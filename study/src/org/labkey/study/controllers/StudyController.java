@@ -75,9 +75,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
-import org.labkey.study.importer.DatasetImporter;
-import org.labkey.study.importer.StudyImporter;
-import org.labkey.study.importer.VisitMapImporter;
+import org.labkey.study.importer.*;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -1821,7 +1819,8 @@ public class StudyController extends BaseStudyController
         @SuppressWarnings("unchecked")
         public boolean handlePost(BulkImportTypesForm form, BindException errors) throws Exception
         {
-            return StudyManager.getInstance().importDatasetSchemas(getStudy(), form.tsv, getUser(), form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
+            SchemaReader reader = new SchemaTsvReader(getStudy(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
+            return StudyManager.getInstance().importDatasetSchemas(getStudy(), getUser(), reader, errors);
         }
 
         public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)

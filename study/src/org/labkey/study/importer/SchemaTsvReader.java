@@ -34,19 +34,19 @@ import java.util.*;
  */
 public class SchemaTsvReader implements SchemaReader
 {
-    private final BindException _errors;
     private final List<Map<String, Object>> _importMaps;
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
+    private final String _typeNameColumn;
 
-    private SchemaTsvReader(Study study, TabLoader loader, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
+
+    private SchemaTsvReader(Study study, TabLoader loader, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
     {
-        _errors = errors;
-
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
 
         _importMaps = new ArrayList<Map<String, Object>>(mapsLoad.size());
         _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>();
+        _typeNameColumn = typeNameColumn;
 
         if (mapsLoad.size() > 0)
         {
@@ -75,7 +75,7 @@ public class SchemaTsvReader implements SchemaReader
                 }
 
                 Integer typeId = (Integer) typeIdObj;
-                DatasetImporter.DatasetImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeId) : null;
+                DatasetImporter.DatasetImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeName) : null;
 
                 boolean isHidden;
 
@@ -230,7 +230,7 @@ public class SchemaTsvReader implements SchemaReader
         this(study, new TabLoader(tsv, true), labelColumn, typeNameColumn, typeIdColumn, null, errors);
     }
 
-    public SchemaTsvReader(Study study, File tsvFile, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
+    public SchemaTsvReader(Study study, File tsvFile, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
     {
         this(study, new TabLoader(tsvFile, true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }
@@ -243,5 +243,10 @@ public class SchemaTsvReader implements SchemaReader
     public Map<Integer, DataSetImportInfo> getDatasetInfo()
     {
         return _datasetInfoMap;
+    }
+
+    public String getTypeNameColumn()
+    {
+        return _typeNameColumn;
     }
 }

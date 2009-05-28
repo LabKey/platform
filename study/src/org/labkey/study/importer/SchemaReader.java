@@ -23,10 +23,17 @@ import java.util.Map;
  * Date: May 26, 2009
  * Time: 10:14:08 AM
  */
+
+// This is an ugly but relatively quick way to add support for the new dataset_metadata.xml format while still
+// maintaining compatibility with schema.tsv.
+//
+// TODO: Rework OntologyManager.importTypes() and StudyManager.importDatasetSchemas() to take typed data structures
+// instead of List<Map<String, Object>>, etc.
 public interface SchemaReader
 {
     List<Map<String, Object>> getImportMaps();
     Map<Integer, DataSetImportInfo> getDatasetInfo();
+    String getTypeNameColumn();
 
     public static class DataSetImportInfo
     {

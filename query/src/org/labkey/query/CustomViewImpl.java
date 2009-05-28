@@ -336,6 +336,8 @@ public class CustomViewImpl implements CustomView
         }
     }
 
+    public static final String FILE_EXTENSION = ".view.xml";
+
     public void serialize(VirtualFile dir) throws IOException
     {
         CustomViewDocument customViewDoc = CustomViewDocument.Factory.newInstance();
@@ -349,7 +351,9 @@ public class CustomViewImpl implements CustomView
         if (null != getCustomIconUrl())
             customViewXml.setCustomIconUrl(getCustomIconUrl());
 
-        XmlBeansUtil.saveDoc(dir.getPrintWriter(getName() + ".xml"), customViewDoc);
+        String filename = (null != getName() ? getName() : "default") + ".db_" + getCstmView().getCustomViewId() + FILE_EXTENSION;
+
+        XmlBeansUtil.saveDoc(dir.getPrintWriter(filename), customViewDoc);
     }
 
     static public boolean isUnselectable(ColumnInfo column)

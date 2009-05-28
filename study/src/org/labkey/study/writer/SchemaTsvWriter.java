@@ -31,7 +31,7 @@ import java.io.PrintWriter;
  * Date: Apr 23, 2009
  * Time: 2:39:33 PM
  */
-public class SchemaWriter implements Writer<DataSetDefinition[]>
+public class SchemaTsvWriter implements Writer<DataSetDefinition[]>
 {
     private static final String SCHEMA_FILENAME = "schema.tsv";
 
@@ -60,7 +60,7 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 
             TableInfo tinfo = def.getTableInfo(ctx.getUser());
 
-            for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo.getColumns(), true))
+            for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo.getColumns(), def, true))
             {
                 writer.print(prefix);
                 writer.print(col.getColumnName() + '\t');
@@ -75,7 +75,7 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
                 writer.print(t.getXsdType());
                 writer.print('\t');
                 writer.print(col.isNullable() ? "optional\t" : "required\t");
-                writer.print(StringUtils.trimToEmpty(col.getFormatString()) + "\t");
+                writer.print(StringUtils.trimToEmpty(col.getFormatString()) + "\t");     // TODO: Only export if non-null / != default
 
                 // TODO: ConceptURI?
                 writer.print("\t");
@@ -88,7 +88,7 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
                         writer.print("\ttrue");
                 }
 
-                // TODO: mvEnabled?  category?
+                // TODO: mvEnabled?  category?  hidden?
 
                 writer.println();
             }

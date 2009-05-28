@@ -60,7 +60,7 @@ public class CustomViewWriter implements Writer<Study>
 
             for (String tableName : tableAndQueryNames)
             {
-                List<CustomView> customViews = QueryService.get().getCustomViews(user, c, schemaName, tableName);
+                List<CustomView> customViews = QueryService.get().getCustomViews(null, c, schemaName, tableName);
 
                 for (CustomView customView : customViews)
                 {

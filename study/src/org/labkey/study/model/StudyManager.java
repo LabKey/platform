@@ -65,9 +65,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
-import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
 import org.labkey.study.importer.SchemaReader;
-import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.DateVisitManager;
@@ -76,7 +74,6 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
-import java.io.File;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
@@ -2445,19 +2442,7 @@ public class StudyManager
     }
 
 
-    public boolean importDatasetSchemas(Study study, String tsv, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
-    {
-        return importDatasetSchemas(study, user, new SchemaTsvReader(study, tsv, labelColumn, typeNameColumn, typeIdColumn, errors), typeNameColumn, errors);
-    }
-
-
-    public boolean importDatasetSchemas(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
-    {
-        return importDatasetSchemas(study, user, new SchemaTsvReader(study, tsvFile, labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors), typeNameColumn, errors);
-    }
-
-
-    private boolean importDatasetSchemas(Study study, User user, SchemaReader reader, String typeNameColumn, BindException errors) throws IOException, SQLException
+    public boolean importDatasetSchemas(Study study, User user, SchemaReader reader, BindException errors) throws IOException, SQLException
     {
         if (errors.hasErrors())
             return false;
@@ -2469,7 +2454,7 @@ public class StudyManager
             String domainURI = getDomainURI(study.getContainer(), (DataSetDefinition)null);
 
             List<String> importErrors = new LinkedList<String>();
-            PropertyDescriptor[] pds = OntologyManager.importTypes(domainURI, typeNameColumn, mapsImport, importErrors, study.getContainer(), true);
+            PropertyDescriptor[] pds = OntologyManager.importTypes(domainURI, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
 
             if (!importErrors.isEmpty())
             {

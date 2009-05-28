@@ -15,33 +15,31 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.DatasetsDocument;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.DatasetReorderer;
-import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.pipeline.DatasetBatch;
+import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TableType;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.DatasetBatch;
+import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.xml.DatasetsDocument;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
-import org.apache.xmlbeans.XmlException;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -71,8 +69,9 @@ public class DatasetImporter
             if (schemaFile.exists())
             {
                 List<Integer> orderedIds = null;
-                Map<Integer, DatasetImportProperties> extraProps = null;
-                Map<String, TableType> metaDataMap = null;
+                Map<String, DatasetImportProperties> extraProps = null;
+                SchemaReader xmlReader = null;
+                SchemaReader tsvReader = null;
 
                 DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root);
 
@@ -95,23 +94,19 @@ public class DatasetImporter
                     for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
                         orderedIds.add(dataset.getId());
 
-                    String metaDataFileName = manifestDatasetsXml.getMetaDataFile();
+                    String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
 
-                    if (null != metaDataFileName)
+                    if (null != metaDataFilename)
                     {
-                        File metaDataFile = new File(datasetDir, metaDataFileName);
-
-                        TablesDocument tablesDoc = TablesDocument.Factory.parse(metaDataFile);
-                        TablesDocument.Tables tablesXml = tablesDoc.getTables();
-
-                        metaDataMap = new HashMap<String, TableType>(tablesXml.getTableArray().length);
-
-                        for (TableType type : tablesXml.getTableArray())
-                            metaDataMap.put(type.getTableName(), type);
+                        xmlReader = new SchemaXmlReader(study, new File(datasetDir, metaDataFilename), extraProps);
                     }
                 }
 
-                if (!StudyManager.getInstance().importDatasetSchemas(study, schemaFile, ctx.getUser(), labelColumn, typeNameColumn, typeIdColumn, extraProps, errors))
+                // Fall back to schema.tsv if dataset_metadata.xml doesn't exist 
+                //if (null == reader)
+                tsvReader = new SchemaTsvReader(study, schemaFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
+
+                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), tsvReader, errors))
                     return false;
 
                 if (null != orderedIds)
@@ -188,15 +183,15 @@ public class DatasetImporter
     }
 
 
-    public static Map<Integer, DatasetImportProperties> getDatasetImportProperties(@NotNull DatasetsDocument.Datasets datasetsXml)
+    public static Map<String, DatasetImportProperties> getDatasetImportProperties(@NotNull DatasetsDocument.Datasets datasetsXml)
     {
         DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = datasetsXml.getDatasets().getDatasetArray();
-        Map<Integer, DatasetImportProperties> extraProps = new HashMap<Integer, DatasetImportProperties>(datasets.length);
+        Map<String, DatasetImportProperties> extraProps = new HashMap<String, DatasetImportProperties>(datasets.length);
 
         for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
         {
-            DatasetImportProperties props = new DatasetImportProperties(dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault());
-            extraProps.put(dataset.getId(), props);
+            DatasetImportProperties props = new DatasetImportProperties(dataset.getId(), dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault());
+            extraProps.put(dataset.getName(), props);
         }
 
         return extraProps;
@@ -207,15 +202,22 @@ public class DatasetImporter
     // TODO: Get rid of schema.tsv and put all dataset-level properties here 
     public static class DatasetImportProperties
     {
-        private String _category;
-        private String _cohort;
-        private boolean _showByDefault;
+        private final int _id;
+        private final String _category;
+        private final String _cohort;
+        private final boolean _showByDefault;
 
-        private DatasetImportProperties(String category, String cohort, boolean showByDefault)
+        private DatasetImportProperties(int id, String category, String cohort, boolean showByDefault)
         {
+            _id = id;
             _category = category;
             _cohort = cohort;
             _showByDefault = showByDefault;
+        }
+
+        public int getId()
+        {
+            return _id;
         }
 
         public String getCategory()

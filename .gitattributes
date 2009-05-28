@@ -2019,6 +2019,7 @@ study/src/org/labkey/study/importer/QueryImporter.java -text
 study/src/org/labkey/study/importer/ReportImporter.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
 study/src/org/labkey/study/importer/SchemaTsvReader.java -text
+study/src/org/labkey/study/importer/SchemaXmlReader.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenArchiveImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
@@ -2340,7 +2341,8 @@ study/src/org/labkey/study/writer/FileSystemFile.java -text
 study/src/org/labkey/study/writer/QcStateWriter.java -text
 study/src/org/labkey/study/writer/QueryWriter.java -text
 study/src/org/labkey/study/writer/ReportWriter.java -text
-study/src/org/labkey/study/writer/SchemaWriter.java -text
+study/src/org/labkey/study/writer/SchemaTsvWriter.java -text
+study/src/org/labkey/study/writer/SchemaXmlWriter.java -text
 study/src/org/labkey/study/writer/SpecimenArchiveWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text

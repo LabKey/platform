@@ -49,12 +49,12 @@ public class DatasetCohortAssigner
             User user = ctx.getUser();
 
             StudyManager studyManager = StudyManager.getInstance();
-            Map<Integer, DatasetImporter.DatasetImportProperties> datasetProps = DatasetImporter.getDatasetImportProperties(datasets);
+            Map<String, DatasetImporter.DatasetImportProperties> datasetProps = DatasetImporter.getDatasetImportProperties(datasets);
             DataSetDefinition[] defs = study.getDataSets();
 
             for (DataSetDefinition def : defs)
             {
-                DatasetImporter.DatasetImportProperties props = datasetProps.get(def.getDataSetId());
+                DatasetImporter.DatasetImportProperties props = datasetProps.get(def.getName());
 
                 Cohort cohort = def.getCohort();
                 String oldCohortLabel = null != cohort ? cohort.getLabel() : null;
