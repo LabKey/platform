@@ -18,10 +18,7 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.permissions.*;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.util.DateUtil;
 import org.json.JSONArray;
 
@@ -249,7 +246,6 @@ public class SecurityPolicy
                     perms.addAll(assignment.getRole().getPermissions());
 
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
-                ++principalsIdx;
             }
             else if(assignment.getUserId() < principals[principalsIdx])
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
@@ -289,7 +285,6 @@ public class SecurityPolicy
                     roles.add(assignment.getRole());
 
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
-                ++principalsIdx;
             }
             else if(assignment.getUserId() < principals[principalsIdx])
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
@@ -411,11 +406,9 @@ public class SecurityPolicy
                 if(null == userId)
                     throw new RuntimeException("Null user id passed in role assignment!");
                 
-                UserPrincipal principal = SecurityManager.getGroup(userId.intValue());
+                UserPrincipal principal = SecurityManager.getPrincipal(userId.intValue());
                 if(null == principal)
-                    principal = UserManager.getUser(userId.intValue());
-                if(null == principal)
-                    throw new RuntimeException("Could not find a group or user with the id " + userId.intValue());
+                    continue; //silently ignore--this could happen if the principal was deleted in between the get and save
 
                 policy.addRoleAssignment(principal, role);
             }
@@ -439,6 +432,32 @@ public class SecurityPolicy
         }
         
         return roles;
+    }
+
+    /**
+     * This will normalize the policy by performing a few clean-up actions. For instance it will
+     * remove all redundant NoPermissionsRole assignments.
+     */
+    public void normalize()
+    {
+        if (isEmpty())
+            return;
+
+        //remove all NoPermissionsRole assignments
+        Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
+        Iterator<RoleAssignment> iter = _assignments.iterator();
+        while (iter.hasNext())
+        {
+            RoleAssignment ra = iter.next();
+            if(noPermsRole.equals(ra.getRole()))
+                iter.remove();
+        }
+
+        //if we are now empty, we need to add a no perms role assignment for guests to keep the Policy from
+        //getting ignored. Otherwise, the SecurityManager will return the parent policy and potentially
+        //grant users access who did not have access before
+        if (isEmpty())
+            addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
     }
 
 }

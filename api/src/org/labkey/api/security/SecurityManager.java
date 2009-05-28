@@ -1729,6 +1729,8 @@ public class SecurityManager
                 return getPolicy(parent, findNearest);
         }
 
+        policy.normalize();
+        
         return policy;
     }
 
@@ -1756,6 +1758,9 @@ public class SecurityManager
                 throw new Table.OptimisticConflictException("The security policy you are attempting to save" +
                 " has been altered by someone else since you selected it.", Table.SQLSTATE_TRANSACTION_STATE, 0);
             }
+
+            //normalize the policy to get rid of extraneous no perms role assignments
+            policy.normalize();
 
             //save to policies table
             if(null == currentPolicyBean)
