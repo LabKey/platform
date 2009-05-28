@@ -517,21 +517,13 @@ public class SecurityApiActions
             ApiSimpleResponse resp = new ApiSimpleResponse("policy", policy.toMap());
 
             //add the relevant roles
+            //for now, just return all assignable roles
+            //but exclude the project admin role if this is not a project
             List<String> relevantRoles = new ArrayList<String>();
-            Set<Class<? extends Permission>> resourcePerms = resource.getRelevantPermissions();
             for(Role role : RoleManager.getAllRoles())
             {
-                if(!role.isAssignable())
-                    continue;
-
-                for(Class<? extends Permission> perm : role.getPermissions())
-                {
-                    if(resourcePerms.contains(perm))
-                    {
-                        relevantRoles.add(role.getUniqueName());
-                        break;
-                    }
-                }
+                if(role.isAssignable())
+                    relevantRoles.add(role.getUniqueName());
             }
 
             //special cases for relevant roles:

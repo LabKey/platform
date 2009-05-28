@@ -80,7 +80,6 @@ public class CoreQuerySchema extends UserSchema
         //expose UserId, Name, Container, and Type
         ColumnInfo col = groups.wrapColumn(principalsBase.getColumn("UserId"));
         col.setKeyField(true);
-        col.setIsHidden(true);
         col.setReadOnly(true);
         groups.addColumn(col);
 
@@ -97,7 +96,6 @@ public class CoreQuerySchema extends UserSchema
         groups.addColumn(col);
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
-        defCols.add(FieldKey.fromParts("UserId"));
         defCols.add(FieldKey.fromParts("Name"));
         defCols.add(FieldKey.fromParts("Type"));
         defCols.add(FieldKey.fromParts("Container"));
@@ -158,7 +156,6 @@ public class CoreQuerySchema extends UserSchema
         principals.addColumn(col);
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
-        defCols.add(FieldKey.fromParts("UserId"));
         defCols.add(FieldKey.fromParts("Name"));
         defCols.add(FieldKey.fromParts("Type"));
         defCols.add(FieldKey.fromParts("Container"));
