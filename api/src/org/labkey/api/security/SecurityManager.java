@@ -24,6 +24,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
 import org.labkey.api.module.ModuleLoader;
@@ -2346,11 +2347,31 @@ public class SecurityManager
         return subfoldersInherit;
     }
 
-    public static void setNewSubfoldersInheritPermissions(Container project, boolean inherit)
+    public static void setNewSubfoldersInheritPermissions(Container project, User user, boolean inherit)
     {
         Map<String, String> props = PropertyManager.getWritableProperties(project.getId(), SUBFOLDERS_INHERIT_PERMISSIONS_NAME, true);
         props.put(SUBFOLDERS_INHERIT_PERMISSIONS_NAME, Boolean.toString(inherit));
         PropertyManager.saveProperties(props);
+        addAuditEvent(project, user, String.format("Container %s was updated so that new subfolders would " + (inherit ? "" : "not ") + "inherit security permissions", project.getName()), 0);
+    }
+
+    public static void addAuditEvent(Container c, User user, String comment, int groupId)
+    {
+        if (user != null)
+        {
+            AuditLogEvent event = new AuditLogEvent();
+
+            event.setCreatedBy(user);
+            event.setComment(comment);
+
+            event.setContainerId(c.getId());
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
+
+            event.setIntKey2(groupId);
+            event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
+            AuditLogService.get().addEvent(event);
+        }
     }
 
 
