@@ -94,5 +94,9 @@ if (null == getStudy())
     {
         out.write(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
     }
+    else if (policy.hasPermission(user, ManageRequestSettingsPermission.class))
+    {
+        out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
+    }
 %>
 

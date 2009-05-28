@@ -386,7 +386,7 @@ public class StudyController extends BaseStudyController
             OverviewBean bean = new OverviewBean();
             bean.study = _study;
             bean.showAll = "1".equals(getViewContext().get("showAll"));
-            bean.canManage = getContainer().hasPermission(getUser(), ACL.PERM_ADMIN);
+            bean.canManage = getContainer().hasPermission(getUser(), ManageStudyPermission.class);
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
             if (StudyManager.getInstance().showQCStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
