@@ -34,6 +34,8 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -43,8 +45,8 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.client.DatasetImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -316,7 +318,7 @@ public class DatasetController extends BaseStudyController
                 {
                     // If we have a current record, display it
                     int datasetId = event.getIntKey1();
-                    DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                    DataSet ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
                     if (null != ds)
                     {
                         TableInfo datasetTable = ds.getTableInfo(getUser());
@@ -437,7 +439,7 @@ public class DatasetController extends BaseStudyController
             Map<String,String> props = new HashMap<String,String>();
 
             Study study = getStudy();
-            DataSetDefinition def = study.getDataSet(form.getDatasetId());
+            DataSet def = study.getDataSet(form.getDatasetId());
 
             props.put("typeURI", def.getTypeURI());
 
@@ -504,7 +506,7 @@ public class DatasetController extends BaseStudyController
     {
         public ModelAndView getView(DatasetIdForm datasetIdForm, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            StudyImpl study = getStudy();
             DataSetDefinition def = study.getDataSet(datasetIdForm.getDatasetId());
             if (def == null)
                 throw new IllegalArgumentException("No dataset found with id of " + datasetIdForm.getDatasetId());

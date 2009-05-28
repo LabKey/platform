@@ -1,9 +1,9 @@
 package org.labkey.study.samples.report.specimentype;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
@@ -44,7 +44,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        List<Cohort> reportCohorts = new ArrayList<Cohort>();
+        List<CohortImpl> reportCohorts = new ArrayList<CohortImpl>();
         if (getCohort() != null)
             reportCohorts.add(getCohort());
         else
@@ -53,14 +53,14 @@ public class TypeCohortReportFactory extends TypeReportFactory
         reportCohorts.add(null);
 
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-        for (Cohort cohort : reportCohorts)
+        for (CohortImpl cohort : reportCohorts)
         {
             String title = cohort != null ? cohort.getLabel() : "[No cohort assigned]";
             Integer cohortId = cohort != null ? cohort.getRowId() : null;
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
             addCohortFilter(filter, cohortId);
-            Visit[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), cohort);
+            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), cohort);
             reports.add(new TypeCohortReport(title, visits, filter, this, cohortId));
         }
         return reports;

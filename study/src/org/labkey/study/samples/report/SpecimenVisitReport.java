@@ -1,6 +1,6 @@
 package org.labkey.study.samples.report;
 
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
@@ -34,8 +34,8 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 {
     private Collection<Row> _rows;
     protected String _title;
-    private Visit[] _visits;
-    private Visit[] _nonEmptyVisits;
+    private VisitImpl[] _visits;
+    private VisitImpl[] _nonEmptyVisits;
     protected Container _container;
     protected SimpleFilter _filter;
     private SpecimenVisitReportParameters _parameters;
@@ -45,7 +45,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private boolean _viewPtidList = false;
     private Map<Double, Double> _nonEmptyColumns = new HashMap<Double, Double>();
 
-    public SpecimenVisitReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenVisitReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         _visits = visits;
         _filter = filter;
@@ -84,7 +84,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return url;
     }
 
-    public Visit[] getVisits()
+    public VisitImpl[] getVisits()
     {
         // ensure rows and non-empty columns have been generated
         getRows();
@@ -94,13 +94,13 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         {
             if (_nonEmptyVisits == null)
             {
-                List<Visit> visits = new ArrayList<Visit>();
-                for (Visit visit : _visits)
+                List<VisitImpl> visits = new ArrayList<VisitImpl>();
+                for (VisitImpl visit : _visits)
                 {
                     if (_nonEmptyColumns.containsKey(visit.getSequenceNumMin()))
                         visits.add(visit);
                 }
-                _nonEmptyVisits = visits.toArray(new Visit[0]);
+                _nonEmptyVisits = visits.toArray(new VisitImpl[0]);
             }
             return _nonEmptyVisits;
         }
@@ -112,9 +112,9 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             _nonEmptyColumns.put(sequenceNum, sequenceNum);
     }
 
-    protected abstract String getCellHtml(Visit visit, CELLDATA summary);
+    protected abstract String getCellHtml(VisitImpl visit, CELLDATA summary);
 
-    protected abstract String[] getCellExcelText(Visit visit, CELLDATA summary);
+    protected abstract String[] getCellExcelText(VisitImpl visit, CELLDATA summary);
 
     public boolean isNumericData()
     {
@@ -167,7 +167,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return fullFilter;
     }
 
-    protected String getFilterQueryString(Visit visit, CELLDATA summary)
+    protected String getFilterQueryString(VisitImpl visit, CELLDATA summary)
     {
         String ret = getViewFilter().toQueryString("SpecimenDetail");
         if (_parameters.getBaseCustomViewName() != null && _parameters.getBaseCustomViewName().length() > 0)
@@ -198,22 +198,22 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             _titleHierarchy = titleHierarchy;
         }
 
-        public String getCellHtml(Visit visit)
+        public String getCellHtml(VisitImpl visit)
         {
             CELLDATA summary = _visitData.get(visit.getSequenceNumMin());
             return SpecimenVisitReport.this.getCellHtml(visit, summary);
         }
 
-        public String[] getCellExcelText(Visit visit)
+        public String[] getCellExcelText(VisitImpl visit)
         {
             CELLDATA summary = _visitData.get(visit.getSequenceNumMin());
             return SpecimenVisitReport.this.getCellExcelText(visit, summary);
         }
 
-        public int getMaxExcelRowHeight(Visit[] visits)
+        public int getMaxExcelRowHeight(VisitImpl[] visits)
         {
             int max = 1;
-            for (Visit visit : visits)
+            for (VisitImpl visit : visits)
             {
                 int currentHeight = getCellExcelText(visit).length;
                 if (currentHeight > max)
@@ -263,7 +263,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return false;
     }
 
-    protected String buildCellHtml(Visit visit, CELLDATA summary, String linkHtml)
+    protected String buildCellHtml(VisitImpl visit, CELLDATA summary, String linkHtml)
     {
         String[] summaryString = getCellExcelText(visit, summary);
         StringBuilder cellHtml = new StringBuilder();

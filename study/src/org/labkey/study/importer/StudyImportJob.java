@@ -19,7 +19,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.pipeline.StudyPipeline;
 
 import java.io.File;
@@ -31,14 +31,14 @@ import java.io.File;
  */
 public class StudyImportJob extends PipelineJob
 {
-    private final Study _study;
+    private final StudyImpl _study;
     private final ImportContext _ctx;
     private final File _root;
 
     // Note: At the moment, this just updates manual cohorts, which must be done after dataset and specimen uploads.
     // It could be extended to do other end-of-import tasks and/or wrap the dataset load, specimen load, and final
     // tasks in a single job.
-    public StudyImportJob(Study study, ImportContext ctx, File root)
+    public StudyImportJob(StudyImpl study, ImportContext ctx, File root)
     {
         super(null, new ViewBackgroundInfo(ctx.getContainer(), ctx.getUser(), ctx.getUrl()));
         _study = study;

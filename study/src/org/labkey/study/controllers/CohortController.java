@@ -24,11 +24,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.study.*;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.model.*;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.query.CohortQueryView;
 import org.labkey.study.query.CohortTable;
 import org.labkey.study.query.StudyQuerySchema;
@@ -60,7 +61,7 @@ public class CohortController extends BaseStudyController
     {
         public ActionURL getRedirectURL(CohortIdForm form) throws Exception
         {
-            Cohort cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getRowId());
+            CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getRowId());
             if (cohort != null && !cohort.isInUse())
                 StudyManager.getInstance().deleteCohort(cohort);
 
@@ -80,8 +81,8 @@ public class CohortController extends BaseStudyController
     {
         public ActionURL getRedirectURL(Object form) throws Exception
         {
-            Cohort[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
-            for (Cohort cohort : cohorts)
+            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
+            for (CohortImpl cohort : cohorts)
             {
                 if (!cohort.isInUse())
                     StudyManager.getInstance().deleteCohort(cohort);
@@ -127,7 +128,7 @@ public class CohortController extends BaseStudyController
 
         public boolean handlePost(ManageCohortsForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            StudyImpl study = getStudy();
 
             if (form.isManualCohortAssignment() != study.isManualCohortAssignment())
             {
@@ -296,7 +297,7 @@ public class CohortController extends BaseStudyController
             Map<String,Object> dataMap = updateForm.getDataMap();
             Object pkVal = updateForm.getPkVal();
 
-            Cohort cohort;
+            CohortImpl cohort;
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
 
             StudyService.get().beginTransaction();
@@ -327,7 +328,7 @@ public class CohortController extends BaseStudyController
                     if (newLabel != null && !cohort.getLabel().equals(newLabel))
                     {
                         // Check if there's a conflict
-                        Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), newLabel);
+                        CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), newLabel);
                         if (existingCohort != null && existingCohort.getRowId() != cohort.getRowId())
                         {
                             errors.reject("insertCohort", "A cohort with the label '" + newLabel + "' already exists");

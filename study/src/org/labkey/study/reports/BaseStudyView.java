@@ -19,11 +19,12 @@ package org.labkey.study.reports;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 
 import java.util.HashMap;
 
@@ -52,29 +53,29 @@ public class BaseStudyView<T> extends HttpView<T>
     }
 
 
-    private Visit[] _visits;            // display ordered
-    private HashMap<Integer, Visit> _visitMap = new HashMap<Integer, Visit>();
+    private VisitImpl[] _visits;            // display ordered
+    private HashMap<Integer, VisitImpl> _visitMap = new HashMap<Integer, VisitImpl>();
     private DataSetDefinition[] _datasetDefs;
     private HashMap<Integer, DataSetDefinition> _datasetMap = new HashMap<Integer, DataSetDefinition>();
 
-    protected Visit[] getVisits()
+    protected VisitImpl[] getVisits()
     {
         if (null == _visits)
         {
             _visits =  _studyManager.getVisits(_study);
-            for (Visit v : _visits)
+            for (VisitImpl v : _visits)
                 _visitMap.put(v.getRowId(), v);
         }
         return _visits;
     }
 
-    protected Visit getVisit(int v)
+    protected VisitImpl getVisit(int v)
     {
         getVisits();
         return _visitMap.get(v);
     }
 
-    protected DataSetDefinition[] getDatasets()
+    protected DataSet[] getDatasets()
     {
         if (null == _datasetDefs)
         {
@@ -85,7 +86,7 @@ public class BaseStudyView<T> extends HttpView<T>
         return _datasetDefs;
     }
 
-    protected DataSetDefinition getDatasetDefinition(int d)
+    protected DataSet getDatasetDefinition(int d)
     {
         getDatasets();
         return _datasetMap.get(d);

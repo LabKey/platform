@@ -159,13 +159,13 @@ public class SpecimenApiController extends BaseStudyController
 
     private Map<String, Object> getLocation(Container container, int siteId) throws SQLException
     {
-        Site location = StudyManager.getInstance().getSite(container, siteId);
+        SiteImpl location = StudyManager.getInstance().getSite(container, siteId);
         if (location == null)
             return null;
         return getLocation(location);
     }
 
-    private Map<String, Object> getLocation(Site site)
+    private Map<String, Object> getLocation(SiteImpl site)
     {
         Map<String, Object> location = new HashMap<String, Object>();
         location.put("endpoint", site.isEndpoint());
@@ -197,7 +197,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(SampleApiForm form, BindException errors) throws Exception
         {
             final List<Map<String, Object>> repositories = new ArrayList<Map<String, Object>>();
-            for (Site site : StudyManager.getInstance().getSites(getContainer()))
+            for (SiteImpl site : StudyManager.getInstance().getSites(getContainer()))
             {
                 if (site.isRepository())
                     repositories.add(getLocation(site));

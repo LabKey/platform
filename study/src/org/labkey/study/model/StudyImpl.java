@@ -21,10 +21,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +37,7 @@ import java.util.*;
  * Date: Jan 6, 2006
  * Time: 10:28:32 AM
  */
-public class Study extends ExtensibleStudyEntity<Study>
+public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 {
     private String _label;
     private boolean _dateBased;
@@ -52,11 +52,11 @@ public class Study extends ExtensibleStudyEntity<Study>
     private Integer _defaultDirectEntryQCState;
     private boolean _showPrivateDataByDefault;
 
-    public Study()
+    public StudyImpl()
     {
     }
 
-    public Study(Container container, String label)
+    public StudyImpl(Container container, String label)
     {
         super(container);
         _label = label;
@@ -77,7 +77,13 @@ public class Study extends ExtensibleStudyEntity<Study>
     {
         List<SecurableResource> ret = new ArrayList<SecurableResource>();
 
-        ret.addAll(Arrays.asList(getDataSets()));
+        //add all datasets the user has admin perms on
+        for(DataSetDefinition dsDef : getDataSets())
+        {
+            SecurityPolicy policy = SecurityManager.getPolicy(dsDef);
+//            if(policy.hasPermission(user, AdminPermission.class))
+                ret.add(dsDef);
+        }
 
         return ret;
     }
@@ -102,7 +108,7 @@ public class Study extends ExtensibleStudyEntity<Study>
     }
 
 
-    public Visit[] getVisits()
+    public VisitImpl[] getVisits()
     {
         return StudyManager.getInstance().getVisits(this);
     }
@@ -134,12 +140,12 @@ public class Study extends ExtensibleStudyEntity<Study>
         return ids;
     }
 
-    public synchronized Site[] getSites()
+    public synchronized SiteImpl[] getSites()
     {
         return StudyManager.getInstance().getSites(getContainer());
     }
 
-    public synchronized Cohort[] getCohorts(User user)
+    public synchronized CohortImpl[] getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
     }
@@ -301,7 +307,7 @@ public class Study extends ExtensibleStudyEntity<Study>
     public int getNumExtendedProperties(User user)
     {
         StudyQuerySchema schema = new StudyQuerySchema(this, user, true);
-        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), Study.class);
+        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), StudyImpl.class);
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
 
         if (domain == null)

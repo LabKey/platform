@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
-<%@ page import="org.labkey.study.model.Site"%>
+<%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
 <%@ page import="org.labkey.study.SampleManager"%>
@@ -33,7 +33,7 @@
     JspView<SpringSpecimenController.NewRequestBean> me = (JspView<SpringSpecimenController.NewRequestBean>) HttpView.currentView();
     SpringSpecimenController.NewRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
-    Site[] sites = StudyManager.getInstance().getSites(context.getContainer());
+    SiteImpl[] sites = StudyManager.getInstance().getSites(context.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
     Specimen[] specimens = bean.getSamples();
     SampleManager.SpecimenRequestInput[] inputs = bean.getInputs();
@@ -122,7 +122,7 @@ function setDefaults()
                 <select id='destinationSite' name="destinationSite" onChange="setDefaults()">
                     <option value="0"></option>
                     <%
-                        for (Site site : sites)
+                        for (SiteImpl site : sites)
                         {
                     %>
                     <option value="<%= site.getRowId() %>" <%= bean.getSelectedSite() == site.getRowId() ? "SELECTED" : ""%>>

@@ -22,11 +22,13 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.StudyImpl;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -36,13 +38,13 @@ public class StudyQuerySchema extends UserSchema
     public static final String SCHEMA_NAME = "study";
 
     @Nullable // if no study defined in this container
-    final Study _study;
+    final StudyImpl _study;
 
     boolean _mustCheckPermissions;
 
     private Map<Integer, List<Double>> _datasetSequenceMap;
 
-    public StudyQuerySchema(Study study, User user, boolean mustCheckPermissions)
+    public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
         super(SCHEMA_NAME, user, study.getContainer(), StudySchema.getInstance().getSchema());
         _study = study;
@@ -136,7 +138,7 @@ public class StudyQuerySchema extends UserSchema
         }
     }
 
-    synchronized List<Double> getSequenceNumsForDataset(DataSetDefinition dsd)
+    synchronized List<Double> getSequenceNumsForDataset(DataSet dsd)
     {
         if (null == _datasetSequenceMap)
             _datasetSequenceMap =  StudyManager.getInstance().getVisitManager(_study).getDatasetSequenceNums();
@@ -264,7 +266,7 @@ public class StudyQuerySchema extends UserSchema
     }
 
     @Nullable
-    public Study getStudy()
+    public StudyImpl getStudy()
     {
         return _study;
     }
@@ -274,7 +276,7 @@ public class StudyQuerySchema extends UserSchema
         return dsd.getName();
     }
 
-    public String decideTableName(Visit visit)
+    public String decideTableName(VisitImpl visit)
     {
         return visit.getLabel();
     }

@@ -18,10 +18,11 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.Visit" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -77,9 +78,9 @@ assign dataset data to the correct timepoints.
     </tr>
 <%
     Study study = getStudy();
-    Visit[] timepoints = StudyManager.getInstance().getVisits(study);
+    VisitImpl[] timepoints = StudyManager.getInstance().getVisits(study);
     ActionURL editTimepointURL = new ActionURL(StudyController.VisitSummaryAction.class, study.getContainer());
-    for (Visit timepoint : timepoints)
+    for (VisitImpl timepoint : timepoints)
     {%>
     <tr>
         <td><%=textLink("edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId())))%></td>

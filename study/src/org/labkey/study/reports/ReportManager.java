@@ -34,6 +34,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
@@ -107,7 +109,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         }
     }
 
-    public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, DataSetDefinition def) throws Exception
+    public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, DataSet def) throws Exception
     {
         SimpleFilter filter = new SimpleFilter();
         Container container = context.getContainer();
@@ -225,7 +227,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         ReportService.get().deleteReport(context, report);
     }
 
-    public ResultSet getReportResultSet(ViewContext context, ActionURL url, DataSetDefinition def) throws Exception
+    public ResultSet getReportResultSet(ViewContext context, ActionURL url, DataSet def) throws Exception
     {
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
         QuerySettings settings = new QuerySettings(url.getPropertyValues(), "Dataset");
@@ -241,7 +243,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
 
     public ResultSet getReportResultSet(ViewContext ctx, int datasetId, int visitRowId) throws ServletException, SQLException
     {
-        Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         DataSetDefinition def = study.getDataSet(datasetId);
         if (def == null)
         {
@@ -250,7 +252,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         }
         if (!def.canRead(ctx.getUser()))
             HttpView.throwUnauthorized();
-        Visit visit = null;
+        VisitImpl visit = null;
         if (visitRowId != 0)
         {
             visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
@@ -370,7 +372,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor(), false);
         if (policy.isEmpty())
         {
-            Study study = StudyManager.getInstance().getStudy(c);
+            StudyImpl study = StudyManager.getInstance().getStudy(c);
 
             if (study != null && (study.getSecurityType() == SecurityType.ADVANCED_READ ||
                     study.getSecurityType() == SecurityType.ADVANCED_WRITE))
@@ -486,7 +488,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         public String getContainerId(){return _containerId;}
     }
 
-    public void dataSetUnmaterialized(final DataSetDefinition def)
+    public void dataSetUnmaterialized(final DataSet def)
     {
 //            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
         if (def != null)

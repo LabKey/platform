@@ -23,6 +23,9 @@
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -41,11 +44,11 @@
 </script>
 
 <%
-    org.labkey.study.model.Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
+    Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
 
-    DataSetDefinition[] datasets = study.getDataSets();
+    DataSet[] datasets = study.getDataSets();
     int countUndefined = 0;
-    for (DataSetDefinition def : datasets) {
+    for (DataSet def : datasets) {
         if (def.getTypeURI() == null)
             countUndefined++;
     }
@@ -166,7 +169,7 @@
         <th>&nbsp;</th>
     </tr><%
 
-    for (DataSetDefinition def : datasets)
+    for (DataSet def : datasets)
     {
     %><tr>
         <td align=right><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%=def.getDataSetId()%></a></td>

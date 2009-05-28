@@ -3,7 +3,7 @@ package org.labkey.study.samples.report.participant;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.SpecimenTypeSummary;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
@@ -38,7 +38,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<? extends SpecimenTypeSummary.TypeCount> types = getSelectedTypes();
-        Visit[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
         List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
         for (SpecimenTypeSummary.TypeCount type : types)
         {

@@ -27,6 +27,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.GUID;
@@ -458,7 +459,7 @@ public class SpecimenImporter
             cpuCurrentLocations.stop();
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
-            Study study = StudyManager.getInstance().getStudy(container);
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
@@ -503,7 +504,7 @@ public class SpecimenImporter
             cpuCurrentLocations.stop();
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
-            Study study = StudyManager.getInstance().getStudy(container);
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
@@ -766,7 +767,7 @@ public class SpecimenImporter
         SampleManager.getInstance().clearCaches(container);
         Specimen[] specimens;
         int offset = 0;
-        Map<Integer, Site> siteMap = new HashMap<Integer, Site>();
+        Map<Integer, SiteImpl> siteMap = new HashMap<Integer, SiteImpl>();
         String currentLocationSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
                 " SET CurrentLocation = CAST(? AS INTEGER), SpecimenHash = ? WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
@@ -795,7 +796,7 @@ public class SpecimenImporter
 
                 if (currentLocation != null)
                 {
-                    Site site;
+                    SiteImpl site;
                     if (!siteMap.containsKey(currentLocation))
                     {
                         site = StudyManager.getInstance().getSite(specimen.getContainer(), currentLocation.intValue());

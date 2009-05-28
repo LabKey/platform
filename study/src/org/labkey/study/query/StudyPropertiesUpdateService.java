@@ -20,7 +20,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Table;
-import org.labkey.study.model.Study;
+import org.labkey.api.study.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
@@ -36,7 +37,7 @@ public class StudyPropertiesUpdateService implements QueryUpdateService
     @SuppressWarnings("unchecked")
     public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Study study = StudyManager.getInstance().getStudy(container);
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
         TableInfo queryTableInfo = querySchema.getTable("StudyProperties");
         Map<String,Object> result = Table.selectObject(queryTableInfo, container.getId(), Map.class);
@@ -45,7 +46,7 @@ public class StudyPropertiesUpdateService implements QueryUpdateService
 
     public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        Study study = StudyManager.getInstance().getStudy(container);
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         study.savePropertyBag(row);
 
         return getRow(user, container, null);

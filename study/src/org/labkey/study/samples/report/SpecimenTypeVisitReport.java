@@ -2,7 +2,7 @@ package org.labkey.study.samples.report;
 
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
@@ -33,7 +33,7 @@ import java.sql.SQLException;
 */
 public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.SummaryByVisitType>
 {
-    public SpecimenTypeVisitReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenTypeVisitReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
     }
@@ -89,7 +89,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         return summaryString.toString();
     }
 
-    protected String[] getCellExcelText(Visit visit, SampleManager.SummaryByVisitType summary)
+    protected String[] getCellExcelText(VisitImpl visit, SampleManager.SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -108,7 +108,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         return strArray;
     }
 
-    protected String getCellHtml(Visit visit, SampleManager.SummaryByVisitType summary)
+    protected String getCellHtml(VisitImpl visit, SampleManager.SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";

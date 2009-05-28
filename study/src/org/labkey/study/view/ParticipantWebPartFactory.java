@@ -4,9 +4,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.view.*;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.Participant;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import static org.labkey.api.util.PageFlowUtil.filter;
+import org.labkey.api.study.Study;
 
 import java.sql.SQLException;
 

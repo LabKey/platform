@@ -33,10 +33,13 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.ResultSet;
@@ -91,10 +94,10 @@ public class ChartReportView extends AbstractReportView
             {
                 descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudyManager.getSchemaName());
 
-                Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
+                Study study = StudyService.get().getStudy(HttpView.currentContext().getContainer());
                 if (study != null)
                 {
-                    DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+                    DataSet ds = study.getDataSet(datasetId);
                     if (ds != null)
                         descriptor.setProperty(ReportDescriptor.Prop.queryName, ds.getLabel());
                 }
@@ -318,8 +321,8 @@ public class ChartReportView extends AbstractReportView
         private TableInfo getTable(ViewContext context, ReportDescriptor descriptor) throws Exception
         {
             final int datasetId = Integer.parseInt(descriptor.getProperty("datasetId"));
-            final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            final Study study = StudyService.get().getStudy(context.getContainer());
+            DataSet def = study.getDataSet(datasetId);
 
             return def.getTableInfo(context.getUser());
         }

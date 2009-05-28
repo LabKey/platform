@@ -17,13 +17,14 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.model.Visit" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     HttpView me = (HttpView) HttpView.currentView();
     StudyController.VisitForm form = (StudyController.VisitForm) me.getViewContext().get("form");
-    Visit v = form.getBean();
+    VisitImpl v = form.getBean();
 %>
 <labkey:errors/>
 Use this form to create  a new visit. A visit is a point in time defined in the study protocol. All data uploaded

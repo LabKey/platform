@@ -26,10 +26,11 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -140,7 +141,7 @@ public class StudyQueryReport extends QueryReport
     {
         if (perm != ACL.PERM_READ)
             throw new IllegalArgumentException("only PERM_READ supported");
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         return new StudyQuerySchema(study, user, true);
     }
 

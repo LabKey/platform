@@ -18,11 +18,12 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.SampleRequestRequirement"%>
-<%@ page import="org.labkey.study.model.Site"%>
+<%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.study.Site" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ManageRequirementBean> me = (JspView<SpringSpecimenController.ManageRequirementBean>) HttpView.currentView();

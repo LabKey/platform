@@ -24,9 +24,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.model.Study;
+import org.labkey.api.study.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.SampleRequestStatus;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 
@@ -150,7 +151,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
 
     public static SpecimenRequestQueryView createView(ViewContext context, SimpleFilter filter)
     {
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = "SpecimenRequest";
         QuerySettings qs = new QuerySettings(context, queryName);

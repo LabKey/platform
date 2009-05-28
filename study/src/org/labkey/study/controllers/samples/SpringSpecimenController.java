@@ -37,6 +37,8 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
+import org.labkey.api.study.Site;
+import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.security.permissions.*;
@@ -186,7 +188,7 @@ public class SpringSpecimenController extends BaseStudyController
             {
                 for (ParticipantDataset pd : getFilterPds())
                 {
-                    Visit visit = pd.getSequenceNum() != null ? StudyManager.getInstance().getVisitForSequence(study, pd.getSequenceNum()) : null;
+                    VisitImpl visit = pd.getSequenceNum() != null ? StudyManager.getInstance().getVisitForSequence(study, pd.getSequenceNum()) : null;
                     ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + pd.getSequenceNum()));
                 }
             }
@@ -286,7 +288,7 @@ public class SpringSpecimenController extends BaseStudyController
             ActionURL otherView = context.cloneActionURL();
             otherView.deleteParameters();
 
-            Study study = StudyManager.getInstance().getStudy(context.getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
             StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
 
             TableInfo otherTableInfo = schema.getTable(otherTable);
@@ -826,8 +828,8 @@ public class SpringSpecimenController extends BaseStudyController
             Integer destinationSiteId = _sampleRequest.getDestinationSiteId();
             if (destinationSiteId != null)
             {
-                Site[] sites = StudyManager.getInstance().getSites(_sampleRequest.getContainer());
-                for (Site site : sites)
+                SiteImpl[] sites = StudyManager.getInstance().getSites(_sampleRequest.getContainer());
+                for (SiteImpl site : sites)
                 {
                     if (destinationSiteId.intValue() == site.getRowId())
                         return site;
@@ -1509,17 +1511,17 @@ public class SpringSpecimenController extends BaseStudyController
     public static class SelectSpecimenProviderBean
     {
         private HiddenFormInputGenerator _sourceForm;
-        private Site[] _possibleSites;
+        private SiteImpl[] _possibleSites;
         private ActionURL _formTarget;
 
-        public SelectSpecimenProviderBean(HiddenFormInputGenerator sourceForm, Site[] possibleSites, ActionURL formTarget)
+        public SelectSpecimenProviderBean(HiddenFormInputGenerator sourceForm, SiteImpl[] possibleSites, ActionURL formTarget)
         {
             _sourceForm = sourceForm;
             _possibleSites = possibleSites;
             _formTarget = formTarget;
         }
 
-        public Site[] getPossibleSites()
+        public SiteImpl[] getPossibleSites()
         {
             return _possibleSites;
         }
@@ -2347,13 +2349,13 @@ public class SpringSpecimenController extends BaseStudyController
             if (request == null)
                 HttpView.throwNotFound();
 
-            Site receivingSite = StudyManager.getInstance().getSite(getContainer(), request.getDestinationSiteId());
+            SiteImpl receivingSite = StudyManager.getInstance().getSite(getContainer(), request.getDestinationSiteId());
             if (receivingSite == null)
                 HttpView.throwNotFound();
 
             final LabSpecimenListsBean.Type type = LabSpecimenListsBean.Type.valueOf(form.getListType());
 
-            Map<Site, List<ActorNotificationRecipientSet>> notifications = new HashMap<Site, List<ActorNotificationRecipientSet>>();
+            Map<SiteImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<SiteImpl, List<ActorNotificationRecipientSet>>();
             if (form.getNotify() != null)
             {
                 for (String tuple : form.getNotify())
@@ -2364,9 +2366,9 @@ public class SpringSpecimenController extends BaseStudyController
                     int[] ids = new int[3];
                     for (int i = 0; i < 3; i++)
                         ids[i] = Integer.parseInt(idStrs[i]);
-                    Site originatingOrProvidingSite = StudyManager.getInstance().getSite(getContainer(), ids[0]);
+                    SiteImpl originatingOrProvidingSite = StudyManager.getInstance().getSite(getContainer(), ids[0]);
                     SampleRequestActor notifyActor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), ids[1]);
-                    Site notifySite = null;
+                    SiteImpl notifySite = null;
                     if (notifyActor.isPerSite() && ids[2] >= 0)
                         notifySite = StudyManager.getInstance().getSite(getContainer(), ids[2]);
                     List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingSite);
@@ -2379,7 +2381,7 @@ public class SpringSpecimenController extends BaseStudyController
                 }
 
 
-                for (final Site originatingOrProvidingSite : notifications.keySet())
+                for (final SiteImpl originatingOrProvidingSite : notifications.keySet())
                 {
                     List<AttachmentFile> formFiles = getAttachmentFileList();
                     TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingSite, receivingSite, type);
@@ -2516,8 +2518,8 @@ public class SpringSpecimenController extends BaseStudyController
         public ModelAndView getView(ExportSiteForm form, BindException errors) throws Exception
         {
             SampleRequest sampleRequest = SampleManager.getInstance().getRequest(getContainer(), form.getId());
-            Site sourceSite = StudyManager.getInstance().getSite(getContainer(), form.getSourceSiteId());
-            Site destSite = StudyManager.getInstance().getSite(getContainer(), form.getDestSiteId());
+            SiteImpl sourceSite = StudyManager.getInstance().getSite(getContainer(), form.getSourceSiteId());
+            SiteImpl destSite = StudyManager.getInstance().getSite(getContainer(), form.getDestSiteId());
             if (sampleRequest == null || sourceSite == null || destSite == null)
                 HttpView.throwNotFound();
 
@@ -2635,7 +2637,7 @@ public class SpringSpecimenController extends BaseStudyController
                 Specimen[] specimens = _sampleRequest.getSpecimens();
                 for (Specimen specimen : specimens)
                 {
-                    Site site;
+                    SiteImpl site;
                     if (_type == LabSpecimenListsBean.Type.ORIGINATING)
                         site = SampleManager.getInstance().getOriginatingSite(specimen);
                     else
@@ -2662,16 +2664,16 @@ public class SpringSpecimenController extends BaseStudyController
             return _possibleNotifications;
         }
 
-        public Set<Site> getLabs() throws SQLException
+        public Set<SiteImpl> getLabs() throws SQLException
         {
             Map<Integer, List<Specimen>> siteIdToSpecimens = getSpecimensBySiteId();
-            Set<Site> sites = new HashSet<Site>(siteIdToSpecimens.size());
+            Set<SiteImpl> sites = new HashSet<SiteImpl>(siteIdToSpecimens.size());
             for (Integer siteId : siteIdToSpecimens.keySet())
                 sites.add(StudyManager.getInstance().getSite(_sampleRequest.getContainer(), siteId));
             return sites;
         }
 
-        public List<Specimen> getSpecimens(Site site) throws SQLException
+        public List<Specimen> getSpecimens(SiteImpl site) throws SQLException
         {
             Map<Integer, List<Specimen>> siteSpecimenLists = getSpecimensBySiteId();
             return siteSpecimenLists.get(site.getRowId());

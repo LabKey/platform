@@ -25,13 +25,14 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.Specimen;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -338,7 +339,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     private static SpecimenQueryView createView(ViewContext context, SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered)
     {
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = viewType.getQueryName();
         QuerySettings qs = new QuerySettings(context, queryName);

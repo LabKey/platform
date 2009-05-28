@@ -220,7 +220,7 @@ public class QCStateSet
 
     public static QCStateSet getDefaultStates(Container container)
     {
-        Study study = StudyManager.getInstance().getStudy(container);
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         return study.isShowPrivateDataByDefault() ? getAllStates(container) : getPublicStates(container);
     }
 

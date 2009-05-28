@@ -32,6 +32,8 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -53,10 +55,29 @@ public class StudyServiceImpl implements StudyService.Service
 
     private StudyServiceImpl() {}
 
+    public Study getStudy(Container container)
+    {
+        return StudyManager.getInstance().getStudy(container);
+    }
+
+    public String getStudyName(Container container)
+    {
+        Study study = getStudy(container);
+        return study == null ? null : study.getLabel();
+    }
+
+    public DataSet getDataSet(Container c, int datasetId)
+    {
+        Study study = StudyManager.getInstance().getStudy(c);
+        if (study != null)
+            return StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+        return null;
+    }
+
     public int getDatasetId(Container c, String datasetLabel)
     {
         Study study = StudyManager.getInstance().getStudy(c);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetLabel);
+        DataSet def = StudyManager.getInstance().getDataSetDefinition(study, datasetLabel);
         if (def == null)
             return -1;
         return def.getDataSetId();
@@ -71,7 +92,7 @@ public class StudyServiceImpl implements StudyService.Service
     public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors, String auditComment, boolean assignDefaultQCState)
             throws SQLException
     {
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
         QCState defaultQCState = null;
@@ -180,7 +201,7 @@ public class StudyServiceImpl implements StudyService.Service
     @SuppressWarnings("unchecked")
     public Map<String,Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException
     {
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
         if (def == null)
@@ -229,7 +250,7 @@ public class StudyServiceImpl implements StudyService.Service
 
     public String insertDatasetRow(User u, Container c, int datasetId, Map<String, Object> data, List<String> errors) throws SQLException
     {
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(study);
@@ -345,7 +366,7 @@ public class StudyServiceImpl implements StudyService.Service
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    private void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, Map<String,Object>oldRecord, Map<String,Object> newRecord)
+    private void addDatasetAuditEvent(User u, Container c, DataSet def, Map<String,Object>oldRecord, Map<String,Object> newRecord)
     {
         String comment;
         if (oldRecord == null)
@@ -361,7 +382,7 @@ public class StudyServiceImpl implements StudyService.Service
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    private void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, Map<String,Object> oldRecord, Map<String,Object> newRecord, String auditComment)
+    private void addDatasetAuditEvent(User u, Container c, DataSet def, Map<String,Object> oldRecord, Map<String,Object> newRecord, String auditComment)
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(u);
@@ -403,7 +424,7 @@ public class StudyServiceImpl implements StudyService.Service
         AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
     }
 
-    public static void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, String comment, UploadLog ul /*optional*/)
+    public static void addDatasetAuditEvent(User u, Container c, DataSet def, String comment, UploadLog ul /*optional*/)
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(u);
@@ -534,9 +555,9 @@ public class StudyServiceImpl implements StudyService.Service
     public String getDomainURI(String queryName, Container container, User user)
     {
         if ("Cohort".equals(queryName))
-            return StudyManager.getInstance().getDomainURI(container, Cohort.class);
+            return StudyManager.getInstance().getDomainURI(container, CohortImpl.class);
         if ("StudyProperties".equals(queryName))
-            return StudyManager.getInstance().getDomainURI(container, Study.class);
+            return StudyManager.getInstance().getDomainURI(container, StudyImpl.class);
 
         Study study = StudyManager.getInstance().getStudy(container);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);
@@ -554,12 +575,6 @@ public class StudyServiceImpl implements StudyService.Service
     public ActionURL getDatasetURL(Container container, int datasetId)
     {
         return new ActionURL(StudyController.DatasetAction.class, container).addParameter("datasetId", datasetId);
-    }
-
-    public String getStudyName(Container container)
-    {
-        Study study = StudyManager.getInstance().getStudy(container);
-        return study == null ? null : study.getLabel();
     }
 
     public Set<Container> getStudyContainersForAssayProtocol(int protocolId)

@@ -1572,7 +1572,7 @@ public class SecurityController extends SpringActionController
         {
             try
             {
-                BaseViewAction.checkActionPermissions(actionClass, c, u);
+                BaseViewAction.checkActionPermissions(actionClass, c, u, null);
             }
             catch (UnauthorizedException x)
             {
@@ -1585,7 +1585,7 @@ public class SecurityController extends SpringActionController
         {
             try
             {
-                BaseViewAction.checkActionPermissions(actionClass, c, u);
+                BaseViewAction.checkActionPermissions(actionClass, c, u, null);
                 fail("Should not have permission");
             }
             catch (UnauthorizedException x)

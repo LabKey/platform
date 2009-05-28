@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
@@ -31,7 +32,7 @@ import java.util.*;
 
 public class ParticipantVisitDataSetTable extends VirtualTable
 {
-    Study _study;
+    StudyImpl _study;
     StudyQuerySchema _schema;
     DataSetDefinition _dataset;
     ColumnInfo _colParticipantId;
@@ -48,19 +49,19 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
         // all visits
         VisitManager visitManager = studyManager.getVisitManager(_study);
-        TreeMap<Double,Visit> visitSequenceMap = visitManager.getVisitSequenceMap();
-        TreeMap<Integer,Visit> visitRowIdMap = new TreeMap<Integer, Visit>();
-        for (Visit v : visitSequenceMap.values())
+        TreeMap<Double, VisitImpl> visitSequenceMap = visitManager.getVisitSequenceMap();
+        TreeMap<Integer, VisitImpl> visitRowIdMap = new TreeMap<Integer, VisitImpl>();
+        for (VisitImpl v : visitSequenceMap.values())
             visitRowIdMap.put(v.getRowId(), v);
 
         // visits for this dataset
         // NOTE vdsList (and therefore visitList) is in display order
         List<VisitDataSet> vdsList = _dataset.getVisitDataSets();
         Set<Integer> visitIds = new HashSet<Integer>();
-        List<Visit> visitList = new ArrayList<Visit>(vdsList.size());
+        List<VisitImpl> visitList = new ArrayList<VisitImpl>(vdsList.size());
         for (VisitDataSet vds : vdsList)
         {
-            Visit visit = visitRowIdMap.get(vds.getVisitRowId());
+            VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
             if (null != visit && null != StringUtils.trimToNull(visit.getLabel()))
             {
                 visitList.add(visit);
@@ -71,7 +72,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         Set<Double> sequenceSet = new TreeSet<Double>();
         for (VisitDataSet vds : vdsList)
         {
-            Visit visit = visitRowIdMap.get(vds.getVisitRowId());
+            VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
             if (null == visit)
                 continue;
             sequenceSet.add(visit.getSequenceNumMin());
@@ -84,14 +85,14 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             for (Double d : currentSequenceNumbers)
             {
                 sequenceSet.add(d);
-                Visit visit = visitManager.findVisitBySequence(d.doubleValue());
+                VisitImpl visit = visitManager.findVisitBySequence(d.doubleValue());
                 if (null != visit && visitIds.add(visit.getRowId()))
                     visitList.add(visit);
             }
             //Resort the visit list
-            Collections.sort(visitList, new Comparator<Visit>() {
+            Collections.sort(visitList, new Comparator<VisitImpl>() {
 
-                public int compare(Visit v1, Visit v2)
+                public int compare(VisitImpl v1, VisitImpl v2)
                 {
                     return v1.getDisplayOrder() != v2.getDisplayOrder() ? v1.getDisplayOrder() - v2.getDisplayOrder() : (int) (v1.getSequenceNumMin() - v2.getSequenceNumMin());
                 }
@@ -102,7 +103,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         MultiValueMap labelMap = new MultiValueMap();
         for (double seq : sequenceSet)
         {
-            Visit visit = visitManager.findVisitBySequence(seq);
+            VisitImpl visit = visitManager.findVisitBySequence(seq);
             if (null == visit)
                 continue;
             labelMap.put(_schema.decideTableName(visit), seq);
@@ -110,7 +111,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
         // nested loop preserves visit display order
         // UNDONE: except that addColumn() does not preserve order
-        for (Visit visit : visitList)
+        for (VisitImpl visit : visitList)
         {
             boolean uniqueLabel = labelMap.getCollection(visit.getLabel()).size() == 1;
             boolean hasSequenceRange = visit.getSequenceNumMin() != visit.getSequenceNumMax();
@@ -120,10 +121,10 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             {
                 if (!_inSequence(visit, seq))
                     continue;
-                String name = "seq" + Visit.formatSequenceNum(seq);
+                String name = "seq" + VisitImpl.formatSequenceNum(seq);
                 String label = visit.getLabel();
                 if (!uniqueLabel || hasSequenceRange)
-                    label += " (" + Visit.formatSequenceNum(seq) + ")";
+                    label += " (" + VisitImpl.formatSequenceNum(seq) + ")";
                 ColumnInfo colSeq = createVisitDataSetColumn(name, seq, visit);
                 colSeq.setCaption(label);
 //                colSeq.setIsHidden(!hasSequenceRange);
@@ -146,14 +147,14 @@ public class ParticipantVisitDataSetTable extends VirtualTable
     }
 
 
-    private static boolean _inSequence(Visit v, double seq)
+    private static boolean _inSequence(VisitImpl v, double seq)
     {
         assert v.getSequenceNumMin() <= v.getSequenceNumMax();
         return seq >= v.getSequenceNumMax() && seq <= v.getSequenceNumMax();
     }
 
     
-    protected ColumnInfo createVisitDataSetColumn(String name, final double sequenceNum, @NotNull final Visit visit)
+    protected ColumnInfo createVisitDataSetColumn(String name, final double sequenceNum, @NotNull final VisitImpl visit)
     {
         ColumnInfo ret;
         if (_colParticipantId == null)
@@ -238,7 +239,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         {
             try
             {
-                seq = Visit.parseSequenceNum(name.substring("seq".length()));
+                seq = VisitImpl.parseSequenceNum(name.substring("seq".length()));
             }
             catch (NumberFormatException x)
             {
@@ -246,13 +247,13 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             }
         }
 
-        Visit visitMatch = null;
+        VisitImpl visitMatch = null;
 
         // UNDONE: if/when visits have names use Visit.getName() before Visit.getLabel()
 
         if (-1 == seq)
         {
-            for (Visit v : StudyManager.getInstance().getVisits(_study))
+            for (VisitImpl v : StudyManager.getInstance().getVisits(_study))
             {
                 if (name.equals(v.getLabel()))
                 {

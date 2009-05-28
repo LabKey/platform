@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.query.DataSetQueryView" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
@@ -100,7 +101,7 @@
                     Map<String, DataSetDefinition> datasetMap = bean.getDatasetDefinitions();
                     for (String name : bean.getTableAndQueryNames())
                     {
-                        DataSetDefinition def = datasetMap.get(name);
+                        DataSet def = datasetMap.get(name);
                         if (def != null) {
                 %>
                         <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDataSetId()) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>

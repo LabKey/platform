@@ -22,12 +22,14 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.Study"%>
+<%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView me = (JspView)HttpView.currentView();
@@ -80,7 +82,7 @@ int datasetsPerCol = userDatasets.size() / 3;
             ActionURL datasetURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, ctx.getContainer());
             sb.append("<table>\n");
             //Print a column header if necessary
-            DataSetDefinition firstDataset = datasets.get(startIndex);
+            DataSet firstDataset = datasets.get(startIndex);
             if (!equal(category, firstDataset.getCategory()))
             {
                 category = firstDataset.getCategory();
@@ -97,7 +99,7 @@ int datasetsPerCol = userDatasets.size() / 3;
                 sb.append("<tr><td class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"/labkey/_.gif\"/></td></tr>\n");
             }
 
-            for (DataSetDefinition dataSet : datasets.subList(startIndex, endIndex))
+            for (DataSet dataSet : datasets.subList(startIndex, endIndex))
             {
                 if (!equal(category, dataSet.getCategory()))
                 {

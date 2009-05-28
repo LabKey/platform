@@ -23,10 +23,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.apache.commons.lang.math.NumberUtils;
 
 import javax.servlet.ServletException;
@@ -138,7 +139,7 @@ public class ExportExcelReport extends RedirectReport
     }
 
 
-    public void runExportToExcel(HttpServletResponse response, Study study, User user)
+    public void runExportToExcel(HttpServletResponse response, StudyImpl study, User user)
             throws IOException, ServletException, SQLException, WriteException
     {
         // TODO: wire up the security

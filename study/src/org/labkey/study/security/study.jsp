@@ -21,16 +21,17 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.model.SecurityType"%>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.security.SecurityPolicy" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
+    HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
     String contextPath = me.getViewContext().getContextPath();
-    Study study = me.getModelBean();
+    StudyImpl study = me.getModelBean();
     boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.

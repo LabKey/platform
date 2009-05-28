@@ -25,12 +25,14 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
     StudyController.VisitSummaryBean visitBean = me.getModelBean();
-    Visit visit = visitBean.getVisit();
-    Cohort[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
+    VisitImpl visit = visitBean.getVisit();
+    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
 
 <table>
@@ -103,7 +105,7 @@
                         <option value="">All</option>
                     <%
 
-                        for (Cohort cohort : cohorts)
+                        for (CohortImpl cohort : cohorts)
                         {
                     %>
                         <option value="<%= cohort.getRowId()%>" <%= visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : ""%>>
@@ -126,7 +128,7 @@
                     <%
                         for (VisitDataSet vds : visit.getVisitDataSets())
                         {
-                            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), vds.getDataSetId());
+                            DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), vds.getDataSetId());
                             if (def == null || def.getTypeURI() == null)
                                 continue;
                             String selected = (visit.getVisitDateDatasetId() == def.getDataSetId() ? "selected" : "");
@@ -160,7 +162,7 @@
                     for (VisitDataSet vds : visit.getVisitDataSets())
                         typeMap.put(vds.getDataSetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
 
-                    for (DataSetDefinition dataSet : getDataSets())
+                    for (DataSet dataSet : getDataSets())
                     {
                         VisitDataSetType type = typeMap.get(dataSet.getDataSetId());
                         if (null == type)

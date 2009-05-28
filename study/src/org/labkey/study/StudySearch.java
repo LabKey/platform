@@ -28,6 +28,8 @@ import org.labkey.api.util.SimpleSearchHit;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 
@@ -46,15 +48,15 @@ public class StudySearch implements Search.Searchable
 
     public void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits, User user)
     {
-        List<Study> studies = new ArrayList<Study>();
+        List<StudyImpl> studies = new ArrayList<StudyImpl>();
         for (Container c : containers)
         {
-            Study study = StudyManager.getInstance().getStudy(c);
+            StudyImpl study = StudyManager.getInstance().getStudy(c);
             if (study != null)
                 studies.add(study);
         }
 
-        for (Study study : studies)
+        for (StudyImpl study : studies)
         {
             searchAll(study, parser, hits, true);
         }
@@ -68,7 +70,7 @@ public class StudySearch implements Search.Searchable
             {
                 if (hits.size() > 0) // Just search until we find any hit at all
                     break;
-                for (Study study : studies)
+                for (StudyImpl study : studies)
                 {
                     Search.SearchTermParser newParser = new Search.SearchTermParser(query);
                     searchAll(study, newParser, hits, true);
@@ -77,14 +79,14 @@ public class StudySearch implements Search.Searchable
         }
     }
 
-    private void searchAll(@NotNull Study study, SearchTermParser parser, List<SearchHit> hits, boolean searchDatasetData)
+    private void searchAll(@NotNull StudyImpl study, SearchTermParser parser, List<SearchHit> hits, boolean searchDatasetData)
     {
         searchStudy(study, parser, hits);
         searchParticipants(study, parser, hits);
         searchDatasets(study, parser, hits);
     }
 
-    private void searchStudy(Study study, SearchTermParser parser, List<SearchHit> hits)
+    private void searchStudy(StudyImpl study, SearchTermParser parser, List<SearchHit> hits)
     {
         if (parser.matches(study.getDisplayString()))
         {
@@ -131,7 +133,7 @@ public class StudySearch implements Search.Searchable
         }
     }
 
-    private void searchDatasets(Study study, SearchTermParser parser, List<SearchHit> hits)
+    private void searchDatasets(StudyImpl study, SearchTermParser parser, List<SearchHit> hits)
     {
         User user = HttpView.currentContext().getUser();
         DataSetDefinition[] defs = study.getDataSets();
@@ -195,7 +197,7 @@ def:    for (DataSetDefinition def : defs)
         }
     }
 
-    private void searchDatasetData(DataSetDefinition def, Search.SearchTermProvider termProvider, List<SearchHit> hits) throws ServletException
+    private void searchDatasetData(DataSet def, Search.SearchTermProvider termProvider, List<SearchHit> hits) throws ServletException
     {
         TableInfo tInfo = def.getTableInfo(HttpView.currentContext().getUser());
         SqlDialect dialect = tInfo.getSchema().getSqlDialect();
@@ -270,10 +272,10 @@ def:    for (DataSetDefinition def : defs)
         }
     }
 
-    private void searchVisits(Study study, SearchTermParser parser, List<SearchHit> hits)
+    private void searchVisits(StudyImpl study, SearchTermParser parser, List<SearchHit> hits)
     {
-        Visit[] visits = study.getVisits();
-        for (Visit visit : visits)
+        VisitImpl[] visits = study.getVisits();
+        for (VisitImpl visit : visits)
         {
             if (parser.matches(visit.getLabel()) || parser.matches(visit.getDisplayString()))
             {
@@ -297,8 +299,8 @@ def:    for (DataSetDefinition def : defs)
         if (!StudyManager.getInstance().showCohorts(study.getContainer(), user))
             return;
 
-        Cohort[] cohorts = study.getCohorts(user);
-        for (Cohort cohort : cohorts)
+        org.labkey.api.study.Cohort[] cohorts = study.getCohorts(user);
+        for (org.labkey.api.study.Cohort cohort : cohorts)
         {
             if (parser.matches(cohort.getLabel()))
             {

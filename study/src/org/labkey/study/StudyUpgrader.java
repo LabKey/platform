@@ -18,8 +18,8 @@ package org.labkey.study;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
@@ -42,9 +42,9 @@ public class StudyUpgrader
         DbScope scope = schema.getScope();
         boolean transactionOwner = !scope.isTransactionActive();
 
-        Study[] studies = StudyManager.getInstance().getAllStudies();
+        StudyImpl[] studies = StudyManager.getInstance().getAllStudies();
 
-        for (Study study : studies)
+        for (StudyImpl study : studies)
         {
             try
             {
@@ -62,7 +62,7 @@ public class StudyUpgrader
         }
     }
 
-    private static void addLsids(User user, Study study) throws SQLException
+    private static void addLsids(User user, StudyImpl study) throws SQLException
     {
         StudyManager manager = StudyManager.getInstance();
         if (UPGRADE_REQUIRED.equals(study.getLsid()))
@@ -71,7 +71,7 @@ public class StudyUpgrader
             manager.updateStudy(user, study);
         }
 
-        for (Cohort cohort : study.getCohorts(user))
+        for (CohortImpl cohort : study.getCohorts(user))
         {
             if (UPGRADE_REQUIRED.equals(cohort.getLsid()))
             {

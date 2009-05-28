@@ -22,9 +22,10 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.study.Study;
 import org.labkey.study.model.Specimen;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 
 /**
  * User: brittp
@@ -41,7 +42,7 @@ public class SpecimenEventQueryView extends BaseStudyQueryView
 
     public static SpecimenEventQueryView createView(ViewContext context, Specimen specimen)
     {
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = "SpecimenEvent";
         QuerySettings qs = new QuerySettings(context, queryName);

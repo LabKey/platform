@@ -21,8 +21,9 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.Study;
 import org.labkey.study.model.ExtensibleStudyEntity;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 
 /**
  * Query view for objects with extended properties using Ontology manager
@@ -37,7 +38,7 @@ public class ExtensibleObjectQueryView extends QueryView
 
     public ExtensibleObjectQueryView(
         User user,
-        Study study,
+        StudyImpl study,
         Class<? extends ExtensibleStudyEntity> extensibleClass,
         ViewContext context,
         boolean allowEditing)

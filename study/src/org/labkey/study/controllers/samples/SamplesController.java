@@ -33,6 +33,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.Study;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -65,11 +66,11 @@ import java.util.*;
 @Jpf.Controller(longLived=true,messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
 public class SamplesController extends ViewController
 {
-    public Study getStudy() throws ServletException
+    public StudyImpl getStudy() throws ServletException
     {
         // UNDONE: see https://cpas.fhcrc.org/Issues/home/issues/details.view?issueId=1137
         Container c = getContainer();
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         if (study == null)
         {
             // redirect to the study home page, where admins will see a 'create study' button,
@@ -180,7 +181,7 @@ public class SamplesController extends ViewController
             return null;
         }
 
-        Site site = null;
+        SiteImpl site = null;
         if (form.getSiteId() != null)
             site = StudyManager.getInstance().getSite(getContainer(), form.getSiteId());
 
@@ -284,13 +285,13 @@ public class SamplesController extends ViewController
     public static class GroupMembersBean
     {
         private SampleRequestActor _actor;
-        private Site _site;
+        private SiteImpl _site;
         private User[] _members;
         private String _messages;
         private String _ldapDomain;
         private String _returnUrl;
 
-        public GroupMembersBean(SampleRequestActor actor, Site site, User[] members, String message, String returnUrl)
+        public GroupMembersBean(SampleRequestActor actor, SiteImpl site, User[] members, String message, String returnUrl)
         {
             _actor = actor;
             _site = site;
@@ -310,7 +311,7 @@ public class SamplesController extends ViewController
             return _members;
         }
 
-        public Site getSite()
+        public SiteImpl getSite()
         {
             return _site;
         }
@@ -1406,7 +1407,7 @@ public class SamplesController extends ViewController
 
     private Forward displayManagementSubpage(String jsp, String title, String helpTopic) throws Exception
     {
-        JspView<Study> view = new JspView<Study>("/org/labkey/study/view/samples/" + jsp + ".jsp", getStudy());
+        JspView<StudyImpl> view = new JspView<StudyImpl>("/org/labkey/study/view/samples/" + jsp + ".jsp", getStudy());
         NavTree[] navTrail = new NavTree[]{
             new NavTree(getStudy().getLabel(), getActionURL().relativeUrl("overview", null, "Study")),
             new NavTree("Manage Study", getActionURL().relativeUrl("manageStudy", null, "Study")),

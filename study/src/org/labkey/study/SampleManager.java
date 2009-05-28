@@ -270,7 +270,7 @@ public class SampleManager
         return eventList;
     }
 
-    public Site getCurrentSite(Specimen specimen) throws SQLException
+    public SiteImpl getCurrentSite(Specimen specimen) throws SQLException
     {
         Integer siteId = getCurrentSiteId(specimen);
         if (siteId != null)
@@ -295,11 +295,11 @@ public class SampleManager
         return null;
     }
 
-    public Site getOriginatingSite(Specimen specimen) throws SQLException
+    public SiteImpl getOriginatingSite(Specimen specimen) throws SQLException
     {
         if (specimen.getOriginatingLocationId() != null)
         {
-            Site site = StudyManager.getInstance().getSite(specimen.getContainer(), specimen.getOriginatingLocationId());
+            SiteImpl site = StudyManager.getInstance().getSite(specimen.getContainer(), specimen.getOriginatingLocationId());
             if (site != null)
                 return site;
         }
@@ -1893,12 +1893,12 @@ public class SampleManager
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), c.getId());
     }
 
-    public Visit[] getVisitsWithSpecimens(Container container)
+    public VisitImpl[] getVisitsWithSpecimens(Container container)
     {
         return getVisitsWithSpecimens(container, null);
     }
 
-    public Visit[] getVisitsWithSpecimens(Container container, Cohort cohort)
+    public VisitImpl[] getVisitsWithSpecimens(Container container, CohortImpl cohort)
     {
         try
         {
@@ -1922,7 +1922,7 @@ public class SampleManager
             filter.addInClause("SequenceNumMin", visitIds);
             if (cohort != null)
                 filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
-            return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin"), Visit.class);
+            return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin"), VisitImpl.class);
         }
         catch (SQLException e)
         {
@@ -2290,15 +2290,15 @@ public class SampleManager
             (additiveType != null ? additiveType : "all");
     }
 
-    public Site[] getSitesWithRequests(Container container) throws SQLException
+    public SiteImpl[] getSitesWithRequests(Container container) throws SQLException
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE rowid IN\n" +
                 "(SELECT destinationsiteid FROM study.samplerequest WHERE container = ?)\n" +
                 "AND container = ? ORDER BY label", container.getId(), container.getId());
-        return Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Site.class);
+        return Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), SiteImpl.class);
     }
 
-    public Set<Site> getEnrollmentSitesWithRequests(Container container)
+    public Set<SiteImpl> getEnrollmentSitesWithRequests(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT Participant.EnrollmentSiteId FROM study.Specimen AS Specimen, " +
                 "study.SampleRequestSpecimen AS RequestSpecimen, \n" +
@@ -2318,7 +2318,7 @@ public class SampleManager
         return getSitesWithIdSql(container, "EnrollmentSiteId", sql);
     }
 
-    public Set<Site> getEnrollmentSitesWithSpecimens(Container container)
+    public Set<SiteImpl> getEnrollmentSitesWithSpecimens(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT EnrollmentSiteId FROM study.Specimen AS Specimen, study.Participant AS Participant\n" +
                 "WHERE Specimen.Ptid = Participant.ParticipantId AND\n" +
@@ -2329,14 +2329,14 @@ public class SampleManager
         return getSitesWithIdSql(container, "EnrollmentSiteId", sql);
     }
 
-    private Set<Site> getSitesWithIdSql(Container container, String idColumnName, SQLFragment sql)
+    private Set<SiteImpl> getSitesWithIdSql(Container container, String idColumnName, SQLFragment sql)
     {
         ResultSet rs = null;
         try
         {
-            Set<Site> sites = new TreeSet<Site>(new Comparator<Site>()
+            Set<SiteImpl> sites = new TreeSet<SiteImpl>(new Comparator<SiteImpl>()
             {
-                public int compare(Site s1, Site s2)
+                public int compare(SiteImpl s1, SiteImpl s2)
                 {
                     if (s1 == null && s2 == null)
                         return 0;

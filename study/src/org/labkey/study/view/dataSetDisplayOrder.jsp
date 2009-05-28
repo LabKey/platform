@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script>
 function saveList(listName)
@@ -73,12 +74,12 @@ function orderModule(down)
         <tr>
             <td>
                 <%
-                    DataSetDefinition[] defs = getDataSets();
+                    DataSet[] defs = getDataSets();
                     boolean first = true;
                 %>
                 <select name="items" size="<%= defs.length %>">
                 <%
-                for (DataSetDefinition def: defs)
+                for (DataSet def: defs)
                 {
                     StringBuilder desc = new StringBuilder();
                     desc.append(def.getDataSetId());

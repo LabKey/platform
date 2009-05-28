@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <div>
 <labkey:errors/>
@@ -38,7 +39,7 @@
 %><table><tr><th>&nbsp;</th><th align=left>action</th><th align=left>dataset</th><th align=left>file</th></tr><%
 for (DatasetBatch.DatasetImportJob job : jobs)
 {
-    DataSetDefinition dataset = job.getDatasetDefinition();
+    DataSet dataset = job.getDatasetDefinition();
     String message = job.validate();
     if (message == null)
         message = PageFlowUtil.filter(job.getFileName());

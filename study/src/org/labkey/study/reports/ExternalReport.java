@@ -36,10 +36,11 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.study.Study;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletException;
@@ -262,7 +263,7 @@ public class ExternalReport extends AbstractReport
     {
         if (perm != ACL.PERM_READ)
             throw new IllegalArgumentException("only PERM_READ supported");
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         //boolean mustCheckUserPermissions = mustCheckDatasetPermissions(user, perm);
         return new StudyQuerySchema(study, user, false);
     }
@@ -388,7 +389,7 @@ public class ExternalReport extends AbstractReport
 
         replaceOrDelete(url, "commandLine", getCommandLine());
         replaceOrDelete(url, "fileExtension", getFileExtension());
-        replaceOrDelete(url, Visit.VISITKEY, getVisitRowId());
+        replaceOrDelete(url, VisitImpl.VISITKEY, getVisitRowId());
         replaceOrDelete(url, DataSetDefinition.DATASETKEY, getDatasetId());
         replaceOrDelete(url, "queryName", getQueryName());
         url.replaceParameter("recomputeWhen", recomputeWhen.toString());
@@ -449,7 +450,7 @@ public class ExternalReport extends AbstractReport
             if (null != visitIdStr)
             {
                 double visitId = NumberUtils.toDouble(visitIdStr);
-                Visit v = StudyManager.getInstance().getVisitForSequence(StudyManager.getInstance().getStudy(_container),visitId);
+                VisitImpl v = StudyManager.getInstance().getVisitForSequence(StudyManager.getInstance().getStudy(_container),visitId);
                 if (null != v)
                     visitRowId = v.getRowId();
             }

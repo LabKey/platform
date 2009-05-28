@@ -25,6 +25,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.study.StudyEntity;
 import org.labkey.study.StudyModule;
 import org.jetbrains.annotations.NotNull;
 
@@ -140,7 +141,7 @@ public abstract class AbstractStudyEntity<T>
 
     public SecurityPolicy getPolicy()
     {
-        final Study study = StudyManager.getInstance().getStudy(getContainer());
+        final StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
         if (study != null &&
             (study.getSecurityType() == SecurityType.ADVANCED_READ ||
              study.getSecurityType() == SecurityType.ADVANCED_WRITE))

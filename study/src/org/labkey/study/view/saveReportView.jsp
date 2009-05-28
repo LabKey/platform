@@ -30,6 +30,9 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
@@ -45,12 +48,12 @@
     boolean confirm = bean.getConfirmed() != null ? Boolean.parseBoolean(bean.getConfirmed()) : false;
 
     Container c = context.getContainer();
-    org.labkey.study.model.Study study = StudyManager.getInstance().getStudy(c);
-    DataSetDefinition[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
+    Study study = StudyManager.getInstance().getStudy(c);
+    DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
     int showWithDataset = NumberUtils.toInt(report.getDescriptor().getProperty("showWithDataset"));
 
     String dsName = "parent";
-    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
+    DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
     if (dsDef != null)
         dsName = dsDef.getLabel();
 
@@ -126,7 +129,7 @@
         <td>Add as Custom View For:
             <select id="datasetSelection" name="showWithDataset">
 <%
-        for (DataSetDefinition def : defs)
+        for (DataSet def : defs)
         {
 %>
             <option <%=def.getDataSetId() == showWithDataset ? " selected" : ""%> value="<%=def.getDataSetId()%>"><%=PageFlowUtil.filter(def.getLabel())%></option>

@@ -27,9 +27,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
-import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ExtensibleStudyEntity;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.ExtensibleObjectQueryView;
 import org.springframework.validation.BindException;
@@ -74,10 +74,10 @@ public class StudyDefinitionController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class EditCohortDefinitionAction extends EditDefinitionAction
     {
-        protected Class<Cohort> getClassToEdit()
+        protected Class<CohortImpl> getClassToEdit()
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
-            return Cohort.class;
+            return CohortImpl.class;
         }
     }
 
@@ -86,7 +86,7 @@ public class StudyDefinitionController extends BaseStudyController
     {
         protected Class<? extends ExtensibleStudyEntity> getClassToEdit()
         {
-            return Study.class;
+            return StudyImpl.class;
         }
     }
 
@@ -116,7 +116,7 @@ public class StudyDefinitionController extends BaseStudyController
         protected Class<? extends ExtensibleStudyEntity> getClassToView()
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
-            return Cohort.class;
+            return CohortImpl.class;
         }
 
         protected String getPluralName()

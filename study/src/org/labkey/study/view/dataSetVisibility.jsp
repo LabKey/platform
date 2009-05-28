@@ -18,13 +18,13 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.Cohort" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Cohort[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
+    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
 %>
@@ -72,7 +72,7 @@
                         <option value="-1">All</option>
                     <%
 
-                        for (Cohort cohort : cohorts)
+                        for (CohortImpl cohort : cohorts)
                         {
                     %>
                         <option value="<%= cohort.getRowId()%>" <%= data.cohort != null && data.cohort.intValue() == cohort.getRowId() ? "SELECTED" : ""%>>

@@ -19,8 +19,8 @@ package org.labkey.study.controllers.reports;
 import org.labkey.api.reports.report.view.ManageReportsBean;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 
 /**

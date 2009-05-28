@@ -19,7 +19,7 @@ package org.labkey.study.requirements;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.Specimen;
-import org.labkey.study.model.Site;
+import org.labkey.study.model.SiteImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.api.data.RuntimeSQLException;
 
@@ -47,7 +47,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
                             Set<Integer> originatingSiteIds = new HashSet<Integer>();
                             for (Specimen specimen : specimens)
                             {
-                                Site originatingSite = SampleManager.getInstance().getOriginatingSite(specimen);
+                                SiteImpl originatingSite = SampleManager.getInstance().getOriginatingSite(specimen);
                                 if (originatingSite != null)
                                     originatingSiteIds.add(originatingSite.getRowId());
                             }
@@ -81,7 +81,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
                             Set<Integer> providerSiteIds = new HashSet<Integer>();
                             for (Specimen specimen : specimens)
                             {
-                                Site providingSite = SampleManager.getInstance().getCurrentSite(specimen);
+                                SiteImpl providingSite = SampleManager.getInstance().getCurrentSite(specimen);
                                 if (providingSite != null)
                                     providerSiteIds.add(providingSite.getRowId());
                             }

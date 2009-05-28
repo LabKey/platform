@@ -22,7 +22,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.VirtualFile;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 
 import java.util.List;
 import java.util.Set;
@@ -32,7 +32,7 @@ import java.util.Set;
  * Date: May 23, 2009
  * Time: 8:25:19 AM
  */
-public class CustomViewWriter implements Writer<Study>
+public class CustomViewWriter implements Writer<StudyImpl>
 {
     private static final String DEFAULT_DIRECTORY = "views";  // TODO: customViews?
 
@@ -41,7 +41,7 @@ public class CustomViewWriter implements Writer<Study>
         return "Custom Views";
     }
 
-    public void write(Study object, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl object, ExportContext ctx, VirtualFile fs) throws Exception
     {
         Container c = ctx.getContainer();
         User user = ctx.getUser();

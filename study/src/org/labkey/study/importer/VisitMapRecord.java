@@ -18,7 +18,8 @@ package org.labkey.study.importer;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.study.model.Visit;
+import org.labkey.api.study.Visit;
+import org.labkey.study.model.VisitImpl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -78,9 +79,9 @@ class VisitMapRecord
             throw new IllegalArgumentException("Sequence range is required");
 
         String split[] = range.split("[\\-\\~]");
-        _sequenceNumberMin = Visit.parseSequenceNum(split[0]);
+        _sequenceNumberMin = VisitImpl.parseSequenceNum(split[0]);
         if (split.length > 1)
-            _sequenceNumberMax = Visit.parseSequenceNum(split[1]);
+            _sequenceNumberMax = VisitImpl.parseSequenceNum(split[1]);
         else
             _sequenceNumberMax = _sequenceNumberMin;
 

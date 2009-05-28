@@ -20,7 +20,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class StudyPropertiesTable extends BaseStudyTable
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
-        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), Study.class);
+        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), StudyImpl.class);
 
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
         if (domain != null)

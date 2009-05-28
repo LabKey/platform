@@ -17,14 +17,15 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.Study"%>
+<%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.study.model.SampleRequestStatus"%>
 <%@ page import="org.labkey.study.model.SampleRequestActor"%>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Study> me = (JspView<Study>) HttpView.currentView();
-    Study study = me.getModelBean();
+    JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
+    StudyImpl study = me.getModelBean();
     SampleRequestActor[] actors = study.getSampleRequestActors();
 %>
 <%=PageFlowUtil.getStrutsError(request, "main")%>

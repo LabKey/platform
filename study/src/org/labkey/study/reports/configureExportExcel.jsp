@@ -20,17 +20,18 @@
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.WebPartView"%>
-<%@ page import="org.labkey.study.model.Site"%>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.SiteImpl"%>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Study> view = (JspView<Study>)HttpView.currentView();
-    Study s = view.getModelBean();
+    JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();
+    StudyImpl s = view.getModelBean();
     User user = (User)request.getUserPrincipal();
-    Site[] sites = s.getSites();
+    SiteImpl[] sites = s.getSites();
     boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, ACL.PERM_ADMIN);
  %>
 
@@ -61,7 +62,7 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
     <form action="exportExcel.view" method=GET>
     <table><tr><th class="labkey-form-label">Site</th><td><select <%= isAdmin ? "onClick='siteId_onChange(this)'" : ""%> id=siteId name=siteId><option value="0">ALL</option>
 <%
-for (Site site : sites)
+for (SiteImpl site : sites)
 {
     String label = site.getLabel();
     if (label == null || label.length() == 0)
@@ -86,7 +87,7 @@ for (Site site : sites)
         var sites = {};
         sites['0'] = 'ALL';
             <%
-            for (Site site : sites)
+            for (SiteImpl site : sites)
             {
                 String label = site.getLabel();
                 if (label == null || label.length() == 0)

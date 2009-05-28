@@ -22,9 +22,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.study.model.Cohort;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
@@ -45,7 +44,7 @@ import java.util.Set;
  * Date: Apr 16, 2009
  * Time: 3:10:37 PM
  */
-public class DatasetWriter implements Writer<Study>
+public class DatasetWriter implements Writer<StudyImpl>
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
@@ -56,7 +55,7 @@ public class DatasetWriter implements Writer<Study>
         return "Datasets";
     }
 
-    public void write(Study study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException
+    public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();
@@ -87,7 +86,7 @@ public class DatasetWriter implements Writer<Study>
             datasetXml.setName(def.getName());
             datasetXml.setId(def.getDataSetId());
 
-            Cohort cohort = def.getCohort();
+            org.labkey.api.study.Cohort cohort = def.getCohort();
 
             if (null != cohort)
                 datasetXml.setCohort(cohort.getLabel());

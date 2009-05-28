@@ -33,7 +33,7 @@ public class StudyDomainKind extends BaseStudyDomainKind
 {
     protected Class<? extends ExtensibleStudyEntity> getSupportedClass()
     {
-        return Study.class;
+        return StudyImpl.class;
     }
 
     protected TableInfo getTableInfo()

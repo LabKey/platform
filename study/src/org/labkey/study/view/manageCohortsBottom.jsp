@@ -18,15 +18,15 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page import="org.labkey.study.model.Cohort" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.Participant" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Study study = getStudy();
+    StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
 %>
 <labkey:errors/>
@@ -40,21 +40,21 @@
 <%
     }
     // Need all participants and cohorts for both versions
-    Map<Participant,Cohort> participant2Cohort = new LinkedHashMap<Participant,Cohort>();
+    Map<Participant, CohortImpl> participant2Cohort = new LinkedHashMap<Participant, CohortImpl>();
     for (Participant participant : manager.getParticipants(study))
     {
-        Cohort cohort = manager.getCohortForParticipant(
+        CohortImpl cohort = manager.getCohortForParticipant(
                 study.getContainer(),
                 getViewContext().getUser(),
                 participant.getParticipantId());
         participant2Cohort.put(participant, cohort);
     }
-    Cohort[] cohortArray = manager.getCohorts(study.getContainer(), HttpView.currentContext().getUser());
-    List<Cohort> cohorts = new ArrayList<Cohort>();
+    CohortImpl[] cohortArray = manager.getCohorts(study.getContainer(), HttpView.currentContext().getUser());
+    List<CohortImpl> cohorts = new ArrayList<CohortImpl>();
     cohorts.addAll(Arrays.asList(cohortArray));
 
     // Need a null cohort for manual removal of cohort setting
-    Cohort nullCohort = new Cohort();
+    CohortImpl nullCohort = new CohortImpl();
     nullCohort.setRowId(-1);
     nullCohort.setLabel("<Unassigned>");
     cohorts.add(nullCohort);
@@ -70,7 +70,7 @@
             <th>Cohort</th>
         </tr>
     <%
-    for (Map.Entry<Participant,Cohort> entry : participant2Cohort.entrySet())
+    for (Map.Entry<Participant, CohortImpl> entry : participant2Cohort.entrySet())
     {
 
 
@@ -80,7 +80,7 @@
             <td><%
                 if(!study.isManualCohortAssignment())
                 {
-                    Cohort cohort = entry.getValue();
+                    org.labkey.api.study.Cohort cohort = entry.getValue();
                     String label = cohort == null ? "" : cohort.getLabel();
                     %><%=h(label)%><%
                 }
@@ -90,12 +90,12 @@
                 <input type="hidden" name="participantId" value="<%=entry.getKey().getParticipantId()%>">
                 <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>"><%
                     // Need to display selection drop-down for each participant
-                    Cohort selectedCohort = entry.getValue();
+                    CohortImpl selectedCohort = entry.getValue();
                     
                     if (selectedCohort == null)
                         selectedCohort = nullCohort;
 
-                    for (Cohort c : cohorts)
+                    for (CohortImpl c : cohorts)
                     {
                         String selected = c.getRowId() == selectedCohort.getRowId() ? "selected" : "";
                         

@@ -2,7 +2,7 @@ package org.labkey.study.samples.report.specimentype;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
@@ -37,7 +37,7 @@ public class TypeSummaryReportFactory extends TypeReportFactory
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        Visit[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
         SimpleFilter filter = new SimpleFilter();
         addBaseFilters(filter);
         SpecimenTypeVisitReport report = new SpecimenTypeVisitReport("Summary", visits, filter, this);

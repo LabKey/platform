@@ -20,11 +20,12 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.model.SecurityType" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
-    Study study = me.getModelBean();
+    HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
+    StudyImpl study = me.getModelBean();
 %>
 <p>Before setting up security for your study please read the documentation on LabKey security and
     on setting up study security.</p>

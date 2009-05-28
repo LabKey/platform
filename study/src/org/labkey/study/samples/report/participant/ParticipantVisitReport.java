@@ -1,6 +1,6 @@
 package org.labkey.study.samples.report.participant;
 
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
@@ -33,7 +33,7 @@ import java.sql.SQLException;
 public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.SummaryByVisitParticipant>
 {
     boolean _showCohorts;
-    public ParticipantVisitReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public ParticipantVisitReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
         _showCohorts = StudyManager.getInstance().showCohorts(_container, getUser());
@@ -79,7 +79,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         return _showCohorts ? 2 : 1;
     }
 
-    protected String[] getCellExcelText(Visit visit, SampleManager.SummaryByVisitParticipant summary)
+    protected String[] getCellExcelText(VisitImpl visit, SampleManager.SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -96,7 +96,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         return new String[] { summaryString.toString() };
     }
 
-    protected String getCellHtml(Visit visit, SampleManager.SummaryByVisitParticipant summary)
+    protected String getCellHtml(VisitImpl visit, SampleManager.SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";

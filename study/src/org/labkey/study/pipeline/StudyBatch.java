@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.StudyController;
 
@@ -39,7 +39,7 @@ import org.labkey.study.controllers.StudyController;
 public abstract class StudyBatch extends PipelineJob implements Serializable
 {
     protected File _definitionFile;
-    transient Study _study = null;
+    transient StudyImpl _study = null;
     transient StudyManager _studyManager = null;
 
     public StudyBatch(ViewBackgroundInfo info, File definitionFile) throws SQLException
@@ -48,7 +48,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
         _definitionFile = definitionFile;
     }
 
-    protected Study getStudy()
+    protected StudyImpl getStudy()
     {
         if (null == _study)
             _study = getStudyManager().getStudy(getInfo().getContainer());

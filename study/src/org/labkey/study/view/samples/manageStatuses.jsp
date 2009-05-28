@@ -17,17 +17,18 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.Study"%>
+<%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.study.model.SampleRequestStatus"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Study> me = (JspView<Study>) HttpView.currentView();
-    Study study = me.getModelBean();
+    JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
+    StudyImpl study = me.getModelBean();
     SampleRequestStatus[] statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
     Set<Integer> inUseStatuses = study.getSampleRequestStatusesInUse();
     SampleManager.StatusSettings settings = SampleManager.getInstance().getStatusSettings(study.getContainer());

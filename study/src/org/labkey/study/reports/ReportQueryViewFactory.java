@@ -33,9 +33,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.study.Study;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.controllers.StudyController;
 import org.apache.commons.lang.StringUtils;
 
@@ -107,7 +108,7 @@ public class ReportQueryViewFactory
     {
         if (perm != ACL.PERM_READ)
             throw new IllegalArgumentException("only PERM_READ supported");
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         boolean mustCheckUserPermissions = mustCheckDatasetPermissions(context.getUser(), descriptor);
 
         if (study != null)

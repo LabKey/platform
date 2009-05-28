@@ -2,11 +2,11 @@ package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.specimentype.TypeReportFactory;
-import org.labkey.study.model.Site;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.study.Site;
 
 import java.util.List;
 import java.util.Collections;
@@ -51,7 +51,7 @@ public class RequestReportFactory extends TypeReportFactory
             if (sites == null)
                 return Collections.emptyList();
             List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-            Visit[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
                 SimpleFilter filter = new SimpleFilter();
                 filter.addWhereClause("globaluniqueid IN\n" +
                         "(SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE container = ?)",

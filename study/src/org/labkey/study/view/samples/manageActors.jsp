@@ -16,18 +16,19 @@
  */
 %>
 <%@ page import="org.labkey.study.model.SampleRequestActor" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.Site"%>
+<%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Study> me = (JspView<Study>) HttpView.currentView();
-    Study study = me.getModelBean();
+    JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
+    StudyImpl study = me.getModelBean();
     SampleRequestActor[] actors = study.getSampleRequestActors();
     String showMemberSitesIdStr = request.getParameter("showMemberSites");
     int showMemberSitesId = -1;
@@ -84,7 +85,7 @@
                     %>
                         <b>Choose Site</b>:<br>
                         <%
-                            for (Site site : study.getSites())
+                            for (SiteImpl site : study.getSites())
                             {
                             %><a href="<%= "showGroupMembers.view?id=" + actor.getRowId() + "&siteId=" + site.getRowId() %>"><%= site.getDisplayName() %></a><br><%
                             }

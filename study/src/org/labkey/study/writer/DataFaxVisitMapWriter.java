@@ -16,7 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.util.VirtualFile;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.xml.StudyDocument;
 
@@ -31,7 +31,7 @@ import java.util.List;
  * Date: Apr 15, 2009
  * Time: 10:57:56 AM
  */
-public class DataFaxVisitMapWriter implements Writer<Visit[]>
+public class DataFaxVisitMapWriter implements Writer<VisitImpl[]>
 {
     private static final String FILENAME = "visit_map.txt";
 
@@ -40,7 +40,7 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
         return null;
     }
 
-    public void write(Visit[] visits, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(VisitImpl[] visits, ExportContext ctx, VirtualFile fs) throws IOException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
@@ -52,7 +52,7 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
         {
             NumberFormat df = new DecimalFormat("#.#####");
 
-            for (Visit v : visits)
+            for (VisitImpl v : visits)
             {
                 List<VisitDataSet> vds = v.getVisitDataSets();
 

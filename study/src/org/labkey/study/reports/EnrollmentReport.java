@@ -32,12 +32,13 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.view.*;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
@@ -99,7 +100,7 @@ public class EnrollmentReport extends ChartReport
 
                 final Study study = StudyManager.getInstance().getStudy(viewContext.getContainer());
                 int datasetId = NumberUtils.createInteger(descriptor.getProperty(DataSetDefinition.DATASETKEY));
-                double sequenceNum = Visit.parseSequenceNum(descriptor.getProperty(Visit.SEQUENCEKEY));
+                double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
 
                 if (ReportManager.get().canReadReport(viewContext.getUser(), viewContext.getContainer(), this))
                 {
@@ -149,7 +150,7 @@ public class EnrollmentReport extends ChartReport
                         col.addSeries(seriesTotal);
                         col.addSeries(seriesPeriod);
 
-                        DataSetDefinition ds = study.getDataSet(datasetId);
+                        DataSet ds = study.getDataSet(datasetId);
                         byte[] bytes = generateTimeChart("Dataset: " + ds.getLabel(), col, "Visit Date", "", null);
                         response.setContentType("image/png");
                         response.setContentLength(bytes.length);
@@ -238,9 +239,9 @@ public class EnrollmentReport extends ChartReport
 
                 final Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
                 int datasetId = NumberUtils.toInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));
-                if (descriptor.getProperty(Visit.SEQUENCEKEY) != null)
+                if (descriptor.getProperty(VisitImpl.SEQUENCEKEY) != null)
                 {
-                    double sequenceNum = Visit.parseSequenceNum(descriptor.getProperty(Visit.SEQUENCEKEY));
+                    double sequenceNum = VisitImpl.parseSequenceNum(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
 
                     ResultSet rs = getVisitDateResultSet(study, datasetId, sequenceNum);
                     try {

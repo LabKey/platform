@@ -34,6 +34,8 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -41,10 +43,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.study.dataset.client.DatasetService;
 import org.labkey.study.dataset.client.model.GWTDataset;
-import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -57,10 +59,10 @@ import java.util.*;
 class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetService
 {
 
-    private final Study study;
+    private final StudyImpl study;
     private final StudyManager studyManager;
 
-    public DatasetServiceImpl(ViewContext context, Study study, StudyManager studyManager)
+    public DatasetServiceImpl(ViewContext context, StudyImpl study, StudyManager studyManager)
     {
         super(context);
         this.study = study;
@@ -79,12 +81,12 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             PropertyUtils.copyProperties(ds, dd);
             ds.setDatasetId(dd.getDataSetId()); // upper/lowercase problem
 
-            Cohort[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
+            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             Map<String, String> cohortMap = new HashMap<String, String>();
             if (cohorts != null && cohorts.length > 0)
             {
                 cohortMap.put("All", "");
-                for (Cohort cohort : cohorts)
+                for (CohortImpl cohort : cohorts)
                     cohortMap.put(cohort.getLabel(), String.valueOf(cohort.getRowId()));
             }
             ds.setCohortMap(cohortMap);
@@ -226,7 +228,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             if (!def.getLabel().equals(updated.getLabel()))
             {
-                DataSetDefinition existing = studyManager.getDataSetDefinition(study, updated.getLabel());
+                DataSet existing = studyManager.getDataSetDefinition(study, updated.getLabel());
                 if (existing != null)
                 {
                     errors.add("A Dataset already exists with the label \"" + updated.getLabel() +"\"");
@@ -236,7 +238,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             if (!def.getName().equals(updated.getName()))
             {
-                DataSetDefinition existing = studyManager.getDataSetDefinitionByName(study, updated.getName());
+                DataSet existing = studyManager.getDataSetDefinitionByName(study, updated.getName());
                 if (existing != null)
                 {
                     errors.add("A Dataset already exists with the name \"" + updated.getName() +"\"");

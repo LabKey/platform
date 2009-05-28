@@ -16,9 +16,8 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.jsp.JspBase;
 import org.labkey.api.data.Container;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.api.study.DataSet;
 
 /**
  * User: brittp
@@ -27,15 +26,15 @@ import org.labkey.study.model.DataSetDefinition;
  */
 public abstract class DataSetSummaryPage extends BaseStudyPage
 {
-    private DataSetDefinition _dataSet;
+    private DataSet _dataSet;
 
-    public void init(Container container, DataSetDefinition dataSet)
+    public void init(Container container, DataSet dataSet)
     {
         super.init(container);
         _dataSet = dataSet;
     }
 
-    public DataSetDefinition getDataSetDefinition()
+    public DataSet getDataSetDefinition()
     {
         return _dataSet;
     }

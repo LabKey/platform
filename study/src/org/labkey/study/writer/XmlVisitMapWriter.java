@@ -17,7 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.util.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.StudyDocument;
@@ -31,7 +31,7 @@ import java.util.List;
  * Date: Apr 15, 2009
  * Time: 10:57:56 AM
  */
-public class XmlVisitMapWriter implements Writer<Visit[]>
+public class XmlVisitMapWriter implements Writer<VisitImpl[]>
 {
     private static final String FILENAME = "visit_map.xml";
 
@@ -40,7 +40,7 @@ public class XmlVisitMapWriter implements Writer<Visit[]>
         return null;
     }
 
-    public void write(Visit[] visits, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(VisitImpl[] visits, ExportContext ctx, VirtualFile fs) throws IOException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
@@ -49,7 +49,7 @@ public class XmlVisitMapWriter implements Writer<Visit[]>
         VisitMapDocument visitMapDoc = VisitMapDocument.Factory.newInstance();
         VisitMapDocument.VisitMap visitMapXml = visitMapDoc.addNewVisitMap();
 
-        for (Visit visit : visits)
+        for (VisitImpl visit : visits)
         {
             VisitMapDocument.VisitMap.Visit visitXml = visitMapXml.addNewVisit();
 

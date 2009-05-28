@@ -3,7 +3,7 @@ package org.labkey.study.samples.report.request;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
@@ -34,7 +34,7 @@ import java.sql.SQLException;
  */
 public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.RequestSummaryByVisitType>
 {
-    public RequestParticipantReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public RequestParticipantReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
     }
@@ -73,7 +73,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         }
     }
 
-    protected String[] getCellExcelText(Visit visit, SampleManager.RequestSummaryByVisitType summary)
+    protected String[] getCellExcelText(VisitImpl visit, SampleManager.RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -89,7 +89,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         return new String[] { summaryString.toString() };
     }
 
-    protected String getCellHtml(Visit visit, SampleManager.RequestSummaryByVisitType summary)
+    protected String getCellHtml(VisitImpl visit, SampleManager.RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
@@ -109,7 +109,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         return buildCellHtml(visit, summary, linkHtml);
     }
 
-    protected String getFilterQueryString(Visit visit, SampleManager.RequestSummaryByVisitType summary)
+    protected String getFilterQueryString(VisitImpl visit, SampleManager.RequestSummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
                 SpecimenQueryView.PARAMS.showRequestedBySite + "=" + summary.getDestinationSiteId();

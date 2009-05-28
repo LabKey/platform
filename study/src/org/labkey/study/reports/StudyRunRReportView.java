@@ -22,12 +22,11 @@ import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HtmlView;
+import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 
 import java.util.List;

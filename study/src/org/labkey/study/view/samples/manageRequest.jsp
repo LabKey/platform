@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.api.study.Site" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ManageRequestBean> me = (JspView<SpringSpecimenController.ManageRequestBean>) HttpView.currentView();
@@ -37,7 +38,7 @@
     SampleRequestRequirement[] requirements = SampleManager.getInstance().getRequestRequirements(bean.getSampleRequest());
     Site destinationSite = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSampleRequest().getCreatedBy());
-    Site[] sites = StudyManager.getInstance().getSites(context.getContainer());
+    SiteImpl[] sites = StudyManager.getInstance().getSites(context.getContainer());
     boolean notYetSubmitted = false;
     if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer()))
     {
@@ -402,7 +403,7 @@
                                     <option value="-1"></option>
                                     <option value="0">[N/A]</option>
                                     <%
-                                        for (Site site : sites)
+                                        for (SiteImpl site : sites)
                                         {
                                     %>
                                     <option value="<%= site.getRowId() %>"><%= h(site.getDisplayName()) %></option>

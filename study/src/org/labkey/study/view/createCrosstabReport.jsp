@@ -18,9 +18,8 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
-<%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.Visit"%>
+<%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
@@ -47,10 +46,10 @@
     <tr>
         <td>Visit</td>
         <td>
-            <select name="<%=Visit.VISITKEY%>">
+            <select name="<%=VisitImpl.VISITKEY%>">
                 <option value="0">All Visits</option>
                 <%
-                    for (Visit visit : bean.getVisits())
+                    for (VisitImpl visit : bean.getVisits())
                     {
                 %>
                 <option value="<%= visit.getRowId() %>"><%= h(visit.getDisplayString()) %></option>

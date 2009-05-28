@@ -26,9 +26,8 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.Study;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.study.model.Study;
 
 import java.util.Arrays;
 import java.util.Set;

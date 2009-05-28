@@ -25,20 +25,22 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
     DataSetDefinition dataset = me.getModelBean();
 
     Container container = HttpView.currentContext().getContainer();
-    Study study = StudyManager.getInstance().getStudy(container);
+    StudyImpl study = StudyManager.getInstance().getStudy(container);
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
-    Cohort[] cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
+    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
     Map<Integer, String> cohortMap = new HashMap<Integer, String>();
     cohortMap.put(null, "All");
     if (cohorts != null)
     {
-        for (Cohort cohort : cohorts)
+        for (CohortImpl cohort : cohorts)
             cohortMap.put(cohort.getRowId(), cohort.getLabel());
     }
 %>
@@ -126,7 +128,7 @@
             <td>
                 <table>
                 <%
-                    for (Visit visit : study.getVisits())
+                    for (VisitImpl visit : study.getVisits())
                     {
                         VisitDataSetType type = dataset.getVisitType(visit.getRowId());
                 %>

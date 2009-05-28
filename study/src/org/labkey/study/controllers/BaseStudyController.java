@@ -25,10 +25,12 @@ import static org.labkey.api.util.PageFlowUtil.jsString;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Visit;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
 import org.labkey.study.view.BaseStudyPage;
 import org.labkey.study.view.StudyNavigationView;
 import org.labkey.study.controllers.samples.SpecimenUtils;
@@ -132,7 +134,7 @@ public abstract class BaseStudyController extends SpringActionController
         ModelAndView t = super.getTemplate(context, wrapper, action, page);
         if (t instanceof HomeTemplate)
         {
-            Study study = null;
+            StudyImpl study = null;
             try {study = getStudy(true);}catch (ServletException x){}
             if (null != study)
                 ((HttpView)t).setView("moduleNav", new StudyNavigationView(study));
@@ -140,10 +142,10 @@ public abstract class BaseStudyController extends SpringActionController
         return t;
     }
 
-    public Study getStudy(boolean allowNullStudy) throws ServletException
+    public StudyImpl getStudy(boolean allowNullStudy) throws ServletException
     {
         Container c = getContainer();
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         if (!allowNullStudy && study == null)
         {
             // redirect to the study home page, where admins will see a 'create study' button,
@@ -153,7 +155,7 @@ public abstract class BaseStudyController extends SpringActionController
         return study;
     }
 
-    public Study getStudy() throws ServletException
+    public StudyImpl getStudy() throws ServletException
     {
         return getStudy(false);
     }
@@ -238,7 +240,7 @@ public abstract class BaseStudyController extends SpringActionController
             if (visitRowId > 0)
                 visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
 
-            DataSetDefinition dataSet = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            DataSet dataSet = study.getDataSet(datasetId);
             if (dataSet != null)
             {
                 StringBuilder label = new StringBuilder();
@@ -272,7 +274,7 @@ public abstract class BaseStudyController extends SpringActionController
 
     public static class StudyJspView<T> extends JspView<T>
     {
-        public StudyJspView(Study study, String name, T bean, BindException errors)
+        public StudyJspView(StudyImpl study, String name, T bean, BindException errors)
         {
             super("/org/labkey/study/view/" + name, bean, errors);
             if (getPage() instanceof BaseStudyPage)

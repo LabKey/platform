@@ -33,7 +33,7 @@
     Container container = me.getViewContext().getContainer();
     User user = me.getViewContext().getUser();
     boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);
-    Cohort[] cohorts = null;
+    CohortImpl[] cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
 %>
@@ -102,7 +102,7 @@
                             <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>">
                                 <option value="">All Cohorts</option>
                                 <%
-                                    for (Cohort cohort : cohorts)
+                                    for (CohortImpl cohort : cohorts)
                                     {
                                 %>
                                 <option value="<%= cohort.getRowId() %>" <%= factory.getCohortId() != null &&

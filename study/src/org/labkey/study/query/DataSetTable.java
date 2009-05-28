@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -221,7 +222,7 @@ public class DataSetTable extends FilteredTable
         return _fromTable;
     }
 
-    public DataSetDefinition getDatasetDefinition()
+    public DataSet getDatasetDefinition()
     {
         return _dsd;
     }

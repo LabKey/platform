@@ -31,7 +31,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyPropertiesTable;
 import org.labkey.study.query.StudyQuerySchema;
@@ -112,7 +112,7 @@ public class StudyPropertiesController extends BaseStudyController
 
             Map<String,Object> dataMap = updateForm.getDataMap();
 
-            Study study = getStudy();
+            StudyImpl study = getStudy();
 
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
 

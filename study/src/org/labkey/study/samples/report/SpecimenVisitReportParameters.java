@@ -7,6 +7,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.study.Site;
+import org.labkey.api.study.Study;
 import org.labkey.study.model.*;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.SampleManager;
@@ -72,7 +74,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
     }
 
     private Integer _cohortId;
-    private Cohort _cohort;
+    private CohortImpl _cohort;
     private Status _statusFilter = Status.ALL;
     private String _baseCustomViewName;
     private boolean _viewVialCount = false;
@@ -110,7 +112,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
             _cohortId = cohortId;
     }
 
-    public Cohort getCohort()
+    public CohortImpl getCohort()
     {
         if (_cohort == null)
             _cohort = _cohortId != null ? StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), _cohortId) : null;
@@ -255,12 +257,12 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         }
     }
 
-    protected String getEnrollmentSitePicker(String inputName, Set<Site> sites, Integer selectedSiteId)
+    protected String getEnrollmentSitePicker(String inputName, Set<SiteImpl> sites, Integer selectedSiteId)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"").append(inputName).append("\">");
         builder.append("<option value=\"\">All enrollment sites</option>");
-        for (Site site : sites)
+        for (SiteImpl site : sites)
         {
             if (site == null)
             {

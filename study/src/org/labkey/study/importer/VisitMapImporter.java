@@ -19,7 +19,8 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -75,7 +76,7 @@ public class VisitMapImporter
         }
     }
 
-    public boolean process(User user, Study study, String content, Format format, List<String> errors) throws SQLException
+    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors) throws SQLException
     {
         if (content == null)
         {
@@ -120,7 +121,7 @@ public class VisitMapImporter
     }
 
 
-    private void saveVisits(User user, Study study, List<VisitMapRecord> records) throws SQLException
+    private void saveVisits(User user, StudyImpl study, List<VisitMapRecord> records) throws SQLException
     {
         Container c = study.getContainer();
         StudyManager studyManager = StudyManager.getInstance();
@@ -128,7 +129,7 @@ public class VisitMapImporter
 
         for (VisitMapRecord record : records)
         {
-            Visit visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
+            VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
 
             // we're using sequenceNumMin as the key in this instance
             if (visit != null && visit.getSequenceNumMin() != record.getSequenceNumMin())
@@ -136,7 +137,7 @@ public class VisitMapImporter
             
             if (visit == null)
             {
-                visit = new Visit(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
+                visit = new VisitImpl(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
                 visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 visit.setShowByDefault(record.isShowByDefault());
                 int rowId = studyManager.createVisit(study, user, visit);
@@ -171,7 +172,7 @@ public class VisitMapImporter
     }
 
     
-    private Visit _ensureMutable(Visit v)
+    private VisitImpl _ensureMutable(VisitImpl v)
     {
         if (!v.isMutable())
             v = v.createMutable();
@@ -233,9 +234,9 @@ public class VisitMapImporter
 
     private void saveDataSets(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
-        DataSetDefinition[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
+        DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
         Set<Integer> existingSet = new HashSet<Integer>();
-        for (DataSetDefinition def : defs)
+        for (DataSet def : defs)
             existingSet.add(def.getDataSetId());
 
         Set<Integer> addDatasetIds = new HashSet<Integer>();

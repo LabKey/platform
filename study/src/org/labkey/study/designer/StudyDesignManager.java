@@ -24,6 +24,9 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Visit;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.study.StudyFolderType;
@@ -31,10 +34,9 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.designer.client.model.*;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -301,7 +303,7 @@ public class StudyDesignManager
 
         //Grab study info from XML and use it here
         StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());
-        Study study = new Study(studyFolder, folderName + " Study");
+        StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
         study.setDateBased(true);
         study.setStartDate(startDate);
         study = StudyManager.getInstance().createStudy(user, study);
@@ -330,7 +332,7 @@ public class StudyDesignManager
                 startDay = Math.max(previousDay + 1, startDay - 15);
                 endDay = Math.min(nextDay - 1, endDay + 15);
             }
-            Visit visit = new Visit(studyFolder, startDay, endDay, timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
+            VisitImpl visit = new VisitImpl(studyFolder, startDay, endDay, timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
             StudyManager.getInstance().createVisit(study, user, visit);
             previousDay = endDay;
         }
@@ -344,7 +346,7 @@ public class StudyDesignManager
         }
         List<String> errors = new ArrayList<String>();
 
-        DataSetDefinition subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
+        DataSet subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
         study = study.createMutable();
         study.setParticipantCohortDataSetId(subjectDataset.getDataSetId());
         study.setParticipantCohortProperty("Cohort");

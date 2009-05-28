@@ -5,7 +5,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public class CohortTable extends BaseStudyTable
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         visibleColumns.add(FieldKey.fromParts(labelColumn.getName())); // Label is the only thing visible from the hard table
 
-        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), Cohort.class);
+        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), CohortImpl.class);
 
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
         if (domain != null)

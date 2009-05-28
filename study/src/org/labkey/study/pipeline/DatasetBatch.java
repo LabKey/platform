@@ -26,6 +26,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 
@@ -104,7 +105,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
         Properties props = new Properties();
         props.load(is);
 
-        Study study = getStudy();
+        StudyImpl study = getStudy();
         if (null == getStudy())
         {
             errors.add("Study has not been created yet.");
@@ -600,7 +601,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
             DbSchema schema  = StudyManager.getSchema();
             DbScope scope = schema.getScope();
             Container c = getInfo().getContainer();
-            Study study = getStudyManager().getStudy(c);
+            StudyImpl study = getStudyManager().getStudy(c);
             QCState defaultQCState = study.getDefaultPipelineQCState() != null ?
                     StudyManager.getInstance().getQCStateForRowId(c, study.getDefaultPipelineQCState().intValue()) : null;
 

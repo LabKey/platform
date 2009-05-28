@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.model.QCStateSet" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -40,8 +41,8 @@
     StudyManager manager = StudyManager.getInstance();
 
     boolean showCohorts = manager.showCohorts(container, user);
-    Cohort selectedCohort = null;
-    Cohort[] cohorts = null;
+    CohortImpl selectedCohort = null;
+    CohortImpl[] cohorts = null;
     if (showCohorts)
     {
         selectedCohort = bean.cohortId != null ? manager.getCohortForRowId(container, user, bean.cohortId) : null;
@@ -57,7 +58,7 @@
         qcStateSetOptions = QCStateSet.getSelectableSets(container);
     }
 
-    Visit[] visits = manager.getVisits(study, selectedCohort, user);
+    VisitImpl[] visits = manager.getVisits(study, selectedCohort, user);
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
     String basePage = "overview.view?";
@@ -94,7 +95,7 @@
     Cohort: <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
-        for (Cohort cohort : cohorts)
+        for (CohortImpl cohort : cohorts)
         {
     %>
     <option value="<%= cohort.getRowId() %>" <%= selectedCohort != null && cohort.getRowId() == selectedCohort.getRowId() ? "SELECTED" : "" %>>
@@ -129,7 +130,7 @@
 <table class="labkey-data-region labkey-show-borders"><colgroup><col><col>
     <%
 
-        for (Visit visit : visits)
+        for (VisitImpl visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
                 continue;
@@ -140,7 +141,7 @@
         <th class="labkey-data-region-title"><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></th>
         <th style="font-weight:bold;">ALL</th><%
 
-        for (Visit visit : visits)
+        for (VisitImpl visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
                 continue;
@@ -199,7 +200,7 @@
         %></td>
         <td style="font-weight:bold;"><%
         int totalCount = 0;
-        for (Visit visit : visits)
+        for (VisitImpl visit : visits)
         {
             key.visitRowId = visit.getRowId();
             Integer c = bean.visitMapSummary.get(key);
@@ -226,7 +227,7 @@
         }
         %></td><%
 
-        for (Visit visit : visits)
+        for (VisitImpl visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
                 continue;
@@ -258,7 +259,7 @@
             if ((isRequired || isOptional || count > 0) && userCanRead)
             {
                 ActionURL datasetLink = new ActionURL(StudyController.DatasetAction.class, container);
-                datasetLink.addParameter(Visit.VISITKEY, visit.getRowId());
+                datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
                 datasetLink.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
                 if (selectedCohort != null)
                     datasetLink.addParameter(BaseStudyController.SharedFormParameters.cohortId, selectedCohort.getRowId());

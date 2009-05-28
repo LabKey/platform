@@ -53,23 +53,25 @@ import java.util.*;
  */
 public class DataSetQueryView extends QueryView
 {
-    private final int _datasetId;
+    private final DataSetDefinition _dataset;
     private List<ActionButton> _buttons;
-    private final Visit _visit;
-    private final Cohort _cohort;
+    private final VisitImpl _visit;
+    private final CohortImpl _cohort;
     private boolean _showSourceLinks;
     private boolean _forExport;
     public static final String DATAREGION = "Dataset";
     private QCStateSet _qcStateSet;
     private boolean _showEditLinks = true;
 
-    public DataSetQueryView(int datasetId, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort, QCStateSet qcStateSet)
+    public DataSetQueryView(DataSetDefinition dataset, UserSchema schema, QuerySettings settings, VisitImpl visit, CohortImpl cohort, QCStateSet qcStateSet)
     {
         super(schema, settings);
+        if (dataset == null)
+            throw new IllegalArgumentException("dataset");
         _qcStateSet = qcStateSet;
         getSettings().setAllowChooseQuery(false);
         getSettings().setAllowChooseView(false);
-        _datasetId = datasetId;
+        _dataset = dataset;
         _visit = visit;
         _cohort = cohort;
     }
@@ -146,7 +148,7 @@ public class DataSetQueryView extends QueryView
         User user = getUser();
         // Only show link to edit if permission allows it
         if (_showEditLinks && !_forExport &&
-                getDefinition().canWrite(user) &&
+                _dataset.canWrite(user) &&
                 c.getPolicy().hasPermission(user, UpdatePermission.class)
             )
         {
@@ -156,23 +158,14 @@ public class DataSetQueryView extends QueryView
         }
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
-        view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _datasetId);
+        view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDataSetId());
 
         return view;
     }
 
-    private DataSetDefinition getDefinition()
-    {
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(
-            StudyManager.getInstance().getStudy(getContainer()), _datasetId);
-        if (def == null)
-            throw new IllegalStateException("Could not find dataset definition for id " + _datasetId);
-        return def;
-    }
-
     private boolean hasUsefulDetailsPage()
     {
-        Integer protocolId = getDefinition().getProtocolId();
+        Integer protocolId = _dataset.getProtocolId();
         if (protocolId == null)
             return true; // we don't have a protocol at all, so we don't know if we have useful details
 
@@ -204,16 +197,14 @@ public class DataSetQueryView extends QueryView
             Object lsid = ctx.get(_sourceLsidColumn.getName());
             if (lsid != null)
             {
-                Container container = LsidManager.get().getContainer(lsid.toString());
-                if (container != null && container.hasPermission(_user, ACL.PERM_READ))
-                {
-                    ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
-                    dataURL.addParameter("sourceLsid", lsid.toString());
-                    out.write("[<a href=\"");
-                    out.write(dataURL.getLocalURIString());
-                    out.write("\">assay</a>]");
-                    return;
-                }
+                // If the user has the ability to read this dataset, always
+                // provide a link to the source assay details page.
+                ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
+                dataURL.addParameter("sourceLsid", lsid.toString());
+                dataURL.addParameter("datasetId", DataSetQueryView.this._dataset.getDataSetId());
+                dataURL.addParameter("studyContainerId", getContainer().getId());
+                out.write(PageFlowUtil.textLink("assay", dataURL));
+                return;
             }
             out.write("&nbsp;");
         }
@@ -246,9 +237,7 @@ public class DataSetQueryView extends QueryView
 
             String lsid = lsidColumn.getValue(ctx).toString();
             actionURL.addParameter("lsid", lsid);
-
-            actionURL.addParameter("datasetId", _datasetId);
-            
+            actionURL.addParameter("datasetId", _dataset.getDataSetId());
 
             out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));
             out.write("\">");

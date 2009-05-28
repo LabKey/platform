@@ -15,9 +15,10 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.Study;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;
@@ -29,11 +30,11 @@ import java.util.Set;
  * Date: Apr 14, 2009
  * Time: 7:29:32 PM
  */
-public class StudyWriter implements Writer<Study>
+public class StudyWriter implements Writer<StudyImpl>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
-    public static final List<Writer<Study>> WRITERS = Arrays.asList(
+    public static final List<Writer<StudyImpl>> WRITERS = Arrays.asList(
         new VisitMapWriter(),
         new CohortWriter(),
         new QcStateWriter(),
@@ -62,11 +63,11 @@ public class StudyWriter implements Writer<Study>
         return null;
     }
 
-    public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         LOG.info("Exporting study to " + fs.getLocation());
 
-        for (Writer<Study> writer : WRITERS)
+        for (Writer<StudyImpl> writer : WRITERS)
         {
             if (null == _dataTypes || null == writer.getSelectionText() || _dataTypes.contains(writer.getSelectionText()))
                 writer.write(study, ctx, fs);

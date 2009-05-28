@@ -3,7 +3,7 @@ package org.labkey.study.samples.report.specimentype;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 
@@ -29,7 +29,7 @@ public class TypeCohortReport extends SpecimenTypeVisitReport
 {
     private Integer _cohortId;
 
-    public TypeCohortReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, Integer cohortId)
+    public TypeCohortReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, Integer cohortId)
     {
         super(titlePrefix, visits, filter, parameters);
         _cohortId = cohortId;

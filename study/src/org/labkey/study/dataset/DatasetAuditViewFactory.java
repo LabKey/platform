@@ -31,10 +31,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
@@ -132,14 +135,13 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                             return;
                         }
 
-                        Study study = StudyManager.getInstance().getStudy(container);
+                        Study study = StudyService.get().getStudy(container);
                         if (study == null)
                         {
                             return;
                         }
 
-                        DataSetDefinition def = StudyManager.getInstance().
-                                getDataSetDefinition(study,datasetId.intValue());
+                        DataSet def = study.getDataSet(datasetId.intValue());
                         if (def == null)
                         {
                             return;

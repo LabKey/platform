@@ -21,9 +21,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.model.ExtensibleStudyEntity;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -35,9 +36,9 @@ import java.io.Writer;
  */
 public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
 {
-    public StudyPropertiesQueryView(User user, Study study, ViewContext viewContext, boolean allowEditing)
+    public StudyPropertiesQueryView(User user, StudyImpl study, ViewContext viewContext, boolean allowEditing)
     {
-        super(user, study, Study.class, viewContext, allowEditing);
+        super(user, study, StudyImpl.class, viewContext, allowEditing);
         setShadeAlternatingRows(false);
     }
 

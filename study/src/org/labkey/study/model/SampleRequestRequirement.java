@@ -91,7 +91,7 @@ public class SampleRequestRequirement extends DefaultRequirement<SampleRequestRe
         return SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), _actorId);
     }
 
-    public Site getSite() throws SQLException
+    public SiteImpl getSite() throws SQLException
     {
         if (_siteId == null)
             return null;

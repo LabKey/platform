@@ -39,6 +39,7 @@ import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.study.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.DataSetsTable;
@@ -55,13 +56,13 @@ import java.util.*;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> implements Cloneable
+public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> implements Cloneable, DataSet
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
     private static Category _log = Logger.getInstance(DataSetDefinition.class);
 
-    private Study _study;
+    private StudyImpl _study;
     private int _dataSetId;
     private String _name;
     private String _typeURI;
@@ -132,7 +133,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public DataSetDefinition(Study study, int dataSetId, String name, String label, String category, String typeURI)
+    public DataSetDefinition(StudyImpl study, int dataSetId, String name, String label, String category, String typeURI)
     {
         _study = study;
         setContainer(_study.getContainer());
@@ -536,7 +537,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public Study getStudy()
+    public StudyImpl getStudy()
     {
         if (null == _study)
             _study = StudyManager.getInstance().getStudy(getContainer());
@@ -884,11 +885,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
     @Nullable
-    public Cohort getCohort()
+    public CohortImpl getCohort()
     {
         if (_cohortId == null)
             return null;
-        return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, Cohort.class);
+        return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, CohortImpl.class);
     }
 
     public Integer getProtocolId()

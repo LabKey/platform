@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();

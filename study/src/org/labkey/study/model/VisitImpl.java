@@ -19,6 +19,7 @@ package org.labkey.study.model;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.study.Cohort;
 import org.labkey.study.StudySchema;
 
 import java.util.List;
@@ -31,57 +32,12 @@ import java.io.Serializable;
  * Date: Jan 6, 2006
  * Time: 10:28:55 AM
  */
-public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Serializable
+public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneable, Serializable, org.labkey.api.study.Visit
 {
     // standard strings to use in URLs etc
     public static final String VISITKEY = "visitRowId";
     public static final String SEQUENCEKEY = "sequenceNum";
     public static final double DEMOGRAPHICS_VISIT = -1;
-
-    public enum Type
-    {
-        SCREENING('X', "Screening"),
-        PREBASELINE('P', "Scheduled pre-baseline visit"),
-        BASELINE('B', "Baseline"),
-        SCHEDULED_FOLLOWUP('S', "Scheduled follow-up"),
-        OPTIONAL_FOLLOWUP('O', "Optional follow-up"),
-        REQUIRED_BY_NEXT_VISIT('r', "Required by time of next visit"),
-        CYCLE_TERMINATION('T', "Cycle termination visit"),
-        REQUIRED_BY_TERMINATION('R', "Required by time of termination visit"),
-        EARLY_CYCLE_TERMINATION('E', "Early termination of current cycle"),
-        ABORT_ALL_CYCLES('A', "Abort all cycles"),
-        FINAL_VISIT('F', "Final visit (terminates all cycles)"),
-        STUDY_TERMINATION_WINDOW('W', "Study termination window");
-
-        private char _code;
-        private String _meaning;
-
-        private Type(char code, String meaning)
-        {
-            _code = code;
-            _meaning = meaning;
-        }
-
-        public char getCode()
-        {
-            return _code;
-        }
-
-        public String getMeaning()
-        {
-            return _meaning;
-        }
-
-        public static Type getByCode(char c)
-        {
-            for (Type type : values())
-            {
-                if (c == type.getCode())
-                    return type;
-            }
-            return null;
-        }
-    }
 
     private int _rowId = 0;
 //    private String _name = null;
@@ -91,30 +47,30 @@ public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Seri
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
     
-    public Visit()
+    public VisitImpl()
     {
     }
 
 
-    public Visit(Container container, double seq, String label, Type type)
+    public VisitImpl(Container container, double seq, String label, Type type)
     {
         this(container, seq, label, null == type ? null : type.getCode());
     }
 
 
-    public Visit(Container container, double seqMin, String label, Character typeCode)
+    public VisitImpl(Container container, double seqMin, String label, Character typeCode)
     {
         this(container, seqMin, seqMin, label, typeCode);
     }
 
 
-    public Visit(Container container, double seqMin, double seqMax, String label, Type type)
+    public VisitImpl(Container container, double seqMin, double seqMax, String label, Type type)
     {
         this(container, seqMin, seqMax, label, null == type ? null : type.getCode());
     }
 
 
-    public Visit(Container container, double seqMin, double seqMax, String name, Character typeCode)
+    public VisitImpl(Container container, double seqMin, double seqMax, String name, Character typeCode)
     {
         setContainer(container);
         _sequenceMin = seqMin;
@@ -141,9 +97,9 @@ public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Seri
     public String getSequenceString()
     {
         if (_sequenceMin == _sequenceMax)
-            return Visit.formatSequenceNum(_sequenceMin);
+            return VisitImpl.formatSequenceNum(_sequenceMin);
         else
-            return Visit.formatSequenceNum(_sequenceMin) + "-" + Visit.formatSequenceNum(_sequenceMax);
+            return VisitImpl.formatSequenceNum(_sequenceMin) + "-" + VisitImpl.formatSequenceNum(_sequenceMax);
     }
 
 
@@ -272,6 +228,6 @@ public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Seri
     {
         if (_cohortId == null)
             return null;
-        return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, Cohort.class);
+        return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, CohortImpl.class);
     }
 }

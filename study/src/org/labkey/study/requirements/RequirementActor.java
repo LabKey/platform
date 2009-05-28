@@ -18,9 +18,7 @@ package org.labkey.study.requirements;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.study.model.Site;
-
-import java.sql.SQLException;
+import org.labkey.api.study.Site;
 
 /**
  * User: brittp

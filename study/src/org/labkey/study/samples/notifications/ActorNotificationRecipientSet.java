@@ -17,13 +17,14 @@
 package org.labkey.study.samples.notifications;
 
 import org.labkey.study.model.SampleRequestActor;
-import org.labkey.study.model.Site;
+import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Site;
 
 import java.sql.SQLException;
 
@@ -35,9 +36,9 @@ import java.sql.SQLException;
 public class ActorNotificationRecipientSet extends NotificationRecipientSet
 {
     private SampleRequestActor _actor;
-    private Site _site;
+    private SiteImpl _site;
 
-    public ActorNotificationRecipientSet(SampleRequestActor actor, Site site)
+    public ActorNotificationRecipientSet(SampleRequestActor actor, SiteImpl site)
     {
         super(init(actor, site));
         _actor = actor;
@@ -49,7 +50,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         return _actor;
     }
 
-    public Site getSite()
+    public SiteImpl getSite()
     {
         return _site;
     }
@@ -91,7 +92,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         int actorId = Integer.parseInt(ids[0]);
         int siteId = Integer.parseInt(ids[1]);
         SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(container, actorId);
-        Site site = siteId >= 0 ? StudyManager.getInstance().getSite(container, siteId) : null;
+        SiteImpl site = siteId >= 0 ? StudyManager.getInstance().getSite(container, siteId) : null;
         return new ActorNotificationRecipientSet(actor, site);
     }
 

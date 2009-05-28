@@ -29,6 +29,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
@@ -144,7 +146,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, types, null, errors);
     }
 
-    private List<PropertyDescriptor> createTargetPropertyDescriptors(DataSetDefinition dataset, List<PropertyDescriptor> sourcePds, List<String> errors)
+    private List<PropertyDescriptor> createTargetPropertyDescriptors(DataSet dataset, List<PropertyDescriptor> sourcePds, List<String> errors)
     {
         List<PropertyDescriptor> targetPds = new ArrayList<PropertyDescriptor>(sourcePds.size());
         Set<String> legalNames = new HashSet<String>();
@@ -180,7 +182,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                           List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
-        Study targetStudy = StudyManager.getInstance().getStudy(targetContainer);
+        StudyImpl targetStudy = StudyManager.getInstance().getStudy(targetContainer);
         assert verifyRequiredColumns(dataMaps, targetStudy.isDateBased());
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean ownsTransaction = !scope.isTransactionActive();
@@ -357,7 +359,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return ret;
     }
 
-    private Map<String, String> ensurePropertyDescriptors(Container container, User user, DataSetDefinition dataset,
+    private Map<String, String> ensurePropertyDescriptors(Container container, User user, DataSet dataset,
                                                           List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
     {
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(dataset.getTypeURI(), container);
@@ -460,7 +462,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return false;
     }
 
-    public DataSetDefinition createAssayDataset(User user, Study study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
+    public DataSetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
     {
         boolean ownTransaction = false;
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -503,7 +505,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     private static String createUniqueDatasetName(Study study, String assayName)
     {
         Set<String> inUseNames = new HashSet<String>();
-        for (DataSetDefinition def : study.getDataSets())
+        for (DataSet def : study.getDataSets())
             inUseNames.add(def.getName());
 
         int suffix = 1;
@@ -519,7 +521,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     static final String DIR_NAME = "assaydata";
-    public UploadLog saveUploadData(User user, DataSetDefinition dsd, String tsv) throws IOException
+    public UploadLog saveUploadData(User user, DataSet dsd, String tsv) throws IOException
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
         if (null == pipelineRoot)
@@ -594,7 +596,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<String[],UploadLog> importDatasetTSV(User user, Study study, DataSetDefinition dsd, String tsv, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
+    public Pair<String[],UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, String tsv, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
     {
         UploadLog ul = null;
         String[] lsids = new String[0];

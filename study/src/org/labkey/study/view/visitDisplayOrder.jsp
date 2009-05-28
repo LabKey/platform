@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.Visit"%>
+<%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script>
@@ -73,12 +73,12 @@ function orderModule(down)
         <tr>
             <td>
                 <%
-                    Visit[] visits = getVisits();
+                    VisitImpl[] visits = getVisits();
                     boolean first = true;
                 %>
                 <select name="items" size="<%= visits.length %>">
                 <%
-                for (Visit visit : visits)
+                for (VisitImpl visit : visits)
                 {
                     StringBuilder desc = new StringBuilder();
                     desc.append(visit.getRowId());

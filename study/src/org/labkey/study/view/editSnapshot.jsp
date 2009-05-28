@@ -28,8 +28,10 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -47,7 +49,7 @@
     String datasetLabel = showDataset ? "Hide Dataset Definition" : "Edit Dataset Definition";
 
     final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-    final DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, bean.getSnapshotName());
+    final DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, bean.getSnapshotName());
     ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
 %>
 

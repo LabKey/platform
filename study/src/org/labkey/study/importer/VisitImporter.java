@@ -16,8 +16,8 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.model.Study;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.model.StudyImpl;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class VisitImporter
 {
-    boolean process(Study study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException
+    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException
     {
         // Visit map
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();

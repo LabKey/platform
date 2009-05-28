@@ -16,7 +16,7 @@
 package org.labkey.study.samples.report;
 
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletOutputStream;
@@ -75,7 +75,7 @@ public class SpecimenReportExcelWriter
 
         WritableSheet sheet = workbook.createSheet(sheetName, workbook.getNumberOfSheets());
 
-        Visit[] visits = report.getVisits();
+        VisitImpl[] visits = report.getVisits();
 
         // Merge cells at top of sheet and write the headers
         // One or more embedded tabs split a header into equally spaced columns
@@ -99,7 +99,7 @@ public class SpecimenReportExcelWriter
                 int columnIndex = 0;
                 for (String titleElement : rowData.getTitleHierarchy())
                     sheet.addCell(new Label(columnIndex++, rowIndex, titleElement));
-                for (Visit visit : visits)
+                for (VisitImpl visit : visits)
                 {
                     String[] valueSet = rowData.getCellExcelText(visit);
                     if (valueSet != null && valueSet.length > 0)

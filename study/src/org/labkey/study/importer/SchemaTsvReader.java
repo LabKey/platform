@@ -19,8 +19,8 @@ import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.study.Study;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.springframework.validation.BindException;
 
 import java.io.File;

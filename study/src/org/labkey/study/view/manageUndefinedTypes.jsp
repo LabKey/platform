@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
 <%@ page import="java.util.List"%>
 <%@ page import="java.util.ArrayList"%>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     List<DataSetDefinition> undefined = new ArrayList<DataSetDefinition>();

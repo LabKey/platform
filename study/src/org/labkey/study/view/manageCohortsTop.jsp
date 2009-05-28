@@ -20,12 +20,13 @@
 <%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Study study = getStudy();
+    StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
 %>
 <labkey:errors/>
@@ -51,7 +52,7 @@
                 <select name="participantCohortDataSetId" onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
                     <option value="-1">[None]</option>
                     <%
-                        for (DataSetDefinition dataset : manager.getDataSetDefinitions(study))
+                        for (DataSet dataset : manager.getDataSetDefinitions(study))
                         {
                             String selected = (study.getParticipantCohortDataSetId() != null &&
                                     dataset.getDataSetId() == study.getParticipantCohortDataSetId().intValue() ? "selected" : "");
@@ -73,7 +74,7 @@
                 descriptors = new PropertyDescriptor[0];
             else
             {
-                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(study, participantCohortDataSetId.intValue());
+                DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantCohortDataSetId.intValue());
                 if (dataset != null)
                     descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
                 else

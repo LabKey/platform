@@ -22,10 +22,10 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
-import org.labkey.study.model.Site;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.StudySchema;
 import org.labkey.api.util.Pair;
+import org.labkey.api.study.Site;
 
 import java.util.List;
 import java.util.Iterator;

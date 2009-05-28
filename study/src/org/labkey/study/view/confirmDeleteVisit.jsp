@@ -18,18 +18,19 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.Visit" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    BaseStudyController.StudyJspView<Visit> me = (BaseStudyController.StudyJspView<Visit>) HttpView.currentView();
-    Visit visit = me.getModelBean();
-    Study study = getStudy();
+    BaseStudyController.StudyJspView<VisitImpl> me = (BaseStudyController.StudyJspView<VisitImpl>) HttpView.currentView();
+    VisitImpl visit = me.getModelBean();
+    StudyImpl study = getStudy();
 
     StudyManager manager = StudyManager.getInstance();
     VisitManager visitManager = manager.getVisitManager(study);

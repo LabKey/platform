@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
-<%@ page import="org.labkey.study.model.Site" %>
+<%@ page import="org.labkey.study.model.SiteImpl" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -33,7 +33,7 @@
 <p>
     <select name="preferredLocation">
     <%
-        for (Site site : bean.getPossibleSites())
+        for (SiteImpl site : bean.getPossibleSites())
         {
     %>
     <option value="<%= site.getRowId() %>"><%= h(site.getLabel())%></option>

@@ -19,10 +19,12 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.study.model.Cohort;
+import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Study;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.DatasetsDocument;
 
 import java.io.File;
@@ -39,7 +41,7 @@ public class DatasetCohortAssigner
 {
     // Parses the dataset manifest again to retrieve the cohort assigments; should cache info from the first parsing
     // somewhere in the ImportContext
-    void process(Study study, ImportContext ctx, File root) throws SQLException, XmlException, IOException
+    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, XmlException, IOException
     {
         DatasetsDocument.Datasets datasets = DatasetImporter.getDatasetsManifest(ctx, root);
 
@@ -61,7 +63,7 @@ public class DatasetCohortAssigner
 
                 if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, props.getCohort()))
                 {
-                    Cohort newCohort = studyManager.getCohortByLabel(c, user, props.getCohort());
+                    CohortImpl newCohort = studyManager.getCohortByLabel(c, user, props.getCohort());
                     def = def.createMutable();
                     def.setCohortId(newCohort.getRowId());
                     StudyManager.getInstance().updateDataSetDefinition(user, def);

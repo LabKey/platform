@@ -1,7 +1,7 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.query.SpecimenQueryView;
@@ -28,13 +28,13 @@ import org.labkey.study.SampleManager;
 public class RequestEnrollmentSiteReport extends SpecimenTypeVisitReport
 {
     private int _siteId;
-    public RequestEnrollmentSiteReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, Visit[] visits, int siteId)
+    public RequestEnrollmentSiteReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, VisitImpl[] visits, int siteId)
     {
         super(titlePrefix, visits, filter, parameters);
         _siteId = siteId;
     }
 
-    protected String getFilterQueryString(Visit visit, SampleManager.SummaryByVisitType summary)
+    protected String getFilterQueryString(VisitImpl visit, SampleManager.SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" + SpecimenQueryView.PARAMS.showRequestedByEnrollmentSite + "=" + _siteId;
     }

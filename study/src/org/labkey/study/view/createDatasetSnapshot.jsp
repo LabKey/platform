@@ -27,8 +27,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.Study" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
@@ -55,8 +53,6 @@
     updateDelay.put("3600", "1 hour");
     updateDelay.put("7200", "2 hours");
 
-    int datasetId = NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), -1);
-    Study study = StudyManager.getInstance().getStudy(context.getContainer());
 %>
 
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>

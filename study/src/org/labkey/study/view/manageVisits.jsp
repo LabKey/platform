@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.Visit"%>
+<%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <table>
 <%
@@ -62,7 +62,7 @@
     <th>Show By Default</th>
     <th>&nbsp;</th>
     <%
-        for (Visit visit : getVisits())
+        for (VisitImpl visit : getVisits())
         {
     %>
         <tr>

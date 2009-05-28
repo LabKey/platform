@@ -22,8 +22,8 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +45,7 @@ public class SchemaXmlReader implements SchemaReader
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
 
-    public SchemaXmlReader(Study study, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException
+    public SchemaXmlReader(StudyImpl study, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException
     {
         TablesDocument tablesDoc = TablesDocument.Factory.parse(metaDataFile);
         TablesDocument.Tables tablesXml = tablesDoc.getTables();

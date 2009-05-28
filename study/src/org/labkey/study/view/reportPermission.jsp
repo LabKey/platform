@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.study.controllers.security.SecurityController"%>
-<%@ page import="org.labkey.study.model.Study"%>
+<%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="org.labkey.study.reports.AttachmentReport" %>
 <%@ page import="java.util.HashMap" %>
@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.security.*" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 

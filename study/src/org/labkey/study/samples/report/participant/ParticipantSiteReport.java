@@ -1,6 +1,6 @@
 package org.labkey.study.samples.report.participant;
 
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.api.data.SimpleFilter;
 
@@ -24,7 +24,7 @@ import org.labkey.api.data.SimpleFilter;
  */
 public class ParticipantSiteReport extends ParticipantVisitReport
 {
-    public ParticipantSiteReport(String title, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public ParticipantSiteReport(String title, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(title, visits, filter, parameters);
     }

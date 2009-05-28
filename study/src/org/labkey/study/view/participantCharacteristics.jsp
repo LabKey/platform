@@ -41,12 +41,14 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.collections.CsvSet" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -211,7 +213,7 @@
     %>
 </table>
 <%!
-PropertyDescriptor[] sortProperties(PropertyDescriptor[] pds, DataSetDefinition dsd, ViewContext context)
+PropertyDescriptor[] sortProperties(PropertyDescriptor[] pds, DataSet dsd, ViewContext context)
 {
     final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
     if (sortMap != null && !sortMap.isEmpty())

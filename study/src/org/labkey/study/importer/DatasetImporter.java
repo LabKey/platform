@@ -15,23 +15,27 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.DatasetsDocument;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.model.DatasetReorderer;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.pipeline.DatasetBatch;
-import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.xml.DatasetsDocument;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.Study;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
+import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +52,7 @@ import java.util.Map;
  */
 public class DatasetImporter
 {
-    boolean process(Study study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException
+    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 

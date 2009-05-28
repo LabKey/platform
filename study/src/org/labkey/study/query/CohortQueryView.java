@@ -27,8 +27,8 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyDefinitionController;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
@@ -41,11 +41,11 @@ import java.io.Writer;
  */
 public class CohortQueryView extends ExtensibleObjectQueryView
 {
-    private final Study study;
+    private final StudyImpl study;
 
-    public CohortQueryView(User user, Study study, ViewContext viewContext, boolean allowEditing)
+    public CohortQueryView(User user, StudyImpl study, ViewContext viewContext, boolean allowEditing)
     {
-        super(user, study, Cohort.class, viewContext, allowEditing);
+        super(user, study, CohortImpl.class, viewContext, allowEditing);
         this.study = study;
         QuerySettings settings = getSettings();
         // We don't have many cohorts typically. Let's cut down on the number of buttons,
@@ -87,7 +87,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
             Container container = view.getRenderContext().getContainer();
 
             boolean hasDomain = false;
-            String domainURI = StudyManager.getInstance().getDomainURI(container, Cohort.class);
+            String domainURI = StudyManager.getInstance().getDomainURI(container, CohortImpl.class);
 
             Domain domain = PropertyService.get().getDomain(container, domainURI);
             if (domain != null)

@@ -30,6 +30,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -37,7 +38,7 @@
 
     ViewContext context = HttpView.currentContext();
     Set<Class<? extends Permission>> permissions = context.getContainer().getPolicy().getPermissions(context.getUser());
-    Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     String contextPath = AppProps.getInstance().getContextPath();
     boolean pipelineSet = null != PipelineService.get().findPipelineRoot(HttpView.currentContext().getContainer());
@@ -107,7 +108,7 @@ if (!pipelineSet)
     HashMap<Integer,VisitDataSet> visitMap = new HashMap<Integer, VisitDataSet>();
     for (VisitDataSet vds : visitList)
         visitMap.put(vds.getVisitRowId(), vds);
-    for (Visit visit : study.getVisits())
+    for (VisitImpl visit : study.getVisits())
     {
         VisitDataSet vm = visitMap.get(visit.getRowId());
         VisitDataSetType type = vm == null ? VisitDataSetType.NOT_ASSOCIATED : vm.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL;

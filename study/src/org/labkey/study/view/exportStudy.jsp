@@ -19,10 +19,11 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.writer.StudyWriter" %>
 <%@ page import="org.labkey.study.writer.Writer" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.ExportForm> me = (JspView<StudyController.ExportForm>) HttpView.currentView();
@@ -36,7 +37,7 @@
             <td>Choose the study objects you wish to export:</td>
         </tr>
         <%
-            List<Writer<Study>> writers = StudyWriter.WRITERS;
+            List<Writer<StudyImpl>> writers = StudyWriter.WRITERS;
 
             for (Writer writer : writers)
             {

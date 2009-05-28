@@ -4,6 +4,7 @@ import org.labkey.study.query.DataSetTable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 
@@ -31,12 +32,12 @@ import java.util.*;
 */
 public class SequenceVisitManager extends VisitManager
 {
-    public SequenceVisitManager(Study study)
+    public SequenceVisitManager(StudyImpl study)
     {
         super(study);
     }
 
-    public Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort, QCStateSet qcStates) throws SQLException
+    public Map<VisitMapKey, Integer> getVisitSummary(CohortImpl cohort, QCStateSet qcStates) throws SQLException
     {
         Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -85,7 +86,7 @@ public class SequenceVisitManager extends VisitManager
                 int datasetId = rows.getInt(1);
                 double sequenceNum = rows.getDouble(2);
                 int count = rows.getInt(3);
-                Visit v = findVisitBySequence(sequenceNum);
+                VisitImpl v = findVisitBySequence(sequenceNum);
                 if (null == v)
                     continue;
                 int visitRowId = v.getRowId();
@@ -115,9 +116,9 @@ public class SequenceVisitManager extends VisitManager
     public boolean validateVisitRanges(List<String> errors)
     {
         int errorSize = errors.size();
-        TreeMap<Double,Visit> map = getVisitSequenceMap();
-        Visit prev = null;
-        for (Visit v : map.values())
+        TreeMap<Double, VisitImpl> map = getVisitSequenceMap();
+        VisitImpl prev = null;
+        for (VisitImpl v : map.values())
         {
             // this shouldn't happen, as this gets validated early
             if (v.getSequenceNumMin() > v.getSequenceNumMax())

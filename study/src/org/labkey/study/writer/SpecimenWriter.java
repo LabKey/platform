@@ -21,7 +21,7 @@ import org.labkey.api.util.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -33,7 +33,7 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 3:49:32 PM
  */
-public class SpecimenWriter implements Writer<Study>
+public class SpecimenWriter implements Writer<StudyImpl>
 {
     private static final Logger _log = Logger.getLogger(SpecimenWriter.class);
 
@@ -42,7 +42,7 @@ public class SpecimenWriter implements Writer<Study>
         return null;
     }
 
-    public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         SpecimenColumn[] columns = SpecimenImporter.SPECIMEN_COLUMNS;
         StudySchema schema = StudySchema.getInstance();

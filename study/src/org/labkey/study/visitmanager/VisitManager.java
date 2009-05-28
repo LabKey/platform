@@ -32,10 +32,10 @@ import java.util.*;
 */
 public abstract class VisitManager
 {
-    protected Study _study;
-    private TreeMap<Double, Visit> _sequenceMap;
+    protected StudyImpl _study;
+    private TreeMap<Double, VisitImpl> _sequenceMap;
 
-    protected VisitManager(Study study)
+    protected VisitManager(StudyImpl study)
     {
         _study = study;
     }
@@ -62,7 +62,7 @@ public abstract class VisitManager
 
     protected abstract void updateParticipantVisitTable(User user);
     protected abstract void updateVisitTable(User user);
-    public abstract Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort, QCStateSet qcStates) throws SQLException;
+    public abstract Map<VisitMapKey, Integer> getVisitSummary(CohortImpl cohort, QCStateSet qcStates) throws SQLException;
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
     protected abstract String getDatasetSequenceNumsSQL();
@@ -104,27 +104,27 @@ public abstract class VisitManager
      * In the case of a date-based study, this is actually a "Day" map, not a sequence map
      * @return
      */
-    public TreeMap<Double, Visit> getVisitSequenceMap()
+    public TreeMap<Double, VisitImpl> getVisitSequenceMap()
     {
-        Visit[] visits = _study.getVisits();
-        TreeMap<Double,Visit> visitMap = new TreeMap<Double, Visit>();
-        for (Visit v : visits)
+        VisitImpl[] visits = _study.getVisits();
+        TreeMap<Double, VisitImpl> visitMap = new TreeMap<Double, VisitImpl>();
+        for (VisitImpl v : visits)
             visitMap.put(v.getSequenceNumMin(),v);
         return visitMap;
     }
 
-    public Visit findVisitBySequence(double seq)
+    public VisitImpl findVisitBySequence(double seq)
     {
         if (_sequenceMap == null)
             _sequenceMap = getVisitSequenceMap();
 
         if (_sequenceMap.containsKey(seq))
             return _sequenceMap.get(seq);
-        SortedMap<Double,Visit> m = _sequenceMap.headMap(seq);
+        SortedMap<Double, VisitImpl> m = _sequenceMap.headMap(seq);
         if (m.isEmpty())
             return null;
         double seqMin = m.lastKey();
-        Visit v = _sequenceMap.get(seqMin);
+        VisitImpl v = _sequenceMap.get(seqMin);
         // v will be null only if we already searched for seq and didn't find it
         if (null == v)
             return null;
@@ -142,7 +142,7 @@ public abstract class VisitManager
      * @return True if the visit overlaps existing visits in the same container
      * @throws SQLException thrown if there's a database error
      */
-    public boolean isVisitOverlapping(Visit visit) throws SQLException
+    public boolean isVisitOverlapping(VisitImpl visit) throws SQLException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo visitTable = StudySchema.getInstance().getTableInfoVisit();

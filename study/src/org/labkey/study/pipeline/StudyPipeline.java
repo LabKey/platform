@@ -25,7 +25,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.Study;
+import org.labkey.api.study.Study;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;

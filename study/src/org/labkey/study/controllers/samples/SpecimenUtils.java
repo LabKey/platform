@@ -26,6 +26,8 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.study.Site;
+import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
@@ -228,17 +230,17 @@ public class SpecimenUtils
             addIfNotPresent(requirement.getActor(), requirement.getSite(), possibleNotifications);
 
         // allow notification of all site-based actors at the destination site, and all study-wide actors:
-        Map<Integer, Site> relevantSites = new HashMap<Integer, Site>();
+        Map<Integer, SiteImpl> relevantSites = new HashMap<Integer, SiteImpl>();
         if (sampleRequest.getDestinationSiteId() == null)
         {
             throw new IllegalStateException("Request " + sampleRequest.getRowId() + " in folder " +
                     sampleRequest.getContainer().getPath() + " does not have a valid destination site id.");
         }
-        Site destSite = StudyManager.getInstance().getSite(sampleRequest.getContainer(), sampleRequest.getDestinationSiteId().intValue());
+        SiteImpl destSite = StudyManager.getInstance().getSite(sampleRequest.getContainer(), sampleRequest.getDestinationSiteId().intValue());
         relevantSites.put(destSite.getRowId(), destSite);
         for (Specimen specimen : sampleRequest.getSpecimens())
         {
-            Site site = SampleManager.getInstance().getCurrentSite(specimen);
+            SiteImpl site = SampleManager.getInstance().getCurrentSite(specimen);
             if (site != null && !relevantSites.containsKey(site.getRowId()))
                 relevantSites.put(site.getRowId(), site);
         }
@@ -249,7 +251,7 @@ public class SpecimenUtils
         {
             if (actor.isPerSite())
             {
-                for (Site site : relevantSites.values())
+                for (SiteImpl site : relevantSites.values())
                 {
                     if (actor.isPerSite())
                         addIfNotPresent(actor, site, possibleNotifications);
@@ -282,7 +284,7 @@ public class SpecimenUtils
         return possibleNotifications;
     }
 
-    private boolean addIfNotPresent(SampleRequestActor actor, Site site, List<ActorNotificationRecipientSet> list)
+    private boolean addIfNotPresent(SampleRequestActor actor, SiteImpl site, List<ActorNotificationRecipientSet> list)
     {
         for (ActorNotificationRecipientSet actorSite : list)
         {
@@ -314,8 +316,8 @@ public class SpecimenUtils
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int siteId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
-            Site[] sites = StudyManager.getInstance().getSites(ctx.getContainer());
-            for (Site site : sites)
+            SiteImpl[] sites = StudyManager.getInstance().getSites(ctx.getContainer());
+            for (SiteImpl site : sites)
             {
                 out.write("<option value=\"");
                 out.write(String.valueOf(site.getRowId()));
@@ -589,7 +591,7 @@ public class SpecimenUtils
     {
         private Container _container;
         private Collection<Integer> _possibleLocationIds;
-        private Site[] _possibleLocations = null;
+        private SiteImpl[] _possibleLocations = null;
 
         public AmbiguousLocationException(Container container, Collection<Integer> possibleLocationIds)
         {
@@ -602,11 +604,11 @@ public class SpecimenUtils
             return _possibleLocationIds;
         }
 
-        public Site[] getPossibleLocations()
+        public SiteImpl[] getPossibleLocations()
         {
             if (_possibleLocations == null)
             {
-                _possibleLocations = new Site[_possibleLocationIds.size()];
+                _possibleLocations = new SiteImpl[_possibleLocationIds.size()];
                 int idx = 0;
                 try
                 {
@@ -776,7 +778,7 @@ public class SpecimenUtils
         }
     }
 
-    public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, Site srcSite,
+    public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, SiteImpl srcSite,
                                               SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException
     {
         SpringSpecimenController.LabSpecimenListsBean bean = new SpringSpecimenController.LabSpecimenListsBean(this, sampleRequest, type);
@@ -800,7 +802,7 @@ public class SpecimenUtils
         return filter;
     }
 
-    private String getSpecimenListFileName(Site srcSite, Site destSite)
+    private String getSpecimenListFileName(SiteImpl srcSite, SiteImpl destSite)
     {
         StringBuilder filename = new StringBuilder();
         filename.append(getShortSiteLabel(srcSite)).append("_to_").append(getShortSiteLabel(destSite));
@@ -808,8 +810,8 @@ public class SpecimenUtils
         return filename.toString();
     }
 
-    public TSVGridWriter getSpecimenListTsvWriter(SampleRequest sampleRequest, Site srcSite,
-                                                   Site destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+    public TSVGridWriter getSpecimenListTsvWriter(SampleRequest sampleRequest, SiteImpl srcSite,
+                                                   SiteImpl destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimen());
@@ -827,8 +829,8 @@ public class SpecimenUtils
         return tsv;
     }
 
-    public ExcelWriter getSpecimenListXlsWriter(SampleRequest sampleRequest, Site srcSite,
-                                                 Site destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+    public ExcelWriter getSpecimenListXlsWriter(SampleRequest sampleRequest, SiteImpl srcSite,
+                                                 SiteImpl destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimen());
@@ -845,7 +847,7 @@ public class SpecimenUtils
         return xl;
     }
 
-    private String getShortSiteLabel(Site site)
+    private String getShortSiteLabel(SiteImpl site)
     {
         String label;
         if (site.getLabel() != null && site.getLabel().length() > 0)

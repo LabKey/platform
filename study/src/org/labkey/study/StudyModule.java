@@ -43,6 +43,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;

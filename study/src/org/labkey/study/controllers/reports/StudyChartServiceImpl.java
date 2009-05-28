@@ -41,12 +41,13 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.chart.client.StudyChartService;
 import org.labkey.study.chart.client.model.GWTPair;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.reports.ReportManager;
 
@@ -85,7 +86,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
         if (study != null)
         {
-            for (DataSetDefinition def : StudyManager.getInstance().getDataSetDefinitions(study))
+            for (DataSet def : StudyManager.getInstance().getDataSetDefinitions(study))
             {
                 datasets.add(new GWTPair(def.getLabel(), Integer.toString(def.getDataSetId())));
             }
@@ -191,7 +192,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
             String queryName = null;
             Study study = StudyManager.getInstance().getStudy(_context.getContainer());
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
+            DataSet def = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
             if (def != null)
                 queryName = def.getLabel();
             return ReportUtil.getReportKey(StudyManager.getSchemaName(), queryName);

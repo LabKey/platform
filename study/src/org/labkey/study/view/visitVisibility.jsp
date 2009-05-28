@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.Visit"%>
-<%@ page import="org.labkey.study.model.Cohort" %>
+<%@ page import="org.labkey.study.model.VisitImpl"%>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    Cohort[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
+    CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
 %>
 <form action="visitVisibility.post" method="POST">
     <table>
@@ -32,7 +33,7 @@
             <th align="left">Show By Default</th>
         </tr>
     <%
-        for (Visit visit : getVisits())
+        for (VisitImpl visit : getVisits())
         {
     %>
         <tr>
@@ -55,7 +56,7 @@
                         <option value="-1">All</option>
                     <%
 
-                        for (Cohort cohort : cohorts)
+                        for (CohortImpl cohort : cohorts)
                         {
                     %>
                         <option value="<%= cohort.getRowId()%>" <%= visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : ""%>>

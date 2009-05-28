@@ -31,7 +31,7 @@ public class CohortDomainKind extends BaseStudyDomainKind
 
     protected Class<? extends ExtensibleStudyEntity> getSupportedClass()
     {
-        return Cohort.class;
+        return CohortImpl.class;
     }
 
     protected TableInfo getTableInfo()

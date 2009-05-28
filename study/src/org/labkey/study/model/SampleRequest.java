@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.study.Site;
 import org.labkey.study.SampleManager;
 import org.labkey.study.requirements.RequirementOwner;
 

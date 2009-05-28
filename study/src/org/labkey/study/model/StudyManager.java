@@ -50,6 +50,9 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -93,11 +96,11 @@ public class StudyManager
     private final TableInfo _tableInfoStudyData;
     private final TableInfo _tableInfoUploadLog;
 
-    private final QueryHelper<Study> _studyHelper;
-    private final QueryHelper<Visit> _visitHelper;
-    private final QueryHelper<Site> _siteHelper;
+    private final QueryHelper<StudyImpl> _studyHelper;
+    private final QueryHelper<VisitImpl> _visitHelper;
+    private final QueryHelper<SiteImpl> _siteHelper;
     private final QueryHelper<DataSetDefinition> _dataSetHelper;
-    private final QueryHelper<Cohort> _cohortHelper;
+    private final QueryHelper<CohortImpl> _cohortHelper;
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
@@ -105,37 +108,37 @@ public class StudyManager
     private StudyManager()
     {
         // prevent external construction with a private default constructor
-        _studyHelper = new QueryHelper<Study>(new TableInfoGetter()
+        _studyHelper = new QueryHelper<StudyImpl>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
                     return StudySchema.getInstance().getTableInfoStudy();
                 }
-            }, Study.class);
+            }, StudyImpl.class);
 
-        _visitHelper = new QueryHelper<Visit>(new TableInfoGetter()
+        _visitHelper = new QueryHelper<VisitImpl>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
                     return StudySchema.getInstance().getTableInfoVisit();
                 }
-            }, Visit.class);
+            }, VisitImpl.class);
 
-        _siteHelper = new QueryHelper<Site>(new TableInfoGetter()
+        _siteHelper = new QueryHelper<SiteImpl>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
                     return StudySchema.getInstance().getTableInfoSite();
                 }
-            }, Site.class);
+            }, SiteImpl.class);
 
-        _cohortHelper = new QueryHelper<Cohort>(new TableInfoGetter()
+        _cohortHelper = new QueryHelper<CohortImpl>(new TableInfoGetter()
             {
                 public TableInfo getTableInfo()
                 {
                     return StudySchema.getInstance().getTableInfoCohort();
                 }
-            }, Cohort.class);
+            }, CohortImpl.class);
 
         TableInfoGetter dataSetGetter = new TableInfoGetter()
         {
@@ -182,21 +185,21 @@ public class StudyManager
         return DbSchema.get(SCHEMA_NAME);
     }
 
-    public QueryHelper<Visit> getVisitHelper()
+    public QueryHelper<VisitImpl> getVisitHelper()
     {
         return _visitHelper;
     }
 
-    public synchronized Study getStudy(Container c)
+    public synchronized StudyImpl getStudy(Container c)
     {
         try
         {
-            Study study;
+            StudyImpl study;
             boolean retry = true;
 
             while (true)
             {
-                Study[] studies = _studyHelper.get(c);
+                StudyImpl[] studies = _studyHelper.get(c);
                 if (studies == null || studies.length == 0)
                     return null;
                 else if (studies.length > 1)
@@ -231,9 +234,9 @@ public class StudyManager
         }
     }
 
-    public Study[] getAllStudies() throws SQLException
+    public StudyImpl[] getAllStudies() throws SQLException
     {
-        return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, Study.class);
+        return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, StudyImpl.class);
     }
 
     @NotNull
@@ -241,10 +244,10 @@ public class StudyManager
     {
         FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, new ContainerFilter.CurrentAndSubfolders(user));
         t.wrapAllColumns(true);
-        return Table.select(t, Table.ALL_COLUMNS, null, null, Study.class);
+        return Table.select(t, Table.ALL_COLUMNS, null, null, StudyImpl.class);
     }
 
-    public Study createStudy(User user, Study study) throws SQLException
+    public StudyImpl createStudy(User user, StudyImpl study) throws SQLException
     {
         assert null != study.getContainer();
         if (study.getLsid() == null)
@@ -267,7 +270,7 @@ public class StudyManager
         return study;
     }
 
-    public void updateStudy(User user, Study study) throws SQLException
+    public void updateStudy(User user, StudyImpl study) throws SQLException
     {
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
@@ -305,15 +308,15 @@ public class StudyManager
         _dataSetHelper.update(user, dataSetDefinition, pk);
     }
 
-    public boolean isDataUniquePerParticipant(DataSetDefinition dataSetDefinition) throws SQLException
+    public boolean isDataUniquePerParticipant(DataSet dataSet) throws SQLException
     {
         String sql = "SELECT max(n) FROM (select count(*) AS n from study.studydata WHERE container=? AND datasetid=? GROUP BY participantid) x";
-        Integer maxCount = Table.executeSingleton(getSchema(), sql, new Object[] {dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()}, Integer.class);
+        Integer maxCount = Table.executeSingleton(getSchema(), sql, new Object[] {dataSet.getContainer().getId(), dataSet.getDataSetId()}, Integer.class);
         return maxCount == null || maxCount.intValue() <= 1;
     }
 
 
-    public int createVisit(Study study, User user, Visit visit) throws SQLException
+    public int createVisit(Study study, User user, VisitImpl visit) throws SQLException
     {
         if (visit.getContainer() != null && !visit.getContainer().getId().equals(study.getContainer().getId()))
             throw new IllegalStateException("Visit container does not match study");
@@ -321,8 +324,8 @@ public class StudyManager
 
         if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
             throw new IllegalStateException("SequenceNumMin must be less than or equal to SequenceNumMax");
-        Visit[] visits = getVisits(study);
-        for (Visit existingVisit : visits)
+        VisitImpl[] visits = getVisits(study);
+        for (VisitImpl existingVisit : visits)
         {
             if (existingVisit.getSequenceNumMin() > existingVisit.getSequenceNumMax())
                 throw new IllegalStateException("Corrupt existing visit " + existingVisit.getLabel() +
@@ -343,8 +346,8 @@ public class StudyManager
 
     public void ensureVisit(Study study, User user, double visitId, Visit.Type type, String label) throws SQLException
     {
-        Visit[] visits = getVisits(study);
-        for (Visit visit : visits)
+        VisitImpl[] visits = getVisits(study);
+        for (VisitImpl visit : visits)
         {
             // check to see if our new visitId is within the range of an existing visit:
             if (visit.getSequenceNumMin() <= visitId && visit.getSequenceNumMax() >= visitId)
@@ -356,11 +359,11 @@ public class StudyManager
 
     public void createVisit(Study study, User user, double visitId, Visit.Type type, String label) throws SQLException
     {
-        Visit visit = new Visit(study.getContainer(), visitId, label, type);
+        VisitImpl visit = new VisitImpl(study.getContainer(), visitId, label, type);
         createVisit(study, user, visit);
     }
 
-    public void createCohort(Study study, User user, Cohort cohort) throws SQLException
+    public void createCohort(Study study, User user, CohortImpl cohort) throws SQLException
     {
         if (cohort.getContainer() != null && !cohort.getContainer().getId().equals(study.getContainer().getId()))
             throw new IllegalArgumentException("Cohort container does not match study");
@@ -380,7 +383,7 @@ public class StudyManager
     }
 
 
-    public void deleteVisit(Study study, Visit visit) throws SQLException
+    public void deleteVisit(Study study, VisitImpl visit) throws SQLException
     {
         StudySchema schema = StudySchema.getInstance();
         try
@@ -422,13 +425,13 @@ public class StudyManager
     }
 
 
-    public void updateVisit(User user, Visit visit) throws SQLException
+    public void updateVisit(User user, VisitImpl visit) throws SQLException
     {
         Object[] pk = new Object[]{visit.getContainer().getId(), visit.getRowId()};
         _visitHelper.update(user, visit, pk);
     }
 
-    public void updateCohort(User user, Cohort cohort) throws SQLException
+    public void updateCohort(User user, CohortImpl cohort) throws SQLException
     {
         _cohortHelper.update(user, cohort);
     }
@@ -443,7 +446,7 @@ public class StudyManager
     }
 
 
-    public Site[] getSites(Container container)
+    public SiteImpl[] getSites(Container container)
     {
         try
         {
@@ -456,17 +459,17 @@ public class StudyManager
     }
 
 
-    public Site getSite(Container container, int id) throws SQLException
+    public SiteImpl getSite(Container container, int id) throws SQLException
     {
         return _siteHelper.get(container, id);
     }
 
-    public void createSite(User user, Site site) throws SQLException
+    public void createSite(User user, SiteImpl site) throws SQLException
     {
         _siteHelper.create(user, site);
     }
 
-    public void updateSite(User user, Site site) throws SQLException
+    public void updateSite(User user, SiteImpl site) throws SQLException
     {
         _siteHelper.update(user, site);
     }
@@ -498,12 +501,12 @@ public class StudyManager
     }
 
 
-    public Visit[] getVisits(Study study)
+    public VisitImpl[] getVisits(Study study)
     {
         return getVisits(study, null, null);
     }
 
-    public Visit[] getVisits(Study study, Cohort cohort, User user)
+    public VisitImpl[] getVisits(Study study, CohortImpl cohort, User user)
     {
         try
         {
@@ -528,7 +531,7 @@ public class StudyManager
     }
 
 
-    public Visit getVisitForRowId(Study study, int rowId)
+    public VisitImpl getVisitForRowId(Study study, int rowId)
     {
         try
         {
@@ -574,7 +577,7 @@ public class StudyManager
     {
         try
         {
-            Study study = getStudy(state.getContainer());
+            StudyImpl study = getStudy(state.getContainer());
             if (safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
                 safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId() )||
                 safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
@@ -624,7 +627,7 @@ public class StudyManager
     }
 
     @Nullable
-    public QCState getDefaultQCState(Study study)
+    public QCState getDefaultQCState(StudyImpl study)
     {
         Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
         QCState defaultQCState = null;
@@ -645,9 +648,9 @@ public class StudyManager
         return null;
     }
 
-    private Map<String, Visit> getVisitsForDataRows(Container container, int datasetId, Collection<String> dataLsids)
+    private Map<String, VisitImpl> getVisitsForDataRows(Container container, int datasetId, Collection<String> dataLsids)
     {
-        Map<String, Visit> visits = new HashMap<String, Visit>();
+        Map<String, VisitImpl> visits = new HashMap<String, VisitImpl>();
         if (dataLsids == null || dataLsids.isEmpty())
             return visits;
 
@@ -708,7 +711,7 @@ public class StudyManager
         Study study = getStudy(container);
         DataSetDefinition def = getDataSetDefinition(study, datasetId);
 
-        Map<String, Visit> lsidVisits = null;
+        Map<String, VisitImpl> lsidVisits = null;
         if (!def.isDemographicData())
             lsidVisits = getVisitsForDataRows(container, datasetId, lsids);
         Map<String, Object>[] rows = StudyService.get().getDatasetRows(user, container, datasetId, lsids);
@@ -738,7 +741,7 @@ public class StudyManager
             auditKey.append(row.get("ParticipantId"));
             if (!def.isDemographicData())
             {
-                Visit visit = lsidVisits.get(lsid);
+                VisitImpl visit = lsidVisits.get(lsid);
                 auditKey.append(", Visit ").append(visit.getLabel());
             }
             String keyProp = def.getKeyPropertyName();
@@ -837,7 +840,7 @@ public class StudyManager
             return false;
         if (user.isAdministrator())
             return true;
-        Study study = StudyManager.getInstance().getStudy(container);
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
 
         if (study == null)
             return false;
@@ -864,7 +867,7 @@ public class StudyManager
     {
         if (!user.isAdministrator())
         {
-            Study study = StudyManager.getInstance().getStudy(container);
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
 
             if (study.isManualCohortAssignment())
             {
@@ -886,7 +889,7 @@ public class StudyManager
         }
     }
 
-    public Cohort[] getCohorts(Container container, User user)
+    public CohortImpl[] getCohorts(Container container, User user)
     {
         assertCohortsViewable(container, user);
         try
@@ -899,7 +902,7 @@ public class StudyManager
         }
     }
 
-    public Cohort getCohortForParticipant(Container container, User user, String participantId) throws SQLException
+    public CohortImpl getCohortForParticipant(Container container, User user, String participantId) throws SQLException
     {
         assertCohortsViewable(container, user);
         Participant participant = getParticipant(getStudy(container), participantId);
@@ -908,7 +911,7 @@ public class StudyManager
         return null;
     }
 
-    public Cohort getCohortForRowId(Container container, User user, int rowId)
+    public CohortImpl getCohortForRowId(Container container, User user, int rowId)
     {
         assertCohortsViewable(container, user);
         try
@@ -921,7 +924,7 @@ public class StudyManager
         }
     }
 
-    public Cohort getCohortByLabel(Container container, User user, String label)
+    public CohortImpl getCohortByLabel(Container container, User user, String label)
     {
         assertCohortsViewable(container, user);
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
@@ -929,7 +932,7 @@ public class StudyManager
 
         try
         {
-            Cohort[] cohorts = _cohortHelper.get(container, filter);
+            CohortImpl[] cohorts = _cohortHelper.get(container, filter);
             if (cohorts != null && cohorts.length == 1)
                 return cohorts[0];
         }
@@ -940,7 +943,7 @@ public class StudyManager
         return null;
     }
 
-    private boolean isCohortInUse(Cohort cohort, TableInfo table)
+    private boolean isCohortInUse(CohortImpl cohort, TableInfo table)
     {
         try
         {
@@ -955,14 +958,14 @@ public class StudyManager
         }
     }
 
-    public boolean isCohortInUse(Cohort cohort)
+    public boolean isCohortInUse(CohortImpl cohort)
     {
         return isCohortInUse(cohort, StudySchema.getInstance().getTableInfoDataSet()) ||
                 isCohortInUse(cohort, StudySchema.getInstance().getTableInfoParticipant()) ||
                 isCohortInUse(cohort, StudySchema.getInstance().getTableInfoVisit());
     }
 
-    public void deleteCohort(Cohort cohort) throws SQLException
+    public void deleteCohort(CohortImpl cohort) throws SQLException
     {
         _cohortHelper.delete(cohort);
 
@@ -977,10 +980,10 @@ public class StudyManager
     }
 
 
-    public Visit getVisitForSequence(Study study, double seqNum)
+    public VisitImpl getVisitForSequence(Study study, double seqNum)
     {
-        Visit[] visits = getVisits(study);
-        for (Visit v : visits)
+        VisitImpl[] visits = getVisits(study);
+        for (VisitImpl v : visits)
         {
             if (seqNum >= v.getSequenceNumMin() && seqNum <= v.getSequenceNumMax())
                 return v;
@@ -993,7 +996,7 @@ public class StudyManager
         return getDataSetDefinitions(study, null);
     }
 
-    public DataSetDefinition[] getDataSetDefinitions(Study study, Cohort cohort)
+    public DataSetDefinition[] getDataSetDefinitions(Study study, CohortImpl cohort)
     {
         try
         {
@@ -1054,14 +1057,14 @@ public class StudyManager
     }
 
     @Nullable
-    public DataSetDefinition getDataSetDefinitionByName(Study s, String name)
+    public DataSet getDataSetDefinitionByName(Study s, String name)
     {
         try
         {
             SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
             filter.addCondition("Name", name);
 
-            DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
+            DataSet[] defs = _dataSetHelper.get(s.getContainer(), filter);
             if (defs != null && defs.length == 1)
                 return defs[0];
 
@@ -1097,7 +1100,7 @@ public class StudyManager
 
 
     /** @deprecated */
-    public DataSetDefinition getDataSetDefinition(Container c, int id) throws SQLException
+    public DataSet getDataSetDefinition(Container c, int id) throws SQLException
     {
         return _dataSetHelper.get(c, id, "DataSetId");
     }
@@ -1108,9 +1111,9 @@ public class StudyManager
                     "(SELECT count(rowid) FROM study.site WHERE study.site.container=study.study.Container) AS siteCount" +
                     "FROM study.study WHERE study.study.container=?";
 
-    public Study.SummaryStatistics getSummaryStatistics(Container c) throws SQLException
+    public StudyImpl.SummaryStatistics getSummaryStatistics(Container c) throws SQLException
     {
-        Study.SummaryStatistics summary = Table.executeSingleton(StudySchema.getInstance().getSchema(), selectSummaryStats, new Object[] {c.getId()}, Study.SummaryStatistics.class);
+        StudyImpl.SummaryStatistics summary = Table.executeSingleton(StudySchema.getInstance().getSchema(), selectSummaryStats, new Object[] {c.getId()}, StudyImpl.SummaryStatistics.class);
         return summary;
     }
 
@@ -1148,7 +1151,7 @@ public class StudyManager
             "WHERE vm.Container = ? AND vm.DataSetId = ?\n" +
             "ORDER BY v.DisplayOrder, v.RowId;";
 
-    List<VisitDataSet> getMapping(Visit visit)
+    List<VisitDataSet> getMapping(VisitImpl visit)
     {
         if (visit.getContainer() == null)
             throw new IllegalStateException("Visit has no container");
@@ -1174,7 +1177,7 @@ public class StudyManager
     }
 
 
-    public List<VisitDataSet> getMapping(DataSetDefinition dataSet)
+    public List<VisitDataSet> getMapping(DataSet dataSet)
     {
         try
         {
@@ -1226,7 +1229,7 @@ public class StudyManager
         }
     }
 
-    public int getNumDatasetRows(DataSetDefinition dataset)
+    public int getNumDatasetRows(DataSet dataset)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo sdTable = StudySchema.getInstance().getTableInfoStudyData();
@@ -1415,7 +1418,7 @@ public class StudyManager
     public void deleteAllStudyData(Container c, User user, boolean deleteDatasetData, boolean deleteStudyDesigns) throws SQLException
     {
         // Before we delete any data, we need to go fetch the Dataset definitions.
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition[] dsds;
         if (study == null) // no study in this folder
             dsds = new DataSetDefinition[0];
@@ -1763,7 +1766,7 @@ public class StudyManager
 
             tableSnapshotInfo.put("Lists", listSnapshotInfo);
 
-            Study study = StudyManager.getInstance().getStudy(container);
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
             if (null == study)
                 return;
 
@@ -2442,7 +2445,7 @@ public class StudyManager
     }
 
 
-    public boolean importDatasetSchemas(Study study, User user, SchemaReader reader, BindException errors) throws IOException, SQLException
+    public boolean importDatasetSchemas(StudyImpl study, User user, SchemaReader reader, BindException errors) throws IOException, SQLException
     {
         if (errors.hasErrors())
             return false;
@@ -2451,7 +2454,7 @@ public class StudyManager
 
         if (!mapsImport.isEmpty())
         {
-            String domainURI = getDomainURI(study.getContainer(), (DataSetDefinition)null);
+            String domainURI = getDomainURI(study.getContainer(), (DataSet)null);
 
             List<String> importErrors = new LinkedList<String>();
             PropertyDescriptor[] pds = OntologyManager.importTypes(domainURI, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
@@ -2476,7 +2479,7 @@ public class StudyManager
                     String label = info.label;
 
                     // Check for name conflicts
-                    DataSetDefinition existingDef = manager.getDataSetDefinition(study, label);
+                    DataSet existingDef = manager.getDataSetDefinition(study, label);
 
                     if (existingDef != null && existingDef.getDataSetId() != id)
                     {
@@ -2526,7 +2529,7 @@ public class StudyManager
     }
 
 
-    public String getDomainURI(Container c, DataSetDefinition def)
+    public String getDomainURI(Container c, DataSet def)
     {
         if (null == def)
             return getDomainURI(c, (String)null);
@@ -2562,7 +2565,7 @@ public class StudyManager
      *
      * @param study
      */
-    public void recomputeStudyDataVisitDate(Study study)
+    public void recomputeStudyDataVisitDate(StudyImpl study)
     {
         DataSetDefinition[] defs = study.getDataSets();
         for (DataSetDefinition def : defs)
@@ -2607,7 +2610,7 @@ public class StudyManager
     }
 
 
-    public VisitManager getVisitManager(Study study)
+    public VisitManager getVisitManager(StudyImpl study)
     {
         if (!study.isDateBased())
             return new SequenceVisitManager(study);
@@ -2706,7 +2709,7 @@ public class StudyManager
         final String _visitDatePropertyURI;
         final String _keyPropertyURI;
         final Study _study;
-        final DataSetDefinition _dataset;
+        final DataSet _dataset;
 
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
 
@@ -2772,7 +2775,7 @@ public class StudyManager
                 if (null != date)
                     visit = sequenceNumFromDate(date);
                 else
-                    visit = Visit.DEMOGRAPHICS_VISIT;
+                    visit = VisitImpl.DEMOGRAPHICS_VISIT;
             }
             else
                 visit = toDouble(map.get(DataSetDefinition.getSequenceNumURI()));
@@ -2802,7 +2805,7 @@ public class StudyManager
                 if (null != date)
                     visit = sequenceNumFromDate(date);
                 else
-                    visit = Visit.DEMOGRAPHICS_VISIT;
+                    visit = VisitImpl.DEMOGRAPHICS_VISIT;
             }
             else
                 visit = toDouble(map.get(visitSequenceNumURI));
@@ -2923,7 +2926,7 @@ public class StudyManager
                     Container c = ContainerManager.getForId(containerId);
                     ActionURL url = new ActionURL(StudyController.DatasetAction.class, c);
                     url.addParameter(DataSetDefinition.DATASETKEY, String.valueOf(datasetId));
-                    url.addParameter(Visit.SEQUENCEKEY, String.valueOf(sequenceNum));
+                    url.addParameter(VisitImpl.SEQUENCEKEY, String.valueOf(sequenceNum));
                     url.addParameter("StudyData.participantId~eq", ptid);
                     return url.toString();
                 }
@@ -2981,7 +2984,7 @@ public class StudyManager
                 "UPDATE study.Participant SET CohortId = NULL WHERE Container = ?", new Object[] { study.getContainer().getId() });
     }
 
-    public void updateParticipantCohorts(User user, Study study) throws SQLException, UnauthorizedException
+    public void updateParticipantCohorts(User user, StudyImpl study) throws SQLException, UnauthorizedException
     {
         if (study.isManualCohortAssignment() ||
                 study.getParticipantCohortDataSetId() == null ||
@@ -3032,7 +3035,7 @@ public class StudyManager
 
                     for (String cohortLabel : newCohortLabels)
                     {
-                        Cohort cohort = new Cohort();
+                        CohortImpl cohort = new CohortImpl();
                         cohort.setLabel(cohortLabel);
                         StudyManager.getInstance().createCohort(study, user, cohort);
                     }
@@ -3139,7 +3142,7 @@ public class StudyManager
 
     public interface UnmaterializeListener
     {
-        void dataSetUnmaterialized(DataSetDefinition def);
+        void dataSetUnmaterialized(DataSet def);
     }
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
@@ -3155,7 +3158,7 @@ public class StudyManager
         return _listeners;
     }
     
-    public static void fireUnmaterialized(DataSetDefinition def)
+    public static void fireUnmaterialized(DataSet def)
     {
         List<UnmaterializeListener> list = getListeners();
         for (UnmaterializeListener l : list)

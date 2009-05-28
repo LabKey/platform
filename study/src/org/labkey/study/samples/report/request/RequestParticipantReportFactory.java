@@ -4,12 +4,12 @@ import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.SampleManager;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.study.Study;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -83,9 +83,9 @@ public class RequestParticipantReportFactory extends TypeReportFactory
         }
 
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-        Map<Integer, Visit[]> visitListCache = new HashMap<Integer, Visit[]>(); // cohort rowId -> visit
+        Map<Integer, VisitImpl[]> visitListCache = new HashMap<Integer, VisitImpl[]>(); // cohort rowId -> visit
         boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
-        Visit[] allVisits = null;
+        VisitImpl[] allVisits = null;
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)
         {
@@ -93,10 +93,10 @@ public class RequestParticipantReportFactory extends TypeReportFactory
             addBaseFilters(filter);
             try
             {
-                Visit[] visits = null;
+                VisitImpl[] visits = null;
                 if (showCohorts)
                 {
-                    Cohort cohort = StudyManager.getInstance().getCohortForParticipant(getContainer(), getUser(), participantId);
+                    CohortImpl cohort = StudyManager.getInstance().getCohortForParticipant(getContainer(), getUser(), participantId);
                     if (cohort != null)
                     {
                         visits = visitListCache.get(cohort.getRowId());

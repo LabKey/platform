@@ -32,10 +32,11 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -76,7 +77,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 if (study != null)
                 {
-                    for (DataSetDefinition dsDef : StudyManager.getInstance().getDataSetDefinitions(study))
+                    for (DataSet dsDef : StudyManager.getInstance().getDataSetDefinitions(study))
                     {
                         Domain d = PropertyService.get().getDomain(view.getContainer(), dsDef.getTypeURI());
                         if (d != null)
@@ -379,7 +380,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
-    private List<QuerySnapshotDefinition> getDependencies(DataSetDefinition dsDef)
+    private List<QuerySnapshotDefinition> getDependencies(DataSet dsDef)
     {
         Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
         Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
@@ -471,7 +472,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    public void dataSetUnmaterialized(final DataSetDefinition def)
+    public void dataSetUnmaterialized(final DataSet def)
     {
         Runnable task = new Runnable()
         {

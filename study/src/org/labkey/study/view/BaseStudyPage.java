@@ -20,6 +20,7 @@ import org.labkey.study.model.*;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.*;
 
 import java.sql.SQLException;
 
@@ -30,16 +31,16 @@ import java.sql.SQLException;
  */
 public abstract class BaseStudyPage extends JspBase
 {
-    private Study _study;
+    private StudyImpl _study;
 
-    protected Study getStudy()
+    protected StudyImpl getStudy()
     {
 //        if (_study == null)
 //            throw new IllegalStateException("init must be called before rendering this JSP.");
         return _study;
     }
 
-    protected Visit[] getVisits()
+    protected VisitImpl[] getVisits()
     {
         return getStudy().getVisits();
     }
@@ -49,12 +50,12 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getDataSets();
     }
 
-    protected Site[] getSites() throws SQLException
+    protected SiteImpl[] getSites() throws SQLException
     {
         return getStudy().getSites();
     }
 
-    protected Cohort[] getCohorts(User user) throws SQLException
+    protected CohortImpl[] getCohorts(User user) throws SQLException
     {
         return getStudy().getCohorts(user);
     }
@@ -64,7 +65,7 @@ public abstract class BaseStudyPage extends JspBase
         _study = StudyManager.getInstance().getStudy(c);
     }
 
-    public void init(Study study)
+    public void init(StudyImpl study)
     {
         _study = study;
     }

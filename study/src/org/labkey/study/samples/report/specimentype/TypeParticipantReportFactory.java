@@ -7,6 +7,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.study.Study;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -71,9 +72,9 @@ public class TypeParticipantReportFactory extends TypeReportFactory
                 return Collections.<SpecimenVisitReport>emptyList();
         }
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-        Map<Integer, Visit[]> visitListCache = new HashMap<Integer, Visit[]>(); // cohort rowId -> visits
+        Map<Integer, VisitImpl[]> visitListCache = new HashMap<Integer, VisitImpl[]>(); // cohort rowId -> visits
         boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
-        Visit[] allVisits = null;
+        VisitImpl[] allVisits = null;
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)
         {
@@ -81,10 +82,10 @@ public class TypeParticipantReportFactory extends TypeReportFactory
             addBaseFilters(filter);
             try
             {
-                Visit[] visits = null;
+                VisitImpl[] visits = null;
                 if (showCohorts)
                 {
-                    Cohort cohort = StudyManager.getInstance().getCohortForParticipant(getContainer(), getUser(), participantId);
+                    CohortImpl cohort = StudyManager.getInstance().getCohortForParticipant(getContainer(), getUser(), participantId);
                     if (cohort != null)
                     {
                         visits = visitListCache.get(cohort.getRowId());

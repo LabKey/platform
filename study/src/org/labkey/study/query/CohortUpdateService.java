@@ -23,11 +23,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -45,7 +46,7 @@ public class CohortUpdateService implements QueryUpdateService
         Map<String,Object> oldRow = getRow(user, container, keys);
 
         int rowId = keyFromMap(keys);
-        Cohort cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
+        CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
 
         if (cohort == null)
             throw new IllegalArgumentException("No cohort found for rowId: " + rowId);
@@ -58,7 +59,7 @@ public class CohortUpdateService implements QueryUpdateService
     @SuppressWarnings("unchecked")
     public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Study study = StudyManager.getInstance().getStudy(container);
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
         TableInfo queryTableInfo = querySchema.getTable("Cohort");
         Map<String,Object> result = Table.selectObject(queryTableInfo, keyFromMap(keys), Map.class);
@@ -68,7 +69,7 @@ public class CohortUpdateService implements QueryUpdateService
     public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         Study study = StudyManager.getInstance().getStudy(container);
-        Cohort cohort = new Cohort();
+        CohortImpl cohort = new CohortImpl();
         cohort.setLabel(row.get("label").toString());
         StudyManager.getInstance().createCohort(study, user, cohort);
 
@@ -90,7 +91,7 @@ public class CohortUpdateService implements QueryUpdateService
     public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         int rowId = oldKeys != null ? keyFromMap(oldKeys) : keyFromMap(row);
-        Cohort cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
+        CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
         if (cohort == null)
             throw new IllegalArgumentException("No cohort found for rowId: " + rowId);
 

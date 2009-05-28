@@ -2,14 +2,15 @@ package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.specimentype.TypeReportFactory;
-import org.labkey.study.model.Site;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.Site;
 
 import java.util.List;
 import java.util.Collections;
@@ -70,16 +71,16 @@ public class RequestSiteReportFactory extends TypeReportFactory
     {
         try
         {
-            Site[] sites;
+            SiteImpl[] sites;
             if (getSiteId() != null)
-                sites = new Site[] { StudyManager.getInstance().getSite(getContainer(), getSiteId()) };
+                sites = new SiteImpl[] { StudyManager.getInstance().getSite(getContainer(), getSiteId()) };
             else
                 sites = SampleManager.getInstance().getSitesWithRequests(getContainer());
             if (sites == null)
                 return Collections.emptyList();
             List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-            Visit[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
-            for (Site site : sites)
+            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+            for (SiteImpl site : sites)
             {
                 SimpleFilter filter = new SimpleFilter();
                 filter.addWhereClause("globaluniqueid IN\n" +
@@ -113,7 +114,7 @@ public class RequestSiteReportFactory extends TypeReportFactory
             StringBuilder builder = new StringBuilder();
             builder.append("<select name=\"siteId\">\n" +
                     "<option value=\"\">All Requesting Locations</option>\n");
-            for (Site site : SampleManager.getInstance().getSitesWithRequests(getContainer()))
+            for (SiteImpl site : SampleManager.getInstance().getSitesWithRequests(getContainer()))
             {
                 builder.append("<option value=\"").append(site.getRowId()).append("\"");
                 if (_siteId != null && site.getRowId() == _siteId)

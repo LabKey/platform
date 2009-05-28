@@ -19,8 +19,10 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -40,9 +42,9 @@
 
     String cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer()).getLocalURIString();
 
-    DataSetDefinition[] datasets = study.getDataSets();
+    DataSet[] datasets = study.getDataSets();
 
-    for (DataSetDefinition def : datasets)
+    for (DataSet def : datasets)
     {
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDataSetId());

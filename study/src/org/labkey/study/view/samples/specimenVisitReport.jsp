@@ -17,10 +17,10 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.Visit" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReport" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
-<%@ page import="org.labkey.study.model.Cohort" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.util.*" %>
@@ -32,7 +32,7 @@
 
     for (SpecimenVisitReport report : bean.getReports())
     {
-        Visit[] visits = report.getVisits();
+        VisitImpl[] visits = report.getVisits();
         int colCount = visits.length + report.getLabelDepth();
 %>
 <table class="labkey-data-region labkey-show-borders"><colgroup>
@@ -56,7 +56,7 @@
         <th class="labkey-data-region-title" colspan="<%= report.getLabelDepth() %>">&nbsp;</th>
         <%
         }
-        for (Visit visit : visits)
+        for (VisitImpl visit : visits)
         {
             String label = visit.getDisplayString();
             %><th class="labkey-col-header" align="center"><%= h(label) %></th><%
@@ -104,7 +104,7 @@
                     }
 
                     previousTitleHierarchy = currentTitleHierarchy;
-                    for (Visit visit : visits)
+                    for (VisitImpl visit : visits)
                     {
                         %><td align="center"><%
                             %><%= row.getCellHtml(visit) %><%

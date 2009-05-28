@@ -23,7 +23,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
@@ -47,7 +47,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
     public List<String> importData(GWTDomain domain, Map<String, String> columnMap) throws ImportException
     {
         Container container = getContainer();
-        Study study = StudyManager.getInstance().getStudy(container);
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
 
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, domain.getName());
 

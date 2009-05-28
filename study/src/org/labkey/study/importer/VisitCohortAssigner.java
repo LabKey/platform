@@ -18,10 +18,11 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Study;
+import org.labkey.api.study.Study;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.StudyDocument;
 
@@ -38,7 +39,7 @@ public class VisitCohortAssigner
 {
     // Parses the whole visit map again to retrieve the cohort assigments; should cache info from the first parsing
     // somewhere in the ImportContext
-    void process(Study study, ImportContext ctx, File root) throws SQLException
+    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException
     {
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
 
@@ -59,14 +60,14 @@ public class VisitCohortAssigner
 
                 for (VisitMapRecord record : records)
                 {
-                    Visit visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
+                    VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
 
                     String oldCohortLabel = null != visit.getCohort() ? visit.getCohort().getLabel() : null;
 
                     if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, record.getCohort()))
                     {
-                        Cohort cohort = studyManager.getCohortByLabel(c, user, record.getCohort());
-                        Visit mutable = visit.createMutable();
+                        CohortImpl cohort = studyManager.getCohortByLabel(c, user, record.getCohort());
+                        VisitImpl mutable = visit.createMutable();
                         mutable.setCohortId(cohort.getRowId());
                         StudyManager.getInstance().updateVisit(ctx.getUser(), mutable);
                     }

@@ -2,13 +2,14 @@ package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.specimentype.TypeReportFactory;
-import org.labkey.study.model.Site;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.study.Site;
 
 import java.util.List;
 import java.util.Collections;
@@ -70,7 +71,7 @@ public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
     {
         try
         {
-            Set<Site> sites;
+            Set<SiteImpl> sites;
             if (getEnrollmentSiteId() != null)
                 sites = Collections.singleton(StudyManager.getInstance().getSite(getContainer(), getEnrollmentSiteId()));
             else
@@ -78,8 +79,8 @@ public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
             if (sites == null)
                 return Collections.emptyList();
             List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-            Visit[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
-            for (Site site : sites)
+            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+            for (SiteImpl site : sites)
             {
                 SimpleFilter filter = new SimpleFilter();
                 String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.Specimen AS Specimen,\n" +
@@ -130,7 +131,7 @@ public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
     public List<String> getAdditionalFormInputHtml()
     {
         List<String> inputs = new ArrayList<String>(super.getAdditionalFormInputHtml());
-        Set<Site> sites = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
+        Set<SiteImpl> sites = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", sites, _enrollmentSiteId));
         return inputs;
     }

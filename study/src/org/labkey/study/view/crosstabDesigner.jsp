@@ -23,8 +23,6 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.Visit" %>
 <%@ page import="org.labkey.study.query.DataSetQueryView" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
 <%@ page import="java.util.Arrays" %>

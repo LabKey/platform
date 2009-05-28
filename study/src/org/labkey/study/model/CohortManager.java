@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -32,7 +33,7 @@ public class CohortManager
     {
     }
 
-    public static void updateAutomaticCohortAssignment(Study study, User user, Integer participantCohortDataSetId, String participantCohortProperty) throws SQLException
+    public static void updateAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDataSetId, String participantCohortProperty) throws SQLException
     {
         study = study.createMutable();
 
@@ -43,7 +44,7 @@ public class CohortManager
         StudyManager.getInstance().updateParticipantCohorts(user, study);
     }
 
-    public static void updateManualCohortAssignment(Study study, User user, Map<String, Integer> p2c) throws SQLException
+    public static void updateManualCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c) throws SQLException
     {
         if (!study.isManualCohortAssignment())
         {
@@ -72,12 +73,12 @@ public class CohortManager
 
 
     // TODO: Check for null label here?
-    public static Cohort createCohort(Study study, User user, String newLabel) throws ServletException, SQLException
+    public static CohortImpl createCohort(Study study, User user, String newLabel) throws ServletException, SQLException
     {
-        Cohort cohort = new Cohort();
+        CohortImpl cohort = new CohortImpl();
 
         // Check if there's a conflict
-        Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
+        org.labkey.api.study.Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
 
         if (existingCohort != null)
             throw new ServletException("A cohort with the label '" + newLabel + "' already exists");

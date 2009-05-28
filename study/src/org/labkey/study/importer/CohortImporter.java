@@ -16,9 +16,9 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
-import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class CohortImporter
 {
-    void process(Study study, ImportContext ctx, File root) throws IOException, SQLException, XmlException, ServletException
+    void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, XmlException, ServletException
     {
         StudyDocument.Study.Cohorts cohortsXml = ctx.getStudyXml().getCohorts();
 
@@ -62,7 +62,7 @@ public class CohortImporter
                 for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)
                 {
                     String label = cohortXml.getLabel();
-                    Cohort cohort = CohortManager.createCohort(study, ctx.getUser(), label);
+                    CohortImpl cohort = CohortManager.createCohort(study, ctx.getUser(), label);
 
                     for (String ptid : cohortXml.getIdArray())
                         p2c.put(ptid, cohort.getRowId());

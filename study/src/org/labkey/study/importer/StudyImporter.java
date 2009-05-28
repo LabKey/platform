@@ -23,7 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
@@ -59,14 +59,14 @@ public class StudyImporter
         _errors = errors;
     }
 
-    private Study getStudy()
+    private StudyImpl getStudy()
     {
         return getStudy(false);
     }
 
-    private Study getStudy(boolean allowNullStudy)
+    private StudyImpl getStudy(boolean allowNullStudy)
     {
-        Study study = StudyManager.getInstance().getStudy(_c);
+        StudyImpl study = StudyManager.getInstance().getStudy(_c);
         if (!allowNullStudy && study == null)
         {
             throw new IllegalStateException("Study does not exist.");

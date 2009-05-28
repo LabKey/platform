@@ -28,12 +28,12 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.view.CrosstabView;
 
 import javax.servlet.http.HttpServletResponse;
@@ -70,7 +70,7 @@ public class StudyCrosstabReport extends AbstractReport
     {
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
         final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-        final String visitRowId = descriptor.getProperty(Visit.VISITKEY);
+        final String visitRowId = descriptor.getProperty(VisitImpl.VISITKEY);
 
         ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor, queryName, viewName);
 
@@ -79,7 +79,7 @@ public class StudyCrosstabReport extends AbstractReport
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
             if (study != null)
             {
-                Visit visit = StudyManager.getInstance().getVisitForRowId(study, NumberUtils.toInt(visitRowId));
+                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, NumberUtils.toInt(visitRowId));
                 if (visit != null)
                 {
                     SimpleFilter filter = new SimpleFilter();

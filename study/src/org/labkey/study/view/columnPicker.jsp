@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.Visit"%>
+<%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="org.labkey.study.model.VisitDataSet"%>
 <%@ page import="java.util.HashMap"%>
 <%@ page import="java.util.List"%>
@@ -53,8 +53,8 @@ for (DataSetDefinition ds : datasets)
 <%
 if (selectedDataset != null)
 {
-    HashMap<Integer, Visit> visits = new HashMap<Integer, Visit>();
-    for (Visit visit : bean.study.getVisits())
+    HashMap<Integer, VisitImpl> visits = new HashMap<Integer, VisitImpl>();
+    for (VisitImpl visit : bean.study.getVisits())
     {
         if (visit.getSequenceNumMin() == visit.getSequenceNumMax())
             visits.put(visit.getRowId(), visit);
@@ -65,12 +65,12 @@ if (selectedDataset != null)
     if (null == pds || pds.length == 0)
         error = "Dataset is not defined yet.";
 
-    %><tr><td>Visit</td><td><select name="<%=Visit.SEQUENCEKEY%>"><%
+    %><tr><td>Visit</td><td><select name="<%=VisitImpl.SEQUENCEKEY%>"><%
     if (datasetVisits.size() == 0 && error == null)
         error = "No visits defined for this dataset.";
     for (VisitDataSet vds : datasetVisits)
     {
-        Visit visit = visits.get(vds.getVisitRowId());
+        VisitImpl visit = visits.get(vds.getVisitRowId());
 //        if (!visit.isRequired())            continue;
         if (null == visit)
             {%><!-- <%=vds.getVisitRowId()%> not found --><% continue;}

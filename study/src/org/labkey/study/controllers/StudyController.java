@@ -59,7 +59,11 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -171,7 +175,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
-        private DataSetDefinition _def;
+        private DataSet _def;
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors) throws Exception
         {
             return new StudyJspView<ImportTypeForm>(getStudy(false), "importDataType.jsp", form, errors);
@@ -184,7 +188,7 @@ public class StudyController extends BaseStudyController
                 errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
             if (null != form.getDataSetId())
             {
-                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
+                DataSet dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
                 if (null != dsd)
                     errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDataSetId());
             }
@@ -201,7 +205,7 @@ public class StudyController extends BaseStudyController
                 else
                 {
                     // Check if a query or table exists with the same name
-                    Study study = StudyManager.getInstance().getStudy(getContainer());
+                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
                     StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
                     if (studySchema.getTableNames().contains(form.getTypeName()) ||
                         QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
@@ -262,10 +266,10 @@ public class StudyController extends BaseStudyController
     @SuppressWarnings("unchecked")
     public class EditTypeAction extends SimpleViewAction<DataSetForm>
     {
-        private DataSetDefinition _def;
+        private DataSet _def;
         public ModelAndView getView(DataSetForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            StudyImpl study = getStudy();
             DataSetDefinition def = study.getDataSet(form.getDatasetId());
             _def = def;
             if (null == def)
@@ -353,7 +357,7 @@ public class StudyController extends BaseStudyController
             _qcState = qcState;
         }
 
-        public Cohort getCohort()
+        public CohortImpl getCohort()
         {
             if (_cohortId != null)
                 return StudyManager.getInstance().getCohortForRowId(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser(), _cohortId.intValue());
@@ -375,7 +379,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_READ)
     public class OverviewAction extends SimpleViewAction<DatasetFilterForm>
     {
-        private Study _study;
+        private StudyImpl _study;
         public ModelAndView getView(DatasetFilterForm form, BindException errors) throws Exception
         {
             _study = getStudy();
@@ -435,7 +439,7 @@ public class StudyController extends BaseStudyController
             }
 
             int datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), -1);
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+            DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
 
             if (def != null)
             {
@@ -516,13 +520,13 @@ public class StudyController extends BaseStudyController
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
 
-            Study study = getStudy();
+            StudyImpl study = getStudy();
             _cohortId = form.getCohortId();
             _encodedQcState = form.getQCState();
             QCStateSet qcStateSet = null;
             if (StudyManager.getInstance().showQCStates(getContainer()))
                 qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
-            Cohort cohort = form.getCohort();
+            CohortImpl cohort = form.getCohort();
             ViewContext context = getViewContext();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
@@ -544,8 +548,8 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 return new TypeNotFoundAction().getView(form, errors);
 
-            _visitId = NumberUtils.toInt((String)context.get(Visit.VISITKEY), 0);
-            Visit visit = null;
+            _visitId = NumberUtils.toInt((String)context.get(VisitImpl.VISITKEY), 0);
+            VisitImpl visit = null;
             if (_visitId != 0)
             {
                 visit = StudyManager.getInstance().getVisitForRowId(getStudy(), _visitId);
@@ -557,7 +561,7 @@ public class StudyController extends BaseStudyController
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
-            DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort, qcStateSet);
+            DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, visit, cohort, qcStateSet);
             queryView.setForExport(export != null);
             queryView.disableContainerFilterSelection();
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()) &&
@@ -642,7 +646,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void populateButtonBar(List<ActionButton> buttonBar, DataSetDefinition def, DataSetQueryView queryView, Cohort cohort, QCStateSet currentStates)
+        private void populateButtonBar(List<ActionButton> buttonBar, DataSetDefinition def, DataSetQueryView queryView, CohortImpl cohort, QCStateSet currentStates)
         {
             createViewButton(buttonBar, queryView);
             createCohortButton(buttonBar, cohort);
@@ -751,11 +755,11 @@ public class StudyController extends BaseStudyController
             buttonBar.add(button);
         }
 
-        private void createCohortButton(List<ActionButton> buttonBar, Cohort currentCohort)
+        private void createCohortButton(List<ActionButton> buttonBar, CohortImpl currentCohort)
         {
             if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
             {
-                Cohort[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
+                CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
                 if (cohorts.length > 0)
                 {
                     MenuButton button = new MenuButton("Cohorts");
@@ -765,7 +769,7 @@ public class StudyController extends BaseStudyController
                         item.setSelected(true);
                     button.addMenuItem(item);
 
-                    for (Cohort cohort : cohorts)
+                    for (CohortImpl cohort : cohorts)
                     {
                         item = new NavTree(cohort.getLabel(),
                                 getViewContext().cloneActionURL().replaceParameter(SharedFormParameters.cohortId, String.valueOf(cohort.getRowId())).toString());
@@ -860,7 +864,7 @@ public class StudyController extends BaseStudyController
             String viewName = (String) getViewContext().get("Dataset.viewName");
 
             // display the next and previous buttons only if we have a cached participant index
-            Cohort cohort = null;
+            CohortImpl cohort = null;
             if (form.getCohortId() != null)
             {
                 if (!StudyManager.getInstance().showCohorts(getContainer(), getUser()))
@@ -1011,11 +1015,11 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static void createStudy(Study study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
+    public static void createStudy(StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
     {
         if (null == study)
         {
-            study = new Study(c, form.getLabel());
+            study = new StudyImpl(c, form.getLabel());
             study.setDateBased(form.isDateBased());
             study.setStartDate(form.getStartDate());
             study.setSecurityType(form.getSecurityType());
@@ -1120,7 +1124,7 @@ public class StudyController extends BaseStudyController
         {
             if (getStudy(true) != null)
             {
-                Study updated = getStudy().createMutable();
+                StudyImpl updated = getStudy().createMutable();
                 updated.setLabel(form.getLabel());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
             }
@@ -1182,7 +1186,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
-            Study study = getStudy().createMutable();
+            StudyImpl study = getStudy().createMutable();
             study.setStartDate(form.getStartDate());
             StudyManager.getInstance().updateStudy(getUser(), study);
 
@@ -1308,7 +1312,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<Study>(getStudy(), "manageSites.jsp", getStudy(), errors);
+            ModelAndView view = new StudyJspView<StudyImpl>(getStudy(), "manageSites.jsp", getStudy(), errors);
             view.addObject("errors", errors);
             return view;
         }
@@ -1324,7 +1328,7 @@ public class StudyController extends BaseStudyController
                     labelLookup.put(ids[i], labels[i]);
 
                 boolean emptyLabel = false;
-                for (Site site : getStudy().getSites())
+                for (SiteImpl site : getStudy().getSites())
                 {
                     String label = labelLookup.get(site.getRowId());
                     if (label == null)
@@ -1352,7 +1356,7 @@ public class StudyController extends BaseStudyController
                 {
                     try
                     {
-                        Site site = new Site();
+                        SiteImpl site = new SiteImpl();
                         site.setLabel(form.getNewLabel());
                         site.setLdmsLabCode(Integer.parseInt(form.getNewId()));
                         site.setContainer(getContainer());
@@ -1382,14 +1386,14 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class VisitSummaryAction extends FormViewAction<VisitForm>
     {
-        private Visit _v;
+        private VisitImpl _v;
 
         public void validateCommand(VisitForm target, Errors errors)
         {
 
             try
             {
-                Study study = getStudy();
+                StudyImpl study = getStudy();
                 target.validate(errors, study);
                 if(errors.getErrorCount() > 0)
                     return;
@@ -1431,17 +1435,17 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
         {
-            Visit postedVisit = form.getBean();
+            VisitImpl postedVisit = form.getBean();
             if (!getContainer().getId().equals(postedVisit.getContainer().getId()))
                     HttpView.throwUnauthorized();
             // UNDONE: how do I get struts to handle this checkbox?
             postedVisit.setShowByDefault(null != StringUtils.trimToNull((String)getViewContext().get("showByDefault")));
 
             // UNDONE: reshow is broken for this form, but we have to validate
-            TreeMap<Double,Visit> visits = StudyManager.getInstance().getVisitManager(getStudy()).getVisitSequenceMap();
+            TreeMap<Double, VisitImpl> visits = StudyManager.getInstance().getVisitManager(getStudy()).getVisitSequenceMap();
             boolean validRange = true;
             // make sure there is no overlapping visit
-            for (Visit v : visits.values())
+            for (VisitImpl v : visits.values())
             {
                 if (v.getRowId() == postedVisit.getRowId())
                     continue;
@@ -1496,14 +1500,14 @@ public class StudyController extends BaseStudyController
 
     public static class VisitSummaryBean
     {
-        private Visit visit;
+        private VisitImpl visit;
 
-        public Visit getVisit()
+        public VisitImpl getVisit()
         {
             return visit;
         }
 
-        public void setVisit(Visit visit)
+        public void setVisit(VisitImpl visit)
         {
             this.visit = visit;
         }
@@ -1520,7 +1524,7 @@ public class StudyController extends BaseStudyController
         {
             int visitId = form.getId();
             Study study = getStudy();
-            Visit visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
+            VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (visit != null)
             {
                 StudyManager.getInstance().deleteVisit(getStudy(), visit);
@@ -1539,16 +1543,16 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ConfirmDeleteVisitAction extends SimpleViewAction<IdForm>
     {
-        private Visit _visit;
+        private VisitImpl _visit;
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             int visitId = form.getId();
-            Study study = getStudy();
+            StudyImpl study = getStudy();
             _visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (null == _visit)
                 return HttpView.throwNotFound();
 
-            ModelAndView view = new StudyJspView<Visit>(study, "confirmDeleteVisit.jsp", _visit, errors);
+            ModelAndView view = new StudyJspView<VisitImpl>(study, "confirmDeleteVisit.jsp", _visit, errors);
             return view;
         }
 
@@ -1566,7 +1570,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                Study study = getStudy();
+                StudyImpl study = getStudy();
                 target.validate(errors, study);
                 if(errors.getErrorCount() > 0)
                     return;
@@ -1599,7 +1603,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(VisitForm form, BindException errors) throws Exception
         {
-            Visit visit = form.getBean();
+            VisitImpl visit = form.getBean();
             if (visit != null)
                 StudyManager.getInstance().createVisit(getStudy(), getUser(), visit);
             return true;
@@ -1948,7 +1952,20 @@ public class StudyController extends BaseStudyController
             {
                 return new HtmlView("The assay run that produced the data has been deleted.");
             }
-            return HttpView.redirect(url);
+
+            // If the user has permission to the source assay, go directly to the details page...
+            Container container = LsidManager.get().getContainer(form.getSourceLsid());
+            if (container != null && container.hasPermission(getUser(), ReadPermission.class))
+            {
+                return HttpView.redirect(url);
+            }
+
+            // otherwise, the let the assay details action check for permissions to the dataset
+            ActionURL actionURL = new ActionURL(url);
+            actionURL.addParameter("datasetId", getViewContext().getRequest().getParameter("datasetId"));
+            actionURL.addParameter("studyContainerId", getViewContext().getRequest().getParameter("studyContainerId"));
+
+            return HttpView.redirect(actionURL);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1962,7 +1979,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            final Study study = getStudy();
+            final StudyImpl study = getStudy();
             final ViewContext context = getViewContext();
 
             VBox view = new VBox();
@@ -1996,7 +2013,7 @@ public class StudyController extends BaseStudyController
                 deleteRows.setActionType(ActionButton.Action.POST);
                 deleteRows.setDisplayPermission(ACL.PERM_DELETE);
 
-                PublishedRecordQueryView qv = new PublishedRecordQueryView(datasetId, querySchema, qs, sourceLsid,
+                PublishedRecordQueryView qv = new PublishedRecordQueryView(def, querySchema, qs, sourceLsid,
                         NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount));
                 qv.setButtons(Collections.singletonList(deleteRows));
                 view.addView(qv);
@@ -2151,7 +2168,7 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors) throws Exception
         {
             int datasetId = form.getDatasetId();
-            DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
             if (null == dataset)
                 HttpView.throwNotFound();
 
@@ -2236,7 +2253,7 @@ public class StudyController extends BaseStudyController
 
     public static class OverviewBean
     {
-        public Study study;
+        public StudyImpl study;
         public Map<VisitMapKey,Integer> visitMapSummary;
         public boolean showAll;
         public boolean canManage;
@@ -2250,7 +2267,7 @@ public class StudyController extends BaseStudyController
      * the cached list of participants.
      */
     private void setColumnURL(final ActionURL url, final QueryView queryView,
-                              final UserSchema querySchema, final DataSetDefinition def)
+                              final UserSchema querySchema, final DataSet def)
     {
         List<DisplayColumn> columns = queryView.getDisplayColumns();
         for (DisplayColumn col : columns)
@@ -2345,7 +2362,7 @@ public class StudyController extends BaseStudyController
         return map;
     }
 
-    public static Map<String, Integer> getSortedColumnList(ViewContext context, DataSetDefinition dsd)
+    public static Map<String, Integer> getSortedColumnList(ViewContext context, DataSet dsd)
     {
         Map<String, Map<String, Integer>> map = getDatasetSortColumnMap(context);
         Map<String, Integer> sortMap = map.get(dsd.getLabel());
@@ -2381,7 +2398,7 @@ public class StudyController extends BaseStudyController
         return sortMap;
     }
 
-    private static String getParticipantListCacheKey(int dataset, String viewName, Cohort cohort, String encodedQCState)
+    private static String getParticipantListCacheKey(int dataset, String viewName, CohortImpl cohort, String encodedQCState)
     {
         String key = Integer.toString(dataset);
         // if there is also a view associated with the dataset, incorporate it into the key as well
@@ -2394,7 +2411,7 @@ public class StudyController extends BaseStudyController
         return key;
     }
 
-    public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, Cohort cohort, String encodedQCState)
+     public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, CohortImpl cohort, String encodedQCState)
     {
 
         Map<String, List<String>> map = getParticipantMapFromCache(context);
@@ -2434,7 +2451,7 @@ public class StudyController extends BaseStudyController
         return expandedMap;
     }
 
-    public static List<String> getParticipantListFromCache(ViewContext context, int dataset, String viewName, Cohort cohort, String encodedQCState)
+    public static List<String> getParticipantListFromCache(ViewContext context, int dataset, String viewName, CohortImpl cohort, String encodedQCState)
     {
         Map<String, List<String>> map = getParticipantMapFromCache(context);
         String key = getParticipantListCacheKey(dataset, viewName, cohort, encodedQCState);
@@ -2448,11 +2465,11 @@ public class StudyController extends BaseStudyController
         return plist;
     }
 
-    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, Cohort cohort, String encodedQCState)
+    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, CohortImpl cohort, String encodedQCState)
     {
         try {
             final StudyManager studyMgr = StudyManager.getInstance();
-            final Study study = studyMgr.getStudy(context.getContainer());
+            final StudyImpl study = studyMgr.getStudy(context.getContainer());
             QCStateSet qcStateSet = null;
             if (StudyManager.getInstance().showQCStates(context.getContainer()))
             {
@@ -2466,8 +2483,8 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 return Collections.emptyList();
 
-            int visitRowId = null == context.get(Visit.VISITKEY) ? 0 : Integer.parseInt((String) context.get(Visit.VISITKEY));
-            Visit visit = null;
+            int visitRowId = null == context.get(VisitImpl.VISITKEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISITKEY));
+            VisitImpl visit = null;
             if (visitRowId != 0)
             {
                 visit = studyMgr.getVisitForRowId(study, visitRowId);
@@ -2479,7 +2496,7 @@ public class StudyController extends BaseStudyController
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             qs.setViewName(viewName);
-            DataSetQueryView queryView = new DataSetQueryView(dataset, querySchema, qs, visit, cohort, qcStateSet);
+            DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, visit, cohort, qcStateSet);
 
             return generateParticipantList(queryView);
         }
@@ -2530,7 +2547,7 @@ public class StudyController extends BaseStudyController
         private boolean _showByDefault;
         private Integer _cohortId;
         private String _label;
-        private Visit _visit;
+        private VisitImpl _visit;
         private int _visitDateDatasetId;
 
         public VisitForm()
@@ -2545,7 +2562,7 @@ public class StudyController extends BaseStudyController
             if (null != StringUtils.trimToNull(request.getParameter(".oldValues")))
                 try
                 {
-                    _visit = (Visit) PageFlowUtil.decodeObject(request.getParameter(".oldValues"));
+                    _visit = (VisitImpl) PageFlowUtil.decodeObject(request.getParameter(".oldValues"));
                 }
                 catch (IOException x)
                 {
@@ -2572,7 +2589,7 @@ public class StudyController extends BaseStudyController
             if(null == getSequenceNumMax() && null != getSequenceNumMin())
                 setSequenceNumMax(getSequenceNumMin());
 
-            Visit visit = getBean();
+            VisitImpl visit = getBean();
             if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
             {
                 double min = visit.getSequenceNumMax();
@@ -2586,10 +2603,10 @@ public class StudyController extends BaseStudyController
                 errors.reject(null, "Sequence numbers must be greater than or equal to zero.");
         }
 
-        public Visit getBean()
+        public VisitImpl getBean()
         {
             if (null == _visit)
-                _visit = new Visit();
+                _visit = new VisitImpl();
             _visit.setContainer(getContainer());
             if (getTypeCode() != null)
                 _visit.setTypeCode(getTypeCode());
@@ -2611,7 +2628,7 @@ public class StudyController extends BaseStudyController
             return _visit;
         }
 
-        public void setBean(Visit bean)
+        public void setBean(VisitImpl bean)
         {
             if (0 != bean.getSequenceNumMax())
                 setSequenceNumMax(bean.getSequenceNumMax());
@@ -2722,11 +2739,11 @@ public class StudyController extends BaseStudyController
     
     public static class ManageQCStatesBean
     {
-        private Study _study;
+        private StudyImpl _study;
         private QCState[] _states;
         private String _returnUrl;
 
-        public ManageQCStatesBean(Study study, String returnUrl)
+        public ManageQCStatesBean(StudyImpl study, String returnUrl)
         {
             _study = study;
             _returnUrl = returnUrl;
@@ -2739,7 +2756,7 @@ public class StudyController extends BaseStudyController
             return _states;
         }
 
-        public Study getStudy()
+        public StudyImpl getStudy()
         {
             return _study;
         }
@@ -2992,7 +3009,7 @@ public class StudyController extends BaseStudyController
     }
 
     // TODO: Move to StudyManager?
-    public static void updateQcState(Study study, User user, ManageQCStatesForm form) throws SQLException
+    public static void updateQcState(StudyImpl study, User user, ManageQCStatesForm form) throws SQLException
     {
         if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
             !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
@@ -3156,7 +3173,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(UpdateQCStateForm updateQCForm, boolean reshow, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            StudyImpl study = getStudy();
             _datasetId = updateQCForm.getDatasetId();
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
             if (def == null)
@@ -3174,7 +3191,7 @@ public class StudyController extends BaseStudyController
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             final Set<String> finalLsids = lsids;
-            DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, null, null, null)
+            DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, null, null, null)
             {
                 public DataView createDataView()
                 {
@@ -3416,8 +3433,8 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_READ)
     public class ViewPreferencesAction extends SimpleViewAction
     {
-        Study study;
-        DataSetDefinition def;
+        StudyImpl study;
+        DataSet def;
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
@@ -3748,7 +3765,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(ExportForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
+            StudyImpl study = getStudy();
             StudyWriter writer = new StudyWriter(form.getTypes());
 
             switch(form.getLocation())
@@ -3868,7 +3885,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new StudyJspView<Study>(getStudy(), "typeNotFound.jsp", null, errors);
+            return new StudyJspView<StudyImpl>(getStudy(), "typeNotFound.jsp", null, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3932,7 +3949,7 @@ public class StudyController extends BaseStudyController
                 for (int i = 0; i < orderedIds.length; i++)
                 {
                     int id = Integer.parseInt(orderedIds[i]);
-                    Visit visit = StudyManager.getInstance().getVisitForRowId(getStudy(), id);
+                    VisitImpl visit = StudyManager.getInstance().getVisitForRowId(getStudy(), id);
                     if (visit.getDisplayOrder() != i)
                     {
                         visit = visit.createMutable();
@@ -3979,7 +3996,7 @@ public class StudyController extends BaseStudyController
                 throw new IllegalStateException("Arrays must be the same length.");
             for (int i = 0; i < allIds.length; i++)
             {
-                Visit def = StudyManager.getInstance().getVisitForRowId(getStudy(), allIds[i]);
+                VisitImpl def = StudyManager.getInstance().getVisitForRowId(getStudy(), allIds[i]);
                 boolean show = visible.contains(allIds[i]);
                 String label = form.getLabel()[i];
                 String typeStr = form.getExtraData()[i];
@@ -4012,8 +4029,8 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
             Map<Integer, DatasetVisibilityData> bean = new HashMap<Integer,DatasetVisibilityData>();
-            DataSetDefinition[] defs = getStudy().getDataSets();
-            for (DataSetDefinition def : defs)
+            DataSet[] defs = getStudy().getDataSets();
+            for (DataSet def : defs)
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
@@ -4536,7 +4553,7 @@ public class StudyController extends BaseStudyController
             SecurityManager.setInheritPermissions(studyFolder);
             studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME));
 
-            Study study = new Study(studyFolder, folderName + " Study");
+            StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
             study.setDateBased(true);
             study.setStartDate(startDate);
             study = StudyManager.getInstance().createStudy(getUser(), study);
@@ -4544,7 +4561,7 @@ public class StudyController extends BaseStudyController
             if (null != visits)
                 for (JSONObject obj : visits.toJSONObjectArray())
                 {
-                    Visit visit = new Visit(studyFolder, obj.getDouble("minDays"), obj.getDouble("maxDays"), obj.getString("label"), Visit.Type.REQUIRED_BY_TERMINATION);
+                    VisitImpl visit = new VisitImpl(studyFolder, obj.getDouble("minDays"), obj.getDouble("maxDays"), obj.getString("label"), Visit.Type.REQUIRED_BY_TERMINATION);
                     StudyManager.getInstance().createVisit(study, getUser(), visit);
                 }
 
@@ -4686,7 +4703,7 @@ public class StudyController extends BaseStudyController
                 }
 
                 // check for a dataset with the same name unless it's one that we created
-                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), name);
+                DataSet dataset = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), name);
                 if (dataset != null)
                 {
                     if (dataset.getDataSetId() != form.getSnapshotDatasetId())
@@ -4712,8 +4729,8 @@ public class StudyController extends BaseStudyController
             }
             else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
-                Study study = getStudy();
-                DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+                StudyImpl study = getStudy();
+                DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
 
                 ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
                         replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay())).
@@ -4760,8 +4777,8 @@ public class StudyController extends BaseStudyController
 
         private void createDataset(StudySnapshotForm form, BindException errors) throws Exception
         {
-            Study study = StudyManager.getInstance().getStudy(getContainer());
-            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
 
             if (dsDef == null)
             {
@@ -4907,8 +4924,8 @@ public class StudyController extends BaseStudyController
 
                 if (showDataset)
                 {
-                    Study study = getStudy();
-                    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+                    StudyImpl study = getStudy();
+                    DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
 
                     if (dsDef == null)
                         return HttpView.throwNotFound("Unable to edit the created DataSet Definition");
@@ -5105,7 +5122,7 @@ public class StudyController extends BaseStudyController
 
     public static class RequirePipelineView extends StudyJspView<Boolean>
     {
-        public RequirePipelineView(Study study, boolean showGoBack, BindException errors)
+        public RequirePipelineView(StudyImpl study, boolean showGoBack, BindException errors)
         {
             super(study, "requirePipeline.jsp", showGoBack, errors);
         }
@@ -5218,16 +5235,16 @@ public class StudyController extends BaseStudyController
     public static class ViewPrefsBean
     {
         private List<Pair<String, String>> _views;
-        private DataSetDefinition _def;
+        private DataSet _def;
 
-        public ViewPrefsBean(List<Pair<String, String>> views, DataSetDefinition def)
+        public ViewPrefsBean(List<Pair<String, String>> views, DataSet def)
         {
             _views = views;
             _def = def;
         }
 
         public List<Pair<String, String>> getViews(){return _views;}
-        public DataSetDefinition getDataSetDefinition(){return _def;}
+        public DataSet getDataSetDefinition(){return _def;}
     }
 
 
@@ -5454,7 +5471,7 @@ public class StudyController extends BaseStudyController
         {
             final int datasetId = Integer.parseInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));
             final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            DataSet def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
             return def.getTableInfo(context.getUser());
         }

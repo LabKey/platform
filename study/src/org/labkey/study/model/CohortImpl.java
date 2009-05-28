@@ -1,5 +1,7 @@
 package org.labkey.study.model;
 
+import org.labkey.api.study.Cohort;
+
 /**
  * Copyright (c) 2008 LabKey Corporation
  * <p/>
@@ -18,7 +20,7 @@ package org.labkey.study.model;
  * User: brittp
  * Created: Jan 15, 2008 4:27:38 PM
  */
-public class Cohort extends ExtensibleStudyEntity<Cohort>
+public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Cohort
 {
     private int _rowId = 0;
     private String _lsid;

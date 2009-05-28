@@ -42,6 +42,8 @@
 <%@ page import="java.util.*" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -69,9 +71,9 @@
     Study study = manager.getStudy(context.getContainer());
     AllParticipantData all = manager.getAllParticipantData(study, bean.getParticipantId(), bean.getQCStateSet());
 
-    Visit[] allVisits = manager.getVisits(study);
-    ArrayList<Visit> visits = new ArrayList<Visit>(all.getVisitSequenceMap().size());
-    for (Visit visit : allVisits)
+    VisitImpl[] allVisits = manager.getVisits(study);
+    ArrayList<VisitImpl> visits = new ArrayList<VisitImpl>(all.getVisitSequenceMap().size());
+    for (VisitImpl visit : allVisits)
     {
         if (all.getVisitSequenceMap().containsKey(visit.getRowId()))
             visits.add(visit);
@@ -128,7 +130,7 @@
     <tr class="labkey-alternate-row">
         <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=contextPath%>/_.gif"></td><%
 
-            for (Visit visit : visits)
+            for (VisitImpl visit : visits)
             {
                 int seqKeyCount = 0;
                 for (Double seqNum : (Collection<Double>)all.getVisitSequenceMap().get(visit.getRowId()))
@@ -145,7 +147,7 @@
     <tr class="labkey-alternate-row">
         <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=contextPath%>/_.gif"></td><%
 
-        for (Visit visit : visits)
+        for (VisitImpl visit : visits)
         {
             Collection<Double> sequences = ((Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()));
             for (Double seqNum : sequences)
@@ -239,7 +241,7 @@
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>"><td class="<%= className %>" align="left" nowrap>QC State</td>
                 <%
-                for (Visit visit : visits)
+                for (VisitImpl visit : visits)
                 {
                     for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
                     {
@@ -282,7 +284,7 @@
                     labelName = pd.getName();
                 %>
                 <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap><%=h(labelName)%></td><%
-                for (Visit visit : visits)
+                for (VisitImpl visit : visits)
                 {
                     for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
                     {
@@ -317,7 +319,7 @@
                 className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
                 %>
                 <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap>Details</td><%
-                for (Visit visit : visits)
+                for (VisitImpl visit : visits)
                 {
                     for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
                     {
@@ -355,7 +357,7 @@
     %>
 </table>
 <%!
-PropertyDescriptor[] sortProperties(PropertyDescriptor[] pds, DataSetDefinition dsd, ViewContext context)
+PropertyDescriptor[] sortProperties(PropertyDescriptor[] pds, DataSet dsd, ViewContext context)
 {
     final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
     if (sortMap != null && !sortMap.isEmpty())

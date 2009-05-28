@@ -27,7 +27,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.reports.ReportManager;
@@ -49,7 +49,7 @@ public class DataHeader extends HttpView
     private ActionURL _customizeURL;
     private DataSetDefinition _datasetDef;
     private boolean _gridView;
-    private Cohort _selectedCohort = null;
+    private CohortImpl _selectedCohort = null;
     private boolean _showCohortSelector;
 
     public DataHeader(ActionURL currentUrl, ActionURL customizeURL, DataSetDefinition dataset, boolean gridView)
@@ -70,12 +70,12 @@ public class DataHeader extends HttpView
         _showCohortSelector = showCohortSelector;
     }
 
-    public Cohort getSelectedCohort()
+    public org.labkey.api.study.Cohort getSelectedCohort()
     {
         return _selectedCohort;
     }
 
-    public void setSelectedCohort(Cohort selectedCohort)
+    public void setSelectedCohort(CohortImpl selectedCohort)
     {
         if (selectedCohort != null)
             StudyManager.getInstance().assertCohortsViewable(getViewContext().getContainer(), getViewContext().getUser());
@@ -139,10 +139,10 @@ public class DataHeader extends HttpView
 
         if (isShowCohortSelector())
         {
-            Cohort[] cohorts = StudyManager.getInstance().getCohorts(getViewContext().getContainer(), getViewContext().getUser());
+            CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getViewContext().getContainer(), getViewContext().getUser());
             out.print(" Cohort <select name=\"cohortId\" onchange=\"this.form.submit()\">");
             out.print("<option value=\"\">All</option>");
-            for (Cohort cohort : cohorts)
+            for (CohortImpl cohort : cohorts)
             {
                 boolean selected = _selectedCohort != null && _selectedCohort.getRowId() == cohort.getRowId();
                 out.printf("<option %s value=\"%s\">%s</option>",

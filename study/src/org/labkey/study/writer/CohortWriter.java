@@ -19,9 +19,9 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
@@ -35,7 +35,7 @@ import java.util.Collection;
  * Date: Apr 23, 2009
  * Time: 11:29:36 AM
  */
-public class CohortWriter implements Writer<Study>
+public class CohortWriter implements Writer<StudyImpl>
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
 
@@ -44,7 +44,7 @@ public class CohortWriter implements Writer<Study>
         return "Cohort settings";
     }
 
-    public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Cohorts cohortsXml = studyXml.addNewCohorts();
@@ -54,7 +54,7 @@ public class CohortWriter implements Writer<Study>
             cohortsXml.setType(CohortType.MANUAL);
             cohortsXml.setFile(COHORTS_FILENAME);
 
-            Cohort[] cohorts = study.getCohorts(ctx.getUser());
+            CohortImpl[] cohorts = study.getCohorts(ctx.getUser());
             MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<Integer, String>(cohorts.length);
 
             for (Participant participant : StudyManager.getInstance().getParticipants(study))
@@ -70,7 +70,7 @@ public class CohortWriter implements Writer<Study>
             CohortsDocument cohortFileXml = CohortsDocument.Factory.newInstance();
             CohortsDocument.Cohorts cohortAssignmentXml = cohortFileXml.addNewCohorts();
 
-            for (Cohort cohort : cohorts)
+            for (CohortImpl cohort : cohorts)
             {
                 CohortsDocument.Cohorts.Cohort cohortXml = cohortAssignmentXml.addNewCohort();
                 cohortXml.setLabel(cohort.getLabel());

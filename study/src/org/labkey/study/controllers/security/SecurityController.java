@@ -30,11 +30,12 @@ import org.labkey.api.security.roles.*;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -66,7 +67,7 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("studySecurity", HelpTopic.Area.STUDY));
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (null == study)
                 return HttpView.redirect(new ActionURL(StudyController.BeginAction.class, getContainer()));
 
@@ -169,7 +170,7 @@ public class SecurityController extends SpringActionController
             for (Group g : groups)
                 groupsInProject.add(g.getUserId());
 
-            for (DataSetDefinition dsDef : study.getDataSets())
+            for (DataSet dsDef : study.getDataSets())
             {
                 // Data that comes back is a list of permissions and groups separated by underscores.
                 // e.g. "NONE_1182" or "READ_-1"
@@ -217,7 +218,7 @@ public class SecurityController extends SpringActionController
             return groupToPermission;
         }
 
-        private SecurityPolicy policyFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject, DataSetDefinition dsDef)
+        private SecurityPolicy policyFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject, DataSet dsDef)
         {
             SecurityPolicy policy = new SecurityPolicy(dsDef);
 
@@ -265,7 +266,7 @@ public class SecurityController extends SpringActionController
 
             if (TAB_STUDY.equals(form.getTabId()))
             {
-                Study study = StudyManager.getInstance().getStudy(getContainer());
+                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
                 if (null == study)
                     return HttpView.redirect(new ActionURL(StudyController.BeginAction.class, getContainer()));
 
@@ -406,10 +407,10 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(StudySecurityForm form, BindException errors) throws Exception
         {
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null && form.getSecurityType() != study.getSecurityType())
             {
-                Study updated = study.createMutable();
+                StudyImpl updated = study.createMutable();
                 updated.setSecurityType(form.getSecurityType());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
             }
@@ -516,23 +517,23 @@ public class SecurityController extends SpringActionController
     {
         HttpView impl;
 
-        Overview(Study study)
+        Overview(StudyImpl study)
         {
             this(study, null);
         }
 
-        Overview(Study study, ActionURL redirect)
+        Overview(StudyImpl study, ActionURL redirect)
         {
-            JspView<Study> studySecurityView = new JspView<Study>("/org/labkey/study/security/studySecurity.jsp", study);
-            JspView<Study> studyView = new JspView<Study>("/org/labkey/study/security/study.jsp", study);
+            JspView<StudyImpl> studySecurityView = new JspView<StudyImpl>("/org/labkey/study/security/studySecurity.jsp", study);
+            JspView<StudyImpl> studyView = new JspView<StudyImpl>("/org/labkey/study/security/study.jsp", study);
             studyView.setTitle("Study Security");
             if (redirect != null)
                 studyView.addObject("redirect", redirect.getLocalURIString());
-            JspView<Study> dsView = new JspView<Study>("/org/labkey/study/security/datasets.jsp", study);
+            JspView<StudyImpl> dsView = new JspView<StudyImpl>("/org/labkey/study/security/datasets.jsp", study);
             dsView.setTitle("Per Dataset Permissions");
             if (redirect != null)
                 dsView.addObject("redirect", redirect.getLocalURIString());
-            JspView<Study> siteView = new JspView<Study>("/org/labkey/study/security/sites.jsp", study);
+            JspView<StudyImpl> siteView = new JspView<StudyImpl>("/org/labkey/study/security/sites.jsp", study);
             siteView.setTitle("Restricted Dataset Permissions (per Site)");
 
             VBox v = new VBox();

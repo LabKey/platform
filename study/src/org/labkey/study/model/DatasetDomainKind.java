@@ -23,6 +23,8 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
@@ -65,7 +67,7 @@ public class DatasetDomainKind extends DomainKind
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
         if (null == def)
             return null;
         SQLFragment sql = new SQLFragment();
@@ -94,7 +96,7 @@ public class DatasetDomainKind extends DomainKind
 
     public ActionURL urlShowData(Domain domain)
     {
-        DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, domain.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
@@ -103,14 +105,14 @@ public class DatasetDomainKind extends DomainKind
 
     public ActionURL urlEditDefinition(Domain domain)
     {
-        DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.EditTypeAction.class, domain.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
     }
 
 
-    DataSetDefinition getDatasetDefinition(Container c, String domainURI)
+    DataSet getDatasetDefinition(Container c, String domainURI)
     {
         ResultSet rs = null;
         try
@@ -154,7 +156,7 @@ public class DatasetDomainKind extends DomainKind
 
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
         return def.getDefaultFieldNames();
     }
 }
