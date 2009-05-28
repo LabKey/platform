@@ -46,7 +46,7 @@ public class SpecimenArchiveWriter implements Writer<Study>
 
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
-        specimens.setRepositoryType(RepositoryType.STANDARD);
+        specimens.setRepositoryType(study.getRepositorySettings().isSimple() ? RepositoryType.STANDARD : RepositoryType.ADVANCED);
         specimens.setDir(DEFAULT_DIRECTORY);
         specimens.setFile(archiveName);
 
