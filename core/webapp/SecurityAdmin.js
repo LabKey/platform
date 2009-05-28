@@ -296,6 +296,20 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         }});
     },
 
+    deleteGroup : function(groupid, callback)
+    {
+        var group = this.getPrincipal(groupid);
+        if (group && group.Type == 'g')
+        {
+            var me = this;
+            S.deleteGroup({groupId:groupid, successCallback:function()
+            {
+                me.principalsStore.removeById(groupid);
+                callback.call();
+            }});
+        }
+    },
+
     addMembership : function(groupid,userid,callback)
     {
         var success = function()
@@ -639,6 +653,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         var id = Ext.id();
         var principalWrapper = null;
         var removeWrapper;
+        var deleteGroup;
         
         // users
         if (isGroup)
@@ -661,6 +676,11 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 {
                     principalWrapper = '$p$' + id;
                     html.push("<tr><td colspan=3 id=" + principalWrapper + "></td></tr>");
+                    if (users.length == 0)
+                    {
+                        deleteGroup = '$delete$' + id;
+                        html.push('<tr><td colspan=3><a id="' + deleteGroup + '" class="labkey-button" href="#"" ><span>Delete Empty Group</span></a></td></tr>');
+                    }
                 }                
                 for (i=0 ; i<users.length ; i++)
                 {
@@ -684,6 +704,8 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         // render a principals drop down
         if (isGroup && this.canEdit)
         {
+            if (deleteGroup)
+                Ext.fly(deleteGroup).dom.onclick = this.Delete_onClick.createDelegate(this);
             this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, usersOnly:true});
             this.addPrincipalComboBox.on("select",this.Combo_onSelect,this);
             this.addPrincipalComboBox.render(principalWrapper);
@@ -694,6 +716,12 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 Ext.fly(removeWrapper).dom.onclick = this.Remove_onClick.createDelegate(this,[user.UserId]);
             }
         }
+    },
+
+    Delete_onClick : function()
+    {
+        var groupid = this.user.UserId;
+        this.cache.deleteGroup(groupid, this.close.createDelegate(this));
     },
 
     Remove_onClick : function(userid)
@@ -1100,6 +1128,17 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this.roleTemplate.compile();
         if (this.resourceId)
             this.setResource(this.resourceId);
+        this.cache.principalsStore.on("remove",this.Principals_onRemove,this);
+    },
+
+    Principals_onRemove : function(store,record,index)
+    {
+        if (this.policy)
+        {
+            var id = record.id;
+            this.policy.clearRoleAssignments(id);
+            this._redraw();
+        }
     },
 
     initComponent : function()
