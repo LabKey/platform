@@ -9,6 +9,10 @@
 <%@ page import="org.labkey.api.security.*" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.view.menu.ProjectAdminMenu" %>
+<%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -31,6 +35,7 @@
     JspView me = (JspView)HttpView.currentView();
     Container c = getViewContext().getContainer();
     Container project = c.getProject();
+    Container root = ContainerManager.getRoot();
     User user = getViewContext().getUser();
 %>
 
@@ -39,7 +44,7 @@ LABKEY.requiresCss("SecurityAdmin.css");
 LABKEY.requiresScript("SecurityAdmin.js", true);
 
 var isFolderAdmin = <%=c.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
-var isProjectAdmin = <%=project.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
+var isProjectAdmin = <%=project != null && project.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
 var isSiteAdmin = <%= user.isAdministrator() ? "true" : "false" %>;
 </script>
 <script type="text/javascript">
@@ -103,114 +108,96 @@ Ext.onReady(function(){
 <%--
     PERMISSIONS
 --%>
-<div id="permissionsFrame" class="extContainer"></div>
-<script type="text/javascript">
-tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
-Ext.onReady(function()
-{
-    var policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isSiteAdmin,
-        resourceId:LABKEY.container.id});
-    policyEditor.render($('permissionsFrame'));
-
-//    tabPanel.on("beforetabchange", function(panel, newTab, currentTab)
-//    {
-//        if (currentTab.contentEl.id != 'permissionsFrame')
-//            return true;
-//        if (!policyEditor.isDirty())
-//            return true;
-//        Ext.MessageBox.alert("Save Changes", "Please save changes (refresh page to discard)");
-//        return false;
-//    });
-});
-</script>
-
+<% if (!c.isRoot())
+{%>
+    <div id="permissionsFrame" class="extContainer"></div>
+    <script type="text/javascript">
+    tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
+    Ext.onReady(function()
+    {
+        var policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isSiteAdmin,
+            resourceId:LABKEY.container.id});
+        policyEditor.render($('permissionsFrame'));
+    });
+    </script>
+<%}%>
 
 <%--
     GROUPS
 --%>
-<%
-    if (project.hasPermission(user, ACL.PERM_ADMIN))
+
+    <div id="groupsFrame"></div>
+    <div id="siteGroupsFrame"></div>
+    <script type="text/javascript">
+    function makeGroupsPanel(project,ct)
     {
-        String title;
-        if (null == c || c.isRoot())
-            title = "Site Groups";
-        else
-            title = "Groups for project " + c.getProject().getName();
-
-        %><div id="groupsFrame"></div>
-        <div id="siteGroupsFrame"></div>
-        <script type="text/javascript">
-        function makeGroupsPanel(project,ct)
-        {
-            var newGroupForm = null;
-            var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, projectId:project});
-            groupsList.on("select", function(list,group){
-                var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
-                var w = new UserInfoPopup({userId:group.UserId, cache:this.cache, policy:null, modal:true, canEdit:canEdit});
-                w.show();
-            });
-
-            var formId = 'newGroupForm' + (project?'':'Site');
-            var groupsPanel = new Ext.Panel({
-                border : false, // border : true, style:{border:'solid 1px red'},
-                height: 400, width:800,
-                items :[
-                        {border:false, html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name"><br><a id="' + (formId + '$submit') + '" class="labkey-button" href="#"" ><span>Create new group</span></a>'},
-                        groupsList
-                    ]
-            });
-            groupsPanel._adjustSize = function()
-            {
-                if (this.rendered)
-                {
-                    var sz = tabPanel.body.getSize();
-                    this.setSize(sz.width-10,sz.height-10);
-                    var btm = sz.height + tabPanel.body.getX();
-                    groupsList.setSize(200,btm-groupsList.el.getX());
-                    this.doLayout();
-                }
-            };
-            groupsPanel.render(ct);
-            groupsPanel._adjustSize();
-            tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
-            tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
-
-            // UNDONE: use security api (Security.js)
-            var inputEl = $(formId + '$input');
-            var btnEl = $(formId + '$submit');
-            var submit = function()
-            {
-                securityCache.createGroup((project||'/'), inputEl.getValue());
-            };
-            inputEl.addKeyListener(13, submit);
-            btnEl.on("click", submit);
-            return groupsPanel;
-        };
-
-
-        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString(title)%>, autoHeight:true});
-        if (isSiteAdmin)
-            tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoHeight:true});
-
-        Ext.onReady(function()
-        {
-            var groupsPanel = makeGroupsPanel(<%=PageFlowUtil.jsString(project.getId())%>, 'groupsFrame');
-            if (isSiteAdmin)
-                var sitePanel = makeGroupsPanel(null, 'siteGroupsFrame');
+        var newGroupForm = null;
+        var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, projectId:project});
+        groupsList.on("select", function(list,group){
+            var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
+            var w = new UserInfoPopup({userId:group.UserId, cache:this.cache, policy:null, modal:true, canEdit:canEdit});
+            w.show();
         });
 
-        </script><%
-    }
-%>
+        var formId = 'newGroupForm' + (project?'':'Site');
+        var groupsPanel = new Ext.Panel({
+            border : false, // border : true, style:{border:'solid 1px red'},
+            height: 400, width:800,
+            items :[
+                    {border:false, html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name"><br><a id="' + (formId + '$submit') + '" class="labkey-button" href="#"" ><span>Create new group</span></a>'},
+                    groupsList
+                ]
+        });
+        groupsPanel._adjustSize = function()
+        {
+            if (this.rendered)
+            {
+                var sz = tabPanel.body.getSize();
+                this.setSize(sz.width-10,sz.height-10);
+                var btm = sz.height + tabPanel.body.getX();
+                groupsList.setSize(200,btm-groupsList.el.getX());
+                this.doLayout();
+            }
+        };
+        groupsPanel.render(ct);
+        groupsPanel._adjustSize();
+        tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
+        tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
 
+        // UNDONE: use security api (Security.js)
+        var inputEl = $(formId + '$input');
+        var btnEl = $(formId + '$submit');
+        var submit = function()
+        {
+            securityCache.createGroup((project||'/'), inputEl.getValue());
+        };
+        inputEl.addKeyListener(13, submit);
+        btnEl.on("click", submit);
+        return groupsPanel;
+    };
+
+    if (isProjectAdmin)
+        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoHeight:true});
+    if (isSiteAdmin)
+        tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoHeight:true});
+
+    Ext.onReady(function()
+    {
+        if (<%=c.isRoot() ? "false" : "true"%>)
+            makeGroupsPanel(<%=PageFlowUtil.jsString(null == project ? "" : project.getId())%>, 'groupsFrame');
+        if (isSiteAdmin)
+            makeGroupsPanel(null, 'siteGroupsFrame');
+    });
+
+    </script>
 
 <%--
     IMPERSONATE
 --%>
 <%
-    if (project.hasPermission(user, ACL.PERM_ADMIN))
+    if (user.isAdministrator() || project != null && project.hasPermission(user, AdminPermission.class))
     {
-        UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(project, false);
+        UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(user.isAdministrator() ? root : null!=project ? project : c, false);
         if (impersonateView.hasUsers())
         {
             %><script type="text/javascript">

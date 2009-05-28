@@ -91,7 +91,7 @@ public class SecurityController extends SpringActionController
 
         public ActionURL getContainerURL(Container container)
         {
-            return new ActionURL(ContainerAction.class, container);
+            return new ActionURL(ProjectAction.class, container);
         }
 
         public String getCompleteUserURLPrefix(Container container)
@@ -192,13 +192,21 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ExtAction extends SimpleViewAction
+    private class ProjectActionExtStyle extends SimpleViewAction<PermissionsForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
         {
-            String root = getViewContext().getContainer().getId();
+            String root = getContainer().getId();
             String resource = root;
-            return new FolderPermissions(root, resource);
+            FolderPermissions view = new FolderPermissions(root, resource);
+            if (!form.isWizard())
+                return view;
+
+            ActionURL startURL = getContainer().getFolderType().getStartURL(getContainer(), getUser());
+            VBox vbox = new VBox(
+                    new HtmlView(PageFlowUtil.generateButton("Done", startURL)),
+                    view);
+            return vbox;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -437,34 +445,25 @@ public class SecurityController extends SpringActionController
     }
 
 
+//    @RequiresPermission(ACL.PERM_ADMIN)
+//    private class ProjectActionOldSChool extends SimpleViewAction<PermissionsForm>
+//    {
+//        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
+//        {
+//            return renderContainerPermissions(null, null, null, form.isWizard());
+//        }
+//
+//        public NavTree appendNavTrail(NavTree root)
+//        {
+//            root.addChild("Permissions");
+//            return root;
+//        }
+//    }
+
+
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ProjectAction extends SimpleViewAction<PermissionsForm>
+    public class ProjectAction extends ProjectActionExtStyle
     {
-        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
-        {
-            return renderContainerPermissions(null, null, null, form.isWizard());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Permissions");
-            return root;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ContainerAction extends SimpleViewAction<PermissionsForm>
-    {
-        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
-        {
-            return renderContainerPermissions(null, errors, Collections.<String>emptyList(), form.isWizard());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Permissions");
-            return root;
-        }
     }
 
 
@@ -515,42 +514,6 @@ public class SecurityController extends SpringActionController
             map.put("members",members);
             put("success", true);
             put("group",map);
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class NewGroupExtAction extends ApiAction<NewGroupForm>
-    {
-        @Override
-        public void validateForm(NewGroupForm form, Errors errors)
-        {
-            String name = form.getName();
-            if (name == null || name.length() == 0)
-            {
-                errors.rejectValue("name", ERROR_REQUIRED);
-            }
-            else
-            {
-                String msg  = UserManager.validGroupName(name, Group.typeProject);
-                if (null != msg)
-                    errors.rejectValue("name", ERROR_MSG, msg);
-            }
-        }
-
-        public ApiResponse execute(NewGroupForm form, BindException errors) throws Exception
-        {
-            String name = form.getName();
-            try
-            {
-                Group group = SecurityManager.createGroup(getContainer().getProject(), name);
-                addGroupAuditEvent(group, "The group: " + name + " was created.");
-                return new GroupResponse(group);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.addError(new LabkeyError(e));
-                return null;
-            }
         }
     }
 
@@ -863,7 +826,7 @@ public class SecurityController extends SpringActionController
 
     private NavTree addGroupNavTrail(NavTree root, Group group)
     {
-        root.addChild("Permissions", new ActionURL(ContainerAction.class, getContainer()));
+        root.addChild("Permissions", new ActionURL(ProjectAction.class, getContainer()));
         root.addChild("Manage Group");
         root.addChild(group.getName() + " Group");
         return root;
@@ -1014,7 +977,7 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Permissions", new ActionURL(ContainerAction.class, getContainer()));
+            root.addChild("Permissions", new ActionURL(ProjectAction.class, getContainer()));
             root.addChild("Group Permissions");
             root.addChild(_requestedGroup == null || _requestedGroup.isUsers() ? "Access Details: Site Users" : "Access Details: " + _requestedGroup.getName());
             return root;
@@ -1027,7 +990,7 @@ public class SecurityController extends SpringActionController
         fromInherited,
         toInherited,
     }
-
+   
     @RequiresPermission(ACL.PERM_ADMIN)
     public class UpdatePermissionsAction extends FormHandlerAction
     {
@@ -1036,23 +999,10 @@ public class SecurityController extends SpringActionController
         private void addAuditEvent(User user, String comment, int groupId)
         {
             if (user != null)
-            {
-                AuditLogEvent event = new AuditLogEvent();
-
-                event.setCreatedBy(user);
-                event.setComment(comment);
-
-                Container c = getViewContext().getContainer();
-                event.setContainerId(c.getId());
-                if (c.getProject() != null)
-                    event.setProjectId(c.getProject().getId());
-
-                event.setIntKey2(groupId);
-                event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
-                AuditLogService.get().addEvent(event);
-            }
+                SecurityManager.addAuditEvent(getViewContext().getContainer(), user, comment, groupId);
         }
 
+        // UNDONE move to SecurityManager
         private void addAuditEvent(Group group, SecurityPolicy newPolicy, SecurityPolicy oldPolicy, AuditChangeType changeType)
         {
             Role oldRole = RoleManager.getRole(NoPermissionsRole.class);
@@ -1105,8 +1055,7 @@ public class SecurityController extends SpringActionController
                 boolean newSubfoldersInherit = "on".equals(ctx.get("newSubfoldersInheritPermissions"));
                 if (newSubfoldersInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
                 {
-                    SecurityManager.setNewSubfoldersInheritPermissions(c, newSubfoldersInherit);
-                    addAuditEvent(getUser(), String.format("Container %s was updated so that new subfolders would " + (newSubfoldersInherit ? "" : "not ") + "inherit security permissions", c.getName()), 0);
+                    SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), newSubfoldersInherit);
                 }
             }
 

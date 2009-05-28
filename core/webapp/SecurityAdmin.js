@@ -554,7 +554,7 @@ function _link(text,href)
 }
 function $open(href)
 {
-    window.open(href+'&_print=1','_blank','width=500,height=500');    
+    window.open(href+'&_print=1','_blank','location=1,scrollbars=1,resizable=1,width=500,height=500');    
 }
 function _open(text,href)
 {
@@ -576,6 +576,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
          //this.panel = new Ext.Panel({html:'hey'});
         config = Ext.apply({},config,{
             title:config.user.Name + ' Information',
+            autoScroll : true,
             closeable : true,
             extraCls : 'extContainer',
             closeAction : 'close',
@@ -693,12 +694,13 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                         deleteGroup = '$delete$' + id;
                         html.push('<tr><td colspan=3><a id="' + deleteGroup + '" class="labkey-button" href="#"" ><span>Delete Empty Group</span></a></td></tr>');
                     }
-                }                
+                }
+                var canRemove = this.canEdit && (this.userId != SecurityCache.prototype.groupAdministrators || users.length > 1);
                 for (i=0 ; i<users.length ; i++)
                 {
                     user = users[i];
                     html.push("<tr><td width=100>" + $h(user.Name) + "</td>");
-                    if (this.canEdit)
+                    if (canRemove)
                     {
                         removeWrapper = '$remove$' + id + user.UserId;
                         html.push("<td>[<a href=# id=" + removeWrapper + ">remove</a>]</td><td>");

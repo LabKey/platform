@@ -37,6 +37,20 @@
 <form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table width="100%" cellpadding=0>
+
+<tr>
+    <td colspan=2>&nbsp;</td>
+</tr>
+
+<tr>
+    <td colspan=2>Security defaults</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr>
+    <td class="labkey-form-label">New folders should inherit permissions by default</td>
+    <td><input type="checkbox" name="shouldInherit" size="50" <%= org.labkey.api.security.SecurityManager.shouldNewSubfoldersInheritPermissions(c) ? "checked" : "" %>></td>
+</tr>
+
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>

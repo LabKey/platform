@@ -671,6 +671,11 @@ public class AdminController extends SpringActionController
             {
             }
 
+            if (form.getShouldInherit() != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+            {
+                SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), form.getShouldInherit());
+            }
+
             // Need to strip out any extraneous characters from the email address.
             // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
             try
@@ -1300,6 +1305,7 @@ public class AdminController extends SpringActionController
 
     public static class ProjectSettingsForm
     {
+        private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
         private String _systemShortName;
         private String _themeName;
@@ -1313,6 +1319,16 @@ public class AdminController extends SpringActionController
         private boolean _appBarUIEnabled;
         private boolean _enableMenuBar;
         private String _tabId;
+
+        public boolean getShouldInherit()
+        {
+            return _shouldInherit;
+        }
+
+        public void setShouldInherit(boolean b)
+        {
+            _shouldInherit = b;
+        }
 
         public String getSystemDescription()
         {
