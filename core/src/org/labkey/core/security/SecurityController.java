@@ -192,7 +192,7 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    private class ProjectActionExtStyle extends SimpleViewAction<PermissionsForm>
+    private abstract class ProjectActionExtStyle extends SimpleViewAction<PermissionsForm>
     {
         public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
         {
@@ -446,7 +446,7 @@ public class SecurityController extends SpringActionController
 
 
 //    @RequiresPermission(ACL.PERM_ADMIN)
-//    private class ProjectActionOldSChool extends SimpleViewAction<PermissionsForm>
+//    private abstract class ProjectActionOldSChool extends SimpleViewAction<PermissionsForm>
 //    {
 //        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
 //        {

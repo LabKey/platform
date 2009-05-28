@@ -140,10 +140,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         S.getRoles({containerPath:this.folderId, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
         this.principalsStore.load();
         this.principalsStore.onReady(this.Principals_onReady, this);
-        S.getSecurableResources({successCallback:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
+        S.getSecurableResources({includeSubfolders:false, successCallback:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
 
-        // not required for onReady
         this.membershipStore.load();
+        this.membershipStore.onReady(this.checkReady, this);
     },
 
     _onLoadException : function(proxy, result, response, e)
@@ -411,8 +411,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (this.principalsStore.ready &&
             this.containersReady &&
             this.projectsReady &&
-            this.rolesReady &&
-            this.resourcesReady)
+            this.rolesReady
+            && this.membershipStore.ready
+            && this.resourcesReady
+            )
         {
             this.ready = true;
             this.fireEvent("ready");
