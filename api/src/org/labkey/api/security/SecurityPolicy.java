@@ -162,12 +162,11 @@ public class SecurityPolicy
     @NotNull
     public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
     {
-        if(contextualRoles == null)
-            contextualRoles = getContextualRoles(principal);
-        else
-            contextualRoles.addAll(getContextualRoles(principal));
+        Set<Role> allContextualRoles = getContextualRoles(principal);
+        if (contextualRoles != null)
+            allContextualRoles.addAll(contextualRoles);
 
-        return getPermissions(GroupManager.getAllGroupsForPrincipal(principal), contextualRoles);
+        return getPermissions(GroupManager.getAllGroupsForPrincipal(principal), allContextualRoles);
     }
 
     /**
@@ -405,7 +404,7 @@ public class SecurityPolicy
                 Integer userId = (Integer)assignmentProps.get("userId");
                 if(null == userId)
                     throw new RuntimeException("Null user id passed in role assignment!");
-                
+
                 UserPrincipal principal = SecurityManager.getPrincipal(userId.intValue());
                 if(null == principal)
                     continue; //silently ignore--this could happen if the principal was deleted in between the get and save
@@ -430,7 +429,7 @@ public class SecurityPolicy
             if(user.isDeveloper())
                 roles.add(RoleManager.getRole(DeveloperRole.class));
         }
-        
+
         return roles;
     }
 

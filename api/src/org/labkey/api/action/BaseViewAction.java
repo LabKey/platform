@@ -46,6 +46,7 @@ import org.springframework.web.servlet.mvc.BaseCommandController;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -525,10 +526,20 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         //ideally, we should pass the bound FORM to getContextualRoles so that
         //actions can determine if the OwnerRole should apply, but this would require
         //a large amount of rework that is too much to consider now.
-        checkPermissionsAndTermsOfUse(getClass(), getViewContext());
+        checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
     }
 
-    public static void checkActionPermissions(Class<? extends Controller> actionClass, Container c, User user) throws UnauthorizedException
+    /**
+     * Actions may provide a set of {@link Role}s used during permission checking
+     * or null if no contextual roles apply.
+     */
+    @Nullable
+    protected Set<Role> getContextualRoles()
+    {
+        return null;
+    }
+
+    public static void checkActionPermissions(Class<? extends Controller> actionClass, Container c, User user, Set<Role> contextualRoles) throws UnauthorizedException
     {
         if (null == c)
         {
@@ -557,7 +568,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if(null != permissionsRequired)
         {
             SecurityPolicy policy = SecurityManager.getPolicy(c);
-            if(!policy.hasOneOf(user, permissionsRequired, null))
+            if(!policy.hasOneOf(user, permissionsRequired, contextualRoles))
                 throw new UnauthorizedException();
         }
 
@@ -596,10 +607,11 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
                 return null;
         }
     }
-    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context)
+
+    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles)
             throws TermsOfUseException, UnauthorizedException
     {
-        checkActionPermissions(actionClass, context.getContainer(), context.getUser());
+        checkActionPermissions(actionClass, context.getContainer(), context.getUser(), contextualRoles);
 
         boolean requiresTermsOfUse = !actionClass.isAnnotationPresent(IgnoresTermsOfUse.class);
         if (requiresTermsOfUse && !context.hasAgreedToTermsOfUse())

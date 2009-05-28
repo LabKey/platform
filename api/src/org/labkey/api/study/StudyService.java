@@ -44,6 +44,25 @@ public class StudyService
     public interface Service extends SchemaUpdateService
     {
         /**
+         * Get the {@link Study} for the {@link Container} if it exists.
+         * @param container The container
+         * @return The container's study or null
+         */
+        @Nullable
+        public Study getStudy(Container container);
+
+        @Nullable
+        public String getStudyName(Container container);
+
+        /**
+         * Returns the {@link DataSet} of the given id for the {@link Container} or null.
+         * @param container The container
+         * @param datasetId The dataset id
+         * @return The container's dataset or null
+         */
+        public DataSet getDataSet(Container container, int datasetId);
+
+        /**
          * Returns the dataset id of the requested dataset definition label,
          * or -1 if no such dataset by that name exists
          */
@@ -126,9 +145,6 @@ public class StudyService
         public void applyDefaultQCStateFilter(DataView view);
 
         public ActionURL getDatasetURL(Container container, int datasetId);
-
-        @Nullable
-        public String getStudyName(Container container);
 
         /**
          * Returns the set of containers which have ever had data copied from the provided protocol

@@ -329,7 +329,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
             else
             {
-                BaseViewAction.checkPermissionsAndTermsOfUse(action.getClass(), context);
+                BaseViewAction.checkPermissionsAndTermsOfUse(action.getClass(), context, null);
             }
 
             beforeAction(action);
