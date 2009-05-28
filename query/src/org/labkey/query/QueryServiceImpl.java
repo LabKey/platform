@@ -361,13 +361,22 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-
     @NotNull
     public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields)
     {
-        AliasManager manager = new AliasManager(table, null);
+        return getColumns(table, fields, Collections.<ColumnInfo>emptySet());
+    }
+
+    @NotNull
+    public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields, Collection<ColumnInfo> existingColumns)
+    {
+        AliasManager manager = new AliasManager(table, existingColumns);
         Map<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey,ColumnInfo>();
+        for (ColumnInfo existingColumn : existingColumns)
+        {
+            columnMap.put(existingColumn.getFieldKey(), existingColumn);
+        }
         for (FieldKey field : fields)
         {
             ColumnInfo column = getColumn(manager, table, columnMap, field);
