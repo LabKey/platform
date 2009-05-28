@@ -149,11 +149,12 @@ public class ResultsQueryView extends AssayBaseQueryView
         {
             super.addQueryColumns(columns);
             FieldKey fk = new FieldKey(_provider.getTableMetadata().getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
-            Map<FieldKey, ColumnInfo> newColumns = QueryService.get().getColumns(getTable(), Collections.singleton(fk));
+            Map<FieldKey, ColumnInfo> newColumns = QueryService.get().getColumns(getTable(), Collections.singleton(fk), columns);
             _matchColumn = newColumns.get(fk);
             if (_matchColumn != null)
             {
                 // Add the column that decides if the specimen info has changed on the study side
+                // Don't add until perf problems are resolved
 //                columns.add(_matchColumn);
             }
         }

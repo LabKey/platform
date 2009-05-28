@@ -299,7 +299,12 @@ public class DataRegion extends DisplayElement
 
     public List<ColumnInfo> getSelectColumns()
     {
-        return RenderContext.getSelectColumns(getDisplayColumns(), getTable());
+        List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(getDisplayColumns(), getTable());
+
+        Set<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
+        addQueryColumns(columns);
+
+        return new ArrayList<ColumnInfo>(columns);
     }
 
 
@@ -591,14 +596,12 @@ public class DataRegion extends DisplayElement
 
     protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        Set<ColumnInfo> additionalRequiredColumns = new HashSet<ColumnInfo>();
-        addQueryColumns(additionalRequiredColumns);
-        return ctx.getResultSet(_displayColumns, getTable(), _maxRows, _offset, getName(), async, additionalRequiredColumns);
+        return ctx.getResultSet(getSelectColumns(), getTable(), _maxRows, _offset, getName(), async);
     }
 
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
-        // no query columns added by default
+        // no extra query columns added by default
     }
 
     private void getAggregates(RenderContext ctx) throws SQLException, IOException

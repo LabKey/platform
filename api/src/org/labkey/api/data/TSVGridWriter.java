@@ -45,13 +45,13 @@ public class TSVGridWriter extends TSVWriter
 
     public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns) throws SQLException, IOException
     {
-        init(ctx.getResultSet(displayColumns, tinfo, 0, 0, tinfo.getName()), displayColumns);
+        init(ctx.getResultSet(RenderContext.getSelectColumns(displayColumns, tinfo), tinfo, 0, 0, tinfo.getName()), displayColumns);
     }
 
 
     public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns, String name) throws SQLException, IOException
     {
-        init(ctx.getResultSet(displayColumns, tinfo, 0, 0, name), displayColumns);
+        init(ctx.getResultSet(RenderContext.getSelectColumns(displayColumns, tinfo), tinfo, 0, 0, name), displayColumns);
     }
 
 

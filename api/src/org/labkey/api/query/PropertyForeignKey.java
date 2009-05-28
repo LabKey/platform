@@ -16,21 +16,25 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class PropertyForeignKey extends AbstractForeignKey
+public class PropertyForeignKey extends AbstractForeignKey implements PropertyColumnDecorator
 {
     Map<String, PropertyDescriptor> _pdMap;
     private QuerySchema _schema;
+
+    private List<PropertyColumnDecorator> _decorators = new ArrayList<PropertyColumnDecorator>();
 
     public PropertyForeignKey(Map<String, PropertyDescriptor> pds, QuerySchema schema)
     {
@@ -145,7 +149,16 @@ public class PropertyForeignKey extends AbstractForeignKey
             ret = new ExprColumn(parent.getParentTable(), name, getValueSql(parent, pd), pd.getPropertyType().getSqlType(), parent);
         }
         initColumn(_schema.getUser(), ret, pd);
+        decorateColumn(ret, pd);
         return ret;
+    }
+
+    public void decorateColumn(ColumnInfo columnInfo, PropertyDescriptor pd)
+    {
+        for (PropertyColumnDecorator decorator : _decorators)
+        {
+            decorator.decorateColumn(columnInfo, pd);
+        }
     }
 
     public TableInfo getLookupTableInfo()
@@ -161,6 +174,11 @@ public class PropertyForeignKey extends AbstractForeignKey
             }
         }
         return ret;
+    }
+
+    public void addDecorator(PropertyColumnDecorator decorator)
+    {
+        _decorators.add(decorator);
     }
 
     public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)

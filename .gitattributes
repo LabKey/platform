@@ -461,6 +461,7 @@ api/src/org/labkey/api/query/LookupForeignKey.java -text
 api/src/org/labkey/api/query/LookupURLExpression.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
 api/src/org/labkey/api/query/PdLookupForeignKey.java -text
+api/src/org/labkey/api/query/PropertyColumnDecorator.java -text
 api/src/org/labkey/api/query/PropertyForeignKey.java -text
 api/src/org/labkey/api/query/PropertyValidationError.java -text
 api/src/org/labkey/api/query/QcAwarePropertyForeignKey.java -text
@@ -726,6 +727,7 @@ api/src/org/labkey/api/study/assay/RunListDetailsQueryView.java -text
 api/src/org/labkey/api/study/assay/SampleChooserDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/SimpleAssayDataImportHelper.java -text
 api/src/org/labkey/api/study/assay/SpecimenForeignKey.java -text
+api/src/org/labkey/api/study/assay/SpecimenPropertyColumnDecorator.java -text
 api/src/org/labkey/api/study/assay/StudyDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolverType.java -text

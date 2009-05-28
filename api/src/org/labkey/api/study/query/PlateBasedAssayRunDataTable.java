@@ -89,14 +89,17 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                     ColumnInfo result = super.constructColumnInfo(parent, name, pd);
                     if (getInputMaterialPropertyName().equals(pd.getName()))
                     {
-                        result.setIsHidden(true);
                         result.setFk(new LookupForeignKey("LSID")
                         {
                             public TableInfo getLookupTableInfo()
                             {
                                 ExpMaterialTable materials = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), schema);
                                 materials.setSampleSet(sampleSet, true);
-                                materials.addColumn(ExpMaterialTable.Column.Property);
+                                ColumnInfo propertyCol = materials.addColumn(ExpMaterialTable.Column.Property);
+                                if (propertyCol.getFk() instanceof PropertyForeignKey)
+                                {
+                                    ((PropertyForeignKey)propertyCol.getFk()).addDecorator(new SpecimenPropertyColumnDecorator(provider, protocol, schema));
+                                }
                                 materials.addColumn(ExpMaterialTable.Column.LSID).setIsHidden(true);
                                 return materials;
                             }

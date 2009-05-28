@@ -52,28 +52,8 @@ public class RunDataTable extends FilteredTable
         final AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain resultsDomain = provider.getResultsDomain(protocol);
         DomainProperty[] resultsDPs = resultsDomain.getProperties();
-        QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(resultsDPs, this, schema)
-        {
-            @Override
-            protected ColumnInfo constructColumnInfo(final ColumnInfo parent, String name, final PropertyDescriptor pd)
-            {
-                ColumnInfo result = super.constructColumnInfo(parent, name, pd);
-                // Don't override any lookups that are already set
-                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()) && pd.getLookupQuery() == null && pd.getLookupSchema() == null)
-                {
-                    DomainProperty[] batchDPs = provider.getBatchDomain(protocol).getProperties();
-                    for (DomainProperty batchDP : batchDPs)
-                    {
-                        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(batchDP.getName()))
-                        {
-                            result.setFk(new SpecimenForeignKey(schema, provider, protocol));
-                            return result;
-                        }
-                    }
-                }
-                return result;
-            }
-        };
+        QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(resultsDPs, this, schema);
+        fk.addDecorator(new SpecimenPropertyColumnDecorator(provider, protocol, schema));
 
         Set<String> hiddenCols = new HashSet<String>();
         for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
@@ -139,4 +119,5 @@ public class RunDataTable extends FilteredTable
     {
         return "RunDataTable";
     }
+
 }

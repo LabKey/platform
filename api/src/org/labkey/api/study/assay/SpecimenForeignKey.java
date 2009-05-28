@@ -96,9 +96,11 @@ public class SpecimenForeignKey extends LookupForeignKey
         ColumnInfo dateCol = columns.get(dateFK);
         if (participantIdCol != null || visitIdCol != null || dateCol != null)
         {
+            // We want NULL if there's no match based on specimen id
             sql.append("CASE WHEN (" + specimenAlias + ".DateBased IS NULL) THEN NULL ELSE (CASE WHEN (");
             if (participantIdCol != null)
             {
+                // Check if the participants match, or if they're both NULL
                 sql.append("(" + specimenAlias + ".ParticipantId = " + targetStudyAlias + "." + participantIdCol.getAlias() + " OR ");
                 sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + participantIdCol.getAlias() + " IS NULL))");
             }
@@ -111,6 +113,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append("(");
                 if (visitIdCol != null)
                 {
+                    // Check if we're in a visit-based study and the visits match or are both NULL
                     sql.append("((" + specimenAlias + ".DateBased IS NULL OR " + specimenAlias + ".DateBased = ?) AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL)))");
                     sql.add(Boolean.FALSE);
                     if (dateCol != null)
@@ -120,6 +123,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 }
                 if (dateCol != null)
                 {
+                    // Check if we're in a date-based study and the visits match or are both NULL
                     SqlDialect dialect = tableInfo.getSqlDialect();
                     sql.append("((" + specimenAlias + ".DateBased = ? OR " + specimenAlias + ".DateBased IS NULL) AND (" +
                             dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
@@ -195,36 +199,45 @@ public class SpecimenForeignKey extends LookupForeignKey
             FieldKey targetStudyFK = new FieldKey(batchPropertiesFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
 
             FieldKey participantFK = tableMetadata.getParticipantIDFieldKey();
+            FieldKey specimenFK = tableMetadata.getSpecimenIDFieldKey();
             FieldKey visitFK = tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
             FieldKey dateFK = tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
             FieldKey objectIdFK = tableMetadata.getResultRowIdFieldKey();
-            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Arrays.asList(targetStudyFK, objectIdFK, participantFK, visitFK, dateFK));
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK));
 
             ColumnInfo targetStudyCol = columns.get(targetStudyFK);
-            if (targetStudyCol != null || _schema.getTargetStudy() != null)
+            Container targetStudy = _schema.getTargetStudy();
+            // Do a complicated join if we can identify a target study so that we choose the right specimen
+            if (targetStudyCol != null || targetStudy != null)
             {
                 ColumnInfo objectIdCol = columns.get(objectIdFK);
+                // Select all the assay-side specimen columns that we'll need to do the comparison
                 SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, 0);
                 SQLFragment sql = new SQLFragment(" LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
                 String assaySubqueryAlias = parentAlias + ASSAY_SUBQUERY_SUFFIX;
                 String specimenSubqueryAlias = parentAlias + SPECIMEN_SUBQUERY_SUFFIX;
                 ColumnInfo parentKeyCol = foreignKey.getParentTable().getPkColumns().get(0);
+                ColumnInfo specimenColumnInfo = columns.get(specimenFK);
                 sql.append(") AS " + assaySubqueryAlias + " ON " + assaySubqueryAlias + "." + objectIdCol.getAlias() + " = " + parentAlias + "." + parentKeyCol.getName());
                 sql.append(" LEFT OUTER JOIN ");
+                // Select all the study-side specimen columns that we'll need to do the comparison
                 sql.append(" (SELECT specimen.RowId, specimen.GlobalUniqueId, specimen.Container, specimen.PTID AS ParticipantId, specimen.drawtimestamp AS Date, specimen.VisitValue AS Visit, s.DateBased ");
                 sql.append(" FROM study.specimen specimen, study.study s WHERE s.Container = specimen.Container) AS " + specimenSubqueryAlias);
-                sql.append(" ON " + specimenSubqueryAlias + ".GlobalUniqueId = " + foreignKey.getValueSql(parentAlias));
-                if (_schema.getTargetStudy() != null)
+                sql.append(" ON " + specimenSubqueryAlias + ".GlobalUniqueId = " + assaySubqueryAlias + "." + specimenColumnInfo.getAlias());
+                if (targetStudy != null)
                 {
+                    // We're in the middle of a copy to study, so ignore what the user selected as the target when they uploaded
                     sql.append(" AND " + specimenSubqueryAlias + ".Container = ?");
-                    sql.add(_schema.getTargetStudy().getId());
+                    sql.add(targetStudy.getId());
                 }
                 else
                 {
+                    // Match based on the target study associated with the assay data
                     sql.append(" AND " + assaySubqueryAlias + "." + targetStudyCol.getAlias() + " = " + specimenSubqueryAlias + ".Container");
                 }
 
+                // Last join to the specimen table based on RowId
                 sql.append("\n\tLEFT OUTER JOIN ");
 
                 TableInfo lookupTable = lookupKey.getParentTable();
@@ -241,7 +254,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 String colTableAlias = getTableAlias();
                 sql.append(" AS ").append(colTableAlias);
                 sql.append(" ON ");
-                sql.append(specimenSubqueryAlias + ".RowId = " + getTableAlias() + ".RowId");
+                sql.append(specimenSubqueryAlias + ".RowId = " + colTableAlias + ".RowId");
 
                 map.put(specimenSubqueryAlias, sql);
             }
