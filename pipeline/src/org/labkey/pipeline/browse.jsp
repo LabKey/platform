@@ -320,7 +320,7 @@ Ext.onReady(function()
         ,allowChangeDirectory:true
         ,propertiesPanel:[{title:'Pipeline Actions', id:'pipelinePanel'}]
         ,actions:{drop:dropAction}
-        ,tbar:['download', 'deletePath', 'refresh', 'drop', 'uploadTool']
+        ,tbar:['parentFolder', 'download', 'deletePath', 'refresh', 'uploadTool']
     });
 
     fileBrowser.on(BROWSER_EVENTS.directorychange, updatePipelinePanel);
@@ -335,8 +335,24 @@ Ext.onReady(function()
 
     fileBrowser.render('files');
 
-    var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
-    resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
+//    var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
+//    resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
+    var viewport = new Ext.Viewport();
+    viewport.on("resize", function(v,w,h)
+    {
+        if (!fileBrowser.rendered)
+            return;
+        var xy = fileBrowser.el.getXY();
+        var size = {
+            width : Math.max(100,w-xy[0]-8),
+            height : Math.max(100,h-xy[1]-8)};
+        fileBrowser.setSize(size);
+        fileBrowser.doLayout();
+    });
+
+    var sz = viewport.getSize();
+    viewport.fireResize(sz.width, sz.height);
+
     fileBrowser.start();
 });
 </script>

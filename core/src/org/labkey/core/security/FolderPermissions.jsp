@@ -86,7 +86,7 @@ Ext.onReady(function(){
 
     viewport.on("resize", function(v,w,h)
     {
-        if (!this.rendered || !this.el)
+        if (!tabPanel.rendered || !tabPanel.el)
             return;
         var xy = tabPanel.el.getXY();
         var size = {
