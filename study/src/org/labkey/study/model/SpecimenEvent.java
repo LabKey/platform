@@ -73,6 +73,8 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     private String _processingTime;
     private String _primaryVolume;
     private String _primaryVolumeUnits;
+    private String _processedByInitials;
+    private Date _processingDate;
 
     public String getComments()
     {
@@ -566,5 +568,25 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     public void setPrimaryVolumeUnits(String primaryVolumeUnits)
     {
         _primaryVolumeUnits = primaryVolumeUnits;
+    }
+
+    public String getProcessedByInitials()
+    {
+        return _processedByInitials;
+    }
+
+    public void setProcessedByInitials(String processedByInitials)
+    {
+        _processedByInitials = processedByInitials;
+    }
+
+    public Date getProcessingDate()
+    {
+        return _processingDate;
+    }
+
+    public void setProcessingDate(Date processingDate)
+    {
+        _processingDate = processingDate;
     }
 }

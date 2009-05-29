@@ -51,7 +51,7 @@ public class RequestReportFactory extends TypeReportFactory
             if (sites == null)
                 return Collections.emptyList();
             List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
                 SimpleFilter filter = new SimpleFilter();
                 filter.addWhereClause("globaluniqueid IN\n" +
                         "(SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE container = ?)",

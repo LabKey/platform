@@ -45,12 +45,17 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private Integer _derivativeTypeId2; // INT,
     private Integer _additiveTypeId; // INT,
     private Integer _originatingLocationId;
+    private Integer _processingLocation;
     private Integer _currentLocation;
     private String _specimenHash;
     private String _frozenTime;
     private String _processingTime;
     private String _primaryVolume;
     private String _primaryVolumeUnits;
+    private boolean _atRepository = false;
+    private boolean _available = false;
+    private boolean _lockedInRequest = false;
+    private Boolean _requestable;
 
     public Integer getAdditiveTypeId()
     {
@@ -320,5 +325,55 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     public void setPrimaryVolumeUnits(String primaryVolumeUnits)
     {
         _primaryVolumeUnits = primaryVolumeUnits;
+    }
+
+    public Integer getProcessingLocation()
+    {
+        return _processingLocation;
+    }
+
+    public void setProcessingLocation(Integer processingLocation)
+    {
+        _processingLocation = processingLocation;
+    }
+
+    public boolean isAtRepository()
+    {
+        return _atRepository;
+    }
+
+    public void setAtRepository(boolean atRepository)
+    {
+        _atRepository = atRepository;
+    }
+
+    public boolean isAvailable()
+    {
+        return _available;
+    }
+
+    public void setAvailable(boolean available)
+    {
+        _available = available;
+    }
+
+    public boolean isLockedInRequest()
+    {
+        return _lockedInRequest;
+    }
+
+    public void setLockedInRequest(boolean lockedInRequest)
+    {
+        _lockedInRequest = lockedInRequest;
+    }
+
+    public Boolean isRequestable()
+    {
+        return _requestable;
+    }
+
+    public void setRequestable(Boolean requestable)
+    {
+        _requestable = requestable;
     }
 }

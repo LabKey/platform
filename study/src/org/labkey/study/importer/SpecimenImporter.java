@@ -376,11 +376,13 @@ public class SpecimenImporter
             new SpecimenColumn("fr_level2", "fr_level2", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("fr_container", "fr_container", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("fr_position", "fr_position", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
-            new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
+            new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("frozen_time", "FrozenTime", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("processing_time", "ProcessingTime", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS)
         };
 
@@ -735,22 +737,16 @@ public class SpecimenImporter
     private static void setLockedInRequestStatus(Container container, User user, Logger logger) throws SQLException
     {
         SQLFragment lockedInRequestSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
-                " SET LockedInRequest = ? WHERE GlobalUniqueId IN (SELECT study.LockedSpecimens.GlobalUniqueId FROM study.LockedSpecimens" +
-                " WHERE study.LockedSpecimens.Container = ?)");
+                " SET LockedInRequest = ? WHERE RowId IN (SELECT study.Specimen.RowId FROM study.Specimen, study.LockedSpecimens " +
+                "WHERE study.Specimen.Container = ? AND study.LockedSpecimens.Container = ? AND " +
+                "study.Specimen.GlobalUniqueId = study.LockedSpecimens.GlobalUniqueId)");
 
         lockedInRequestSql.add(Boolean.TRUE);
+        lockedInRequestSql.add(container.getId());
         lockedInRequestSql.add(container.getId());
 
         logger.info("Setting Specimen Locked in Request status...");
         Table.execute(StudySchema.getInstance().getSchema(), lockedInRequestSql);
-        logger.info("Complete.");
-    }
-
-    private static void setAvailableStatus(Container container, User user, Logger logger) throws SQLException
-    {
-        SQLFragment availableSql = SampleManager.getInstance().getSpecimenAvailableQuery();
-        logger.info("Setting Specimen Available status...");
-        Table.execute(StudySchema.getInstance().getSchema(), availableSql);
         logger.info("Complete.");
     }
 
@@ -768,32 +764,26 @@ public class SpecimenImporter
         Specimen[] specimens;
         int offset = 0;
         Map<Integer, SiteImpl> siteMap = new HashMap<Integer, SiteImpl>();
-        String currentLocationSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
-                " SET CurrentLocation = CAST(? AS INTEGER), SpecimenHash = ? WHERE RowId = ?";
+        String vialPropertiesSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
+                " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
+                "SpecimenHash = ?, AtRepository = ?, Available = ? WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " SET SpecimenHash = ?, QualityControlComments = ? WHERE GlobalUniqueId = ?";
-        String atRepositorySql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
-                " SET AtRepository = ? WHERE RowId = ?";
         do
         {
             if (logger != null)
                 logger.info("Calculating hashes and current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
             specimens = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), Table.ALL_COLUMNS,
                     containerFilter, null, Specimen.class, CURRENT_SITE_UPDATE_SIZE, offset);
-            List<List<?>> currentLocationParams = new ArrayList<List<?>>();
+            List<List<?>> vialPropertiesParams = new ArrayList<List<?>>();
             List<List<?>> commentParams = new ArrayList<List<?>>();
-            List<List<?>> atRepositoryParams = new ArrayList<List<?>>();
 
             for (Specimen specimen : specimens)
             {
-                Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(specimen);
-                String specimenHash = getSpecimenHash(specimen);
-                if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
-                    !specimenHash.equals(specimen.getSpecimenHash()))
-                {
-                    currentLocationParams.add(Arrays.asList(currentLocation, specimenHash, specimen.getRowId()));
-                }
-
+                List<SpecimenEvent> dateOrderedEvents = SampleManager.getInstance().getDateOrderedEventList(specimen);
+                Integer processingLocation = SampleManager.getInstance().getProcessingSiteId(dateOrderedEvents);
+                Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(dateOrderedEvents);
+                boolean atRepository = false;
                 if (currentLocation != null)
                 {
                     SiteImpl site;
@@ -806,9 +796,26 @@ public class SpecimenImporter
                     else
                         site = siteMap.get(currentLocation);
 
-                    if (site != null && site.isRepository())
-                        atRepositoryParams.add(Arrays.asList(Boolean.TRUE, specimen.getRowId()));
+                    if (site != null)
+                        atRepository = site.isRepository() != null && site.isRepository().booleanValue();
                 }
+
+                // note that we've already updated all specimens with whether they're in a request, so we can use 'specimen.isLockedInRequest' here.
+                // We can't use 'specimen.isAtRepository' since we've just calculated whether we're at a repository so the information in the database
+                // (and in the specimen bean) may not be correct.
+                boolean available = SampleManager.getInstance().isAvailable(specimen.isRequestable(), atRepository, specimen.isLockedInRequest());
+
+                String specimenHash = getSpecimenHash(specimen);
+                if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
+                    !safeIntegerEqual(processingLocation, specimen.getProcessingLocation()) ||
+                    atRepository != specimen.isAtRepository() ||
+                    available != specimen.isAvailable() ||
+                    !specimenHash.equals(specimen.getSpecimenHash()))
+                {
+                    vialPropertiesParams.add(Arrays.asList(currentLocation, processingLocation,
+                            specimenHash, atRepository, available, specimen.getRowId()));
+                }
+
                 SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
                 if (comment != null)
                 {
@@ -833,17 +840,13 @@ public class SpecimenImporter
                     commentParams.add(Arrays.asList(specimenHash, message, specimen.getGlobalUniqueId()));
                 }
             }
-            if (!currentLocationParams.isEmpty())
-                Table.batchExecute(StudySchema.getInstance().getSchema(), currentLocationSql, currentLocationParams);
+            if (!vialPropertiesParams.isEmpty())
+                Table.batchExecute(StudySchema.getInstance().getSchema(), vialPropertiesSql, vialPropertiesParams);
             if (!commentParams.isEmpty())
                 Table.batchExecute(StudySchema.getInstance().getSchema(), commentSql, commentParams);
-            if (!atRepositoryParams.isEmpty())
-                Table.batchExecute(StudySchema.getInstance().getSchema(), atRepositorySql, atRepositoryParams);
             offset += CURRENT_SITE_UPDATE_SIZE;
         }
         while (specimens.length > 0);
-
-        setAvailableStatus(container, user, logger);
     }
     
     private static String getSpecimenHash(Specimen specimen)

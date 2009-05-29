@@ -342,6 +342,9 @@
       <ns:column columnName="AtRepository"/>
       <ns:column columnName="LockedInRequest"/>
       <ns:column columnName="Available"/>
+      <ns:column columnName="ProcessedByInitials"/>
+      <ns:column columnName="ProcessingDate"/>
+      <ns:column columnName="ProcessingLocation"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
@@ -483,6 +486,8 @@
       <ns:column columnName="ProcessingTime"/>
       <ns:column columnName="PrimaryVolume"/>
       <ns:column columnName="PrimaryVolumeUnits"/>
+      <ns:column columnName="ProcessedByInitials"/>
+      <ns:column columnName="ProcessingDate"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">

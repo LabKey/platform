@@ -45,12 +45,15 @@
     String propString = numProperties == 1 ? "property" : "properties";
 
 %>
-<%
-    if(c.hasPermission(user, AdminPermission.class))
-    {
-%>
-<h4>General Study Information</h4>
 <table>
+    <%
+        if(c.hasPermission(user, AdminPermission.class))
+        {
+    %>
+    <tr>
+        <td colspan="3" class="labkey-announcement-title"><span>General Study Settings</span></td>
+    </tr>
+    <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Study Label</th>
         <td><%= h(getStudy().getLabel()) %></td>
@@ -118,25 +121,35 @@
         <td>Manage QC states for this Study</td>
         <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL(StudyController.ManageQCStatesAction.class, getStudy().getContainer())) %></td>
     </tr>
-</table>
 <%
-    } //admin permission
-%>
-<%
+    } // admin permission
+
     if(c.hasPermission(user, ManageRequestSettingsPermission.class))
     {
 %>
-<h4>Specimen Request/Tracking Settings</h4>
-<table>
     <tr>
-        <th align="left">Specimen Repository</th>
-        <td>This study uses <%=getStudy().getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
-        <td><% if(c.hasPermission(user, AdminPermission.class)) {out.write(textLink("Change Repository System", new ActionURL("Study-Samples", "showManageRepositorySettings.view", getStudy().getContainer())));}%></td>
+        <td colspan="3" class="labkey-announcement-title"><span>Specimen Repository Settings</span></td>
+    </tr>
+    <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
+    <tr>
+        <th align="left">Repository Type</th>
+        <td>This study uses the <%=getStudy().getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
+        <td><%=textLink("Change Repository Type", new ActionURL("Study-Samples", "showManageRepositorySettings.view", getStudy().getContainer()))%></td>
     </tr>
     <%
         if (getStudy().getRepositorySettings().isEnableRequests())
         {
     %>
+    <tr>
+        <th align="left">Display and Behavior</th>
+        <td>Manage warnings, comments, and workflow</td>
+        <td><%= textLink("Manage Display and Behavior",
+                new ActionURL("Study-Samples", "manageDisplaySettings.view", getStudy().getContainer())) %></td>
+    </tr>
+    <tr>
+        <td colspan="3" class="labkey-announcement-title"><span>Specimen Request Settings</span></td>
+    </tr>
+    <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Statuses</th>
         <td>This study defines <%= getStudy().getSampleRequestStatuses(HttpView.currentContext().getUser()).length %> specimen request
@@ -153,40 +166,34 @@
     </tr>
     <tr>
         <th align="left">Request Requirements</th>
-        <td>The default requirements for new requests can be customized by study</td>
+        <td>Manage default requirements for new requests</td>
         <td><%= textLink("Manage Default Requirements",
                 new ActionURL("Study-Samples", "manageDefaultReqs.view", getStudy().getContainer())) %></td>
     </tr>
     <tr>
         <th align="left">Request Form</th>
-        <td>The inputs required for a new specimen request can be customized by study.</td>
+        <td>Manage inputs required for a new specimen request </td>
         <td><%= textLink("Manage New Request Form",
                 new ActionURL("Study-Samples", "manageRequestInputs.view", getStudy().getContainer())) %></td>
     </tr>
     <tr>
         <th align="left">Notifications</th>
-        <td>Specimen request notifications can be customized by study.</td>
+        <td>Manage specimen request notifications</td>
         <td><%= textLink("Manage Notifications",
                 new ActionURL("Study-Samples", "manageNotifications.view", getStudy().getContainer())) %></td>
     </tr>
-    <tr>
-        <th align="left">Display Settings</th>
-        <td>Warnings for low available vial counts are configurable.</td>
-        <td><%= textLink("Manage Display Settings",
-                new ActionURL("Study-Samples", "manageDisplaySettings.view", getStudy().getContainer())) %></td>
-    </tr>
     <%
         }
+        }
     %>
-</table>
-<%
-    } //manage specimen settings perm
-%>
+</table><br>
 <%
     if(c.hasPermission(user, AdminPermission.class))
     {
 %>
-<%=generateButton("Export Study", "exportStudy.view")%> <%=generateButton("Snapshot Study Data", "snapshot.view")%> <%=generateButton("Delete Study", "deleteStudy.view")%>
+<%=generateButton("Export Study", "exportStudy.view")%>
+<%=generateButton("Snapshot Study Data", "snapshot.view")%>
+<%=generateButton("Delete Study", "deleteStudy.view")%>
 <%
     }
 %>

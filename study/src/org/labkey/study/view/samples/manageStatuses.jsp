@@ -24,6 +24,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.samples.settings.StatusSettings" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,7 +32,7 @@
     StudyImpl study = me.getModelBean();
     SampleRequestStatus[] statuses = study.getSampleRequestStatuses(me.getViewContext().getUser());
     Set<Integer> inUseStatuses = study.getSampleRequestStatusesInUse();
-    SampleManager.StatusSettings settings = SampleManager.getInstance().getStatusSettings(study.getContainer());
+    StatusSettings settings = SampleManager.getInstance().getStatusSettings(study.getContainer());
     boolean showSystemStatuses = settings.isUseShoppingCart();
 %>
 <%=PageFlowUtil.getStrutsError(request, "main")%>

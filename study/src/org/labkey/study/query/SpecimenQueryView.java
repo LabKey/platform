@@ -28,6 +28,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.samples.settings.DisplaySettings;
+import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.Specimen;
@@ -588,15 +590,15 @@ public class SpecimenQueryView extends BaseStudyQueryView
             boolean zeroVialIndicator = false;
             if (!_disableLowVialIndicators)
             {
-                SampleManager.DisplaySettings settings =  SampleManager.getInstance().getDisplaySettings(getContainer());
-                oneVialIndicator = settings.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ||
-                    (settings.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY &&
+                DisplaySettings settings =  SampleManager.getInstance().getDisplaySettings(getContainer());
+                oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
+                    (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                         getUser().isAdministrator());
-                zeroVialIndicator = settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ||
-                        (settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY &&
+                zeroVialIndicator = settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
+                        (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                                 getUser().isAdministrator());
             }
-            SampleManager.RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+            RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
             if (!settings.isSimple() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
             {
                 // Only add this column if we're using advanced specimen management

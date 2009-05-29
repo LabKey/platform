@@ -38,7 +38,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<? extends SpecimenTypeSummary.TypeCount> types = getSelectedTypes();
-        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
         for (SpecimenTypeSummary.TypeCount type : types)
         {

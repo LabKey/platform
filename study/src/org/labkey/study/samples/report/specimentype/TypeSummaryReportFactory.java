@@ -37,7 +37,7 @@ public class TypeSummaryReportFactory extends TypeReportFactory
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         SimpleFilter filter = new SimpleFilter();
         addBaseFilters(filter);
         SpecimenTypeVisitReport report = new SpecimenTypeVisitReport("Summary", visits, filter, this);

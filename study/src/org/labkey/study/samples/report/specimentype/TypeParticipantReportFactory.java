@@ -91,7 +91,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
                         visits = visitListCache.get(cohort.getRowId());
                         if (visits == null)
                         {
-                            visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), cohort);
+                            visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
                             visitListCache.put(cohort.getRowId(), visits);
                         }
                     }

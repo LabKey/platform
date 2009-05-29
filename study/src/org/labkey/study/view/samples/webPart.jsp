@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.study.samples.settings.RepositorySettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -40,7 +41,7 @@
 
     SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(currentContext.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(currentContext.getContainer());
-    SampleManager.RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(currentContext.getContainer());
+    RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(currentContext.getContainer());
 
 %>
 <%

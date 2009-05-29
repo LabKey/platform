@@ -34,9 +34,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
@@ -48,9 +46,12 @@ import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.samples.report.SpecimenCountSummary;
+import org.labkey.study.samples.settings.StatusSettings;
+import org.labkey.study.samples.settings.DisplaySettings;
+import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
-import javax.mail.Address;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -258,7 +259,7 @@ public class SampleManager
         }
     }
 
-    private List<SpecimenEvent> getDateOrderedEventList(Specimen specimen) throws SQLException
+    public List<SpecimenEvent> getDateOrderedEventList(Specimen specimen) throws SQLException
     {
         List<SpecimenEvent> eventList = new ArrayList<SpecimenEvent>();
         SpecimenEvent[] events = getSpecimenEvents(specimen);
@@ -281,9 +282,14 @@ public class SampleManager
     public Integer getCurrentSiteId(Specimen specimen) throws SQLException
     {
         List<SpecimenEvent> events = getDateOrderedEventList(specimen);
-        if (!events.isEmpty())
+        return getCurrentSiteId(events);
+    }
+
+    public Integer getCurrentSiteId(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    {
+        if (!dateOrderedEvents.isEmpty())
         {
-            SpecimenEvent lastEvent = events.get(events.size() - 1);
+            SpecimenEvent lastEvent = dateOrderedEvents.get(dateOrderedEvents.size() - 1);
 
             if (lastEvent.getShipDate() == null &&
                     (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber().intValue() == 0) &&
@@ -291,6 +297,16 @@ public class SampleManager
             {
                 return lastEvent.getLabId();
             }
+        }
+        return null;
+    }
+
+    public Integer getProcessingSiteId(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    {
+        if (!dateOrderedEvents.isEmpty())
+        {
+            SpecimenEvent firstEvent = dateOrderedEvents.get(0);
+            return firstEvent.getLabId();
         }
         return null;
     }
@@ -344,70 +360,44 @@ public class SampleManager
         Specimen[] specimens = request.getSpecimens();
         if (specimens != null && specimens.length > 0)
         {
-            updateSpecimenStatus(specimens, user);
+            SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
+            updateSpecimenStatus(specimens, user, status.isSpecimensLocked());
         }
     }
 
-    public SQLFragment getSpecimenAvailableQuery()
+    public boolean isAvailable(Boolean requestable, boolean atRepository, boolean lockedInRequest)
     {
-        SQLFragment availableSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
-                " SET Available =" +
-                " CASE Requestable\n" +
-                "   WHEN ? THEN (\n" +
-                "       CASE LockedInRequest\n" +
-                "       WHEN ? THEN ?\n" +
-                "       ELSE ?\n" +
-                "       END)\n" +
-                "   WHEN ? THEN ?\n" +
-                "   ELSE (\n" +
-                "       CASE AtRepository\n" +
-                "       WHEN ? THEN (\n" +
-                "           CASE LockedInRequest\n" +
-                "           WHEN ? THEN ?\n" +
-                "           ELSE ?\n" +
-                "           END)\n" +
-                "       ELSE ?\n" +
-                "       END)\n" +
-                " END");
-        availableSql.addAll(Arrays.asList(Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE,
-                Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE));
+        boolean available;
+        if (requestable != null)
+        {
+            // the import has explicitly overridden the requestable state- this value is respected,
+            // unless the vial is locked in a request:
+            available = requestable.booleanValue() && !lockedInRequest;
+        }
+        else
+        {
+            // no override, so the vial must be at a repository and not locked in another request:
+            available = !lockedInRequest && atRepository;
+        }
+        return available;
+    }
 
-        return availableSql;
+    public boolean isAvailable(Specimen specimen)
+    {
+        return isAvailable(specimen.isRequestable(), specimen.isAtRepository(), specimen.isLockedInRequest());
     }
 
     /**
      * Update the lockedInRequest and available field states for the set of specimens.
      */
-    private void updateSpecimenStatus(Specimen[] specimens, User user) throws SQLException
+    private void updateSpecimenStatus(Specimen[] specimens, User user, boolean lockedInRequest) throws SQLException
     {
-        List<List<?>> lockedInRequestParams = new ArrayList<List<?>>();
-        List<List<?>> availableParams = new ArrayList<List<?>>();
-
-        String lockedInRequestSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
-                " SET LockedInRequest = " +
-                "   CASE WHEN (GlobalUniqueId IN (SELECT study.LockedSpecimens.GlobalUniqueId FROM study.LockedSpecimens WHERE study.LockedSpecimens.Container = ? )) THEN ?" +
-                "       ELSE ?" +
-                "       END" +
-                " WHERE RowId = ?";
-
-        SQLFragment availableSql = getSpecimenAvailableQuery();
-        availableSql.append(" WHERE RowId = ? AND Container = ?");
-
         for (Specimen specimen : specimens)
         {
-            lockedInRequestParams.add(Arrays.asList(specimen.getContainer().getId(), Boolean.TRUE, Boolean.FALSE, specimen.getRowId()));
-
-            List<Object> params = new ArrayList(availableSql.getParams());
-            params.add(specimen.getRowId());
-            params.add(specimen.getContainer().getId());
-
-            availableParams.add(params);
+            specimen.setLockedInRequest(lockedInRequest);
+            specimen.setAvailable(isAvailable(specimen));
+            Table.update(user, StudySchema.getInstance().getTableInfoSpecimen(), specimen, specimen.getRowId(), null);
         }
-
-        if (!lockedInRequestParams.isEmpty())
-            Table.batchExecute(StudySchema.getInstance().getSchema(), lockedInRequestSql, lockedInRequestParams);
-        if (!availableParams.isEmpty())
-            Table.batchExecute(StudySchema.getInstance().getSchema(), availableSql.toString(), availableParams);
     }
 
     public SampleRequestRequirement[] getRequestRequirements(SampleRequest request)
@@ -672,70 +662,6 @@ public class SampleManager
                 new Object[]{request.getRowId(), request.getContainer().getId()}, Specimen.class);
     }
 
-    public static class RepositorySettings
-    {
-        private static final String KEY_SIMPLE = "Simple";
-        private static final String KEY_ENABLE_REQUESTS = "EnableRequests";
-        private boolean _simple;
-        private boolean _enableRequests;
-
-        public RepositorySettings()
-        {
-            //no-arg constructor for struts reflection
-        }
-
-        public RepositorySettings(Map<String,String> map)
-        {
-            this();
-            String simple = map.get(KEY_SIMPLE);
-            _simple = null == simple ? false : Boolean.parseBoolean(simple);
-            String enableRequests = map.get(KEY_ENABLE_REQUESTS);
-            _enableRequests = null == enableRequests ? !_simple : Boolean.parseBoolean(enableRequests);
-        }
-
-        public void populateMap(Map<String,String> map)
-        {
-            map.put(KEY_SIMPLE, Boolean.toString(_simple));
-            map.put(KEY_ENABLE_REQUESTS, Boolean.toString(_enableRequests));
-        }
-
-        public boolean isSimple()
-        {
-            return _simple;
-        }
-
-        public void setSimple(boolean simple)
-        {
-            _simple = simple;
-        }
-
-        public boolean isEnableRequests()
-        {
-            return _enableRequests;
-        }
-
-        public void setEnableRequests(boolean enableRequests)
-        {
-            _enableRequests = enableRequests;
-        }
-
-        public static RepositorySettings getDefaultSettings(Container container)
-        {
-            RepositorySettings settings = new RepositorySettings();
-            if (null != StudyManager.getInstance().getStudy(container))
-            {
-                settings.setSimple(false);
-                settings.setEnableRequests(true);
-            }
-            else
-            {
-                settings.setSimple(true);
-                settings.setEnableRequests(false);
-            }
-            return settings;
-        }
-    }
-
     public RepositorySettings getRepositorySettings(Container container) throws SQLException
     {
         Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
@@ -758,156 +684,6 @@ public class SampleManager
         PropertyManager.saveProperties(settingsMap);
     }
 
-
-
-    public static class RequestNotificationSettings
-    {
-        public static final String REPLY_TO_CURRENT_USER_VALUE = "[current user]";
-        private static final String KEY_REPLYTO = "ReplyTo";
-        private static final String KEY_CC = "CC";
-        private static final String KEY_SUBJECTSUFFIX = "SubjectSuffix";
-        private static final String KEY_NEWREQUESTNOTIFY = "NewRequestNotify";
-        private String _replyTo;
-        private String _cc;
-        private String _subjectSuffix;
-        private String _newRequestNotify;
-        private boolean _ccCheckbox;
-        private boolean _newRequestNotifyCheckbox;
-
-        public RequestNotificationSettings()
-        {
-            // no-arg constructor for struts reflection
-        }
-
-        public RequestNotificationSettings(Map<String, String> map)
-        {
-            _replyTo = (String) map.get(KEY_REPLYTO);
-            _cc = (String) map.get(KEY_CC);
-            _subjectSuffix = (String) map.get(KEY_SUBJECTSUFFIX);
-            _newRequestNotify = (String) map.get(KEY_NEWREQUESTNOTIFY);
-        }
-
-        public String getReplyToEmailAddress(User currentAdmin)
-        {
-            if (SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(getReplyTo()))
-                return currentAdmin.getEmail();
-            else
-                return getReplyTo();
-        }
-
-        public String getReplyTo()
-        {
-            return _replyTo;
-        }
-
-        public void setReplyTo(String replyTo)
-        {
-            _replyTo = replyTo;
-        }
-
-        public String getCc()
-        {
-            return _cc;
-        }
-
-        public void setCc(String cc)
-        {
-            _cc = cc;
-        }
-
-        public String getSubjectSuffix()
-        {
-            return _subjectSuffix;
-        }
-
-        public void setSubjectSuffix(String subjectSuffix)
-        {
-            _subjectSuffix = subjectSuffix;
-        }
-
-        public String getNewRequestNotify()
-        {
-            return _newRequestNotify;
-        }
-
-        public void setNewRequestNotify(String newRequestNotify)
-        {
-            _newRequestNotify = newRequestNotify;
-        }
-
-        public boolean isCcCheckbox()
-        {
-            return _ccCheckbox;
-        }
-
-        public void setCcCheckbox(boolean ccCheckbox)
-        {
-            _ccCheckbox = ccCheckbox;
-        }
-
-        public boolean isNewRequestNotifyCheckbox()
-        {
-            return _newRequestNotifyCheckbox;
-        }
-
-        public void setNewRequestNotifyCheckbox(boolean newRequestNotifyCheckbox)
-        {
-            _newRequestNotifyCheckbox = newRequestNotifyCheckbox;
-        }
-
-        public void populateMap(Map<String, String> map)
-        {
-            map.put(KEY_REPLYTO, _replyTo);
-            map.put(KEY_CC, _cc);
-            map.put(KEY_SUBJECTSUFFIX, _subjectSuffix);
-            map.put(KEY_NEWREQUESTNOTIFY, _newRequestNotify);
-        }
-
-        public static RequestNotificationSettings getDefaultSettings(Container c)
-        {
-            RequestNotificationSettings defaults = new RequestNotificationSettings();
-            defaults.setReplyTo(LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
-            defaults.setCc("");
-            defaults.setNewRequestNotify("");
-            defaults.setSubjectSuffix("Specimen Request Notification");
-            return defaults;
-        }
-
-        public Address[] getCCAddresses() throws ValidEmail.InvalidEmailException
-        {
-            if (_cc == null || _cc.length() == 0)
-                return null;
-            StringTokenizer splitter = new StringTokenizer(_cc, ",;: \t\n\r");
-            List<Address> addresses = new ArrayList<Address>();
-            while (splitter.hasMoreTokens())
-            {
-                String token = splitter.nextToken();
-                ValidEmail tester = new ValidEmail(token);
-                addresses.add(tester.getAddress());
-            }
-            return addresses.toArray(new Address[addresses.size()]);
-        }
-
-        public Address[] getNewRequestNotifyAddresses() throws ValidEmail.InvalidEmailException
-        {
-            if (_newRequestNotify == null || _newRequestNotify.length() == 0)
-                return null;
-            StringTokenizer splitter = new StringTokenizer(_newRequestNotify, ",;: \t\n\r");
-            List<Address> addresses = new ArrayList<Address>();
-            while (splitter.hasMoreTokens())
-            {
-                String token = splitter.nextToken();
-                ValidEmail tester = new ValidEmail(token);
-                addresses.add(tester.getAddress());
-            }
-            return addresses.toArray(new Address[addresses.size()]);
-        }
-
-        public boolean isReplyToCurrentUser()
-        {
-            return SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(getReplyTo());
-        }
-    }
 
     public RequestNotificationSettings getRequestNotificationSettings(Container container) throws SQLException
     {
@@ -932,75 +708,6 @@ public class SampleManager
     }
 
 
-    public static class DisplaySettings
-    {
-        private static final String KEY_FLAG_ONE_AVAIL_VIAL = "OneAvailableVial";
-        private static final String KEY_FLAG_ZERO_AVAIL_VIALS = "ZeroAvailableVials";
-        private DisplayOption _lastVial;
-        private DisplayOption _zeroVials;
-        public static enum DisplayOption
-        {
-            NONE,
-            ALL_USERS,
-            ADMINS_ONLY
-        }
-
-        public DisplaySettings()
-        {
-            // no-arg constructor for struts reflection
-        }
-
-        public DisplaySettings(Map<String, String> map)
-        {
-            _lastVial = DisplayOption.valueOf(map.get(KEY_FLAG_ONE_AVAIL_VIAL));
-            _zeroVials = DisplayOption.valueOf(map.get(KEY_FLAG_ZERO_AVAIL_VIALS));
-        }
-
-        public void populateMap(Map<String, String> map)
-        {
-            map.put(KEY_FLAG_ONE_AVAIL_VIAL, _lastVial.name());
-            map.put(KEY_FLAG_ZERO_AVAIL_VIALS, _zeroVials.name());
-        }
-
-        public static DisplaySettings getDefaultSettings()
-        {
-            DisplaySettings defaults = new DisplaySettings();
-            defaults.setLastVial(DisplayOption.ALL_USERS.name());
-            defaults.setZeroVials(DisplayOption.ALL_USERS.name());
-            return defaults;
-        }
-
-        public String getLastVial()
-        {
-            return _lastVial.name();
-        }
-
-        public void setLastVial(String lastVial)
-        {
-            _lastVial = DisplayOption.valueOf(lastVial);
-        }
-
-        public String getZeroVials()
-        {
-            return _zeroVials.name();
-        }
-
-        public void setZeroVials(String zeroVials)
-        {
-            _zeroVials = DisplayOption.valueOf(zeroVials);
-        }
-
-        public DisplayOption getLastVialEnum()
-        {
-            return _lastVial;
-        }
-
-        public DisplayOption getZeroVialsEnum()
-        {
-            return _zeroVials;
-        }
-    }
-
     public DisplaySettings getDisplaySettings(Container container) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
@@ -1021,45 +728,6 @@ public class SampleManager
                 container.getId(), "SpecimenRequestDisplay", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
-    }
-
-    public static class StatusSettings
-    {
-        public static final String KEY_USE_SHOPPING_CART = "UseShoppingCart";
-        private boolean _useShoppingCart;
-
-        public StatusSettings()
-        {
-            // no-arg constructor for struts reflection
-        }
-
-        public StatusSettings(Map<String, String> map)
-        {
-            String boolString = map.get(KEY_USE_SHOPPING_CART);
-            _useShoppingCart = Boolean.parseBoolean(boolString);
-        }
-
-        public void populateMap(Map<String, String> map)
-        {
-            map.put(KEY_USE_SHOPPING_CART, String.valueOf(_useShoppingCart));
-        }
-
-        public static StatusSettings getDefaultSettings()
-        {
-            StatusSettings defaults = new StatusSettings();
-            defaults.setUseShoppingCart(true);
-            return defaults;
-        }
-
-        public boolean isUseShoppingCart()
-        {
-            return _useShoppingCart;
-        }
-
-        public void setUseShoppingCart(boolean useShoppingCart)
-        {
-            _useShoppingCart = useShoppingCart;
-        }
     }
 
     public StatusSettings getStatusSettings(Container container) throws SQLException
@@ -1380,7 +1048,8 @@ public class SampleManager
             if (createRequirements)
                 getRequirementsProvider().generateDefaultRequirements(user, request);
 
-            updateSpecimenStatus(specimens.toArray(new Specimen[specimens.size()]), user);
+            SampleRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
+            updateSpecimenStatus(specimens.toArray(new Specimen[specimens.size()]), user, status.isSpecimensLocked());
         }
     }
 
@@ -1454,7 +1123,7 @@ public class SampleManager
                 createRequestEvent(user, request, RequestEventType.SPECIMEN_REMOVED, description, null);
         }
 
-        updateSpecimenStatus(specimens, user);
+        updateSpecimenStatus(specimens, user, false);
     }
 
     public Integer[] getRequestIdsForSpecimen(Specimen specimen) throws SQLException
@@ -1893,18 +1562,32 @@ public class SampleManager
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), c.getId());
     }
 
-    public VisitImpl[] getVisitsWithSpecimens(Container container)
+    public VisitImpl[] getVisitsWithSpecimens(Container container, User user)
     {
-        return getVisitsWithSpecimens(container, null);
+        return getVisitsWithSpecimens(container, user, null);
     }
 
-    public VisitImpl[] getVisitsWithSpecimens(Container container, CohortImpl cohort)
+    public VisitImpl[] getVisitsWithSpecimens(Container container, User user, CohortImpl cohort)
     {
         try
         {
-            //TODO: consider changing this to query-based.
-            SQLFragment visitIdSQL = new SQLFragment("SELECT SequenceNumMin from study.SpecimenDetail " +
-                    "WHERE Container = ? GROUP BY SequenceNumMin", container.getId());
+            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+            TableInfo tinfo = schema.getTable("SpecimenDetail");
+
+            FieldKey visitKey = FieldKey.fromParts("Visit");
+            Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
+            List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+            cols.add(colMap.get(visitKey));
+            Set<String> unresolvedColumns = new HashSet<String>();
+            QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
+            if (!unresolvedColumns.isEmpty())
+                throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
+            // generate our select SQL:
+            SQLFragment specimenDetailSql = Table.getSelectSQL(tinfo, cols, null, null);
+            
+            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenDetailSql + ") SpecimenDetailQuery");
+            visitIdSQL.addAll(specimenDetailSql.getParamsArray());
+            
             List<Double> visitIds = new ArrayList<Double>();
             ResultSet rs = null;
             try
@@ -1919,10 +1602,11 @@ public class SampleManager
             }
 
             SimpleFilter filter = new SimpleFilter("Container", container.getId());
-            filter.addInClause("SequenceNumMin", visitIds);
+            String visitFilterCol = StudyManager.getInstance().getStudy(container).isDateBased() ? "VisitValue" : "SequenceNumMin";
+            filter.addInClause(visitFilterCol, visitIds);
             if (cohort != null)
                 filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
-            return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin"), VisitImpl.class);
+            return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder," + visitFilterCol), VisitImpl.class);
         }
         catch (SQLException e)
         {

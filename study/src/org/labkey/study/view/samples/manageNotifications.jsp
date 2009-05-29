@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
@@ -41,9 +42,9 @@ function setElementDisplayByCheckbox(checkbox, element)
 </script>
 
 <%
-    JspView<SampleManager.RequestNotificationSettings> me =
-            (JspView<SampleManager.RequestNotificationSettings>) HttpView.currentView();
-    SampleManager.RequestNotificationSettings bean = me.getModelBean();
+    JspView<RequestNotificationSettings> me =
+            (JspView<RequestNotificationSettings>) HttpView.currentView();
+    RequestNotificationSettings bean = me.getModelBean();
     Container container = HttpView.getRootContext().getContainer();
 
     String completionURLPrefix = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(container);
@@ -70,10 +71,10 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 Replies to specimen request notications should go to:<br>
                 <%
-                    boolean replyToCurrentUser = SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(bean.getReplyTo());
+                    boolean replyToCurrentUser = RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(bean.getReplyTo());
                 %>
                 <input type='radio' value='true' id='replyToCurrentUser' name='replyToCurrentUser' value='true' <%= replyToCurrentUser ? "CHECKED" : "" %>
-                        onclick="document.getElementById('replyTo').value = '<%= h(SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');">
+                        onclick="document.getElementById('replyTo').value = '<%= h(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');">
                 The administrator who generated each notification<br>
                 <input type='radio' value='true' id='replyToFixedUser'  name='replyToCurrentUser'  value='false' <%= !replyToCurrentUser ? "CHECKED" : "" %>
                         onclick="setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = '<%= !replyToCurrentUser ? h(bean.getReplyTo()) : "" %>';">

@@ -79,7 +79,7 @@ public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
             if (sites == null)
                 return Collections.emptyList();
             List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+            VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
             for (SiteImpl site : sites)
             {
                 SimpleFilter filter = new SimpleFilter();

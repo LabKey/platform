@@ -63,7 +63,7 @@ function showRequestWindow(specOrVialIdArray, vialIdType)
     }
     else
         _addToRequestButton.hide();
-    
+
     _requestWin.specOrVialIdArray = specOrVialIdArray;
     _requestWin.vialIdType = vialIdType;
     _requestWin.setPosition(undefined, undefined);
@@ -78,7 +78,7 @@ function submitRequest()
             if (button == 'yes')
             {
                 document.location = LABKEY.ActionURL.buildURL("study-samples", "submitRequest",
-                        LABKEY.ActionURL.getContainer(), { id: _requestWin.selectedRequest});
+                        LABKEY.ActionURL.getContainer(), { id: LABKEY.Utils.getCookie("selectedRequest")});
             }
         });
 }
@@ -97,7 +97,7 @@ function cancelRequest()
             if (button == 'yes')
             {
                 Ext.Msg.wait("Canceling request...");
-                LABKEY.Specimen.cancelRequest(cancelSuccessful, _requestWin.selectedRequest);
+                LABKEY.Specimen.cancelRequest(cancelSuccessful, LABKEY.Utils.getCookie("selectedRequest"));
             }
         });
 }
@@ -105,7 +105,7 @@ function cancelRequest()
 function showRequestDetails()
 {
     document.location = LABKEY.ActionURL.buildURL("study-samples", "manageRequest",
-            LABKEY.ActionURL.getContainer(), { id: _requestWin.selectedRequest});
+            LABKEY.ActionURL.getContainer(), { id: LABKEY.Utils.getCookie("selectedRequest")});
 }
 
 function requestAPISelection(request)
@@ -128,7 +128,7 @@ function requestComboSelection(combo, record, index)
 function requestSelected(requestRecord)
 {
     var requestData = requestRecord.data;
-    _requestWin.selectedRequest = requestData.requestId;
+    LABKEY.Utils.setCookie("selectedRequest", requestData.requestId, true);
 
     if (!_detailsPanel)
     {
@@ -244,7 +244,7 @@ function removeSelectedVial()
         var recordData = record.data;
         vialIds[vialIds.length] = recordData.GlobalUniqueId;
     }
-    LABKEY.Specimen.removeVialsFromRequest(removeSelecteVialSuccessful, _requestWin.selectedRequest, vialIds, "GlobalUniqueId");
+    LABKEY.Specimen.removeVialsFromRequest(removeSelecteVialSuccessful, LABKEY.Utils.getCookie("selectedRequest"), vialIds, "GlobalUniqueId");
 }
 
 function failedAddCallback(responseObj, exceptionObj)
@@ -302,7 +302,7 @@ function succesfulAddCallback(request)
 function addToCurrentRequest()
 {
     var specOrVialIdArray = _requestWin.specOrVialIdArray;
-    var requestId = _requestWin.selectedRequest;
+    var requestId = LABKEY.Utils.getCookie("selectedRequest");
     var vialIdType = _requestWin.vialIdType;
     if (!specOrVialIdArray || !specOrVialIdArray.length > 0 || !requestId)
     {
@@ -376,17 +376,6 @@ function populateRequestList(requests)
     {
         _requestStore.removeAll();
         _requestStore.add(requestRecords);
-
-        // we're redisplaying the form; since our set of available requests may have changed, we need to make sure
-        // that our previously selected request is still active;
-        if (_requestWin.selectedRequest)
-        {
-            var found = false;
-            for (var i = 0; i < requests.length && !found; i++)
-                found = (request.requestId == _requestWin.selectedRequest);
-            if (!found && _requestWin.selectedRequest != _requestWin.manualSelection)
-                _requestWin.selectedRequest = undefined;
-        }
     }
     else
     {
@@ -436,7 +425,22 @@ function populateRequestList(requests)
         });
     }
 
-    var defaultValue = _requestWin.selectedRequest ? _requestWin.selectedRequest :  requests[0].requestId;
+    // since our set of available requests may have changed, we need to make sure
+    // that our previously selected request (if any) is still active:
+    var selectedRequest = LABKEY.Utils.getCookie("selectedRequest");
+    if (selectedRequest)
+    {
+        var found = false;
+        for (var i = 0; i < requests.length && !found; i++)
+            found = (requests[i].requestId == selectedRequest);
+        if (!found && selectedRequest != _requestWin.manualSelection)
+        {
+            LABKEY.Utils.deleteCookie("selectedRequest", true);
+            selectedRequest = undefined;
+        }
+    }
+
+    var defaultValue = selectedRequest ? selectedRequest :  requests[0].requestId;
     if (defaultValue == _requestWin.manualSelection)
     {
         // the user was last using a request that is not part of the default list.  We'll need to select that record now,
@@ -452,6 +456,9 @@ function populateRequestList(requests)
 
 function createRequest()
 {
+    // delete any stored request.  when we return to this page, we want to see the newly created request,
+    // which will be at the top of the list:
+    LABKEY.Utils.deleteCookie("selectedRequest", true);
     document.location = CREATE_REQUEST_BASE_LINK + '&sampleIds=' + _requestWin.specOrVialIdArray.toString();
 }
 

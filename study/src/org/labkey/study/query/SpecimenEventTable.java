@@ -36,7 +36,7 @@ public class SpecimenEventTable extends BaseStudyTable
         
         addWrapColumn(_rootTable.getColumn("SpecimenId"));
         addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
-        addWrapLocationColumn("Location", "LabId");
+        addWrapLocationColumn("LabId", "LabId").setCaption("Location");
         addWrapColumn(_rootTable.getColumn("Stored"));
         addWrapColumn(_rootTable.getColumn("StorageFlag"));
         addWrapColumn(_rootTable.getColumn("StorageDate"));
@@ -69,5 +69,11 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ProcessingTime"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
+        addWrapColumn(_rootTable.getColumn("ProcessingDate"));
+        addWrapColumn(_rootTable.getColumn("ProcessedByInitials"));
+        addWrapColumn(_rootTable.getColumn("ShippedFromLab"));
+        addWrapColumn(_rootTable.getColumn("ShippedToLab"));
+        addWrapColumn(_rootTable.getColumn("ExpectedTimeValue"));
+        addWrapColumn(_rootTable.getColumn("ExpectedTimeUnit"));
     }
 }

@@ -45,6 +45,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.security.permissions.*;
+import org.labkey.study.samples.settings.StatusSettings;
+import org.labkey.study.samples.settings.DisplaySettings;
+import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
@@ -367,7 +371,7 @@ public class SamplesController extends ViewController
     protected Forward showManageRepositorySettings() throws Exception
     {
         requiresAdmin();
-        JspView<SampleManager.RepositorySettings> view = new JspView<SampleManager.RepositorySettings>("/org/labkey/study/view/samples/manageRepositorySettings.jsp", SampleManager.getInstance().getRepositorySettings(getContainer()));
+        JspView<RepositorySettings> view = new JspView<RepositorySettings>("/org/labkey/study/view/samples/manageRepositorySettings.jsp", SampleManager.getInstance().getRepositorySettings(getContainer()));
         return _renderInTemplate(view, "Manage Repository Settings",
                 new NavTree("Study", new ActionURL(StudyController.BeginAction.class, getContainer())),
                 new NavTree("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer())));
@@ -376,7 +380,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageRepositorySettings(ManageRepositorySettingsForm form) throws Exception
     {
-        SampleManager.RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+        RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
         settings.setSimple(form.isSimple());
         settings.setEnableRequests(!form.isSimple()); //We only expose one setting for now...
         SampleManager.getInstance().saveRepositorySettings(getContainer(), settings);
@@ -754,7 +758,7 @@ public class SamplesController extends ViewController
                 SampleManager.getInstance().createRequestStatus(getUser(), status);
             }
 
-            SampleManager.StatusSettings settings = SampleManager.getInstance().getStatusSettings(getContainer());
+            StatusSettings settings = SampleManager.getInstance().getStatusSettings(getContainer());
             if (settings.isUseShoppingCart() != form.isUseShoppingCart())
             {
                 settings.setUseShoppingCart(form.isUseShoppingCart());
@@ -800,11 +804,11 @@ public class SamplesController extends ViewController
         }
     }
 
-    public static class ManageNotificationsForm extends BeanViewForm<SampleManager.RequestNotificationSettings>
+    public static class ManageNotificationsForm extends BeanViewForm<RequestNotificationSettings>
     {
         public ManageNotificationsForm()
         {
-            super(SampleManager.RequestNotificationSettings.class);
+            super(RequestNotificationSettings.class);
         }
 
         @Override
@@ -817,7 +821,7 @@ public class SamplesController extends ViewController
                 errors = new ActionErrors();
                 errors.add("main", new ActionMessage("Error", "Reply-to cannot be empty."));
             }
-            else if (!SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(replyTo))
+            else if (!RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(replyTo))
             {
                 try
                 {
@@ -960,7 +964,7 @@ public class SamplesController extends ViewController
     @Jpf.Action(validationErrorForward = @Jpf.Forward(path = "manageNotifications.do", name = "validate"))
     protected Forward handleUpdateNotifications(ManageNotificationsForm form) throws Exception
     {
-        SampleManager.RequestNotificationSettings settings = form.getBean();
+        RequestNotificationSettings settings = form.getBean();
         if (!settings.isNewRequestNotifyCheckbox())
             settings.setNewRequestNotify(null);
         else
@@ -1070,7 +1074,7 @@ public class SamplesController extends ViewController
     protected Forward showUploadSpecimens(UploadSpecimensForm form) throws Exception
     {
         requiresAdmin();
-        SampleManager.RepositorySettings settings =  SampleManager.getInstance().getRepositorySettings(getContainer());
+        RepositorySettings settings =  SampleManager.getInstance().getRepositorySettings(getContainer());
         if (!settings.isSimple())
             return new ViewForward("Pipeline", "browse", getContainer());
         
@@ -1223,11 +1227,11 @@ public class SamplesController extends ViewController
         return ((toCheck == null) || toCheck.equals(""));
     }
 
-    public static class DisplaySettingsForm extends BeanViewForm<SampleManager.DisplaySettings>
+    public static class DisplaySettingsForm extends BeanViewForm<DisplaySettings>
     {
         public DisplaySettingsForm()
         {
-            super(SampleManager.DisplaySettings.class);
+            super(DisplaySettings.class);
         }
     }
 
@@ -1236,12 +1240,12 @@ public class SamplesController extends ViewController
     {
         requiresPermission(ManageDisplaySettingsPermission.class);
         // try to get the settings from the form, just in case this is a reshow:
-        SampleManager.DisplaySettings settings = form.getBean();
+        DisplaySettings settings = form.getBean();
         if (settings == null || settings.getLastVialEnum() == null)
             settings = SampleManager.getInstance().getDisplaySettings(getContainer());
 
-        JspView<SampleManager.DisplaySettings> view =
-                new JspView<SampleManager.DisplaySettings>("/org/labkey/study/view/samples/manageDisplay.jsp", settings);
+        JspView<DisplaySettings> view =
+                new JspView<DisplaySettings>("/org/labkey/study/view/samples/manageDisplay.jsp", settings);
         NavTree[] navTrail = new NavTree[]{
                 new NavTree(getStudy().getLabel(), getActionURL().relativeUrl("overview", null, "Study")),
                 new NavTree("Manage Study", getActionURL().relativeUrl("manageStudy", null, "Study")),
@@ -1252,7 +1256,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward handleUpdateDisplaySettings(DisplaySettingsForm form) throws SQLException, ServletException, URISyntaxException
     {
-        SampleManager.DisplaySettings settings = form.getBean();
+        DisplaySettings settings = form.getBean();
         SampleManager.getInstance().saveDisplaySettings(getContainer(), settings);
         return new ViewForward(getActionURL().relativeUrl("manageStudy", null, "Study"));
     }
@@ -1262,12 +1266,12 @@ public class SamplesController extends ViewController
     {
         requiresPermission(ManageNotificationsPermission.class);
         // try to get the settings from the form, just in case this is a reshow:
-        SampleManager.RequestNotificationSettings settings = form.getBean();
+        RequestNotificationSettings settings = form.getBean();
         if (settings == null || settings.getReplyTo() == null)
             settings = SampleManager.getInstance().getRequestNotificationSettings(getContainer());
 
-        JspView<SampleManager.RequestNotificationSettings> view =
-                new JspView<SampleManager.RequestNotificationSettings>("/org/labkey/study/view/samples/manageNotifications.jsp",
+        JspView<RequestNotificationSettings> view =
+                new JspView<RequestNotificationSettings>("/org/labkey/study/view/samples/manageNotifications.jsp",
                         settings);
         NavTree[] navTrail = new NavTree[]{
                 new NavTree(getStudy().getLabel(), getActionURL().relativeUrl("overview", null, "Study")),

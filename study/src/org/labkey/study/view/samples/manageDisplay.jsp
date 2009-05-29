@@ -23,11 +23,12 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.samples.settings.DisplaySettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SampleManager.DisplaySettings> me =
-            (JspView<SampleManager.DisplaySettings>) HttpView.currentView();
-    SampleManager.DisplaySettings bean = me.getModelBean();
+    JspView<DisplaySettings> me =
+            (JspView<DisplaySettings>) HttpView.currentView();
+    DisplaySettings bean = me.getModelBean();
     Container container = HttpView.getRootContext().getContainer();
 %>
 
@@ -41,12 +42,12 @@
             <th align="right">Display warning icon when available vial count reaches one:</th>
             <td>
                 <select name="lastVial">
-                    <option value="<%= SampleManager.DisplaySettings.DisplayOption.NONE.name() %>"
-                            <%= bean.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.NONE ? "SELECTED" : ""%>>Never</option>
-                    <option value="<%= SampleManager.DisplaySettings.DisplayOption.ALL_USERS.name() %>"
-                            <%= bean.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ? "SELECTED" : ""%>>For all users</option>
-                    <option value="<%= SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY.name() %>"
-                            <%= bean.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY ? "SELECTED" : ""%>>For administrators only</option>
+                    <option value="<%= DisplaySettings.DisplayOption.NONE.name() %>"
+                            <%= bean.getLastVialEnum() == DisplaySettings.DisplayOption.NONE ? "SELECTED" : ""%>>Never</option>
+                    <option value="<%= DisplaySettings.DisplayOption.ALL_USERS.name() %>"
+                            <%= bean.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ? "SELECTED" : ""%>>For all users</option>
+                    <option value="<%= DisplaySettings.DisplayOption.ADMINS_ONLY.name() %>"
+                            <%= bean.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY ? "SELECTED" : ""%>>For administrators only</option>
                 </select>
             </td>
         </tr>
@@ -54,12 +55,12 @@
             <th align="right">Display warning icon when available vial count reaches zero:</th>
             <td>
                 <select name="zeroVials">
-                    <option value="<%= SampleManager.DisplaySettings.DisplayOption.NONE.name() %>"
-                            <%= bean.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.NONE ? "SELECTED" : ""%>>Never</option>
-                    <option value="<%= SampleManager.DisplaySettings.DisplayOption.ALL_USERS.name() %>"
-                            <%= bean.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ? "SELECTED" : ""%>>For all users</option>
-                    <option value="<%= SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY.name() %>"
-                            <%= bean.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY ? "SELECTED" : ""%>>For administrators only</option>
+                    <option value="<%= DisplaySettings.DisplayOption.NONE.name() %>"
+                            <%= bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.NONE ? "SELECTED" : ""%>>Never</option>
+                    <option value="<%= DisplaySettings.DisplayOption.ALL_USERS.name() %>"
+                            <%= bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS ? "SELECTED" : ""%>>For all users</option>
+                    <option value="<%= DisplaySettings.DisplayOption.ADMINS_ONLY.name() %>"
+                            <%= bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY ? "SELECTED" : ""%>>For administrators only</option>
                 </select>
             </td>
         </tr>

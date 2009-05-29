@@ -103,6 +103,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         sqlFragQCComments.add(getContainer().getId());
         addColumn(new ExprColumn(this, "QualityControlComments", sqlFragQCComments, Types.VARCHAR));
 
+        addWrapColumn(_rootTable.getColumn("ProcessingDate"));
+        addWrapColumn(_rootTable.getColumn("ProcessedByInitials"));
+        addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
+
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
 
 //        // add the vial count columns from specimen summary

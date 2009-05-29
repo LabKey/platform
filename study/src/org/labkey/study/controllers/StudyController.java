@@ -73,6 +73,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.study.*;
+import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -1029,7 +1030,7 @@ public class StudyController extends BaseStudyController
 
     public static void updateRepositorySettings(Container c, boolean simple) throws SQLException
     {
-        SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
         reposSettings.setSimple(simple);
         reposSettings.setEnableRequests(!simple);
         SampleManager.getInstance().saveRepositorySettings(c, reposSettings);

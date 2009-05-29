@@ -1825,6 +1825,7 @@ study/src/META-INF/study/scripts/postgresql/study-9.10-9.11.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.11-9.12.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.12-9.13.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.13-9.14.sql -text
+study/src/META-INF/study/scripts/postgresql/study-9.14-9.15.sql -text
 study/src/META-INF/study/scripts/postgresql/study-create.sql -text
 study/src/META-INF/study/scripts/postgresql/study-drop.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.11.sql -text
@@ -1931,6 +1932,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-9.10-9.11.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.11-9.12.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.12-9.13.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.13-9.14.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-9.14-9.15.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-create.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-drop.sql -text
 study/src/org/labkey/study/QueryHelper.java -text
@@ -2197,6 +2199,10 @@ study/src/org/labkey/study/samples/report/specimentype/TypeCohortReportFactory.j
 study/src/org/labkey/study/samples/report/specimentype/TypeParticipantReportFactory.java -text
 study/src/org/labkey/study/samples/report/specimentype/TypeReportFactory.java -text
 study/src/org/labkey/study/samples/report/specimentype/TypeSummaryReportFactory.java -text
+study/src/org/labkey/study/samples/settings/DisplaySettings.java -text
+study/src/org/labkey/study/samples/settings/RepositorySettings.java -text
+study/src/org/labkey/study/samples/settings/RequestNotificationSettings.java -text
+study/src/org/labkey/study/samples/settings/StatusSettings.java -text
 study/src/org/labkey/study/security/datasets.jsp -text
 study/src/org/labkey/study/security/permissions/LockSpecimensPermission.java -text
 study/src/org/labkey/study/security/permissions/ManageDisplaySettingsPermission.java -text

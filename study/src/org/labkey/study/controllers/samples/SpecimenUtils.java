@@ -38,6 +38,8 @@ import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.samples.notifications.DefaultRequestNotification;
 import org.labkey.study.samples.notifications.NotificationRecipientSet;
 import org.labkey.study.samples.notifications.RequestNotification;
+import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
@@ -111,7 +113,7 @@ public class SpecimenUtils
     public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, boolean commentsMode) throws ServletException, SQLException
     {
         SpecimenQueryView gridView;
-        SampleManager.RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+        RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
 
         if (cachedFilterData != null)
             gridView = SpecimenQueryView.createView(getViewContext(), cachedFilterData,
@@ -344,7 +346,7 @@ public class SpecimenUtils
 
     public void sendNewRequestNotifications(SampleRequest request) throws Exception
     {
-        SampleManager.RequestNotificationSettings settings =
+        RequestNotificationSettings settings =
                 SampleManager.getInstance().getRequestNotificationSettings(request.getContainer());
         Address[] notify = settings.getNewRequestNotifyAddresses();
         if (notify != null && notify.length > 0)
@@ -366,7 +368,7 @@ public class SpecimenUtils
         SampleRequest sampleRequest = notification.getSampleRequest();
         String specimenList = notification.getSpecimenListHTML(getViewContext());
 
-        SampleManager.RequestNotificationSettings settings =
+        RequestNotificationSettings settings =
                 SampleManager.getInstance().getRequestNotificationSettings(getContainer());
         MailHelper.ViewMessage message = MailHelper.createMessage(settings.getReplyToEmailAddress(getUser()), null);
         String subject = settings.getSubjectSuffix().replaceAll("%requestId%", "" + sampleRequest.getRowId());

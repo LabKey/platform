@@ -17,9 +17,10 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.samples.settings.RepositorySettings" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    SampleManager.RepositorySettings settings = (SampleManager.RepositorySettings) getModelBean();
+    RepositorySettings settings = (RepositorySettings) getModelBean();
 %>
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 

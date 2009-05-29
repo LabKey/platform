@@ -32,7 +32,7 @@ public class ParticipantSummaryReportFactory extends SpecimenVisitReportParamete
 {
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getCohort());
+        VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         SimpleFilter filter = new SimpleFilter();
         addBaseFilters(filter);
         ParticipantVisitReport report = new ParticipantVisitReport("Summary", visits, filter, this);
