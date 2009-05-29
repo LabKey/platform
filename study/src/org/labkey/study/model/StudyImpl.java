@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
+import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.query.StudyQuerySchema;
 import org.jetbrains.annotations.NotNull;
 
@@ -160,7 +161,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return SampleManager.getInstance().getRequestStatusIdsInUse(getContainer());
     }
 
-    public synchronized SampleManager.RepositorySettings getRepositorySettings() throws SQLException
+    public synchronized RepositorySettings getRepositorySettings() throws SQLException
     {
         return SampleManager.getInstance().getRepositorySettings(getContainer());
     }
