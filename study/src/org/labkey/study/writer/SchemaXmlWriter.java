@@ -112,7 +112,7 @@ public class SchemaXmlWriter implements Writer<DataSetDefinition[]>
                 if (null != fk && null != fk.getLookupColumnName())
                 {
                     ColumnType.Fk fkXml = columnXml.addNewFk();
-                    TableInfo tinfo = fk.getLookupTableInfo();
+                    TableInfo tinfo = fk.getLookupTableInfo();           // TODO: Export folder path
                     fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
                     fkXml.setFkTable(tinfo.getPublicName());
                     fkXml.setFkColumnName(fk.getLookupColumnName());

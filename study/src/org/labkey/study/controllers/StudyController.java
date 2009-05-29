@@ -3738,7 +3738,6 @@ public class StudyController extends BaseStudyController
     }
 
 
-    // TODO: Change to "Study Data Administrator" role?
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ExportStudyAction extends FormViewAction<ExportForm>
     {

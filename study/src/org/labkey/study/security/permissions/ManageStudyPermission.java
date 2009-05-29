@@ -16,7 +16,6 @@
 package org.labkey.study.security.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.study.StudyModule;
 
 /*

@@ -2454,10 +2454,18 @@ public class StudyManager
 
         if (!mapsImport.isEmpty())
         {
-            String domainURI = getDomainURI(study.getContainer(), (DataSet)null);
-
             List<String> importErrors = new LinkedList<String>();
-            PropertyDescriptor[] pds = OntologyManager.importTypes(domainURI, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
+            final Container c = study.getContainer();
+
+            // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
+            DomainURIFactory factory = new DomainURIFactory() {
+                public String getDomainURI(String name)
+                {
+                    return StudyManager.getDomainURI(c, name);
+                }
+            };
+
+            PropertyDescriptor[] pds = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
 
             if (!importErrors.isEmpty())
             {
@@ -2496,11 +2504,10 @@ public class StudyManager
                     }
 
                     DataSetDefinition def = manager.getDataSetDefinition(study, id);
-                    Container c = study.getContainer();
 
                     if (def == null)
                     {
-                        def = new DataSetDefinition(study, id, name, label, null, getDomainURI(c, name));
+                        def = new DataSetDefinition(study, id, name, label, null, factory.getDomainURI(name));
                         def.setVisitDatePropertyName(info.visitDatePropertyName);
                         def.setShowByDefault(!info.isHidden);
                         def.setKeyPropertyName(info.keyPropertyName);
@@ -2537,7 +2544,7 @@ public class StudyManager
             return getDomainURI(c, def.getName());
     }
 
-    private String getDomainURI(Container c, String name)
+    private static String getDomainURI(Container c, String name)
     {
         return new DatasetDomainKind().generateDomainURI(c, name);
     }

@@ -65,14 +65,14 @@ public class SchemaXmlReader implements SchemaReader
             info.isHidden = !tableProps.isShowByDefault();
             info.label = tableXml.getTableTitle();
 
-            // TODO:
+            // TODO: fill these in
             info.startDatePropertyName = null;
             info.visitDatePropertyName = null;
 
             _datasetInfoMap.put(tableProps.getId(), info);
 
             // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "ConceptURI", "RangeURI", "NotNull", "Hidden", "MvEnabled", "Description", "Format");
+            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "Hidden", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery");
 
             for (ColumnType columnXml : tableXml.getColumns().getColumnArray())
             {
@@ -91,17 +91,22 @@ public class SchemaXmlReader implements SchemaReader
                 // Assume nullable if not specified
                 boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
 
+                ColumnType.Fk fk = columnXml.getFk();
+
                 Map<String, Object> map = mapFactory.getRowMap(new Object[]{
                     datasetName,
                     columnName,
                     columnXml.getColumnTitle(),
-                    null,  // TODO: conceptURI
+                    columnXml.getDescription(),
                     t.getXsdType(),
                     notNull,
+                    null,  // TODO: conceptURI
+                    columnXml.getFormatString(),
                     columnXml.getIsHidden(),
                     null != columnXml.getMvColumnName(),
-                    columnXml.getDescription(),
-                    columnXml.getFormatString()
+                    null != fk ? fk.getFkFolderPath() : null,
+                    null != fk ? fk.getFkDbSchema() : null,
+                    null != fk ? fk.getFkTable() : null
                 });
 
                 _importMaps.add(map);

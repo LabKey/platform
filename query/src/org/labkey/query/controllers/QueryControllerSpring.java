@@ -2197,7 +2197,7 @@ public class QueryControllerSpring extends SpringActionController
                 if (!getContainer().hasPermission(getUser(),ACL.PERM_ADMIN))
                     HttpView.throwUnauthorized();
             }
-            CstmView[] existing = QueryManager.get().getColumnLists(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
+            CstmView[] existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
             CstmView view;
             if (existing.length != 0)
             {

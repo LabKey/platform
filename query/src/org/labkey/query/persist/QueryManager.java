@@ -177,13 +177,13 @@ public class QueryManager
         return view;
     }
 
-    public List<CstmView> getAllColumnLists(Container container, String schemaName, String queryName, User user, boolean inheritable) throws SQLException
+    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, User user, boolean inheritable) throws SQLException
     {
         List<CstmView> views = new ArrayList<CstmView>();
 
-        views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, user, false)));
+        views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, user, false)));
         if (user != null)
-            views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, null, false)));
+            views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, false)));
 
         if (!inheritable)
             return views;
@@ -192,20 +192,20 @@ public class QueryManager
         while (!containerCur.isRoot())
         {
             containerCur = containerCur.getParent();
-            views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, user, true)));
+            views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, user, true)));
             if (user != null)
-                views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, null, true)));
+                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, true)));
         }
 
         // look in the shared project
-        views.addAll(Arrays.asList(getColumnLists(ContainerManager.getSharedContainer(), schemaName, queryName, null, user, true)));
+        views.addAll(Arrays.asList(getCstmViews(ContainerManager.getSharedContainer(), schemaName, queryName, null, user, true)));
         if (user != null)
-            views.addAll(Arrays.asList(getColumnLists(ContainerManager.getSharedContainer(), schemaName, queryName, null, null, true)));
+            views.addAll(Arrays.asList(getCstmViews(ContainerManager.getSharedContainer(), schemaName, queryName, null, null, true)));
 
         return views;
     }
 
-    public CstmView[] getColumnLists(Container container, String schemaName, String queryName, String viewName, User user, boolean inheritableOnly) throws SQLException
+    public CstmView[] getCstmViews(Container container, String schemaName, String queryName, String viewName, User user, boolean inheritableOnly) throws SQLException
     {
         CstmView.Key key = new CstmView.Key(container);
         if (schemaName != null)

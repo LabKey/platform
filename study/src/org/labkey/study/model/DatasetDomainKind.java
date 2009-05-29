@@ -79,6 +79,7 @@ public class DatasetDomainKind extends DomainKind
     }
 
 
+    // Lsid.toString() encodes incorrectly TODO: fix
     public String generateDomainURI(Container container, String name)
     {
         // UNDONE can't use id, because it won't match OntologyManager.importTypes()!

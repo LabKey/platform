@@ -223,8 +223,8 @@ public class QueryServiceImpl extends QueryService
     {
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(container, schema, false, true);
         Map<String, CustomView> views = new HashMap<String, CustomView>();
-        for (CstmView collist : QueryManager.get().getAllColumnLists(container, schema, query, user, true))
-            addCustomView(container, user, views, collist, queryDefs);
+        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
+            addCustomView(container, user, views, cstmView, queryDefs);
         return views;
     }
 
@@ -254,19 +254,19 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView collist, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
+    private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView cstmView, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
     {
-        QueryDefinition qd = queryDefs.get(new Pair<String, String>(collist.getSchema(), collist.getQueryName()));
+        QueryDefinition qd = queryDefs.get(new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName()));
         if (qd == null)
-            qd = QueryService.get().getUserSchema(user, container, collist.getSchema()).getQueryDefForTable(collist.getQueryName());
+            qd = QueryService.get().getUserSchema(user, container, cstmView.getSchema()).getQueryDefForTable(cstmView.getQueryName());
 
-        if (qd instanceof QueryDefinitionImpl && !views.containsKey(collist.getName()))
-            views.put(collist.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, collist));
+        if (qd instanceof QueryDefinitionImpl && !views.containsKey(cstmView.getName()))
+            views.put(cstmView.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, cstmView));
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
     {
-        Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<String,QuerySnapshotDefinition>();
+        Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<String, QuerySnapshotDefinition>();
         for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schemaName))
         {
             ret.put(queryDef.getName(), new QuerySnapshotDefImpl(queryDef));

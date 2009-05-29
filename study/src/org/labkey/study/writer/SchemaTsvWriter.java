@@ -88,7 +88,7 @@ public class SchemaTsvWriter implements Writer<DataSetDefinition[]>
                         writer.print("\ttrue");
                 }
 
-                // TODO: mvEnabled?  category?  hidden?
+                // TODO: mvEnabled?  category?  hidden?  lookup properties (folder path, schema, query)?
 
                 writer.println();
             }

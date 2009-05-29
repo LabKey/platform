@@ -47,14 +47,14 @@
     User user = getViewContext().getUser();
     Container c = getViewContext().getContainer();
     QueryManager mgr = QueryManager.get();
-    List<CstmView> views = new ArrayList();
+    List<CstmView> views = new ArrayList<CstmView>();
     if (form.getViewContext().hasPermission(ACL.PERM_UPDATE))
     {
-        views.addAll(Arrays.asList(mgr.getColumnLists(c, null, null, null, null, false)));
+        views.addAll(Arrays.asList(mgr.getCstmViews(c, null, null, null, null, false)));
     }
     if (!user.isGuest())
     {
-        views.addAll(Arrays.asList(mgr.getColumnLists(c, null, null, null, user, false)));
+        views.addAll(Arrays.asList(mgr.getCstmViews(c, null, null, null, user, false)));
     }
     Collections.sort(views, new Comparator<CstmView>()
     {

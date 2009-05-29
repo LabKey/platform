@@ -16,25 +16,24 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.security.SecurityPolicy"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
-<%@ page import="org.labkey.api.security.SecurityPolicy" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
+    Container c = getViewContext().getContainer();
 
 if (null == getStudy())
 {
     out.println("A study has not yet been created in this folder.<br>");
-    if (getViewContext().getContainer().hasPermission(user, AdminPermission.class))
+    if (c.hasPermission(user, AdminPermission.class))
     {
-        Container c = getViewContext().getContainer();
         ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
         out.println(generateButton("Create Study", createURL));
         ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
@@ -51,7 +50,7 @@ if (null == getStudy())
     return;
 }
     boolean dateBased = getStudy().isDateBased();
-    SecurityPolicy policy = getViewContext().getContainer().getPolicy();
+    SecurityPolicy policy = c.getPolicy();
     boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, getStudy().getContainer());
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
@@ -66,10 +65,10 @@ if (null == getStudy())
                         isAdmin ? textLink("Manage " + visitLabel, url.setAction(StudyController.ManageVisitsAction.class)) : "" %></li>
     <li><%= getSites().length %> Labs and Sites&nbsp;<%= isAdmin ? textLink("Manage Labs/Sites", url.setAction(StudyController.ManageSitesAction.class)) : ""%></li>
 <%
-    if (StudyManager.getInstance().showCohorts(getViewContext().getContainer(), getViewContext().getUser()))
+    if (StudyManager.getInstance().showCohorts(c, user))
     {
 %>
-    <li><%= getCohorts(getViewContext().getUser()).length %> Cohorts&nbsp;<%= isAdmin ? textLink("Manage Cohorts", url.setAction(CohortController.ManageCohortsAction.class)) : ""%></li>
+    <li><%= getCohorts(user).length %> Cohorts&nbsp;<%= isAdmin ? textLink("Manage Cohorts", url.setAction(CohortController.ManageCohortsAction.class)) : ""%></li>
 <%
     }
 %>

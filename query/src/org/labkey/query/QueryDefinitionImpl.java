@@ -137,7 +137,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     ret.put(view.getName(), new CustomViewImpl(this, view));
                 }
             }
-            addCustomViews(ret, mgr.getAllColumnLists(container, _queryDef.getSchema(), _queryDef.getName(), user, inheritable));
+            addCustomViews(ret, mgr.getAllCstmViews(container, _queryDef.getSchema(), _queryDef.getName(), user, inheritable));
 
             //finally, look in all the active modules for any views defined in the file system
             Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();

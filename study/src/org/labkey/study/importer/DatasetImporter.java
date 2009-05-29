@@ -74,8 +74,7 @@ public class DatasetImporter
             {
                 List<Integer> orderedIds = null;
                 Map<String, DatasetImportProperties> extraProps = null;
-                SchemaReader xmlReader = null;
-                SchemaReader tsvReader = null;
+                SchemaReader reader = null;
 
                 DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root);
 
@@ -101,16 +100,15 @@ public class DatasetImporter
                     String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
 
                     if (null != metaDataFilename)
-                    {
-                        xmlReader = new SchemaXmlReader(study, new File(datasetDir, metaDataFilename), extraProps);
-                    }
+                        reader = new SchemaXmlReader(study, new File(datasetDir, metaDataFilename), extraProps);
                 }
 
                 // Fall back to schema.tsv if dataset_metadata.xml doesn't exist 
-                //if (null == reader)
-                tsvReader = new SchemaTsvReader(study, schemaFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
+                // TODO, once schema.tsv export/import is verified:
+                //  if (null == reader)
+                reader = new SchemaTsvReader(study, schemaFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
 
-                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), tsvReader, errors))
+                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors))
                     return false;
 
                 if (null != orderedIds)
@@ -202,8 +200,7 @@ public class DatasetImporter
     }
 
 
-    // These dataset properties are defined in datasets.xml; the rest are specified in schema.tsv.
-    // TODO: Get rid of schema.tsv and put all dataset-level properties here 
+    // These are the study-specific dataset properties that are defined in datasets.xml
     public static class DatasetImportProperties
     {
         private final int _id;

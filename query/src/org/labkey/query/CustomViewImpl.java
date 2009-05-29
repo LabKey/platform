@@ -46,12 +46,12 @@ public class CustomViewImpl implements CustomView
     boolean _dirty;
     final QueryManager _mgr = QueryManager.get();
     final QueryDefinitionImpl _queryDef;
-    CstmView _collist;
+    CstmView _cstmView;
 
     public CustomViewImpl(QueryDefinitionImpl queryDef, CstmView view)
     {
         _queryDef = queryDef;
-        _collist = view;
+        _cstmView = view;
         _dirty = false;
     }
 
@@ -59,19 +59,19 @@ public class CustomViewImpl implements CustomView
     {
         _queryDef = queryDef;
         _dirty = true;
-        _collist = new CstmView();
-        _collist.setContainer(queryDef.getContainer().getId());
-        _collist.setSchema(queryDef.getSchemaName());
-        _collist.setQueryName(queryDef.getName());
+        _cstmView = new CstmView();
+        _cstmView.setContainer(queryDef.getContainer().getId());
+        _cstmView.setSchema(queryDef.getSchemaName());
+        _cstmView.setQueryName(queryDef.getName());
         if (user != null)
         {
-            _collist.setCustomViewOwner(user.getUserId());
+            _cstmView.setCustomViewOwner(user.getUserId());
         }
         else
         {
-            _collist.setCustomViewOwner(null);
+            _cstmView.setCustomViewOwner(null);
         }
-        _collist.setName(name);
+        _cstmView.setName(name);
     }
 
     public QueryDefinition getQueryDefinition()
@@ -81,12 +81,12 @@ public class CustomViewImpl implements CustomView
 
     public String getName()
     {
-        return _collist.getName();
+        return _cstmView.getName();
     }
 
     public User getOwner()
     {
-        Integer userId = _collist.getCustomViewOwner();
+        Integer userId = _cstmView.getCustomViewOwner();
         if (userId == null)
             return null;
         return UserManager.getUser(userId.intValue());
@@ -94,12 +94,12 @@ public class CustomViewImpl implements CustomView
 
     public User getCreatedBy()
     {
-        return UserManager.getUser(_collist.getCreatedBy());
+        return UserManager.getUser(_cstmView.getCreatedBy());
     }
 
     public Container getContainer()
     {
-        return ContainerManager.getForId(_collist.getContainerId());
+        return ContainerManager.getForId(_cstmView.getContainerId());
     }
 
     public List<FieldKey> getColumns()
@@ -165,7 +165,7 @@ public class CustomViewImpl implements CustomView
 
     public List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties()
     {
-        return decodeProperties(_collist.getColumns());
+        return decodeProperties(_cstmView.getColumns());
     }
 
     public Map<FieldKey, Map<ColumnProperty, String>> getColumnPropertiesMap()
@@ -193,12 +193,12 @@ public class CustomViewImpl implements CustomView
 
     public boolean hasColumnList()
     {
-        return StringUtils.trimToNull(_collist.getColumns()) != null;
+        return StringUtils.trimToNull(_cstmView.getColumns()) != null;
     }
 
     public boolean hasFilterOrSort()
     {
-        return StringUtils.trimToNull(_collist.getFilter()) != null;
+        return StringUtils.trimToNull(_cstmView.getFilter()) != null;
     }
 
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
@@ -207,7 +207,7 @@ public class CustomViewImpl implements CustomView
             return;
         try
         {
-            URLHelper src = new URLHelper(_collist.getFilter());
+            URLHelper src = new URLHelper(_cstmView.getFilter());
             for (String key : src.getKeysByPrefix(FILTER_PARAM_PREFIX + "."))
             {
                 String newKey = dataRegionName + key.substring(FILTER_PARAM_PREFIX.length());
@@ -230,7 +230,7 @@ public class CustomViewImpl implements CustomView
             return null;
         try
         {
-            URLHelper src = new URLHelper(_collist.getFilter());
+            URLHelper src = new URLHelper(_cstmView.getFilter());
             String[] containerFilterNames = src.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
             if (containerFilterNames.length > 0)
                 return containerFilterNames[containerFilterNames.length - 1];
@@ -273,7 +273,7 @@ public class CustomViewImpl implements CustomView
 
     public String getFilter()
     {
-        return _collist.getFilter();
+        return _cstmView.getFilter();
     }
 
     public void setFilter(String filter)
@@ -294,15 +294,15 @@ public class CustomViewImpl implements CustomView
         {
             if (saveInSession())
             {
-                _collist = CustomViewSetKey.saveCustomViewInSession(request, getQueryDefinition(), _collist);
+                _cstmView = CustomViewSetKey.saveCustomViewInSession(request, getQueryDefinition(), _cstmView);
             }
             else if (isNew())
             {
-                _collist = _mgr.insert(user, _collist);
+                _cstmView = _mgr.insert(user, _cstmView);
             }
             else
             {
-                _collist = _mgr.update(user, _collist);
+                _cstmView = _mgr.update(user, _cstmView);
             }
             _mgr.fireViewChanged(this);
             _dirty = false;
@@ -325,9 +325,9 @@ public class CustomViewImpl implements CustomView
                 if (isNew())
                     return;
 
-                _mgr.delete(user, _collist);
+                _mgr.delete(user, _cstmView);
                 _mgr.fireViewDeleted(this);
-                _collist = null;
+                _cstmView = null;
             }
         }
         catch (SQLException e)
@@ -363,27 +363,27 @@ public class CustomViewImpl implements CustomView
 
     public boolean isNew()
     {
-        return _collist.getCustomViewId() == 0;
+        return _cstmView.getCustomViewId() == 0;
     }
 
     public boolean canInherit()
     {
-        return _mgr.canInherit(_collist.getFlags());
+        return _mgr.canInherit(_cstmView.getFlags());
     }
 
     public void setCanInherit(boolean f)
     {
-        edit().setFlags(_mgr.setCanInherit(_collist.getFlags(), f));
+        edit().setFlags(_mgr.setCanInherit(_cstmView.getFlags(), f));
     }
 
     public boolean isHidden()
     {
-        return _mgr.isHidden(_collist.getFlags());
+        return _mgr.isHidden(_cstmView.getFlags());
     }
 
     public void setIsHidden(boolean b)
     {
-        edit().setFlags(_mgr.setIsHidden(_collist.getFlags(), b));
+        edit().setFlags(_mgr.setIsHidden(_cstmView.getFlags(), b));
     }
 
     public boolean isEditable()
@@ -440,7 +440,7 @@ public class CustomViewImpl implements CustomView
             }
         }
 
-        String strFilter = _collist.getFilter();
+        String strFilter = _cstmView.getFilter();
         if (strFilter != null)
         {
             try
@@ -487,6 +487,7 @@ public class CustomViewImpl implements CustomView
     static public Map<FieldKey, ColumnInfo> getColumnInfos(TableInfo table, Collection<FieldKey> fields)
     {
         Map<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(table, fields);
+
         if (ret.size() != fields.size())
         {
             for (FieldKey field : fields)
@@ -499,8 +500,8 @@ public class CustomViewImpl implements CustomView
                 column.setCaption(field.getDisplayString() + " (not found)");
                 ret.put(field, column);
             }
-
         }
+
         return ret;
     }
 
@@ -510,6 +511,7 @@ public class CustomViewImpl implements CustomView
         DgQuery.Select select = view.getSelect();
 
         List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> fields = new ArrayList<Map.Entry<FieldKey, Map<ColumnProperty, String>>>();
+
         for (DgColumn column : select.getColumnArray())
         {
             FieldKey key = FieldKey.fromString(column.getValue().getField().getStringValue());
@@ -525,6 +527,7 @@ public class CustomViewImpl implements CustomView
             }
             fields.add(Pair.of(key, map));
         }
+
         setColumnProperties(fields);
         if (!saveFilterAndSort)
             return;
@@ -532,6 +535,7 @@ public class CustomViewImpl implements CustomView
         DgQuery.Where where = view.getWhere();
         DgQuery.OrderBy orderBy = view.getOrderBy();
         ActionURL url = new ActionURL();
+
         for (DgCompare compare : where.getCompareArray())
         {
             String op = compare.getOp();
@@ -546,8 +550,10 @@ public class CustomViewImpl implements CustomView
 
             url.addParameter(FILTER_PARAM_PREFIX + "." + compare.getField() + "~" + op, value);
         }
+
         StringBuilder sort = new StringBuilder();
         String strComma = "";
+
         for (DgOrderByString obs : orderBy.getFieldArray())
         {
             sort.append(strComma);
@@ -558,12 +564,15 @@ public class CustomViewImpl implements CustomView
             }
             sort.append(obs.getStringValue());
         }
+
         if (sort.length() != 0)
         {
             url.addParameter(FILTER_PARAM_PREFIX + ".sort", sort.toString());
         }
+
         if (view.isSetContainerFilterName())
             url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, view.getContainerFilterName());
+
         setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
     }
 
@@ -571,15 +580,15 @@ public class CustomViewImpl implements CustomView
     {
         if (_dirty)
         {
-            return _collist;
+            return _cstmView;
         }
-        _collist = _collist.clone();
+        _cstmView = _cstmView.clone();
         _dirty = true;
-        return _collist;
+        return _cstmView;
     }
 
     public CstmView getCstmView()
     {
-        return _collist;
+        return _cstmView;
     }
 }
