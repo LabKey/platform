@@ -205,6 +205,7 @@ api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text
 api/src/org/labkey/api/exp/DomainDescriptor.java -text
 api/src/org/labkey/api/exp/DomainNotFoundException.java -text
+api/src/org/labkey/api/exp/DomainURIFactory.java -text
 api/src/org/labkey/api/exp/DuplicateMaterialException.java -text
 api/src/org/labkey/api/exp/ExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/ExperimentException.java -text

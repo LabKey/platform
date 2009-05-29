@@ -1935,14 +1935,20 @@ public class OntologyManager
 	}
 
 
-    public static PropertyDescriptor[] importOneType(String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container)
+    public static PropertyDescriptor[] importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container)
             throws SQLException
     {
-        return importTypes(domainURI, null, maps, errors, container, false);
+        return importTypes(new DomainURIFactory()
+            {
+                public String getDomainURI(String name)
+                {
+                    return domainURI;
+                }
+            }, null, maps, errors, container, false);
     }
 
 
-    public static PropertyDescriptor[] importTypes(String domainPrefix, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
+    public static PropertyDescriptor[] importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
             throws SQLException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
@@ -1951,17 +1957,12 @@ public class OntologyManager
         Map<String, Map<String, PropertyDescriptor>> newPropsByDomain = new  TreeMap<String, Map<String, PropertyDescriptor>>();
         Map<String, PropertyDescriptor> pdNewMap;
 
-        Map<String,DomainDescriptor> domainMap = new HashMap<String,DomainDescriptor>();
+        Map<String, DomainDescriptor> domainMap = new HashMap<String, DomainDescriptor>();
 
         for (Map m : maps)
         {
-            String domainURI = domainPrefix;
-            String domainName=null;
-            if (typeColumn != null)
-            {
-                domainName = (String) m.get(typeColumn);
-                domainURI += domainName;
-            }
+            String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
+            String domainURI = uriFactory.getDomainURI(domainName);
 
             String name = StringUtils.trimToEmpty((String) m.get("property"));
             String propertyURI = domainURI + "." + name;
@@ -1992,6 +1993,17 @@ public class OntologyManager
 
             String description = (String) m.get("description");
             String format = StringUtils.trimToNull((String)m.get("format"));
+
+            // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
+            String lookupContainerId = null;
+            String lookupFolderPath = (String) m.get("LookupFolderPath");
+            if (null != lookupFolderPath)
+            {
+                Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
+                lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
+            }
+            String lookupSchema = (String) m.get("LookupSchema");
+            String lookupQuery = (String) m.get("LookupQuery");
 
             PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
             if (null == pt)
@@ -2032,13 +2044,14 @@ public class OntologyManager
             }
 
             DomainDescriptor dd = null;
+
             if (null != domainURI)
             {
                 dd = domainMap.get(domainURI);
                 if (null == dd)
                 {
                     dd = ensureDomainDescriptor(domainURI, domainName, container);
-                    domainMap.put(domainURI,dd);
+                    domainMap.put(domainURI, dd);
                 }
             }
 
@@ -2054,6 +2067,9 @@ public class OntologyManager
             pd.setHidden(hidden);
             pd.setFormat(format);
             pd.setMvEnabled(mvEnabled);
+            pd.setLookupContainer(lookupContainerId);
+            pd.setLookupSchema(lookupSchema);
+            pd.setLookupQuery(lookupQuery);
 
             if (null != allProps.put(pd.getPropertyURI(), pd))
             {
@@ -2110,14 +2126,17 @@ public class OntologyManager
                 }
                 if (null == pdInserted)
                     pdInserted = OntologyManager.insertOrUpdatePropertyDescriptor(pdToInsert, dd);
+
                 list.add(pdInserted);
             }
         }
+
         for (PropertyDescriptor pdToInsert : propsWithoutDomains.values())
         {
             PropertyDescriptor pdInserted = OntologyManager.insertOrUpdatePropertyDescriptor(pdToInsert, null);
             list.add(pdInserted);
         }
+
         return list.toArray(new PropertyDescriptor[list.size()]);
     }
 

@@ -156,6 +156,8 @@ public class Lsid
     /**
      * Converts this to a string. urn:lsid:authority prefix will always be lower case so may not
      * match original input. Use equals or canonical to be sure of equality.
+     *
+     * TODO: Encoding is incorrect
      */
     public String toString()
     {
