@@ -626,7 +626,8 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 html.push(_link('manage group...', $url('security','group',this.user.Container||'/',{id:this.user.UserId})));
                 html.push('&nbsp;');
             }
-            html.push(_open('permissions', $url('security','groupPermission',this.cache.projectId,{id:this.user.UserId})));
+            if (this.user.UserId != SecurityCache.prototype.groupDevelopers)
+                html.push(_open('permissions', $url('security','groupPermission',this.cache.projectId,{id:this.user.UserId})));
         }
         else
         {
@@ -728,8 +729,9 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             for (i=0 ; i<users.length ; i++)
             {
                 user = users[i];
-                removeWrapper = '$remove$' + id + user.UserId;
-                Ext.fly(removeWrapper).dom.onclick = this.RemoveMember_onClick.createDelegate(this,[user.UserId]);
+                removeWrapper = Ext.fly('$remove$' + id + user.UserId);
+                if (removeWrapper)
+                    removeWrapper.dom.onclick = this.RemoveMember_onClick.createDelegate(this,[user.UserId]);
             }
         }
     },
