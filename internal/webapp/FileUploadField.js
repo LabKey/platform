@@ -104,6 +104,12 @@ Ext.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
         }, this);
     },
 
+    reset : function()
+    {
+        Ext.form.FileUploadField.superclass.reset.call(this);
+        try {this.fileInput.dom.value = '';}catch(ex){}
+    },
+
     // private
     getFileInputId: function(){
         return this.id+'-file';
