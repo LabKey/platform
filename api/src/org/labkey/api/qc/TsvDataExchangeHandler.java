@@ -71,13 +71,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         runDataFile,
         runDataUploadedFile,
         errorsFile,
-        transformedDataFile,
     }
     public static final String SAMPLE_DATA_PROP_NAME = "sampleData";
     public static final String VALIDATION_RUN_INFO_FILE = "runProperties.tsv";
     public static final String ERRORS_FILE = "validationErrors.tsv";
     public static final String RUN_DATA_FILE = "runData.tsv";
-    public static final String TRANSFORM_DATA_FILE = "transformData.tsv";
 
     private Map<String, String> _formFields = new HashMap<String, String>();
     private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<String, List<Map<String, Object>>>();
@@ -142,13 +140,19 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
      */
     protected void writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
-        Map<String, File> data = context.getUploadedData();
-        assert(data.size() <= 1);
+        TransformResult transform = context.getTransformResult();
+        List<File> dataFiles = new ArrayList<File>();
+
+        if (!transform.isEmpty())
+            dataFiles.addAll(transform.getTransformedData().values());
+        else
+            dataFiles.addAll(context.getUploadedData().values());
+        assert(dataFiles.size() <= 1);
 
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
         XarContext xarContext = new XarContext("Simple Run Creation", context.getContainer(), context.getUser());
 
-        for (Map.Entry<String, File> entry : data.entrySet())
+        for (File data : dataFiles)
         {
             ExpData expData = ExperimentService.get().createData(context.getContainer(), context.getProvider().getDataType());
             expData.setRun(run);
@@ -159,10 +163,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 // original data file
                 pw.append(Props.runDataUploadedFile.name());
                 pw.append('\t');
-                pw.append(entry.getValue().getAbsolutePath());
+                pw.append(data.getAbsolutePath());
                 pw.append('\n');
 
-                Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, entry.getValue(), info, LOG, xarContext);
+                Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext);
                 File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
                 for (Map.Entry<DataType, List<Map<String, Object>>> dataEntry : dataMap.entrySet())
