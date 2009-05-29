@@ -318,6 +318,65 @@ LABKEY.Utils = new function()
                 var scrollBarWidth = 18;
                 boxComponent.setPosition(viewportWidth + scrollLeft - box.width - scrollBarWidth);
             }
+        },
+
+        /**
+         * Sets a client-side cookie.  Useful for saving non-essential state to provide a better
+         * user experience.  Note that some browser settings may prevent cookies from being saved,
+         * and users can clear browser cookies at any time, so cookies are not a substitute for
+         * database persistence.
+         * @param {String} name The name of the cookie to be saved.
+         * @param {String} value The value of the cookie to be saved.
+         * @param {Boolean} pageonly Whether this cookie should be scoped to the entire site, or just this page.
+         * Page scoping considers the entire URL without parameters; all URL contents after the '?' are ignored.
+         * @param {int} days The number of days the cookie should be saved on the client.
+         */
+        setCookie : function(name, value, pageonly, days) {
+            var expires;
+            if (days)
+            {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toGMTString();
+            }
+            else
+                expires = "";
+            document.cookie = name + "=" + value + expires + "; path=" + (pageonly ? location.pathname : '/');
+        },
+
+        /**
+         * Retrieves a client-side cookie.  Useful for retrieving non-essential state to provide a better
+         * user experience.  Note that some browser settings may prevent cookies from being saved,
+         * and users can clear browser cookies at any time, so previously saved cookies should not be assumed
+         * to be available.
+         * @param {String} name The name of the cookie to be retrieved.
+         * @param {String} defaultvalue The value to be returned if no cookie with the specified name is found on the client.
+         */
+        getCookie : function(name, defaultvalue) {
+            var nameEQ = name + "=";
+            var ca = document.cookie.split(';');
+            for(var i=0; i < ca.length; i++)
+            {
+                var c = ca[i];
+                while (c.charAt(0) == ' ')
+                    c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0)
+                    return c.substring(nameEQ.length, c.length);
+            }
+            return defaultvalue;
+        },
+
+        /**
+         * Deletes a client-side cookie.  Note that 'name' and 'pageonly' should be exactly the same as when the cookie
+         * was set.
+         * @param {String} name The name of the cookie to be deleted.
+         * @param {Boolean} pageonly Whether the cookie is scoped to the entire site, or just this page.
+         * Deleting a site-level cookie has no impact on page-level cookies, and deleting page-level cookies
+         * has no impact on site-level cookies, even if the cookies have the same name.
+         */
+        deleteCookie : function (name, pageonly)
+        {
+            LABKEY.setCookie(name, "", pageonly, -1);
         }
     };
 };

@@ -52,6 +52,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
+    private String _viewName;
 
     public RenderContext(ViewContext context)
     {
@@ -591,5 +592,15 @@ public class RenderContext extends BoundMap // extends ViewContext
             return Collections.emptySet();
         }
         return _selected;
+    }
+
+    public void setViewName(String viewName)
+    {
+        _viewName = viewName;
+    }
+
+    public String getViewName()
+    {
+        return _viewName;
     }
 }

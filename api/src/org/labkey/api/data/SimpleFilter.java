@@ -248,6 +248,23 @@ public class SimpleFilter implements Filter
             return Arrays.asList(_colName);
         }
 
+        @Override
+        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        {
+            sb.append(formatter.format(_colName));
+            sb.append(" IS ONE OF (");
+            String sep = "";
+            for (Object val : getParamVals())
+            {
+                if (val != null)
+                {
+                    sb.append(sep).append(val.toString());
+                    sep = ", ";
+                }
+            }
+            sb.append(")");
+        }
+
         public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             Object[] params = getParamVals();

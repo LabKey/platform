@@ -92,6 +92,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _initializeButtonBar = true;
 
     private boolean _shadeAlternatingRows = false;
+    private boolean _showFilterDescription = true;
     private boolean _showBorders = false;
     private Report _report;
 
@@ -918,6 +919,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setDisplayColumns(displayColumns);
 
         rgn.setShadeAlternatingRows(isShadeAlternatingRows());
+        rgn.setShowFilterDescription(isShowFilterDescription());
         rgn.setShowBorders(isShowBorders());
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
@@ -1004,6 +1006,9 @@ public class QueryView extends WebPartView<Object>
             ret.getRenderContext().setBaseFilter(filter);
             ret.getRenderContext().setBaseSort(sort);
         }
+
+        if (_customView != null)
+            ret.getRenderContext().setViewName(_customView.getName());
     }
 
     protected void renderDataRegion(PrintWriter out) throws Exception
@@ -1381,6 +1386,16 @@ public class QueryView extends WebPartView<Object>
     public void setShadeAlternatingRows(boolean shadeAlternatingRows)
     {
         _shadeAlternatingRows = shadeAlternatingRows;
+    }
+
+    public boolean isShowFilterDescription()
+    {
+        return _showFilterDescription;
+    }
+
+    public void setShowFilterDescription(boolean showFilterDescription)
+    {
+        _showFilterDescription = showFilterDescription;
     }
 
     public boolean isShowBorders()

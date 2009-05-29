@@ -447,7 +447,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     clearAllFilters : function ()
     {
-        this._removeParams(getParamValPairs([".", ".offset"]));
+        this._removeParams([".", ".offset"]);
     },
 
     showMessage : function (html)

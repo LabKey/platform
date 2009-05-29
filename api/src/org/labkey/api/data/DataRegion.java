@@ -55,6 +55,7 @@ public class DataRegion extends DisplayElement
     private boolean _showUpdateButton = false;
     private boolean _showFilters = true;
     private boolean _sortable = true;
+    private boolean _showFilterDescription = true;
     private String _name = null;
     private String _selectionKey = null;
     private ButtonBar _gridButtonBar = ButtonBar.BUTTON_BAR_GRID;
@@ -353,6 +354,16 @@ public class DataRegion extends DisplayElement
     public void setSortable(boolean sortable)
     {
         _sortable = sortable;
+    }
+
+    public boolean isShowFilterDescription()
+    {
+        return _showFilterDescription;
+    }
+
+    public void setShowFilterDescription(boolean showFilterDescription)
+    {
+        _showFilterDescription = showFilterDescription;
     }
 
     public boolean getShowUpdateButton()
@@ -683,7 +694,18 @@ public class DataRegion extends DisplayElement
             // If button bar is not visible, don't render form.  Important for nested regions (forms can't be nested)
             //TODO: Fix this so form is rendered AFTER all rows. (Does this change layoout?)
             boolean renderButtons = _gridButtonBar.shouldRender(ctx);
-            renderHeader(ctx, out, renderButtons);
+            String headerMessage = null;
+            if (isShowFilterDescription())
+            {
+                String filterDescription = getFilterDescription(ctx);
+                if (filterDescription != null)
+                {
+                    headerMessage = PageFlowUtil.filter(filterDescription) +
+                        " <a href=\"#\" onClick=\"javascript:LABKEY.DataRegions['" +
+                            PageFlowUtil.filter(getName()) + "'].clearAllFilters(); return false;\">Clear all filters</a>";
+                }
+            }
+            renderHeader(ctx, out, renderButtons, headerMessage);
 
             Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
             if (!ignoredColumns.isEmpty())
@@ -749,9 +771,9 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
+    protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, String headerMessage) throws IOException
     {
-        renderHeaderScript(ctx, out);
+        renderHeaderScript(ctx, out, headerMessage);
 
         if (renderButtons)
             renderFormHeader(out, MODE_GRID);
@@ -775,7 +797,7 @@ public class DataRegion extends DisplayElement
         renderMessageBox(ctx, out);
     }
 
-    protected void renderHeaderScript(RenderContext ctx, Writer out) throws IOException
+    protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage) throws IOException
     {
         out.write("<script type=\"text/javascript\">\n");
         out.write("LABKEY.requiresExtJs();\n");
@@ -801,7 +823,13 @@ public class DataRegion extends DisplayElement
         out.write("'showStatusBar' : " + _showStatusBar + ",\n");
         out.write("'selectionKey' : '" + PageFlowUtil.filter(_selectionKey) + "',\n");
         out.write("'selectorCols' : '" + PageFlowUtil.filter(_recordSelectorValueColumns) + "'\n");
-        out.write("})});\n");
+        out.write("});\n");
+        if (headerMessage != null)
+        {
+            out.write("LABKEY.DataRegions['" + PageFlowUtil.filter(getName()) + "'].showMessage('" +
+                    PageFlowUtil.encodeJavascriptStringLiteral(headerMessage) + "');\n");
+        }
+        out.write("});\n");
         out.write("</script>\n");
     }
 
@@ -937,6 +965,45 @@ public class DataRegion extends DisplayElement
         ctx.setBaseFilter(baseFilter);
         ctx.setBaseSort(baseSort);
         renderTable(ctx, out);
+    }
+
+    private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = { "RowId", "DisplayName", "Description", "Label", "Caption", "Value" };
+    protected String getFilterDescription(RenderContext ctx) throws IOException
+    {
+        SimpleFilter urlFilter = new SimpleFilter(ctx.getViewContext().getActionURL(), getName());
+        if (!urlFilter.getWhereParamNames().isEmpty())
+        {
+            StringBuilder filterDesc = new StringBuilder();
+            if (ctx.getViewName() != null)
+                filterDesc.append("View \"").append(ctx.getViewName()).append("\"");
+            else
+                filterDesc.append("This view");
+            filterDesc.append(" is filtered: ").append(urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
+            {
+                @Override
+                public String format(String columnName)
+                {
+                    String formatted = super.format(columnName);
+                    for (String hiddenFilter : HIDDEN_FILTER_COLUMN_SUFFIXES)
+                    {
+                        if (formatted.toLowerCase().endsWith("/" + hiddenFilter.toLowerCase()) ||
+                            formatted.toLowerCase().endsWith("." + hiddenFilter.toLowerCase()))
+                        {
+                            formatted = formatted.substring(0, formatted.length() - (hiddenFilter.length() + 1));
+                        }
+                    }
+                    int dotIndex = formatted.lastIndexOf('.');
+                    if (dotIndex >= 0)
+                        formatted = formatted.substring(dotIndex + 1);
+                    int slashIndex = formatted.lastIndexOf('/');
+                    if (slashIndex >= 0)
+                        formatted = formatted.substring(slashIndex);
+                    return formatted;
+                }
+            }));
+            return filterDesc.toString();
+        }
+        return null;
     }
 
     protected void renderGridStart(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws IOException
