@@ -166,7 +166,6 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             if (null == c)
                 throw new IllegalStateException("No current container");
 
-            Container project = c.getProject();
             //TODO: Have registry of trees. Need registry of trees instead of just arbitrary macros to support graphical tree editor
             if ("core.projects".equals(treeId))
                 navTree = new ProjectsMenu(ctx);
@@ -174,6 +173,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 navTree = new ContainerMenu(ctx);
             else if ("core.projectAdmin".equals(treeId))
                 navTree = new ProjectAdminMenu(ctx);
+            else if ("core.folderAdmin".equals(treeId))
+                navTree = new FolderAdminMenu(ctx);
             else if ("core.siteAdmin".equals(treeId))
                 navTree = new SiteAdminMenu(ctx);
 
