@@ -70,8 +70,8 @@ Any user with READ access to this folder may view some summary data.  However, a
         if (!includeEditOption && hasUpdatePerm)
             hasReadAllPerm = true;
         String inputName = "group." + group.getUserId();
-        String warning = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN" + "').style.display='inline';\"";
-        String clear = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN" + "').style.display='none';\"";
+        String warning = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN').style.display='inline';\"";
+        String clear = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN').style.display='none';\"";
         %><tr><td><%=h(name)%></td><%
         if (includeEditOption)
         {

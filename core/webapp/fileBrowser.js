@@ -2045,9 +2045,21 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             if (this.currentDirectory)
             {
                 var form = this.formPanel.getForm();
-                var options = {url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
-                form.doAction(new Ext.form.Action.Submit(form, options));
-                Ext.getBody().dom.style.cursor = "wait"
+                var path = this.fileUploadField.getValue();
+                var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+                var name = path.substring(i+1);
+                var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
+                var file = this.fileSystem.recordFromCache(target);
+                if (file)
+                {
+                    alert('file already exists on server: ' + name);
+                }
+                else
+                {
+                    var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
+                    form.doAction(new Ext.form.Action.Submit(form, options));
+                    Ext.getBody().dom.style.cursor = "wait";
+                }
             }
         };
 
@@ -2073,6 +2085,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             listeners: {
                 "actioncomplete" : function (f, action)
                 {
+                    me.fileUploadField.reset();
                     Ext.getBody().dom.style.cursor = "pointer";
                     console.log("upload actioncomplete");
                     console.log(action);
@@ -2083,6 +2096,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 },
                 "actionfailed" : function (f, action)
                 {
+                    me.fileUploadField.reset();
                     Ext.getBody().dom.style.cursor = "pointer";
                     console.log("upload actionfailed");
                     console.log(action);

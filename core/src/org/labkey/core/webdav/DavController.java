@@ -568,45 +568,44 @@ public class DavController extends SpringActionController
                     Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>) o;
                     MultipartFile file = entry.getValue();
                     String fileName = file.getOriginalFilename();
-                    if (!file.isEmpty())
+                    if (file.isEmpty())
+                        return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+                    WebdavResolver.Resource dest = resource.find(fileName);
+                    if (null == dest)
+                        return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+                    // CONSIDER: support multi-file POST
+                    setResource(dest);
+                    setFileStream(new SpringAttachmentFile(file));
+                    WebdavStatus status = super.doMethod();
+
+                    // if _returnUrl then redirect, else respond as if PROPFIND
+                    String returnUrl = getRequest().getParameter(ReturnUrlForm.Params.returnUrl.toString());
+                    if (null != StringUtils.trimToNull(returnUrl))
                     {
-                        WebdavResolver.Resource dest = resource.find(fileName);
-                        if (null == file)
-                            return WebdavStatus.SC_METHOD_NOT_ALLOWED;
-                        // CONSIDER: support multi-file POST
-                        setResource(dest);
-                        setFileStream(new SpringAttachmentFile(file));
-                        WebdavStatus status = super.doMethod();
-
-                        // if _returnUrl then redirect, else respond as if PROPFIND
-                        String returnUrl = getRequest().getParameter(ReturnUrlForm.Params.returnUrl.toString());
-                        if (null != StringUtils.trimToNull(returnUrl))
-                        {
-                            HttpView.throwRedirect(returnUrl);
-                            return WebdavStatus.SC_OK;
-                        }
-
-                        if (status == WebdavStatus.SC_CREATED)
-                        {
-                            PropfindAction action = new PropfindAction()
-                            {
-                                @Override
-                                protected InputStream getInputStream() throws IOException
-                                {
-                                    return new ByteArrayInputStream(new byte[0]);
-                                }
-
-                                @Override
-                                protected Pair<Integer, Boolean> getDepthParameter()
-                                {
-                                    return new Pair<Integer,Boolean>(0,Boolean.FALSE);
-                                }
-                            };
-                            action.setResource(dest);
-                            return action.doMethod();
-                        }
-                        return status;
+                        HttpView.throwRedirect(returnUrl);
+                        return WebdavStatus.SC_OK;
                     }
+
+                    if (status == WebdavStatus.SC_CREATED)
+                    {
+                        PropfindAction action = new PropfindAction()
+                        {
+                            @Override
+                            protected InputStream getInputStream() throws IOException
+                            {
+                                return new ByteArrayInputStream(new byte[0]);
+                            }
+
+                            @Override
+                            protected Pair<Integer, Boolean> getDepthParameter()
+                            {
+                                return new Pair<Integer,Boolean>(0,Boolean.FALSE);
+                            }
+                        };
+                        action.setResource(dest);
+                        return action.doMethod();
+                    }
+                    return status;
                 }
             }
             return new GetAction().doMethod();
