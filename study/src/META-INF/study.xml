@@ -502,7 +502,6 @@
   </ns:table>
   <ns:table tableName="LockedSpecimens" tableDbType="VIEW">
     <ns:columns>
-      <ns:column columnName="RowId"/>
       <ns:column columnName="GlobalUniqueId"/>
       <ns:column columnName="Container"/>
     </ns:columns>
