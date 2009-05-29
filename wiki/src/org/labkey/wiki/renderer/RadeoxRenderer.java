@@ -18,17 +18,14 @@ package org.labkey.wiki.renderer;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.HString;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.menu.MenuService;
-import org.labkey.api.view.menu.NavTreeMenu;
+import org.labkey.api.view.menu.*;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.radeox.api.engine.RenderEngine;
@@ -161,7 +158,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         public void executeTree(Writer writer, MacroParameter params) throws IOException
         {
             String treeId = params.get("name", 1);
-            NavTree navTree = null;
+            NavTreeMenu navTree = null;
             ViewContext ctx = HttpView.currentContext();
             if (null == ctx)
                 throw new IllegalStateException("No view context.");
@@ -172,13 +169,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             Container project = c.getProject();
             //TODO: Have registry of trees. Need registry of trees instead of just arbitrary macros to support graphical tree editor
             if ("core.projects".equals(treeId))
-                navTree = ContainerManager.getProjectList(ctx);
+                navTree = new ProjectsMenu(ctx);
             else if ("core.currentProject".equals(treeId))
-                navTree = ContainerManager.getFolderListForUser(project, ctx);
+                navTree = new ContainerMenu(ctx);
             else if ("core.projectAdmin".equals(treeId))
-                navTree = MenuService.get().getProjectAdminTree(ctx);
+                navTree = new ProjectAdminMenu(ctx);
             else if ("core.siteAdmin".equals(treeId))
-                navTree = MenuService.get().getSiteAdminTree(ctx);
+                navTree = new SiteAdminMenu(ctx);
 
             NavTreeManager.applyExpandState(navTree, ctx);
             if (null == navTree)
@@ -187,10 +184,9 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 return;
             }
 
-            NavTreeMenu mv = new NavTreeMenu(ctx, "wiki-menu", navTree);
             try
             {
-            mv.include(mv, writer);
+                navTree.include(navTree, writer);
             }
             catch (IOException iox)
             {
