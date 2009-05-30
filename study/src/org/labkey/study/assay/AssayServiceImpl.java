@@ -17,11 +17,16 @@
 package org.labkey.study.assay;
 
 import com.google.gwt.user.client.rpc.SerializableException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.StringUtils;
+import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -29,38 +34,35 @@ import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
+import org.labkey.api.qc.TransformDataHandler;
+import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
-import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.beanutils.ConvertUtils;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.File;
 
 /**
  * User: brittp
@@ -217,8 +219,10 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         if (transformScripts.size() == 1)
             result.setProtocolTransformScript(transformScripts.get(0).getAbsolutePath());
 
+        ExpData data = ExperimentService.get().createData(getContainer(), provider.getDataType());
+        ExperimentDataHandler handler = data.findDataHandler();
         result.setAllowValidationScript(provider.getDataExchangeHandler() != null);
-        result.setAllowTransformationScript(provider.getDataExchangeHandler() != null);
+        result.setAllowTransformationScript(handler instanceof TransformDataHandler);
 
         return result;
     }
