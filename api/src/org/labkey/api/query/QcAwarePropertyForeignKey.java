@@ -312,12 +312,12 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
         public void addNonOORPropetyDescriptor(PropertyDescriptor pd)
         {
-            // May be a QC PD, but not OOR specifically
+            // May be a MV PD, but not OOR specifically
             if (pd.isMvEnabled())
             {
                 PropertyDescriptor indicatorPd = pd.clone();
                 indicatorPd.setName(pd.getName() + MvColumn.MV_INDICATOR_SUFFIX);
-                indicatorPd.setLabel(pd.getName() + " QC Indicator");
+                indicatorPd.setLabel(pd.getName() + " MV Indicator");
                 indicatorPd.setRangeURI(PropertyType.STRING.getTypeUri());
                 indicatorPd.setMvEnabled(false);
 

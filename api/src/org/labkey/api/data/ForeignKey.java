@@ -47,6 +47,11 @@ public interface ForeignKey
     StringExpressionFactory.StringExpression getURL(ColumnInfo parent);
 
     /**
+     * @return The container id of the foreign user schema table.  Null means current container.
+     */
+    String getLookupContainerId();
+
+    /**
      * Just for introspection.
      * @return The name of the foreign user schema table.
      */

@@ -2698,7 +2698,7 @@ public class OntologyManager
             }
             else if (pd.isMvEnabled())
             {
-                // Not all callers will have wrapped a QC value if there isn't also
+                // Not all callers will have wrapped an MV value if there isn't also
                 // a real value
                 if (MvUtil.isMvIndicator(value.toString(), pd.getContainer()))
                 {

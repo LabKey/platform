@@ -53,6 +53,11 @@ public abstract class AbstractForeignKey implements ForeignKey
         _lookupSchemaName = lookupSchemaName;
     }
 
+    public String getLookupContainerId()
+    {
+        return null;
+    }
+
     protected void setTableName(String name)
     {
         this._tableName = name;

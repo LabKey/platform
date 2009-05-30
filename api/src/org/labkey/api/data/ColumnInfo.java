@@ -901,18 +901,23 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String ownerName, String tableName, String lookupKey, boolean joinWithContaienr)
         {
-            this._dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
-            this._ownerName = ownerName == null ? foreignKey.getParentTable().getSchema().getOwner() : ownerName;
-            this._tableName = tableName;
-            this._lookupKey = lookupKey;
-            this._joinWithContainer = joinWithContaienr;
+            _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
+            _ownerName = ownerName == null ? foreignKey.getParentTable().getSchema().getOwner() : ownerName;
+            _tableName = tableName;
+            _lookupKey = lookupKey;
+            _joinWithContainer = joinWithContaienr;
         }
 
         public boolean isJoinWithContainer()
         {
             return _joinWithContainer;
         }
-        
+
+        public String getLookupContainerId()
+        {
+            return null;
+        }
+
         public String getLookupTableName()
         {
             return _tableName;

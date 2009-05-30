@@ -70,6 +70,11 @@ public class QueryForeignKey implements ForeignKey
         return LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupTable.getColumn(displayField), true);
     }
 
+    public String getLookupContainerId()
+    {
+        return null;
+    }
+
     public TableInfo getLookupTableInfo()
     {
         if (_table == null && _schema != null)

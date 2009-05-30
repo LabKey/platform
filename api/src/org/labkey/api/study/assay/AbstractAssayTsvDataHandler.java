@@ -368,7 +368,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         {
                             String columnName = pd.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             wrongTypes.add(columnName);
-                            errorSB.append(columnName).append(" must be a valid QC Value.");
+                            errorSB.append(columnName).append(" must be a valid MV indicator.");
                         }
                     }
 

@@ -122,7 +122,7 @@ public enum CompareType
                     return new SimpleFilter.InClause(colName, values, true);
                 }
             },
-    HAS_QC("Has a QC Value", "hasqcvalue", false, null, "QC_VALUE")
+    HAS_QC("Has a QC Value", "hasqcvalue", false, null, "QC_VALUE")           // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)
@@ -130,7 +130,7 @@ public enum CompareType
                     return new QcClause(colName, false);
                 }
             },
-    NO_QC("Does not have a QC Value", "noqcvalue", false, null, "NOT_QC_VALUE")
+    NO_QC("Does not have a QC Value", "noqcvalue", false, null, "NOT_QC_VALUE")        // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)

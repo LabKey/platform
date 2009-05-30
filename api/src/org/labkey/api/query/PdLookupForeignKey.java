@@ -28,6 +28,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
 {
     User _user;
     PropertyDescriptor _pd;
+
     public PdLookupForeignKey(User user, PropertyDescriptor pd)
     {
         if (user == null)
@@ -37,12 +38,20 @@ public class PdLookupForeignKey extends AbstractForeignKey
         _pd = pd;
         _user = user;
     }
+
+    @Override
+    public String getLookupContainerId()
+    {
+        return _pd.getLookupContainer();
+    }
+
     public TableInfo getLookupTableInfo()
     {
         if (_pd.getLookupSchema() == null || _pd.getLookupQuery() == null)
             return null;
         String containerId = _pd.getLookupContainer();
         Container container;
+
         if (containerId != null)
         {
             container = ContainerManager.getForId(containerId);
@@ -51,23 +60,27 @@ public class PdLookupForeignKey extends AbstractForeignKey
         {
             container = _pd.getContainer();
         }
+
         if (container == null)
             return null;
+
         if (!container.hasPermission(_user, ACL.PERM_READ))
             return null;
+
         QuerySchema qSchema = DefaultSchema.get(_user, container).getSchema(_pd.getLookupSchema());
+
         if (!(qSchema instanceof UserSchema))
-        {
             return null;
-        }
+
         UserSchema schema = (UserSchema) qSchema;
         TableInfo table = schema.getTable(_pd.getLookupQuery());
+
         if (table == null)
             return null;
+
         if (table.getPkColumns().size() != 1)
-        {
             return null;
-        }
+
         return table;
     }
 

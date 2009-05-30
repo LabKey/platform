@@ -85,7 +85,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         writer.writeProperty("columnModel", getColumnModel());
         Map<String,String> qcInfo = getQcInfo();
         if (qcInfo != null)
-            writer.writeProperty("qcInfo", qcInfo);
+            writer.writeProperty("qcInfo", qcInfo);    // TODO: Change to mvInfo?
 
         writeRowset(writer);
 
@@ -116,10 +116,10 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     }
 
     /**
-     * Returns a map of QC Values to their labels.
+     * Returns a map of MV indicators to their labels.
      * E.g.: ".Q" -> "This value has been flagged as failing QC"
      *
-     * If no columns contained in this result allow QC,
+     * If no columns contained in this result allow missing values,
      * the result of this method will be null
      */
     protected Map<String,String> getQcInfo()

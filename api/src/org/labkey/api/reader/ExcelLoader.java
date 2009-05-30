@@ -231,7 +231,7 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
                         }
                         else
                         {
-                            // Do we have a QC indicator column?
+                            // Do we have an MV indicator column?
                             int mvIndicatorIndex = getMvIndicatorColumnIndex(column);
                             if (mvIndicatorIndex != -1)
                             {
@@ -242,10 +242,10 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
                             }
                             else
                             {
-                                // No such column. Is this a valid qc indicator or a valid value?
+                                // No such column. Is this a valid MV indicator or a valid value?
                                 if (MvUtil.isValidMvIndicator(contents.toString(), column.getMvContainer()))
                                 {
-                                    // set the qc value
+                                    // set the MV indicator
                                     mvWrapper = new MvFieldWrapper();
                                     mvWrapper.setMvIndicator("".equals(contents) ? null : contents.toString());
                                     value = mvWrapper;

@@ -493,7 +493,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                         {
                             if (values[i] != null)
                             {
-                                // A QC indicator column must have generated this. Set the value
+                                // An MV indicator column must have generated this. Set the value
                                 MvFieldWrapper mvWrapper = (MvFieldWrapper)values[i];
                                 mvWrapper.setValue(("".equals(fld)) ?
                                     column.missingValues :
@@ -501,7 +501,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                             }
                             else
                             {
-                                // Do we have a QC indicator column?
+                                // Do we have an MV indicator column?
                                 int mvIndicatorIndex = getMvIndicatorColumnIndex(column);
                                 if (mvIndicatorIndex != -1)
                                 {
@@ -515,7 +515,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                                 }
                                 else
                                 {
-                                    // No such column. Is this a valid qc indicator or a valid value?
+                                    // No such column. Is this a valid MV indicator or a valid value?
                                     if (MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
                                     {
                                         MvFieldWrapper mvWrapper = new MvFieldWrapper();
@@ -552,14 +552,14 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                                     mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
                                 }
                                 if (_throwOnErrors && !MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
-                                    throw new ConversionException(fld + " is not a valid QC value");
+                                    throw new ConversionException(fld + " is not a valid MV indicator");
                             }
                             else
                             {
                                 // No matching qc column, just put in a wrapper
                                 if (!MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
                                 {
-                                    throw new ConversionException(fld + " is not a valid QC value");
+                                    throw new ConversionException(fld + " is not a valid MV indicator");
                                 }
                                 MvFieldWrapper mvWrapper = new MvFieldWrapper();
                                 mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
