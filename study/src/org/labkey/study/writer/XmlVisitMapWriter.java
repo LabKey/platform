@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class XmlVisitMapWriter implements Writer<VisitImpl[]>
 {
-    private static final String FILENAME = "visit_map.xml";
+    public static final String FILENAME = "visit_map.xml";
 
     public String getSelectionText()
     {

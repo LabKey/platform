@@ -544,6 +544,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return null;
         }
 
+        public String getLookupContainerId()
+        {
+            return null;
+        }
+
         public String getLookupTableName()
         {
             return ExpSchema.TableType.RunGroups.toString();

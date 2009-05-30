@@ -33,7 +33,7 @@ import java.io.PrintWriter;
  */
 public class SchemaTsvWriter implements Writer<DataSetDefinition[]>
 {
-    private static final String SCHEMA_FILENAME = "schema.tsv";
+    public static final String FILENAME = "schema.tsv";
 
     public String getSelectionText()
     {
@@ -44,7 +44,7 @@ public class SchemaTsvWriter implements Writer<DataSetDefinition[]>
     {
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();
-        String schemaFilename = fs.makeLegalName(SCHEMA_FILENAME);
+        String schemaFilename = fs.makeLegalName(FILENAME);
         schemaXml.setFile(schemaFilename);
         schemaXml.setTypeNameColumn("platename");
         schemaXml.setLabelColumn("platelabel");

@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class DataFaxVisitMapWriter implements Writer<VisitImpl[]>
 {
-    private static final String FILENAME = "visit_map.txt";
+    public static final String FILENAME = "visit_map.txt";
 
     public String getSelectionText()
     {

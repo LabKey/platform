@@ -17,17 +17,14 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.security.ACL"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -49,7 +46,7 @@
         }
         else
         {
-            if (!col.isHidden()) // QC indicator and raw columns shouldn't be displayed
+            if (!col.isHidden()) // MV indicator and raw columns shouldn't be displayed
                 userColumns.add(col);
         }
     }
@@ -62,7 +59,7 @@
         <th>Type</th>
         <th>Format</th>
         <th>Required</th>
-        <th>Allows QC</th>
+        <th>Allows MV</th>
         <th>Description</th>
     </tr><%
 

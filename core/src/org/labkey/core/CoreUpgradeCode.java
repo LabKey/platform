@@ -102,7 +102,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         try
         {
-            // Need to insert standard QC values for the root
+            // Need to insert standard MV indicators for the root
             Container rootContainer = ContainerManager.getRoot();
             String rootContainerId = rootContainer.getId();
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();

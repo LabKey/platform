@@ -341,7 +341,7 @@ public class ListDefinitionImpl implements ListDefinition
 
             if (property != null)
             {
-                // Special handling for qc indicators -- they don't have real property descriptors.
+                // Special handling for MV indicators -- they don't have real property descriptors.
                 if (mvIndicatorColumnNames.contains(cd.name))
                 {
                     cd.name = property.getPropertyURI();
@@ -406,7 +406,7 @@ public class ListDefinitionImpl implements ListDefinition
                 if (null == cdKey)
                     break;
 
-                // cdKey must be class Integer if autoincrement key exists or normal Integer key column
+            // cdKey must be class Integer if autoincrement key exists or normal Integer key column
             case Integer:
                 if (Integer.class.equals(cdKey.clazz))
                     break;
@@ -446,7 +446,7 @@ public class ListDefinitionImpl implements ListDefinition
                         {
                             String columnName = domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             wrongTypes.add(columnName);
-                            errors.add(columnName + " must be a valid QC Value.");
+                            errors.add(columnName + " must be a valid MV indicator.");
                         }
                     }
                 }
@@ -520,7 +520,7 @@ public class ListDefinitionImpl implements ListDefinition
                     used.add(dp);
             ListImportHelper helper = new ListImportHelper(user, this, used.toArray(new DomainProperty[used.size()]), cdKey);
 
-            // our map of properties can have duplicates due to qc indicator columns (different columns, same URI)
+            // our map of properties can have duplicates due to MV indicator columns (different columns, same URI)
             Set<PropertyDescriptor> propSet = new HashSet<PropertyDescriptor>(properties.values());
 
             PropertyDescriptor[] pds = propSet.toArray(new PropertyDescriptor[propSet.size()]);

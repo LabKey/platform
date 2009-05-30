@@ -3774,7 +3774,7 @@ public class StudyController extends BaseStudyController
                 {
                     File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
                     File exportDir = new File(rootDir, "export");
-                    writer.write(study, new ExportContext(getUser(), getContainer()), new FileSystemFile(exportDir));
+                    writer.write(study, new ExportContext(getUser(), getContainer(), "old".equals(form.getFormat())), new FileSystemFile(exportDir));
                     _successURL = new ActionURL(ManageStudyAction.class, getContainer());
                     break;
                 }
@@ -3784,7 +3784,7 @@ public class StudyController extends BaseStudyController
                     File exportDir = new File(rootDir, "export");
                     exportDir.mkdir();
                     ZipFile zip = new ZipFile(exportDir, study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".zip");
-                    writer.write(study, new ExportContext(getUser(), getContainer()), zip);
+                    writer.write(study, new ExportContext(getUser(), getContainer(), "old".equals(form.getFormat())), zip);
                     zip.close();
                     _successURL = new ActionURL(ManageStudyAction.class, getContainer());
                     break;
@@ -3792,7 +3792,7 @@ public class StudyController extends BaseStudyController
                 case 2:
                 {
                     ZipFile zip = new ZipFile(getViewContext().getResponse(), study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".zip");
-                    writer.write(study, new ExportContext(getUser(), getContainer()), zip);
+                    writer.write(study, new ExportContext(getUser(), getContainer(), "old".equals(form.getFormat())), zip);
                     zip.close();
                     break;
                 }
@@ -3811,6 +3811,7 @@ public class StudyController extends BaseStudyController
     {
         private String[] _types;
         private int _location;
+        private String _format;
 
         public String[] getTypes()
         {
@@ -3830,6 +3831,16 @@ public class StudyController extends BaseStudyController
         public void setLocation(int location)
         {
             _location = location;
+        }
+
+        public String getFormat()
+        {
+            return _format;
+        }
+
+        public void setFormat(String format)
+        {
+            _format = format;
         }
     }
 

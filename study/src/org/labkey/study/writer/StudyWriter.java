@@ -15,11 +15,10 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.study.model.StudyImpl;
-import org.labkey.api.util.VirtualFile;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.Study;
 import org.apache.log4j.Logger;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.VirtualFile;
+import org.labkey.study.model.StudyImpl;
 
 import java.util.Arrays;
 import java.util.List;

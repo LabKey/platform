@@ -26,11 +26,13 @@ import org.labkey.study.xml.StudyDocument;
  */
 public class ExportContext extends AbstractContext
 {
+    private final boolean _oldFormats;
     private boolean _locked = false;
 
-    public ExportContext(User user, Container c)
+    public ExportContext(User user, Container c, boolean oldFormats)
     {
         super(user, c, StudyXmlWriter.getStudyDocument());
+        _oldFormats = oldFormats;
     }
 
     public void lockStudyDocument()
@@ -46,5 +48,10 @@ public class ExportContext extends AbstractContext
             throw new IllegalStateException("Can't access StudyDocument after study.xml has been written");
 
         return super.getStudyDocument();
+    }
+
+    public boolean useOldFormats()
+    {
+        return _oldFormats;
     }
 }

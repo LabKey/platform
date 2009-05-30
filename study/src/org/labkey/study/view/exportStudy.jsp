@@ -20,10 +20,8 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.writer.StudyWriter" %>
-<%@ page import="org.labkey.study.writer.Writer" %>
+<%@ page import="org.labkey.study.writer.*" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.ExportForm> me = (JspView<StudyController.ExportForm>) HttpView.currentView();
@@ -33,6 +31,10 @@
 <%=errors%>
 <form action="" method="post">
     <table>
+        <tr><td>Choose export file format:</td></tr>
+        <tr><td><input type="radio" name="format" value="new" checked>New XML format (e.g., <%=XmlVisitMapWriter.FILENAME%>, <%=SchemaXmlWriter.SCHEMA_FILENAME%>)</td></tr>
+        <tr><td><input type="radio" name="format" value="old">Old file format (e.g., <%=DataFaxVisitMapWriter.FILENAME%>, <%=SchemaTsvWriter.FILENAME%>)</td></tr>
+        <tr><td>&nbsp;</td></tr>
         <tr>
             <td>Choose the study objects you wish to export:</td>
         </tr>
@@ -54,6 +56,7 @@
         <tr><td><input type="radio" name="location" value="0">Pipeline root as individual files</td></tr>
         <tr><td><input type="radio" name="location" value="1">Pipeline root as zip file</td></tr>
         <tr><td><input type="radio" name="location" value="2" checked>Browser as zip file</td></tr>
+        <tr><td>&nbsp;</td></tr>
         <tr>
             <td>
                 <%=generateSubmitButton("Export")%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%>

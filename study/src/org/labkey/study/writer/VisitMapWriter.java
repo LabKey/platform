@@ -34,7 +34,15 @@ public class VisitMapWriter implements Writer<StudyImpl>
 
     public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws IOException
     {
-        XmlVisitMapWriter writer = new XmlVisitMapWriter();
-        writer.write(study.getVisits(), ctx, fs);
+        if (ctx.useOldFormats())
+        {
+            DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
+            writer.write(study.getVisits(), ctx, fs);
+        }
+        else
+        {
+            XmlVisitMapWriter writer = new XmlVisitMapWriter();
+            writer.write(study.getVisits(), ctx, fs);
+        }
     }
 }

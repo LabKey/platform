@@ -15,27 +15,24 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.DatasetsDocument;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.DatasetReorderer;
-import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.pipeline.DatasetBatch;
+import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.Study;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TableType;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.DatasetBatch;
+import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.xml.DatasetsDocument;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
-import org.apache.xmlbeans.XmlException;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,69 +57,70 @@ public class DatasetImporter
         {
             File datasetDir = getDatasetDirectory(ctx, root);
 
-            StudyDocument.Study.Datasets.Schema schema = datasetsXml.getSchema();
-            String schemaSource = schema.getFile();
-            String labelColumn = schema.getLabelColumn();
-            String typeNameColumn = schema.getTypeNameColumn();
-            String typeIdColumn = schema.getTypeIdColumn();
+            List<Integer> orderedIds = null;
+            Map<String, DatasetImportProperties> extraProps = null;
+            SchemaReader reader = null;
+            DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root);
 
-            String datasetFilename = ctx.getStudyXml().getDatasets().getDefinition().getFile();
-
-            File schemaFile = new File(datasetDir, schemaSource);
-
-            if (schemaFile.exists())
+            if (null != manifestDatasetsXml)
             {
-                List<Integer> orderedIds = null;
-                Map<String, DatasetImportProperties> extraProps = null;
-                SchemaReader reader = null;
+                Container c = ctx.getContainer();
 
-                DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root);
+                if (!PageFlowUtil.nullSafeEquals(manifestDatasetsXml.getDefaultDateFormat(), StudyManager.getInstance().getDefaultDateFormatString(c)))
+                    StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
 
-                if (null != manifestDatasetsXml)
+                if (!PageFlowUtil.nullSafeEquals(manifestDatasetsXml.getDefaultNumberFormat(), StudyManager.getInstance().getDefaultNumberFormatString(c)))
+                    StudyManager.getInstance().setDefaultNumberFormatString(c, manifestDatasetsXml.getDefaultNumberFormat());
+
+                DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
+
+                extraProps = getDatasetImportProperties(manifestDatasetsXml);
+
+                orderedIds = new ArrayList<Integer>(datasets.length);
+
+                for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
+                    orderedIds.add(dataset.getId());
+
+                String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
+
+                if (null != metaDataFilename)
+                    reader = new SchemaXmlReader(study, new File(datasetDir, metaDataFilename), extraProps);
+            }
+
+            if (null == reader)
+            {
+                StudyDocument.Study.Datasets.Schema schema = datasetsXml.getSchema();
+
+                if (null != schema)
                 {
-                    Container c = ctx.getContainer();
+                    String schemaTsvSource = schema.getFile();
+                    String labelColumn = schema.getLabelColumn();
+                    String typeNameColumn = schema.getTypeNameColumn();
+                    String typeIdColumn = schema.getTypeIdColumn();
 
-                    if (!PageFlowUtil.nullSafeEquals(manifestDatasetsXml.getDefaultDateFormat(), StudyManager.getInstance().getDefaultDateFormatString(c)))
-                        StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
+                    File schemaTsvFile = new File(datasetDir, schemaTsvSource);
 
-                    if (!PageFlowUtil.nullSafeEquals(manifestDatasetsXml.getDefaultNumberFormat(), StudyManager.getInstance().getDefaultNumberFormatString(c)))
-                        StudyManager.getInstance().setDefaultNumberFormatString(c, manifestDatasetsXml.getDefaultNumberFormat());
-
-                    DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
-
-                    extraProps = getDatasetImportProperties(manifestDatasetsXml);
-
-                    orderedIds = new ArrayList<Integer>(datasets.length);
-
-                    for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
-                        orderedIds.add(dataset.getId());
-
-                    String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
-
-                    if (null != metaDataFilename)
-                        reader = new SchemaXmlReader(study, new File(datasetDir, metaDataFilename), extraProps);
+                    reader = new SchemaTsvReader(study, schemaTsvFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
                 }
+            }
 
-                // Fall back to schema.tsv if dataset_metadata.xml doesn't exist 
-                // TODO, once schema.tsv export/import is verified:
-                //  if (null == reader)
-                reader = new SchemaTsvReader(study, schemaFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
-
+            if (null != reader)
                 if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors))
                     return false;
 
-                if (null != orderedIds)
-                {
-                    DatasetReorderer reorderer = new DatasetReorderer(study, ctx.getUser());
-                    reorderer.reorderDatasets(orderedIds);
-                }
+            if (null != orderedIds)
+            {
+                DatasetReorderer reorderer = new DatasetReorderer(study, ctx.getUser());
+                reorderer.reorderDatasets(orderedIds);
+            }
 
-                File datasetFile = new File(datasetDir, datasetFilename);
+            String datasetFilename = datasetsXml.getDefinition().getFile();
 
-                if (datasetFile.exists())
-                {
-                    submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());
-                }
+            File datasetFile = new File(datasetDir, datasetFilename);
+
+            if (datasetFile.exists())
+            {
+                submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());
             }
         }
 

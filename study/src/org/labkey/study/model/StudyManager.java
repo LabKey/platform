@@ -2213,7 +2213,7 @@ public class StudyManager
                         if (col.isMvEnabled() && !MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), def.getContainer()))
                         {
                             String columnName = col.getName() + MvColumn.MV_INDICATOR_SUFFIX;
-                            errors.add(columnName + " must be a valid QC Value.");
+                            errors.add(columnName + " must be a valid MV indicator.");
                             break;
                         }
                     }

@@ -125,7 +125,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                     column.clazz = expectedColumnClass;
                 else
                 {
-                    // It's not an expected column. Is it a qc indicator column?
+                    // It's not an expected column. Is it an MV indicator column?
                     if (!mvIndicatorColumns.contains(column.name))
                     {
                         column.load = false;

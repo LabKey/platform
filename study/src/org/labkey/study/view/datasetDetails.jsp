@@ -16,21 +16,19 @@
  */
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
-<%@ page import="org.labkey.api.security.ACL"%>
-<%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.security.permissions.Permission"%>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.*" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
-<%@ page import="org.labkey.api.security.permissions.Permission" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();

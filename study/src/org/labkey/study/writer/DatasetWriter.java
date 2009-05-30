@@ -109,9 +109,20 @@ public class DatasetWriter implements Writer<StudyImpl>
         else
             categoriesXml.setCategoryArray(categories.toArray(new String[categories.size()]));
 
-        // Write out the schema.tsv file and add reference & attributes to study.xml
-        SchemaTsvWriter schemaTsvWriter = new SchemaTsvWriter();
-        schemaTsvWriter.write(datasets, ctx, fs);
+        if (ctx.useOldFormats())
+        {
+            // Write out the schema.tsv file and add reference & attributes to study.xml
+            SchemaTsvWriter schemaTsvWriter = new SchemaTsvWriter();
+            schemaTsvWriter.write(datasets, ctx, fs);
+        }
+        else
+        {
+            SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter(defaultDateFormat);
+            schemaXmlWriter.write(datasets, ctx, fs);
+            dsXml.setMetaDataFile(SchemaXmlWriter.SCHEMA_FILENAME);
+        }
+
+        XmlBeansUtil.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
 
         // Write out the .dataset file and add reference to study.xml
         Datasets.Definition definitionXml = datasetsXml.addNewDefinition();
@@ -139,11 +150,6 @@ public class DatasetWriter implements Writer<StudyImpl>
                 "default.filePattern=plate(\\\\d\\\\d\\\\d).tsv\n" +
                 "default.importAllMatches=TRUE");
         writer.close();
-
-        SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter(defaultDateFormat);
-        schemaXmlWriter.write(datasets, ctx, fs);
-        dsXml.setMetaDataFile(SchemaXmlWriter.SCHEMA_FILENAME);
-        XmlBeansUtil.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
 
         // Write out all the dataset .tsv files
         for (DataSetDefinition def : datasets)

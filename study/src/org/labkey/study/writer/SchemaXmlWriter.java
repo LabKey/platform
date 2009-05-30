@@ -15,9 +15,7 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.VirtualFile;
@@ -112,7 +110,10 @@ public class SchemaXmlWriter implements Writer<DataSetDefinition[]>
                 if (null != fk && null != fk.getLookupColumnName())
                 {
                     ColumnType.Fk fkXml = columnXml.addNewFk();
-                    TableInfo tinfo = fk.getLookupTableInfo();           // TODO: Export folder path
+                    Container lkContainer = (null != fk.getLookupContainerId() ? ContainerManager.getForId(fk.getLookupContainerId()) : null);
+                    fkXml.setFkFolderPath(lkContainer != null ? lkContainer.getPath() : null);
+
+                    TableInfo tinfo = fk.getLookupTableInfo();           // TODO: Export folder path: ContainerManager.getForId(((PdLookupForeignKey)fk)._pd.getLookupContainer()).getPath()
                     fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
                     fkXml.setFkTable(tinfo.getPublicName());
                     fkXml.setFkColumnName(fk.getLookupColumnName());
