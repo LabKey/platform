@@ -122,13 +122,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         infoPanel.setWidth("100%");
         _rootPanel.add(infoPanel);
 
-        if (assay.isAllowValidationScript())
-        {
-            WebPartPanel scriptPanel = new WebPartPanel("Validation and Transformation Scripts", createAssayScriptTable(_assay));
-            scriptPanel.setWidth("100%");
-            _rootPanel.add(scriptPanel);
-        }
-
         for (int i = 0; i < _assay.getDomains().size(); i++)
         {
             _rootPanel.add(new HTML("<br/>"));
@@ -323,94 +316,87 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             picker.setVerticalAlignment(ALIGN_BOTTOM);
             table.setWidget(row++, 1, picker);
         }
-        return table;
-    }
 
-    protected FlexTable createAssayScriptTable(final GWTProtocol assay)
-    {
-        final FlexTable table = new FlexTable();
-        int row = 0;
-
-        // transform scripts
-        if (assay.isAllowTransformationScript())
+        if (assay.isAllowValidationScript())
         {
-            BoundTextBox transformFile = new BoundTextBox("Data Transform", "AssayDesignerTransformScript", assay.getProtocolTransformScript(), new WidgetUpdatable()
+            table.setWidget(row++, 0, new HTML("&nbsp;"));
+
+            HTML title = new HTML("Validation and Transformation Scripts");
+            title.setStyleName("labkey-wp-title");
+            table.setWidget(row++, 1, title);
+
+            if (assay.isAllowTransformationScript())
+            {
+                BoundTextBox transformFile = new BoundTextBox("Data Transform", "AssayDesignerTransformScript", assay.getProtocolTransformScript(), new WidgetUpdatable()
+                {
+                    public void update(Widget widget)
+                    {
+                        assay.setProtocolTransformScript(((TextBox) widget).getText());
+                        if (!((TextBox) widget).getText().equals(assay.getProtocolTransformScript()))
+                        {
+                            setDirty(true);
+                        }
+                    }
+                }, this);
+                transformFile.getBox().setVisibleLength(79);
+                FlowPanel transformNamePanel = new FlowPanel();
+                transformNamePanel.add(new InlineHTML("Data Transform"));
+                transformNamePanel.add(new HelpPopup("Data Transform", "The full path to the data transform script file. The extension of the script file " +
+                        "identifies the script engine that will be used to run the transform script. For example: a script named test.pl will " +
+                        "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
+                table.setWidget(row, 0, transformNamePanel);
+                table.setWidget(row++, 1, transformFile);
+            }
+
+            // validation scripts defined at the type or global level are read only
+            for (String path : assay.getValidationScripts())
+            {
+                TextBox text = new TextBox();
+                text.setText(path);
+                text.setReadOnly(true);
+                text.setVisibleLength(79);
+
+                FlowPanel namePanel = new FlowPanel();
+                namePanel.add(new InlineLabel("QC Validation"));
+                namePanel.add(new HelpPopup("QC Validation", "Validation scripts can be assigned by default by the assay type. Default scripts cannot be " +
+                        "removed from this view."));
+
+                table.setWidget(row, 0, namePanel);
+                table.setWidget(row++, 1, text);
+            }
+
+            BoundTextBox scriptFile = new BoundTextBox("QC Validation", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
             {
                 public void update(Widget widget)
                 {
-                    assay.setProtocolTransformScript(((TextBox) widget).getText());
-                    if (!((TextBox) widget).getText().equals(assay.getProtocolTransformScript()))
+                    assay.setProtocolValidationScript(((TextBox) widget).getText());
+                    if (!((TextBox) widget).getText().equals(assay.getProtocolValidationScript()))
                     {
                         setDirty(true);
                     }
                 }
             }, this);
-            transformFile.getBox().setVisibleLength(79);
-            FlowPanel transformNamePanel = new FlowPanel();
-            transformNamePanel.add(new InlineHTML("Data Transform"));
-            transformNamePanel.add(new HelpPopup("Data Transform", "The full path to the data transform script file. The extension of the script file " +
-                    "identifies the script engine that will be used to run the transform script. For example: a script named test.pl will " +
-                    "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
-            table.setWidget(row, 0, transformNamePanel);
-            table.setWidget(row++, 1, transformFile);
-        }
-
-        // validation scripts defined at the type or global level are read only
-        for (String path : assay.getValidationScripts())
-        {
-            TextBox text = new TextBox();
-            text.setText(path);
-            text.setReadOnly(true);
-            text.setVisibleLength(79);
+            scriptFile.getBox().setVisibleLength(79);
 
             FlowPanel namePanel = new FlowPanel();
-            namePanel.add(new InlineLabel("QC Validation"));
-            namePanel.add(new HelpPopup("QC Validation", "Validation scripts can be assigned by default by the assay type. Default scripts cannot be " +
-                    "removed from this view."));
-
+            namePanel.add(new InlineHTML("QC Validation"));
+            namePanel.add(new HelpPopup("QC Validation", "The full path to the validation script file. The extension of the script file " +
+                    "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
+                    "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
             table.setWidget(row, 0, namePanel);
-            table.setWidget(row++, 1, text);
-        }
+            table.setWidget(row, 1, scriptFile);
 
-        BoundTextBox scriptFile = new BoundTextBox("QC Validation", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
-        {
-            public void update(Widget widget)
+            // add a download sample data button if the protocol already exists
+            if (_protocolId != null)
             {
-                assay.setProtocolValidationScript(((TextBox) widget).getText());
-                if (!((TextBox) widget).getText().equals(assay.getProtocolValidationScript()))
-                {
-                    setDirty(true);
-                }
+                String url = PropertyUtil.getRelativeURL("downloadSampleQCData", "assay");
+                url += "?rowId=" + _protocolId;
+
+                LinkButton download = new LinkButton("Download Test Data", url);
+                table.setWidget(row, 2, download);
             }
-        }, this);
-        scriptFile.getBox().setVisibleLength(79);
-
-        FlowPanel namePanel = new FlowPanel();
-        namePanel.add(new InlineHTML("QC Validation"));
-        namePanel.add(new HelpPopup("QC Validation", "The full path to the validation script file. The extension of the script file " +
-                "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
-                "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
-        table.setWidget(row, 0, namePanel);
-        table.setWidget(row, 1, scriptFile);
-
-        // add a download sample data button if the protocol already exists
-        if (_protocolId != null)
-        {
-            String url = PropertyUtil.getRelativeURL("downloadSampleQCData", "assay");
-            url += "?rowId=" + _protocolId;
-
-            LinkButton download = new LinkButton("Download Test Data", url);
-            table.setWidget(row, 2, download);
         }
-
-        FlexTable main = new FlexTable();
-
-        //table.getFlexCellFormatter().setColSpan(row, 0, 3);
-        main.setWidget(0, 0, new HTML("Programmatic data transformation and validation scripts can be run at assay run upload time. " +
-                "Specify the full path to the transformation or validation script."));
-        main.setWidget(1, 0, table);
-
-        return main;
+        return table;
     }
 
     public void setDirty(boolean dirty)
