@@ -56,8 +56,11 @@ $('bodypanel').addClass('extContainer');
 
 // shared cache
 var viewport = new Ext.Viewport();
-var securityCache = new SecurityCache({});
-
+var securityCache = new SecurityCache({
+    root:<%=PageFlowUtil.jsString(root.getId())%>,
+    project:<%=project==null?"null":PageFlowUtil.jsString(root.getId())%>,
+    folder:<%=PageFlowUtil.jsString(c.getId())%>
+});
 </script>
 
 <%--
@@ -129,28 +132,31 @@ Ext.onReady(function(){
     <div id="groupsFrame"></div>
     <div id="siteGroupsFrame"></div>
     <script type="text/javascript">
-    function makeGroupsPanel(project,ct)
+    function makeGroupsPanel(project,canEdit,ct)
     {
-        var newGroupForm = null;
-        var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, projectId:project});
+        var formId = 'newGroupForm' + (project?'':'Site');
+        var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoHeight:true, projectId:project});
         groupsList.on("select", function(list,group){
             var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
             var w = new UserInfoPopup({userId:group.UserId, cache:this.cache, policy:null, modal:true, canEdit:canEdit});
             w.show();
         });
 
-        var formId = 'newGroupForm' + (project?'':'Site');
+        var items = [];
+        if (canEdit)
+            items.push({border:false, html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name"><br><a id="' + (formId + '$submit') + '" class="labkey-button" href="#"" ><span>Create new group</span></a>'});
+        items.push(groupsList);
+        
         var groupsPanel = new Ext.Panel({
-            border : false, // border : true, style:{border:'solid 1px red'},
-            height: 400, width:800,
-            items :[
-                    {border:false, html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name"><br><a id="' + (formId + '$submit') + '" class="labkey-button" href="#"" ><span>Create new group</span></a>'},
-                    groupsList
-                ]
+            border : false,
+            //border : true, style:{border:'solid 1px red'},
+            //autoScroll:true,
+            autoHeight:true,
+            items : items
         });
         groupsPanel._adjustSize = function()
         {
-            if (this.rendered)
+            if (this.rendered && !this.autoHeight)
             {
                 var sz = tabPanel.body.getSize();
                 this.setSize(sz.width-10,sz.height-10);
@@ -164,29 +170,31 @@ Ext.onReady(function(){
         tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
         tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
 
-        // UNDONE: use security api (Security.js)
-        var inputEl = $(formId + '$input');
-        var btnEl = $(formId + '$submit');
-        var submit = function()
+        if (canEdit)
         {
-            securityCache.createGroup((project||'/'), inputEl.getValue());
-        };
-        inputEl.addKeyListener(13, submit);
-        btnEl.on("click", submit);
+            var inputEl = $(formId + '$input');
+            var btnEl = $(formId + '$submit');
+            var submit = function()
+            {
+                securityCache.createGroup((project||'/'), inputEl.getValue());
+            };
+            inputEl.addKeyListener(13, submit);
+            btnEl.on("click", submit);
+        }
         return groupsPanel;
     };
 
-    if (isProjectAdmin)
-        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoHeight:true});
+    if (<%=c.isRoot() ? "false" : "true"%>)
+        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoScroll:true});
     if (isSiteAdmin)
-        tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoHeight:true});
+        tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoScroll:true});
 
     Ext.onReady(function()
     {
         if (<%=c.isRoot() ? "false" : "true"%>)
-            makeGroupsPanel(<%=PageFlowUtil.jsString(null == project ? "" : project.getId())%>, 'groupsFrame');
+            makeGroupsPanel(<%=PageFlowUtil.jsString(null == project ? "" : project.getId())%>, isProjectAdmin, 'groupsFrame');
         if (isSiteAdmin)
-            makeGroupsPanel(null, 'siteGroupsFrame');
+            makeGroupsPanel(null, isSiteAdmin, 'siteGroupsFrame');
     });
 
     </script>

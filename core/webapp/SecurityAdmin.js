@@ -78,7 +78,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     groupDevelopers : -4,
 
     rootContainer : null,
-    
+    rootId : null,
+    projectId : null,
+    folderId : null,
+
     principalsStore : null,
 
     membershipStore : null,
@@ -97,7 +100,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     resourceMap : {},
     
     /*
-     * config just takes a project path/id and folder path/id
+     * config just takes a project path/id, folder path/id, and root container id
      *
      * fires "ready" when all the initially requested objects are loaded, subsequent loads
      * are handled with regular callbacks
@@ -107,6 +110,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         SecurityCache.superclass.constructor.call(this,config);
         this.addEvents(['ready']);
 
+        this.rootId = config.root;
         this.projectId = config.project || config.folder || LABKEY.container.id;
         this.folderId = config.folder || config.project || LABKEY.container.id;
 
@@ -134,8 +138,9 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
         this.containersStore = new Ext.data.Store({id:'id'}, this.ContainerRecord);
 
-        S.getContainers({containerPath:this.projectId, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
-        S.getContainers({containerPath:'/', includeSubfolders:true, depth:1, successCallback:this._loadProjectsResponse, errorCallback:this._errorCallback, scope:this});
+// Don't need these since we are not showing navigation
+//        S.getContainers({containerPath:this.projectId, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorContainersCallback, scope:this});
+//        S.getContainers({containerPath:'/', includeSubfolders:true, depth:1, successCallback:this._loadProjectsResponse, errorCallback:this._errorProjectsCallback, scope:this});
 
         S.getRoles({containerPath:this.folderId, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
         this.principalsStore.load();
@@ -408,10 +413,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     
     checkReady : function()
     {
-        if (this.principalsStore.ready &&
-            this.containersReady &&
-            this.projectsReady &&
-            this.rolesReady
+        if (this.principalsStore.ready
+//          &&  this.containersReady &&
+//          &&  this.projectsReady &&
+            && this.rolesReady
             && this.membershipStore.ready
             && this.resourcesReady
             )
@@ -447,10 +452,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         var minor = data.Name.toLowerCase();
         data.sortOrder = major + "." + minor;
     },
-
-    _errorCallback: function(e,r)
+                              
+    _errorCallback: function(e,resp,req)
     {
-        console.error(e + " " + r);
+        console.error(e.exception);
     },
 
     _loadResourcesResponse : function(r)
@@ -504,6 +509,13 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return new this.ContainerRecord(c,c.id);
     },
             
+    _errorContainersCallback : function(e,resp,req)
+    {
+        alert(e.exception);
+        this.containersReady = true;
+        this.checkReady();
+    },
+
     _loadContainersResponse :function(r)
     {
         var map = this._mapContainers(null, [r], {});
@@ -515,6 +527,15 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         this.checkReady();
     },
 
+
+    _errorProjectsCallback : function(e,resp,req)
+    {
+        alert(e.exception);
+        this.projectsReady = true;
+        this.checkReady();
+    },
+
+
     _loadProjectsResponse : function(r)
     {
         var map = this._mapContainers(null, [r], {});
@@ -523,7 +544,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         {
             var c = map[id];
             if (c.path=='/')
+            {
                 this.rootContainer = c;
+                this.rootId = c.id;
+            }
             records.push(this._makeRecord(c));
         }
         this.containersStore.add(records);
@@ -1243,7 +1267,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             this.policy = policy;
             // we'd still like to get the inherited policy
-            if (this.resource.parentId && this.resource.parentId != this.cache.rootContainer.id)
+            if (this.resource.parentId && this.resource.parentId != this.cache.rootId)
                 S.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy, scope:this});
         }
         this.roles = [];
