@@ -1729,8 +1729,6 @@ public class SecurityManager
             if(null != parent)
                 return getPolicy(parent, findNearest);
         }
-
-        policy.normalize();
         
         return policy;
     }

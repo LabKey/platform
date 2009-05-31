@@ -20,7 +20,7 @@ package org.labkey.api.security.roles;
 * Date: Apr 27, 2009
 * Time: 1:32:29 PM
 */
-public class NoPermissionsRole extends AbstractRole
+public class NoPermissionsRole extends AbstractContextualRole
 {
     public NoPermissionsRole()
     {
