@@ -539,14 +539,16 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         return null;
     }
 
-    public static void checkActionPermissions(Class<? extends Controller> actionClass, Container c, User user, Set<Role> contextualRoles) throws UnauthorizedException
+    public static void checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
     {
+        Container c = context.getContainer();
         if (null == c)
         {
             HttpView.throwNotFound();
             return;
         }
 
+        User user = context.getUser();
         if (c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
 
@@ -554,18 +556,25 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
         RequiresOneOf requiresOneOf = actionClass.getAnnotation(RequiresOneOf.class);
         Set<Class<? extends Permission>> permissionsRequired = null;
-        if(null != requiresPerm)
+        if (null != requiresPerm)
+        {
             permissionsRequired = RoleManager.permSet(requiresPerm.value());
-        if(null != requiresOneOf)
+            contextualRoles = RoleManager.mergeContextualRoles(context, requiresPerm.contextual(), contextualRoles);
+        }
+        if (null != requiresOneOf)
+        {
             permissionsRequired = RoleManager.permSet(requiresOneOf.value());
-        if(null != oldReqPerm)
+            contextualRoles = RoleManager.mergeContextualRoles(context, requiresOneOf.contextual(), contextualRoles);
+        }
+        if (null != oldReqPerm)
         {
             Class<? extends Permission> perm = translatePermission(oldReqPerm);
             if(null != perm)
                 permissionsRequired = RoleManager.permSet(perm);
+            contextualRoles = RoleManager.mergeContextualRoles(context, oldReqPerm.contextual(), contextualRoles);
         }
 
-        if(null != permissionsRequired)
+        if (null != permissionsRequired)
         {
             SecurityPolicy policy = SecurityManager.getPolicy(c);
             if(!policy.hasOneOf(user, permissionsRequired, contextualRoles))
@@ -611,7 +620,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles)
             throws TermsOfUseException, UnauthorizedException
     {
-        checkActionPermissions(actionClass, context.getContainer(), context.getUser(), contextualRoles);
+        checkActionPermissions(actionClass, context, contextualRoles);
 
         boolean requiresTermsOfUse = !actionClass.isAnnotationPresent(IgnoresTermsOfUse.class);
         if (requiresTermsOfUse && !context.hasAgreedToTermsOfUse())

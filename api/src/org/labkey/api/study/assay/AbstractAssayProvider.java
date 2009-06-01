@@ -1303,10 +1303,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 table.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
                 "(200)))";
 
-            final ExprColumn datasetColumn = new ExprColumn(table,
+            final ExprColumn datasetColumn = new StudyDataSetColumn(table,
                 "dataset" + datasetIndex++,
                 new SQLFragment(datasetIdSQL),
-                Types.INTEGER);
+                studyContainer);
             datasetColumn.setIsHidden(true);
             table.addColumn(datasetColumn);
 

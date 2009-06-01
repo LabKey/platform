@@ -17,11 +17,13 @@ package org.labkey.api.security.roles;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.view.ViewContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.lang.reflect.Constructor;
 
 /*
 * User: Dave
@@ -155,4 +157,50 @@ public class RoleManager
         return roles;
     }
 
+    /**
+     * Returns a set of contextual {@link Role}s created from
+     * the view context and the given role factories.
+     *
+     * @param context The view context
+     * @param roleFactories Queried for contextual roles.
+     * @param contextualRoles Any additional contextual roles.
+     * @return A set of Role objects corresponding to the role classes
+     */
+    @NotNull
+    public static Set<Role> mergeContextualRoles(ViewContext context, Class<? extends HasContextualRoles>[] roleFactories, Set<Role> contextualRoles)
+    {
+        if (roleFactories == null || roleFactories.length == 0)
+            return contextualRoles;
+
+        Set<Role> allContextualRoles = new HashSet<Role>();
+        if (contextualRoles != null)
+            allContextualRoles.addAll(contextualRoles);
+        
+        for (Class<? extends HasContextualRoles> roleFactory : roleFactories)
+        {
+            HasContextualRoles factory = null;
+            try
+            {
+                Constructor ctor = roleFactory.getConstructor();
+                if (ctor == null)
+                    throw new IllegalStateException("Failed to find no-arg constructor.");
+                factory = (HasContextualRoles)ctor.newInstance();
+            }
+            catch (Exception e)
+            {
+                if (e instanceof RuntimeException)
+                    throw (RuntimeException)e;
+                throw new RuntimeException(e);
+            }
+
+            if (factory != null)
+            {
+                Set<Role> roles = factory.getContextualRoles(context);
+                if (roles != null)
+                    allContextualRoles.addAll(roles);
+            }
+        }
+
+        return allContextualRoles;
+    }
 }

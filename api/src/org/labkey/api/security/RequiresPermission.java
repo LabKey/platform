@@ -16,7 +16,7 @@
 
 package org.labkey.api.security;
 
-import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.HasContextualRoles;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,4 +32,6 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({Element
 @interface RequiresPermission
 {
     int value();
+
+    Class<? extends HasContextualRoles>[] contextual() default { };
 }

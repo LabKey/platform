@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.HasContextualRoles;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -35,4 +36,6 @@ import java.lang.annotation.ElementType;
 public @interface RequiresPermissionClass
 {
     Class<? extends Permission> value();
+
+    Class<? extends HasContextualRoles>[] contextual() default { };
 }
