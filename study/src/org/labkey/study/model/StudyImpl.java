@@ -17,10 +17,8 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.util.GUID;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -177,7 +175,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public void savePolicy(SecurityPolicy policy)
+    public void savePolicy(MutableSecurityPolicy policy)
     {
         super.savePolicy(policy);
         StudyManager.getInstance().scrubDatasetAcls(this, policy);

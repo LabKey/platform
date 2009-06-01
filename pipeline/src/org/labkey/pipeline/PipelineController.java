@@ -712,7 +712,7 @@ public class PipelineController extends SpringActionController
 
             if (null != pipeRoot && null != pipeRoot.getUri())
             {
-                SecurityPolicy policy = new SecurityPolicy(pipeRoot);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(pipeRoot);
                 if (form.isEnable())
                 {
                     Group[] groupsAll = SecurityManager.getGroups(c.getProject(), true);

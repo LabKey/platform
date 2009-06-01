@@ -1083,7 +1083,7 @@ public class SecurityController extends SpringActionController
             }
             else
             {
-                SecurityPolicy newPolicy = new SecurityPolicy(c);
+                MutableSecurityPolicy newPolicy = new MutableSecurityPolicy(c);
 
                 //get the current nearest policy for this container
                 SecurityPolicy oldPolicy = SecurityManager.getPolicy(c);
@@ -1486,7 +1486,7 @@ public class SecurityController extends SpringActionController
             SecurityManager.addMember(usersGroup, admin);
             SecurityManager.addMember(guestsGroup, admin);
 
-            SecurityPolicy policy = c.getPolicy();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
             policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));
             policy.addRoleAssignment(guest, RoleManager.getRole(ReaderRole.class));
             policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));

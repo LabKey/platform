@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.module.Module;
@@ -155,7 +156,7 @@ public abstract class AbstractStudyEntity<T>
 
     }
 
-    public void savePolicy(SecurityPolicy policy)
+    public void savePolicy(MutableSecurityPolicy policy)
     {
         if (!supportsPolicyUpdate())
             throw new IllegalArgumentException("unexpected class " + this.getClass().getName());

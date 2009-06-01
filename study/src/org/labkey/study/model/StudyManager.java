@@ -264,7 +264,7 @@ public class StudyManager
             acl.setPermission(groupId.intValue(), ACL.PERM_READ);
         //create a new policy for the study which is a copy of the container's policy
         SecurityPolicy containerPolicy = SecurityManager.getPolicy(c);
-        SecurityPolicy studyPolicy = new SecurityPolicy(study, containerPolicy);
+        MutableSecurityPolicy studyPolicy = new MutableSecurityPolicy(study, containerPolicy);
         SecurityManager.savePolicy(studyPolicy);
 
         return study;

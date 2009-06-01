@@ -582,7 +582,7 @@ public class SecurityApiActions
             SecurityPolicy oldPolicy = SecurityManager.getPolicy(resource);
 
             //create the policy from the props (will throw if invalid)
-            SecurityPolicy policy = SecurityPolicy.fromMap(form.getProps(), resource);
+            MutableSecurityPolicy policy = MutableSecurityPolicy.fromMap(form.getProps(), resource);
 
             //save it
             SecurityManager.savePolicy(policy);

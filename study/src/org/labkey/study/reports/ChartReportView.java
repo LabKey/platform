@@ -26,6 +26,7 @@ import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -295,7 +296,7 @@ public class ChartReportView extends AbstractReportView
         }
 
 
-        public void updatePolicy(ViewContext context, SecurityPolicy policy)
+        public void updatePolicy(ViewContext context, MutableSecurityPolicy policy)
         {
             super.updatePolicy(context, policy);
             if(null != _parent)

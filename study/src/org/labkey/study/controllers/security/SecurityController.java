@@ -96,7 +96,7 @@ public class SecurityController extends SpringActionController
             for (Group g : groups)
                 set.add(g.getUserId());
 
-            SecurityPolicy policy = policyFromPost(request, set, study);
+            MutableSecurityPolicy policy = policyFromPost(request, set, study);
 
             // Explicitly give site admins read permission, so they can never be locked out
             Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
@@ -116,9 +116,9 @@ public class SecurityController extends SpringActionController
             return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
 
-        private SecurityPolicy policyFromPost(HttpServletRequest request, HashSet<Integer> set, Study study)
+        private MutableSecurityPolicy policyFromPost(HttpServletRequest request, HashSet<Integer> set, Study study)
         {
-            SecurityPolicy policy = new SecurityPolicy(study);
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(study);
             Enumeration i = request.getParameterNames();
             while (i.hasMoreElements())
             {
@@ -218,9 +218,9 @@ public class SecurityController extends SpringActionController
             return groupToPermission;
         }
 
-        private SecurityPolicy policyFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject, DataSet dsDef)
+        private MutableSecurityPolicy policyFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject, DataSet dsDef)
         {
-            SecurityPolicy policy = new SecurityPolicy(dsDef);
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(dsDef);
 
             for (Map.Entry<Integer,String> entry : group2Perm.entrySet())
             {
@@ -309,17 +309,17 @@ public class SecurityController extends SpringActionController
                 return false;
             }
 
-            SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor());
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityManager.getPolicy(report.getDescriptor()));
             Integer owner = null;
 
             if (form.getPermissionType().equals(PermissionType.privatePermission.toString()))
             {
-                policy = new SecurityPolicy(report.getDescriptor());
+                policy = new MutableSecurityPolicy(report.getDescriptor());
                 owner = getUser().getUserId();
             }
             else if (form.getPermissionType().equals(PermissionType.defaultPermission.toString()))
             {
-                policy = new SecurityPolicy(report.getDescriptor());
+                policy = new MutableSecurityPolicy(report.getDescriptor());
             }
             else
             {
@@ -342,7 +342,7 @@ public class SecurityController extends SpringActionController
                 // set all at once
                 else
                 {
-                    policy = new SecurityPolicy(report.getDescriptor());
+                    policy = new MutableSecurityPolicy(report.getDescriptor());
                     if (form.getGroups() != null)
                         for (int gid : form.getGroups())
                         {
