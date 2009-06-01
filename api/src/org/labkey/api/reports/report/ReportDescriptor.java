@@ -429,7 +429,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return null;
     }
 
-    public void updatePolicy(ViewContext context, SecurityPolicy policy)
+    public void updatePolicy(ViewContext context, MutableSecurityPolicy policy)
     {
         assert policy.getResource() == this;
         SecurityManager.savePolicy(policy);

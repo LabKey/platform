@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.MutableSecurityPolicy;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,6 +53,6 @@ public interface StudyEntity extends SecurableResource
 
     SecurityPolicy getPolicy();
 
-    void savePolicy(SecurityPolicy policy);
+    void savePolicy(MutableSecurityPolicy policy);
 
 }

@@ -1733,7 +1733,7 @@ public class SecurityManager
         return policy;
     }
 
-    public static void savePolicy(@NotNull SecurityPolicy policy)
+    public static void savePolicy(@NotNull MutableSecurityPolicy policy)
     {
         DbScope scope = core.getSchema().getScope();
         boolean startedTran = false;
@@ -2284,7 +2284,7 @@ public class SecurityManager
         // Set default permissions
         // CONSIDER: get/set permissions on Container, rather than going behind its back
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
-        SecurityPolicy policy = new SecurityPolicy(project);
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(project);
         policy.addRoleAssignment(userGroup, noPermsRole);
 
         //users and guests have no perms by default
@@ -2296,7 +2296,7 @@ public class SecurityManager
 
     public static void setAdminOnlyPermissions(Container c)
     {
-        SecurityPolicy policy = new SecurityPolicy(c);
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
 
         //assign all principals who are project admins at the project level to the folder admin role in the container
         SecurityPolicy projectPolicy = c.getProject().getPolicy();

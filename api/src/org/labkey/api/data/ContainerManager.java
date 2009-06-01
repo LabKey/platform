@@ -1499,7 +1499,7 @@ public class ContainerManager
             if (newContainer || 0 == policyCount)
             {
                 _log.debug("Setting permissions for '" + path + "'");
-                SecurityPolicy policy = new SecurityPolicy(c);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);

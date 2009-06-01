@@ -620,7 +620,7 @@ public class WebdavResolverImpl implements WebdavResolver
             String pathTest = junit.getPath() + "/dav";
             Container cTest = ContainerManager.ensureContainer(pathTest);
 
-            SecurityPolicy policyNone = new SecurityPolicy(cTest);
+            MutableSecurityPolicy policyNone = new MutableSecurityPolicy(cTest);
             policyNone.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
             policyNone.addRoleAssignment(user, ReaderRole.class);
             SecurityManager.savePolicy(policyNone);
@@ -636,7 +636,7 @@ public class WebdavResolverImpl implements WebdavResolver
             assertFalse(names.contains("webdav"));
             assertTrue(names.contains("dav"));
 
-            SecurityPolicy policyRead = new SecurityPolicy(cTest);
+            MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
             SecurityManager.savePolicy(policyRead);
             rTest = resolver.lookup(pathTest);

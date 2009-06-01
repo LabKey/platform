@@ -23,6 +23,7 @@ import org.apache.struts.action.ActionErrors;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.TestContext;
@@ -106,7 +107,7 @@ public class TableViewFormTestCase extends junit.framework.TestCase
         tf.reset(null, ctx.getRequest());
 
         Container test = JunitUtil.getTestContainer();
-        SecurityPolicy policy = new SecurityPolicy(test);
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(test);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ProjectAdminRole.class));
         SecurityManager.savePolicy(policy);
         tf.setContainer(test);
