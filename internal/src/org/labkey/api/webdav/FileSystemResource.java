@@ -132,20 +132,24 @@ public class FileSystemResource extends AbstractResource
 
     public OutputStream getOutputStream(User user) throws IOException
     {
-        if (null == _file || !_file.exists())
+        if (!canWrite(user))
             return null;
+        if (null == _file)
+            return null;
+        if (!_file.exists())
+            _file.createNewFile();
         return new FileOutputStream(_file);
     }
 
 
     public long copyFrom(User user, FileStream is) throws IOException
     {
-        if (null == _file || !_file.exists())
-            return -1;
         FileOutputStream fos=null;
         try
         {
-            fos = new FileOutputStream(_file);
+            fos = (FileOutputStream)getOutputStream(user);
+            if (null == fos)
+                return -1;
             long len = FileUtil.copyData(is.openInputStream(), fos);
             fos.getFD().sync();
             return len;

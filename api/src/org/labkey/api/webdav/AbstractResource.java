@@ -252,7 +252,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
 
     public boolean delete(User user) throws IOException
     {
-        assert !canDelete(user);
+        assert null == user || canDelete(user);
         return false;
     }
     
