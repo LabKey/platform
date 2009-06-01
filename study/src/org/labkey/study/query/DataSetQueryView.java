@@ -201,8 +201,6 @@ public class DataSetQueryView extends QueryView
                 // provide a link to the source assay details page.
                 ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                 dataURL.addParameter("sourceLsid", lsid.toString());
-                dataURL.addParameter("datasetId", DataSetQueryView.this._dataset.getDataSetId());
-                dataURL.addParameter("studyContainerId", getContainer().getId());
                 out.write(PageFlowUtil.textLink("assay", dataURL));
                 return;
             }

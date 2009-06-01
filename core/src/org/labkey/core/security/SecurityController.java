@@ -1521,7 +1521,10 @@ public class SecurityController extends SpringActionController
         {
             try
             {
-                BaseViewAction.checkActionPermissions(actionClass, c, u, null);
+                ViewContext context = new ViewContext();
+                context.setContainer(c);
+                context.setUser(u);
+                BaseViewAction.checkActionPermissions(actionClass, context, null);
             }
             catch (UnauthorizedException x)
             {
@@ -1534,7 +1537,10 @@ public class SecurityController extends SpringActionController
         {
             try
             {
-                BaseViewAction.checkActionPermissions(actionClass, c, u, null);
+                ViewContext context = new ViewContext();
+                context.setContainer(c);
+                context.setUser(u);
+                BaseViewAction.checkActionPermissions(actionClass, context, null);
                 fail("Should not have permission");
             }
             catch (UnauthorizedException x)

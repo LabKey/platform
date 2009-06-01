@@ -1953,20 +1953,7 @@ public class StudyController extends BaseStudyController
             {
                 return new HtmlView("The assay run that produced the data has been deleted.");
             }
-
-            // If the user has permission to the source assay, go directly to the details page...
-            Container container = LsidManager.get().getContainer(form.getSourceLsid());
-            if (container != null && container.hasPermission(getUser(), ReadPermission.class))
-            {
-                return HttpView.redirect(url);
-            }
-
-            // otherwise, the let the assay details action check for permissions to the dataset
-            ActionURL actionURL = new ActionURL(url);
-            actionURL.addParameter("datasetId", getViewContext().getRequest().getParameter("datasetId"));
-            actionURL.addParameter("studyContainerId", getViewContext().getRequest().getParameter("studyContainerId"));
-
-            return HttpView.redirect(actionURL);
+            return HttpView.redirect(url);
         }
 
         public NavTree appendNavTrail(NavTree root)
