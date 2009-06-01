@@ -1843,7 +1843,7 @@ public class DavController extends SpringActionController
                 close(raf, "put action outputdata");
                 if (deleteFileOnFail)
                 {
-                    resource.delete(null);
+                    resource.delete(getUser());
                 }
             }
 

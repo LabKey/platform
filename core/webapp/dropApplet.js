@@ -387,8 +387,7 @@ function btnCancel_onClick(i)
 {
     if (i in transfers && transfers[i])
     {
-        var t = transfers[i];
-        getDropApplet().transfer_cancel(t.path);
+        getDropApplet().transfer_cancel(i);
     }
 }
 
@@ -396,8 +395,7 @@ function btnRetry_onClick(i)
 {
     if (i in transfers && transfers[i])
     {
-        var t = transfers[i];
-        getDropApplet().transfer_retry(t.path);
+        getDropApplet().transfer_retry(i);
     }
 }
 

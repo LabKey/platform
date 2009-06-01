@@ -1593,6 +1593,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             try
             {
+                if (user != null && !canDelete(user))
+                    return false;
                 AttachmentService.get().delete(user, _parent, _name);
                 return true;
             }

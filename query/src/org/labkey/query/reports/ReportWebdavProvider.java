@@ -215,6 +215,8 @@ public class ReportWebdavProvider implements WebdavService.Provider
         // so pretend we deleted it.
         public boolean delete(User user) throws IOException
         {
+            if (user != null && !canDelete(user))
+                return false;
             copyFrom(user, FileStream.EMPTY);
             return true;
         }
