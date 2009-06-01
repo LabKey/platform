@@ -44,7 +44,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             }
         });
 
-        addVisitColumn(_schema.getStudy().isDateBased());
+        addSpecimenVisitColumn(_schema.getStudy().isDateBased());
         addVolumeAndTypeColumns(true);
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));

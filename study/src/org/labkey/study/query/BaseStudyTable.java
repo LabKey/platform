@@ -19,10 +19,11 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.*;
+import org.labkey.study.StudySchema;
+
+import java.sql.Types;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -78,4 +79,42 @@ public abstract class BaseStudyTable extends FilteredTable
         });
         return addColumn(typeColumn);
     }
+
+    protected void addSpecimenVisitColumn(boolean dateBased)
+    {
+        ColumnInfo visitColumn;
+        ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
+        if (dateBased)
+        {
+            //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
+            // could change to visitrowid but that changes datatype and displays rowid
+            // instead of sequencenum when label is null
+            SQLFragment sqlFragVisit = new SQLFragment("(SELECT V.SequenceNumMin FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + " PV, " +
+                    StudySchema.getInstance().getTableInfoVisit() + " V WHERE V.RowId = PV.VisitRowId AND " +
+                    ExprColumn.STR_TABLE_ALIAS + ".ParticipantId = PV.ParticipantId AND" +
+                    ExprColumn.STR_TABLE_ALIAS + ".Container = PV.Container)");
+            visitColumn = addColumn(new ExprColumn(this, "Visit", sqlFragVisit, Types.VARCHAR));
+            visitColumn.setCaption("Timepoint");
+            visitDescriptionColumn.setIsHidden(true);
+        }
+        else
+        {
+            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
+        }
+
+        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                VisitTable visitTable = new VisitTable(_schema);
+                visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
+                return visitTable;
+            }
+        };
+        visitFK.setJoinOnContainer(true);
+        visitColumn.setFk(visitFK);
+        visitColumn.setKeyField(true);
+        addColumn(visitColumn);
+    }
+
 }

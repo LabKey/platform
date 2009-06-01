@@ -27,6 +27,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.query.SpecimenQueryView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -113,7 +114,7 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
 
                         ActionURL url = new ActionURL(SpringSpecimenController.SamplesAction.class, container);
                         url.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
-                        url.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.commentsMode, true);
+                        url.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
                         url.addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
 
                         out.write("<a href=\"");

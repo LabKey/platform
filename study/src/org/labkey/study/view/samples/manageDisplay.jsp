@@ -17,11 +17,9 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.samples.settings.DisplaySettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -34,12 +32,49 @@
 
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 <form action="handleUpdateDisplaySettings.post" method="POST">
-    <table class="labkey-manage-display" width=500>
+    <table class="labkey-manage-display" width=600>
+        <tr>
+            <td colspan="2" class="labkey-announcement-title" align="left">
+                <span>Comments and Quality Control</span>
+            </td>
+        </tr>
+        <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
+        <tr>
+            <td colspan="2">The specimen system can function in two modes: request mode, where vials are requested and requests are managed,
+                and comments/QC mode, where vial information is modified.  Users with appropriate permissions can always manually switch modes.</td>
+        </tr>
+        <tr>
+            <th align="right">Default mode:</th>
+            <td>
+                <select name="defaultToCommentsMode">
+                    <option value="false" <%= !bean.isDefaultToCommentsMode() ? "SELECTED" : ""%>>Request Mode</option>
+                    <option value="true"  <%= bean.isDefaultToCommentsMode() ? "SELECTED" : ""%>>Comments Mode</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th align="right">Manual QC flagging/unflagging<%= helpPopup("Manual QC Flagging", "Vials are automatically flagged for QC " +
+                    "at time of import if a vial's history contains conflicting information." +
+                    "<p>Manual QC flagging/unflagging allows these states to be changed without updating the underlying specimen data.  " +
+                    "<p>Once a vial's QC state is set manually, it will no longer be updated automatically during the import process.", true)%>:</th>
+            <td>
+                <select name="enableManualQCFlagging">
+                    <option value="true" <%= bean.isEnableManualQCFlagging() ? "SELECTED" : ""%>>Enabled</option>
+                    <option value="false"  <%= !bean.isEnableManualQCFlagging() ? "SELECTED" : ""%>>Disabled</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="labkey-announcement-title" align="left">
+                <span>Low vial warnings</span>
+            </td>
+        </tr>
+        <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
         <tr>
             <td colspan="2">The specimen request system can display warning icons when one or zero vials of any primary specimen are available for request.  The icon will appear next to all vials of that the primary specimen.</td>
         </tr>
         <tr>
-            <th align="right">Display warning icon when available vial count reaches one:</th>
+            <th align="right">Display one available vial warning:</th>
             <td>
                 <select name="lastVial">
                     <option value="<%= DisplaySettings.DisplayOption.NONE.name() %>"
@@ -52,7 +87,7 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Display warning icon when available vial count reaches zero:</th>
+            <th align="right">Display zero available vials warning:</th>
             <td>
                 <select name="zeroVials">
                     <option value="<%= DisplaySettings.DisplayOption.NONE.name() %>"

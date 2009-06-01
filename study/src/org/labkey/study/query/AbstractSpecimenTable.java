@@ -86,44 +86,7 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         });
         addColumn(commentsColumn);
     }
-
-    protected void addVisitColumn(boolean dateBased)
-    {
-        ColumnInfo visitColumn;
-        ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
-        if (dateBased)
-        {
-            //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
-            // could change to visitrowid but that changes datatype and displays rowid
-            // instead of sequencenum when label is null
-            SQLFragment sqlFragVisit = new SQLFragment("(SELECT V.SequenceNumMin FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + " PV, " +
-                    StudySchema.getInstance().getTableInfoVisit() + " V WHERE V.RowId = PV.VisitRowId AND " +
-                    ExprColumn.STR_TABLE_ALIAS + ".ParticipantId = PV.ParticipantId AND" +
-                    ExprColumn.STR_TABLE_ALIAS + ".Container = PV.Container)");
-            visitColumn = addColumn(new ExprColumn(this, "Visit", sqlFragVisit, Types.VARCHAR));
-            visitColumn.setCaption("Timepoint");
-            visitDescriptionColumn.setIsHidden(true);
-        }
-        else
-        {
-            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
-        }
-
-        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                VisitTable visitTable = new VisitTable(_schema);
-                visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
-                return visitTable;
-            }
-        };
-        visitFK.setJoinOnContainer(true);
-        visitColumn.setFk(visitFK);
-        visitColumn.setKeyField(true);
-        addColumn(visitColumn);
-    }
-
+    
     public static class CommentDisplayColumn extends DataColumn
     {
         public CommentDisplayColumn(ColumnInfo commentColumn)

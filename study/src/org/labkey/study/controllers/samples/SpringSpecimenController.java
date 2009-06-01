@@ -215,10 +215,10 @@ public class SpringSpecimenController extends BaseStudyController
             SpecimenQueryView view;
             if (lsids != null)
             {
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.isCommentsMode());
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum());
             }
             else
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.isCommentsMode());
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.getViewModeEnum());
             view.setAllowExportExternalQuery(false);
             return view;
         }
@@ -244,8 +244,8 @@ public class SpringSpecimenController extends BaseStudyController
         protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             _vialView = form.isShowVials();
-            SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.isCommentsMode());
-            if (form.isCommentsMode())
+            SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.getViewModeEnum());
+            if (SpecimenUtils.isCommentsMode(getContainer(), form.getViewModeEnum()))
                 view.setRestrictRecordSelectors(false);
             return view;
         }
@@ -381,11 +381,11 @@ public class SpringSpecimenController extends BaseStudyController
         public enum PARAMS
         {
             showVials,
-            commentsMode
+            viewMode
         }
 
         private boolean _showVials;
-        private boolean _commentsMode;
+        private SpecimenQueryView.Mode _viewMode = SpecimenQueryView.Mode.DEFAULT;
 
         public boolean isShowVials()
         {
@@ -397,14 +397,20 @@ public class SpringSpecimenController extends BaseStudyController
             _showVials = showVials;
         }
 
-        public boolean isCommentsMode()
+        public String getViewMode()
         {
-            return _commentsMode;
+            return _viewMode.name();
         }
 
-        public void setCommentsMode(boolean commentsMode)
+        public SpecimenQueryView.Mode getViewModeEnum()
         {
-            _commentsMode = commentsMode;
+            return _viewMode;
+        }
+
+        public void setViewMode(String viewMode)
+        {
+            if (viewMode != null)
+                _viewMode = SpecimenQueryView.Mode.valueOf(viewMode);
         }
     }
 
@@ -3109,8 +3115,11 @@ public class SpringSpecimenController extends BaseStudyController
                     // use the currently saved history conflict state; if it's been forced before, this will prevent it
                     // from being cleared.
                     SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
-                    SampleManager.getInstance().setSpecimenComment(getUser(), specimen, null,
-                            comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
+                    if (comment != null)
+                    {
+                        SampleManager.getInstance().setSpecimenComment(getUser(), specimen, null,
+                                comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
+                    }
                 }
             }
             return true;
@@ -3167,7 +3176,7 @@ public class SpringSpecimenController extends BaseStudyController
 
                 boolean newConflictState;
                 boolean newForceState;
-                if (commentsForm.isQualityControlFlag() != null)
+                if (commentsForm.isQualityControlFlag() != null && SampleManager.getInstance().getDisplaySettings(getContainer()).isEnableManualQCFlagging())
                 {
                     // if a state has been specified in the post, we consider this to be 'forcing' the state:
                     newConflictState = commentsForm.isQualityControlFlag().booleanValue();

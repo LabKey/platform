@@ -89,9 +89,9 @@ public class SpecimenUtils
         return _controller.getStudy();
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, boolean commentsMode) throws ServletException, SQLException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode) throws ServletException, SQLException
     {
-        return getSpecimenQueryView(showVials, forExport, null, commentsMode);
+        return getSpecimenQueryView(showVials, forExport, null, viewMode);
     }
 
     private String urlFor(Class<? extends Controller> action)
@@ -110,8 +110,16 @@ public class SpecimenUtils
         return url.getLocalURIString();
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, boolean commentsMode) throws ServletException, SQLException
+    public static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode) throws SQLException
     {
+        return (selectedMode == SpecimenQueryView.Mode.COMMENTS) ||
+                (selectedMode == SpecimenQueryView.Mode.DEFAULT && SampleManager.getInstance().getDisplaySettings(container).isDefaultToCommentsMode());
+    }
+
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode) throws ServletException, SQLException
+    {
+        boolean commentsMode = isCommentsMode(getContainer(), viewMode);
+
         SpecimenQueryView gridView;
         RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
 
@@ -163,7 +171,7 @@ public class SpecimenUtils
             else
             {
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.deleteParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.commentsMode);
+                endCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 requestMenuButton.addMenuItem("Enable Request Mode", endCommentsURL);
             }
 
@@ -172,12 +180,13 @@ public class SpecimenUtils
 
         if (getViewContext().getContainer().hasPermission(getUser(), SetSpecimenCommentsPermission.class))
         {
+            boolean manualQCEnabled = SampleManager.getInstance().getDisplaySettings(getViewContext().getContainer()).isEnableManualQCFlagging();
             if (commentsMode)
             {
-                MenuButton commentsMenuButton = new MenuButton("Comments");
+                MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
                 String dataRegionName = gridView.getSettings().getDataRegionName();
                 String setCommentsURL = urlFor(SpringSpecimenController.UpdateCommentsAction.class);
-                NavTree setItem = commentsMenuButton.addMenuItem("Set Comment for Selected", "#",
+                NavTree setItem = commentsMenuButton.addMenuItem("Set Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected", "#",
                         "if (verifySelected(document.forms['" + dataRegionName + "'], '" + setCommentsURL +
                         "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
                 setItem.setId("Comments:Set");
@@ -185,21 +194,22 @@ public class SpecimenUtils
                 String clearCommentsURL = urlFor(SpringSpecimenController.ClearCommentsAction.class);
                 NavTree clearItem = commentsMenuButton.addMenuItem("Clear Comments for Selected", "#",
                         "if (verifySelected(document.forms['" + dataRegionName + "'], '" + clearCommentsURL +
-                        "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials.  Continue?')) " +
+                        "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials.  " +
+                                (manualQCEnabled ? "Quality control states will remain unchanged.  " : "" )+ "Continue?')) " +
                                 "document.forms['" + dataRegionName + "'].submit();\nreturn false;");
                 clearItem.setId("Comments:Clear");
 
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.deleteParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.commentsMode);
-                NavTree exitItem = commentsMenuButton.addMenuItem("Exit Comments Mode", endCommentsURL);
+                endCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
+                NavTree exitItem = commentsMenuButton.addMenuItem("Exit Comments " + (manualQCEnabled ? "and QC " : "") + "mode", endCommentsURL);
                 exitItem.setId("Comments:Exit");
                 buttons.add(commentsMenuButton);
             }
             else
             {
                 ActionURL enableCommentsURL = getViewContext().getActionURL().clone();
-                enableCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.commentsMode, Boolean.TRUE.toString());
-                ActionButton commentsButton = new ActionButton("Enable Comments", enableCommentsURL);
+                enableCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
+                ActionButton commentsButton = new ActionButton("Enable Comments" + (manualQCEnabled ? "/QC" : ""), enableCommentsURL);
                 buttons.add(commentsButton);
             }
         }

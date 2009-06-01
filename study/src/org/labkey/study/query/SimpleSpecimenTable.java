@@ -29,7 +29,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 
         getColumn("ParticipantId").setFk(null);
 
-        addVisitColumn(false);
+        addSpecimenVisitColumn(false);
 
         addVolumeAndTypeColumns(false);
     }

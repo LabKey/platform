@@ -26,6 +26,10 @@ public class DisplaySettings
 {
     private static final String KEY_FLAG_ONE_AVAIL_VIAL = "OneAvailableVial";
     private static final String KEY_FLAG_ZERO_AVAIL_VIALS = "ZeroAvailableVials";
+
+    private static final String KEY_DEFAULT_COMMENT_MODE = "DefaultToCommentMode";
+    private static final String KEY_ENABLE_MANUAL_QC_FLAGGING = "EnableManualQCFlagging";
+
     private DisplayOption _lastVial;
     private DisplayOption _zeroVials;
     public static enum DisplayOption
@@ -34,6 +38,8 @@ public class DisplaySettings
         ALL_USERS,
         ADMINS_ONLY
     }
+    private boolean _defaultToCommentsMode = false;
+    private boolean _enableManualQCFlagging = true;
 
     public DisplaySettings()
     {
@@ -44,12 +50,25 @@ public class DisplaySettings
     {
         _lastVial = DisplayOption.valueOf(map.get(KEY_FLAG_ONE_AVAIL_VIAL));
         _zeroVials = DisplayOption.valueOf(map.get(KEY_FLAG_ZERO_AVAIL_VIALS));
+        _defaultToCommentsMode = getBoolean(map.get(KEY_DEFAULT_COMMENT_MODE), false);
+        _enableManualQCFlagging = getBoolean(map.get(KEY_ENABLE_MANUAL_QC_FLAGGING), true);
+    }
+
+    private boolean getBoolean(Object value, boolean defaultValue)
+    {
+        if (value == null)
+            return defaultValue;
+        if (value instanceof String)
+            return Boolean.valueOf((String) value).booleanValue();
+        throw new IllegalArgumentException("Cannot convert object to boolean: " + value);
     }
 
     public void populateMap(Map<String, String> map)
     {
         map.put(KEY_FLAG_ONE_AVAIL_VIAL, _lastVial.name());
         map.put(KEY_FLAG_ZERO_AVAIL_VIALS, _zeroVials.name());
+        map.put(KEY_DEFAULT_COMMENT_MODE, Boolean.toString(_defaultToCommentsMode));
+        map.put(KEY_ENABLE_MANUAL_QC_FLAGGING, Boolean.toString(_enableManualQCFlagging));
     }
 
     public static DisplaySettings getDefaultSettings()
@@ -57,6 +76,8 @@ public class DisplaySettings
         DisplaySettings defaults = new DisplaySettings();
         defaults.setLastVial(DisplayOption.ALL_USERS.name());
         defaults.setZeroVials(DisplayOption.ALL_USERS.name());
+        defaults.setDefaultToCommentsMode(false);
+        defaults.setEnableManualQCFlagging(true);
         return defaults;
     }
 
@@ -88,5 +109,25 @@ public class DisplaySettings
     public DisplayOption getZeroVialsEnum()
     {
         return _zeroVials;
+    }
+
+    public boolean isDefaultToCommentsMode()
+    {
+        return _defaultToCommentsMode;
+    }
+
+    public void setDefaultToCommentsMode(boolean defaultToCommentsMode)
+    {
+        _defaultToCommentsMode = defaultToCommentsMode;
+    }
+
+    public boolean isEnableManualQCFlagging()
+    {
+        return _enableManualQCFlagging;
+    }
+
+    public void setEnableManualQCFlagging(boolean enableManualQCFlagging)
+    {
+        _enableManualQCFlagging = enableManualQCFlagging;
     }
 }

@@ -49,6 +49,12 @@ import java.util.*;
  */
 public class SpecimenQueryView extends BaseStudyQueryView
 {
+    public enum Mode
+    {
+        COMMENTS,
+        REQUESTS,
+        DEFAULT
+    }
     private static class SpecimenDataRegion extends DataRegion
     {
         private Map<String, ColumnInfo> _requiredColumns = new HashMap<String, ColumnInfo>();

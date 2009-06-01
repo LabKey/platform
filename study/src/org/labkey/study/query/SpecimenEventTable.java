@@ -16,12 +16,7 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
-
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * User: brittp

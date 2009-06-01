@@ -21,7 +21,6 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.ExprColumn;
 
@@ -38,28 +37,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary());
         addWrapParticipantColumn("PTID").setKeyField(true);
 
-        // Same as in SpecimentDetailTable
-        AliasedColumn visitColumn;
-        ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
-        if (_schema.getStudy().isDateBased())
-        {
-            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("SequenceNumMin"));
-            visitColumn.setCaption("Timepoint");
-            visitDescriptionColumn.setIsHidden(true);
-        }
-        else
-        {
-            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
-        }
-        visitColumn.setFk(new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new VisitTable(_schema);
-            }
-        });
-        visitColumn.setKeyField(true);
-        addColumn(visitColumn);
+        addSpecimenVisitColumn(_schema.getStudy().isDateBased());
 
         ColumnInfo pvColumn = new ParticipantVisitColumn(
                 "ParticipantVisit",
