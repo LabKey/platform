@@ -126,24 +126,6 @@ public class SecurityPolicy
         return roles;
     }
 
-    /**
-     * Clears assigned roles for the user principal
-     * @param principal The principal
-     */
-    public void clearAssignedRoles(@NotNull UserPrincipal principal)
-    {
-        List<RoleAssignment> toRemove = new ArrayList<RoleAssignment>();
-        for(RoleAssignment assignment : _assignments)
-        {
-            if(assignment.getUserId() == principal.getUserId())
-                toRemove.add(assignment);
-        }
-        synchronized (_assignments)
-        {
-            _assignments.removeAll(toRemove);
-        }
-    }
-
     @NotNull
     public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal)
     {

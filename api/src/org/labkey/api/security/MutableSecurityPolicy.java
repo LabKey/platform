@@ -22,9 +22,7 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.util.DateUtil;
 import org.json.JSONArray;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Date;
+import java.util.*;
 
 /*
 * User: Dave
@@ -154,5 +152,20 @@ public class MutableSecurityPolicy extends SecurityPolicy
         //grant users access who did not have access before
         if (isEmpty())
             addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
+    }
+
+    /**
+     * Clears assigned roles for the user principal
+     * @param principal The principal
+     */
+    public void clearAssignedRoles(@NotNull UserPrincipal principal)
+    {
+        List<RoleAssignment> toRemove = new ArrayList<RoleAssignment>();
+        for(RoleAssignment assignment : _assignments)
+        {
+            if(assignment.getUserId() == principal.getUserId())
+                toRemove.add(assignment);
+        }
+        _assignments.removeAll(toRemove);
     }
 }
