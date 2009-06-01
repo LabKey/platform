@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.upload.MultipartRequestHandler;
@@ -37,10 +38,11 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.DateUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
@@ -88,6 +90,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
         try {
+            FileUtil.deleteDir(scriptDir);
+
             // serialize the run properties to a tsv
             writeRunProperties(context, scriptDir, pw);
 
@@ -276,9 +280,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         if (runInfo.exists())
         {
             List<ValidationError> errors = new ArrayList<ValidationError>();
+            Reader runInfoReader = null;
+            Reader errorReader = null;
 
             try {
-                TabLoader loader = new TabLoader(runInfo, false);
+                runInfoReader = new BufferedReader(new FileReader(runInfo));
+                TabLoader loader = new TabLoader(runInfoReader, false);
                 loader.setColumns(new ColumnDescriptor[]{
                         new ColumnDescriptor("name", String.class),
                         new ColumnDescriptor("value", String.class),
@@ -297,7 +304,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                 if (errorFile != null && errorFile.exists())
                 {
-                    TabLoader errorLoader = new TabLoader(errorFile, false);
+                    errorReader = new BufferedReader(new FileReader(errorFile));
+                    TabLoader errorLoader = new TabLoader(errorReader, false);
                     errorLoader.setColumns(new ColumnDescriptor[]{
                             new ColumnDescriptor("type", String.class),
                             new ColumnDescriptor("property", String.class),
@@ -321,6 +329,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             catch (Exception e)
             {
                 throw new ValidationException(e.getMessage());
+            }
+            finally
+            {
+                IOUtils.closeQuietly(errorReader);
+                IOUtils.closeQuietly(runInfoReader);
             }
 
             if (!errors.isEmpty())
@@ -456,14 +469,22 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     protected List<Map<String, Object>> parseRunInfo(File runInfo) throws IOException
     {
-        TabLoader loader = new TabLoader(runInfo, false);
-        loader.setColumns(new ColumnDescriptor[]{
-                new ColumnDescriptor("name", String.class),
-                new ColumnDescriptor("value", String.class),
-                new ColumnDescriptor("type", String.class),
-                new ColumnDescriptor("transformedData", String.class)
-        });
-        return loader.load();
+        Reader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(runInfo));
+            TabLoader loader = new TabLoader(reader, false);
+            loader.setColumns(new ColumnDescriptor[]{
+                    new ColumnDescriptor("name", String.class),
+                    new ColumnDescriptor("value", String.class),
+                    new ColumnDescriptor("type", String.class),
+                    new ColumnDescriptor("transformedData", String.class)
+            });
+            return loader.load();
+        }
+        finally
+        {
+            IOUtils.closeQuietly(reader);
+        }
     }
 
     public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo) throws ValidationException
