@@ -1294,7 +1294,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         try
         {
             fw = new FileWriter(new File(directory, UPLOAD_LOG), true);
-            fw.write(action.toString()  + "\t" + fileName + "\t" + new Date() + "\t" + user.getEmail() + "\n");
+            fw.write(action.toString()  + "\t" + fileName + "\t" + new Date() + "\t" + (user == null ? "(unknown)" : user.getEmail()) + "\n");
         }
         catch (Exception x)
         {
