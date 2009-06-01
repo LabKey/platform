@@ -630,7 +630,7 @@ LABKEY.WebdavFileSystem = function(config)
             {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
             {name: 'options'}
         ]);
-    this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
+    this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
     this.transferReader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
 
@@ -763,24 +763,34 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     },
 
 
+    _updateRecord : function(update)
+    {
+        var path = update.data.path;
+        if (path == '/')
+        {
+            Ext.apply(this.rootRecord.data, update.data);
+        }
+        else
+        {
+            var record = this.recordFromCache(path);
+            if (record)
+                Ext.apply(record.data, update.data);
+        }
+    },
+
+
     processFile : function(result, args, success)
     {
+        var update = null;
+        if (!Ext.isArray(result.records))
+            success = false;
         if (success && result.records.length == 1)
         {
-            var update = result.records[0];
-            if (args.path == '/')
-            {
-                Ext.apply(this.rootRecord, update.data);
-            }
-            else
-            {
-                var record = this.recordFromCache(args.path);
-                if (record)
-                    Ext.apply(record.data, update.data);
-            }
+            update = result.records[0];
+            this._updateRecord(update);
         }
         if (typeof args.callback == "function")
-            args.callback(this, success && null != record, args.path, record);
+            args.callback(this, success && null != update, args.path, update);
     },
 
 
@@ -790,7 +800,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         this.connection.url = url;
 
         var args = {url: url, path: path, callback:callback};
-        this.proxy.load({method:"PROPFIND",depth:"1,noroot"}, this.transferReader, this.processFiles, this, args);
+        this.proxy.load({method:"PROPFIND",depth:"1"}, this.transferReader, this.processFiles, this, args);
         return true;
     },
 
@@ -799,14 +809,29 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     {
         var path = args.path;
         var callback = args.callback;
-        var records = [];
+        delete args.callback;
+
+        var directory = null;
+        var listing = [];
+        if (!Ext.isArray(result.records))
+            success = false;
         if (success)
         {
-            records = result.records;
-            this._addFiles(path, records);
+            var records = result.records;
+            for (var r=0 ; r<records.length ; r++)
+            {
+                var record = records[r];
+                if (record.data.path == path)
+                    directory = record;
+                else
+                    listing.push(record);
+            }
+            if (directory)
+                this._updateRecord(directory);
+            this._addFiles(path, listing);
         }
         if (typeof callback == "function")
-            callback(this, success, path, records);
+            callback(this, success, path, listing);
     }
 });
 
@@ -827,8 +852,6 @@ var AppletFileSystem = function(config)
         rootName: "My Computer"
     });
     AppletFileSystem.superclass.constructor.call(this);
-    this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
-    this.proxy = new Ext.data.HttpProxy(this.connection);
     this.transferReader = new Ext.data.JsonReader({totalProperty:'recordCount', root:'records', id:'uri'}, this.AppletRecord),
 
     this.rootRecord = new this.FileRecord(
@@ -1535,7 +1558,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }});
     },
 
-    changeDirectory : function(record)
+    changeDirectory : function(record, force)
     {
         if (typeof record == "string")
         {
@@ -1553,7 +1576,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }
         }
 
-        if (record && !record.data.file && this.currentDirectory != record)
+        if (record && !record.data.file && (force || this.currentDirectory != record))
         {
             this.currentDirectory = record;
             if (this.statePrefix)
@@ -1567,13 +1590,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         if (!this.currentDirectory)
             return;
-        this.fileSystem.reloadFiles(this.currentDirectory.data.path, this.loadRecords.createDelegate(this));
-        if (this.tree)
-        {
-            var sel = this.tree.getSelectionModel().getSelectedNode();
-            if (sel)
-                sel.reload();
-        }
+        this.changeDirectory(this.currentDirectory, true);
     },
 
 
