@@ -34,8 +34,7 @@ public class AssayDesignerRole extends AbstractRole
                 "An assay designer may perform several actions related to designing assays.",
                 StudyModule.class,
                 DesignAssayPermission.class,
-                DesignListPermission.class,
-                ReadPermission.class //TODO: remove this once we have multi-role assignment in the UI
+                DesignListPermission.class
         );
     }
 }
