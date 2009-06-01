@@ -1527,7 +1527,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getUploadToolAction : function()
     {
-        return new Ext.Action({text: 'Upload Tool', iconCls:'iconDownloadManager', scope:this, disabled:true, handler: function()
+        return new Ext.Action({text: 'Upload Tool', tooltip:"upload&nbsp;multiple&nbsp;files<br>(requires Java)", iconCls:'iconDownloadManager', scope:this, disabled:true, handler: function()
         {
             if (!this.applet || !this.appletWindow)
                 this.layoutAppletWindow();
