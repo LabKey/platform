@@ -48,8 +48,8 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private Integer _processingLocation;
     private Integer _currentLocation;
     private String _specimenHash;
-    private String _frozenTime;
-    private String _processingTime;
+    private Date _frozenTime;
+    private Date _processingTime;
     private String _primaryVolume;
     private String _primaryVolumeUnits;
     private boolean _atRepository = false;
@@ -287,22 +287,22 @@ public class Specimen extends AbstractStudyCachable<Specimen>
         _derivativeTypeId2 = derivativeTypeId2;
     }
 
-    public String getFrozenTime()
+    public Date getFrozenTime()
     {
         return _frozenTime;
     }
 
-    public void setFrozenTime(String frozenTime)
+    public void setFrozenTime(Date frozenTime)
     {
         _frozenTime = frozenTime;
     }
 
-    public String getProcessingTime()
+    public Date getProcessingTime()
     {
         return _processingTime;
     }
 
-    public void setProcessingTime(String processingTime)
+    public void setProcessingTime(Date processingTime)
     {
         _processingTime = processingTime;
     }
