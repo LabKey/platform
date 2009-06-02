@@ -90,8 +90,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
         try {
-            FileUtil.deleteDir(scriptDir);
-
             // serialize the run properties to a tsv
             writeRunProperties(context, scriptDir, pw);
 
