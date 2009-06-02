@@ -91,7 +91,7 @@ public abstract class BaseStudyTable extends FilteredTable
             // instead of sequencenum when label is null
             SQLFragment sqlFragVisit = new SQLFragment("(SELECT V.SequenceNumMin FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + " PV, " +
                     StudySchema.getInstance().getTableInfoVisit() + " V WHERE V.RowId = PV.VisitRowId AND " +
-                    ExprColumn.STR_TABLE_ALIAS + ".ParticipantId = PV.ParticipantId AND" +
+                    ExprColumn.STR_TABLE_ALIAS + ".ParticipantId = PV.ParticipantId AND " +
                     ExprColumn.STR_TABLE_ALIAS + ".Container = PV.Container)");
             visitColumn = addColumn(new ExprColumn(this, "Visit", sqlFragVisit, Types.VARCHAR));
             visitColumn.setCaption("Timepoint");
@@ -99,7 +99,7 @@ public abstract class BaseStudyTable extends FilteredTable
         }
         else
         {
-            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
+            visitColumn = addColumn(new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue")));
         }
 
         LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
@@ -114,7 +114,6 @@ public abstract class BaseStudyTable extends FilteredTable
         visitFK.setJoinOnContainer(true);
         visitColumn.setFk(visitFK);
         visitColumn.setKeyField(true);
-        addColumn(visitColumn);
     }
 
 }

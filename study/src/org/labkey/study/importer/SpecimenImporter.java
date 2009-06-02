@@ -141,7 +141,7 @@ public class SpecimenImporter
                 return Types.VARCHAR;
             else if (getJavaType() == java.util.Date.class)
                 return Types.DATE;
-            else if (getJavaType() == java.sql.Timestamp.class)
+            else if (getJavaType() == TimeOnlyDate.class)
                 return Types.DATE;
             else if (getJavaType() == Float.class)
                 return Types.FLOAT;
