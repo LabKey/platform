@@ -34,12 +34,10 @@ import java.awt.*;
 import java.beans.PropertyEditorSupport;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Date;
 import java.util.HashSet;
+import java.text.ParseException;
 
 
 public class ConvertHelper implements PropertyEditorRegistrar
@@ -118,6 +116,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new DateFriendlyStringConverter()), String.class);
         _register(new StringArrayConverter(), String[].class);
         _register(new URLHelper.Converter(), URLHelper.class);
+        _register(new LenientTimeOnlyConverter(), TimeOnlyDate.class);
     }
 
 
@@ -161,6 +160,45 @@ public class ConvertHelper implements PropertyEditorRegistrar
     }
 
 
+    /**
+     * This converter converts dates with a time portion only.
+     * A duration is a date without year, month, or day components (e.g., 2:01 or 2:01:32).
+     */
+    public static class LenientTimeOnlyConverter implements Converter
+    {
+        private static final String[] VALID_FORMATS = {"H:mm", "H:mm:ss"};
+        public Object convert(Class clss, Object o)
+        {
+            if (null == o)
+                return null;
+
+            if (o instanceof Time)
+                return o;
+
+            Date duration = null;
+            ParseException parseException = null;
+            for (int i = 0; i < VALID_FORMATS.length && duration == null; i++)
+            {
+                try
+                {
+                    duration = DateUtil.parseDateTime(o.toString(), VALID_FORMATS[i]);
+                }
+                catch (ParseException e)
+                {
+                    parseException = e;
+                }
+            }
+            if (duration == null)
+                throw new ConversionException("Could not convert \"" + o.toString() + "\" to duration.", parseException);
+            else
+                return new TimeOnlyDate(duration.getTime());
+        }
+    }
+
+    /**
+     * This converter converts timestamps.
+     * A timestamp is a date plus milliseconds.  (e.g., 6/1/2009 16:01.432)
+     */
     public static class LenientTimestampConverter implements Converter
     {
         private LenientDateConverter _dateConverter = new LenientDateConverter();
