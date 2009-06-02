@@ -335,8 +335,12 @@
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="FrozenTime"/>
-      <ns:column columnName="ProcessingTime"/>
+      <ns:column columnName="FrozenTime">
+        <ns:formatString>H:mm:ss</ns:formatString>
+      </ns:column>
+      <ns:column columnName="ProcessingTime">
+        <ns:formatString>H:mm:ss</ns:formatString>
+      </ns:column>
       <ns:column columnName="PrimaryVolume"/>
       <ns:column columnName="PrimaryVolumeUnits"/>
       <ns:column columnName="AtRepository"/>
@@ -482,8 +486,12 @@
       <ns:column columnName="AdditiveTypeId"/>
       <ns:column columnName="DerivativeTypeId2"/>
       <ns:column columnName="OriginatingLocationId"/>
-      <ns:column columnName="FrozenTime"/>
-      <ns:column columnName="ProcessingTime"/>
+      <ns:column columnName="FrozenTime">
+        <ns:formatString>H:mm:ss</ns:formatString>
+      </ns:column>
+      <ns:column columnName="ProcessingTime">
+        <ns:formatString>H:mm:ss</ns:formatString>
+      </ns:column>
       <ns:column columnName="PrimaryVolume"/>
       <ns:column columnName="PrimaryVolumeUnits"/>
       <ns:column columnName="ProcessedByInitials"/>

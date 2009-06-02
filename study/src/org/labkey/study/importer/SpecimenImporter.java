@@ -28,10 +28,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.CloseableIterator;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
@@ -82,8 +79,19 @@ public class SpecimenImporter
         {
             _tsvColumnName = tsvColumnName;
             _dbColumnName = dbColumnName;
-            _dbType = databaseType.toUpperCase();
             _unique = unique;
+            if (DURATION_TYPE.equals(databaseType))
+            {
+                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDatatype();
+                _javaType = TimeOnlyDate.class;
+            }
+            else if (DATETIME_TYPE.equals(databaseType))
+            {
+                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDatatype();
+                _javaType = java.util.Date.class;
+            }
+            else
+                _dbType = databaseType.toUpperCase();
         }
 
 
@@ -114,7 +122,7 @@ public class SpecimenImporter
                 if (_dbType.indexOf("VARCHAR") >= 0)
                     _javaType = String.class;
                 else if (_dbType.indexOf(DATETIME_TYPE) >= 0)
-                    _javaType = java.util.Date.class;
+                    throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initalized.");
                 else if (_dbType.indexOf("FLOAT") >= 0)
                     _javaType = Float.class;
                 else if (_dbType.indexOf("INT") >= 0)
@@ -129,18 +137,20 @@ public class SpecimenImporter
 
         public int getSQLType()
         {
-            if (_dbType.indexOf("VARCHAR") >= 0)
+            if (getJavaType() == String.class)
                 return Types.VARCHAR;
-            else if (_dbType.indexOf(DATETIME_TYPE) >= 0)
+            else if (getJavaType() == java.util.Date.class)
                 return Types.DATE;
-            else if (_dbType.indexOf("FLOAT") >= 0)
+            else if (getJavaType() == java.sql.Timestamp.class)
+                return Types.DATE;
+            else if (getJavaType() == Float.class)
                 return Types.FLOAT;
-            else if (_dbType.indexOf("INT") >= 0)
+            else if (getJavaType() == Integer.class)
                 return Types.INTEGER;
-            else if (_dbType.indexOf(BOOLEAN_TYPE) >= 0)
+            else if (getJavaType() == Boolean.class)
                 return Types.BIT;
             else
-                throw new UnsupportedOperationException("SQL type has not been defined for class " + _dbType);
+                throw new UnsupportedOperationException("SQL type has not been defined for DB type " + _dbType + ", java type " + getJavaType());
         }
     }
 
@@ -322,7 +332,8 @@ public class SpecimenImporter
         }
     }
 
-    private static final String DATETIME_TYPE = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDatatype();
+    private static final String DATETIME_TYPE = "SpecimenImporter/DateTime";
+    private static final String DURATION_TYPE = "SpecimenImporter/TimeOnlyDate";
     private static final String BOOLEAN_TYPE = StudySchema.getInstance().getSqlDialect().getBooleanDatatype();
     private static final String GLOBAL_UNIQUE_ID_TSV_COL = "global_unique_specimen_id";
     private static final String LAB_ID_TSV_COL = "lab_id";
@@ -378,12 +389,12 @@ public class SpecimenImporter
             new SpecimenColumn("fr_position", "fr_position", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("frozen_time", "FrozenTime", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn("frozen_time", "FrozenTime", DURATION_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("processing_time", "ProcessingTime", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS)
+            new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS)
         };
 
     public static final ImportableColumn[] ADDITIVE_COLUMNS = new ImportableColumn[]
@@ -1458,7 +1469,14 @@ public class SpecimenImporter
                 params.add(lsid.toString());
 
                 for (ImportableColumn col : SPECIMEN_COLUMNS)
-                    params.add(getValue(col, properties));
+                {
+                    Object value = getValue(col, properties);
+                    if (value != null && !(value instanceof Parameter) && "FrozenTime".equals(col.getDbColumnName()))
+                    {
+                        int i = 5;
+                    }
+                    params.add(value);
+                }
 
                 rows.add(params);
 
@@ -1500,7 +1518,7 @@ public class SpecimenImporter
         return value;
     }
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {
