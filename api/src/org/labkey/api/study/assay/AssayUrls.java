@@ -31,7 +31,7 @@ public interface AssayUrls extends UrlProvider
     ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action);
     
     ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
-    ActionURL getDesignerURL(Container container, String providerName);
+    ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL);
 
     /**
      * @param container container in which the assay definition should live

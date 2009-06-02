@@ -49,16 +49,21 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private static final String STATUS_SUCCESSFUL = "Save successful.<br/>";
     private BoundTextBox _nameBox;
     private boolean _copy;
+    private final String _returnURL;
     private SaveButtonBar saveBarTop;
     private SaveButtonBar saveBarBottom;
     private WindowCloseListener _closeListener = new AssayCloseListener();
 
-    public AssayDesignerMainPanel(RootPanel rootPanel, String providerName, Integer protocolId, boolean copy)
+    public AssayDesignerMainPanel(RootPanel rootPanel)
     {
-        _providerName = providerName;
-        _protocolId = protocolId;
         _rootPanel = rootPanel;
-        _copy = copy;
+
+        String protocolIdStr = PropertyUtil.getServerProperty("protocolId");
+        _protocolId = protocolIdStr != null ? new Integer(Integer.parseInt(protocolIdStr)) : null;
+        _providerName = PropertyUtil.getServerProperty("providerName");
+        _returnURL = PropertyUtil.getServerProperty("returnURL");
+        String copyStr = PropertyUtil.getServerProperty("copy");
+        _copy = copyStr != null && Boolean.TRUE.toString().equals(copyStr);
     }
 
     public void showAsync()
@@ -523,7 +528,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     {
         // If a new assay is never saved, there are no details to view, so it will take the user to the study
         final String doneLink;
-        if (_assay != null && _assay.getProtocolId() != null)
+        if (_returnURL != null)
+            doneLink = _returnURL;
+        else if (_assay != null && _assay.getProtocolId() != null)
             doneLink = PropertyUtil.getContextPath() + "/assay" + PropertyUtil.getContainerPath() + "/assayRuns.view?rowId=" + _assay.getProtocolId();
         else
             doneLink = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";

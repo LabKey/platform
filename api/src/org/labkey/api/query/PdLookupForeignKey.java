@@ -39,7 +39,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
         _user = user;
     }
 
-    @Override
     public String getLookupContainerId()
     {
         return _pd.getLookupContainer();

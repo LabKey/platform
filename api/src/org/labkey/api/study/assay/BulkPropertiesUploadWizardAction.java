@@ -1,0 +1,124 @@
+package org.labkey.api.study.assay;
+
+import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.actions.BulkPropertiesUploadForm;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.action.LabkeyError;
+import org.labkey.api.query.ValidationException;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.validation.BindException;
+
+import javax.servlet.ServletException;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Collections;
+import java.io.File;
+
+/**
+ * User: jeckels
+ * Date: May 31, 2009
+ */
+public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUploadForm<ProviderType>, ProviderType extends AssayProvider>
+        extends UploadWizardAction<FormType, ProviderType>
+{
+    public BulkPropertiesUploadWizardAction(Class<? extends FormType> formClass)
+    {
+        super(formClass);
+    }
+
+    @Override
+    protected boolean showBatchStep(FormType runForm, Domain uploadDomain)
+    {
+        return true;
+    }
+
+    @Override
+    protected StepHandler<FormType> getBatchStepHandler()
+    {
+        return new BulkPropertiesBatchStepHandler();
+    }
+
+    private class BulkPropertiesBatchStepHandler extends BatchStepHandler
+    {
+        @Override
+        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException
+        {
+            if (form.isBulkUploadAttempted())
+            {
+                BindException batchErrors = new BindException(form, "form");
+                // Collect the errors in a separate list because if otherwise we fail, the superclass will add them a
+                // second time during its reshow logic
+                if (validatePostedProperties(form.getBatchProperties(), batchErrors))
+                {
+                    List<ExpRun> runs = insertRuns(form, errors);
+                    if (batchErrors.getErrorCount() == 0 && errors.getErrorCount() == 0 && !runs.isEmpty())
+                    {
+                        return afterRunCreation(form, runs.get(0), errors);
+                    }
+                }
+            }
+
+            return super.handleStep(form, errors);
+        }
+
+        private List<ExpRun> insertRuns(FormType form, BindException errors)
+        {
+            try
+            {
+                PipelineDataCollector collector = form.getSelectedDataCollector();
+                RunStepHandler handler = getRunStepHandler();
+                List<ExpRun> runs = new ArrayList<ExpRun>();
+
+                // Hold on to a copy of the original file list so that we can reset the selection state if one of them fails
+                List<Map<String, File>> allFiles =
+                        new ArrayList<Map<String, File>>(collector.getFileCollection(form));
+                boolean success = false;
+                ExperimentService.get().beginTransaction();
+                try
+                {
+                    boolean hasMoreRuns;
+                    do
+                    {
+                        hasMoreRuns = collector.allowAdditionalUpload(form);
+                        form.getUploadedData();
+                        form.getBulkProperties();
+                        validatePostedProperties(form.getRunProperties(), errors);
+                        if (errors.getErrorCount() > 0)
+                        {
+                            return Collections.emptyList();
+                        }
+                        runs.add(handler.saveExperimentRun(form));
+                        form.clearUploadedData();
+                    }
+                    while (hasMoreRuns);
+                    success = true;
+                    ExperimentService.get().commitTransaction();
+                    return runs;
+                }
+                finally
+                {
+                    if (!success)
+                    {
+                        // Something went wrong, restore the full list of files
+                        PipelineDataCollector.setFileCollection(getViewContext().getRequest().getSession(true), getContainer(), form.getProtocol(), allFiles);
+                    }
+                    ExperimentService.get().closeTransaction();
+                }
+            }
+            catch (ExperimentException e)
+            {
+                errors.addError(new LabkeyError(e));
+            }
+            catch (ValidationException e)
+            {
+                errors.addError(new LabkeyError(e));
+            }
+            return Collections.emptyList();
+        }
+    }
+
+}

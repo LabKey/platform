@@ -17,22 +17,20 @@
 package org.labkey.api.study.actions;
 
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.view.GWTView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.template.AppBar;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GWTView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -44,6 +42,9 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 {
     public static class DesignerForm extends ProtocolIdForm
     {
+        private boolean _copy;
+        private String _returnURL;
+
         public boolean isCopy()
         {
             return _copy;
@@ -54,9 +55,17 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             _copy = copy;
         }
 
-        private boolean _copy;
+        public String getReturnURL()
+        {
+            return _returnURL;
+        }
 
+        public void setReturnURL(String returnURL)
+        {
+            _returnURL = returnURL;
+        }
     }
+
     private DesignerForm _form;
 
     public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
@@ -70,6 +79,10 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             properties.put("copy", Boolean.toString(form.isCopy()));
         }
         properties.put("providerName", form.getProviderName());
+        if (form.getReturnURL() != null)
+        {
+            properties.put("returnURL", form.getReturnURL());
+        }
 
         // hack for 4404 : Lookup picker performance is terrible when there are many containers
         ContainerManager.getAllChildren(ContainerManager.getRoot());
@@ -85,7 +98,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     public NavTree appendNavTrail(NavTree root)
     {
         NavTree result = super.appendNavTrail(root);
-        if (!_form.isCopy() && _form.getRowId() != null && _form.getProtocol() != null)
+        if (!_form.isCopy() && _form.getRowId() != null)
         {
             ExpProtocol protocol = _form.getProtocol(!_form.isCopy());
             result.addChild(protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol));

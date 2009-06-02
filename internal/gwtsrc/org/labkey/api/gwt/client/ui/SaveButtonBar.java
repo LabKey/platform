@@ -15,17 +15,14 @@
  */
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.user.client.ui.ButtonBase;
-import com.google.gwt.user.client.ui.ClickListener;
-import com.google.gwt.user.client.ui.FlexTable;
-import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.*;
 
 /**
  * User: jgarms
  * Date: Jun 2, 2008
  * Time: 1:46:00 PM
  */
-public class SaveButtonBar extends FlexTable
+public class SaveButtonBar extends HorizontalPanel
 {
     private final Saveable owner;
 
@@ -46,7 +43,7 @@ public class SaveButtonBar extends FlexTable
             }
         });
 
-        setWidget(0, 0, finishButton);
+        add(finishButton);
 
         saveButton = new ImageButton("Save", new ClickListener()
         {
@@ -55,7 +52,7 @@ public class SaveButtonBar extends FlexTable
                 owner.save();
             }
         });
-        setWidget(0, 1, saveButton);
+        add(saveButton);
 
 
         cancelButton = new ImageButton("Cancel", new ClickListener()
@@ -66,7 +63,7 @@ public class SaveButtonBar extends FlexTable
             }
         });
 
-        setWidget(0, 2, cancelButton);
+        add(cancelButton);
     }
 
     public void setAllowSave(boolean dirty)
