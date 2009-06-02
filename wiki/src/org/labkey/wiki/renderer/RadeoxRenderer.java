@@ -149,12 +149,6 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             return "Base LabKey macro, used for putting data from the LabKey Server portal into wikis.";
         }
 
-        @Override
-        public String[] getParamDescription()
-        {
-            return super.getParamDescription();    //To change body of overridden methods use File | Settings | File Templates.
-        }
-
         public void executeTree(Writer writer, MacroParameter params) throws IOException
         {
             String treeId = params.get("name", 1);

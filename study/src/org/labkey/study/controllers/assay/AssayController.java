@@ -335,7 +335,7 @@ public class AssayController extends SpringActionController
 
         public boolean handlePost(ProtocolIdForm form, BindException errors) throws Exception
         {
-            if (PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName()) == null)
+            if (PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
             {
                 errors.addError(new LabkeyError("Please select an assay type."));
                 return false;
@@ -346,7 +346,7 @@ public class AssayController extends SpringActionController
 
         public ActionURL getSuccessURL(ProtocolIdForm form)
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null);
         }
 
         public ModelAndView getView(ProtocolIdForm protocolIdForm, boolean reshow, BindException errors) throws Exception
@@ -650,7 +650,7 @@ public class AssayController extends SpringActionController
             return url;
         }
 
-        public ActionURL getDesignerURL(Container container, String providerName)
+        public ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(providerName);
             if (provider == null)
@@ -659,6 +659,10 @@ public class AssayController extends SpringActionController
             }
             ActionURL url = getProtocolURL(container, null, provider.getDesignerAction());
             url.addParameter("providerName", provider.getName());
+            if (returnURL != null)
+            {
+                url.addParameter("returnURL", returnURL.toString());
+            }
             return url;
         }
 

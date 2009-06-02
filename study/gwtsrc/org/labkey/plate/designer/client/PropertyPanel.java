@@ -111,7 +111,7 @@ public abstract class PropertyPanel extends DockPanel
         return result;
     }
 
-    public void redraw(Map properties)
+    public void redraw(Map<String, Object> properties)
     {
         _propertyTable.clear();
         while (_propertyTable.getRowCount() > 0)
@@ -122,17 +122,10 @@ public abstract class PropertyPanel extends DockPanel
         int row = 0;
         if (properties != null)
         {
-            List names = new ArrayList(properties.keySet());
-            Collections.sort(names, new Comparator()
+            List<String> names = new ArrayList<String>(properties.keySet());
+            Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
+            for (String name : names)
             {
-                public int compare(Object o1, Object o2)
-                {
-                    return ((String)o1).toLowerCase().compareTo(((String)o2).toLowerCase());
-                }
-            });
-            for (Iterator it = names.iterator(); it.hasNext(); )
-            {
-                String name = (String)it.next();
                 Object value = properties.get(name);
                 insertPropertyRow(row, name, value);
                 row++;
