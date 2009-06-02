@@ -157,7 +157,7 @@ else
     if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0 && wiki.isShowAttachments())
     {
         %><p/>
-            <table style="width:100%" cellspacing="0" id="lk-wiki-file-attachments-divider">
+            <table style="width:100%" cellspacing="0" class="lk-wiki-file-attachments-divider">
                 <tr>
                     <td style="border-bottom: 1px solid #89A1B4; width:48%">&nbsp;</td>
                     <td rowspan="2" style="font-style:italic; width:2%;white-space:nowrap; color: #89A1B4;">Attached Files</td>
