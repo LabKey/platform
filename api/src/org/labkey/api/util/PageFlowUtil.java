@@ -64,10 +64,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
@@ -1491,6 +1488,12 @@ public class PageFlowUtil
             out.close();
 
             return new String(out.toByteArray(), "UTF-8").trim();
+        }
+        catch (TransformerFactoryConfigurationError e)
+        {
+            throw new RuntimeException("There was a problem creating the XML transformer factory." +
+                    " If you specified a class name in the 'javax.xml.transform.TransformerFactory' system property," +
+                    " please ensure that this class is included in the classpath for web application.", e);
         }
         catch (TransformerException e)
         {

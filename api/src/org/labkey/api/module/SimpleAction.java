@@ -118,10 +118,10 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         User user = getViewContext().getUser();
         Container container = getViewContext().getContainer();
 
-        if(_view.isRequiresLogin() && user.isGuest())
+        if (null != _view && _view.isRequiresLogin() && user.isGuest())
             throw new UnauthorizedException("You must sign in to see this content.");
 
-        if (!container.hasPermission(user, _view.getRequiredPerms()))
+        if (null != _view && !container.hasPermission(user, _view.getRequiredPerms()))
         {
             if (container.isForbiddenProject(user))
                 throw new ForbiddenProjectException();
