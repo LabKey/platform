@@ -428,6 +428,14 @@ Ext.extend(FileSystem, Ext.util.Observable,
         }
     },
 
+    // minor hack to force reload on next listFiles call
+    uncacheListing : function(record)
+    {
+        var path = (typeof record == "string") ? record : record.data.path;
+        this.directoryMap[path] = null;
+    },
+
+
     canRead : function(record)
     {
         return true;
@@ -705,8 +713,12 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
             var connection = new Ext.data.Connection();
             connection.handleResponse = function(response)
             {
-                if (204 == response.status)
+                if (204 == response.status || 404 == response.status) // NO_CONTENT (success), NOT_FOUND (actually goes to handleFailure)
+                {
+                    // CONSIDER just delete one entry
+                    fileSystem.uncacheListing(fileSystem.parentPath(path));
                     callback(fileSystem, true, path, response);
+                }
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
                     callback(fileSystem, false, path, response);
                 else
@@ -1590,6 +1602,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         if (!this.currentDirectory)
             return;
+        this.fileSystem.uncacheListing(this.currentDirectory);
         this.changeDirectory(this.currentDirectory, true);
     },
 
