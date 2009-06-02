@@ -214,7 +214,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         if (!domain.getContainer().equals(getViewContext().getContainer()) &&
                 domain.getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
         {
-            ActionURL url = new ActionURL(SetDefaultValuesAction.class, domain.getContainer());
+            ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
             url.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
             url.addParameter("domainId", domain.getTypeId());
             headerHtml.append(" [<a href=\"").append(url).append("\">edit default values for this table in ");
@@ -256,7 +256,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
 
     private void appendEditURL(StringBuilder builder, Container container, Domain domain, String returnUrl)
     {
-        ActionURL editURL = new ActionURL(SetDefaultValuesAction.class, container);
+        ActionURL editURL = new ActionURL(this.getClass(), container);
         editURL.addParameter("domainId", domain.getTypeId());
         editURL.addParameter("returnUrl", returnUrl);
         builder.append("<a href=\"").append(editURL.getLocalURIString()).append("\">");
