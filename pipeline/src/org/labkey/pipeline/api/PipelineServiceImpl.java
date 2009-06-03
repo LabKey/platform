@@ -159,7 +159,10 @@ public class PipelineServiceImpl extends PipelineService
     {
         try
         {
-            return new PipeRootImpl(PipelineManager.getPipelineRootObject(container, PipelineRoot.PRIMARY_ROOT));
+            PipelineRoot r = PipelineManager.getPipelineRootObject(container, PipelineRoot.PRIMARY_ROOT);
+            if (null == r)
+                return null;
+            return new PipeRootImpl(r);
         }
         catch (URISyntaxException x)
         {
