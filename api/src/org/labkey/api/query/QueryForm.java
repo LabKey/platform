@@ -232,7 +232,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
 
     public IdentifierString getSchemaName()
     {
-        return _schemaName;
+        return _schemaName == null ? new IdentifierString("", false) : _schemaName;
     }
 
     public UserSchema getSchema()
