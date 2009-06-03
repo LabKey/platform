@@ -153,7 +153,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
     _onLoadException : function(proxy, result, response, e)
     {
-        console.log(e.message);   
+        if (e && e.message)
+            console.log(e.message);
     },
 
     getRole : function(id)
@@ -1260,6 +1261,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             this.inheritedPolicy = policy;
             this.policy = policy.copy(this.resource.id);
+            this.policy.policy.modified = null; // UNDONE: make overwrite explicit in savePolicy
             if (this.inheritedCheckbox)
                 this.inheritedCheckbox.enable();
         }
