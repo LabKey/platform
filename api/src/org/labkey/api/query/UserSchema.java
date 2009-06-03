@@ -45,9 +45,17 @@ abstract public class UserSchema extends AbstractSchema
     {
         Object o = _getTableOrQuery(name, includeExtraMetadata);
         if (o instanceof TableInfo)
+        {
             return (TableInfo)o;
+        }
         if (o instanceof QueryDefinition)
-            return ((QueryDefinition)o).getTable(this, null, true);
+        {
+            ArrayList<QueryException> errors = new ArrayList<QueryException>();
+            TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
+            if (!errors.isEmpty())
+                throw errors.get(0);
+            return t;
+        }
         return null;
     }
 
