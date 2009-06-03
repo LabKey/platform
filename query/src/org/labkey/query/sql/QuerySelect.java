@@ -569,9 +569,9 @@ loop:
             }
         if (null != _orderBy)
         {
-            for (QNode expr : _orderBy.children())
+            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
             {
-                declareFields((QExpr)expr);
+                declareFields(entry.getKey());
             }
         }
     }

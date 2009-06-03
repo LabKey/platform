@@ -110,8 +110,16 @@ public class QueryControllerSpring extends SpringActionController
     {
         if (form.getSchema() == null)
             HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
-        if (!queryExists(form))
-            HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
+        try
+        {
+            if (!queryExists(form))
+                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
+        }
+        catch (QueryException qe)
+        {
+            // it exists, but it has an error
+            return;
+        }
     }
 
     @RequiresPermission(ACL.PERM_READ)
