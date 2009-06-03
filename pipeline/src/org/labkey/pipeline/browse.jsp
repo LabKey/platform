@@ -143,7 +143,7 @@ function renderPipelineActions(actions)
             {
                 var menuid = 'actionmenu' + ++actionMenuCounter;
                 a.children.push("&nbsp;&nbsp;&nbsp;");
-                a.children.push({tag:'img', src:LABKEY.imagePath+'/text_link_arrow.gif', 'cls':'labkey-button-arrow'});
+                a.children.push({tag:'img', src:LABKEY.imagePath+'/button_arrow.gif', 'cls':'labkey-button-arrow'});
                 var menu = toMenu(link);
                 activeMenus[menuid] = new Ext.menu.Menu(menu);
                 a.id = menuid;
