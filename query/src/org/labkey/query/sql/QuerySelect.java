@@ -168,7 +168,7 @@ public class QuerySelect extends QueryRelation
                 // look for table.*
                 if (node instanceof QFieldKey)
                 {
-                    FieldKey key = ((QDot)node).getFieldKey();
+                    FieldKey key = ((QFieldKey)node).getFieldKey();
 
                     if (null != key && key.getName().equals("*"))
                     {
