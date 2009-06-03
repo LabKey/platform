@@ -81,7 +81,7 @@ public class CustomViewImpl implements CustomView
 
     public String getName()
     {
-        return _cstmView.getName();
+        return null == _cstmView ? null : _cstmView.getName();
     }
 
     public User getOwner()
