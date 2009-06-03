@@ -27,6 +27,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ViewContext;
@@ -107,7 +108,15 @@ public class DomainEditorServiceBase extends BaseRemoteService
             Map<String, String> availableQueries = new HashMap<String, String>();  //  GWT: TreeMap does not work
             for (String name : schema.getTableAndQueryNames(false))
             {
-                TableInfo table = schema.getTable(name);
+                TableInfo table;
+                try
+                {
+                    table = schema.getTable(name);
+                }
+                catch (QueryException x)
+                {
+                    continue;
+                }
                 if (table == null)
                     continue;
                 List<ColumnInfo> pkColumns = table.getPkColumns();
