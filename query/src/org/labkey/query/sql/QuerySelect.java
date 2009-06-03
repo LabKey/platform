@@ -1113,7 +1113,9 @@ loop:
                 if (null != fk)
                     _key = new FieldKey(null, fk.getName());
             }
-            _alias = _aliasManager.decideAlias(getName());
+            String name = getName();
+            if (null != name)
+                _alias = _aliasManager.decideAlias(name);
         }
 
         public SelectColumn(QExpr expr)
