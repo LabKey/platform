@@ -313,7 +313,12 @@ public class QuerySelect extends QueryRelation
         private void parseTable(QNode parent)
         {
 			List<QNode> l = parent.childList();
-			QNode[] children = l.toArray(new QNode[l.size()]);
+            if (l.isEmpty())
+            {
+                parseError("FROM clause is empty", parent);
+                return;
+            }
+            QNode[] children = l.toArray(new QNode[l.size()]);
 			int inode = 0;
             QNode node = children[inode];
 
