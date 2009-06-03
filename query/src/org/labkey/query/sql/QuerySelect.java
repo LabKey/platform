@@ -489,6 +489,7 @@ loop:
     }
 
 
+
     private void declareFields(QExpr expr)
     {
         if (expr instanceof QMethodCall)
@@ -542,8 +543,14 @@ loop:
     }
 
 
+    private boolean _declareCalled = false;
+
     void declareFields()
     {
+        if (_declareCalled)
+            return;
+        _declareCalled = true;
+
         if (null != _columns)
             for (SelectColumn column : _columns.values())
             {

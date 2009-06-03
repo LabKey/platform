@@ -121,6 +121,8 @@ public class Query
     {
         _querySource = queryText;
         _parse(_querySource);
+        if (_parseErrors.isEmpty() && null != _queryRoot)
+            _queryRoot.declareFields();
     }
 
 	private void _parse(String queryText)
