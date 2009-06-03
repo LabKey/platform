@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
@@ -62,6 +63,8 @@ public class DataSetQueryView extends QueryView
     public static final String DATAREGION = "Dataset";
     private QCStateSet _qcStateSet;
     private boolean _showEditLinks = true;
+    private ExpProtocol _protocol;
+    private AssayProvider _provider;
 
     public DataSetQueryView(DataSetDefinition dataset, UserSchema schema, QuerySettings settings, VisitImpl visit, CohortImpl cohort, QCStateSet qcStateSet)
     {
@@ -74,6 +77,14 @@ public class DataSetQueryView extends QueryView
         _dataset = dataset;
         _visit = visit;
         _cohort = cohort;
+
+        Integer protocolId = _dataset.getProtocolId();
+        if (protocolId != null)
+        {
+            _protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
+            if (_protocol != null)
+                _provider = AssayService.get().getProvider(_protocol);
+        }
     }
 
     public DataView createDataView()
@@ -169,14 +180,12 @@ public class DataSetQueryView extends QueryView
         if (protocolId == null)
             return true; // we don't have a protocol at all, so we don't know if we have useful details
 
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
-        if (protocol == null)
+        if (_protocol == null)
             return false; // We have a protocol, but it's been deleted
 
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider == null)
+        if (_provider == null)
             return false; // Unlikely, but possible -- provider no longer available
-        return provider.hasUsefulDetailsPage();
+        return _provider.hasUsefulDetailsPage();
     }
 
     private class DatasetDetailsColumn extends SimpleDisplayColumn
@@ -197,12 +206,19 @@ public class DataSetQueryView extends QueryView
             Object lsid = ctx.get(_sourceLsidColumn.getName());
             if (lsid != null)
             {
-                // If the user has the ability to read this dataset, always
-                // provide a link to the source assay details page.
-                ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
-                dataURL.addParameter("sourceLsid", lsid.toString());
-                out.write(PageFlowUtil.textLink("assay", dataURL));
-                return;
+                Container container = LsidManager.get().getContainer(lsid.toString());
+                if (container != null)
+                {
+                    // Currently, only the nab assay allows viewing the assay details if the user has permission to this dataset
+                    if (container.hasPermission(_user, ReadPermission.class) ||
+                            (_provider != null && _provider.getClass().getName().equals("org.labkey.nab.NabAssayProvider")))
+                    {
+                        ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
+                        dataURL.addParameter("sourceLsid", lsid.toString());
+                        out.write(PageFlowUtil.textLink("assay", dataURL));
+                        return;
+                    }
+                }
             }
             out.write("&nbsp;");
         }
