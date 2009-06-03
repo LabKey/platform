@@ -110,6 +110,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         if (form.getSchema() == null)
             HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
+
         try
         {
             if (!queryExists(form))
@@ -490,6 +491,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
+            assertQueryExists(form);
             _print = true;
             String title = form.getQueryName();
             if (StringUtils.isEmpty(title))
