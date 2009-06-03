@@ -13,6 +13,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.ExceptionUtil;
 import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang.math.NumberUtils;
 
@@ -96,7 +97,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         }
         catch (SQLException e)
         {
-            e.printStackTrace();
+            throw new RuntimeSQLException(e);
         }
 
         if (results == null || results.length == 0)

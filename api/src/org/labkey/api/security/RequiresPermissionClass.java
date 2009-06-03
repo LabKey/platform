@@ -35,7 +35,5 @@ import java.lang.annotation.ElementType;
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
 public @interface RequiresPermissionClass
 {
-    Class<? extends Permission> value();
-
-    Class<? extends HasContextualRoles>[] contextual() default { };
+    Class<? extends Permission>[] value();
 }

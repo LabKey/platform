@@ -15,10 +15,7 @@
  */
 package org.labkey.api.defaults;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresOneOf;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.exp.property.Domain;
@@ -34,7 +31,7 @@ import org.springframework.web.servlet.ModelAndView;
  * Time: 7:06:18 PM
  */
 
-@RequiresOneOf({DesignListPermission.class, DesignAssayPermission.class, AdminPermission.class})
+@RequiresPermissionClass({DesignListPermission.class, DesignAssayPermission.class, AdminPermission.class})
 public class ClearDefaultValuesAction extends DefaultValuesAction<DomainIdForm>
 {
     public ModelAndView getView(DomainIdForm domainIdForm, boolean reshow, BindException errors) throws Exception
