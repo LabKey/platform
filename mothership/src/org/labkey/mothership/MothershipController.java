@@ -349,6 +349,8 @@ public class MothershipController extends SpringActionController
             settings.setAllowChooseQuery(false);
 
             ExceptionSummaryQueryView queryView = new ExceptionSummaryQueryView(schema, settings);
+            queryView.setShadeAlternatingRows(true);
+            queryView.setShowBorders(true);
 
             return new VBox(linkView, queryView);
         }
