@@ -619,7 +619,7 @@ LABKEY.WebdavFileSystem = function(config)
                     return path;
                 }
             },
-            {name: 'name', mapping: 'propstat/prop/displayname'},
+            {name: 'name', mapping: 'propstat/prop/displayname', sortType:'asUCString'},
             {name: 'file', mapping: 'href', type: 'boolean',
                 convert : function (v, rec)
                 {
@@ -668,8 +668,6 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
             {
                 url: this.concatPaths(this.prefixUrl, path),
                 xmlData : body,
-//                method: "GET",
-//                headers: {"Method" : "PROPFIND", "Depth" : "0"}
                 method: "PROPFIND",
                 headers: {"Depth" : "0"}
             });
@@ -794,7 +792,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     processFile : function(result, args, success)
     {
         var update = null;
-        if (!Ext.isArray(result.records))
+        if (success && result && !Ext.isArray(result.records))
             success = false;
         if (success && result.records.length == 1)
         {
@@ -825,7 +823,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 
         var directory = null;
         var listing = [];
-        if (!Ext.isArray(result.records))
+        if (success && result && !Ext.isArray(result.records))
             success = false;
         if (success)
         {
@@ -946,6 +944,38 @@ Ext.extend(AppletFileSystem, FileSystem,
         return true;
     }
 });
+
+
+
+
+
+//
+// FileStore
+//
+
+var FileStore = Ext.extend(Ext.data.Store,
+{
+    sortData : function(f, direction)
+    {
+        direction = direction || 'ASC';
+        var st = this.fields.get(f).sortType;
+        var d = direction=="DESC" ? -1 : 1;
+        var fn = function(r1, r2)
+        {
+            if (r1.data.file != r2.data.file)
+                return d * (r1.data.file ? 1 : -1);
+            var v1 = st(r1.data[f]), v2 = st(r2.data[f]);
+            return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
+        };
+        this.data.sort(direction, fn);
+        if (this.snapshot && this.snapshot != this.data)
+        {
+            this.snapshot.sort(direction, fn);
+        }
+    }
+});
+
+
 
 
 //
@@ -1807,7 +1837,18 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             if (data.file)
                 row("Size",data.size);
             if (data.createdBy && data.createdBy != 'Guest')
-                row("Created By", data.createdBy);
+                row("Created By", $h(data.createdBy));
+            if (startsWith(data.contentType,"image/"))
+            {
+                row("Size","<span id=detailsImgSize></span>");
+                var image = new Image();
+                image.onload = function()
+                {
+                    $('detailsImgSize').update(image.width + "x" + image.height);
+                };
+                image.src = data.uri;
+            }
+
             html.push("</table>");
             el.update(html.join(""));
         }
@@ -1818,6 +1859,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     },
 
 
+    // UNDONE: move part of this into FileStore?
     loadRecords : function(filesystem, success, path, records)
     {
         var i, len;
@@ -1830,7 +1872,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 for (i=0 ; i<t.length ; i++)
                     if (t[i].data.file) records.push(t[i]);
             }
-            // consider subclassing store? this is meant to act like loadRecords()
             this.store.modified = [];
             for (i = 0, len = records.length; i < len; i++)
                 records[i].join(this.store);
@@ -1988,7 +2029,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         // mild convolution to pass fileSystem to the _attachPreview function
         var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
 
-        this.store = new Ext.data.Store({recordType:this.fileSystem.FileRecord});
+        this.store = new FileStore({recordType:this.fileSystem.FileRecord});
         this.grid = new Ext.grid.GridPanel(
         {
             store: this.store,
@@ -2166,6 +2207,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             layoutItems.push(
             {
                 region: 'south',
+                split: true,
                 height: 100,
                 minSize: 75,
                 maxSize: 250,
@@ -2185,7 +2227,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 width: 200,
                 minSize: 100,
                 collapsible: true,
-                margins:'5 0 5 5',
+                margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
                 layoutConfig:{animate:true},
                 items: [this.tree]
             });
@@ -2193,7 +2235,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         layoutItems.push(
             {
                 region:'center',
-                margins: this.propertiesPanel ? '5 0 5 0' : '5 5 5 0',
+                margins: '5 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '5') + ' 0',
                 minSize: 200,
                 layout:'border',
                 items:
@@ -2209,7 +2251,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 region:'east',
                 split:true,
-                margins:'5 5 5 0',
+                margins: this.showDetails ? '5 5 0 0' : '5 5 5 0',
                 width: 200,
                 minSize: 100,
                 border: false,
