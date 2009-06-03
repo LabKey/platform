@@ -955,6 +955,12 @@ Ext.extend(AppletFileSystem, FileSystem,
 
 var FileStore = Ext.extend(Ext.data.Store,
 {
+    constructor : function(config)
+    {
+        FileStore.superclass.constructor.call(this,config);
+        this.setDefaultSort("name","ASC");
+    },
+
     sortData : function(f, direction)
     {
         direction = direction || 'ASC';
