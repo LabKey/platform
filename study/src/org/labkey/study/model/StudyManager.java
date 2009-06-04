@@ -45,6 +45,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -2966,6 +2967,11 @@ public class StudyManager
             }
 */
             return null;
+        }
+
+        public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
+        {
+            return false;
         }
     }
 

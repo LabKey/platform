@@ -26,6 +26,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.*;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.util.GUID;
@@ -33,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.plate.query.PlateSchema;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -561,19 +563,24 @@ public class PlateManager implements PlateService.Service
 
     private static class PlateLsidHandler implements LsidManager.LsidHandler
     {
-        public String getDisplayURL(Lsid lsid)
+        protected PlateImpl getPlate(Lsid lsid)
         {
             try
             {
-                PlateImpl plate = PlateManager.get().getPlate(lsid.toString());
-                if (plate == null)
-                    return null;
-                return PlateManager.get().getDetailsURL(plate).getLocalURIString();
+                return PlateManager.get().getPlate(lsid.toString());
             }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
             }
+        }
+
+        public String getDisplayURL(Lsid lsid)
+        {
+            PlateImpl plate = getPlate(lsid);
+            if (plate == null)
+                return null;
+            return PlateManager.get().getDetailsURL(plate).getLocalURIString();
         }
 
         public ExpObject getObject(Lsid lsid)
@@ -583,35 +590,41 @@ public class PlateManager implements PlateService.Service
 
         public Container getContainer(Lsid lsid)
         {
-            try
-            {
-                PlateImpl plate = PlateManager.get().getPlate(lsid.toString());
-                if (plate == null)
-                    return null;
-                return plate.getContainer();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            PlateImpl plate = getPlate(lsid);
+            if (plate == null)
+                return null;
+            return plate.getContainer();
+        }
+
+        public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
+        {
+            Container c = getContainer(lsid);
+            if (c != null)
+                return c.hasPermission(user, perm);
+            return false;
         }
     }
 
     private static class WellGroupLsidHandler implements LsidManager.LsidHandler
     {
-        public String getDisplayURL(Lsid lsid)
+        protected WellGroup getWellGroup(Lsid lsid)
         {
             try
             {
-                WellGroup wellGroup = PlateManager.get().getWellGroup(lsid.toString());
-                if (wellGroup == null)
-                    return null;
-                return PlateManager.get().getDetailsURL(wellGroup.getPlate()).getLocalURIString();
+                return PlateManager.get().getWellGroup(lsid.toString());
             }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
             }
+        }
+
+        public String getDisplayURL(Lsid lsid)
+        {
+            WellGroup wellGroup = getWellGroup(lsid);
+            if (lsid == null)
+                return null;
+            return PlateManager.get().getDetailsURL(wellGroup.getPlate()).getLocalURIString();
         }
 
         public ExpObject getObject(Lsid lsid)
@@ -621,17 +634,18 @@ public class PlateManager implements PlateService.Service
 
         public Container getContainer(Lsid lsid)
         {
-            try
-            {
-                WellGroup wellGroup = PlateManager.get().getWellGroup(lsid.toString());
-                if (wellGroup == null)
-                    return null;
-                return wellGroup.getContainer();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            WellGroup wellGroup = getWellGroup(lsid);
+            if (wellGroup == null)
+                return null;
+            return wellGroup.getContainer();
+        }
+
+        public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
+        {
+            Container c = getContainer(lsid);
+            if (c != null)
+                return c.hasPermission(user, perm);
+            return false;
         }
     }
     

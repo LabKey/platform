@@ -206,18 +206,12 @@ public class DataSetQueryView extends QueryView
             Object lsid = ctx.get(_sourceLsidColumn.getName());
             if (lsid != null)
             {
-                Container container = LsidManager.get().getContainer(lsid.toString());
-                if (container != null)
+                if (LsidManager.get().hasPermission(lsid.toString(), _user, ReadPermission.class))
                 {
-                    // Currently, only the nab assay allows viewing the assay details if the user has permission to this dataset
-                    if (container.hasPermission(_user, ReadPermission.class) ||
-                            (_provider != null && _provider.getClass().getName().equals("org.labkey.nab.NabAssayProvider")))
-                    {
-                        ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
-                        dataURL.addParameter("sourceLsid", lsid.toString());
-                        out.write(PageFlowUtil.textLink("assay", dataURL));
-                        return;
-                    }
+                    ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
+                    dataURL.addParameter("sourceLsid", lsid.toString());
+                    out.write(PageFlowUtil.textLink("assay", dataURL));
+                    return;
                 }
             }
             out.write("&nbsp;");
