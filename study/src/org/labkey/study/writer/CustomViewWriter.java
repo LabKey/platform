@@ -34,14 +34,15 @@ import java.util.Set;
  */
 public class CustomViewWriter implements Writer<StudyImpl>
 {
-    private static final String DEFAULT_DIRECTORY = "views";  // TODO: customViews?
+    private static final String DEFAULT_DIRECTORY = "views";  // TODO: qviews?
+    private VirtualFile _viewDir = null;
 
     public String getSelectionText()
     {
         return "Custom Views";
     }
 
-    public void write(StudyImpl object, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl object, ExportContext ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         User user = ctx.getUser();
@@ -64,10 +65,23 @@ public class CustomViewWriter implements Writer<StudyImpl>
 
                 for (CustomView customView : customViews)
                 {
-                    VirtualFile customViewDir = fs.getDir(DEFAULT_DIRECTORY);
+                    // Create the <view> element only if we have a custom view to write
+                    VirtualFile customViewDir = ensureViewDirectory(ctx, root);
                     customView.serialize(customViewDir);
                 }
             }
         }
+    }
+
+    // Create the <views> element
+    private VirtualFile ensureViewDirectory(ExportContext ctx, VirtualFile root)
+    {
+        if (null == _viewDir)
+        {
+            ctx.getStudyXml().addNewViews().setDir(DEFAULT_DIRECTORY);
+            _viewDir = root.getDir(DEFAULT_DIRECTORY);
+        }
+
+        return _viewDir;
     }
 }

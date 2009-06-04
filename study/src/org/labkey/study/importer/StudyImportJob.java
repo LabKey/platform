@@ -77,6 +77,11 @@ public class StudyImportJob extends PipelineJob
             new QueryImporter().process(_ctx, _root);
             info("Done importing queries");
 
+            info("Importing custom views");
+            setStatus("IMPORT custom views");
+            new CustomViewImporter().process(_ctx, _root);
+            info("Done importing custom views");
+
             info("Importing reports");
             setStatus("IMPORT reports");
             new ReportImporter().process(_ctx, _root);

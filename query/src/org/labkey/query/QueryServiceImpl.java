@@ -264,6 +264,27 @@ public class QueryServiceImpl extends QueryService
             views.put(cstmView.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, cstmView));
     }
 
+    public void importCustomViews(File viewDir)
+    {
+        File[] viewFiles = viewDir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name)
+            {
+                return name.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
+            }
+        });
+
+        for (File viewFile : viewFiles)
+        {
+            CustomViewXmlReader reader = new CustomViewXmlReader(viewFile);
+
+            System.out.println(reader.getSchema());
+            System.out.println(reader.getQuery());
+            System.out.println(reader.getName());
+            System.out.println(reader.getSorts());
+            System.out.println(reader.getFilters());
+        }
+    }
+
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
     {
         Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<String, QuerySnapshotDefinition>();

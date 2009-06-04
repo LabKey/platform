@@ -113,7 +113,7 @@ public class SchemaXmlWriter implements Writer<DataSetDefinition[]>
                     Container lkContainer = (null != fk.getLookupContainerId() ? ContainerManager.getForId(fk.getLookupContainerId()) : null);
                     fkXml.setFkFolderPath(lkContainer != null ? lkContainer.getPath() : null);
 
-                    TableInfo tinfo = fk.getLookupTableInfo();           // TODO: Export folder path: ContainerManager.getForId(((PdLookupForeignKey)fk)._pd.getLookupContainer()).getPath()
+                    TableInfo tinfo = fk.getLookupTableInfo();
                     fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
                     fkXml.setFkTable(tinfo.getPublicName());
                     fkXml.setFkColumnName(fk.getLookupColumnName());

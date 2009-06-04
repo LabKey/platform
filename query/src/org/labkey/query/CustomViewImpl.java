@@ -335,8 +335,6 @@ public class CustomViewImpl implements CustomView
         }
     }
 
-    public static final String FILE_EXTENSION = ".view.xml";
-
     public void serialize(VirtualFile dir) throws IOException
     {
         CustomViewDocument customViewDoc = CustomViewDocument.Factory.newInstance();
@@ -427,7 +425,7 @@ public class CustomViewImpl implements CustomView
             _log.error("Bad filter/sort URL in custom view: " + _cstmView.getFilter());
         }
 
-        String filename = (null != getName() ? getName() : "default") + ".db_" + getCstmView().getCustomViewId() + FILE_EXTENSION;
+        String filename = (null != getName() ? getName() : "default") + ".db_" + getCstmView().getCustomViewId() + CustomViewXmlReader.XML_FILE_EXTENSION;
 
         XmlBeansUtil.saveDoc(dir.getPrintWriter(filename), customViewDoc);
     }
