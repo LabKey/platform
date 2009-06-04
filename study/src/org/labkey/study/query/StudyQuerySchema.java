@@ -80,6 +80,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add("Visit");
             ret.add("SpecimenEvent");
             ret.add("SpecimenDetail");
+            ret.add("SpecimenVialCount");
             ret.add("SimpleSpecimen");
             ret.add("SpecimenSummary");
             ret.add("SpecimenRequest");
@@ -189,6 +190,11 @@ public class StudyQuerySchema extends UserSchema
         if ("SpecimenDetail".equals(name))
         {
             SpecimenDetailTable ret = new SpecimenDetailTable(this);
+            return ret;
+        }
+        if ("SpecimenVialCount".equals(name))
+        {
+            SpecimenVialCountTable ret = new SpecimenVialCountTable(this);
             return ret;
         }
         if ("SpecimenEvent".equals(name))

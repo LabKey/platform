@@ -19,6 +19,16 @@ CREATE VIEW study.LockedSpecimens AS
       JOIN study.SampleRequestSpecimen AS map ON request.rowid = map.SampleRequestId AND map.Orphaned = 0
 GO
 
+CREATE VIEW study.VialCounts AS
+        SELECT Container, SpecimenHash,
+        COUNT(GlobalUniqueId) AS VialCount,
+        SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequestCount,
+        SUM(CASE AtRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepositoryCount,
+        SUM(CASE Available WHEN 1 THEN 1 ELSE 0 END) AS AvailableCount
+    FROM study.Specimen
+    GROUP BY Container, SpecimenHash
+GO
+
 CREATE VIEW study.SpecimenSummary AS
     SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue,
 		SUM(Volume) AS TotalVolume, SUM(CASE Available WHEN 1 THEN Volume ELSE 0 END) AS AvailableVolume,

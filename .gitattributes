@@ -2132,6 +2132,7 @@ study/src/org/labkey/study/query/SpecimenRequestDisplayColumn.java -text
 study/src/org/labkey/study/query/SpecimenRequestQueryView.java -text
 study/src/org/labkey/study/query/SpecimenRequestTable.java -text
 study/src/org/labkey/study/query/SpecimenSummaryTable.java -text
+study/src/org/labkey/study/query/SpecimenVialCountTable.java -text
 study/src/org/labkey/study/query/StudyPropertiesQueryView.java -text
 study/src/org/labkey/study/query/StudyPropertiesTable.java -text
 study/src/org/labkey/study/query/StudyPropertiesUpdateService.java -text

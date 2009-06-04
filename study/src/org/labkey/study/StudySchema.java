@@ -215,4 +215,8 @@ public class StudySchema
         return getSchema().getTable("SpecimenAdditive");
     }
 
+    public TableInfo getTableInfoSpecimenVialCount()
+    {
+        return getSchema().getTable("VialCounts");
+    }
 }
