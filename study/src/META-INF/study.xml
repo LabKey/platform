@@ -680,4 +680,14 @@
       <ns:column columnName="QualityControlComments"/>
       </ns:columns>
   </ns:table>
+  <ns:table tableName="VialCounts" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="SpecimenHash"/>
+      <ns:column columnName="LockedInRequestCount"/>
+      <ns:column columnName="AtRepositoryCount"/>
+      <ns:column columnName="AvailableCount"/>
+      <ns:column columnName="VialCount"/>
+    </ns:columns>
+  </ns:table>
 </ns:tables>
