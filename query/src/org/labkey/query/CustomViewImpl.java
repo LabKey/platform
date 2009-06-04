@@ -25,8 +25,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.queryCustomView.CustomViewDocument;
-import org.labkey.data.xml.queryCustomView.CustomViewType;
+import org.labkey.data.xml.queryCustomView.*;
 import org.labkey.query.design.*;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
@@ -344,12 +343,89 @@ public class CustomViewImpl implements CustomView
         CustomViewType customViewXml = customViewDoc.addNewCustomView();
 
         customViewXml.setName(getName());
+        customViewXml.setSchema(getQueryDefinition().getSchemaName());
+        customViewXml.setQuery(getQueryDefinition().getName());
 
         if (isHidden())
             customViewXml.setHidden(isHidden());
 
         if (null != getCustomIconUrl())
             customViewXml.setCustomIconUrl(getCustomIconUrl());
+
+        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> columns = getColumnProperties();
+
+        // TODO: ContainerFilter?
+
+        if (!columns.isEmpty())
+        {
+            ColumnsType columnsXml = customViewXml.addNewColumns();
+
+            for (Map.Entry<FieldKey, Map<ColumnProperty, String>> column : columns)
+            {
+                org.labkey.data.xml.queryCustomView.ColumnType columnXml = columnsXml.addNewColumn();
+
+                columnXml.setName(column.getKey().getName());
+
+                Map<ColumnProperty, String> props = column.getValue();
+
+                if (!props.isEmpty())
+                {
+                    PropertiesType propsXml = columnXml.addNewProperties();
+
+                    for (Map.Entry<ColumnProperty, String> propEntry : props.entrySet())
+                    {
+                        PropertyType propXml = propsXml.addNewProperty();
+                        propXml.setName(propEntry.getKey().getXmlPropertyEnum());
+                        propXml.setValue(propEntry.getValue());
+                    }
+                }
+            }
+        }
+
+        try
+        {
+            FilterAndSort fas = getFilterAndSort(_cstmView.getFilter());
+
+            if (!fas.filter.isEmpty())
+            {
+                FiltersType filtersXml = customViewXml.addNewFilters();
+
+                for (FilterInfo filter : fas.filter)
+                {
+                    FilterType filterXml = filtersXml.addNewFilter();
+
+                    filterXml.setColumn(filter.getField().getName());
+
+                    if (null != filter.getOp())
+                    {
+                        OperatorType.Enum opType = OperatorType.Enum.forString(filter.getOp().getUrlKey());
+
+                        if (null != opType)
+                        {
+                            filterXml.setOperator(opType);
+                            filterXml.setValue(filter.getValue());                            
+                        }
+                    }
+                }
+            }
+
+            if (!fas.sort.isEmpty())
+            {
+                SortsType sortsXml = customViewXml.addNewSorts();
+
+                for (Sort.SortField sort : fas.sort)
+                {
+                    SortType sortXml = sortsXml.addNewSort();
+
+                    sortXml.setColumn(sort.getColumnName());
+                    sortXml.setDescending(sort.getSortDirection() == Sort.SortDirection.DESC);
+                }
+            }
+        }
+        catch (URISyntaxException e)
+        {
+            _log.error("Bad filter/sort URL in custom view: " + _cstmView.getFilter());
+        }
 
         String filename = (null != getName() ? getName() : "default") + ".db_" + getCstmView().getCustomViewId() + FILE_EXTENSION;
 
@@ -482,6 +558,55 @@ public class CustomViewImpl implements CustomView
         tableOutput.setAlias("output");
         TableXML.initTable(tableOutput.addNewMetadata(), tinfo, null, getColumnInfos(tinfo, allKeys).values());
         return ret;
+    }
+
+    private static class FilterAndSort
+    {
+        private List<FilterInfo> filter = new ArrayList<FilterInfo>();
+        private List<Sort.SortField> sort = new ArrayList<Sort.SortField>();
+        private String[] containerFilterNames = new String[]{};
+
+        public List<Sort.SortField> getSort()
+        {
+            return sort;
+        }
+
+        public String[] getContainerFilterNames()
+        {
+            return containerFilterNames;
+        }
+    }
+
+    // TODO: Shift other methods in CustomViewImpl to use this helper
+    private FilterAndSort getFilterAndSort(String strFilter) throws URISyntaxException
+    {
+        FilterAndSort fas = new FilterAndSort();
+
+        if (strFilter != null)
+        {
+            URLHelper filterSort = new URLHelper(strFilter);
+
+            for (String key : filterSort.getKeysByPrefix(FILTER_PARAM_PREFIX + "."))
+            {
+                String param = key.substring(FILTER_PARAM_PREFIX.length() + 1);
+                String[] parts = StringUtils.splitPreserveAllTokens(param, '~');
+
+                if (parts.length != 2)
+                    continue;
+
+                for (String value : filterSort.getParameters(key))
+                {
+                    FilterInfo filter = new FilterInfo(parts[0], parts[1], value);
+                    fas.filter.add(filter);
+                }
+            }
+
+            Sort sort = new Sort(filterSort, FILTER_PARAM_PREFIX);
+            fas.sort = sort.getSortList();
+            fas.containerFilterNames = filterSort.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+        }
+
+        return fas;
     }
 
     static public Map<FieldKey, ColumnInfo> getColumnInfos(TableInfo table, Collection<FieldKey> fields)

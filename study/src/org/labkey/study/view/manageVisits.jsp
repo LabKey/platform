@@ -53,14 +53,16 @@
     {
 %>
 <p>
-<table>
-    <th>&nbsp;</th>
-    <th>Label</th>
-    <th>Sequence</th>
-    <th>Cohort</th>
-    <th>Type</th>
-    <th>Show By Default</th>
-    <th>&nbsp;</th>
+<table id="visits">
+    <tr>
+        <th>&nbsp;</th>
+        <th>Label</th>
+        <th>Sequence</th>
+        <th>Cohort</th>
+        <th>Type</th>
+        <th>Show By Default</th>
+        <th>&nbsp;</th>
+    </tr>
     <%
         for (VisitImpl visit : getVisits())
         {

@@ -159,7 +159,8 @@ public class ModuleCustomViewDef
             {
                 for(PropertyType propDef : propsList.getPropertyArray())
                 {
-                    CustomView.ColumnProperty colProp = CustomView.ColumnProperty.valueOf(propDef.getName());
+                    CustomView.ColumnProperty colProp = CustomView.ColumnProperty.getForXmlEnum(propDef.getName());
+
                     if(null == colProp)
                         continue;
 
