@@ -618,7 +618,7 @@ public class Portal
 
     private static HashMap<String, WebPartFactory> getViewMap()
     {
-        if (null == _viewMap)
+        if (null == _viewMap || areWebPartMapsStale())
             initMaps();
 
         return _viewMap;
@@ -627,12 +627,22 @@ public class Portal
 
     private static MultiHashMap<String, String> getRegionMap()
     {
-        if (null == _regionMap)
+        if (null == _regionMap || areWebPartMapsStale())
             initMaps();
 
         return _regionMap;
     }
 
+    private static boolean areWebPartMapsStale()
+    {
+        List<Module> modules = ModuleLoader.getInstance().getModules();
+        for (Module module : modules)
+        {
+            if (module.isWebPartFactorySetStale())
+                return true;
+        }
+        return false;
+    }
 
     private static void initMaps()
     {

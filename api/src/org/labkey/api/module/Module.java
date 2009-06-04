@@ -122,6 +122,12 @@ public interface Module extends Comparable<Module>
     public Collection<? extends WebPartFactory> getWebPartFactories();
 
     /**
+     * Return true if the set of web part factories is now stale and needs to be reloaded
+     * @return true if stale, false if not.
+     */
+    public boolean isWebPartFactorySetStale();
+    
+    /**
      * @param c container in which the items would be stored
      * @return description of the objects that this module has stored in the container
      */

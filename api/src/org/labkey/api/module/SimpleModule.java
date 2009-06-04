@@ -69,7 +69,7 @@ public class SimpleModule extends DefaultModule
         return viewsDir.exists() && viewsDir.isDirectory() ? viewsDir.listFiles(SimpleWebPartFactory.webPartFileFilter) : new File[0];
     }
 
-    protected boolean isFactorySetStale()
+    public boolean isWebPartFactorySetStale()
     {
         return _factorySetHash != calcFactorySetHash();
     }

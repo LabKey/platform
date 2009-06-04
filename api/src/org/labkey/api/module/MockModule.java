@@ -123,6 +123,11 @@ public class MockModule implements Module
         return null;
     }
 
+    public boolean isWebPartFactorySetStale()
+    {
+        return false;
+    }
+
     public Collection<String> getSummary(Container c)
     {
         return null;
