@@ -1468,6 +1468,15 @@ public class SecurityController extends SpringActionController
 
         public void testAnnotations() throws Exception
         {
+            //clean up users in case this failed part way through
+            String[] cleanupUsers = {"guest@scjutc.com", "user@scjutc.com", "admin@scjutc.com"};
+            for (String cleanupUser : cleanupUsers)
+            {
+                User oldUser = UserManager.getUser(new ValidEmail(cleanupUser));
+                if (null != oldUser)
+                    UserManager.deleteUser(oldUser.getUserId());
+            }
+
             Container junit = ContainerManager.ensureContainer("/Shared/_junit");
             c = ContainerManager.createContainer(junit, "SecurityController-" + GUID.makeGUID());
 
