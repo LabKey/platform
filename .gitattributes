@@ -152,6 +152,7 @@ api/src/org/labkey/api/data/EnumConverter.java -text
 api/src/org/labkey/api/data/EnumTableInfo.java -text
 api/src/org/labkey/api/data/FileSqlScriptProvider.java -text
 api/src/org/labkey/api/data/Filter.java -text
+api/src/org/labkey/api/data/FilterInfo.java -text
 api/src/org/labkey/api/data/ForeignKey.java -text
 api/src/org/labkey/api/data/GroupTableInfo.java -text
 api/src/org/labkey/api/data/HtmlWriter.java -text

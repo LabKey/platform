@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.VirtualFile;
+import org.labkey.data.xml.queryCustomView.PropertyName;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -30,7 +31,25 @@ public interface CustomView
 {
     enum ColumnProperty
     {
-        columnTitle
+        columnTitle(PropertyName.COLUMN_TITLE);
+
+        private PropertyName.Enum _xmlEnum;
+
+        private ColumnProperty(PropertyName.Enum xmlEnum)
+        {
+            _xmlEnum = xmlEnum;
+        }
+
+        public PropertyName.Enum getXmlPropertyEnum()
+        {
+            return _xmlEnum;
+        }
+
+        public static ColumnProperty getForXmlEnum(PropertyName.Enum xmlEnum)
+        {
+            // There's only one possible value right now... once we add more, turn this into a loop or map lookup
+            return columnTitle.getXmlPropertyEnum() == xmlEnum ? columnTitle : null;
+        }
     }
 
     QueryDefinition getQueryDefinition();
