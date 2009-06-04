@@ -17,7 +17,17 @@ package org.labkey.api.exp;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.assay.AssayUrls;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,6 +60,51 @@ public class LsidManager
         String getDisplayURL(Lsid lsid);
 
         Container getContainer(Lsid lsid);
+
+        boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm);
+    }
+
+    public abstract static class ExpObjectLsidHandler implements LsidHandler
+    {
+        public abstract ExpObject getObject(Lsid lsid);
+
+        public Container getContainer(Lsid lsid)
+        {
+            ExpObject run = getObject(lsid);
+            return run == null ? null : run.getContainer();
+        }
+
+        public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
+        {
+            Container c = getContainer(lsid);
+            if (c != null)
+                return c.hasPermission(user, perm);
+            return false;
+        }
+    }
+
+    public static class ExpRunLsidHandler extends ExpObjectLsidHandler
+    {
+        public ExpRun getObject(Lsid lsid)
+        {
+            return ExperimentService.get().getExpRun(lsid.toString());
+        }
+
+        public String getDisplayURL(Lsid lsid)
+        {
+            ExpRun run = getObject(lsid);
+            if (run == null)
+                return null;
+            ExpProtocol protocol = run.getProtocol();
+            if (protocol == null)
+                return null;
+            return getDisplayURL(run.getContainer(), protocol, run).getLocalURIString();
+        }
+
+        protected ActionURL getDisplayURL(Container c, ExpProtocol protocol, ExpRun run)
+        {
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, protocol, run.getRowId());
+        }
     }
 
     public void registerHandler(String prefix, LsidHandler handler, String authority)
@@ -90,6 +145,19 @@ public class LsidManager
     public Container getContainer(String lsid)
     {
         return getContainer(new Lsid(lsid));
+    }
+
+    public boolean hasPermission(Lsid lsid, User user, Class<? extends ReadPermission> perm)
+    {
+        LsidHandler handler = findHandler(lsid);
+        if (null != handler)
+            return handler.hasPermission(lsid, user, perm);
+        return false;
+    }
+
+    public boolean hasPermission(String lsid, User user, Class<? extends ReadPermission> perm)
+    {
+        return hasPermission(new Lsid(lsid), user, perm);
     }
 
     private String getDefaultAuthority()

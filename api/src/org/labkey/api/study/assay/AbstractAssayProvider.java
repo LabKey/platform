@@ -260,31 +260,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected void registerLsidHandler()
     {
-        LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.LsidHandler()
-        {
-            public ExpRun getObject(Lsid lsid)
-            {
-                return ExperimentService.get().getExpRun(lsid.toString());
-            }
-
-            public String getDisplayURL(Lsid lsid)
-            {
-                ExpRun run = ExperimentService.get().getExpRun(lsid.toString());
-                if (run == null)
-                    return null;
-                ExpProtocol protocol = run.getProtocol();
-                if (protocol == null)
-                    return null;
-                ActionURL dataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(run.getContainer(), protocol, run.getRowId());
-                return dataURL.getLocalURIString();
-            }
-
-            public Container getContainer(Lsid lsid)
-            {
-                ExpRun run = getObject(lsid);
-                return run == null ? null : run.getContainer();
-            }
-        });
+        LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.ExpRunLsidHandler());
     }
 
     public Priority getPriority(ExpProtocol protocol)

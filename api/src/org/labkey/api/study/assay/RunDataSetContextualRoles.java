@@ -73,15 +73,21 @@ public class RunDataSetContextualRoles implements HasContextualRoles
     @Nullable
     public static Set<Role> getContextualRolesForRun(Container container, User user, int runId)
     {
+        ExpRun run = ExperimentService.get().getExpRun(runId);
+        if (run == null)
+            return null;
+
+        return getContextualRolesForRun(container, user, run);
+    }
+
+    @Nullable
+    public static Set<Role> getContextualRolesForRun(Container container, User user, ExpRun run)
+    {
         if (container == null || user == null)
             return null;
 
         // skip the check if the user has ReadPermission to the container
         if (container.hasPermission(user, ReadPermission.class))
-            return null;
-
-        ExpRun run = ExperimentService.get().getExpRun(runId);
-        if (run == null)
             return null;
 
         ExpProtocol protocol = run.getProtocol();
@@ -108,7 +114,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         Map<String, Object>[] results = null;
         try
         {
-            results = Table.selectMaps(resultsTable, columnNames, new SimpleFilter("runid", runId), null);
+            results = Table.selectMaps(resultsTable, columnNames, new SimpleFilter("runid", run.getRowId()), null);
         }
         catch (SQLException e)
         {
@@ -139,5 +145,4 @@ public class RunDataSetContextualRoles implements HasContextualRoles
 
         return null;
     }
-
 }
