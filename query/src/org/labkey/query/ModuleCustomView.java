@@ -108,14 +108,14 @@ public class ModuleCustomView implements CustomView
     public List<FieldKey> getColumns()
     {
         List<FieldKey> ret = new ArrayList<FieldKey>();
-        for(Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>> entry : getColumnProperties())
+        for(Map.Entry<FieldKey, Map<CustomView.ColumnProperty,String>> entry : getColumnProperties())
         {
             ret.add(entry.getKey());
         }
         return ret;
     }
 
-    public List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> getColumnProperties()
+    public List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty,String>>> getColumnProperties()
     {
         return _customViewDef.getColList();
     }
@@ -132,33 +132,18 @@ public class ModuleCustomView implements CustomView
 
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
     {
-        if(null != _customViewDef.getFilters())
+        if (null != _customViewDef.getFilters())
         {
-            for(Pair<String,String> filter : _customViewDef.getFilters())
+            for(Pair<String, String> filter : _customViewDef.getFilters())
             {
                 url.addParameter(dataRegionName + "." + filter.first, filter.second);
             }
         }
 
-        String sortParam = buildSortParamValue();
-        if(null != sortParam)
+        String sortParam = _customViewDef.getSortParamValue();
+
+        if (null != sortParam)
             url.addParameter(dataRegionName + ".sort", sortParam);
-    }
-
-    protected String buildSortParamValue()
-    {
-        if(null == _customViewDef.getSorts())
-            return null;
-
-        StringBuilder sortParam = new StringBuilder();
-        String sep = "";
-        for(String sort : _customViewDef.getSorts())
-        {
-            sortParam.append(sep);
-            sortParam.append(sort);
-            sep = ",";
-        }
-        return sortParam.toString();
     }
 
     public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)
@@ -168,18 +153,7 @@ public class ModuleCustomView implements CustomView
 
     public String getFilter()
     {
-        if(null == _customViewDef.getFilters())
-            return null;
-
-        StringBuilder ret = new StringBuilder();
-        for(Pair<String,String> filter : _customViewDef.getFilters())
-        {
-            ret.append(filter.first);
-            ret.append("=");
-            ret.append(filter.second);
-        }
-
-        return ret.toString();
+        return _customViewDef.getFilterAndSortString();
     }
 
     public void setFilter(String filter)
@@ -189,14 +163,15 @@ public class ModuleCustomView implements CustomView
 
     public String getContainerFilterName()
     {
-        if(null == _customViewDef.getFilters())
+        if (null == _customViewDef.getFilters())
             return null;
 
-        for(Pair<String,String> filter : _customViewDef.getFilters())
+        for(Pair<String, String> filter : _customViewDef.getFilters())
         {
-            if(filter.first.startsWith("containerFilterName~"))
+            if (filter.first.startsWith("containerFilterName~"))
                 return filter.second;
         }
+
         return null;
     }
 

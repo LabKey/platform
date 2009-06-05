@@ -19,6 +19,7 @@ package org.labkey.query;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.data.xml.queryCustomView.*;
 import org.apache.log4j.Logger;
 
@@ -90,6 +91,59 @@ public class CustomViewXmlReader
         return _filters;
     }
 
+    // TODO: There should be a common util for filter/sort url handling.  Should use a proper URL class to do this, not create/encode the query string manually
+    public String getFilterAndSortString()
+    {
+        String sort = getSortParamValue();
+
+        if (null == getFilters() && null == sort)
+            return null;
+
+        StringBuilder ret = new StringBuilder("?");
+
+        String sep = "";
+
+        if (null != getFilters())
+        {
+            for (Pair<String, String> filter : getFilters())
+            {
+                ret.append(sep);
+                ret.append("filter.");
+                ret.append(PageFlowUtil.encode(filter.first));
+                ret.append("=");
+                ret.append(PageFlowUtil.encode(filter.second));
+                sep = "&";
+            }
+        }
+
+        if (null != sort)
+        {
+            ret.append(sep);
+            ret.append("filter.sort=");
+            ret.append(PageFlowUtil.encode(sort));
+        }
+
+        return ret.toString();
+    }
+
+    public String getSortParamValue()
+    {
+        if (null == getSorts())
+            return null;
+
+        StringBuilder sortParam = new StringBuilder();
+        String sep = "";
+
+        for (String sort : getSorts())
+        {
+            sortParam.append(sep);
+            sortParam.append(sort);
+            sep = ",";
+        }
+
+        return sortParam.toString();
+    }
+
     public List<String> getSorts()
     {
         return _sorts;
@@ -131,9 +185,9 @@ public class CustomViewXmlReader
         }
     }
 
-    protected List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> loadColumns(ColumnsType columns)
+    protected List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> loadColumns(ColumnsType columns)
     {
-        List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> ret = new ArrayList<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>>();
+        List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>>();
 
         if(null == columns)
             return ret;
@@ -167,7 +221,7 @@ public class CustomViewXmlReader
         return ret;
     }
 
-    protected List<Pair<String,String>> loadFilters(FiltersType filters)
+    protected List<Pair<String, String>> loadFilters(FiltersType filters)
     {
         if(null == filters)
             return null;

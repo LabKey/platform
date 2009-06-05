@@ -37,7 +37,7 @@ public class CustomViewImporter
         {
             File viewDir = new File(root, viewsXml.getDir());   // TODO: Use current directory if not specified
 
-            QueryService.get().importCustomViews(viewDir);
+            QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
         }
     }
 }

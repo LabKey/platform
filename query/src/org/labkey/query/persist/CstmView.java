@@ -97,6 +97,7 @@ public final class CstmView extends Entity implements Cloneable, Serializable
     {
         return _owner;
     }
+
     public void setCustomViewOwner(Integer owner)
     {
         _owner = owner;

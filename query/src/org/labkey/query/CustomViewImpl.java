@@ -347,12 +347,12 @@ public class CustomViewImpl implements CustomView
         if (isHidden())
             customViewXml.setHidden(isHidden());
 
+        // At the moment, CustomViewImpl always returns null.  If that changes, this will export it, though  it needs
+        //  to be enabled on the import side.
         if (null != getCustomIconUrl())
             customViewXml.setCustomIconUrl(getCustomIconUrl());
 
         List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> columns = getColumnProperties();
-
-        // TODO: ContainerFilter?
 
         if (!columns.isEmpty())
         {
@@ -362,7 +362,7 @@ public class CustomViewImpl implements CustomView
             {
                 org.labkey.data.xml.queryCustomView.ColumnType columnXml = columnsXml.addNewColumn();
 
-                columnXml.setName(column.getKey().getName());
+                columnXml.setName(column.getKey().toString());
 
                 Map<ColumnProperty, String> props = column.getValue();
 
@@ -392,7 +392,7 @@ public class CustomViewImpl implements CustomView
                 {
                     FilterType filterXml = filtersXml.addNewFilter();
 
-                    filterXml.setColumn(filter.getField().getName());
+                    filterXml.setColumn(filter.getField().toString());
 
                     if (null != filter.getOp())
                     {
