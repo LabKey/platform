@@ -72,8 +72,11 @@ public interface CustomView
 
     void applyFilterAndSortToURL(ActionURL url, String dataRegionName);
     void setFilterAndSortFromURL(ActionURL url, String dataRegionName);
+
+    // TODO: To reduce confusion, rename these methods to *FilterAndSort()
     String getFilter();
     void setFilter(String filter);
+
     String getContainerFilterName();
     
     boolean hasFilterOrSort();

@@ -58,7 +58,7 @@ abstract public class QueryService
     abstract public UserSchema getUserSchema(User user, Container container, String schema);
     abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
-    abstract public void importCustomViews(File viewDir);
+    abstract public void importCustomViews(User user, Container container, File viewDir);
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table

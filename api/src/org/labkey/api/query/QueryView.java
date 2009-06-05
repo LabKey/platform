@@ -723,6 +723,7 @@ public class QueryView extends WebPartView<Object>
     {
         String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
+
         for (Report report : ReportUtil.getReports(getViewContext(), reportKey, true))
         {
             // Filter out reports that don't match what this view is supposed to show. This can prevent
