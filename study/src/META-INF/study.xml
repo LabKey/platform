@@ -688,6 +688,7 @@
       <ns:column columnName="AtRepositoryCount"/>
       <ns:column columnName="AvailableCount"/>
       <ns:column columnName="VialCount"/>
+      <ns:column columnName="ExpectedAvailableCount"/>
     </ns:columns>
   </ns:table>
 </ns:tables>

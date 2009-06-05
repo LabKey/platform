@@ -24,7 +24,8 @@ CREATE VIEW study.VialCounts AS
         COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepositoryCount,
-        SUM(CASE Available WHEN 1 THEN 1 ELSE 0 END) AS AvailableCount
+        SUM(CASE Available WHEN 1 THEN 1 ELSE 0 END) AS AvailableCount,
+        (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
     FROM study.Specimen
     GROUP BY Container, SpecimenHash
 GO

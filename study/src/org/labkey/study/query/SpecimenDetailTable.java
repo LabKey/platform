@@ -109,7 +109,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
 
-        ColumnInfo vialCountColumn = wrapColumn("SiblingVialCounts", getRealTable().getColumn("SpecimenHash"));
+        ColumnInfo vialCountColumn = wrapColumn("SiblingVials", getRealTable().getColumn("SpecimenHash"));
         vialCountColumn.setFk(new QueryForeignKey(_schema, "SpecimenVialCount", "SpecimenHash", "Vials"));
         addColumn(vialCountColumn);
 
