@@ -40,10 +40,12 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     private HelpPopup _helpPopup = new HelpPopup("Default Value Types", "");
     private GWTDomain _domain;
     private HTML _setDefaultValueLink;
-    private static final String SET_DEFAULT_DISABLED = "<i>Not supported for file/attachment fields.</i>";
+    private static final String SET_DEFAULT_DISABLED = "<span class='labkey-disabled'><i>Not supported for file/attachment fields.</i></span>";
     private static final String SET_DEFAULT_ENABLED = "[<a href=\"#\">set&nbsp;value</a>]";
     private FlexTable _defaultTypeTable;
     private FlexTable _defaultValueTable;
+    private InlineHTML _defaultTypeLabel;
+    private InlineHTML _defaultValueLabel;
 
     public DefaultValueItem(Saveable<GWTDomain> owner, PropertyPane<DomainType, FieldType> propertyPane)
     {
@@ -68,11 +70,13 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         }
         if (field.isFileType())
         {
+            addClass(_defaultValueLabel, "labkey-disabled");
             _defaultValueTypes.setEnabled(false);
             _setDefaultValueLink.setHTML(SET_DEFAULT_DISABLED);
         }
         else
         {
+            removeClass(_defaultValueLabel, "labkey-disabled");
             _defaultValueTypes.setEnabled(true);
             _setDefaultValueLink.setHTML(SET_DEFAULT_ENABLED);
         }
@@ -96,7 +100,8 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     public int addToTable(FlexTable flexTable, int row)
     {
         FlowPanel labelPanel = new FlowPanel();
-        labelPanel.add(new InlineHTML("Default&nbsp;Type"));
+        _defaultTypeLabel = new InlineHTML("Default&nbsp;Type");
+        labelPanel.add(_defaultTypeLabel);
         labelPanel.add(_helpPopup);
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
 
@@ -146,7 +151,8 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         _defaultValueTable.setWidget(0, 0, _currentDefault);
         _defaultValueTable.setWidget(0, 1, _setDefaultValueLink);
 
-        flexTable.setWidget(row + 1, LABEL_COLUMN, new HTML("Default&nbsp;Value"));
+        _defaultValueLabel = new InlineHTML("Default&nbsp;Value");
+        flexTable.setWidget(row + 1, LABEL_COLUMN, _defaultValueLabel);
         flexTable.setWidget(row + 1, INPUT_COLUMN, _defaultValueTable);
 
         return row + 2;
@@ -191,12 +197,12 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         }
         else
         {
-            String msg = "<i>Not supported for " +
-                    StringUtils.filter(domain.getName()) + "</i>";
+            String msg = "<span class='labkey-disabled'><i>Not supported for " +
+                    StringUtils.filter(domain.getName()) + "</i></span>";
             _defaultTypeTable.clear();
             _defaultTypeTable.setWidget(0, 0, new HTML(msg));
             _defaultValueTable.clear();
-            _defaultValueTable.setWidget(0, 0, new HTML("<i>None</i>"));
+            _defaultValueTable.setWidget(0, 0, new HTML("<span class='labkey-disabled'><i>None</i></span>"));
             _helpPopup.setBody(msg);
         }
     }

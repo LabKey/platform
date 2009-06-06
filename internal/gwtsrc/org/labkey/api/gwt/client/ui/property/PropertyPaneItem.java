@@ -19,6 +19,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.Element;
 
 /**
  * User: jeckels
@@ -34,6 +35,21 @@ public abstract class PropertyPaneItem<DomainType extends GWTDomain<FieldType>, 
     public PropertyPaneItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
         _propertyPane = propertyPane;
+    }
+
+    public static void addClass(UIObject uio, String className)
+    {
+        String clazz = uio.getElement().getAttribute("class");
+        if (!clazz.contains(className))
+            clazz += " " + className;
+        uio.getElement().setAttribute("class", clazz);
+    }
+
+    // workaround for GWT not removing class names on Label
+    public static void removeClass(UIObject uio, String className)
+    {
+        String clazz = uio.getElement().getAttribute("class");
+        uio.getElement().setAttribute("class", clazz.replaceAll(" ?" + className, ""));
     }
 
     public abstract int addToTable(FlexTable flexTable, int row);

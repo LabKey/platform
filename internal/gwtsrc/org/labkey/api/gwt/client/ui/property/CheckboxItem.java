@@ -26,6 +26,7 @@ import com.google.gwt.user.client.ui.*;
  */
 public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
+    protected Label label = null;
     protected CheckBox checkbox = new CheckBox();
     protected HelpPopup helpPopup;
 
@@ -37,7 +38,8 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
     public int addToTable(FlexTable flexTable, int row)
     {
         FlowPanel labelPanel = new FlowPanel();
-        labelPanel.add(new InlineLabel(getCheckboxLabelText()));
+        label = new InlineLabel(getCheckboxLabelText());
+        labelPanel.add(label);
         if (getHelpBody() != null)
         {
             helpPopup = new HelpPopup(getCheckboxLabelText(), getHelpBody());
@@ -77,6 +79,11 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
 
     public void enabledChanged()
     {
+        if (isEnabled())
+            removeClass(label, "labkey-disabled");
+        else
+            addClass(label, "labkey-disabled");
+        helpPopup.setVisible(isEnabled());
         checkbox.setEnabled(isEnabled());
     }
 

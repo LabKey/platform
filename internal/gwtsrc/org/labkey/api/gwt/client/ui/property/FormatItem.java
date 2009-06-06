@@ -57,6 +57,7 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
             "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
 
+    private Label _label = null;
     private TextBox _formatTextBox = new TextBox();
     private HelpPopup _formatHelpPopup = new HelpPopup("Format Strings", "");
     private boolean _canFormat;
@@ -72,7 +73,8 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
         _formatTextBox.addKeyboardListener(createKeyboardListener());
 
         FlowPanel labelPanel = new FlowPanel();
-        labelPanel.add(new InlineLabel("Format"));
+        _label = new InlineLabel("Format");
+        labelPanel.add(_label);
         labelPanel.add(_formatHelpPopup);
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
 
@@ -95,6 +97,11 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
 
     public void enabledChanged()
     {
+        if (isEnabled())
+            removeClass(_label, "labkey-disabled");
+        else
+            addClass(_label, "labkey-disabled");
+        _formatHelpPopup.setVisible(isEnabled());
         _formatTextBox.setEnabled(isEnabled());
     }
 

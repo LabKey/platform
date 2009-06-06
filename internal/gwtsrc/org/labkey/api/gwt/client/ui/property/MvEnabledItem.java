@@ -79,19 +79,13 @@ public class MvEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
     private void updateEnabledState(FieldType field)
     {
-        checkbox.setEnabled(allowsMvEnabling(field.getRangeURI()));
+        setEnabled(allowsMvEnabling(field.getRangeURI()));
     }
 
     @Override
     public void propertyDescriptorChanged(FieldType field)
     {
         showPropertyDescriptor(null, field);
-    }
-
-    @Override
-    public void enabledChanged()
-    {
-        checkbox.setEnabled(isEnabled());
     }
 
     @Override
