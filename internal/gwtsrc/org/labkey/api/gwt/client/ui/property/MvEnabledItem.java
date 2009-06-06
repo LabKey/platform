@@ -19,6 +19,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import org.labkey.api.gwt.client.ui.TypePicker;
+import com.google.gwt.user.client.ui.FlexTable;
 
 /**
  * User: jgarms
@@ -86,12 +87,6 @@ public class MvEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     public void propertyDescriptorChanged(FieldType field)
     {
         showPropertyDescriptor(null, field);
-    }
-
-    @Override
-    public boolean isEnabled()
-    {
-        return super.isEnabled() && allowsMvEnabling;
     }
 
     @Override
