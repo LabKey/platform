@@ -413,6 +413,7 @@ public class PipelineStatusManager
         filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.ERROR_STATUS, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.SPLIT_STATUS, CompareType.NEQ);
+        filter.addCondition("Status", PipelineJob.INTERRUPTED_STATUS, CompareType.NEQ);
         filter.addCondition("Job", null, CompareType.NONBLANK);
         return filter;
     }
