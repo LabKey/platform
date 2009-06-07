@@ -261,14 +261,16 @@ public class AssaySchemaImpl extends AssaySchema
             ColumnInfo result = super.constructColumnInfo(parent, name, pd);
             if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
             {
-                result.setFk(new LookupForeignKey("Container", "Label")
+                result.setFk(new LookupForeignKey("Folder", "Label")
                 {
                     public TableInfo getLookupTableInfo()
                     {
                         FilteredTable table = new FilteredTable(StudyManager.getSchema().getTable("Study"));
-                        ExprColumn col = new ExprColumn(table, "Container", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), Types.VARCHAR);
+                        table.setContainerFilter(new StudyContainerFilter(AssaySchemaImpl.this));
+                        ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), Types.VARCHAR);
+                        col.setFk(new ContainerForeignKey());
                         table.addColumn(col);
-                        table.addColumn(table.wrapColumn(table.getRealTable().getColumn("Label")));
+                        table.addWrapColumn(table.getRealTable().getColumn("Label"));
                         return table;
                     }
                 });

@@ -325,22 +325,22 @@
             {
                 if (view.getOwner() == null)
                 {
-                    strButtonText = "Reset default grid view";
+                    strButtonText = "Reset default view";
                 }
                 else
                 {
-                    strButtonText = "Reset my default grid view";
+                    strButtonText = "Reset my default view";
                 }
             }
             else
             {
                 if (view.getOwner() == null)
                 {
-                    strButtonText = "Delete grid view '" + view.getName() + "'";
+                    strButtonText = "Delete view '" + view.getName() + "'";
                 }
                 else
                 {
-                    strButtonText = "Delete my grid view '" + view.getName() + "'";
+                    strButtonText = "Delete my view '" + view.getName() + "'";
                 }
             }
         %><labkey:button href="<%=urlDeleteView%>" text="<%=strButtonText%>"/><%

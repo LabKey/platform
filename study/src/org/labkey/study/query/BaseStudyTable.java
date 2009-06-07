@@ -60,7 +60,7 @@ public abstract class BaseStudyTable extends FilteredTable
     protected ColumnInfo addWrapTypeColumn(String wrappedName, final String rootTableColumnName)
     {
         ColumnInfo typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
-        typeColumn.setFk(new LookupForeignKey("RowId")
+        LookupForeignKey fk = new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -76,7 +76,10 @@ public abstract class BaseStudyTable extends FilteredTable
                 result.setContainerFilter(ContainerFilter.EVERYTHING);
                 return result;
             }
-        });
+        };
+        fk.setJoinOnContainer(true);
+        typeColumn.setFk(fk);
+
         return addColumn(typeColumn);
     }
 

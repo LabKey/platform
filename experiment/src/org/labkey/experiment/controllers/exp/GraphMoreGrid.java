@@ -16,11 +16,12 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.GridView;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
-import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.List;
 
@@ -78,7 +79,12 @@ public class GraphMoreGrid extends GridView
         getDataRegion().getDisplayColumn(4).setURL(graphDetail.toString() + runIdParam + "&detail=true&focus=" + objectType + "${rowId}");
 
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
-        String[] inValues =  url.getParameter("rowId~in").split(",");
+        String param = url.getParameter("rowId~in");
+        if (param == null)
+        {
+            throw new NotFoundException();
+        }
+        String[] inValues = param.split(",");
         String separator = "";
         StringBuilder inClause = new StringBuilder(" RowId IN (");
         for (String inValue : inValues)

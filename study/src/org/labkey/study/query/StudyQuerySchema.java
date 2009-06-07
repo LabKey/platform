@@ -16,20 +16,19 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.TableInfo;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.StudyImpl;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -151,7 +150,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo createTable(String name)
     {
-        if ("StudyProperties".equals(name))
+        if ("StudyProperties".equalsIgnoreCase(name))
         {
             StudyPropertiesTable ret = new StudyPropertiesTable(this);
             return ret;
@@ -167,97 +166,97 @@ public class StudyQuerySchema extends UserSchema
         if (_study == null)
             return null;
 
-        if ("Cohort".equals(name))
+        if ("Cohort".equalsIgnoreCase(name))
         {
             CohortTable ret = new CohortTable(this);
             return ret;
         }
-        if ("Participant".equals(name))
+        if ("Participant".equalsIgnoreCase(name))
         {
             ParticipantTable ret = new ParticipantTable(this);
             return ret;
         }
-        if ("Site".equals(name))
+        if ("Site".equalsIgnoreCase(name))
         {
             SiteTable ret = new SiteTable(this);
             return ret;
         }
-        if ("SpecimenSummary".equals(name))
+        if ("SpecimenSummary".equalsIgnoreCase(name))
         {
             SpecimenSummaryTable ret = new SpecimenSummaryTable(this);
             return ret;
         }
-        if ("SpecimenDetail".equals(name))
+        if ("SpecimenDetail".equalsIgnoreCase(name))
         {
             SpecimenDetailTable ret = new SpecimenDetailTable(this);
             return ret;
         }
-        if ("SpecimenVialCount".equals(name))
+        if ("SpecimenVialCount".equalsIgnoreCase(name))
         {
             SpecimenVialCountTable ret = new SpecimenVialCountTable(this);
             return ret;
         }
-        if ("SpecimenEvent".equals(name))
+        if ("SpecimenEvent".equalsIgnoreCase(name))
         {
             SpecimenEventTable ret = new SpecimenEventTable(this);
             return ret;
         }
-        if ("ParticipantVisit".equals(name))
+        if ("ParticipantVisit".equalsIgnoreCase(name))
         {
             ParticipantVisitTable ret = new ParticipantVisitTable(this, null);
             return ret;
         }
-        if ("SpecimenRequest".equals(name))
+        if ("SpecimenRequest".equalsIgnoreCase(name))
         {
             SpecimenRequestTable ret = new SpecimenRequestTable(this);
             return ret;
         }
-        if ("SpecimenRequestStatus".equals(name))
+        if ("SpecimenRequestStatus".equalsIgnoreCase(name))
         {
             RequestStatusTable ret = new RequestStatusTable(this);
             return ret;
         }
-        if ("Visit".equals(name))
+        if ("Visit".equalsIgnoreCase(name))
         {
             VisitTable ret = new VisitTable(this);
             return ret;
         }
-        if ("DataSets".equals(name))
+        if ("DataSets".equalsIgnoreCase(name))
         {
             DataSetsTable ret = new DataSetsTable(this);
             return ret;
         }
-        if ("DataSetColumns".equals(name))
+        if ("DataSetColumns".equalsIgnoreCase(name))
         {
             DataSetColumnsTable ret = new DataSetColumnsTable(this);
             return ret;
         }
-        if ("QCState".equals(name))
+        if ("QCState".equalsIgnoreCase(name))
         {
             FilteredTable ret = new QCStateTable(this);
             return ret;
         }
-        if ("SpecimenAdditive".equals(name))
+        if ("SpecimenAdditive".equalsIgnoreCase(name))
         {
             FilteredTable ret = new AdditiveTypeTable(this);
             return ret;
         }
-        if ("SpecimenDerivative".equals(name))
+        if ("SpecimenDerivative".equalsIgnoreCase(name))
         {
             FilteredTable ret = new DerivativeTypeTable(this);
             return ret;
         }
-        if ("SpecimenPrimaryType".equals(name))
+        if ("SpecimenPrimaryType".equalsIgnoreCase(name))
         {
             FilteredTable ret = new PrimaryTypeTable(this);
             return ret;
         }
-        if ("SpecimenComment".equals(name))
+        if ("SpecimenComment".equalsIgnoreCase(name))
         {
             FilteredTable ret = new SpecimenCommentTable(this);
             return ret;
         }
-        if ("VialRequest".equals(name))
+        if ("VialRequest".equalsIgnoreCase(name))
         {
             FilteredTable ret = new VialRequestTable(this);
             return ret;

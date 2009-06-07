@@ -39,7 +39,7 @@
                     <td><input name="typeName" style="width:100%" value="<%=h(form.getTypeName())%>"></td>
                 </tr>
                 <tr>
-                    <td class=labkey-form-label>Dataset Id <%=PageFlowUtil.helpPopup("Dataset Id", "The dataset id is an integer number that must be unique for all datasets in a study.")%></td>
+                    <td class=labkey-form-label>Dataset ID <%=PageFlowUtil.helpPopup("Dataset ID", "The dataset id is an integer number that must be unique for each dataset in a study.")%></td>
                     <td><input id=datasetId type=text name=dataSetId value="<%=formDatasetId%>" <%=form.isAutoDatasetId() ? "disabled" : "" %> size=6>
                         <input type=checkbox name="autoDatasetId" onclick="toggleAutoDatasetId(this);" <%=form.isAutoDatasetId() ? "checked" : "" %>>Define Dataset Id Automatically</td>
                 </tr>
