@@ -64,6 +64,8 @@ public class SchemaXmlReader implements SchemaReader
             info.name = datasetName;
             info.isHidden = !tableProps.isShowByDefault();
             info.label = tableXml.getTableTitle();
+            info.description = tableXml.getDescription();
+            info.demographicData = tableProps.isDemographicData();
 
             // TODO: fill these in
             info.startDatePropertyName = null;

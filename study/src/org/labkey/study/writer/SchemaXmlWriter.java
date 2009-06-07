@@ -68,6 +68,8 @@ public class SchemaXmlWriter implements Writer<DataSetDefinition[]>
             tableXml.setTableDbType("TABLE");
             if (null != def.getLabel())
                 tableXml.setTableTitle(def.getLabel());
+            if (null != def.getDescription())
+                tableXml.setDescription(def.getDescription());
             TableType.Columns columnsXml = tableXml.addNewColumns();
 
             if (null == _defaultDateFormat)

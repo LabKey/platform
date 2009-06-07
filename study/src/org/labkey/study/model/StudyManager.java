@@ -2509,11 +2509,13 @@ public class StudyManager
                     if (def == null)
                     {
                         def = new DataSetDefinition(study, id, name, label, null, factory.getDomainURI(name));
+                        def.setDescription(info.description);
                         def.setVisitDatePropertyName(info.visitDatePropertyName);
                         def.setShowByDefault(!info.isHidden);
                         def.setKeyPropertyName(info.keyPropertyName);
                         def.setCategory(info.category);
                         def.setKeyPropertyManaged(info.keyManaged);
+                        def.setDemographicData(info.demographicData);
                         manager.createDataSetDefinition(user, def);
                     }
                     else
@@ -2521,12 +2523,14 @@ public class StudyManager
                         def = def.createMutable();
                         def.setLabel(label);
                         def.setName(name);
+                        def.setDescription(info.description);
                         def.setTypeURI(getDomainURI(c, def));
                         def.setVisitDatePropertyName(info.visitDatePropertyName);
                         def.setShowByDefault(!info.isHidden);
                         def.setKeyPropertyName(info.keyPropertyName);
                         def.setCategory(info.category);
                         def.setKeyPropertyManaged(info.keyManaged);
+                        def.setDemographicData(info.demographicData);
                         manager.updateDataSetDefinition(user, def);
                     }
                 }

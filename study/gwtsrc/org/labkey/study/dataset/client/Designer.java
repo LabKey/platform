@@ -878,6 +878,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     _dataset.setDemographicData(((CheckBox)widget).isChecked());
                 }
             });
+            demographicData.setName("demographicData");
             if (fromAssay)
                 demographicData.setEnabled(false);
             panel = new HorizontalPanel();
@@ -908,6 +909,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     _dataset.setDescription(((TextArea)widget).getText());
                 }
             });
+            description.setName("description");
             panel = new HorizontalPanel();
             panel.add(new Label("Description"));
             _table.setWidget(row, 0, panel);

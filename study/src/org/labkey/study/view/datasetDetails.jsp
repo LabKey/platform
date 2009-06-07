@@ -41,13 +41,13 @@
     String contextPath = AppProps.getInstance().getContextPath();
     boolean pipelineSet = null != PipelineService.get().findPipelineRoot(HttpView.currentContext().getContainer());
 %>
-<table>
+<table id="details">
     <tr><td class=labkey-form-label>Name</td><th align=left><%= h(dataset.getName()) %></th></tr>
     <tr><td class=labkey-form-label>Label</td><td><%= h(dataset.getLabel()) %></td></tr>
     <tr><td class=labkey-form-label>Display String</td><td><%= h(dataset.getDisplayString()) %></td></tr>
     <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getCategory()) %></td></tr>
     <tr><td class=labkey-form-label>Cohort</td><td><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td></tr>
-    <tr><td class="labkey-form-label">Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each participant in the study.")%></td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
+    <tr><td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each participant in the study.")%></td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
     <tr><td class=labkey-form-label><%=visitManager.getLabel()%> Date Column</td><td><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
     <tr><td class=labkey-form-label>Show By Default</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td></tr>
     <tr><td class=labkey-form-label>Description</td><td><%= h(dataset.getDescription()) %></td></tr>

@@ -93,7 +93,7 @@ public class DatasetWriter implements Writer<StudyImpl>
 
             // Default value is "true"
             if (!def.isShowByDefault())
-                datasetXml.setShowByDefault(def.isShowByDefault());
+                datasetXml.setShowByDefault(false);
 
             String category = def.getCategory();
 
@@ -102,6 +102,9 @@ public class DatasetWriter implements Writer<StudyImpl>
                 categories.add(category);
                 datasetXml.setCategory(category);
             }
+
+            if (def.isDemographicData())
+                datasetXml.setDemographicData(true);
         }
 
         if (categories.isEmpty())

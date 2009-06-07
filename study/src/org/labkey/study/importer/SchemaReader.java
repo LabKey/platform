@@ -43,11 +43,13 @@ public interface SchemaReader
         }
         public String name;
         public String label;
+        public String description;
         public String visitDatePropertyName;
         public String startDatePropertyName;
         public boolean isHidden;
         public String keyPropertyName;
         public boolean keyManaged;
         public String category;
+        public boolean demographicData;
     }
 }

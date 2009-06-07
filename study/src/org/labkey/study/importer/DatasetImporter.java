@@ -190,7 +190,7 @@ public class DatasetImporter
 
         for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
         {
-            DatasetImportProperties props = new DatasetImportProperties(dataset.getId(), dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault());
+            DatasetImportProperties props = new DatasetImportProperties(dataset.getId(), dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault(), dataset.getDemographicData());
             extraProps.put(dataset.getName(), props);
         }
 
@@ -205,13 +205,15 @@ public class DatasetImporter
         private final String _category;
         private final String _cohort;
         private final boolean _showByDefault;
+        private final boolean _demographicData;
 
-        private DatasetImportProperties(int id, String category, String cohort, boolean showByDefault)
+        private DatasetImportProperties(int id, String category, String cohort, boolean showByDefault, boolean demographicData)
         {
             _id = id;
             _category = category;
             _cohort = cohort;
             _showByDefault = showByDefault;
+            _demographicData = demographicData;
         }
 
         public int getId()
@@ -232,6 +234,11 @@ public class DatasetImporter
         public boolean isShowByDefault()
         {
             return _showByDefault;
+        }
+
+        public boolean isDemographicData()
+        {
+            return _demographicData;
         }
     }
 }
