@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -141,13 +142,34 @@ public enum CompareType
 
 
     // TODO: Better exception handling?
-    protected DateEqCompareClause getDateCompareClause(String colName, Object value)
+    protected CompareClause getDateCompareClause(String colName, Object value)
     {
         //If only date (no time) is specified in a DATE_EQUAL clause
         //return anything that happened during that day.
-        Date dt = (Date) ConvertUtils.convert((String)value, Date.class);
+        try
+        {
+            Date dt = (Date) ConvertUtils.convert((String)value, Date.class);
 
-        return new DateEqCompareClause(colName, this, dt);
+            return new DateEqCompareClause(colName, this, dt);
+        }
+        catch (ConversionException e)
+        {
+            // Fall back to String comparison
+            CompareType stringCompareType;
+            if (this == CompareType.DATE_EQUAL)
+            {
+                stringCompareType = EQUAL;
+            }
+            else if (this == CompareType.DATE_NOT_EQUAL)
+            {
+                stringCompareType = NEQ;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Could not determine string version of comparison type " + this);
+            }
+            return new CompareClause(colName, stringCompareType, value);
+        }
     }
 
     private String _urlKey;
@@ -355,7 +377,16 @@ public enum CompareType
             case Types.TIMESTAMP:
             case Types.DATE:
             case Types.TIME:
-                return ConvertUtils.convert((String) paramVal, Date.class);
+            {
+                try
+                {
+                    return ConvertUtils.convert((String) paramVal, Date.class);
+                }
+                catch (ConversionException e)
+                {
+                    //Just leave as string...
+                }
+            }
 
             //FALL THROUGH! (Decimal is better than nothing)
             case Types.DECIMAL:

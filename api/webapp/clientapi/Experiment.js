@@ -86,7 +86,10 @@ LABKEY.Experiment = new function()
         createHiddenRunGroup : function (config)
         {
             if(!config.successCallback)
+            {
                 Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.createHiddenRunGroup()!");
+                return;
+            }
 
             function createExp(json)
             {

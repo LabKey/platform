@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.study.TimepointType;
 
 import java.sql.Types;
@@ -44,33 +43,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         _schema = schema;
         _provider = provider;
         _protocol = protocol;
-        _studyContainerFilter = new StudyContainerFilter();
-    }
-
-    private class StudyContainerFilter extends ContainerFilter
-    {
-        private Set<String> _ids;
-
-        public Collection<String> getIds(Container currentContainer)
-        {
-            if (_ids == null)
-            {
-                if (_schema.getTargetStudy() != null)
-                {
-                    _ids = Collections.singleton(_schema.getTargetStudy().getId());
-                }
-                else
-                {
-                    _ids = ContainerFilter.toIds(AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ACL.PERM_READ).keySet());
-                }
-            }
-            return _ids;
-        }
-
-        public Type getType()
-        {
-            throw new UnsupportedOperationException();
-        }
+        _studyContainerFilter = new StudyContainerFilter(schema);
     }
 
     public TableInfo getLookupTableInfo()

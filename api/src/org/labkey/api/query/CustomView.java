@@ -29,6 +29,8 @@ import java.io.IOException;
 
 public interface CustomView
 {
+
+
     enum ColumnProperty
     {
         columnTitle(PropertyName.COLUMN_TITLE);

@@ -670,8 +670,60 @@ public class QueryView extends WebPartView<Object>
         }
         addCustomizeViewItems(button);
         addManageViewItems(button);
+        addFilterItems(button);
 
         return button;
+    }
+
+    protected void addFilterItems(NavTreeMenuButton button)
+    {
+        if (_customView != null && _customView.hasFilterOrSort())
+        {
+            ActionURL url = getSettings().getSortFilterURL();
+            NavTree item;
+            String label = "Apply View Filter";
+            if (ignoreUserFilter())
+            {
+                url.deleteParameter(param(QueryParam.ignoreFilter));
+                item = new NavTree(label, url.toString());
+            }
+            else
+            {
+                url.replaceParameter(param(QueryParam.ignoreFilter), "1");
+                item = new NavTree(label, url.toString());
+                item.setSelected(true);
+            }
+            item.setId("Views:" + label);
+            button.addMenuItem(item);
+        }
+
+        if (getTable() instanceof ContainerFilterable && !getAllowableContainerFilterTypes().isEmpty())
+        {
+            button.addSeparator();
+            NavTree containerFilterItem = new NavTree("Folder Filter");
+            containerFilterItem.setId("Views:Folder Filter");
+            button.addMenuItem(containerFilterItem);
+
+            ContainerFilterable table = (ContainerFilterable)getTable();
+
+            ContainerFilter selectedFilter = table.getContainerFilter();
+
+            for (ContainerFilter.Type filterType : getAllowableContainerFilterTypes())
+            {
+                ActionURL url = getViewContext().getActionURL().clone();
+                String propName = getDataRegionName() + ".containerFilterName";
+                url.replaceParameter(propName, filterType.name());
+                NavTree filterItem = new NavTree(filterType.toString(), url);
+
+                filterItem.setId("Views:Folder Filter:" + filterType.toString());
+
+                if(selectedFilter.getType() == filterType)
+                {
+                    filterItem.setSelected(true);
+                }
+                containerFilterItem.addChild(filterItem);
+            }
+        }
     }
 
     protected void addGridViews(MenuButton menu, ActionURL target, String currentView)
@@ -783,31 +835,11 @@ public class QueryView extends WebPartView<Object>
 
     public void addCustomizeViewItems(MenuButton button)
     {
-        String label = "Apply View Filter";
         if (_report == null && (null == _customView || _customView.isEditable()))
         {
             NavTree item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
             item.setId("Views:Customize View");
 
-            button.addMenuItem(item);
-        }
-
-        if (_customView != null && _customView.hasFilterOrSort())
-        {
-            ActionURL url = getSettings().getSortFilterURL();
-            NavTree item;
-            if (ignoreUserFilter())
-            {
-                url.deleteParameter(param(QueryParam.ignoreFilter));
-                item = new NavTree(label, url.toString());
-            }
-            else
-            {
-                url.replaceParameter(param(QueryParam.ignoreFilter), "1");
-                item = new NavTree(label, url.toString());
-                item.setSelected(true);
-            }
-            item.setId("Views:" + label);
             button.addMenuItem(item);
         }
 
@@ -818,33 +850,6 @@ public class QueryView extends WebPartView<Object>
             {
                 NavTree item = button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
                 item.setId("Views:Edit Snapshot");
-            }
-        }
-
-        if (getTable() instanceof ContainerFilterable && !getAllowableContainerFilterTypes().isEmpty())
-        {
-            NavTree containerFilterItem = new NavTree("Folder Filter");
-            containerFilterItem.setId("Views:Folder Filter");
-            button.addMenuItem(containerFilterItem);
-
-            ContainerFilterable table = (ContainerFilterable)getTable();
-
-            ContainerFilter selectedFilter = table.getContainerFilter();
-
-            for (ContainerFilter.Type filterType : getAllowableContainerFilterTypes())
-            {
-                ActionURL url = getViewContext().getActionURL().clone();
-                String propName = getDataRegionName() + ".containerFilterName";
-                url.replaceParameter(propName, filterType.name());
-                NavTree filterItem = new NavTree(filterType.toString(), url);
-
-                filterItem.setId("Views:Folder Filter:" + filterType.toString());
-
-                if(selectedFilter.getType() == filterType)
-                {
-                    filterItem.setSelected(true);
-                }
-                containerFilterItem.addChild(filterItem);
             }
         }
     }

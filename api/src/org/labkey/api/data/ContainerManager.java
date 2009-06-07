@@ -627,8 +627,8 @@ public class ContainerManager
         try
         {
             NavTree list = new NavTree("Projects");
-            //track containers to ensure that each is added to nav tree only once
-            Set<Container> containerSet = new HashSet<Container>();
+            // Use a tree set so that we only add each container once, and they're sorted correctly
+            Set<Container> containerSet = new TreeSet<Container>();
 
             String[] ids;
 
@@ -655,7 +655,6 @@ public class ContainerManager
                 Container c = ContainerManager.getForId(id);
                 if (null == c || !c.isProject() || !c.shouldDisplay())
                     continue;
-                list.addChild(c.getName(), PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
                 containerSet.add(c);
             }
 
@@ -675,11 +674,16 @@ public class ContainerManager
                 if (null == c || !c.shouldDisplay())
                     continue;
                 //ensure that user has permissions on container, and that container is not already in nav tree set
-                if (c.hasPermission(user, ACL.PERM_READ) && !containerSet.contains(c))
+                if (c.hasPermission(user, ACL.PERM_READ))
                 {
-                    String name = c.equals(getHomeContainer()) ? "Home" : c.getName();
-                    list.addChild(name, PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
+                    containerSet.add(c);
                 }
+            }
+            
+            for (Container c : containerSet)
+            {
+                String name = c.equals(getHomeContainer()) ? "Home" : c.getName();
+                list.addChild(name, PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
             }
 
             list.setId(PROJECT_LIST_ID);
