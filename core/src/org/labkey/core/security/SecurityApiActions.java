@@ -452,6 +452,7 @@ public class SecurityApiActions
         protected Map<String,Object> getResourceProps(SecurableResource resource)
         {
             Map<String,Object> props = new HashMap<String,Object>();
+            props.put("resourceClass", resource.getClass().getName());
             props.put("id", resource.getResourceId());
             props.put("name", resource.getResourceName());
             props.put("description", resource.getResourceDescription());

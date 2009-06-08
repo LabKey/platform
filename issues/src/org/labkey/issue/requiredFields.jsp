@@ -31,8 +31,8 @@
 %>
 <form action="updateRequiredFields.view" method="post" name="requiredFieldsForm">
     <table>
-        <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields for Issues</b></div></td></tr>
-        <tr><td colspan=2>Select fields to be required when entering or updating an issue:</td></tr>
+        <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields for <%=bean.getEntryTypeNames().pluralName%></b></div></td></tr>
+        <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=bean.getEntryTypeNames().singularName%>:</td></tr>
     <%
         List<ColumnInfo> columns = bean.getColumns();
         for (int i = 0; i < columns.size(); i++)

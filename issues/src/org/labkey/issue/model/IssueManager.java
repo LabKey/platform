@@ -427,6 +427,16 @@ public class IssueManager
     {
         public HString singularName = new HString("Issue", false);
         public HString pluralName = new HString("Issues", false);
+        public String getIndefiniteSingularArticle()
+        {
+            if(singularName.length() == 0)
+                return "";
+            char first = singularName.toLowerCase().charAt(0);
+            if (first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u')
+                return "an";
+            else
+                return "a";
+        }
     }
 
     public static EntryTypeNames getEntryTypeNames(Container container)

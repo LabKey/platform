@@ -1605,7 +1605,7 @@ public class IssuesController extends SpringActionController
             columnNames.addAll(IssuesTable.getCustomColumnCaptions(c).keySet());
             List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
 
-            IssuesPreference ipb = new IssuesPreference(cols, IssueManager.getRequiredIssueFields(c));
+            IssuesPreference ipb = new IssuesPreference(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
 
             AdminBean bean = new AdminBean();
 
@@ -2062,15 +2062,18 @@ public class IssuesController extends SpringActionController
     {
         private List<ColumnInfo> _columns;
         private HString _requiredFields;
+        private IssueManager.EntryTypeNames _entryTypeNames;
 
-        public IssuesPreference(List<ColumnInfo> columns, HString requiredFields)
+        public IssuesPreference(List<ColumnInfo> columns, HString requiredFields, IssueManager.EntryTypeNames typeNames)
         {
             _columns = columns;
             _requiredFields = requiredFields;
+            _entryTypeNames = typeNames;
         }
 
         public List<ColumnInfo> getColumns(){return _columns;}
         public HString getRequiredFields(){return _requiredFields;}
+        public IssueManager.EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
     }
 
 
