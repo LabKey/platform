@@ -66,7 +66,7 @@ var securityCache = new SecurityCache({
 --%>
 
 
-<div id="tabBoxDiv" class="extContainer"></div>
+<div id="tabBoxDiv" class="extContainer"><i>Loading...</i></div>
 <script type="text/javascript">
 
 var tabItems = [];
@@ -96,7 +96,8 @@ Ext.onReady(function(){
         tabPanel.setSize(size);
         tabPanel.doLayout();
     });
-    
+
+    $('tabBoxDiv').update('');
     tabPanel.render('tabBoxDiv');
     tabPanel.strip.applyStyles({'background':'#ffffff'});
 
@@ -153,7 +154,9 @@ Ext.onReady(function(){
         });
         groupsPanel._adjustSize = function()
         {
-            if (this.rendered && !this.autoHeight)
+            if (!this.rendered)
+                return;
+            if (!this.autoHeight)
             {
                 var sz = tabPanel.body.getSize();
                 this.setSize(sz.width-10,sz.height-10);
