@@ -1152,8 +1152,7 @@ var GroupPicker = Ext.extend(Ext.Panel,{
     {   
         GroupPicker.superclass.onRender.call(this,ct,position);
         this.view.render(this.body);
-        if (this.cache.principalsStore.ready)
-            this.onDataChanged();
+        this.cache.onReady(this.onDataChanged,this);
     }
 });
 
