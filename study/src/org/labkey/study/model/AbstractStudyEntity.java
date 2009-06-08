@@ -109,12 +109,6 @@ public abstract class AbstractStudyEntity<T>
         _showByDefault = showByDefault;
     }
 
-    @NotNull
-    public String getDescription()
-    {
-        return getDisplayString();
-    }
-
     public String getDisplayString()
     {
         StringBuilder builder = new StringBuilder();

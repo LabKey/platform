@@ -630,7 +630,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     @NotNull
     public String getDescription()
     {
-        return null == _description ? "The study dataset " + getName() : _description;
+        return _description;
     }
 
     public void setDescription(String description)
@@ -638,6 +638,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _description = description;
     }
 
+    @NotNull
+    @Override
+    public String getResourceDescription()
+    {
+        return null == _description ? "The study dataset " + getName() : _description;
+    }
 
     private static class StudyDataTableInfo extends SchemaTableInfo
     {

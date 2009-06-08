@@ -30,7 +30,7 @@
 %>
 <br>
 <table>
-<tr><td><%=PageFlowUtil.generateButton("Back to Issues", "list.view?.lastFilter=true")%></td></tr>
+<tr><td><%=PageFlowUtil.generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?.lastFilter=true")%></td></tr>
 <tr><td>&nbsp;</td></tr>
 </table>
 <% me.include(bean.keywordView, out); %>
@@ -44,7 +44,7 @@
     <form action="setCustomColumnConfiguration.post" method="post">
     <table>
     <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
-    <tr><td colspan=2>Enter captions below to use custom fields in this issues list:</td></tr>
+    <tr><td colspan=2>Enter captions below to use custom fields in this <%=bean.entryTypeNames.pluralName%> list:</td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
     <tr><td>Integer1</td><td><input name="int1" value="<%=h(captions.get("int1"))%>" size=20></td></tr>
     <tr><td>Integer2</td><td><input name="int2" value="<%=h(captions.get("int2"))%>" size=20></td></tr>
