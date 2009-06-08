@@ -413,12 +413,6 @@ public class SecurityController extends SpringActionController
                 StudyImpl updated = study.createMutable();
                 updated.setSecurityType(form.getSecurityType());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
-
-                //delete study's policy if type is basic read or basic write
-                if (form.getSecurityType() == SecurityType.BASIC_READ || form.getSecurityType() == SecurityType.BASIC_WRITE)
-                {
-                    SecurityManager.deletePolicy(updated);
-                }
             }
             return true;
         }

@@ -255,18 +255,9 @@ public class StudyManager
             study.setLsid(createLsid(study, study.getContainer().getRowId()));
         study = _studyHelper.create(user, study);
 
-        Container c = study.getContainer();
-        ACL acl = new ACL();
-        acl.setPermission(Group.groupAdministrators, ACL.PERM_READ);
-        acl.setPermission(Group.groupUsers, 0);
-        acl.setPermission(Group.groupGuests, 0);
-        Integer groupId = SecurityManager.getGroupId(c.getProject(), "Users", false);
-        if (null != groupId)
-            acl.setPermission(groupId.intValue(), ACL.PERM_READ);
-        //create a new policy for the study which is a copy of the container's policy
-        SecurityPolicy containerPolicy = SecurityManager.getPolicy(c);
-        MutableSecurityPolicy studyPolicy = new MutableSecurityPolicy(study, containerPolicy);
-        SecurityManager.savePolicy(studyPolicy);
+        //note: we no longer copy the container's policy to the study upon creation
+        //instead, we let it inherit the container's policy until the security type
+        //is changed to one of the advanced options. 
 
         return study;
     }

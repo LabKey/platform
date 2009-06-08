@@ -33,6 +33,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
@@ -548,10 +549,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public boolean canRead(User user)
     {
+        //if the study security type is basic read or basic write, use the container's policy instead of the
+        //study's policy. This will enable us to "remember" the study-level role assignments in case we want
+        //to switch back to them in the future
+        SecurityType securityType = getStudy().getSecurityType();
+        SecurityPolicy studyPolicy = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ?
+                SecurityManager.getPolicy(getContainer()) : SecurityManager.getPolicy(getStudy());
+
+
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
         //users that have read-some permission on the study must also have read permission on this dataset
-        return SecurityManager.getPolicy(getStudy()).hasPermission(user, ReadPermission.class) ||
+        return studyPolicy.hasPermission(user, ReadPermission.class) ||
                 SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class);
     }
 
