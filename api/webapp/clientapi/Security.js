@@ -536,6 +536,7 @@ LABKEY.Security = new function()
          *      <li>id: The unique id of the resource (String, typically a GUID).</li>
          *      <li>name: The name of the resource suitable for showing to a user.</li>
          *      <li>description: The description of the reosurce.</li>
+         *      <li>resourceClass: The fully-qualified Java class name of the resource.</li>
          *      <li>sourceModule: The name of the module in which the resource is defined and managed</li>
          *      <li>parentId: The parent resource's id (may be omitted if no parent)</li>
          *      <li>parentContainerPath: The parent resource's container path (may be omitted if no parent)</li>
