@@ -130,14 +130,19 @@ Ext.onReady(function(){
     <div id="groupsFrame"></div>
     <div id="siteGroupsFrame"></div>
     <script type="text/javascript">
+    function showPopup(group)
+    {
+        var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
+        var w = new UserInfoPopup({userId:group.UserId, cache:securityCache, policy:null, modal:true, canEdit:canEdit});
+        w.show();
+    }
+
     function makeGroupsPanel(project,canEdit,ct)
     {
         var formId = 'newGroupForm' + (project?'':'Site');
         var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoHeight:true, projectId:project});
         groupsList.on("select", function(list,group){
-            var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
-            var w = new UserInfoPopup({userId:group.UserId, cache:this.cache, policy:null, modal:true, canEdit:canEdit});
-            w.show();
+            showPopup(group);
         });
 
         var items = [];
@@ -176,7 +181,10 @@ Ext.onReady(function(){
             var btnEl = $(formId + '$submit');
             var submit = function()
             {
-                securityCache.createGroup((project||'/'), inputEl.getValue());
+                securityCache.createGroup((project||'/'), inputEl.getValue(), function(group)
+                {
+                    showPopup(group);
+                });
             };
             inputEl.addKeyListener(13, submit);
             btnEl.on("click", submit);

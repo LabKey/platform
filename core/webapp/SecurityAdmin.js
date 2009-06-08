@@ -239,7 +239,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
 
-    // non-recursive, return objects
+    // non-recursive, return objects                                                    
     getMembersOf : function(principal)
     {
         if (principal == this.groupUsers)
@@ -288,7 +288,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return users;
     },
 
-    createGroup : function(project, name, callback)
+    createGroup : function(project, name, callback,scope)
     {
         var me = this;
         S.createGroup({containerPath:project, groupName:name, successCallback:function(obj,response,options)
@@ -299,10 +299,12 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             me._applyPrincipalsSortOrder(record);
             st.add(record);
             st.applySort();
+            if (typeof callback == 'function')
+                callback.call(scope || this, group);
         }});
     },
 
-    deleteGroup : function(groupid, callback)
+    deleteGroup : function(groupid, callback, scope)
     {
         var group = this.getPrincipal(groupid);
         if (group && group.Type == 'g')
@@ -311,12 +313,12 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             S.deleteGroup({groupId:groupid, containerPath:(group.Container||'/'), successCallback:function()
             {
                 me.principalsStore.removeById(groupid);
-                callback.call();
+                callback.call(scope || this);
             }});
         }
     },
 
-    addMembership : function(groupid,userid,callback)
+    addMembership : function(groupid, userid, callback, scope)
     {
         var group = this.getPrincipal(groupid);
         if (group && (group.Type == 'g' || group.Type == 'r'))
@@ -324,13 +326,13 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             var success = function()
             {
                 this._addMembership(groupid,userid);
-                callback.call();
+                callback.call(scope || this);
             };
             S.addGroupMembers({groupId:groupid, principalIds:[userid], containerPath:(group.Container||'/'), successCallback:success, scope:this});
         }
     },
 
-    removeMembership : function(groupid,userid,callback)
+    removeMembership : function(groupid, userid, callback, scope)
     {
         var group = this.getPrincipal(groupid);
         if (group && (group.Type == 'g' || group.Type == 'r'))
@@ -338,7 +340,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             var success = function()
             {
                 this._removeMembership(groupid,userid);
-                callback.call();
+                callback.call(scope || this);
             };
             // find the container for the group
             S.removeGroupMembers({groupId:groupid, principalIds:[userid], containerPath:(group.Container||'/'), successCallback:success, scope:this});
@@ -602,6 +604,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
 
          //this.panel = new Ext.Panel({html:'hey'});
         config = Ext.apply({},config,{
+            id : 'userInfoPopup',
             title:config.user.Name + ' Information',
             autoScroll : true,
             closeable : true,
