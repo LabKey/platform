@@ -48,7 +48,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     LABKEY.requiresScript("fileBrowser.js");
 </script>
 
-<div class="extContainer" style="padding:20px;">
+<div class="extContainer" style="padding-left:20px; padding-top:20px;">
 <div id="files"/>
 </div>
 
@@ -337,21 +337,23 @@ Ext.onReady(function()
 
 //    var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
 //    resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
-    var viewport = new Ext.Viewport();
-    viewport.on("resize", function(v,w,h)
+
+    var _resize = function(w,h)
     {
         if (!fileBrowser.rendered)
             return;
+//        w = document.body.clientWidth;
+//        h = document.body.clientHeight;
+        var padding = [20,20];
         var xy = fileBrowser.el.getXY();
         var size = {
-            width : Math.max(100,w-xy[0]-8),
-            height : Math.max(100,h-xy[1]-8)};
+            width : Math.max(100,w-xy[0]-padding[0]),
+            height : Math.max(100,h-xy[1]-padding[1])};
         fileBrowser.setSize(size);
         fileBrowser.doLayout();
-    });
-
-    var sz = viewport.getSize();
-    viewport.fireResize(sz.width, sz.height);
+    };
+    Ext.EventManager.onWindowResize(_resize);
+    Ext.EventManager.fireWindowResize();
 
     fileBrowser.start();
 });

@@ -447,7 +447,6 @@ core/src/org/labkey/core/security/GroupView.java -text
 core/src/org/labkey/core/security/PermissionsDetailsView.java -text
 core/src/org/labkey/core/security/SecurityApiActions.java -text
 core/src/org/labkey/core/security/addUsers.jsp -text
-core/src/org/labkey/core/security/admin.jsp -text
 core/src/org/labkey/core/security/deleteUser.jsp -text
 core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groups.jsp -text

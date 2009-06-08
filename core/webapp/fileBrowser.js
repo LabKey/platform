@@ -401,14 +401,15 @@ function destroyPreviews()
 
 var FILESYSTEM_EVENTS = {listfiles:"listfiles", ready:"ready"};
 
-var FileSystem = function(config)
-{
-    this.directoryMap = {}; //  map<path,(time,[records])>
-    this.addEvents(FILESYSTEM_EVENTS.listfiles, FILESYSTEM_EVENTS.ready);
-};
+var FileSystem = Ext.extend(Ext.util.Observable, {
 
-Ext.extend(FileSystem, Ext.util.Observable,
-{
+    constructor : function(config)
+    {
+        Ext.util.Observable.prototype.constructor.call(this);
+        this.directoryMap = {};
+        this.addEvents(FILESYSTEM_EVENTS.listfiles, FILESYSTEM_EVENTS.ready);
+    },
+
     rootPath : "/",
     separator : "/",
 
@@ -1124,7 +1125,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 // TransferApplet
 //
 
-TRANSFER_EVENTS = {update:'update'};
+var TRANSFER_EVENTS = {update:'update'};
 
 var TransferApplet;
 if (LABKEY.Applet)
@@ -1834,9 +1835,21 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 html.push(value);
                 html.push("</td></tr>");
             };
-            html.push("<p style='font-size:133%; padding:8px;'>");
+
+/*
+            html.push('<table width=100%><tr><td align=left valign=top style="font-size:133%; padding-left:8px;">');
             html.push($h(data.name));
-            html.push("</p>");
+            html.push('</td><td align=right valign=top style="color:#404040; padding-right:8px;">');
+            html.push($h(data.uri));
+            html.push("</td></tr></table>");
+*/
+            html.push('<p style="padding:8px;"><span align=left style="font-size:133%; padding:8px;">');
+            html.push($h(data.name));
+            html.push("</span>");
+            html.push('<span align=right style="color:#404040; padding-left:8px; padding-botton:8px;">');
+            html.push($h(data.uri));
+            html.push("</span></p>");
+
             html.push("<table style='padding-left:30px;'>");
             if (data.modified)
                 row("Date Modified", _longDateTime(data.modified));
@@ -1854,8 +1867,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 };
                 image.src = data.uri;
             }
-
-            html.push("</table>");
+//            html.push('<tr><td colspan=2 style="color:#404040;">');
+//            html.push($h(data.uri));
+//            html.push('</td></tr>');
+//
+            html.push('</table>');
             el.update(html.join(""));
         }
         catch (x)

@@ -231,12 +231,6 @@ Ext.onReady(function()
         ,tbar:['download','parentFolder','refresh','createDirectory','deletePath','uploadTool','->','html'<%=user.isGuest()?",'login'":""%>]
     });
 
-    var viewport = new Ext.Viewport({
-        layout:'fit',
-        cls:'extContainer',
-        items:[fileBrowser]
-    });
-
     fileBrowser.start(<%=PageFlowUtil.jsString(path)%>);
 });
 </script>

@@ -25,7 +25,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.                                                                                                                     F
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -54,8 +54,6 @@ var $dom = Ext.DomHelper;
 
 $('bodypanel').addClass('extContainer');
 
-// shared cache
-var viewport = new Ext.Viewport();
 var securityCache = new SecurityCache({
     root:<%=PageFlowUtil.jsString(root.getId())%>,
     project:<%=project==null?"null":PageFlowUtil.jsString(root.getId())%>,
@@ -87,14 +85,14 @@ Ext.onReady(function(){
         items : tabItems
     });
 
-    viewport.on("resize", function(v,w,h)
+    Ext.EventManager.onWindowResize(function(w,h)
     {
         if (!tabPanel.rendered || !tabPanel.el)
             return;
         var xy = tabPanel.el.getXY();
         var size = {
-            width : Math.max(100,w-xy[0]-8),
-            height : Math.max(100,h-xy[1]-8)};
+            width : Math.max(100,w-xy[0]-20),
+            height : Math.max(100,h-xy[1]-20)};
         tabPanel.setSize(size);
         tabPanel.doLayout();
     });
@@ -102,8 +100,7 @@ Ext.onReady(function(){
     tabPanel.render('tabBoxDiv');
     tabPanel.strip.applyStyles({'background':'#ffffff'});
 
-    var sz = viewport.getSize();
-    viewport.fireResize(sz.width, sz.height);
+    Ext.EventManager.fireWindowResize();
 });
 </script>
 

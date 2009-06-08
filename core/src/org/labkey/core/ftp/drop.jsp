@@ -61,24 +61,15 @@ var applet = new LABKEY.Applet({
         dropFileLimit:<%=dropPage.getPipeline()!=null?1000:0%>
     }});
 
-var viewport;
 
 Ext.onReady(function()
 {
-    viewport = new Ext.Viewport();
-    onWindowResize();
+    Ext.EventManager.onWindowResize(_resize);
     applet.render(Ext.get('appletDiv'));
     applet.onReady(startDropApplication);
+    Ext.EventManager.fireWindowResize();
 });
 
-
-var resizeIntervalId = null;
-function onWindowResize()
-{
-//    if (!resizeIntervalId)
-//        resizeIntervalId = window.setInterval(resize,100);
-    resize();
-}
 
 function closeWindow()
 {
@@ -93,15 +84,9 @@ function closeWindow()
     }
 }
 
-function resize()
-{
-    var s = viewport.getSize();
-    _resize(s.width,s.height);
-}
 
 function _resize(windowWidth,windowHeight)
 {
-    window.clearInterval(resizeIntervalId); resizeIntervalId = null;
     var elem = Ext.get('scrollDiv');
     if (!elem) return;
     var minHeight=200; var bottomMargin=80;
@@ -115,7 +100,6 @@ function _resize(windowWidth,windowHeight)
     elem.dom.parentNode.style.height = elem.dom.style.height; // this makes firefox redraw properly (on shrink)
 }
 
-Ext.EventManager.onWindowResize(onWindowResize);
 </script></div>
 <%=PageFlowUtil.generateButton("Find Files...", "#findFiles", "browseFiles();")%>
 <!--PageFlowUtil.generateButton("New Folder...", "#mkdir", "showMkdirDialog();")-->
