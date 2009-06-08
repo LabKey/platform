@@ -150,7 +150,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
             {
                 try
                 {
-                    _url = ViewServlet.getRequestURL().toString();
+                    _url = ViewServlet.getOriginalURL();
                 }
                 catch (Exception x)
                 {

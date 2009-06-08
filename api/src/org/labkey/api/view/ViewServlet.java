@@ -387,6 +387,19 @@ public class ViewServlet extends HttpServlet
     }
 
 
+    public static String getOriginalURL()
+    {
+        // using HttpView to remember the root request, rather than have our own ThreadLocal
+        HttpServletRequest request = HttpView.getRootContext().getRequest();
+        if (null == request)
+            return null;
+        Object url = request.getAttribute(ORIGINAL_URL);
+        if (null == url)
+            url = request.getRequestURI() + "?" + StringUtils.trimToEmpty(request.getQueryString());
+        return String.valueOf(url);
+    }
+    
+
     public static ActionURL getRequestURL()
     {
         // using HttpView to remember the root request, rather than have our own ThreadLocal
