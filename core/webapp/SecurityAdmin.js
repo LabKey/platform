@@ -700,6 +700,10 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         if (isGroup)
         {
             var users = this.cache.getMembersOf(this.userId);
+            user = users.sort(function(a,b){
+                var A = a.Name.toUpperCase(), B = b.Name.toUpperCase();
+                return A > B ? 1 : A < B ? -1 : 0;
+            });
             html.push("<b>users</b>");
 
             if (this.userId == SecurityCache.prototype.groupUsers)
