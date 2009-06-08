@@ -119,7 +119,13 @@ public class ThemeFont
     }
 
     public final static ThemeFont DEFAULT_THEME_FONT = SMALL;
-    protected static List<ThemeFont> webThemeFontList = new ArrayList<ThemeFont>();
+    protected static final List<ThemeFont> webThemeFontList = new ArrayList<ThemeFont>();
+    static
+    {
+        webThemeFontList.add(SMALL);
+        webThemeFontList.add(MEDIUM);
+        webThemeFontList.add(LARGE);
+    }
 
     @Deprecated
     public static ThemeFont getThemeFont()
@@ -151,14 +157,6 @@ public class ThemeFont
 
     public static List<ThemeFont> getThemeFonts()
     {
-        if (0 == webThemeFontList.size())
-        {
-//            webThemeFontList.add (VERYSMALL);
-            webThemeFontList.add (SMALL);
-            webThemeFontList.add (MEDIUM);
-            webThemeFontList.add (LARGE);
-        }
-
         return webThemeFontList;
     }
 }
