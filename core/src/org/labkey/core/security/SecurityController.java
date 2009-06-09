@@ -26,24 +26,21 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.*;
-import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.*;
+import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.util.Pair;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.json.JSONObject;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.naming.OperationNotSupportedException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.*;
@@ -695,6 +692,8 @@ public class SecurityController extends SpringActionController
 
                 if (addEmails.size() > 0)
                 {
+                    List<User> users = new ArrayList<User>(addEmails.size());
+
                     // add new users
                     for (ValidEmail email : addEmails)
                     {
@@ -702,17 +701,24 @@ public class SecurityController extends SpringActionController
                         if (addMessage != null)
                             messages.add(addMessage);
 
-                        //get the user and ensure that the user is still active
+                        // get the user and ensure that the user is still active
                         User user = UserManager.getUser(email);
-                        if(!user.isActive())
-                            errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
+
+                        // Null check since user creation may have failed, #8066
+                        if (null != user)
+                        {
+                            if (!user.isActive())
+                                errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
                                     + "' to this group because that user account is currently deactivated." +
                                     " To re-activate this account, contact your system administrator.");
+                            else
+                                users.add(user);
+                        }
                     }
 
                     try
                     {
-                        SecurityManager.addMembers(_group, addEmails);
+                        SecurityManager.addMembers(_group, users);
                     }
                     catch (SQLException e)
                     {

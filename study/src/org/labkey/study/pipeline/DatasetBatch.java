@@ -18,17 +18,19 @@ package org.labkey.study.pipeline;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.CPUTimer;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.study.DataSet;
+import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.*;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.io.*;
 import java.sql.SQLException;
@@ -112,7 +114,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
             return;
         }
         DataSetDefinition[] dsArray = getStudyManager().getDataSetDefinitions(getStudy());
-        HashMap<String,DataSetDefinition> dsMap = new HashMap<String,DataSetDefinition>(dsArray.length * 3);
+        HashMap<String, DataSetDefinition> dsMap = new HashMap<String, DataSetDefinition>(dsArray.length * 3);
         // UNDONE: duplicate labels? dataset named participant?
         for (DataSetDefinition ds : dsArray)
         {
