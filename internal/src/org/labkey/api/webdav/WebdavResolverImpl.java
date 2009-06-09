@@ -63,6 +63,11 @@ public class WebdavResolverImpl implements WebdavResolver
         return false;
     }
 
+    public Resource welcome()
+    {
+        return lookup("/");
+    }
+
     public Resource lookup(String fullPath)
     {
         if (fullPath == null)

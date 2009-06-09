@@ -20,6 +20,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
@@ -154,7 +155,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     @NotNull
     public String getLocalHref(ViewContext context)
     {
-        String href = context.getContextPath() + context.getRequest().getServletPath() + PageFlowUtil.encodePath(_path);
+        String href = c(context.getContextPath(), context.getRequest().getServletPath(), PageFlowUtil.encodePath(_path));
         if (isCollection() && !href.endsWith("/"))
             href += "/";
         return href;
@@ -292,7 +293,11 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         StringBuilder s = new StringBuilder();
         s.append(StringUtils.stripEnd(path,"/"));
         for (String name : names)
-            s.append("/").append(StringUtils.strip(name, "/"));
+        {
+            String bare = StringUtils.strip(name, "/");
+            if (bare.length() > 0)
+                s.append("/").append(bare);
+        }
         return s.toString();
     }
 

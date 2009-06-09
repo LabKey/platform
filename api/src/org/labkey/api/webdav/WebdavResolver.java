@@ -41,6 +41,7 @@ public interface WebdavResolver
 {
     boolean requiresLogin();
     Resource lookup(String path);
+    Resource welcome();
 
     /**
      * Created by IntelliJ IDEA.
