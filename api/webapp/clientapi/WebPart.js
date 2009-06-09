@@ -168,7 +168,7 @@ LABKEY.WebPart = function(config)
                 _partConfig["webpart.title"] = _title;
             if(_titleHref)
                 _partConfig["webpart.titleHref"] = _titleHref;
-            _partConfig.returnURL = _partConfig.returnURL || (window.location.pathname + window.location.search);
+            _partConfig.returnURL = encodeURI(_partConfig.returnURL || (window.location.pathname + window.location.search));
 
             if(!_errorCallback)
                 _errorCallback = handleLoadError;
