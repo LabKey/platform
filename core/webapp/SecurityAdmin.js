@@ -293,7 +293,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         var me = this;
         S.createGroup({containerPath:project, groupName:name, successCallback:function(obj,response,options)
         {
-            var group = {UserId:obj.id, Name:obj.name, Container:project, Type:'g'};
+            var container = project == '/' ? null : project;
+            var group = {UserId:obj.id, Name:obj.name, Container:container, Type:'g'};
             var st = me.principalsStore;
             var record = new st.reader.recordType(group,group.UserId);
             me._applyPrincipalsSortOrder(record);
@@ -800,14 +801,21 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
 var CloseButton = Ext.extend(Ext.Button,{
 
     template : new Ext.Template(
-                    '<table border="0" cellpadding="0" cellspacing="0" class="x-btn-wrap" style="display:inline-table;"><tbody><tr>',
+                    '<span><table cellpadding="0" cellspacing="0" class="x-btn-wrap" style="display:inline;"><tbody><tr>',
                     '<td class="x-btn-left"><i>&#160;</i></td><td class="x-btn-center"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em></td><td class="x-btn-center"><i class="pclose">&#160;</i></td><td class="x-btn-right"><i>&#160;</i></td>',
-                    "</tr></tbody></table>"),
+                    "</tr></tbody></table><span>"),
+    // add &nbsp;
+    templateIE : new Ext.Template(
+                    '<span><table cellpadding="0" cellspacing="0" class="x-btn-wrap" style="display:inline;"><tbody><tr>',
+                    '<td class="x-btn-left"><i>&#160;</i></td><td class="x-btn-center"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em></td><td class="x-btn-center"><i class="pclose">&#160;</i></td><td class="x-btn-right"><i>&#160;</i></td>',
+                    "</tr></tbody></table>&nbsp;<span>"),
 
     initComponent : function()
     {
         CloseButton.superclass.initComponent.call(this);
         this.addEvents(['close']);
+        if (Ext.isIE)
+            this.template = this.templateIE;
     },
 
     onRender : function(ct, position)
@@ -1670,19 +1678,22 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this.save(false);
     },
 
-    save : function(overwrite)
+    save : function(overwrite, success, scope)
     {
         Ext.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
-        
+
+        success = success || this.saveSuccess;
+        scope = scope || this;
+
         var policy = this.getPolicy();
         this.disable();
         if (!policy)
-            S.deletePolicy({resourceId:this.resource.id, successCallback:this.saveSuccess, errorCallback:this.saveFail, scope:this});
+            S.deletePolicy({resourceId:this.resource.id, successCallback:success, errorCallback:this.saveFail, scope:scope});
         else
         {
             if (overwrite)
                 policy.setModified(null);
-            S.savePolicy({policy:policy, successCallback:this.saveSuccess, errorCallback:this.saveFail, scope:this});
+            S.savePolicy({policy:policy, successCallback:success, errorCallback:this.saveFail, scope:scope});
         }
     },
 

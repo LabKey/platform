@@ -102,7 +102,12 @@ Ext.onReady(function()
     });
 
     fileBrowser.on("doubleclick", function(record){
-        window.location = "<%=PageFlowUtil.encodePath(request.getContextPath())%>/files<%=c.getEncodedPath()%>" + encodeURI(record.data.name) + "?renderAs=DEFAULT<%=me.getFileSet()==null ? "" : "&fileSet=" + PageFlowUtil.encode(me.getFileSet())%>";
+        var contentType = record.data.contentType || "attachment";
+        var location = "<%=PageFlowUtil.encodePath(request.getContextPath())%>/files<%=c.getEncodedPath()%>" + encodeURI(record.data.name) + "?renderAs=DEFAULT<%=me.getFileSet()==null ? "" : "&fileSet=" + PageFlowUtil.encode(me.getFileSet())%>";
+        if (0 == contentType.indexOf("image/") || 0 == contentType.indexOf("text/"))
+            window.open(location,"_blank");
+        else
+            window.location = location;
     });
 
     fileBrowser.render('files');

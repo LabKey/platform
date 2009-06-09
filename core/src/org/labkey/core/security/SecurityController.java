@@ -198,15 +198,10 @@ public class SecurityController extends SpringActionController
         {
             String root = getContainer().getId();
             String resource = root;
-            FolderPermissions view = new FolderPermissions(root, resource);
-            if (!form.isWizard())
-                return view;
-
-            ActionURL startURL = getContainer().getFolderType().getStartURL(getContainer(), getUser());
-            VBox vbox = new VBox(
-                    new HtmlView(PageFlowUtil.generateButton("Done", startURL)),
-                    view);
-            return vbox;
+            ActionURL doneURL = form.isWizard() ? getContainer().getFolderType().getStartURL(getContainer(), getUser()) : null;
+            
+            FolderPermissions view = new FolderPermissions(root, resource, doneURL);
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -216,12 +211,18 @@ public class SecurityController extends SpringActionController
     }
 
 
-    public class FolderPermissions extends JspView
+    public class FolderPermissions extends JspView<FolderPermissions>
     {
-        FolderPermissions(String root, String resource)
+        public final String resource;
+        public final ActionURL doneURL;
+        
+        FolderPermissions(String root, String resource, ActionURL doneURL)
         {
             super(SecurityController.class, "FolderPermissions.jsp", null);
+            this.setModelBean(this);
             this.setFrame(FrameType.NONE);
+            this.resource = resource;
+            this.doneURL = doneURL;
         }
     }
 

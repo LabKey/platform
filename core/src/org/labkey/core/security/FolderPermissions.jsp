@@ -13,6 +13,7 @@
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -32,7 +33,8 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView me = (JspView)HttpView.currentView();
+    SecurityController.FolderPermissions me = (SecurityController.FolderPermissions)HttpView.currentView();
+    ActionURL doneURL = me.doneURL;
     Container c = getViewContext().getContainer();
     Container project = c.getProject();
     Container root = ContainerManager.getRoot();
@@ -56,23 +58,53 @@ $('bodypanel').addClass('extContainer');
 
 var securityCache = new SecurityCache({
     root:<%=PageFlowUtil.jsString(root.getId())%>,
-    project:<%=project==null?"null":PageFlowUtil.jsString(root.getId())%>,
+    project:<%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
     folder:<%=PageFlowUtil.jsString(c.getId())%>
 });
+
+var policyEditor;
 </script>
 
 <%--
     TABS
 --%>
 
-
+<div id="buttonDiv"></div>
 <div id="tabBoxDiv" class="extContainer"><i>Loading...</i></div>
 <script type="text/javascript">
 
 var tabItems = [];
 var tabPanel = null;
+var doneURL = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>;
+
+function done()
+{
+    if (!policyEditor)
+        window.location = doneURL;
+    else
+    {
+        policyEditor.save(false, function(){
+            LABKEY.setSubmit(true);
+            window.location = doneURL;
+        });
+    }
+}
+function save()
+{
+    if (policyEditor)
+        policyEditor.save();
+}
 
 Ext.onReady(function(){
+
+    if (doneURL)
+    {
+        var doneBtn = new Ext.Button({text:'Done', style:{display:'inline'}, handler:done});
+        doneBtn.render($('buttonDiv'));
+        $('buttonDiv').createChild('&nbsp;');
+    }
+    var saveBtn = new Ext.Button({text:'Save', style:{display:'inline'}, handler:save});
+    saveBtn.render($('buttonDiv'));
 
     for (var i=0 ; i<tabItems.length ; i++)
         tabItems[i].contentEl = $(tabItems[i].contentEl);
@@ -116,7 +148,7 @@ Ext.onReady(function(){
     tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
     Ext.onReady(function()
     {
-        var policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isSiteAdmin,
+        policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isSiteAdmin,
             resourceId:LABKEY.container.id});
         policyEditor.render($('permissionsFrame'));
     });
