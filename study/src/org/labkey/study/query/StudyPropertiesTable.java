@@ -56,7 +56,7 @@ public class StudyPropertiesTable extends BaseStudyTable
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
-        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), StudyImpl.class);
+        String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
 
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
         if (domain != null)

@@ -36,15 +36,17 @@ import java.io.Writer;
  */
 public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
 {
+    public static final String QUERY_NAME = "StudyProperties";
+
     public StudyPropertiesQueryView(User user, StudyImpl study, ViewContext viewContext, boolean allowEditing)
     {
-        super(user, study, StudyImpl.class, viewContext, allowEditing);
+        super(user, study, StudyImpl.DOMAIN_INFO, viewContext, allowEditing);
         setShadeAlternatingRows(false);
     }
 
-    protected String getQueryName(Class<? extends ExtensibleStudyEntity> extensibleClass)
+    protected String getQueryName(ExtensibleStudyEntity.DomainInfo domainInfo)
     {
-        return "StudyProperties";
+        return QUERY_NAME;
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)

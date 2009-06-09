@@ -53,7 +53,7 @@ public class CohortTable extends BaseStudyTable
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         visibleColumns.add(FieldKey.fromParts(labelColumn.getName())); // Label is the only thing visible from the hard table
 
-        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), CohortImpl.class);
+        String domainURI = CohortImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
 
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
         if (domain != null)

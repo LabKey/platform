@@ -45,7 +45,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
 
     public CohortQueryView(User user, StudyImpl study, ViewContext viewContext, boolean allowEditing)
     {
-        super(user, study, CohortImpl.class, viewContext, allowEditing);
+        super(user, study, CohortImpl.DOMAIN_INFO, viewContext, allowEditing);
         this.study = study;
         QuerySettings settings = getSettings();
         // We don't have many cohorts typically. Let's cut down on the number of buttons,
@@ -87,7 +87,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
             Container container = view.getRenderContext().getContainer();
 
             boolean hasDomain = false;
-            String domainURI = StudyManager.getInstance().getDomainURI(container, CohortImpl.class);
+            String domainURI = CohortImpl.DOMAIN_INFO.getDomainURI(container);
 
             Domain domain = PropertyService.get().getDomain(container, domainURI);
             if (domain != null)

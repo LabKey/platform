@@ -1,6 +1,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.study.Cohort;
+import org.labkey.api.exp.Lsid;
 
 /**
  * Copyright (c) 2008-2009 LabKey Corporation
@@ -22,6 +23,9 @@ import org.labkey.api.study.Cohort;
  */
 public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Cohort
 {
+    private static final String DOMAIN_URI_PREFIX = "Cohort";
+    public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX);
+
     private int _rowId = 0;
     private String _lsid;
 
@@ -39,6 +43,17 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     {
         verifyMutability();
         _rowId = rowId;
+    }
+
+    public String getDomainURIPrefix()
+    {
+        return DOMAIN_URI_PREFIX;
+    }
+
+    public void initLsid()
+    {
+        Lsid lsid = new Lsid(getDomainURIPrefix(), "Folder-" + getContainer().getRowId(), String.valueOf(getRowId()));
+        setLsid(lsid.toString());
     }
 
     public String getLsid()

@@ -54,16 +54,17 @@ public class StudyDefinitionController extends BaseStudyController
 
     private abstract class EditDefinitionAction extends SimpleRedirectAction
     {
-        protected abstract Class<? extends ExtensibleStudyEntity> getClassToEdit();
+        protected abstract ExtensibleStudyEntity.DomainInfo getDomainInfo();
 
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             // Get domain Id
-            String domainURI = StudyManager.getInstance().getDomainURI(getContainer(), getClassToEdit());
+            ExtensibleStudyEntity.DomainInfo domainInfo = getDomainInfo();
+            String domainURI = domainInfo.getDomainURI(getContainer());
             Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
             if (domain == null)
             {
-                domain = PropertyService.get().createDomain(getContainer(), domainURI, getClassToEdit().getSimpleName());
+                domain = PropertyService.get().createDomain(getContainer(), domainURI, domainInfo.getDomainName());
                 domain.save(getUser());
             }
 
@@ -74,19 +75,18 @@ public class StudyDefinitionController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class EditCohortDefinitionAction extends EditDefinitionAction
     {
-        protected Class<CohortImpl> getClassToEdit()
+        protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
         {
-            StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
-            return CohortImpl.class;
+            return CohortImpl.DOMAIN_INFO;
         }
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
     public class EditStudyDefinitionAction extends EditDefinitionAction
     {
-        protected Class<? extends ExtensibleStudyEntity> getClassToEdit()
+        protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
         {
-            return StudyImpl.class;
+            return StudyImpl.DOMAIN_INFO;
         }
     }
 
@@ -94,7 +94,7 @@ public class StudyDefinitionController extends BaseStudyController
     {
         public ViewAction() {super(QueryExportForm.class);}
 
-        protected abstract Class<? extends ExtensibleStudyEntity> getClassToView();
+        protected abstract ExtensibleStudyEntity.DomainInfo getDomainInfo();
 
         protected abstract String getPluralName();
 
@@ -106,17 +106,17 @@ public class StudyDefinitionController extends BaseStudyController
 
         protected QueryView createQueryView(QueryExportForm queryExportForm, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
-            return new ExtensibleObjectQueryView(getUser(), getStudy(), getClassToView(), HttpView.currentContext(), false);
+            return new ExtensibleObjectQueryView(getUser(), getStudy(), getDomainInfo(), HttpView.currentContext(), false);
         }
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
     public class CohortViewAction extends ViewAction
     {
-        protected Class<? extends ExtensibleStudyEntity> getClassToView()
+        protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
-            return CohortImpl.class;
+            return CohortImpl.DOMAIN_INFO;
         }
 
         protected String getPluralName()

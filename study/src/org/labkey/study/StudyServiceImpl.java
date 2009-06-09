@@ -554,10 +554,10 @@ public class StudyServiceImpl implements StudyService.Service
     @Nullable
     public String getDomainURI(String queryName, Container container, User user)
     {
-        if ("Cohort".equals(queryName))
-            return StudyManager.getInstance().getDomainURI(container, CohortImpl.class);
-        if ("StudyProperties".equals(queryName))
-            return StudyManager.getInstance().getDomainURI(container, StudyImpl.class);
+        if (CohortImpl.DOMAIN_INFO.getDomainName().equals(queryName))
+            return CohortImpl.DOMAIN_INFO.getDomainURI(container);
+        if (StudyPropertiesQueryView.QUERY_NAME.equals(queryName))
+            return StudyImpl.DOMAIN_INFO.getDomainURI(container);
 
         Study study = StudyManager.getInstance().getStudy(container);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);

@@ -252,7 +252,7 @@ public class StudyManager
     {
         assert null != study.getContainer();
         if (study.getLsid() == null)
-            study.setLsid(createLsid(study, study.getContainer().getRowId()));
+            study.initLsid();
         study = _studyHelper.create(user, study);
 
         //note: we no longer copy the container's policy to the study upon creation
@@ -370,7 +370,7 @@ public class StudyManager
         if (cohort.getRowId() == 0)
             throw new IllegalStateException("Cohort rowId has not been set properly");
 
-        cohort.setLsid(createLsid(cohort, cohort.getRowId()));
+        cohort.initLsid();
         _cohortHelper.update(user, cohort);
     }
 
@@ -3102,24 +3102,6 @@ public class StudyManager
             view.beforeUpdate(user);
             return Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId(), null);
         }
-    }
-
-    /**
-     * Returns a domain URI for use by Ontology Manager
-     */
-    public String getDomainURI(Container container, Class<? extends ExtensibleStudyEntity> clazz)
-    {
-        return new Lsid(clazz.getSimpleName(),
-                "Folder-" + container.getRowId(),
-                clazz.getSimpleName()).toString();
-    }
-
-    /**
-     * Creates and lsid for this individual extensible object
-     */
-    public String createLsid(ExtensibleStudyEntity o, int uniqueId)
-    {
-        return new Lsid(o.getClass().getSimpleName(), "Folder-" + o.getContainer().getRowId(), Integer.toString(uniqueId)).toString();
     }
 
     public interface ParticipantViewConfig

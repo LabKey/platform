@@ -16,10 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.*;
 import org.labkey.api.query.ValidationException;
 
 import java.util.Map;
@@ -34,6 +31,39 @@ import java.sql.SQLException;
  */
 public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
 {
+    public interface DomainInfo
+    {
+        String getDomainURI(Container c);
+        String getDomainPrefix();
+        String getDomainName();
+    }
+
+    protected static class StudyDomainInfo implements DomainInfo
+    {
+        String _domainUriPrefix;
+
+        protected StudyDomainInfo(String domainUriPrefix)
+        {
+            _domainUriPrefix = domainUriPrefix;
+        }
+
+        public String getDomainPrefix()
+        {
+            return _domainUriPrefix;
+        }
+
+        public String getDomainURI(final Container c)
+        {
+            return new Lsid(getDomainPrefix(), "Folder-" + c.getRowId(), getDomainPrefix()).toString();
+        }
+
+        public String getDomainName()
+        {
+            // for now, the prefix and name happen to be the same
+            return _domainUriPrefix;
+        }
+    }
+
     public ExtensibleStudyEntity()
     {
         super();
@@ -44,10 +74,20 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
         super(c);
     }
 
-    public String getDomainURI()
+    /**
+     * Returns a domain URI for use by Ontology Manager
+     */
+    public DomainInfo getDomainInfo()
     {
-        return StudyManager.getInstance().getDomainURI(getContainer(), getClass());
+        return new StudyDomainInfo(getDomainURIPrefix());
     }
+
+    protected abstract String getDomainURIPrefix();
+
+    /**
+     * Creates and lsid for this individual extensible object
+     */
+    public abstract void initLsid();
 
     public abstract String getLsid();
 
@@ -55,7 +95,7 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
     {
         Container container = getContainer();
         String ownerLsid = getLsid();
-        String classLsid = getDomainURI();
+        String classLsid = getDomainInfo().getDomainURI(container);
 
         Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, ownerLsid);
         if (resourceProperties != null && !resourceProperties.isEmpty())

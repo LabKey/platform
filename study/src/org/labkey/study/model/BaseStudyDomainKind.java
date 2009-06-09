@@ -44,7 +44,7 @@ public abstract class BaseStudyDomainKind extends DomainKind
     public boolean isDomainType(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return getSupportedClass().getSimpleName().equals(lsid.getNamespacePrefix());
+        return getDomainInfo().getDomainPrefix().equals(lsid.getNamespacePrefix());
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
@@ -62,7 +62,7 @@ public abstract class BaseStudyDomainKind extends DomainKind
         return null;
     }
 
-    protected abstract Class<? extends ExtensibleStudyEntity> getSupportedClass();
+    protected abstract ExtensibleStudyEntity.DomainInfo getDomainInfo();
 
     protected abstract TableInfo getTableInfo();
 

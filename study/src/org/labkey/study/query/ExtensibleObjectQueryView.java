@@ -39,7 +39,7 @@ public class ExtensibleObjectQueryView extends QueryView
     public ExtensibleObjectQueryView(
         User user,
         StudyImpl study,
-        Class<? extends ExtensibleStudyEntity> extensibleClass,
+        ExtensibleStudyEntity.DomainInfo domainInfo,
         ViewContext context,
         boolean allowEditing)
     {
@@ -48,14 +48,14 @@ public class ExtensibleObjectQueryView extends QueryView
         setShadeAlternatingRows(true);
         setShowBorders(true);
         QuerySettings settings = getSchema().getSettings(context, null);
-        settings.setQueryName(getQueryName(extensibleClass));
+        settings.setQueryName(getQueryName(domainInfo));
         settings.setAllowChooseQuery(false);
         setSettings(settings);
     }
 
-    protected String getQueryName(Class<? extends ExtensibleStudyEntity> extensibleClass)
+    protected String getQueryName(ExtensibleStudyEntity.DomainInfo domainInfo)
     {
-        return extensibleClass.getSimpleName();
+        return domainInfo.getDomainName();
     }
 
     public DataView createDataView()

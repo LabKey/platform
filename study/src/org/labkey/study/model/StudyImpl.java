@@ -22,6 +22,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -38,6 +39,9 @@ import java.util.*;
  */
 public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 {
+    private static final String DOMAIN_URI_PREFIX = "Study";
+    public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX);
+
     private String _label;
     private boolean _dateBased;
     private Date _startDate;
@@ -252,6 +256,17 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _manualCohortAssignment = manualCohortAssignment;
     }
 
+    public String getDomainURIPrefix()
+    {
+        return DOMAIN_URI_PREFIX;
+    }
+
+    public void initLsid()
+    {
+        Lsid lsid = new Lsid(getDomainURIPrefix(), "Folder-" + getContainer().getRowId(), String.valueOf(getContainer().getRowId()));
+        setLsid(lsid.toString());
+    }
+
     public String getLsid()
     {
         return _lsid;
@@ -306,7 +321,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public int getNumExtendedProperties(User user)
     {
         StudyQuerySchema schema = new StudyQuerySchema(this, user, true);
-        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), StudyImpl.class);
+        String domainURI = DOMAIN_INFO.getDomainURI(schema.getContainer());
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
 
         if (domain == null)

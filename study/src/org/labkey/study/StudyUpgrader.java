@@ -67,7 +67,7 @@ public class StudyUpgrader
         StudyManager manager = StudyManager.getInstance();
         if (UPGRADE_REQUIRED.equals(study.getLsid()))
         {
-            study.setLsid(manager.createLsid(study, study.getContainer().getRowId()));
+            study.initLsid();
             manager.updateStudy(user, study);
         }
 
@@ -76,7 +76,7 @@ public class StudyUpgrader
             if (UPGRADE_REQUIRED.equals(cohort.getLsid()))
             {
                 cohort = cohort.createMutable();
-                cohort.setLsid(manager.createLsid(cohort, cohort.getRowId()));
+                cohort.initLsid();
                 manager.updateCohort(user, cohort);
             }
         }

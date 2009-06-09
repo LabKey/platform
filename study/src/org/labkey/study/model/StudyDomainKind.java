@@ -31,9 +31,9 @@ import org.labkey.study.controllers.StudyController;
  */
 public class StudyDomainKind extends BaseStudyDomainKind
 {
-    protected Class<? extends ExtensibleStudyEntity> getSupportedClass()
+    protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
     {
-        return StudyImpl.class;
+        return StudyImpl.DOMAIN_INFO;
     }
 
     protected TableInfo getTableInfo()
