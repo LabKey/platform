@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.TabStripView"%>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.TabStripView" %>
 <%@ page import="org.springframework.web.servlet.ModelAndView" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<TabStripView> me = (JspView<TabStripView>) HttpView.currentView();
@@ -28,48 +30,46 @@
     List<NavTree> tabs = view.getTabList();
     String tabId = view.getSelectedTabId();
 %>
-<table class="labkey-tab-strip">
-    <tr>
+
+<div class="labkey-tab-strip">
+    <ul class="labkey-tab-strip">
     <%
         for (NavTree tab : tabs)
         {
             %>
-            <td class="labkey-tab-space"><img src="<%=request.getContextPath()%>/_.gif" width="3"></td>
-            <td id="<%=view._prefix%>tab<%=tab.getId()%>" class="<%=(tab.getId().equals(tabId) ? "labkey-tab-selected" : "labkey-tab")%>"><%
+            <li class="<%=(tab.getId().equals(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=view._prefix%>tab<%=tab.getId()%>"><%
 
             if (tab.getScript() == null && tab.getValue() == null)
             {
-                %><%=h(tab.getKey())%><%   
+                %><%=h(tab.getKey())%><%
             }
             else if (tab.getScript() == null)
             {
-                %><a href="<%=h(tab.getValue())%>"><%=h(tab.getKey())%>&nbsp;</a><%
+                %><a class="labkey-tab-strip" href="<%=h(tab.getValue())%>"><%=h(tab.getKey())%>&nbsp;</a><%
             }
             else
             {
                 String href = StringUtils.defaultString(tab.getValue(), "javascript:void(0);");
-                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getKey())%>&nbsp;</a><%
+                %><a class="labkey-tab-strip" href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getKey())%>&nbsp;</a><%
             }
-            %></td><%
+            %></li><%
         }
     %>
-        <td class="labkey-tab-space" style="text-align:right;" width=100%>
-            <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="<%=tabs.size() * 2 + 2%>" class="labkey-tab-content" style="border-top:none;text-align:left;" width=100%>
-            <div id="<%=view._prefix%>tabContent"><%
-    ModelAndView tabView = view.getTabView(tabId);
-    if (tabView != null)
-    {
-        include(tabView, out);
-    }
-    else
-    {
-        %>No handler for view: <%=h(tabId)%><%
-    }
-%></div></td></tr></table>
+    </ul>
+    <div class="labkey-tab-strip-content">
+        <div id="<%=view._prefix%>tabContent"><%
+            ModelAndView tabView = view.getTabView(tabId);
+            if (tabView != null)
+            {
+                include(tabView, out);
+            }
+            else
+            {
+                %>No handler for view: <%=h(tabId)%><%
+            }
+        %></div>
+    </div>
+</div>
 
 <%-- enable changing selected tab in place --%>
 <script type="text/javascript">
@@ -100,4 +100,3 @@ function selectTab(el)
     }
 }
 </script>
-
