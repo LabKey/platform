@@ -189,6 +189,8 @@ LABKEY.Security = new function()
          * The return value will be the name of a property in the LABKEY.Security.roles map.
          * This is a local function, and does not make a call to the server.
          * @param perms The permissions set
+         * @deprecated Do not use this anymore. Use the roles array in the various responses and the
+         * getRoles() method to obtain extra information about each role.
          */
         getRole : function(perms)
         {
@@ -307,6 +309,7 @@ LABKEY.Security = new function()
          *          <ul>
          *              <li>userId: the user's id</li>
          *              <li>displayName: the user's display name</li>
+         *              <li>email: the user's email address</li>
          *          </ul>
          *      </li>
          *      <li>container: the path of the requested container</li>
