@@ -908,7 +908,6 @@ api/webapp/WEB-INF/spring-form.tld -text
 api/webapp/WEB-INF/spring.tld -text
 api/webapp/clientapi/ActionURL.js -text
 api/webapp/clientapi/Assay.js -text
-api/webapp/clientapi/Batch.js -text
 api/webapp/clientapi/Chart.js -text
 api/webapp/clientapi/Domain.js -text
 api/webapp/clientapi/EditorGridPanel.js -text
