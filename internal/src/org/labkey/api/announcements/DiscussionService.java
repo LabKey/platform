@@ -177,11 +177,10 @@ public class DiscussionService
             }
         }
 
-        // Set the defaults that will be used for un-customized message boards.  We must set them all to false above to
+        // Set the defaults that will be used for un-customized message boards.  We must set them to false above to
         // workaround the "checkbox doesn't post if false" problem.
         public void setDefaults()
         {
-            _expires = true;
             _formatPicker = true;
             _titleEditable = true;
         }

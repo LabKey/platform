@@ -2021,20 +2021,21 @@ public class OntologyManager
                 {
                     switch (pt)
                     {
-                    case DOUBLE:
-                        format = convertNumberFormatChars(format);
-                        (new DecimalFormat(format)).format(1.0);
-                        break;
-                    case DATE_TIME:
-                        format = convertDateFormatChars(format);
-                        (new SimpleDateFormat(format)).format(new Date());
-                        // UNDONE: don't import date format until we have default format for study
-                        // UNDONE: it looks bad to have mixed formats
-                        // break;
-                    case STRING:
-                    case MULTI_LINE:
-                    default:
-                        format = null;
+                        case INTEGER:
+                        case DOUBLE:
+                            format = convertNumberFormatChars(format);
+                            (new DecimalFormat(format)).format(1.0);
+                            break;
+                        case DATE_TIME:
+                            format = convertDateFormatChars(format);
+                            (new SimpleDateFormat(format)).format(new Date());
+                            // UNDONE: don't import date format until we have default format for study
+                            // UNDONE: it looks bad to have mixed formats
+                            // break;
+                        case STRING:
+                        case MULTI_LINE:
+                        default:
+                            format = null;
                     }
                 }
                 catch (Exception x)
