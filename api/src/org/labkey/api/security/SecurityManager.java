@@ -20,14 +20,17 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.Cache;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.*;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -35,11 +38,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.collections.Cache;
-import org.labkey.api.util.Pair;
-import org.labkey.api.security.roles.*;
-import org.labkey.api.security.permissions.Permission;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -1012,18 +1010,19 @@ public class SecurityManager
     }
 
 
-    public static void addMembers(Group group, List<ValidEmail> emailsToAdd) throws SQLException
+    public static void addMembers(Group group, List<User> usersToAdd) throws SQLException
     {
         int groupId = group.getUserId();
 
-        if (emailsToAdd != null && !emailsToAdd.isEmpty())
+        if (usersToAdd != null && !usersToAdd.isEmpty())
         {
-            Iterator<ValidEmail> it = emailsToAdd.iterator();
+            Iterator<User> it = usersToAdd.iterator();
             StringBuilder addString = new StringBuilder();
+
             while (it.hasNext())
             {
-                ValidEmail email = it.next();
-                addString.append("'").append(StringEscapeUtils.escapeSql(email.getEmailAddress())).append("'");
+                User user = it.next();
+                addString.append(user.getUserId());
 
                 if (it.hasNext())
                     addString.append(", ");
@@ -1034,15 +1033,15 @@ public class SecurityManager
                     "INSERT INTO " + core.getTableInfoMembers() +
                             "\nSELECT UserId, ?\n" +
                             "FROM " + core.getTableInfoPrincipals() +
-                            "\nWHERE Name IN (" + addString.toString() + ") AND Name NOT IN\n" +
-                            "  (SELECT Name FROM " + core.getTableInfoMembers() + " _Members JOIN " + core.getTableInfoPrincipals() + " _Principals ON _Members.UserId = _Principals.UserId\n" +
+                            "\nWHERE UserId IN (" + addString.toString() + ") AND UserId NOT IN\n" +
+                            "  (SELECT _Members.UserId FROM " + core.getTableInfoMembers() + " _Members JOIN " + core.getTableInfoPrincipals() + " _Principals ON _Members.UserId = _Principals.UserId\n" +
                             "   WHERE GroupId = ?)",
                     new Object[]{groupId, groupId});
-        }
 
-        if (null != emailsToAdd)
-            for (ValidEmail email : emailsToAdd)
-                fireAddPrincipalToGroup(group, UserManager.getUser(email));
+
+            for (User user : usersToAdd)
+                fireAddPrincipalToGroup(group, user);
+        }
     }
 
 
