@@ -1134,7 +1134,7 @@ if (LABKEY.Applet)
     {
         constructor : function(params)
         {
-            this.addEvents([TRANSFER_EVENTS.update]);
+            var callbackname = Ext.id(null, 'transferapplet');
 
             var config =
             {
@@ -1146,13 +1146,25 @@ if (LABKEY.Applet)
                 params:
                 {
                     url : params.url || (window.location.protocol + "//" + window.location.host + LABKEY.contextPath + '/_webdav/'),
+                    events : "this.",
                     webdavPrefix: LABKEY.contextPath+'/_webdav/',
                     user: LABKEY.user.email,
                     password: LABKEY.user.sessionid,
                     text : params.text,
+                    overwrite : "true",
                     enabled : !('enabled' in params) || params.enabled
                 }
             };
+            TransferApplet.superclass.constructor.call(this, config);
+            console.log("TransferApplet.url: " + config.params.url);
+        },
+
+        initComponent : function()
+        {
+            TransferApplet.superclass.initComponent.call(this);
+
+            this.addEvents([TRANSFER_EVENTS.update]);
+            
             this.transferReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records', id:'target'}, this.TransferRecord);
             this.transfers = new Ext.data.Store();
             this.consoleReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records'}, this.ConsoleRecord);
@@ -1165,8 +1177,6 @@ if (LABKEY.Applet)
                 for (var i=0 ; i<records.length ; i++)
                     console.debug('add: ' + records[i].get('uri') + ' ' + records[i].get('status'));
             });
-            TransferApplet.superclass.constructor.call(this, config);
-            console.log("TransferApplet.url: " + config.params.url);
         },
 
         onRender : function(ct, position)
@@ -1183,35 +1193,15 @@ if (LABKEY.Applet)
         _poll : function()
         {
             var a = this.getApplet();
-            var r,result,records;
             if (null == a)
                 return;
-
-            var updated = false;
-            if (a.transfer_hasUpdates())
+            var event;
+            while (event = a.getEvent())
             {
-                // merge updates into data store
-                r = a.transfer_getObjects();
-                result = eval("(" + r + ")");
-                if (!result.success)
-                    console.error(r);
-                records = this.transferReader.readRecords(result);
-                this._merge(this.transfers,records.records);
-                updated = true;
+                eval(event);
             }
-
-            var consoleLineCount = a.console_getLineCount();
-            if (consoleLineCount > this.console.getCount())
-            {
-                r = a.console_getRange(this.console.getCount(), consoleLineCount);
-                result = eval("(" + r + ")");
-                records = this.consoleReader.readRecords(result);
-                this.console.add(records.records);
-            }
-
-            if (updated)
-                this.fireEvent(TRANSFER_EVENTS.update);
         },
+
 
         /* private */
         _merge : function(store,records)
@@ -1313,6 +1303,47 @@ if (LABKEY.Applet)
             }
             return {success:success, info:info, failed:failed, retryable:retryable,
                 total:count, totalActive:success+info+failed};
+        },
+
+
+        // EVENTS
+        dragEnter : function()
+        {
+            console.log('TransferApplet.dragEnter');
+        },
+        dragExit : function()
+        {
+            console.log('TransferApplet.dragExit');
+        },
+        update : function()
+        {
+            var a = this.getApplet();
+            var r,result,records;
+            var updated = false;
+
+            if (a.transfer_hasUpdates())
+            {
+                // merge updates into data store
+                r = a.transfer_getObjects();
+                result = eval("(" + r + ")");
+                if (!result.success)
+                    console.error(r);
+                records = this.transferReader.readRecords(result);
+                this._merge(this.transfers,records.records);
+                updated = true;
+            }
+
+            var consoleLineCount = a.console_getLineCount();
+            if (consoleLineCount > this.console.getCount())
+            {
+                r = a.console_getRange(this.console.getCount(), consoleLineCount);
+                result = eval("(" + r + ")");
+                records = this.consoleReader.readRecords(result);
+                this.console.add(records.records);
+            }
+
+            if (updated)
+                this.fireEvent(TRANSFER_EVENTS.update);
         }
     });
 }

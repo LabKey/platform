@@ -714,10 +714,6 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             {
                 html.push("<p/>Site Users represents all signed-in users.");
             }
-            else if (this.userId == SecurityCache.prototype.groupUsers)
-            {
-                html.push("Guest");
-            }
             else
             {
                 html.push("<table>");
@@ -726,9 +722,9 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     principalWrapper = '$p$' + id;
                     html.push("<tr><td colspan=3 id=" + principalWrapper + "></td></tr>");
                     if (users.length == 0 && this.userId > 0)
-                    {
+                    {                                                                                                      
                         deleteGroup = '$delete$' + id;
-                        html.push('<tr><td colspan=3><a id="' + deleteGroup + '" class="labkey-button" href="#"" ><span>Delete Empty Group</span></a></td></tr>');
+                        html.push('<tr><td colspan=3><a id="' + deleteGroup + '" class="labkey-button" href="#""><span>Delete Empty Group</span></a></td></tr>');
                     }
                 }
                 var canRemove = this.canEdit && (this.userId != SecurityCache.prototype.groupAdministrators || users.length > 1);
@@ -739,8 +735,9 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     if (canRemove)
                     {
                         removeWrapper = '$remove$' + id + user.UserId;
-                        html.push("<td>[<a href=# id=" + removeWrapper + ">remove</a>]</td><td>");
+                        html.push("<td>[<a href=# id=" + removeWrapper + ">remove</a>]</td>");
                     }
+                    html.push("<td>");
                     html.push(_open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
                     html.push("</td></tr>");
                 }
