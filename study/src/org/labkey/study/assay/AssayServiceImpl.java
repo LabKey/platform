@@ -401,7 +401,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
             catch (SerializableException e)
             {
-                throw new AssayException(e);
+                throw new AssayException(e.getMessage());
             }
             catch (SQLException e)
             {

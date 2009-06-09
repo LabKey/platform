@@ -409,7 +409,7 @@
     <tr><td><i>A scripting engine enables the execution of scripting code in a report or a QC validation script.
         A scripting engine can be exposed as a <a href="https://scripting.dev.java.net/" target="_blank">Java 6 script engine implementation</a>,
         or as an external script engine. Java 6 script engine implementations are exposed by configuring the Java runtime the webserver is running
-        against. External engine implementations are added in this view. For example scripting languages like R and Perl
+        against. External engine implementations are added in this view. For example, scripting languages like R and Perl
         can be configured here in order to create and run scripts and reports using these languages.</i></td>
     </tr>
     <tr><td>&nbsp;</td></tr>
