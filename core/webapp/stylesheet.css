@@ -1241,6 +1241,49 @@ td.labkey-tab-space, .labkey-tab-space
     border-bottom: 1px solid #89A1B4;
 }
 
+/* styles used for TabStripView tabs */
+ul.labkey-tab-strip
+{
+    border-bottom : 1px solid #89A1B4;
+    margin : 0;
+    padding-bottom : 19px;
+    padding-left : 10px;
+}
+
+ul.labkey-tab-strip li
+{
+    display : inline;
+    list-style-type : none;
+    margin : 0;
+    padding : 0;
+}
+
+a.labkey-tab-strip
+{
+    border : 1px solid #89A1B4;
+    float : left;
+    line-height : 14px;
+    margin-right : 8px;
+    padding : 2px 10px 2px 10px;
+    text-decoration : none;
+}
+
+li.labkey-tab-active a
+{
+    border-bottom : 1px solid #fff;
+    font-weight: bold;
+}
+
+.labkey-tab-strip-content
+{
+	background : #fff;
+	border : 1px solid #89A1B4;
+	border-top : none;
+	clear : both;
+	margin : 0px;
+	padding : 15px;
+}
+
 table#navBar td.labkey-tab-space
 {
     background-color:#ffffff;

@@ -255,42 +255,57 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    private static class ReportPermissionsTabStrip extends TabStripView
+    {
+        private PermissionsForm _bean;
+        public ReportPermissionsTabStrip(PermissionsForm bean)
+        {
+            _bean = bean;
+        }
+
+        public List<NavTree> getTabList()
+        {
+            List<NavTree> tabs = new ArrayList<NavTree>(2);
+
+            tabs.add(new TabInfo("Permissions", SecurityController.TAB_REPORT, getViewContext().getActionURL()));
+            tabs.add(new TabInfo("Study Security", SecurityController.TAB_STUDY, getViewContext().getActionURL()));
+
+            return tabs;
+        }
+
+        public HttpView getTabView(String tabId) throws Exception
+        {
+            if (TAB_STUDY.equals(tabId))
+            {
+                StudyImpl study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+                if (null == study)
+                {
+                    HttpView.throwRedirect(new ActionURL(StudyController.BeginAction.class, getViewContext().getContainer()));
+                    return null;
+                }
+                return new Overview(study, getViewContext().getActionURL());
+            }
+            else
+            {
+                ReportIdentifier reportId = _bean.getReportId();
+                if (reportId != null)
+                    return new JspView<Report>("/org/labkey/study/view/reportPermission.jsp", reportId.getReport());
+                else
+                {
+                    HttpView.throwNotFound();
+                    return null;
+                }
+            }
+        }
+    }
+
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ReportPermissionsAction extends FormViewAction<PermissionsForm>
     {
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("reportPermissions", HelpTopic.Area.STUDY));
-            VBox v = new VBox();
-            v.addView(new JspView<PermissionsForm>("/org/labkey/study/view/securityTabHeader.jsp", form));
-
-            if (TAB_STUDY.equals(form.getTabId()))
-            {
-                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                if (null == study)
-                    return HttpView.redirect(new ActionURL(StudyController.BeginAction.class, getContainer()));
-
-                v.addView(new Overview(study, getViewContext().getActionURL()));
-            }
-            else
-            {
-                Report report = null;
-                if (form.getReportId() != null)
-                    report = form.getReportId().getReport();
-
-                if (null == report)
-                {
-                    HttpView.throwNotFound();
-                    return null;
-                }
-                v.addView(new JspView<Report>("/org/labkey/study/view/reportPermission.jsp", report));
-            }
-            v.addView(new HttpView() {
-                protected void renderInternal(Object model, PrintWriter out) throws Exception {
-                    out.write("</td></tr></table>");
-                }
-            });
-            return v;
+            return new ReportPermissionsTabStrip(form);
         }
 
         public void validateCommand(PermissionsForm target, Errors errors)
