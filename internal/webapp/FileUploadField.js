@@ -58,6 +58,8 @@ Ext.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
         Ext.form.FileUploadField.superclass.enable.call(this);
         if (this.button)
             this.button.enable();
+        if (this.fileInput)
+            this.fileInput.dom.disabled = false;
     },
 
     disable : function()
@@ -65,6 +67,8 @@ Ext.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
         Ext.form.FileUploadField.superclass.disable.call(this);
         if (this.button)
             this.button.disable();
+        if (this.fileInput)
+            this.fileInput.dom.disabled = true;
     },
     
     // private
@@ -92,7 +96,8 @@ Ext.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
             cls: 'x-form-file-btn' + (btnCfg.iconCls ? ' x-btn-icon' : '')
         }));
 
-        if(this.buttonOnly){
+        if (this.buttonOnly)
+        {
             this.el.hide();
             this.wrap.setWidth(this.button.getEl().getWidth());
         }
