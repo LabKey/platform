@@ -2297,19 +2297,27 @@ public class SecurityManager
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
 
-        //assign all principals who are project admins at the project level to the folder admin role in the container
-        SecurityPolicy projectPolicy = c.getProject().getPolicy();
-        Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
-        Role folderAdminRole = RoleManager.getRole(FolderAdminRole.class);
-        for(RoleAssignment ra : projectPolicy.getAssignments())
+        if (!c.isProject())
         {
-            if (ra.getRole().equals(projAdminRole))
+            //assign all principals who are project admins at the project level to the folder admin role in the container
+            SecurityPolicy projectPolicy = c.getProject().getPolicy();
+            Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
+            Role folderAdminRole = RoleManager.getRole(FolderAdminRole.class);
+            for(RoleAssignment ra : projectPolicy.getAssignments())
             {
-                UserPrincipal principal = getPrincipal(ra.getUserId());
-                if(null != principal)
-                    policy.addRoleAssignment(principal, folderAdminRole);
+                if (ra.getRole().equals(projAdminRole))
+                {
+                    UserPrincipal principal = getPrincipal(ra.getUserId());
+                    if(null != principal)
+                        policy.addRoleAssignment(principal, folderAdminRole);
+                }
             }
         }
+
+        //if policy is still empty, add the guests group to the no perms role so that
+        //we don't end up with an empty (i.e., inheriting policy)
+        if (policy.isEmpty())
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
 
         savePolicy(policy);
     }

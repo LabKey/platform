@@ -380,11 +380,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if(this.getResourceId().equals(resourceId))
             return this;
 
-        for(SecurableResource child : getChildResources(user))
-        {
-            if(child.getResourceId().equals(resourceId))
-                return child;
-        }
+        //recurse down all non-container resources
+        SecurableResource resource = findSecurableResourceInContainer(resourceId, user, this);
+        if (null != resource)
+            return resource;
 
         //recurse down child containers
         for(Container child : getChildren())
@@ -392,11 +391,30 @@ public class Container implements Serializable, Comparable<Container>, Securable
             //only look in child containers where the user has read perm
             if(child.hasPermission(user, ReadPermission.class))
             {
-                SecurableResource resource = child.findSecurableResource(resourceId, user);
+                resource = child.findSecurableResource(resourceId, user);
 
                 if(null != resource)
                     return resource;
             }
+        }
+
+        return null;
+    }
+
+    protected SecurableResource findSecurableResourceInContainer(String resourceId, User user, SecurableResource parent)
+    {
+        SecurableResource resource = null;
+        for(SecurableResource child : parent.getChildResources(user))
+        {
+            if (child instanceof Container)
+                continue;
+
+            if (child.getResourceId().equals(resourceId))
+                return child;
+
+            resource = findSecurableResourceInContainer(resourceId, user, child);
+            if (null != resource)
+                return resource;
         }
 
         return null;
