@@ -2056,6 +2056,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         {
             store: this.store,
             border:false,
+            selModel : new Ext.grid.RowSelectionModel({singleSelect:true}),
             columns: [
                 {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:iconRenderer},
                 {header: "Name", width: 150, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
