@@ -11,6 +11,13 @@ var $h = Ext.util.Format.htmlEncode;
 var $dom = Ext.DomHelper;
 
 
+var FATAL_INT = 50000;
+var ERROR_INT = 40000;
+var WARN_INT  = 30000;
+var INFO_INT  = 20000;
+var DEBUG_INT = 10000;
+
+
 /*
 	parseUri 1.2.1
 	(c) 2007 Steven Levithan <stevenlevithan.com>
@@ -1152,7 +1159,8 @@ if (LABKEY.Applet)
                     password: LABKEY.user.sessionid,
                     text : params.text,
                     overwrite : "true",
-                    enabled : !('enabled' in params) || params.enabled
+                    enabled : !('enabled' in params) || params.enabled,
+                    dropFileLimit : 5000
                 }
             };
             TransferApplet.superclass.constructor.call(this, config);
@@ -1309,11 +1317,11 @@ if (LABKEY.Applet)
         // EVENTS
         dragEnter : function()
         {
-            console.log('TransferApplet.dragEnter');
+            //console.debug('TransferApplet.dragEnter');
         },
         dragExit : function()
         {
-            console.log('TransferApplet.dragExit');
+            //console.debug('TransferApplet.dragExit');
         },
         update : function()
         {
@@ -1340,6 +1348,21 @@ if (LABKEY.Applet)
                 result = eval("(" + r + ")");
                 records = this.consoleReader.readRecords(result);
                 this.console.add(records.records);
+                for (var i=0 ; i<records.records.length ; i++)
+                {
+                    var data = records.records[i].data;
+                    var level = data.level;
+                    var text = data.text;
+                    if (!text) continue;
+                    if (level >= ERROR_INT)
+                        console.error(text);
+                    else if (level >= WARN_INT)
+                        console.warn(text);
+                    else if (level >= INFO_INT)
+                        console.info(text);
+                    else
+                        console.debug(text);
+                }
             }
 
             if (updated)
@@ -1983,7 +2006,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var a = this.applet.getApplet();
             if (a) a.showFileChooser();
         }});
-        this.actions.appletDirAction = new Ext.Action({text:'(NYI) Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen', handler:function()
+        this.actions.appletDirAction = new Ext.Action({text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen', handler:function()
         {
             var a = this.applet.getApplet();
             if (a) a.showDirectoryChooser();

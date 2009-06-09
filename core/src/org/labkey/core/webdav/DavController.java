@@ -471,7 +471,11 @@ public class DavController extends SpringActionController
 
         public WebdavStatus doMethod() throws DavException, IOException
         {
-            WebdavResolver.Resource resource = resolvePath();
+            WebdavResolver.Resource resource = null;
+            if ("GET".equals(method) && "/".equals(getResourcePath()))
+                resource = getResolver().welcome();
+            if (null == resource)
+                resource = resolvePath();
             if (null == resource)
                 return notFound();
             if (!(resource.isCollection() ? resource.canList(getUser()) : resource.canRead(getUser())))
@@ -3675,7 +3679,7 @@ public class DavController extends SpringActionController
             super(is instanceof BufferedInputStream ? is : new BufferedInputStream(is));
             this.is = is;
             assert super.markSupported();
-            byte[] buf = new byte[1024];
+            byte[] buf = new byte[1];
             super.mark(1025);
             int r = super.read(buf);
             super.reset();
