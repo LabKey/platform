@@ -114,6 +114,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.zip.ZipException;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -3626,7 +3627,7 @@ public class StudyController extends BaseStudyController
                 return false;   // getView() will show an appropriate message in this case
             }
 
-            // Assuming success starting the import process, redirect to pipeline statue
+            // Assuming success starting the import process, redirect to pipeline status
             redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
 
             if ("pipeline".equals(form.getSource()))
@@ -3648,26 +3649,41 @@ public class StudyController extends BaseStudyController
                 else
                 {
                     MultipartFile file = map.values().iterator().next();
-                    InputStream is = file.getInputStream();
 
-                    File zipFile = File.createTempFile("study", ".zip");
-                    FileOutputStream fos = new FileOutputStream(zipFile);
-
-                    try
+                    if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
                     {
-                        FileUtil.copyData(is, fos);
+                        errors.reject("studyImport", "You must select a .zip file to import.");
                     }
-                    finally
+                    else
                     {
-                        if (is != null) try { is.close(); } catch (IOException e) {  }
-                        try { fos.close(); } catch (IOException e) {  }
+                        InputStream is = file.getInputStream();
+
+                        File zipFile = File.createTempFile("study", ".zip");
+                        FileOutputStream fos = new FileOutputStream(zipFile);
+
+                        try
+                        {
+                            FileUtil.copyData(is, fos);
+                        }
+                        finally
+                        {
+                            if (is != null) try { is.close(); } catch (IOException e) {  }
+                            try { fos.close(); } catch (IOException e) {  }
+                        }
+
+                        File importDir = new File(pipelineRoot, "unzip");
+                        FileUtil.deleteDir(importDir);
+
+                        try
+                        {
+                            ZipUtil.unzipToDirectory(zipFile, importDir);
+                            importStudy(errors, importDir);
+                        }
+                        catch (ZipException e)
+                        {
+                            errors.reject("studyImport", "This file does not appear to be a valid .zip file.");
+                        }
                     }
-
-                    File importDir = new File(pipelineRoot, "unzip");
-                    FileUtil.deleteDir(importDir);
-                    ZipUtil.unzipToDirectory(zipFile, importDir);
-
-                    importStudy(errors, importDir);
                 }
 
                 return !errors.hasErrors();
