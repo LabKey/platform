@@ -503,7 +503,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     Object data = row.get("transformedData");
                     if (data != null)
                     {
-                        transformedData.put(String.valueOf(row.get("type")), new File(data.toString()));
+                        File transformed = new File(data.toString());
+                        if (transformed.exists())
+                            transformedData.put(String.valueOf(row.get("type")), new File(data.toString()));
                     }
                 }
 

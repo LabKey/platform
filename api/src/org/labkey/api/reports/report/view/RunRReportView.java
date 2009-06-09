@@ -170,23 +170,30 @@ public class RunRReportView extends RunScriptReportView
             if (getRenderAction() != null)
                 designer.addObject("renderAction", getRenderAction().getLocalURIString());
 
-            boolean isReadOnly = !_report.getDescriptor().canEdit(getViewContext());
-            designer.addObject("readOnly", isReadOnly);
-
-            view.addView(designer);
-
-            if (!isReadOnly)
+            if (_report != null)
             {
-                for (ReportService.ViewFactory vf : ReportService.get().getViewFactories())
+                boolean isReadOnly = !_report.getDescriptor().canEdit(getViewContext());
+                designer.addObject("readOnly", isReadOnly);
+
+                view.addView(designer);
+
+                if (!isReadOnly)
                 {
-                    view.addView(vf.createView(getViewContext(), form));
+                    for (ReportService.ViewFactory vf : ReportService.get().getViewFactories())
+                    {
+                        view.addView(vf.createView(getViewContext(), form));
+                    }
                 }
+                view.addView(new HttpView() {
+                    protected void renderInternal(Object model, PrintWriter out) throws Exception {
+                        out.write("</form>");
+                    }
+                });
             }
-            view.addView(new HttpView() {
-                protected void renderInternal(Object model, PrintWriter out) throws Exception {
-                    out.write("</form>");
-                }
-            });
+            else
+            {
+                view.addView(new HtmlView("Unable to find the specified view"));
+            }
         }
         else if (TAB_SYNTAX.equals(tabId))
         {
