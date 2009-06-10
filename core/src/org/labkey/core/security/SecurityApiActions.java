@@ -24,12 +24,12 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.RestrictedReaderRole;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HString;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
 import java.util.*;
@@ -950,6 +950,54 @@ public class SecurityApiActions
             }
 
             return new ApiSimpleResponse("removed", form.getPrincipalIds());
+        }
+    }
+
+    public static class CreateNewUserForm
+    {
+        private HString _email;
+        private boolean _sendEmail = true;
+
+        public HString getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(HString email)
+        {
+            _email = email;
+        }
+
+        public boolean isSendEmail()
+        {
+            return _sendEmail;
+        }
+
+        public void setSendEmail(boolean sendEmail)
+        {
+            _sendEmail = sendEmail;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class CreateNewUserAction extends MutatingApiAction<CreateNewUserForm>
+    {
+        public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
+        {
+            if (null == form.getEmail() || form.getEmail().trim().length() == 0)
+                throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
+            
+            ValidEmail email = new ValidEmail(form.getEmail().toString().trim());
+            String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
+            User user = UserManager.getUser(email);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("userId", user.getUserId());
+            response.put("email", user.getEmail());
+            if (null != msg)
+                response.put("message", msg);
+
+            return response;
         }
     }
 
