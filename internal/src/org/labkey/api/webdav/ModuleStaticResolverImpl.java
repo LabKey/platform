@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -204,6 +205,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         public boolean canWrite(User user)
         {
             return false;
+        }
+
+        @Override
+        protected String getServletPath(ViewContext context)
+        {
+            return "/";
         }
     }
 

@@ -145,20 +145,23 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         int port = context.getRequest().getServerPort();
         boolean defaultPort = "http".equals(url.getScheme()) && 80 == port || "https".equals(url.getScheme()) && 443 == port;
         String portStr = defaultPort ? "" : ":" + port;
-        String href = url.getScheme() + "://" + url.getHost() + portStr + context.getContextPath() + context.getRequest().getServletPath() + PageFlowUtil.encodePath(_path);
-        if (isCollection() && !href.endsWith("/"))
-            href += "/";
-        return href;
+        return c(url.getScheme() + "://" + url.getHost() + portStr, getLocalHref(context));
     }
 
 
     @NotNull
     public String getLocalHref(ViewContext context)
     {
-        String href = c(context.getContextPath(), context.getRequest().getServletPath(), PageFlowUtil.encodePath(_path));
+        String href = c(context.getContextPath(), getServletPath(context), PageFlowUtil.encodePath(_path));
         if (isCollection() && !href.endsWith("/"))
             href += "/";
         return href;
+    }
+
+
+    protected String getServletPath(ViewContext context)
+    {
+        return context.getRequest().getServletPath();
     }
 
 
