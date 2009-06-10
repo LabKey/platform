@@ -2205,6 +2205,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 else
                 {
                     var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
+                    // set errorReader, so that handleResponse() doesn't try to eval() the XML response
+                    // assume that we've got a WebdavFileSystem
+                    form.errorReader = this.fileSystem.transferReader;
                     form.doAction(new Ext.form.Action.Submit(form, options));
                     Ext.getBody().dom.style.cursor = "wait";
                 }
