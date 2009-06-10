@@ -755,7 +755,7 @@ in the table tag.  They are necessary so that the borders take precedence correc
 }
 
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
-.labkey-error-row td, .labkey-error-row th, tr.labkey-error-row
+.labkey-error-row td, .labkey-error-row th, tr.labkey-error-row, td.labkey-error-row
 {
     border-top: 1px solid #990000;
     border-bottom: 1px solid #990000;
