@@ -30,6 +30,8 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Study;
@@ -41,6 +43,8 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
 import org.labkey.study.query.*;
+import org.labkey.study.security.roles.SpecimenCoordinatorRole;
+import org.labkey.study.security.roles.SpecimenRequesterRole;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -612,5 +616,10 @@ public class StudyServiceImpl implements StudyService.Service
             return Collections.emptyList();
         else
             return Collections.singletonList((SecurableResource)study);
+    }
+
+    public Set<Role> getStudyRoles()
+    {
+        return RoleManager.roleSet(SpecimenCoordinatorRole.class, SpecimenRequesterRole.class);
     }
 }

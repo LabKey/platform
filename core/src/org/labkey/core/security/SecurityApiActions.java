@@ -27,6 +27,8 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.study.StudyService;
 import org.springframework.validation.BindException;
 
 import java.util.*;
@@ -529,8 +531,16 @@ public class SecurityApiActions
 
             //special cases for relevant roles:
             // - don't include project admin if this is not a project
-            if(!container.isProject())
+            // - don't include study-related roles if no study
+            if (!container.isProject())
                 relevantRoles.remove(RoleManager.getRole(ProjectAdminRole.class).getUniqueName());
+            if (null == StudyService.get().getStudy(container))
+            {
+                for (Role studyRole : StudyService.get().getStudyRoles())
+                {
+                    relevantRoles.remove(studyRole.getUniqueName());
+                }
+            }
 
             resp.put("relevantRoles", relevantRoles);
             return resp;
