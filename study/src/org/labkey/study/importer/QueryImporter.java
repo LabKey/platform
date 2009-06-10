@@ -39,13 +39,13 @@ import java.util.Map;
  */
 public class QueryImporter
 {
-    void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException, SQLException
+    void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException, SQLException, StudyImporter.StudyImportException
     {
         StudyDocument.Study.Queries queriesXml = ctx.getStudyXml().getQueries();
 
         if (null != queriesXml)
         {
-            File queriesDir = new File(root, queriesXml.getDir());
+            File queriesDir = StudyImporter.getStudyDir(root, queriesXml.getDir(), "Study.xml");
 
             File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)

@@ -15,15 +15,14 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MvUtil;
+import org.labkey.study.xml.StudyDocument;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam

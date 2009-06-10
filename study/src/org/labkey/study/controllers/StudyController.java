@@ -3737,7 +3737,16 @@ public class StudyController extends BaseStudyController
         ActionURL url = getViewContext().getActionURL();
 
         StudyImporter importer = new StudyImporter(c, user, url, root, errors);
-        return importer.process();
+
+        try
+        {
+            return importer.process();
+        }
+        catch (StudyImporter.StudyImportException e)
+        {
+            errors.reject("studyImport", e.getMessage());
+            return false;
+        }
     }
 
 
@@ -3749,7 +3758,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
         {
             // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
-            // URL; returning null here causes the base action to stop pestering us. 
+            // URL; returning null here causes the base action to stop pestering the action. 
             if (reshow)
                 return null;
 

@@ -29,13 +29,13 @@ import java.sql.SQLException;
  */
 public class CustomViewImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException
+    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImporter.StudyImportException
     {
         StudyDocument.Study.Views viewsXml = ctx.getStudyXml().getViews();
 
         if (null != viewsXml)
         {
-            File viewDir = new File(root, viewsXml.getDir());   // TODO: Use current directory if not specified
+            File viewDir = StudyImporter.getStudyDir(root, viewsXml.getDir(), "Study.xml"); 
 
             QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
         }

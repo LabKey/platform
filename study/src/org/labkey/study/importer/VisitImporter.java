@@ -33,29 +33,25 @@ import java.util.List;
  */
 public class VisitImporter
 {
-    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException
+    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.StudyImportException
     {
         // Visit map
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
 
         if (null != visitsXml)
         {
-            File visitMap = new File(root, visitsXml.getFile());
+            File visitMap = StudyImporter.getStudyFile(root, root, visitsXml.getFile(), "Study.xml");
+            String content = PageFlowUtil.getFileContentsAsString(visitMap);
 
-            if (visitMap.exists())
+            VisitMapImporter importer = new VisitMapImporter();
+            List<String> errorMsg = new LinkedList<String>();
+
+            if (!importer.process(ctx.getUser(), study, content, VisitMapImporter.Format.getFormat(visitMap), errorMsg))
             {
-                String content = PageFlowUtil.getFileContentsAsString(visitMap);
+                for (String error : errorMsg)
+                    errors.reject("uploadVisitMap", error);
 
-                VisitMapImporter importer = new VisitMapImporter();
-                List<String> errorMsg = new LinkedList<String>();
-
-                if (!importer.process(ctx.getUser(), study, content, VisitMapImporter.Format.getFormat(visitMap), errorMsg))
-                {
-                    for (String error : errorMsg)
-                        errors.reject("uploadVisitMap", error);
-
-                    return false;
-                }
+                return false;
             }
         }
 

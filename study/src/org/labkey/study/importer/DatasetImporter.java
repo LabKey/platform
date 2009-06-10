@@ -50,7 +50,7 @@ import java.util.Map;
  */
 public class DatasetImporter
 {
-    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException
+    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException, StudyImporter.StudyImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 
@@ -85,7 +85,7 @@ public class DatasetImporter
                 String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
 
                 if (null != metaDataFilename)
-                    reader = new SchemaXmlReader(study, new File(datasetDir, metaDataFilename), extraProps);
+                    reader = new SchemaXmlReader(study, StudyImporter.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile()), extraProps);
             }
 
             if (null == reader)
@@ -99,7 +99,7 @@ public class DatasetImporter
                     String typeNameColumn = schema.getTypeNameColumn();
                     String typeIdColumn = schema.getTypeIdColumn();
 
-                    File schemaTsvFile = new File(datasetDir, schemaTsvSource);
+                    File schemaTsvFile = StudyImporter.getStudyFile(root, datasetDir, schemaTsvSource, "Study.xml");
 
                     reader = new SchemaTsvReader(study, schemaTsvFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
                 }
@@ -117,10 +117,9 @@ public class DatasetImporter
 
             String datasetFilename = datasetsXml.getDefinition().getFile();
 
-            File datasetFile = new File(datasetDir, datasetFilename);
-
-            if (datasetFile.exists())
+            if (null != datasetFilename)
             {
+                File datasetFile = StudyImporter.getStudyFile(root, datasetDir, datasetFilename, "Study.xml");
                 submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());
             }
         }
@@ -147,13 +146,16 @@ public class DatasetImporter
     }
 
 
-    private static File getDatasetDirectory(ImportContext ctx, File root)
+    private static File getDatasetDirectory(ImportContext ctx, File root) throws StudyImporter.StudyImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 
         if (null != datasetsXml)
         {
-            return (null == datasetsXml.getDir() ? root : new File(root, datasetsXml.getDir()));
+            if (null == datasetsXml.getDir())
+                return root;
+
+            return StudyImporter.getStudyDir(root, datasetsXml.getDir(), "Study.xml");
         }
 
         return null;
@@ -161,7 +163,7 @@ public class DatasetImporter
 
 
     @Nullable
-    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root) throws XmlException, IOException
+    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root) throws XmlException, IOException, StudyImporter.StudyImportException
     {
         File datasetDir = getDatasetDirectory(ctx, root);
 
@@ -171,12 +173,8 @@ public class DatasetImporter
 
             if (null != datasetsXmlFilename)
             {
-                File datasetsXmlFile = new File(datasetDir, datasetsXmlFilename);
-
-                if (datasetsXmlFile.exists())
-                {
-                    return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
-                }
+                File datasetsXmlFile = StudyImporter.getStudyFile(root, datasetDir, datasetsXmlFilename, "Study.xml");
+                return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
             }
         }
 

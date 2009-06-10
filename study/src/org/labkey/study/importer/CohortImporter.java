@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class CohortImporter
 {
-    void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, XmlException, ServletException
+    void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, XmlException, ServletException, StudyImporter.StudyImportException
     {
         StudyDocument.Study.Cohorts cohortsXml = ctx.getStudyXml().getCohorts();
 
@@ -53,7 +53,7 @@ public class CohortImporter
             }
             else
             {
-                File cohortFile = new File(root, cohortsXml.getFile());
+                File cohortFile = StudyImporter.getStudyFile(root, root, cohortsXml.getFile(), "Study.xml");
                 CohortsDocument cohortAssignmentXml = CohortsDocument.Factory.parse(cohortFile);
 
                 Map<String, Integer> p2c = new HashMap<String, Integer>();

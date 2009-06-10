@@ -74,13 +74,26 @@ public class StudyImporter
         return study;
     }
 
-    public boolean process() throws SQLException, ServletException, IOException, SAXException, ParserConfigurationException, XmlException
+    public boolean process() throws SQLException, ServletException, IOException, SAXException, ParserConfigurationException, XmlException, StudyImportException
     {
         File file = new File(_root, "study.xml");
 
+        if (!file.exists())
+            throw new StudyImportException("Study.xml file does not exist.");
+
         _log.info("Loading study: " + file.getAbsolutePath());
 
-        StudyDocument studyDoc = StudyDocument.Factory.parse(file);
+        StudyDocument studyDoc;
+
+        try
+        {
+            studyDoc = StudyDocument.Factory.parse(file);
+        }
+        catch (XmlException e)
+        {
+            throw new StudyImportException("Study.xml file is not valid", e);
+        }
+
         ImportContext ctx = new ImportContext(_user, _c, studyDoc, _url);
 
         StudyDocument.Study studyXml = studyDoc.getStudy();
@@ -116,4 +129,56 @@ public class StudyImporter
     }
 
     public static class DatasetLockExistsException extends ServletException {}
+
+    public static class StudyImportException extends Exception
+    {
+        public StudyImportException(String message)
+        {
+            super(message);
+        }
+
+        public StudyImportException(String message, Throwable t)
+        {
+            super(message + ": " + t.getMessage());
+        }
+    }
+
+    public static File getStudyDir(File root, String dirName, String source) throws StudyImportException
+    {
+        File dir = null != dirName ? new File(root, dirName) : root;
+
+        if (!dir.exists())
+            throw new StudyImporter.StudyImportException(source + " refers to a directory that does not exist: " + getRelativePath(root, dir, dirName));
+
+        if (!dir.isDirectory())
+            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, dir, dirName) + ": expected a directory but found a file");
+
+        return dir;
+    }
+
+    public static File getStudyFile(File root, File dir, String name, String source) throws StudyImportException
+    {
+        File file = new File(dir, name);
+
+        if (!file.exists())
+            throw new StudyImporter.StudyImportException(source + " refers to a file that does not exist: " + getRelativePath(root, file, name));
+
+        if (!file.isFile())
+            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, file, name) + ": expected a file but found a directory");
+
+        return file;
+    }
+
+    private static String getRelativePath(File root, File file, String name)
+    {
+        String relativePath = name;
+
+            String rootPath = root.getAbsolutePath();
+            String filePath = file.getAbsolutePath();
+
+            if (filePath.startsWith(rootPath))
+                relativePath = filePath.substring(rootPath.length());
+
+        return relativePath;
+    }
 }

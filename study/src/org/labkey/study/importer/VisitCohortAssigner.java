@@ -18,11 +18,10 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.Study;
 import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.StudyDocument;
 
@@ -39,38 +38,35 @@ public class VisitCohortAssigner
 {
     // Parses the whole visit map again to retrieve the cohort assigments; should cache info from the first parsing
     // somewhere in the ImportContext
-    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException
+    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, StudyImporter.StudyImportException
     {
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
 
         if (null != visitsXml)
         {
-            File visitMap = new File(root, visitsXml.getFile());
+            File visitMap = StudyImporter.getStudyFile(root, root, visitsXml.getFile(), "Study.xml");
 
-            if (visitMap.exists())
+            StudyManager studyManager = StudyManager.getInstance();
+            VisitManager visitManager = studyManager.getVisitManager(study);
+            Container c = ctx.getContainer();
+            User user = ctx.getUser();
+
+            VisitMapImporter.Format vmFormat = VisitMapImporter.Format.getFormat(visitMap);
+            String contents = PageFlowUtil.getFileContentsAsString(visitMap);
+            List<VisitMapRecord> records = vmFormat.getReader().getRecords(contents);
+
+            for (VisitMapRecord record : records)
             {
-                StudyManager studyManager = StudyManager.getInstance();
-                VisitManager visitManager = studyManager.getVisitManager(study);
-                Container c = ctx.getContainer();
-                User user = ctx.getUser();
+                VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
 
-                VisitMapImporter.Format vmFormat = VisitMapImporter.Format.getFormat(visitMap);
-                String contents = PageFlowUtil.getFileContentsAsString(visitMap);
-                List<VisitMapRecord> records = vmFormat.getReader().getRecords(contents);
+                String oldCohortLabel = null != visit.getCohort() ? visit.getCohort().getLabel() : null;
 
-                for (VisitMapRecord record : records)
+                if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, record.getCohort()))
                 {
-                    VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
-
-                    String oldCohortLabel = null != visit.getCohort() ? visit.getCohort().getLabel() : null;
-
-                    if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, record.getCohort()))
-                    {
-                        CohortImpl cohort = studyManager.getCohortByLabel(c, user, record.getCohort());
-                        VisitImpl mutable = visit.createMutable();
-                        mutable.setCohortId(cohort.getRowId());
-                        StudyManager.getInstance().updateVisit(ctx.getUser(), mutable);
-                    }
+                    CohortImpl cohort = studyManager.getCohortByLabel(c, user, record.getCohort());
+                    VisitImpl mutable = visit.createMutable();
+                    mutable.setCohortId(cohort.getRowId());
+                    StudyManager.getInstance().updateVisit(ctx.getUser(), mutable);
                 }
             }
         }

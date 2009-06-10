@@ -32,7 +32,7 @@ import java.sql.SQLException;
  */
 public class SpecimenArchiveImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException
+    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImporter.StudyImportException
     {
         StudyDocument.Study.Specimens specimens = ctx.getStudyXml().getSpecimens();
 
@@ -43,8 +43,9 @@ public class SpecimenArchiveImporter
             // TODO: support specimen archives that are not zipped
             RepositoryType.Enum repositoryType = specimens.getRepositoryType();
             StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
-            File specimenDir = (null == specimens.getDir() ? root : new File(root, specimens.getDir()));
-            File specimenFile = new File(specimenDir, specimens.getFile());
+
+            File specimenDir = StudyImporter.getStudyDir(root, specimens.getDir(), "Study.xml");
+            File specimenFile = StudyImporter.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
             SpringSpecimenController.submitSpecimenBatch(c, ctx.getUser(), ctx.getUrl(), specimenFile);
         }
     }

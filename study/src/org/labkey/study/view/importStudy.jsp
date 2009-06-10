@@ -22,7 +22,7 @@
 %>
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
-    <%=formatMissedErrorsInTable("form", 1)%>
+    <%=formatMissedErrorsInTable("form", 2)%>
 <tr>
     <td><input type="radio" name="source" value="zip" checked>Import from a .zip file</td>
     <td><input type="file" name="studyZip" size="50"></td>

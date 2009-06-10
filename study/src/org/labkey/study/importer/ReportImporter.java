@@ -30,13 +30,13 @@ import java.sql.SQLException;
  */
 public class ReportImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException
+    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImporter.StudyImportException
     {
         StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().getReports();
 
         if (null != reportsXml)
         {
-            File reportsDir = new File(root, reportsXml.getDir());
+            File reportsDir = StudyImporter.getStudyDir(root, reportsXml.getDir(), "Study.xml");
 
             File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
