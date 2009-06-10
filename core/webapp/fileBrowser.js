@@ -1913,7 +1913,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 row("Created By", $h(data.createdBy));
             if (startsWith(data.contentType,"image/"))
             {
-                row("Size","<span id=detailsImgSize></span>");
+                row("Dimensions","<span id=detailsImgSize></span>");
                 var image = new Image();
                 image.onload = function()
                 {

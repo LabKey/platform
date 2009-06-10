@@ -215,9 +215,9 @@ Ext.onReady(function()
     {
         window.location = <%=PageFlowUtil.jsString(listpage.loginURL.getLocalURIString())%>;    
     }});
-    
+
     fileSystem = new LABKEY.WebdavFileSystem({
-        baseUrl:<%=PageFlowUtil.jsString(request.getContextPath()+'/'+WebdavService.getServletPath())%>,
+        baseUrl:<%=PageFlowUtil.jsString(request.getContextPath()+'/'+(request.getServletPath().equals("/" + WebdavService.getServletPath()) ? WebdavService.getServletPath() + "/": ""))%>,
         rootName:<%=PageFlowUtil.jsString(app.getServerName())%>});
 
     fileBrowser = new LABKEY.FileBrowser({
