@@ -85,7 +85,7 @@ public class DatasetImporter
                 String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
 
                 if (null != metaDataFilename)
-                    reader = new SchemaXmlReader(study, StudyImporter.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile()), extraProps);
+                    reader = new SchemaXmlReader(study, root, StudyImporter.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile()), extraProps);
             }
 
             if (null == reader)
@@ -174,7 +174,15 @@ public class DatasetImporter
             if (null != datasetsXmlFilename)
             {
                 File datasetsXmlFile = StudyImporter.getStudyFile(root, datasetDir, datasetsXmlFilename, "Study.xml");
-                return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
+
+                try
+                {
+                    return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
+                }
+                catch (XmlException e)
+                {
+                    throw new StudyImporter.StudyImportException(datasetsXmlFilename + " is not valid", e);
+                }
             }
         }
 

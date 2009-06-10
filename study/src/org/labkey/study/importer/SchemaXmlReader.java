@@ -45,9 +45,19 @@ public class SchemaXmlReader implements SchemaReader
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
 
-    public SchemaXmlReader(StudyImpl study, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException
+    public SchemaXmlReader(StudyImpl study, File root, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImporter.StudyImportException
     {
-        TablesDocument tablesDoc = TablesDocument.Factory.parse(metaDataFile);
+        TablesDocument tablesDoc = null;
+
+        try
+        {
+            tablesDoc = TablesDocument.Factory.parse(metaDataFile);
+        }
+        catch (XmlException e)
+        {
+            throw new StudyImporter.StudyImportException(StudyImporter.getRelativePath(root, metaDataFile, metaDataFile.getName()));
+        }
+
         TablesDocument.Tables tablesXml = tablesDoc.getTables();
 
         _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>(tablesXml.getTableArray().length);

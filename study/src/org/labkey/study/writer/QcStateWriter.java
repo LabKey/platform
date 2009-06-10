@@ -33,7 +33,7 @@ public class QcStateWriter implements Writer<StudyImpl>
 
     public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception
     {
-        // TODO: Write other QC properties
+        // TODO: Write out the action QC states
         StudyDocument.Study.QcStates qcStatesXml = ctx.getStudyXml().addNewQcStates();
         qcStatesXml.setShowPrivateDataByDefault(study.isShowPrivateDataByDefault());
     }

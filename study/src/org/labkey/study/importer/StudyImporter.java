@@ -169,15 +169,15 @@ public class StudyImporter
         return file;
     }
 
-    private static String getRelativePath(File root, File file, String name)
+    // Return a filepath relative to root... this provides help path information but hides the pipeline root path.
+    public static String getRelativePath(File root, File file, String name)
     {
         String relativePath = name;
+        String rootPath = root.getAbsolutePath();
+        String filePath = file.getAbsolutePath();
 
-            String rootPath = root.getAbsolutePath();
-            String filePath = file.getAbsolutePath();
-
-            if (filePath.startsWith(rootPath))
-                relativePath = filePath.substring(rootPath.length());
+        if (filePath.startsWith(rootPath))
+            relativePath = filePath.substring(rootPath.length());
 
         return relativePath;
     }

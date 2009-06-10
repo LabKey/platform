@@ -33,7 +33,8 @@ public class StudyWriter implements Writer<StudyImpl>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
-    public static final List<Writer<StudyImpl>> WRITERS = Arrays.asList(
+    // New up the writers every time since these classes can be stateful
+    public final List<Writer<StudyImpl>> WRITERS = Arrays.asList(
         new VisitMapWriter(),
         new CohortWriter(),
         new QcStateWriter(),
