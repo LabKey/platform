@@ -203,6 +203,13 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            Container c = getContainer();
+            if (c.isRoot())
+                root.addChild("Site Permissions");
+            else if (c.isProject())
+                root.addChild("Project Permissions");
+            else
+                root.addChild("Folder Permissions");
             return root;
         }
     }
