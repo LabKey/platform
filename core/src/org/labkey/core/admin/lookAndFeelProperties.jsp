@@ -42,6 +42,7 @@
     <td colspan=2>&nbsp;</td>
 </tr>
 
+<% if (c.isProject()) {%>
 <tr>
     <td colspan=2>Security defaults</td>
 </tr>
@@ -54,7 +55,7 @@
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
-
+<% } %>
 <tr>
     <td colspan=2>Customize the look and feel of your LabKey Server installation (<%=bean.helpLink%>)</td>
 </tr>
