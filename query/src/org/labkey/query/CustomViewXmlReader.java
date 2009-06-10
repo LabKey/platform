@@ -187,7 +187,7 @@ public class CustomViewXmlReader
 
     protected List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> loadColumns(ColumnsType columns)
     {
-        List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>>();
+        List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>>();
 
         if(null == columns)
             return ret;

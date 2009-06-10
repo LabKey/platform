@@ -76,9 +76,19 @@ public class QueryImporter
                     throw new ServletException("QueryImport: SQL file \"" + sqlFile.getName() + "\" has no corresponding meta data file.");
 
                 String sql = PageFlowUtil.getFileContentsAsString(sqlFile);
-                QueryType queryXml = QueryDocument.Factory.parse(metaFile).getQuery();
 
-                // For now, just delete if a query by this name already exists.  TODO: Merge
+                QueryType queryXml;
+
+                try
+                {
+                    queryXml = QueryDocument.Factory.parse(metaFile).getQuery();
+                }
+                catch (XmlException e)
+                {
+                    throw new StudyImporter.InvalidFileException(root, metaFile, e);
+                }
+
+                // For now, just delete if a query by this name already exists.
                 QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
 
                 if (null != oldQuery)

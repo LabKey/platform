@@ -76,7 +76,7 @@ public class VisitMapImporter
         }
     }
 
-    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors) throws SQLException
+    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors) throws SQLException, StudyImporter.StudyImportException
     {
         if (content == null)
         {

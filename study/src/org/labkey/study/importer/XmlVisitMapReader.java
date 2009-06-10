@@ -18,6 +18,8 @@ package org.labkey.study.importer;
 import org.labkey.study.xml.VisitMapDocument;
 import org.labkey.study.xml.DatasetType;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlError;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -29,46 +31,50 @@ import java.util.ArrayList;
  */
 public class XmlVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String xml)
+    public List<VisitMapRecord> getRecords(String xml) throws StudyImporter.StudyImportException
     {
+        VisitMapDocument doc;
+
         try
         {
-            VisitMapDocument doc = VisitMapDocument.Factory.parse(xml);
+            doc = VisitMapDocument.Factory.parse(xml);
+        }
+        catch (XmlException x)
+        {
+            // TODO: Use InvalidFileException... but need to pass in root and file instead of an xml string
+            XmlError error = x.getError();
+            throw new StudyImporter.StudyImportException("visit_map.xml is not valid: " + error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
+        }
 
-            VisitMapDocument.VisitMap.Visit[] visitsXml = doc.getVisitMap().getVisitArray();
-            List<VisitMapRecord> visits = new ArrayList<VisitMapRecord>(visitsXml.length);
+        VisitMapDocument.VisitMap.Visit[] visitsXml = doc.getVisitMap().getVisitArray();
+        List<VisitMapRecord> visits = new ArrayList<VisitMapRecord>(visitsXml.length);
 
-            for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
+        for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
+        {
+            double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
+
+            List<Integer> required = new ArrayList<Integer>();
+            List<Integer> optional = new ArrayList<Integer>();
+
+            if (null != visitXml.getDatasets())
             {
-                double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
-
-                List<Integer> required = new ArrayList<Integer>();
-                List<Integer> optional = new ArrayList<Integer>();
-
-                if (null != visitXml.getDatasets())
+                for (VisitMapDocument.VisitMap.Visit.Datasets.Dataset dataset : visitXml.getDatasets().getDatasetArray())
                 {
-                    for (VisitMapDocument.VisitMap.Visit.Datasets.Dataset dataset : visitXml.getDatasets().getDatasetArray())
-                    {
-                        if (dataset.getType() == DatasetType.REQUIRED)
-                            required.add(dataset.getId());
-                        else
-                            optional.add(dataset.getId());
-                    }
+                    if (dataset.getType() == DatasetType.REQUIRED)
+                        required.add(dataset.getId());
+                    else
+                        optional.add(dataset.getId());
                 }
-
-                VisitMapRecord record = new VisitMapRecord(visitXml.getSequenceNum(), maxSequenceNum, visitXml.getTypeCode(),
-                        visitXml.getLabel(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(),
-                        ArrayUtils.toPrimitive(required.toArray(new Integer[required.size()])),
-                        ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault());
-
-                visits.add(record);
             }
 
-            return visits;
+            VisitMapRecord record = new VisitMapRecord(visitXml.getSequenceNum(), maxSequenceNum, visitXml.getTypeCode(),
+                    visitXml.getLabel(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(),
+                    ArrayUtils.toPrimitive(required.toArray(new Integer[required.size()])),
+                    ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault());
+
+            visits.add(record);
         }
-        catch (Exception x)
-        {
-            throw new RuntimeException(x);
-        }
+
+        return visits;
     }
 }

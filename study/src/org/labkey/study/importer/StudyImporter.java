@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlError;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
@@ -91,7 +92,7 @@ public class StudyImporter
         }
         catch (XmlException e)
         {
-            throw new StudyImportException("Study.xml file is not valid", e);
+            throw new InvalidFileException(_root, file, e);
         }
 
         ImportContext ctx = new ImportContext(_user, _c, studyDoc, _url);
@@ -143,15 +144,40 @@ public class StudyImporter
         }
     }
 
+    public static class InvalidFileException extends StudyImportException
+    {
+        public InvalidFileException(File root, File file, Throwable t)
+        {
+            super(getErrorString(root, file, t.getMessage()));
+        }
+
+        public InvalidFileException(File root, File file, XmlException e)
+        {
+            super(getErrorString(root, file, e));
+        }
+
+        // Special handling for XmlException: e.getMessage() includes absolute path to file, which don't want to display
+        private static String getErrorString(File root, File file, XmlException e)
+        {
+            XmlError error = e.getError();
+            return getErrorString(root, file, error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
+        }
+
+        private static String getErrorString(File root, File file, String message)
+        {
+            return StudyImporter.getRelativePath(root, file) + " is not valid: " + message;
+        }
+    }
+
     public static File getStudyDir(File root, String dirName, String source) throws StudyImportException
     {
         File dir = null != dirName ? new File(root, dirName) : root;
 
         if (!dir.exists())
-            throw new StudyImporter.StudyImportException(source + " refers to a directory that does not exist: " + getRelativePath(root, dir, dirName));
+            throw new StudyImporter.StudyImportException(source + " refers to a directory that does not exist: " + getRelativePath(root, dir));
 
         if (!dir.isDirectory())
-            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, dir, dirName) + ": expected a directory but found a file");
+            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, dir) + ": expected a directory but found a file");
 
         return dir;
     }
@@ -161,24 +187,23 @@ public class StudyImporter
         File file = new File(dir, name);
 
         if (!file.exists())
-            throw new StudyImporter.StudyImportException(source + " refers to a file that does not exist: " + getRelativePath(root, file, name));
+            throw new StudyImporter.StudyImportException(source + " refers to a file that does not exist: " + getRelativePath(root, file));
 
         if (!file.isFile())
-            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, file, name) + ": expected a file but found a directory");
+            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, file) + ": expected a file but found a directory");
 
         return file;
     }
 
     // Return a filepath relative to root... this provides help path information but hides the pipeline root path.
-    public static String getRelativePath(File root, File file, String name)
+    public static String getRelativePath(File root, File file)
     {
-        String relativePath = name;
         String rootPath = root.getAbsolutePath();
         String filePath = file.getAbsolutePath();
 
         if (filePath.startsWith(rootPath))
-            relativePath = filePath.substring(rootPath.length());
-
-        return relativePath;
+            return filePath.substring(rootPath.length());
+        else
+            return file.getName();
     }
 }

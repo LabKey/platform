@@ -181,7 +181,7 @@ public class DatasetImporter
                 }
                 catch (XmlException e)
                 {
-                    throw new StudyImporter.StudyImportException(datasetsXmlFilename + " is not valid", e);
+                    throw new StudyImporter.InvalidFileException(root, datasetsXmlFile, e);
                 }
             }
         }

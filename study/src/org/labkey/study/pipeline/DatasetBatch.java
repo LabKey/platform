@@ -578,7 +578,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
             if (datasetDefinition == null)
                 errors.add("Dataset not defined");
             else if (datasetDefinition.getTypeURI() == null)
-                errors.add("Dataset type is not defined");
+                errors.add("Dataset " + (null != datasetDefinition.getName() ? datasetDefinition.getName() + ": " : "") + "type is not defined");
 
             if (action == Action.DELETE)
                 return;

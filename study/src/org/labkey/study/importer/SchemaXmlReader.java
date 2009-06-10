@@ -47,7 +47,7 @@ public class SchemaXmlReader implements SchemaReader
 
     public SchemaXmlReader(StudyImpl study, File root, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImporter.StudyImportException
     {
-        TablesDocument tablesDoc = null;
+        TablesDocument tablesDoc;
 
         try
         {
@@ -55,7 +55,7 @@ public class SchemaXmlReader implements SchemaReader
         }
         catch (XmlException e)
         {
-            throw new StudyImporter.StudyImportException(StudyImporter.getRelativePath(root, metaDataFile, metaDataFile.getName()));
+            throw new StudyImporter.InvalidFileException(root, metaDataFile, e);
         }
 
         TablesDocument.Tables tablesXml = tablesDoc.getTables();
