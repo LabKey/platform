@@ -44,8 +44,7 @@ public class SpecimenCoordinatorRole extends AbstractRole
                 ManageSpecimenActorsPermission.class,
                 ManageStudyPermission.class,
                 RequestSpecimensPermission.class,
-                SetSpecimenCommentsPermission.class,
-                ViewSpecimensPermission.class
+                SetSpecimenCommentsPermission.class
                 );
     }
 }

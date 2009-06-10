@@ -38,7 +38,6 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
@@ -73,7 +72,6 @@ import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
-import org.labkey.study.security.permissions.ViewSpecimensPermission;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.security.roles.AssayDesignerRole;
@@ -194,9 +192,6 @@ public class StudyModule extends DefaultModule
         RoleManager.registerRole(new SpecimenRequesterRole());
         RoleManager.registerRole(new AssayDesignerRole());
 
-        //add view specimen perm to reader role (all readers are allowed to see available specimens)
-        RoleManager.getRole(ReaderRole.class).addPermission(ViewSpecimensPermission.class);
-        
         PipelineService.get().registerPipelineProvider(new StudyPipeline());
         ContainerManager.addContainerListener(new StudyContainerListener());
         AssayPublishService.register(new AssayPublishManager());

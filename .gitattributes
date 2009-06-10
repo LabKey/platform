@@ -2218,7 +2218,6 @@ study/src/org/labkey/study/security/permissions/ManageSpecimenActorsPermission.j
 study/src/org/labkey/study/security/permissions/ManageStudyPermission.java -text
 study/src/org/labkey/study/security/permissions/RequestSpecimensPermission.java -text
 study/src/org/labkey/study/security/permissions/SetSpecimenCommentsPermission.java -text
-study/src/org/labkey/study/security/permissions/ViewSpecimensPermission.java -text
 study/src/org/labkey/study/security/roles/AssayDesignerRole.java -text
 study/src/org/labkey/study/security/roles/SpecimenCoordinatorRole.java -text
 study/src/org/labkey/study/security/roles/SpecimenRequesterRole.java -text

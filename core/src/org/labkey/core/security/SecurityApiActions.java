@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.study.StudyService;
@@ -532,6 +533,7 @@ public class SecurityApiActions
             //special cases for relevant roles:
             // - don't include project admin if this is not a project
             // - don't include study-related roles if no study
+            // - don't include restricted reader
             if (!container.isProject())
                 relevantRoles.remove(RoleManager.getRole(ProjectAdminRole.class).getUniqueName());
             if (null == StudyService.get().getStudy(container))
@@ -541,6 +543,9 @@ public class SecurityApiActions
                     relevantRoles.remove(studyRole.getUniqueName());
                 }
             }
+            //CONSIDER: restricted reader is assignable, but maybe we need another method on Role
+            //that says whether this role should be displayed in the permissions UI?
+            relevantRoles.remove(RoleManager.getRole(RestrictedReaderRole.class).getUniqueName());
 
             resp.put("relevantRoles", relevantRoles);
             return resp;

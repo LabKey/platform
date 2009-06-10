@@ -31,7 +31,7 @@ public class AssayDesignerRole extends AbstractRole
     public AssayDesignerRole()
     {
         super("Assay Designer",
-                "An assay designer may perform several actions related to designing assays.",
+                "Assay designers may perform several actions related to designing assays.",
                 StudyModule.class,
                 DesignAssayPermission.class,
                 DesignListPermission.class
