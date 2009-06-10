@@ -1699,7 +1699,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         // reload policy
         S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
         // feedback
-        var mb = Ext.MessageBox.show({title : 'Save', msg:'<div align=center><h3 style="color:green;">save successful</h3></div>', width:150, animEl:this.saveButton});
+        var mb = Ext.MessageBox.show({title : 'Save', msg:'<div align=center><span style="color:green; font-weight:bold; font-size:133%;">save successful</span></div>', width:150, animEl:this.saveButton});
         var w = mb.getDialog();
         var save = w.el.getStyles();
         w.el.pause(1);
