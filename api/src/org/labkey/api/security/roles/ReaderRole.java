@@ -27,7 +27,7 @@ public class ReaderRole extends AbstractRole
 {
     public ReaderRole()
     {
-        super("Reader", "May read information but not change anything.",
+        super("Reader", "Readers may read information but may not change anything.",
                 ReadPermission.class, ReadSomePermission.class);
     }
 }

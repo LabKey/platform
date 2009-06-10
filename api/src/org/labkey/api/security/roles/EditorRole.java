@@ -26,7 +26,7 @@ public class EditorRole extends AbstractRole
 {
     public EditorRole()
     {
-        super("Editor", "May read, add, update and delete information.",
+        super("Editor", "Editors may read, add, update and delete information.",
                 ReadPermission.class, ReadSomePermission.class, 
                 InsertPermission.class, UpdatePermission.class,
                 DeletePermission.class);

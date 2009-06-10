@@ -28,7 +28,7 @@ public class AuthorRole extends AbstractRole
 {
     public AuthorRole()
     {
-        super("Author", "May read and add information, but may update and delete only information they added.",
+        super("Author", "Authors may read and add information in some cases, but may update and delete only information they added.",
                 ReadPermission.class,
                 ReadSomePermission.class,
                 InsertPermission.class);

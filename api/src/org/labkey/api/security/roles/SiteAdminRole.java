@@ -30,7 +30,7 @@ public class SiteAdminRole extends AbstractContextualRole
 {
     public SiteAdminRole()
     {
-        super("Site Administrator", "The Site Administrator has full control over the entire system.",
+        super("Site Administrator", "Site Administrators have full control over the entire system.",
                 ReadPermission.class,
                 ReadSomePermission.class,
                 UpdatePermission.class,

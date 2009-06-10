@@ -26,7 +26,7 @@ public class SubmitterRole extends AbstractRole
 {
     public SubmitterRole()
     {
-        super("Submitter", "May submit new information, but may not read or change anything.",
+        super("Submitter", "Submitters may submit new information, but may not read or change anything.",
                 InsertPermission.class);
     }
 }

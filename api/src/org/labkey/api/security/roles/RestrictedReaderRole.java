@@ -26,7 +26,7 @@ public class RestrictedReaderRole extends AbstractRole
 {
     public RestrictedReaderRole()
     {
-        super("Restricted Reader", "Users may read some information, but not all.",
+        super("Restricted Reader", "Restricted Readers may read some information, but not all.",
                 ReadSomePermission.class);
     }
 }
