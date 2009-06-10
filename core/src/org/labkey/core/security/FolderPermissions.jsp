@@ -62,7 +62,7 @@ var securityCache = new SecurityCache({
     folder:<%=PageFlowUtil.jsString(c.getId())%>
 });
 
-var policyEditor;
+var policyEditor = null;
 </script>
 
 <%--
@@ -79,7 +79,7 @@ var doneURL = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIS
 
 function done()
 {
-    if (!policyEditor)
+    if (!policyEditor || !policyEditor.isDirty())
         window.location = doneURL;
     else
     {
