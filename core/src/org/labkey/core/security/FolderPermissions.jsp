@@ -95,6 +95,8 @@ function save()
         policyEditor.save();
 }
 
+var autoScroll = false;
+
 Ext.onReady(function(){
 
     if (doneURL)
@@ -110,12 +112,17 @@ Ext.onReady(function(){
         tabItems[i].contentEl = $(tabItems[i].contentEl);
 
     tabPanel = new Ext.TabPanel({
-        autoScroll : true,
+        autoScroll : autoScroll,
+        autoHeight : !autoScroll,
         activeItem : 0,
         border : false,
         defaults: {style : {padding:'5px'}},
         items : tabItems
     });
+
+    $('tabBoxDiv').update('');
+    tabPanel.render('tabBoxDiv');
+    tabPanel.strip.applyStyles({'background':'#ffffff'});
 
     Ext.EventManager.onWindowResize(function(w,h)
     {
@@ -125,14 +132,9 @@ Ext.onReady(function(){
         var size = {
             width : Math.max(100,w-xy[0]-20),
             height : Math.max(100,h-xy[1]-20)};
-        tabPanel.setSize(size);
+        tabPanel.setSize(size.width, autoScroll ? size.height : undefined);
         tabPanel.doLayout();
     });
-
-    $('tabBoxDiv').update('');
-    tabPanel.render('tabBoxDiv');
-    tabPanel.strip.applyStyles({'background':'#ffffff'});
-
     Ext.EventManager.fireWindowResize();
 });
 </script>
@@ -185,8 +187,8 @@ Ext.onReady(function(){
         var groupsPanel = new Ext.Panel({
             border : false,
             //border : true, style:{border:'solid 1px red'},
-            //autoScroll:true,
-            autoHeight:true,
+            autoScroll:autoScroll,
+            autoHeight:!autoScroll,
             items : items
         });
         groupsPanel._adjustSize = function()
@@ -203,9 +205,13 @@ Ext.onReady(function(){
             }
         };
         groupsPanel.render(ct);
-        groupsPanel._adjustSize();
-        tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
-        tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
+
+        if (autoScroll)
+        {
+            groupsPanel._adjustSize();
+            tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
+            tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
+        }
 
         if (canEdit)
         {
