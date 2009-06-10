@@ -33,19 +33,6 @@ public class StudyWriter implements Writer<StudyImpl>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
-    // New up the writers every time since these classes can be stateful
-    public final List<Writer<StudyImpl>> WRITERS = Arrays.asList(
-        new VisitMapWriter(),
-        new CohortWriter(),
-        new QcStateWriter(),
-        new DatasetWriter(),
-        new SpecimenArchiveWriter(),
-        new QueryWriter(),
-        new CustomViewWriter(),
-        new ReportWriter(),
-        new StudyXmlWriter()  // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
-    );
-
     private final Set<String> _dataTypes;
 
     public StudyWriter()
@@ -67,12 +54,28 @@ public class StudyWriter implements Writer<StudyImpl>
     {
         LOG.info("Exporting study to " + fs.getLocation());
 
-        for (Writer<StudyImpl> writer : WRITERS)
+        for (Writer<StudyImpl> writer : getWriters())
         {
             if (null == _dataTypes || null == writer.getSelectionText() || _dataTypes.contains(writer.getSelectionText()))
                 writer.write(study, ctx, fs);
         }
 
         LOG.info("Done exporting study to " + fs.getLocation());
+    }
+
+    public static List<Writer<StudyImpl>> getWriters()
+    {
+        // New up the writers every time since these classes can be stateful
+        return Arrays.asList(
+            new VisitMapWriter(),
+            new CohortWriter(),
+            new QcStateWriter(),
+            new DatasetWriter(),
+            new SpecimenArchiveWriter(),
+            new QueryWriter(),
+            new CustomViewWriter(),
+            new ReportWriter(),
+            new StudyXmlWriter()  // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
+        );
     }
 }

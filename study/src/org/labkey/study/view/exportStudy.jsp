@@ -39,7 +39,7 @@
             <td>Choose the study objects you wish to export:</td>
         </tr>
         <%
-            List<Writer<StudyImpl>> writers = StudyWriter.WRITERS;
+            List<Writer<StudyImpl>> writers = StudyWriter.getWriters();
 
             for (Writer writer : writers)
             {
