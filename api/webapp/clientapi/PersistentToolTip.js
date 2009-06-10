@@ -161,11 +161,12 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
 
     doAutoLoad : function ()
     {
-        if (this.initialConfig.tpl)
+        if (this.initialConfig.tpl || this.initialConfig.renderer)
         {
             var tpl = this.initialConfig.tpl;
+            var renderer = this.initialConfig.renderer;
             var self = this;
-            var renderer = {
+            var updaterRenderer = {
                 render: function (el, response, updateManager, callback)
                 {
                     var json = null;
@@ -174,17 +175,20 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
                         json = Ext.util.JSON.decode(response.responseText);
 
                     // XXX: error handling
-                    
+
                     if (json)
                     {
-                        tpl.overwrite(el, json);
+                        if (tpl)
+                            tpl.overwrite(el, json);
+                        else if (renderer)
+                            renderer(el, json);
                         self.syncSize();
 
                         LABKEY.Utils.ensureBoxVisible(self);
                     }
                 }
             };
-            this.body.getUpdater().setRenderer(renderer);
+            this.body.getUpdater().setRenderer(updaterRenderer);
         }
         LABKEY.ext.CalloutTip.superclass.doAutoLoad.call(this);
     }
