@@ -85,12 +85,17 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new BaseWebPartFactory(PipelineWebPart.getPartName()){
-            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+        return Arrays.asList(
+            new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
-                return new PipelineWebPart(portalCtx);
-            }
-        });
+                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+                {
+                    return new PipelineWebPart(portalCtx);
+                }
+            },
+
+            new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class)
+        );
     }
 
     public boolean hasScripts()

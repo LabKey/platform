@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
+<%@ page import="org.labkey.api.util.URIUtil" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -33,13 +35,23 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     ViewContext context = HttpView.currentContext();
     PipelineController.BrowseWebPart me = (PipelineController.BrowseWebPart) HttpView.currentView();
     PipeRoot root = me.getPipeRoot();
-    Container c = root.getContainer();
+    Container c = null == root ? me.getContainer() : root.getContainer();
 
     // prefix is where we want the tree rooted
     // TODO: applet and fileBrowser could use more consistent configuration parameters
     String rootName = c.getName();
     String webdavPrefix = context.getContextPath() + "/" + WebdavService.getServletPath();
     String rootPath = webdavPrefix + c.getEncodedPath() + "@pipeline/";
+
+    if (root == null || !URIUtil.exists(root.getUri()))
+    {
+        %>Pipeline directory is not set or does not exist on disk.<br><%
+        if (c.hasPermission(context.getUser(), AdminPermission.class))
+        {
+            %><%=PageFlowUtil.generateButton("Setup", new ActionURL(PipelineController.SetupAction.class, c))%><%
+        }
+        return;
+    }
 %>
 <script type="text/javascript" language="javascript">
     LABKEY.requiresExtJs(true);
@@ -48,7 +60,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     LABKEY.requiresScript("fileBrowser.js");
 </script>
 
-<div class="extContainer" style="padding-left:20px; padding-top:20px;">
+<div class="extContainer" style="<%=me.getAutoResize() ? "padding-left:10px;" : ""%>">
 <div id="files"/>
 </div>
 
@@ -68,6 +80,7 @@ function $c(a,b)
     return fileSystem.concatPaths(a,b);
 }
 
+var autoResize = <%= me.getAutoResize() ? "true" : "false" %>;
 var actionsConnection = new Ext.data.Connection({autoAbort:true});
 var activeMenus = {};
 var fileMap = {};
@@ -335,15 +348,10 @@ Ext.onReady(function()
 
     fileBrowser.render('files');
 
-//    var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
-//    resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
-
     var _resize = function(w,h)
     {
         if (!fileBrowser.rendered)
             return;
-//        w = document.body.clientWidth;
-//        h = document.body.clientHeight;
         var padding = [20,20];
         var xy = fileBrowser.el.getXY();
         var size = {
@@ -352,8 +360,17 @@ Ext.onReady(function()
         fileBrowser.setSize(size);
         fileBrowser.doLayout();
     };
-    Ext.EventManager.onWindowResize(_resize);
-    Ext.EventManager.fireWindowResize();
+
+    if (autoResize)
+    {
+        Ext.EventManager.onWindowResize(_resize);
+        Ext.EventManager.fireWindowResize();
+    }
+    else
+    {
+        var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
+        resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
+    }
 
     fileBrowser.start();
 });

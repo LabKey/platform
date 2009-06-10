@@ -593,13 +593,10 @@ public class PipelineController extends SpringActionController
 
         public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
         {
-            Container c = getContainer();
-            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-
-            if (pr == null || !URIUtil.exists(pr.getUri()))
-                return HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
             BrowseWebPart wp = new BrowseWebPart();
-            wp.setPipeRoot(pr);
+            wp.setContainer(getContainer());
+            wp._autoResize = true;
+            wp.setFrame(WebPartView.FrameType.NONE);
             return wp;
         }
 
@@ -611,24 +608,40 @@ public class PipelineController extends SpringActionController
     }
 
 
-    public class BrowseWebPart extends JspView<BrowseWebPart>
+    public static class BrowseWebPart extends JspView<BrowseWebPart>
     {
+        Container _c;
         PipeRoot _root;
+        boolean _autoResize = false;
         
-        BrowseWebPart()
+        public BrowseWebPart()
         {
             super(PipelineController.class, "browse.jsp", null, null);
             setModelBean(this);
+            setTitle("Pipeline Files");
+            setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
         }
 
-        void setPipeRoot(PipeRoot root)
+        void setContainer(Container c)
         {
-            _root = root;
+            _c = c;
         }
 
+        public Container getContainer()
+        {
+            return _c != null ? _c : getViewContext().getContainer();
+        }
+        
         public PipeRoot getPipeRoot()
         {
+            if (null == _root)
+                _root = PipelineService.get().findPipelineRoot(getContainer());
             return _root;
+        }
+
+        public boolean getAutoResize()
+        {
+            return _autoResize;
         }
     }
 
