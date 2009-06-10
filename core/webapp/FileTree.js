@@ -185,8 +185,13 @@ LABKEY.ext.FileTree = function (config)
 {
     Ext.apply(this, config);
 
-    this.path = config.path || _concatPaths(LABKEY.ActionURL.getContainer(),(this.browsePipeline ? "/%40pipeline" : ""));
+    this.path = config.path || _concatPaths(LABKEY.ActionURL.getContainer(),(this.browsePipeline ? "/@pipeline" : ""));
     this.baseURL = config.baseURL || _concatPaths(LABKEY.ActionURL.getContextPath(), "_webdav");
+
+    var parts = _pathParts(this.path);
+    for (var i = 0; i < parts.length; i++)
+        parts[i] = encodeURIComponent(parts[i]);
+    this.path = parts.join("/");
 
     if (this.multiSelect)
     {
@@ -369,11 +374,13 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
     {
         attr = attr || "id";
         var self = this;
+        var rootId = this.getRootNode()[attr];
         function stripId(id)
         {
-            var rootId = self.getRootNode()[attr];
             if (self.relativeToRoot && id.indexOf(rootId) == 0)
                 return id.substring(rootId.length);
+            if (self.browsePipeline && id.indexOf("/%40pipeline") > 0)
+                return id.substring(id.indexOf("/%40pipeline")+"/%40pipeline".length);
             return id;
         }
 
