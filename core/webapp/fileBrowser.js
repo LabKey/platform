@@ -2399,6 +2399,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         {
             // data store
             this.store.removeAll();
+            this.grid.view.scrollToTop();
             this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
 
             // address bar
