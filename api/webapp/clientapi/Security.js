@@ -868,7 +868,7 @@ LABKEY.Security = new function()
         },
 
         /**
-         * Removes a member from an existing groupo.
+         * Removes a member from an existing group.
          * @param config A configuration object with the following properties:
          * @param {String} config.groupId The id of the group from which you want to remove the member.
          * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to remove.
@@ -904,6 +904,46 @@ LABKEY.Security = new function()
                     'Content-Type' : 'application/json'
                 }
             });
+        },
+
+        /**
+         * Creates a new user account
+         * @param config A configuration object with the following properties:
+         * @param {String} config.email The new user's email address.
+         * @param {Boolean} config.sendEmail Set to false to stop the server from sending a welcome email to the user.
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with three properties: userId, email, and message.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
+         */
+        createNewUser : function(config)
+        {
+            var params = {
+                email: config.email,
+                sendEmail: config.sendEmail
+            };
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "createNewUser", config.containerPath),
+                method: "POST",
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData: params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
         }
+
     };
 };
