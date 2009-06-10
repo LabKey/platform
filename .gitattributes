@@ -1439,6 +1439,7 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -te
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
 portal/module.properties -text
 portal/src/org/labkey/portal/PortalModule.java -text
+portal/src/org/labkey/portal/customizeErrors.jsp -text
 portal/src/org/labkey/portal/customizeSearchWebPart.jsp -text
 portal/src/org/labkey/portal/search.jsp -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text

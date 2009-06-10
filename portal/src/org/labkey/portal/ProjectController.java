@@ -478,7 +478,12 @@ public class ProjectController extends SpringActionController
         {
             _webPart = Portal.getPart(form.getPageId(), form.getIndex());
             if (null == _webPart)
-                return HttpView.redirect(beginURL());
+            {
+                if (errors.hasErrors())
+                    return new JspView<Object>("/org/labkey/portal/customizeErrors.jsp", null, errors);
+                else
+                    return HttpView.redirect(beginURL());
+            }
 
             WebPartFactory desc = Portal.getPortalPart(_webPart.getName());
             assert (null != desc);
@@ -496,6 +501,12 @@ public class ProjectController extends SpringActionController
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
             Portal.WebPart webPart = Portal.getPart(form.getPageId(), form.getIndex());
+            if (null == webPart)
+            {
+                //the web part no longer exists--probably because another admin has deleted it
+                errors.reject(null, "The web part you are trying to customize no longer exists. It may have been removed by another administrator.");
+                return false;
+            }
 
             // Security check -- subclasses may have overridden isEditable for certain types of users
             WebPartFactory desc = Portal.getPortalPart(webPart.getName());
@@ -555,7 +566,7 @@ public class ProjectController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return (new BeginAction()).appendNavTrail(root)
-                    .addChild("Customize " + _webPart.getName());
+                    .addChild("Customize " + (null != _webPart ? _webPart.getName() : "Web Part"));
         }
     }
 
