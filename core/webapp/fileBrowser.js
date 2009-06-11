@@ -1734,6 +1734,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             return;
         this.fileSystem.uncacheListing(this.currentDirectory);
         this.changeDirectory(this.currentDirectory, true);
+        if (this.tree)
+        {
+            var node = this.tree.getNodeById(this.currentDirectory.data.path);
+            if (node)
+                node.reload();
+        }
     },
 
 
@@ -1758,8 +1764,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             return;
         if (!this.selectedRecord && !record)
             return;
-
-        this.selectedRecord = record;
+        this.selectedRecord = record || this.currentDirectory;
         this.fireEvent(BROWSER_EVENTS.selectionchange, record);
     },
 
@@ -2395,6 +2400,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         this.on(BROWSER_EVENTS.selectionchange, function(record)
         {
+            if (this.tree && record && !record.data.file)
+            {
+                var node = this.tree.getNodeById(record.data.path);
+                if (node && !node.isSelected())
+                    node.select();
+            }
             this.history = null;
             if (this.actions.showHistory)
                 this.actions.showHistory.disable();
@@ -2448,19 +2459,16 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             if (this.tree)
             {
                 var treePath = this.treePathFromPath(record.data.path, this.tree.getRootNode().id);
-                this.tree.expandPath(treePath, undefined, function(success,node)
+                this.tree.expandPath(treePath, undefined, (function(success,node)
                 {
-                    console.group("expandpath(" + treePath + ")");
-                    console.dir({id:node.id, uri:node.attributes.uri, expanded:node.expanded, children:node.childNodes.length});
-                    console.trace();
-                    console.groupEnd();
-                });
-                var node = this.tree.getNodeById(record.id);
-                if (node)
-                {
-                    if (node != this.tree.root) this.node.ensureVisible();
-                    node.select();
-                }
+                    if (node)
+                    {
+                        if (node != this.tree.root)
+                            node.ensureVisible();
+                        if (node.id == record.data.path)
+                            node.select();
+                    }
+                }).createDelegate(this));
             }
         }, this);
 
