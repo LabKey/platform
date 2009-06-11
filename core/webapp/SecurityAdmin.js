@@ -340,13 +340,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
             errorCallback: function(json,response)
             {
-                var exception = json.exception;
-                if (!exception)
-                {
-                    if (!Ext.form.VTypes.email(email))
-                        exception = "Invalid email: " + email;
-                }
-                Ext.Msg.alert("Error", exception || "Uknown error");
+                var exception = json.exception || json.exceptionClass;
+                if (-1 != exception.indexOf('$InvalidEmailException'))
+                    exception = "Invalid email: " + email;
+                Ext.Msg.alert("Error", $h(exception) || "Uknown error");
             }
         });
     },
