@@ -659,12 +659,18 @@ public abstract class DefaultModule implements Module
         //first try to get this from the exploded/source directory,
         //and if not found, try the class loader
         File file;
-        if(_loadFromSource)
-            file = new File(_sourcePath, path);
+        if (_loadFromSource)
+        {
+            //FIX: 8122 - if path does not start with /src, add that
+            if (!path.startsWith("/src"))
+                file = new File(_sourcePath, "/src" + path);
+            else
+                file = new File(_sourcePath, path);
+        }
         else
             file = new File(_explodedPath, path);
 
-        if(file.exists())
+        if (file.exists())
             return new FileInputStream(file);
         else
             return this.getClass().getResourceAsStream(path);
