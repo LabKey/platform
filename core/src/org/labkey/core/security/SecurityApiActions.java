@@ -23,10 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
-import org.labkey.api.security.roles.ProjectAdminRole;
-import org.labkey.api.security.roles.RestrictedReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.UnauthorizedException;
@@ -517,8 +514,25 @@ public class SecurityApiActions
 
             //get the policy
             SecurityPolicy policy = SecurityManager.getPolicy(resource);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ApiSimpleResponse resp = new ApiSimpleResponse("policy", policy.toMap());
+            //FIX: 8077 - if this is a subfolder and the policy is inherited from the project
+            // assign all principals in the project admin role to the folder admin role
+            if (!container.isRoot() && policy.getResource().getResourceId().equals(container.getProject().getResourceId()))
+            {
+                Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
+                Role fldrAdminRole = RoleManager.getRole(FolderAdminRole.class);
+
+                MutableSecurityPolicy mpolicy = new MutableSecurityPolicy(policy);
+                for (RoleAssignment ra : policy.getAssignments())
+                {
+                    if (ra.getRole().equals(projAdminRole))
+                        mpolicy.addRoleAssignment(SecurityManager.getPrincipal(ra.getUserId()), fldrAdminRole);
+                }
+                resp.put("policy", mpolicy.toMap());
+            }
+            else
+                resp.put("policy", policy.toMap());
 
             //add the relevant roles
             //for now, just return all assignable roles
