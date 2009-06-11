@@ -198,14 +198,14 @@
         <servlet-class>org.labkey.api.attachments.ImageServlet</servlet-class>
     </servlet>
 
-	<servlet>
+<!--	<servlet>
 		<servlet-name>webdav</servlet-name>
 		<servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
         <init-param>
           <param-name>resolver</param-name> 
           <param-value>org.labkey.api.webdav.WebdavResolverImpl</param-value>
         </init-param>
-	</servlet>
+	</servlet> -->
 
     <servlet>
         <servlet-name>static</servlet-name>
@@ -300,10 +300,10 @@
         <url-pattern>/files/*</url-pattern>
     </servlet-mapping>
 
-    <servlet-mapping>
+<!--    <servlet-mapping>
         <servlet-name>webdav</servlet-name>
         <url-pattern>/_webdav/*</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping> -->
 
     <servlet-mapping>
         <servlet-name>static</servlet-name>
@@ -311,7 +311,7 @@
     </servlet-mapping>
     
     <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
+        <welcome-file>/</welcome-file>
     </welcome-file-list>
     <taglib>
         <taglib-uri>/tags/struts-tiles</taglib-uri>

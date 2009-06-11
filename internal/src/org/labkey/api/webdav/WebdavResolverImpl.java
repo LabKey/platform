@@ -68,17 +68,25 @@ public class WebdavResolverImpl implements WebdavResolver
         return lookup("/");
     }
 
+    String _rootPath = "/" + WebdavService.getServletPath();
+
+    public String getRootPath()
+    {
+        return _rootPath;
+    }
+
     public Resource lookup(String fullPath)
     {
-        if (fullPath == null)
+        if (fullPath == null || !fullPath.startsWith(getRootPath()))
             return null;
+        String path = fullPath.substring(getRootPath().length());
 
         Resource root = getRoot();
-        if (fullPath.equals("/"))
+        if ("/".equals(path))
             return root;
 
         // start at the root and work down, to avoid lots of cache misses
-        ArrayList<String> paths = FileUtil.normalizeSplit(fullPath);
+        ArrayList<String> paths = FileUtil.normalizeSplit(path);
         if (paths == null)
             return null;
 
@@ -104,7 +112,7 @@ public class WebdavResolverImpl implements WebdavResolver
     synchronized Resource getRoot()
     {
         if (null == _root)
-            _root = new WebFolderResource(ContainerManager.getRoot(), null);
+            _root = new WebFolderResource(this, ContainerManager.getRoot(), null);
         return _root;
     }
 
@@ -191,8 +199,9 @@ public class WebdavResolverImpl implements WebdavResolver
             return c.getParent() == null ? "" : c.getParent().getPath();
         }
 
-        void invalidate(String path, boolean recursive)
+        void invalidate(String containerPath, boolean recursive)
         {
+            String path = getRootPath() + containerPath;
             remove(path);
             if (recursive)
                 removeUsingPrefix(c(path,""));
@@ -288,14 +297,16 @@ public class WebdavResolverImpl implements WebdavResolver
 
     public class WebFolderResource extends AbstractCollectionResource implements WebFolder
     {
+        WebdavResolver _resolver;
         final Container _c;
         final AttachmentDirectory _attachmentDirectory;
         final Resource _attachmentResource;
         ArrayList<String> _children = null;
 
-        WebFolderResource(Container c, AttachmentDirectory root)
+        WebFolderResource(WebdavResolver resolver, Container c, AttachmentDirectory root)
         {
-            super(c.getPath());
+            super(c(resolver.getRootPath(),c.getPath()));
+            _resolver = resolver;
             _c = c;
             _policy = c.getPolicy();
             _attachmentDirectory = root;
@@ -444,7 +455,7 @@ public class WebdavResolverImpl implements WebdavResolver
                     {
                         /* */
                     }
-                    resource = new WebFolderResource(c, dir);
+                    resource = new WebFolderResource(_resolver, c, dir);
                 }
                 else
                 {
@@ -612,17 +623,18 @@ public class WebdavResolverImpl implements WebdavResolver
             assertNull(resolver.lookup("/.."));
             assertNull(resolver.lookup(c.getPath() + "/./../../.."));
 
-            Resource root = resolver.lookup("/");
+            String rootPath = resolver.getRootPath();
+            Resource root = resolver.lookup(rootPath);
             assertNotNull(root);
             assertTrue(root.isCollection());
             assertTrue(root.canRead(user));
             assertFalse(root.canCreate(user));
 
-            Resource junit = resolver.lookup(c.getPath());
+            Resource junit = resolver.lookup(rootPath + c.getPath());
             assertNotNull(junit);
             assertTrue(junit.isCollection());
 
-            String pathTest = junit.getPath() + "/dav";
+            String pathTest = c.getPath() + "/dav";
             Container cTest = ContainerManager.ensureContainer(pathTest);
 
             MutableSecurityPolicy policyNone = new MutableSecurityPolicy(cTest);
@@ -630,7 +642,7 @@ public class WebdavResolverImpl implements WebdavResolver
             policyNone.addRoleAssignment(user, ReaderRole.class);
             SecurityManager.savePolicy(policyNone);
 
-            Resource rTest = resolver.lookup(pathTest);
+            Resource rTest = resolver.lookup(rootPath + pathTest);
             assertNotNull(rTest);
             assertTrue(rTest.canRead(user));
             assertFalse(rTest.canWrite(user));
@@ -644,20 +656,19 @@ public class WebdavResolverImpl implements WebdavResolver
             MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
             SecurityManager.savePolicy(policyRead);
-            rTest = resolver.lookup(pathTest);
+            rTest = resolver.lookup(rootPath + pathTest);
             assertTrue(rTest.canRead(guest));
 
             ContainerManager.rename(cTest, "webdav");
-            String pathNew = junit.getPath() + WebdavService.getServletPath();
-//            Container cTestNew = ContainerManager.getForPath(pathNew);
-            assertFalse(resolver.lookup(pathTest).exists());
-            assertNotNull(resolver.lookup(pathNew));
+            String pathNew = c.getPath() + "/webdav";
+            assertFalse(resolver.lookup(rootPath + pathTest).exists());
+            assertTrue(resolver.lookup(rootPath + pathNew).exists());
 
             names = resolver.lookup(junit.getPath()).listNames();
             assertTrue(names.contains("webdav"));
             assertFalse(names.contains("dav"));
 
-            Resource rNotFound = resolver.lookup("/NotFound/" + GUID.makeHash());
+            Resource rNotFound = resolver.lookup(rootPath + "/NotFound/" + GUID.makeHash());
             assertFalse(rNotFound.exists());
         }
 

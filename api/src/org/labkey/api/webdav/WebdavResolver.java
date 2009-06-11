@@ -40,6 +40,7 @@ import java.util.Set;
 public interface WebdavResolver
 {
     boolean requiresLogin();
+    String getRootPath();
     Resource lookup(String path);
     Resource welcome();
 

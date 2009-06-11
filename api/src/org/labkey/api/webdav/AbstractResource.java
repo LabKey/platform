@@ -45,7 +45,7 @@ import java.util.Set;
 */
 public abstract class AbstractResource implements WebdavResolver.Resource
 {
-    protected long _ts = System.currentTimeMillis();
+    protected long _ts = System.currentTimeMillis();                   
     private String _path;
     protected SecurityPolicy _policy;
     protected String _etag = null;
@@ -151,17 +151,11 @@ public abstract class AbstractResource implements WebdavResolver.Resource
 
     @NotNull
     public String getLocalHref(ViewContext context)
-    {
-        String href = c(context.getContextPath(), getServletPath(context), PageFlowUtil.encodePath(_path));
+    {                                             
+        String href = c(context.getContextPath(), PageFlowUtil.encodePath(_path));
         if (isCollection() && !href.endsWith("/"))
             href += "/";
         return href;
-    }
-
-
-    protected String getServletPath(ViewContext context)
-    {
-        return context.getRequest().getServletPath();
     }
 
 
