@@ -34,7 +34,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
     WebdavResolver.Resource resource = listpage.resource;
-    String path = resource.getPath();
+    String path = listpage.getDirectory();
     ViewContext context = HttpView.currentContext();
     AppProps app = AppProps.getInstance();
     User user = context.getUser();
@@ -217,7 +217,7 @@ Ext.onReady(function()
     }});
 
     fileSystem = new LABKEY.WebdavFileSystem({
-        baseUrl:<%=PageFlowUtil.jsString(request.getContextPath()+'/'+(request.getServletPath().equals("/" + WebdavService.getServletPath()) ? WebdavService.getServletPath() + "/": ""))%>,
+        baseUrl:<%=PageFlowUtil.jsString(request.getContextPath() + listpage.root)%>,
         rootName:<%=PageFlowUtil.jsString(app.getServerName())%>});
 
     fileBrowser = new LABKEY.FileBrowser({

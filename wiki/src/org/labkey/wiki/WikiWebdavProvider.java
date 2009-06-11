@@ -75,7 +75,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return null;
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
-        return WIKI_NAME.equals(name) ? new WikiProviderResource(c) : null;
+        return WIKI_NAME.equals(name) ? new WikiProviderResource(folder,c) : null;
     }
     
 
@@ -92,9 +92,9 @@ class WikiWebdavProvider implements WebdavService.Provider
     {
         Container _c;
         
-        WikiProviderResource(Container c)
+        WikiProviderResource(WebdavResolver.Resource parent, Container c)
         {
-            super(c.getPath(), WIKI_NAME);
+            super(parent.getPath(), WIKI_NAME);
             _c = c;
             _policy = c.getPolicy();
         }

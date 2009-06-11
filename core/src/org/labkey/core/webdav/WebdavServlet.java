@@ -50,11 +50,7 @@ public class WebdavServlet extends HttpServlet
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
-        String fullPath = request.getPathInfo();
-        if (fullPath == null)
-            fullPath = request.getServletPath();
-        if ((fullPath == null) || (fullPath.equals("")))
-            fullPath = "/";
+        String fullPath = (null==request.getServletPath()?"":request.getServletPath()) + (null==request.getPathInfo()?"":request.getPathInfo());
 
         // Store the original URL in case we need to redirect for authentication
         URLHelper helper = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL); 

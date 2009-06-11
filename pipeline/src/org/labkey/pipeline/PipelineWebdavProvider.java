@@ -62,16 +62,16 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         PipeRoot root = PipelineService.get().getPipelineRootSetting(c);
         if (null == root)
             return null;
-        return new PipelineFolderResource(c, root);
+        return new PipelineFolderResource(folder, c, root);
     }
 
     private class PipelineFolderResource extends FileSystemResource
     {
         Container c;
 
-        PipelineFolderResource(Container c, PipeRoot root)
+        PipelineFolderResource(WebdavResolver.Resource parent, Container c, PipeRoot root)
         {
-            super(c.getPath(), PIPELINE_LINK);
+            super(parent.getPath(), PIPELINE_LINK);
 
             this.c = c;
             URI uriRoot = (root != null) ? root.getUri(c) : null;

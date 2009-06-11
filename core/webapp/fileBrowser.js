@@ -1964,7 +1964,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         if (!this.fileSystem.ready)
         {
-            this.fileSystem.onReady(this.start.createDelegate(this));
+            this.fileSystem.onReady(this.start.createDelegate(this, [wd]));
             return;
         }
         if (this.tree)

@@ -35,6 +35,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
@@ -994,7 +995,7 @@ public class DavController extends SpringActionController
             xml.writeText(h(resource.getLocalHref(getViewContext())));
             xml.writeElement(null, "href", XMLWriter.CLOSING);
 
-            String displayName = resource.getPath().equals("/") ? WebdavService.getServletPath() : resource.getName();
+            String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
 
             switch (type)
             {
@@ -3125,8 +3126,15 @@ public class DavController extends SpringActionController
 
     public class ListPage
     {
+        public String root = "";
         public WebdavResolver.Resource resource;
         public ActionURL loginURL;
+        public String getDirectory()
+        {
+            String path = resource.getPath();
+            assert path.toLowerCase().startsWith(root);
+            return path.substring(root.length());
+        }
     }
 
     WebdavStatus listHtml(WebdavResolver.Resource resource)
@@ -3136,8 +3144,10 @@ public class DavController extends SpringActionController
             ListPage page = new ListPage();
             page.resource = resource;
             page.loginURL = getLoginURL();
+            if (resource.getPath().toLowerCase().startsWith(WebdavResolverImpl.get().getRootPath()))
+                page.root = WebdavResolverImpl.get().getRootPath();
 
-            JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "list.jsp", page);
+            JspView<ListPage> v = new JspView<ListPage>(DavController.class, "list.jsp", page);
             v.setFrame(WebPartView.FrameType.NONE);
             PageConfig config = new PageConfig();
             config.setTitle(resource.getPath() + "-- webdav");

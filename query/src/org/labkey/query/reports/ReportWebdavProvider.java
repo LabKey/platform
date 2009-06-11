@@ -59,7 +59,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
 
-        return VIEW_NAME.equals(name) ? new ViewProviderResource(c) : null;
+        return VIEW_NAME.equals(name) ? new ViewProviderResource(folder, c) : null;
     }
 
     private boolean hasViews(User user, Container c)
@@ -77,9 +77,9 @@ public class ReportWebdavProvider implements WebdavService.Provider
     {
         Container _c;
 
-        ViewProviderResource(Container c)
+        ViewProviderResource(WebdavResolver.Resource parent, Container c)
         {
-            super(c.getPath(), VIEW_NAME);
+            super(parent.getPath(), VIEW_NAME);
             _c = c;
             _policy = c.getPolicy();
         }
