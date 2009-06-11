@@ -288,6 +288,16 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return users;
     },
 
+    _addPrincipal : function(p)
+    {
+        var st = this.principalsStore;
+        var record = new st.reader.recordType(p,p.UserId);
+        this._applyPrincipalsSortOrder(record);
+        st.add(record);
+        st.applySort();
+        return record;
+    },
+
     createGroup : function(project, name, callback,scope)
     {
         var me = this;
@@ -295,11 +305,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         {
             var container = project == '/' ? null : project;
             var group = {UserId:obj.id, Name:obj.name, Container:container, Type:'g'};
-            var st = me.principalsStore;
-            var record = new st.reader.recordType(group,group.UserId);
-            me._applyPrincipalsSortOrder(record);
-            st.add(record);
-            st.applySort();
+            me._addPrincipal(group);
             if (typeof callback == 'function')
                 callback.call(scope || this, group);
         }});
@@ -319,6 +325,32 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         }
     },
 
+    createNewUser : function(email, sendEmail, callback, scope)
+    {
+        var me = this;
+        S.createNewUser({containerPath:'/', email:email, sendEmail:sendEmail,
+            successCallback : function(user,response)
+            {
+                // make user match the Principals query
+                var data = {UserId:user.userId, Name:user.email, Type:'u', Container:null};
+                var record = me._addPrincipal(data);
+                if (callback)
+                    callback.call(scope||this, data);
+            },
+
+            errorCallback: function(json,response)
+            {
+                var exception = json.exception;
+                if (!exception)
+                {
+                    if (!Ext.form.VTypes.email(email))
+                        exception = "Invalid email: " + email;
+                }
+                Ext.Msg.alert("Error", exception || "Uknown error");
+            }
+        });
+    },
+    
     addMembership : function(groupid, userid, callback, scope)
     {
         var group = this.getPrincipal(groupid);
@@ -753,8 +785,10 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         {
             if (deleteGroup)
                 Ext.fly(deleteGroup).dom.onclick = this.DeleteGroup_onClick.createDelegate(this);
-            this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, usersOnly:true});
+            this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, usersOnly:true, forceSelection:false});
             this.addPrincipalComboBox.on("select",this.Combo_onSelect,this);
+            this.addPrincipalComboBox.on("change",this.Combo_onChange,this);
+            this.addPrincipalComboBox.on("specialkey",this.Combo_onKeyPress,this);
             this.addPrincipalComboBox.render(principalWrapper);
             for (i=0 ; i<users.length ; i++)
             {
@@ -787,11 +821,27 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
         }
         combo.selectText();
+    },
+    
+    Combo_onChange : function(combo,email)
+    {
+        if (!email)
+            return;
+        this.cache.createNewUser(email, true, function(user)
+        {
+            var groupid = this.user.UserId;
+            var userid = user.UserId;
+            this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
+        }, this);
+    },
+
+    Combo_onKeyPress : function(combo, e)
+    {
+        if (e.ENTER != e.getKey())
+            return;
+        this.Combo_onChange(combo,combo.getValue());
     }
 });
-
-
-
 
 
 
