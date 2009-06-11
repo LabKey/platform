@@ -420,19 +420,19 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
     rootPath : "/",
     separator : "/",
 
-    listFiles : function(path, callback)    // callback(filesystem, success, path, records)
+    listFiles : function(path, callback, scope)    // callback(filesystem, success, path, records)
     {
         var files = this.directoryFromCache(path);
         if (files)
         {
             if (typeof callback == "function")
-                callback.defer(1, null, [this, true, path, files]);
+                callback.defer(1, scope||this, [this, true, path, files]);
         }
         else
         {
-            var ok = this.reloadFiles(path, callback);
+            var ok = this.reloadFiles(path, callback, scope);
             if (!ok && typeof callback == "function")
-                callback.defer(1, null, [this, false, path]);
+                callback.defer(1, scope||this, [this, false, path]);
         }
     },
 
@@ -477,7 +477,7 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
 
 
     // called by listFiles(), return false on immediate fail
-    reloadFiles : function(path, callback)
+    reloadFiles : function(path, callback, scope)
     {
         return false;
     },
@@ -812,12 +812,12 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     },
 
 
-    reloadFiles : function(path, callback)
+    reloadFiles : function(path, callback, scope)
     {
         var url = this.concatPaths(this.prefixUrl, encodeURI(path));
         this.connection.url = url;
 
-        var args = {url: url, path: path, callback:callback};
+        var args = {url: url, path: path, callback:callback.createDelegate(scope||this)};
         this.proxy.load({method:"PROPFIND",depth:"1"}, this.transferReader, this.processFiles, this, args);
         return true;
     },
@@ -906,13 +906,13 @@ Ext.extend(AppletFileSystem, FileSystem,
         alert("NYI");
     },
 
-    reloadFiles : function(directory, callback)
+    reloadFiles : function(directory, callback, scope)
     {
         var applet = this.getDropApplet();
         if (!applet)
         {
             this.retry++;
-            this.reloadFiles.defer(100, this, [directory, callback]);
+            this.reloadFiles.defer(100, this, [directory, callback, scope]);
             return true;
         }
         this.retry = 0;
@@ -948,7 +948,7 @@ Ext.extend(AppletFileSystem, FileSystem,
         }
         this._addFiles(directory, records);
         if (typeof callback == "function")
-            callback.defer(1, null, [this, true, directory, records]);
+            callback.defer(1, scope||this, [this, true, directory, records]);
         return true;
     }
 });
@@ -1022,7 +1022,7 @@ var FileListMenu = function(fileSystem, path, fn)
     if (records)
         populate.call(this, null, true, path, records);
     else
-        fileSystem.listFiles(path, populate.createDelegate(this));
+        fileSystem.listFiles(path, populate, this);
     if (typeof fn == "function")
     {
         this.on("click", function(menu,item,event)
@@ -1057,8 +1057,8 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         if (this.fireEvent("beforeload", this, node, callback) !== false)
         {
             var args = {node:node, callback:callback};
-            if (this.fileSystem.listFiles(node.id, this.listCallback.createDelegate(this, [args], true)))
-                return true;
+            this.fileSystem.listFiles(node.id, this.listCallback.createDelegate(this, [args], true));
+            return;
         }
         if (typeof callback == "function")
             callback();
@@ -1085,6 +1085,8 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             n.record = record;
             if (record.data.iconHref)
                 n.attributes.icon = record.data.iconHref;
+            console.log("createNodeFromRecord(" + record.id + "," + record.data.path + ")");
+            console.log("node.id: " + n.id);
         }
         return n;
     },
@@ -1099,6 +1101,12 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         }
         try
         {
+            var records = records.sort(function(a,b)
+            {
+                var A = a.data.name.toUpperCase(), B = b.data.name.toUpperCase();
+                return A < B ? -1 : 1;
+            });
+
             var node = args.node;
             node.beginUpdate();
             for (var i = 0; i < records.length; i++)
@@ -1545,13 +1553,44 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         return new Ext.Action({text: 'Delete', iconCls:'iconDelete', scope:this, disabled:true, handler: function()
         {
-            if (!this.currentDirectory)
+            if (!this.currentDirectory || !this.selectedRecord)
                 return;
-            if (this.selectedRecord && this.selectedRecord.data.file)
+
+            var selectedRecord = this.selectedRecord;
+            var fnDelete = (function()
             {
-                this.fileSystem.deletePath(this.selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[this.selectedRecord],true));
+                this.fileSystem.deletePath(selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
+                this.selectFile(null);
+            }).createDelegate(this);
+
+            if (selectedRecord)
+            {
+                if (this.selectedRecord.data.file)
+                {
+                    fnDelete();
+                }
+                else
+                {
+                    this.fileSystem.listFiles(selectedRecord.data.path, function(filesystem, success, parentPath, records)
+                    {
+                        if (records.length == 0)
+                        {
+                            fnDelete();
+                        }
+                        else
+                        {
+                            var name = selectedRecord.data.name;
+                            var mb = Ext.MessageBox.confirm("Delete -- " + selectedRecord.data.name, "The directory '" + name + "' is not empty.  This operation is permanent.<br>Delete?", function(answer)
+                            {
+                                if (answer == "yes")
+                                {
+                                    fnDelete();    
+                                }
+                            });
+                        }
+                    }, this);
+                }
             }
-            this.selectFile(null);
         }});
     },
 
@@ -1675,7 +1714,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     record = this.fileSystem.recordFromCache(path);
                     if (record)
                         this.changeDirectory(record);
-                }.createDelegate(this));
+                }, this);
             }
         }
 
@@ -1712,7 +1751,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     record = this.fileSystem.recordFromCache(path);
                     if (record)
                         this.selectFile(record);
-                }.createDelegate(this));
+                }, this);
             }
         }
         if (this.selectedRecord && record && this.selectedRecord.data.path == record.data.path)
@@ -2400,7 +2439,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             // data store
             this.store.removeAll();
             this.grid.view.scrollToTop();
-            this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
+            this.fileSystem.listFiles(record.data.path, this.loadRecords, this);
 
             // address bar
             this.updateAddressBar(record.data.path);
@@ -2409,7 +2448,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             if (this.tree)
             {
                 var treePath = this.treePathFromPath(record.data.path, this.tree.getRootNode().id);
-                this.tree.expandPath(treePath);
+                this.tree.expandPath(treePath, undefined, function(success,node)
+                {
+                    console.group("expandpath(" + treePath + ")");
+                    console.dir({id:node.id, uri:node.attributes.uri, expanded:node.expanded, children:node.childNodes.length});
+                    console.trace();
+                    console.groupEnd();
+                });
                 var node = this.tree.getNodeById(record.id);
                 if (node)
                 {
