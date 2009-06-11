@@ -189,6 +189,46 @@ LABKEY.Query = new function()
         },
 
         /**
+         * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
+         * called, the user will be prompted to accept a file from the server, and most browsers will allow
+         * the user to either save it or open it in an apporpriate application.
+         * For more information on LabKey SQL, see
+         * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+         * https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql</a>.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} config.schemaName name of the schema to query.
+         * @param {String} config.sql The LabKey SQL to execute.
+         * @param {String} config.format The desired export format. May be either 'excel' or 'tsv'.
+         * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
+         *       if different than the current container. If not supplied, the current container's path will be used.
+         * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
+         *       Supported values include:
+                <ul>
+                    <li>"Current": Include the current folder only</li>
+                    <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
+                    <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
+                    <li>"CurrentAndParents": Include the current folder and its parent folders</li>
+                    <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
+                    <li>"AllFolders": Include all folders for which the user has read permission</li>
+                </ul>
+         */
+        exportSql : function(config)
+        {
+            // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
+            // will make the browser pop up a dialog
+            var html = '<form method="POST" action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">' +
+            '<input type="hidden" name="sql" value="' + Ext.util.Format.htmlEncode(config.sql) + '" />' +
+            '<input type="hidden" name="schemaName" value="' + Ext.util.Format.htmlEncode(config.schemaName) + '" />';
+            if (undefined != config.format)
+                html += '<input type="hidden" name="format" value="' + Ext.util.Format.htmlEncode(config.format) + '" />';
+            if (undefined != config.containerFilter)
+                html += '<input type="hidden" name="containerFilter" value="' + Ext.util.Format.htmlEncode(config.containerFilter) + '" />';
+            html += "</form>";
+            var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0], html);
+            newForm.submit();
+        },
+
+        /**
         * Select rows.
         * @param {Object} config An object which contains the following configuration properties.
         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
