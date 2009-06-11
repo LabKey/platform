@@ -18,6 +18,7 @@ package org.labkey.api.reports;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.apache.commons.lang.StringUtils;
 
 import javax.script.*;
 import java.io.*;
@@ -126,7 +127,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
             if (runProcess(context, pb, output) != 0)
             {
-                throw new ScriptException(output.toString());
+                throw new ScriptException(StringUtils.defaultIfEmpty(output.toString(), "An Unknown error occurred running the script"));
             }
             else
                 return output.toString();
