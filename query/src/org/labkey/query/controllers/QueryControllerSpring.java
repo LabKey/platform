@@ -29,6 +29,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -1428,27 +1429,6 @@ public class QueryControllerSpring extends SpringActionController
     @ApiVersion(9.1)
     public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
     {
-        protected class TempQuerySettings extends QuerySettings
-        {
-            private String _schemaName;
-            private String _sql;
-
-            public TempQuerySettings(String schemaName, String sql)
-            {
-                super("query");
-                _schemaName = schemaName;
-                _sql = sql;
-            }
-
-            public QueryDefinition getQueryDef(UserSchema schema)
-            {
-                QueryDefinition qdef = QueryService.get().createQueryDef(getViewContext().getContainer(),
-                        _schemaName, "temp");
-                qdef.setSql(_sql);
-                return qdef;
-            }
-        }
-
         public ApiResponse execute(ExecuteSqlForm form, BindException errors) throws Exception
         {
             String schemaName = StringUtils.trimToNull(form.getSchemaName());
@@ -1462,7 +1442,7 @@ public class QueryControllerSpring extends SpringActionController
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            TempQuerySettings settings = new TempQuerySettings(schemaName, sql);
+            TempQuerySettings settings = new TempQuerySettings(schemaName, sql, getViewContext().getContainer());
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -1505,6 +1485,109 @@ public class QueryControllerSpring extends SpringActionController
             else
                 return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
                         false, schemaName, "sql", 0, null, metaDataOnly);
+        }
+    }
+
+    public static class ExportSqlForm
+    {
+        private String _sql;
+        private String _schemaName;
+        private String _containerFilter;
+        private String _format = "excel";
+
+        public String getSql()
+        {
+            return _sql;
+        }
+
+        public void setSql(String sql)
+        {
+            _sql = sql;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        public String getFormat()
+        {
+            return _format;
+        }
+
+        public void setFormat(String format)
+        {
+            _format = format;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    @ApiVersion(9.2)
+    public class exportSqlAction extends ExportAction<ExportSqlForm>
+    {
+        public void export(ExportSqlForm form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            String schemaName = StringUtils.trimToNull(form.getSchemaName());
+            if (null == schemaName)
+                throw new IllegalArgumentException("No value was supplied for the required parameter 'schemaName'.");
+            String sql = StringUtils.trimToNull(form.getSql());
+            if (null == sql)
+                throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
+
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
+
+            //create a temp query settings object initialized with the posted LabKey SQL
+            //this will provide a temporary QueryDefinition to Query
+            TempQuerySettings settings = new TempQuerySettings(schemaName, sql, getViewContext().getContainer());
+
+            //need to explicitly turn off various UI options that will try to refer to the
+            //current URL and query string
+            settings.setAllowChooseQuery(false);
+            settings.setAllowChooseView(false);
+            settings.setAllowCustomizeView(false);
+
+            //return all rows
+            settings.setShowRows(ShowRows.ALL);
+
+            //add container filter if supplied
+            if (form.getContainerFilter() != null && form.getContainerFilter().length() > 0)
+            {
+                ContainerFilter.Type containerFilterType =
+                    ContainerFilter.Type.valueOf(form.getContainerFilter());
+                settings.setContainerFilterName(containerFilterType.name());
+            }
+
+            //build a query view using the schema and settings
+            QueryView view = new QueryView(schema, settings);
+            view.setShowRecordSelectors(false);
+            view.setShowExportButtons(false);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            
+            //export it
+            response.setContentType("application/vnd.ms-excel");
+            response.setHeader("Content-disposition", "attachment; filename=\"QueryResults.xls\"");
+            response.setHeader("Pragma", "private");
+            response.setHeader("Cache-Control", "private");
+
+            if ("excel".equalsIgnoreCase(form.getFormat()))
+                view.exportToExcel(getViewContext().getResponse());
+            else if ("tsv".equalsIgnoreCase(form.getFormat()))
+                view.exportToTsv(getViewContext().getResponse());
         }
     }
 
