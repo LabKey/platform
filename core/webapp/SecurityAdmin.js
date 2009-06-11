@@ -962,9 +962,11 @@ var ButtonsDragDrop = Ext.extend(Ext.dd.DragZone,
     getDragData : function(e)
     {
         // is target a button in my container?
-        var table = Ext.fly(e.getTarget()).findParentNode('table');
-        if (!table || !table.id) return;
-        var btn = this.container.getComponent(table.id);
+        var btnEl = Ext.fly(e.getTarget()).findParentNode('table');
+        if (btnEl && !btnEl.id)
+            btnEl = btnEl.parentNode;
+        if (!btnEl || !btnEl.id) return;
+        var btn = this.container.getComponent(btnEl.id);
         if (!btn)
             return false;
         if (!('groupId' in btn) || !btn.roleId)
