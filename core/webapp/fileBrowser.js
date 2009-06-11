@@ -1085,8 +1085,6 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             n.record = record;
             if (record.data.iconHref)
                 n.attributes.icon = record.data.iconHref;
-            console.log("createNodeFromRecord(" + record.id + "," + record.data.path + ")");
-            console.log("node.id: " + n.id);
         }
         return n;
     },
