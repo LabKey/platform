@@ -318,9 +318,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         //if the display column has a url, include that as another row property
         //with the name "<URL_COL_PREFIX><colname>"
-        String url = dc.getURL(_ctx);
-        if(null != value && null != url)
-            row.put(URL_COL_PREFIX + dc.getColumnInfo().getName(), url);
+        if (null != value)
+        {
+            String url = dc.getURL(_ctx);
+            if(null != url)
+                row.put(URL_COL_PREFIX + dc.getColumnInfo().getName(), url);
+        }
     }
 
     protected Object getColumnValue(DisplayColumn dc)

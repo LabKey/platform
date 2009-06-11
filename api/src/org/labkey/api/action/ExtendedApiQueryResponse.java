@@ -79,9 +79,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             colMap.put(ColMapEntry.displayValue.name(), displayValue);
 
         //url
-        String url = dc.getURL(getRenderContext());
-        if(null != value && null != url)
-            colMap.put(ColMapEntry.url.name(), url);
+        if (null != value)
+        {
+            String url = dc.getURL(getRenderContext());
+            if(null != url)
+                colMap.put(ColMapEntry.url.name(), url);
+        }
 
         //missing values
         if (dc instanceof MVDisplayColumn)
