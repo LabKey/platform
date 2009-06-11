@@ -519,7 +519,7 @@ public abstract class DefaultModule implements Module
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         if(_loadFromSource)
-            return "/src/META-INF/" + getName().toLowerCase() + "/scripts/" + dialect.getSQLScriptPath(true) + "/";
+            return "src/META-INF/" + getName().toLowerCase() + "/scripts/" + dialect.getSQLScriptPath(true) + "/";
         else
             return "schemas/dbscripts/" + dialect.getSQLScriptPath(false) + "/";
     }
@@ -661,9 +661,9 @@ public abstract class DefaultModule implements Module
         File file;
         if (_loadFromSource)
         {
-            //FIX: 8122 - if path does not start with /src, add that
-            if (!path.startsWith("/src"))
-                file = new File(_sourcePath, "/src" + path);
+            //FIX: 8122 - if path does not start with src/, add that
+            if (!path.startsWith("src"))
+                file = new File(_sourcePath, "src/" + path);
             else
                 file = new File(_sourcePath, path);
         }
