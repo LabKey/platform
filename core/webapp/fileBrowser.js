@@ -248,7 +248,7 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
 
 var _previewScope = "previewAncor";
 
-var PreviewResource = Ext.extend(Ext.ToolTip, {
+var PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
 
     baseCls: 'x-panel',
     minWidth : 40,
@@ -2113,7 +2113,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             selModel : new Ext.grid.RowSelectionModel({singleSelect:true}),
             columns: [
                 {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:iconRenderer},
-                {header: "Name", width: 150, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
+                {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
 //                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize}
