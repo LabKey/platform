@@ -122,7 +122,6 @@ function updatePipelinePanel(record)
 
 function renderPipelineActions(actions)
 {
-    var i, f, l;
     var html = [];
     activeMenus = {};
     fileMap = {};
@@ -134,7 +133,7 @@ function renderPipelineActions(actions)
     var all = {id:'showAll', style:{display:'none'}, children:['[', {tag:'a', onClick:'showAllActions()', href:'#', children:['show all']},']']};
     html.push(all);
     
-    for (i=0 ; i<actions.length ; i++)
+    for (var i=0; i < actions.length; i++)
     {
         var action = actions[i];
         var actionMarkup = {tag:'div', id:'actiondiv' + ++actionDivCounter, style:styleAction, children:[]};
@@ -142,16 +141,17 @@ function renderPipelineActions(actions)
 
         // UNDONE: some actions depend on this this parameter, why not append it themselves?
         var fileInputNames = "";
-        for (f=0 ; f<action.files.length ; f++)
+        for (var f=0; f < action.files.length; f++)
             fileInputNames += "&fileInputNames=" + action.files[f];
         var fileInputNamesParam = $h(fileInputNames);
 
         // BUTTONS
-        for (l=0 ; l<action.links.length ; l++)
+        for (var lg=0; lg < action.linkgroups.length; lg++)
         {
-            var link = action.links[l];
+            var linkgroup = action.linkgroups[lg];
+            var link = linkgroup.links;
             var a = {tag:'a', 'cls':'labkey-button', href:(link.href ? link.href + fileInputNamesParam : '#action'), children:['<span>',$h(link.text),'</span>']};
-//            var span = {tag:'span', 'cls':'labkey-button', children:[a]};
+            //var span = {tag:'span', 'cls':'labkey-button', children:[a]};
             if (link.items && link.items.length)
             {
                 var menuid = 'actionmenu' + ++actionMenuCounter;
@@ -164,10 +164,16 @@ function renderPipelineActions(actions)
             }
             actionMarkup.children.push(a);
             actionMarkup.children.push('<br>');
+
+            if (linkgroup.description && linkgroup.description.length > 0)
+            {
+                actionMarkup.children.push('<em>' + linkgroup.description + '</em>');
+            }
         }
+
         // FILES
         actionMarkup.children.push('<ul style="margin-left:5px;">');
-        for (f=0 ; f<action.files.length ; f++)
+        for (var f=0 ; f<action.files.length ; f++)
         {
             var file = action.files[f];
             actionMarkup.children.push({tag:'li', html:$h(file)});
@@ -211,11 +217,14 @@ function consolidateActions(actions)
         var key = action.files.join(':');
         if (fileSets[key])
         {
-            fileSets[key].links.push(action.links);
+            fileSets[key].linkgroups.push({ description: action.description, links: action.links });
         }
         else
         {
-            fileSets[key] = {files:action.files, links:[action.links]};
+            fileSets[key] = {
+                files: action.files,
+                linkgroups: [{ description : action.description, links: action.links }]
+            };
             result.push(fileSets[key]);
         }
     }
