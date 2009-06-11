@@ -685,16 +685,20 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(final _AttachmentForm form, BindException errors) throws Exception
         {
-            getPageConfig().setTemplate(PageConfig.Template.None);
-            final AttachmentParent parent = new IssueAttachmentParent(getContainer(), form.getEntityId());
-
-            return new HttpView()
+            if (form.getEntityId() != null && form.getName() != null)
             {
-                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+                getPageConfig().setTemplate(PageConfig.Template.None);
+                final AttachmentParent parent = new IssueAttachmentParent(getContainer(), form.getEntityId());
+
+                return new HttpView()
                 {
-                    AttachmentService.get().download(response, parent, form.getName());
-                }
-            };
+                    protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+                    {
+                        AttachmentService.get().download(response, parent, form.getName());
+                    }
+                };
+            }
+            return null;
         }
 
         public NavTree appendNavTrail(NavTree root)

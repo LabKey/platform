@@ -65,6 +65,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
         addWrapColumn(_rootTable.getColumn("AtRepositoryCount"));
         addWrapColumn(_rootTable.getColumn("AvailableCount"));
+        addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount"));
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));

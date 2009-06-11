@@ -395,6 +395,7 @@
       <ns:column columnName="LockedInRequestCount"/>
       <ns:column columnName="AtRepositoryCount"/>
       <ns:column columnName="AvailableCount"/>
+      <ns:column columnName="ExpectedAvailableCount"/>
       <ns:column columnName="VialCount"/>
       <ns:column columnName="AvailableVolume">
         <ns:formatString>#,##0.0#</ns:formatString>

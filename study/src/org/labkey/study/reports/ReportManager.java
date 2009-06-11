@@ -37,7 +37,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.samples.SamplesController;
+import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.model.*;
 
 import javax.servlet.ServletException;
@@ -358,6 +361,19 @@ public class ReportManager implements StudyManager.UnmaterializeListener
                 return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasets.get(def.getName()).getDataSetId()).
                         addParameter("Dataset.viewName", view.getName());
+            }
+
+            // any specimen views
+            if ("SpecimenDetail".equals(def.getName()))
+            {
+                return new ActionURL(SpringSpecimenController.SamplesAction.class, context.getContainer()).
+                        addParameter("showVials", "true").
+                        addParameter("SpecimenDetail." + QueryParam.viewName, view.getName());
+            }
+            else if ("SpecimenSummary".equals(def.getName()))
+            {
+                return new ActionURL(SpringSpecimenController.SamplesAction.class, context.getContainer()).
+                        addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
             return super.getViewRunURL(context, def, view);
         }

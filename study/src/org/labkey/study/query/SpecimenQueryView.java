@@ -31,6 +31,7 @@ import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.controllers.samples.SpecimenUtils;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.StudyManager;
@@ -745,5 +746,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             if (rs != null) try { rs.close(); } catch (SQLException e) {}
         }
+    }
+
+    @Override
+    public void addManageViewItems(MenuButton button)
+    {
+        button.addMenuItem("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).
+                addParameter("schemaName", getSchema().getSchemaName()).
+                addParameter("queryName", getSettings().getQueryName()));
     }
 }

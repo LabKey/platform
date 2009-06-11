@@ -25,7 +25,7 @@ CREATE VIEW study.VialCounts AS
         SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN True THEN 1 ELSE 0 END) AS AtRepositoryCount,
         SUM(CASE Available WHEN True THEN 1 ELSE 0 END) AS AvailableCount,
-        (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
+        (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN False THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
     FROM study.Specimen
     GROUP BY Container, SpecimenHash;
 
@@ -38,7 +38,8 @@ CREATE VIEW study.SpecimenSummary AS
         COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN True THEN 1 ELSE 0 END) AS AtRepositoryCount,
-        SUM(CASE Available WHEN True THEN 1 ELSE 0 END) AS AvailableCount
+        SUM(CASE Available WHEN True THEN 1 ELSE 0 END) AS AvailableCount,
+        (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN False THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
     FROM study.Specimen
     GROUP BY Container, SpecimenHash, Ptid, VisitDescription,
         VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
