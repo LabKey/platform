@@ -172,7 +172,7 @@ function renderPipelineActions(actions)
         }
 
         // FILES
-        actionMarkup.children.push('<ul style="margin-left:5px;">');
+        actionMarkup.children.push('<ul style="margin-left:10px;">');
         for (var f=0 ; f<action.files.length ; f++)
         {
             var file = action.files[f];
