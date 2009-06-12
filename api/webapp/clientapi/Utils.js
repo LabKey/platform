@@ -376,7 +376,7 @@ LABKEY.Utils = new function()
          */
         deleteCookie : function (name, pageonly)
         {
-            LABKEY.setCookie(name, "", pageonly, -1);
+            LABKEY.Utils.setCookie(name, "", pageonly, -1);
         }
     };
 };

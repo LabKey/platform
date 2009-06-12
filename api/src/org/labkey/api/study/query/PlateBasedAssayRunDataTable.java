@@ -89,6 +89,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                     ColumnInfo result = super.constructColumnInfo(parent, name, pd);
                     if (getInputMaterialPropertyName().equals(pd.getName()))
                     {
+                        result.setCaption("Specimen");
                         result.setFk(new LookupForeignKey("LSID")
                         {
                             public TableInfo getLookupTableInfo()
