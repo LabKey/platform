@@ -16,18 +16,19 @@
 
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.util.GUID;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.Lsid;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.GUID;
 import org.labkey.study.SampleManager;
-import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.query.StudyQuerySchema;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.study.samples.settings.RepositorySettings;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -54,6 +55,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Integer _defaultAssayQCState;
     private Integer _defaultDirectEntryQCState;
     private boolean _showPrivateDataByDefault;
+    private boolean _isAllowReload;
+    private Integer _reloadInterval;
+    private Date _lastReload;
 
     public StudyImpl()
     {
@@ -323,6 +327,37 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             return 0;
 
         return domain.getProperties().length;
+    }
+
+    public boolean isAllowReload()
+    {
+        return _isAllowReload;
+    }
+
+    public void setAllowReload(boolean allowReload)
+    {
+        _isAllowReload = allowReload;
+    }
+
+    // Study reload interval, specified in seconds
+    public Integer getReloadInterval()
+    {
+        return _reloadInterval;
+    }
+
+    public void setReloadInterval(Integer reloadInterval)
+    {
+        _reloadInterval = reloadInterval;
+    }
+
+    public Date getLastReload()
+    {
+        return _lastReload;
+    }
+
+    public void setLastReload(Date lastReload)
+    {
+        _lastReload = lastReload;
     }
 
     public static class SummaryStatistics

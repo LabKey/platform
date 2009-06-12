@@ -23,7 +23,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;

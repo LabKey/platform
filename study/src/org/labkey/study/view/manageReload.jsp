@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.importer.StudyReload.*" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    StudyController.ReloadForm form = (StudyController.ReloadForm)getModelBean();
-
-    boolean reload = StudyController.isSetToReload(this.getViewContext().getContainer());
-
+    boolean allowReload = getStudy().isAllowReload();
+    ReloadInterval currentInterval = ReloadInterval.getForSeconds(getStudy().getReloadInterval());
 %>
 <form action="" method="post">
     <table>
@@ -33,16 +31,15 @@
         </tr>
         <tr>
             <th align="left" width=200>Allow Study Reload</th>
-            <td><input name="allowReload" type="checkbox"<%=reload ? " checked" : ""%>></td>
+            <td><input name="allowReload" type="checkbox"<%=allowReload ? " checked" : ""%>></td>
         </tr>
         <tr>
             <th align="left" width=200>Reload Interval</th>
-            <td align="left"><select name="interval">
-                <option value="1">Manual</option>
-                <option value="1">24 hours</option>
-                <option value="2">1 hour</option>
-                <option value="3">5 minutes</option>
-                <option value="4"<%=reload ? " selected" : ""%>>10 seconds</option>
+            <td align="left"><select name="interval"><%
+                for (ReloadInterval interval : ReloadInterval.values())
+                    if (interval.shouldDisplay())
+                        out.println("<option value=\"" + interval.getSeconds() + "\"" + (interval == currentInterval ? " selected>" : ">") + h(interval.getDropDownLabel()) + "</option>");
+            %>
             </select></td>
         </tr>
         <tr>

@@ -30,20 +30,29 @@
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.importer.StudyReload" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
-    String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
-    ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, getStudy().getContainer());
-    User user = HttpView.currentContext().getUser();
-    int numProperties = getStudy().getNumExtendedProperties(user);
-
+    StudyImpl study = getStudy();
     Container c = me.getViewContext().getContainer();
 
-    boolean reload = StudyController.isSetToReload(c);
-
+    String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();
+    ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, c);
+    User user = HttpView.currentContext().getUser();
+    int numProperties = study.getNumExtendedProperties(user);
     String propString = numProperties == 1 ? "property" : "properties";
 
+    StudyReload.ReloadInterval currentInterval = StudyReload.ReloadInterval.getForSeconds(study.getReloadInterval());
+    String intervalLabel;
+
+    if (!study.isAllowReload())
+        intervalLabel = "This study is set to not reload";
+    else if (null == study.getReloadInterval() || 0 == study.getReloadInterval().intValue())
+        intervalLabel = "This study is set for manual reloading";
+    else
+        intervalLabel = "This is study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
 %>
 <table>
     <%
@@ -56,18 +65,18 @@
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Study Label</th>
-        <td><%= h(getStudy().getLabel()) %></td>
+        <td><%= h(study.getLabel()) %></td>
         <td><%= textLink("Change Label", "manageStudyProperties.view") %></td>
     </tr>
     <tr>
         <th align="left">Reloading</th>
-        <td><%= !reload ? "This study is set to not reload" : "This is study is scheduled to check for reload every 10 seconds"%></td>
+        <td><%= h(intervalLabel) %></td>
         <td><%= textLink("Manage Reloading", "manageReload.view") %></td>
     </tr>
     <tr>
         <th align="left">Additional Properties</th>
         <td>This study has <%=numProperties%> additional <%=propString%></td>
-        <td><%= textLink("Edit Definition", new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, getStudy().getContainer())) %></td>
+        <td><%= textLink("Edit Definition", new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, c)) %></td>
     </tr>
 
     <% if (numProperties > 0)
@@ -108,18 +117,18 @@
     <tr>
         <th align="left">Security</th>
         <td>Manage access to Study datasets and samples</td>
-        <% ActionURL url = new ActionURL(SecurityController.BeginAction.class, getStudy().getContainer());%>
+        <% ActionURL url = new ActionURL(SecurityController.BeginAction.class, c);%>
         <td><%= textLink("Manage Security", url) %></td>
     </tr>
     <tr>
         <th align="left">Reports/Views</th>
         <td>Manage views for this Study</td>
-        <td><%= PageFlowUtil.textLink("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getStudy().getContainer())) %></td>
+        <td><%= PageFlowUtil.textLink("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Quality Control States</th>
         <td>Manage QC states for this Study</td>
-        <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL(StudyController.ManageQCStatesAction.class, getStudy().getContainer())) %></td>
+        <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
     </tr>
 <%
     } // admin permission
@@ -133,18 +142,18 @@
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Repository Type</th>
-        <td>This study uses the <%=getStudy().getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
-        <td><%=textLink("Change Repository Type", new ActionURL("Study-Samples", "showManageRepositorySettings.view", getStudy().getContainer()))%></td>
+        <td>This study uses the <%=study.getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
+        <td><%=textLink("Change Repository Type", new ActionURL("Study-Samples", "showManageRepositorySettings.view", c))%></td>
     </tr>
     <%
-        if (getStudy().getRepositorySettings().isEnableRequests())
+        if (study.getRepositorySettings().isEnableRequests())
         {
     %>
     <tr>
         <th align="left">Display and Behavior</th>
         <td>Manage warnings, comments, and workflow</td>
         <td><%= textLink("Manage Display and Behavior",
-                new ActionURL("Study-Samples", "manageDisplaySettings.view", getStudy().getContainer())) %></td>
+                new ActionURL("Study-Samples", "manageDisplaySettings.view", c)) %></td>
     </tr>
     <tr>
         <td colspan="3" class="labkey-announcement-title"><span>Specimen Request Settings</span></td>
@@ -152,35 +161,35 @@
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
     <tr>
         <th align="left">Statuses</th>
-        <td>This study defines <%= getStudy().getSampleRequestStatuses(HttpView.currentContext().getUser()).length %> specimen request
+        <td>This study defines <%= study.getSampleRequestStatuses(HttpView.currentContext().getUser()).length %> specimen request
             statuses</td>
         <td><%= textLink("Manage Request Statuses",
-                new ActionURL("Study-Samples", "manageStatuses.view", getStudy().getContainer())) %></td>
+                new ActionURL("Study-Samples", "manageStatuses.view", c)) %></td>
     </tr>
     <tr>
         <th align="left">Actors</th>
-        <td>This study defines <%= getStudy().getSampleRequestActors().length %> specimen request
+        <td>This study defines <%= study.getSampleRequestActors().length %> specimen request
             actors</td>
         <td><%= textLink("Manage Actors and Groups",
-                new ActionURL("Study-Samples", "manageActors.view", getStudy().getContainer())) %></td>
+                new ActionURL("Study-Samples", "manageActors.view", c)) %></td>
     </tr>
     <tr>
         <th align="left">Request Requirements</th>
         <td>Manage default requirements for new requests</td>
         <td><%= textLink("Manage Default Requirements",
-                new ActionURL("Study-Samples", "manageDefaultReqs.view", getStudy().getContainer())) %></td>
+                new ActionURL("Study-Samples", "manageDefaultReqs.view", c)) %></td>
     </tr>
     <tr>
         <th align="left">Request Form</th>
         <td>Manage inputs required for a new specimen request </td>
         <td><%= textLink("Manage New Request Form",
-                new ActionURL("Study-Samples", "manageRequestInputs.view", getStudy().getContainer())) %></td>
+                new ActionURL("Study-Samples", "manageRequestInputs.view", c)) %></td>
     </tr>
     <tr>
         <th align="left">Notifications</th>
         <td>Manage specimen request notifications</td>
         <td><%= textLink("Manage Notifications",
-                new ActionURL("Study-Samples", "manageNotifications.view", getStudy().getContainer())) %></td>
+                new ActionURL("Study-Samples", "manageNotifications.view", c)) %></td>
     </tr>
     <%
         }

@@ -33,6 +33,9 @@
       <ns:column columnName="DefaultAssayQCState"/>
       <ns:column columnName="DefaultDirectEntryQCState"/>
       <ns:column columnName="ShowPrivateDataByDefault"/>
+      <ns:column columnName="AllowReload"/>
+      <ns:column columnName="ReloadInterval"/>
+      <ns:column columnName="LastReload"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">

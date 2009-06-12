@@ -59,7 +59,6 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
@@ -98,7 +97,6 @@ import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.ZipFile;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -115,7 +113,6 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.zip.ZipException;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: Karl Lum
@@ -3592,13 +3589,14 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ImportForm form, boolean reshow, BindException errors) throws Exception
         {
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            Container c = getContainer();
+            Study study = StudyManager.getInstance().getStudy(c);
 
             if (!reshow && null != study)
             {
                 return new HtmlView("Existing study: " + study.getLabel() + "<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Delete Study") + "</form>");
             }
-            else if (null == getPipelineRoot())
+            else if (null == StudyReload.getPipelineRoot(c))
             {
                 return new HtmlView("You must set a pipeline root before importing a study.<br>" + PageFlowUtil.generateButton("Pipeline Setup", PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getContainer())));
             }
@@ -3612,15 +3610,12 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
 
-            // If a study exists they've just asked to delete it  TODO: Remove this after testing
             if (null != StudyManager.getInstance().getStudy(c))
             {
-                StudyManager.getInstance().deleteAllStudyData(c, getUser(), true, false);
-                redirect = new ActionURL(ImportStudyAction.class, c);
-                return true;
+                return false;
             }
 
-            File pipelineRoot = getPipelineRoot();
+            File pipelineRoot = StudyReload.getPipelineRoot(c);
 
             if (null == pipelineRoot)
             {
@@ -3632,7 +3627,7 @@ public class StudyController extends BaseStudyController
 
             if ("pipeline".equals(form.getSource()))
             {
-                return importStudy(errors, getPipelineRoot());
+                return importStudy(errors, pipelineRoot);
             }
             else
             {
@@ -3715,18 +3710,6 @@ public class StudyController extends BaseStudyController
         {
             _source = source;
         }
-    }
-
-
-    @Nullable
-    private File getPipelineRoot()
-    {
-        PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-
-        if (null != root)
-            return root.getRootPath();
-        else
-            return null;
     }
 
 
@@ -5884,20 +5867,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static class ReloadStatus
-    {
-        private Date lastReload = null;
-        private boolean hasTimer = true;
-    }
-
-    public static boolean isSetToReload(Container c)
-    {
-        return _lastReload.containsKey(c);
-    }
-
-    private static Map<Container, ReloadStatus> _lastReload = new ConcurrentHashMap<Container, ReloadStatus>();
-    private static Timer _timer = new Timer("Study Load", true);
-
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ManageReloadAction extends FormViewAction<ReloadForm>
     {
@@ -5910,40 +5879,51 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<ReloadForm>(getStudy(true), "manageReload.jsp", form, errors);
         }
 
-        // TODO: This is just a hack for demo purposes -- timer info is not persisted, is hard-coded to 10 seconds, doesn't check timestamps, etc.
         public boolean handlePost(ReloadForm form, final BindException errors) throws Exception
         {
-            if (form.isAllowReload())
-            {
-                ReloadStatus status = new ReloadStatus();
-                _lastReload.put(getContainer(), status);
+//            if (form.isAllowReload())
+//            {
+//                ReloadStatus status = new ReloadStatus();
+//                _lastReload.put(getContainer(), status);
+//
+//                _timer.schedule(new TimerTask() {
+//                    public void run()
+//                    {
+//                        try
+//                        {
+//                            if (!importStudy(errors, getPipelineRoot()))
+//                            {
+//                                for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+//                                    _log.error(error.getDefaultMessage());
+//                            }
+//                        }
+//                        catch (Exception e)
+//                        {
+//                            _log.error("Error loading study", e);
+//                        }
+//                        finally
+//                        {
+//                            cancel();
+//                        }
+//                    }
+//                }, 10 * 1000);
+//            }
+//            else
+//            {
+//                _lastReload.remove(getContainer());
+//            }
+//
+            StudyImpl study = getStudy();
 
-                _timer.schedule(new TimerTask() {
-                    public void run()
-                    {
-                        try
-                        {
-                            if (!importStudy(errors, getPipelineRoot()))
-                            {
-                                for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
-                                    _log.error(error.getDefaultMessage());
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            _log.error("Error loading study", e);
-                        }
-                        finally
-                        {
-                            cancel();
-                        }
-                    }
-                }, 10 * 1000);
-            }
-            else
+            if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval()))
             {
-                _lastReload.remove(getContainer());
+                study = study.createMutable();
+                study.setAllowReload(form.isAllowReload());
+                study.setReloadInterval(0 != form.getInterval() ? form.getInterval() : null);
+                StudyManager.getInstance().updateStudy(getUser(), study);
+                StudyReload.initializeTimer(study);
             }
+
             return true;
         }
 

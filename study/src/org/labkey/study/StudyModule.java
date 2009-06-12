@@ -76,6 +76,7 @@ import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.view.*;
+import org.labkey.study.importer.StudyReload;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -111,7 +112,7 @@ public class StudyModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.18;
+        return 9.19;
     }
 
     protected void init()
@@ -145,7 +146,6 @@ public class StudyModule extends DefaultModule
 
         EnumConverter.registerEnum(SecurityType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
-
     }
 
     @Override
@@ -242,6 +242,8 @@ public class StudyModule extends DefaultModule
 
         ReportService.get().addViewFactory(new ReportsController.StudyRReportViewFactory());
         ReportService.get().addUIProvider(new StudyReportUIProvider());
+
+        StudyReload.initializeAllTimers();
     }
 
 
