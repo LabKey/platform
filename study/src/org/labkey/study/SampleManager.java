@@ -1155,30 +1155,33 @@ public class SampleManager
         return rowIdList.toArray(new Integer[rowIdList.size()]);
     }
 
-    private static final String SPECIMEN_TYPE_SUMMARY_SQL = "SELECT study.SpecimenPrimaryType.PrimaryType,\n" +
-            "study.SpecimenPrimaryType.RowId AS PrimaryTypeId,\n" +
+    private static final String SPECIMEN_TYPE_SUMMARY_SQL = "SELECT Specimens.*,\n" +
+            "study.SpecimenPrimaryType.PrimaryType AS PrimaryType,\n" +
             "study.SpecimenDerivative.Derivative AS Derivative,\n" +
-            "study.SpecimenDerivative.RowId AS DerivativeId,\n" +
-            "study.SpecimenAdditive.Additive AS Additive,\n" +
-            "study.SpecimenAdditive.RowId AS AdditiveId,\n" +
-            "Count(*) AS VialCount\n" +
-            "FROM study.Specimen\n" +
+            "study.SpecimenAdditive.Additive AS Additive\n" +
+            "FROM\n" +
+            "\t(SELECT study.Specimen.PrimaryTypeId,\n" +
+            "\t\tstudy.Specimen.DerivativeTypeId,\n" +
+            "\t\tstudy.Specimen.AdditiveTypeId,\n" +
+            "\t\t? AS Container,\n" +
+            "\t\tCount(*) AS VialCount\n" +
+            "\tFROM study.Specimen\n" +
+            "\tWHERE study.Specimen.Container = ?\n" +
+            "\tGROUP BY study.Specimen.PrimaryTypeId,\n" +
+            "\t\tstudy.Specimen.DerivativeTypeId,\n" +
+            "\t\tstudy.Specimen.AdditiveTypeId) Specimens\n" +
             "LEFT OUTER JOIN study.SpecimenPrimaryType ON\n" +
-            "\tstudy.SpecimenPrimaryType.RowId = study.Specimen.PrimaryTypeId AND\n" +
-            "\tstudy.SpecimenPrimaryType.Container = study.Specimen.Container\n" +
+            "\tstudy.SpecimenPrimaryType.RowId = Specimens.PrimaryTypeId AND\n" +
+            "\tstudy.SpecimenPrimaryType.Container = Specimens.Container\n" +
             "LEFT OUTER JOIN study.SpecimenDerivative ON\n" +
-            "\tstudy.SpecimenDerivative.RowId = study.Specimen.DerivativeTypeId AND\n" +
-            "\tstudy.SpecimenDerivative.Container = study.Specimen.Container\n" +
+            "\tstudy.SpecimenDerivative.RowId = Specimens.DerivativeTypeId AND\n" +
+            "\tstudy.SpecimenDerivative.Container = Specimens.Container\n" +
             "LEFT OUTER JOIN study.SpecimenAdditive ON\n" +
-            "\tstudy.SpecimenAdditive.RowId = study.Specimen.AdditiveTypeId AND\n" +
-            "\tstudy.SpecimenAdditive.Container = study.Specimen.Container\n" +
-            "WHERE study.Specimen.Container = ?\n" +
-            "GROUP BY PrimaryType, study.SpecimenPrimaryType.RowId, \n" +
-            "\tDerivative, study.SpecimenDerivative.RowId, \n" +
-            "\tAdditive, study.SpecimenAdditive.RowId\n" +
-            "ORDER BY PrimaryType, study.SpecimenPrimaryType.RowId, \n" +
-            "\tDerivative, study.SpecimenDerivative.RowId, \n" +
-            "\tAdditive, study.SpecimenAdditive.RowId";
+            "\tstudy.SpecimenAdditive.RowId = Specimens.AdditiveTypeId AND\n" +
+            "\tstudy.SpecimenAdditive.Container = Specimens.Container\n" +
+            "ORDER BY study.SpecimenPrimaryType.PrimaryType,\n" +
+            "study.SpecimenDerivative.Derivative,\n" +
+            "study.SpecimenAdditive.Additive";
 
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
     {
@@ -1191,10 +1194,10 @@ public class SampleManager
         try
         {
             SpecimenTypeSummaryRow[] rows = Table.executeQuery(StudySchema.getInstance().getSchema(), SPECIMEN_TYPE_SUMMARY_SQL,
-                    new Object[] { container.getId() }, SpecimenTypeSummaryRow.class);
+                    new Object[] { container.getId(), container.getId() }, SpecimenTypeSummaryRow.class);
 
             summary = new SpecimenTypeSummary(rows);
-            DbCache.put(StudySchema.getInstance().getTableInfoSpecimen(), cacheKey, summary, Cache.HOUR);
+            DbCache.put(StudySchema.getInstance().getTableInfoSpecimen(), cacheKey, summary, 8 * Cache.HOUR);
             return summary;
         }
         catch (SQLException e)
@@ -2217,25 +2220,15 @@ public class SampleManager
 
     public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash) throws SQLException
     {
-        SimpleFilter vialFilter = new SimpleFilter("Container", container.getId());
-        vialFilter.addCondition("SpecimenHash", specimenHash);
-        List<String> globalUniqueIds = new ArrayList<String>();
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), new CsvSet("GlobalUniqueId,SpecimenHash,Container"), vialFilter, new Sort("GlobalUniqueId"));
-            while (rs.next())
-                globalUniqueIds.add(rs.getString("GlobalUniqueId"));
-        }
-        finally
-        {
-            if (rs != null)
-                try { rs.close(); } catch (SQLException e) { /* fall through */ }
-        }
-        SimpleFilter commentFilter = new SimpleFilter("Container", container.getId());
-        commentFilter.addInClause("GlobalUniqueId", globalUniqueIds);
+        return getSpecimenCommentForSpecimens(container, Collections.singleton(specimenHash));
+    }
+
+    public SpecimenComment[] getSpecimenCommentForSpecimens(Container container, Collection<String> specimenHashes) throws SQLException
+    {
+        SimpleFilter hashFilter = new SimpleFilter("Container", container.getId());
+        hashFilter.addInClause("SpecimenHash", specimenHashes);
         return Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(), Table.ALL_COLUMNS,
-                commentFilter, new Sort("GlobalUniqueId"), SpecimenComment.class);
+                hashFilter, new Sort("GlobalUniqueId"), SpecimenComment.class);
     }
 
     private boolean safeComp(Object a, Object b)

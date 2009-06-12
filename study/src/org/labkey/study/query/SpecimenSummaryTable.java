@@ -20,12 +20,11 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.SampleManager;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.api.data.*;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.*;
 
 import java.sql.Types;
 import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.io.Writer;
 import java.io.IOException;
 import java.util.*;
@@ -134,9 +133,109 @@ public class SpecimenSummaryTable extends BaseStudyTable
             columns.add(getColumnInfo().getParentTable().getColumn("SpecimenHash"));
         }
 
-        private String getDisplayText(RenderContext ctx, String lineSeparator)
+        private Map<String, String> _commentCache;
+
+        private void addComments(Container container, Set<String> hashes, Map<String, List<SpecimenComment>> hashToComments) throws SQLException
+        {
+            SpecimenComment[] comments = SampleManager.getInstance().getSpecimenCommentForSpecimens(container, hashes);
+            for (SpecimenComment comment : comments)
+            {
+                List<SpecimenComment> commentList = hashToComments.get(comment.getSpecimenHash());
+                if (commentList == null)
+                {
+                    commentList = new ArrayList<SpecimenComment>();
+                    hashToComments.put(comment.getSpecimenHash(), commentList);
+                }
+                commentList.add(comment);
+            }
+
+        }
+
+        private Map<String, String> getCommentCache(RenderContext ctx, String lineSeparator) throws SQLException
+        {
+            ResultSet rs = ctx.getResultSet();
+            if (_commentCache == null && rs instanceof Table.TableResultSet)
+            {
+                Table.TableResultSet tableRs = (Table.TableResultSet) rs;
+                Set<String> hashes = new HashSet<String>();
+                Map<String, List<SpecimenComment>> hashToComments = new HashMap<String, List<SpecimenComment>>();
+                for (Iterator<Map> it = tableRs.iterator(); it.hasNext(); )
+                {
+                    Map<String, Object> row = (Map<String, Object>) it.next();
+                    String maxPossibleCount = (String) row.get("Comments");
+                    if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
+                        hashes.add((String) row.get("SpecimenHash"));
+
+                    if (hashes.size() >= 1000)
+                    {
+                        addComments(ctx.getContainer(), hashes, hashToComments);
+                        hashes.clear();
+                    }
+                }
+                addComments(ctx.getContainer(), hashes, hashToComments);
+
+                _commentCache = new HashMap<String, String>();
+                for (Map.Entry<String, List<SpecimenComment>> entry : hashToComments.entrySet())
+                {
+                    List<SpecimenComment> commentList = entry.getValue();
+                    String formatted = formatCommentText(commentList.toArray(new SpecimenComment[commentList.size()]), lineSeparator);
+                    _commentCache.put(entry.getKey(), formatted);
+                }
+            }
+            return _commentCache;
+        }
+
+        private String formatCommentText(SpecimenComment[] comments, String lineSeparator)
         {
             StringBuilder builder = new StringBuilder();
+            if (comments != null && comments.length > 0)
+            {
+                Map<String, List<String>> commentToIds = new TreeMap<String, List<String>>();
+                for (SpecimenComment comment : comments)
+                {
+                    if (comment.getComment() != null)
+                    {
+                        List<String> ids = commentToIds.get(comment.getComment());
+                        if (ids == null)
+                        {
+                            ids = new ArrayList<String>();
+                            commentToIds.put(comment.getComment(), ids);
+                        }
+                        ids.add(comment.getGlobalUniqueId());
+                    }
+                }
+                String tempSep = "";
+                for (Map.Entry<String, List<String>> entry : commentToIds.entrySet())
+                {
+                    builder.append(tempSep);
+                    builder.append(entry.getValue().size()).append(" vial");
+                    if (entry.getValue().size() > 1)
+                        builder.append("s");
+                    builder.append(": ").append(entry.getKey());
+                    tempSep = lineSeparator;
+                }
+            }
+            return builder.toString();
+        }
+
+        private String getCommentText(RenderContext ctx, String specimenHash, String lineSeparator) throws SQLException
+        {
+            Map<String, String> commentCache = null;
+            if (true)
+                commentCache = getCommentCache(ctx, lineSeparator);
+            if (commentCache != null)
+                return commentCache.get(specimenHash);
+            else
+            {
+                // we must not have a cached resultset, so we couldn't get the full set of comments efficiently; we'll select
+                // comments for each row:
+                SpecimenComment[] comments = SampleManager.getInstance().getSpecimenCommentForSpecimen(ctx.getContainer(), specimenHash);
+                return formatCommentText(comments, lineSeparator);
+            }
+        }
+
+        private String getDisplayText(RenderContext ctx, String lineSeparator)
+        {
             String maxPossibleCount = (String) getValue(ctx);
             // the string compare below is a big of a hack, but it's cheaper than converting the string to a number and
             // equally effective.  The column type is string so that exports to excel correctly set the column type as string.
@@ -144,42 +243,14 @@ public class SpecimenSummaryTable extends BaseStudyTable
             {
                 try
                 {
-                    String specimenHash = (String) ctx.get("SpecimenHash");
-                    SpecimenComment[] comments = SampleManager.getInstance().getSpecimenCommentForSpecimen(ctx.getContainer(), specimenHash);
-                    if (comments != null && comments.length > 0)
-                    {
-                        Map<String, List<String>> commentToIds = new TreeMap<String, List<String>>();
-                        for (SpecimenComment comment : comments)
-                        {
-                            if (comment.getComment() != null)
-                            {
-                                List<String> ids = commentToIds.get(comment.getComment());
-                                if (ids == null)
-                                {
-                                    ids = new ArrayList<String>();
-                                    commentToIds.put(comment.getComment(), ids);
-                                }
-                                ids.add(comment.getGlobalUniqueId());
-                            }
-                        }
-                        String tempSep = "";
-                        for (Map.Entry<String, List<String>> entry : commentToIds.entrySet())
-                        {
-                            builder.append(tempSep);
-                            builder.append(entry.getValue().size()).append(" vial");
-                            if (entry.getValue().size() > 1)
-                                builder.append("s");
-                            builder.append(": ").append(entry.getKey());
-                            tempSep = lineSeparator;
-                        }
-                    }
+                    return getCommentText(ctx, ctx.getResultSet().getString("SpecimenHash"), lineSeparator);
                 }
                 catch (SQLException e)
                 {
                     throw new RuntimeSQLException(e);
                 }
             }
-            return builder.toString();
+            return "";
         }
 
         public Object getDisplayValue(RenderContext ctx)

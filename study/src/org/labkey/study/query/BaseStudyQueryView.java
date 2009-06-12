@@ -70,8 +70,8 @@ public abstract class BaseStudyQueryView extends QueryView
             }
             view.getDataRegion().setButtonBar(bbar);
         }
-        else
-            view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+        //else
+        //    view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         view.getDataRegion().setButtonBarPosition(getButtonBarPosition());
         return view;
     }

@@ -28,7 +28,7 @@ public class SpecimenEventTable extends BaseStudyTable
     public SpecimenEventTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent());
-        
+
         addWrapColumn(_rootTable.getColumn("SpecimenId"));
         addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
         addWrapLocationColumn("LabId", "LabId").setCaption("Location");
@@ -70,5 +70,6 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ShippedToLab"));
         addWrapColumn(_rootTable.getColumn("ExpectedTimeValue"));
         addWrapColumn(_rootTable.getColumn("ExpectedTimeUnit"));
+        addWrapColumn(_rootTable.getColumn("UpdateTimestamp"));
     }
 }
