@@ -52,7 +52,7 @@
     else if (null == study.getReloadInterval() || 0 == study.getReloadInterval().intValue())
         intervalLabel = "This study is set for manual reloading";
     else
-        intervalLabel = "This is study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
+        intervalLabel = "This study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
 %>
 <table>
     <%
