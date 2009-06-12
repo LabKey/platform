@@ -40,7 +40,6 @@ public class TableXmlUtils
 
     public static TablesDocument getXmlDocumentFromMetaData(String dbSchemaName, boolean bFull) throws Exception
     {
-
         DbSchema dbSchema = DbSchema.createFromMetaData(dbSchemaName);
         TablesDocument xmlTablesDoc = TablesDocument.Factory.newInstance();
         TablesDocument.Tables xmlTables = xmlTablesDoc.addNewTables();
@@ -272,7 +271,6 @@ public class TableXmlUtils
                             "ManageTableAllowed", sbOut);
                     if (merge && bCopyTargetNode)
                         mt.setManageTableAllowed(xmlTable.getManageTableAllowed());
-
                 }
 
                 dbCols = tt.getColumns().getColumnArray();
@@ -471,7 +469,6 @@ public class TableXmlUtils
                                 if (bCopyTargetNode)
                                     fk.setFkDbSchema(xmlCol.getFk().getFkDbSchema());
                             }
-
                         }
 
                         // check and merge Ontology (assumed not from metadata)
@@ -504,6 +501,7 @@ public class TableXmlUtils
                 {
                     idc = mDbColOrdinals.get(dbCol).intValue();
                     sbOut.append("ERROR: Table ").append(tt.getTableName()).append(" Column ").append(dbCol).append(" missing from Xml.<br>");
+
                     if (merge)
                     {
                         mc = mt.getColumns().addNewColumn();
