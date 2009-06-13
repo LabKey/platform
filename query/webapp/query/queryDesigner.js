@@ -1118,8 +1118,12 @@ QueryOrViewDesigner.prototype =
     },
     updateDocument : function ()
     {
-        document.getElementById("ff_designXML").value = XMLUtil.serializeXML(this.designDoc);
-        document.getElementById("ff_dirty").value = "true";
+        var newDoc = XMLUtil.serializeXML(this.designDoc);
+        if (document.getElementById("ff_designXML").value != newDoc)
+        {
+            document.getElementById("ff_designXML").value = newDoc;
+            document.getElementById("ff_dirty").value = "true";
+        }
     },
     validateFilter : function(field, value, comparison)
     {
@@ -1270,8 +1274,12 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
             }
     ret.updateDocument = function ()
     {
-        document.getElementById("ff_designXML").value = XMLUtil.serializeXML(this.designDoc);
-        document.getElementById("ff_dirty").value = "true";
+        var newDoc = XMLUtil.serializeXML(this.designDoc);
+        if (document.getElementById("ff_designXML").value != newDoc)
+        {
+            document.getElementById("ff_designXML").value = newDoc;
+            document.getElementById("ff_dirty").value = "true";
+        }
     };
     ret.columnPicker.setShowHiddenFields(true);
     ret.getColumnLabel = getColumnAlias;
@@ -1516,7 +1524,7 @@ Bind_Alias.prototype = {
         this.designer.updateDocument();
         this.designer.tabs.columns.refresh();
     }
-}
+};
 
 function Bind_FieldKey(designer, dn)
 {
@@ -1533,7 +1541,7 @@ Bind_FieldKey.prototype =
     {
 
     }
-}
+};
 
 var needToPrompt = true;
 function designerInit()
@@ -1544,7 +1552,7 @@ function designerInit()
         {
             if (needToPrompt && document.getElementById("ff_dirty").value == "true")
                 return "Your changes have not been saved.";
-        }
+        };
         designer.setDesignDocument(XMLUtil.loadXML(document.getElementById("ff_designXML").value));
     }
     if (window.addEventListener)
