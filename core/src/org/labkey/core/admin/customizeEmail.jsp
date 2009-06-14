@@ -75,8 +75,8 @@
     {
         var selection = YAHOO.util.Dom.get('templateClass');
         var subject = YAHOO.util.Dom.get('emailSubject');
-        var message = YAHOO.util.Dom.get('emailMessage')
-        var description = YAHOO.util.Dom.get('emailDescription')
+        var message = YAHOO.util.Dom.get('emailMessage');
+        var description = YAHOO.util.Dom.get('emailDescription');
 
         for (var i=0; i < this.emailTemplates.length; i++)
         {

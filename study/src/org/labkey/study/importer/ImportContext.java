@@ -36,6 +36,8 @@ public class ImportContext extends AbstractContext
         _url = url;
     }
 
+    @Deprecated
+    // TODO: All importers should new up ActionURLs using getContainer() 
     public ActionURL getUrl()
     {
         return _url;

@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.xmlbeans.XmlException;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -59,9 +58,9 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -71,8 +70,8 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.*;
-import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -80,6 +79,7 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.*;
+import org.labkey.study.importer.StudyReload.*;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -89,6 +89,7 @@ import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.reports.StudyReportUIProvider;
+import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.ExportContext;
@@ -5963,6 +5964,36 @@ public class StudyController extends BaseStudyController
         public void setInterval(int interval)
         {
             this.interval = interval;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class CheckForReload extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            ReloadTask task = new ReloadTask(getContainer().getId());
+            String message;
+
+            try
+            {
+                message = task.attemptReload();
+            }
+            catch (StudyImporter.StudyImportException e)
+            {
+                message = "Error: " + e.getMessage();
+            }
+
+            // Consider: Template.None
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+
+            return new HtmlView(message);  // TODO: Add Done button or something
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 

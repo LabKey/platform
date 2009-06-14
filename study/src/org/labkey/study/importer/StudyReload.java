@@ -23,19 +23,24 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.importer.StudyImporter.StudyImportException;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /*
@@ -48,13 +53,18 @@ public class StudyReload
     private static final Logger LOG = Logger.getLogger(StudyReload.class);
     private static final Map<String, Future> FUTURES = new ConcurrentHashMap<String, Future>();
     private static final ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1, new ReloadThreadFactory());
+    private static final BlockingQueue<Container> QUEUE = new ArrayBlockingQueue<Container>(100);       // Container IDs instead?
+    private static final Thread RELOAD_THREAD = new ReloadThread();
 
     static
     {
+        RELOAD_THREAD.start();
+
         ContextListener.addShutdownListener(new ShutdownListener() {
             public void shutdownStarted(ServletContextEvent servletContextEvent)
             {
                 SCHEDULER.shutdown();
+                RELOAD_THREAD.interrupt();
             }
         });
     }
@@ -189,16 +199,34 @@ public class StudyReload
     }
 
 
-    private static class ReloadTask implements Runnable
+    public static class ReloadTask implements Runnable
     {
+        private static final String STUDY_LOAD_FILENAME = "studyload.txt";
+
         private final String _studyContainerId;
 
-        private ReloadTask(String studyContainerId)
+        public ReloadTask(String studyContainerId)
         {
             _studyContainerId = studyContainerId;
         }
 
         public void run()
+        {
+            try
+            {
+                attemptReload();    // Ignore success messages
+            }
+            catch (SQLException e)
+            {
+                LOG.error("SQLException saving study reload state", e);
+            }
+            catch (StudyImportException e)
+            {
+                LOG.error("Error reloading study: " + e.getMessage());
+            }
+        }
+
+        public String attemptReload() throws SQLException, StudyImporter.StudyImportException
         {
             Container c = ContainerManager.getForId(_studyContainerId);
 
@@ -206,6 +234,7 @@ public class StudyReload
             {
                 // Container must have been deleted
                 cancelTimer(_studyContainerId);
+                throw new StudyImportException("Container " + _studyContainerId + " does not exist");
             }
             else
             {
@@ -215,21 +244,18 @@ public class StudyReload
                 {
                     // Study must have been deleted
                     cancelTimer(_studyContainerId);
+                    throw new StudyImportException("Study does not exist in " + c.getPath());
                 }
                 else
                 {
-                    boolean shouldReload = study.isAllowReload() && null != study.getReloadInterval() && study.getReloadInterval().intValue() > 0;
-
-                    assert shouldReload : "Shouldn't be attempting reload on a study set for no reload or manual reload";
+                    assert study.isAllowReload() : "Can't reload a study set for no reload";
 
                     File root = getPipelineRoot(c);
 
                     if (null == root)
-                        return;
+                        throw new StudyImportException("Pipeline root does not exist");
 
-                    File studyload = new File(root, "studyload.txt");
-
-                    LOG.info("Checking timestamp on file " + studyload.getAbsolutePath());
+                    File studyload = new File(root, STUDY_LOAD_FILENAME);
 
                     if (studyload.exists() && studyload.isFile())
                     {
@@ -237,25 +263,40 @@ public class StudyReload
 
                         if (null == study.getLastReload() || studyload.lastModified() > (study.getLastReload().getTime() + 1000))  // Add a second since SQL Server rounds datetimes
                         {
-                            LOG.info("I'm pretending to load the study named " + study.getLabel() + " in folder " + c.getPath());
-
-                            // TODO: queue up a reload here
-
-                            study = study.createMutable();
-                            study.setLastReload(new Date(lastModified));
-                            
-                            try
+                            // Try to add this study to the reload queue; if it's full, wait until next time
+                            // We could submit reload pipeline jobs directly, but:
+                            //  1) we need a way to throttle automatic reloads and
+                            //  2) the initial import steps happen synchronously; they aren't part of the pipeline job
+                            // TODO: Better throttling behavior (e.g., prioritize studies that check infrequently)
+                            if (QUEUE.offer(c))
                             {
+                                study = study.createMutable();
+                                study.setLastReload(new Date(lastModified));
                                 StudyManager.getInstance().updateStudy(null, study);
+
+                                return "Attempting to reload " + getDescription(study);
                             }
-                            catch (SQLException e)
+                            else
                             {
-                                LOG.error("Failed to update last reload timestamp for study " + study.getLabel() + " in folder " + c.getPath());
+                                throw new StudyImportException("Skipping reload of " + getDescription(study) + ": reload queue is full");
                             }
                         }
+                        else
+                        {
+                            return "Skipping reload of " + getDescription(study) + ": this study is up-to-date";
+                        }
+                    }
+                    else
+                    {
+                        throw new StudyImportException("Could not find file " + STUDY_LOAD_FILENAME + " in the pipeline root for " + getDescription(study));
                     }
                 }
             }
+        }
+
+        private static String getDescription(Study study)
+        {
+            return study.getLabel();
         }
     }
 
@@ -265,7 +306,43 @@ public class StudyReload
     {
         public Thread newThread(Runnable r)
         {
-            return new Thread(r, "Study Reload");
+            return new Thread(r, "Study Reload Scheduler");
+        }
+    }
+
+
+    private static class ReloadThread extends Thread
+    {
+        private ReloadThread()
+        {
+            super("Study Reload Handler");
+        }
+
+        @Override
+        public void run()
+        {
+            while (true)
+            {
+                try
+                {
+                    Container c = QUEUE.take();
+                    File root = StudyReload.getPipelineRoot(c);
+                    //noinspection ThrowableInstanceNeverThrown
+                    BindException errors = new BindException(c, "reload");
+                    ActionURL manageStudyURL = new ActionURL(StudyController.ManageStudyAction.class, c);
+                    StudyImporter importer = new StudyImporter(c, null, manageStudyURL, root, errors);
+                    //importer.process();
+                    LOG.info("Handling " + c.getPath());
+                }
+                catch (InterruptedException e)
+                {
+                    break;
+                }
+                catch (Throwable t)
+                {
+                    LOG.error("Error while reloading study", t);
+                }
+            }
         }
     }
 }
