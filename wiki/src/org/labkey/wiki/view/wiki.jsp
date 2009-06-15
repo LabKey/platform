@@ -177,7 +177,7 @@ else
     }
 }
 %>
-<br>
+<p/>
 <%
 if (hasContent && null != me.getView("discussion"))
 {
