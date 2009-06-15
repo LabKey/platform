@@ -408,7 +408,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         }
         catch (XmlException e)
         {
-            throw new IOException(e);
+            throw new IOException(e.getMessage());
         }
     }
 
@@ -429,7 +429,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         }
         catch (XmlException e)
         {
-            throw new IOException(e);
+            throw new IOException(e.getMessage());
         }
     }
 
