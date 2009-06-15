@@ -440,6 +440,8 @@ public class DatasetController extends BaseStudyController
 
             Study study = getStudy();
             DataSet def = study.getDataSet(form.getDatasetId());
+            if (null == def)
+                throw new NotFoundException("Invalid dataset id");
 
             props.put("typeURI", def.getTypeURI());
 
