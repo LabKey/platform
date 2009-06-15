@@ -440,8 +440,10 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
                     br = new BufferedReader(new FileReader(scriptFile));
                     String l;
                     while ((l = br.readLine()) != null)
+                    {
                         sb.append(l);
-
+                        sb.append('\n');
+                    }
                     getDescriptor().setProperty(RReportDescriptor.Prop.script, sb.toString());
                 }
                 finally

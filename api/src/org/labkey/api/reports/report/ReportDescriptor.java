@@ -18,9 +18,8 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xerces.util.DOMUtil;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
@@ -35,16 +34,13 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
-import org.w3c.dom.CDATASection;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import org.labkey.query.xml.ReportDescriptorDocument;
+import org.labkey.query.xml.ReportPropertyList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.*;
 
 /**
@@ -305,128 +301,136 @@ public class ReportDescriptor extends Entity implements SecurableResource
     }
 
     /**
-     * Creates an xml representation of this descriptor prior to serialization.
-     * Subclasses can override.
+     * Builds an XML representation of this descriptor
+     * @return
      */
-    protected Document toXML()
+    private ReportDescriptorDocument getDescriptorDocument()
     {
-        Document doc;
-        try
-        {
-            doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-        }
-        catch (ParserConfigurationException e)
-        {
-            return null;
-        }
-        doc.appendChild(doc.createElement("ReportDescriptor"));
+        XmlOptions opts = new XmlOptions();
+        opts.setSaveCDataEntityCountThreshold(0);
+        opts.setSaveCDataLengthThreshold(0);
+        opts.setSavePrettyPrint();
+        opts.setUseDefaultNamespace();
 
-        Element elRoot = doc.getDocumentElement();
-        elRoot.setAttribute(Prop.descriptorType.toString(), getDescriptorType());
-        elRoot.setAttribute(Prop.reportName.toString(), getReportName());
+        ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance(opts);
+        ReportDescriptorDocument.ReportDescriptor descriptor = doc.addNewReportDescriptor();
 
-        Element props = doc.createElement("Properties");
-        elRoot.appendChild(props);
+        descriptor.setDescriptorType(getDescriptorType());
+        descriptor.setReportName(getReportName());
 
+        ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
         {
+            ReportPropertyList.Prop prop = props.addNewProp();
+
+            prop.setName(entry.getKey());
             final Object value = entry.getValue();
             if (value instanceof List)
             {
                 for (Object item : ((List)value))
-                    createPropNode(entry.getKey(), item.toString(), doc, props);
+                    prop.setStringValue(String.valueOf(item));
             }
             else if (value != null)
-                createPropNode(entry.getKey(), value.toString(), doc, props);
+                prop.setStringValue(String.valueOf(value));
         }
         return doc;
     }
 
-    private void createPropNode(String name, String value, Document doc, Element parent)
+    public void serialize(Writer writer) throws IOException
     {
-        final Element prop = doc.createElement("Prop");
+        XmlOptions opts = new XmlOptions();
+        opts.setSaveCDataEntityCountThreshold(0);
+        opts.setSaveCDataLengthThreshold(0);
+        opts.setSavePrettyPrint();
+        opts.setUseDefaultNamespace();
+        ReportDescriptorDocument doc = getDescriptorDocument();
 
-        prop.setAttribute("name", name);
-        if (RReportDescriptor.Prop.script.toString().equals(name))
-            prop.appendChild(doc.createCDATASection(value));
-        else
-            prop.appendChild(doc.createTextNode(value));
-
-        parent.appendChild(prop);
-    }
-
-    public String serialize()
-    {
         try {
-            final Document doc = toXML();
-            StringWriter writer = new StringWriter();
-            XMLSerializer serializer = new XMLSerializer(writer, new OutputFormat(doc));
-
-            serializer.asDOMSerializer();
-            serializer.serialize(doc);
-
-            return writer.toString();
+            doc.save(writer, opts);
         }
-        catch (Exception e)
+        finally
         {
-            _log.error(e);
+            writer.close();
         }
-        return null;
     }
 
-    public static ReportDescriptor createFromXML(String xmlString)
+    public String serialize() throws IOException
+    {
+        XmlOptions opts = new XmlOptions();
+        opts.setSaveCDataEntityCountThreshold(0);
+        opts.setSaveCDataLengthThreshold(0);
+        opts.setSavePrettyPrint();
+        opts.setUseDefaultNamespace();
+        ReportDescriptorDocument doc = getDescriptorDocument();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        try {
+            doc.save(output, opts);
+            return output.toString();
+        }
+        finally
+        {
+            output.close();
+        }
+    }
+
+    public static ReportDescriptor createFromXML(String xmlString) throws IOException
     {
         List<Pair<String,String>> props = createPropsFromXML(xmlString);
         return create(props);
     }
 
-    public static List<Pair<String, String>> createPropsFromXML(String xmlString)
+    public static ReportDescriptor createFromXML(Reader reader) throws IOException
     {
-        try
-        {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setValidating(false);
-            DocumentBuilder db = dbf.newDocumentBuilder();
+        try {
+            XmlOptions options = new XmlOptions();
+            options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
-            Document doc = db.parse(new ByteArrayInputStream(xmlString.getBytes("UTF-8")));
-            if (doc != null)
+            ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(reader, options);
+            ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
+
+            ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(d.getDescriptorType());
+            if (descriptor != null)
             {
-                Element root = DOMUtil.getFirstChildElement(doc);
+                descriptor.setReportName(d.getReportName());
+                List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
 
-                List<Pair<String,String>> props = new ArrayList<Pair<String,String>>();
-
-                Element propsElem = DOMUtil.getFirstChildElement(root);
-                if(null == propsElem)
-                    return null;
-
-                //need to iterate elements here, not just child nodes, as \r\n get parsed into text nodes
-                //and module-based reports will likely have those between property elements
-                for (Element propElem = DOMUtil.getFirstChildElement(propsElem); null != propElem; propElem = DOMUtil.getNextSiblingElement(propElem))
+                for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
                 {
-                    final String key = propElem.getAttribute("name");
-                    String value = "";
-                    if (RReportDescriptor.Prop.script.toString().equals(key))
-                    {
-                        Node cdata = propElem.getFirstChild();
-                        if (cdata != null && CDATASection.class.isAssignableFrom(cdata.getClass()))
-                        {
-                            value = ((CDATASection)cdata).getWholeText();
-                        }
-                    }
-                    else
-                        value = DOMUtil.getChildText(propElem);
-
-                    props.add(new Pair(key, value));
+                    props.add(new Pair(prop.getName(), prop.getStringValue()));
                 }
-                return props;
+
+                descriptor.init(props.toArray(new Pair[props.size()]));
+
+                return descriptor;
             }
-        }
-        catch (Exception e)
-        {
-            _log.error("An error occurred parsing the report xml", e);
             return null;
         }
-        return null;
+        catch (XmlException e)
+        {
+            throw new IOException(e);
+        }
+    }
+
+    public static List<Pair<String, String>> createPropsFromXML(String xmlString) throws IOException
+    {
+        try {
+            XmlOptions options = new XmlOptions();
+            options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
+
+            ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
+            ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
+
+            List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
+            for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
+                props.add(new Pair(prop.getName(), prop.getStringValue()));
+
+            return props;
+        }
+        catch (XmlException e)
+        {
+            throw new IOException(e);
+        }
     }
 
     public void updatePolicy(ViewContext context, MutableSecurityPolicy policy)

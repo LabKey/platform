@@ -24,9 +24,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
-import org.w3c.dom.Document;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
 
 import java.io.*;
 
@@ -118,14 +115,7 @@ public abstract class AbstractReport implements Report
         ReportDescriptor descriptor = getDescriptor();
         if (descriptor.getReportId() != null)
         {
-            Document doc = descriptor.toXML();
-
-            OutputFormat format = new OutputFormat(doc);
-            format.setIndenting(true);
-            XMLSerializer serializer = new XMLSerializer(writer, format);
-
-            serializer.asDOMSerializer();
-            serializer.serialize(doc);
+            descriptor.serialize(writer);
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");

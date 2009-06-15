@@ -67,19 +67,11 @@ public abstract class DataLoader<T> implements Iterable<T>
         return _columns;
     }
 
-    protected void ensureInitialized()
+    protected void ensureInitialized() throws IOException
     {
         if (!_initialized)
         {
-            try
-            {
-                initialize();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-
+            initialize();
             _initialized = true;
         }
     }

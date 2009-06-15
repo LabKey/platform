@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 
 import java.util.Date;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,14 +44,20 @@ public class ReportDB
     public ReportDB(){}
     public ReportDB(Container c, int userId, String key, ReportDescriptor descriptor)
     {
-        _containerId = c.getId();
-        _entityId = descriptor.getEntityId();
-        _createdBy = descriptor.getCreatedBy();
-        _created = descriptor.getCreated();
-        _key = key;
-        _descriptorXML = descriptor.serialize();
-        _reportOwner = descriptor.getOwner();
-        _flags = descriptor.getFlags();
+        try {
+            _containerId = c.getId();
+            _entityId = descriptor.getEntityId();
+            _createdBy = descriptor.getCreatedBy();
+            _created = descriptor.getCreated();
+            _key = key;
+            _descriptorXML = descriptor.serialize();
+            _reportOwner = descriptor.getOwner();
+            _flags = descriptor.getFlags();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void setRowId(int rowId){_rowId = rowId;}
