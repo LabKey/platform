@@ -77,8 +77,6 @@ public abstract class BaseStudyTable extends FilteredTable
                 return result;
             }
         };
-        if (getColumn("Container") != null)
-            fk.setJoinOnContainer(true);
         typeColumn.setFk(fk);
 
         return addColumn(typeColumn);
