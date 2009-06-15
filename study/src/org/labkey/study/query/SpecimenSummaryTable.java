@@ -35,6 +35,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary());
         addWrapParticipantColumn("PTID").setKeyField(true);
+        addWrapColumn(_rootTable.getColumn("Container")).setFk(new ContainerForeignKey());
 
         addSpecimenVisitColumn(_schema.getStudy().isDateBased());
 
