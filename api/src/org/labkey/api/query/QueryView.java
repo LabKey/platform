@@ -221,12 +221,12 @@ public class QueryView extends WebPartView<Object>
 
     public MenuButton createQueryPickerButton(String label)
     {
-        String current = _queryDef.getName();
+        String current = _queryDef != null ? _queryDef.getName() : null;
 
         ActionURL target = urlRefreshQuery();
         NavTreeMenuButton button = new NavTreeMenuButton(label);
 
-        if (_queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
+        if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
         {
             if (_queryDef.isTableQueryDefinition())
             {
@@ -1267,7 +1267,7 @@ public class QueryView extends WebPartView<Object>
 
     protected TableInfo createTable()
     {
-        return _queryDef.getTable(_schema, _errors, true);
+        return _queryDef != null ? _queryDef.getTable(_schema, _errors, true) : null;
     }
 
     final public TableInfo getTable()
