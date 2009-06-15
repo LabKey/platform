@@ -248,7 +248,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
                 byte[] buf = _report.getDescriptor().serialize().getBytes("UTF-8");
                 return buf.length;
             }
-            catch (UnsupportedEncodingException e)
+            catch (Exception e)
             {
                 return 0;
             }

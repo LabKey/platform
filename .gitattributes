@@ -97,6 +97,7 @@ audit/src/META-INF/audit/scripts/postgresql/audit-8.20-8.21.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-8.20-8.30.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-8.21-8.22.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-8.23-8.24.sql -text
+audit/src/META-INF/audit/scripts/postgresql/audit-9.10-9.11.sql -text
 audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.00-0.01.sql -text
 audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.01-0.02.sql -text
 audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.02-0.03.sql -text
@@ -107,6 +108,7 @@ audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.20-8.21.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.20-8.30.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.21-8.22.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.23-8.24.sql -text
+audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-9.10-9.11.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.00-0.01.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.01-0.02.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.02-0.03.sql -text

@@ -32,8 +32,8 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.io.*;
@@ -289,24 +289,24 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         if (r != null)
         {
-            ReportDescriptor descriptor = ReportDescriptor.createFromXML(r.getDescriptorXML());
-            if (descriptor != null)
-            {
-                try {
-                    BeanUtils.copyProperties(descriptor, r);
-                }
-                catch (Exception e)
+            try {
+                ReportDescriptor descriptor = ReportDescriptor.createFromXML(r.getDescriptorXML());
+                if (descriptor != null)
                 {
-                    throw new RuntimeException(e);
-                }
-                descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
-                descriptor.setOwner(r.getReportOwner());
+                    BeanUtils.copyProperties(descriptor, r);
+                    descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
+                    descriptor.setOwner(r.getReportOwner());
 
-                String type = descriptor.getReportType();
-                Report report = createReportInstance(type);
-                if (report != null)
-                    report.setDescriptor(descriptor);
-                return report;
+                    String type = descriptor.getReportType();
+                    Report report = createReportInstance(type);
+                    if (report != null)
+                        report.setDescriptor(descriptor);
+                    return report;
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
             }
         }
         return null;
@@ -486,13 +486,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         BufferedReader br = null;
 
         try {
-            StringBuilder sb = new StringBuilder();
-            br = new BufferedReader(reader);
-            String l;
-            while ((l = br.readLine()) != null)
-                sb.append(l);
-
-            ReportDescriptor descriptor = ReportDescriptor.createFromXML(sb.toString());
+            ReportDescriptor descriptor = ReportDescriptor.createFromXML(reader);
             if (descriptor != null)
             {
                 //descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
