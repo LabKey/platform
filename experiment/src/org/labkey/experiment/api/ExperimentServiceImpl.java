@@ -1363,11 +1363,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
 
             for (int runId : selectedRunIds)
             {
+                if (!containingTrans)
+                    getExpSchema().getScope().beginTransaction();
+             
                 // Grab these to delete after we've deleted the Data rows
                 ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
 
@@ -1378,10 +1379,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ExperimentDataHandler handler = data.findDataHandler();
                     handler.deleteData(data, container, user);
                 }
+                if (!containingTrans)
+                    getExpSchema().getScope().commitTransaction();
             }
-
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
         }
         catch (SQLException e)
         {
