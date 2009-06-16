@@ -353,9 +353,6 @@ LABKEY.Exp.Run = function (config) {
     this.dataRows = config.dataRows || [];
     this.materialInputs = config.materialInputs || [];
     this.materialOutputs = config.materialOutputs || [];
-//    this.protocolApplications = config.protocolApplications || [];
-//    this.inputProtocolApplication = config.inputProtocolApplication;
-//    this.outputProtocolApplication = config.outputProtocolApplication;
     this.objectProperties = config.objectProperties || {};
 };
 Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
@@ -374,7 +371,6 @@ LABKEY.Exp.Protocol = function (config) {
     LABKEY.Exp.Protocol.superclass.constructor.call(this, config);
     config = config || {};
 
-    //this.protocolParameters = config.protocolParameters || [];
     this.instrument = config.instrument;
     this.software = config.software;
     this.contact = config.contact;
@@ -382,14 +378,6 @@ LABKEY.Exp.Protocol = function (config) {
     this.steps = config.steps || [];
     this.applicationType = config.applicationType;
     this.description = config.description;
-    //this.maxInputDataPerInstance = config.maxInputDataPerInstance;
-    //this.maxInputMaterialPerInstance = config.maxInputMaterialPerInstance;
-    //this.protocolDescription = config.protocolDescription;
-    //this.outputMaterialPerInstance = config.outputMaterialPerInstance;
-    //this.outputDataPerInstance = config.outputDataPerInstance;
-    //this.outputMaterialType = config.outputMaterialType;
-    //this.outputDataType = config.outputDataType;
-    //this.parentProtocols = config.parentProtocols || [];
     this.runs = [];
     if (config.runs) {
         for (var i = 0; i < config.runs.length; i++) {
@@ -450,18 +438,6 @@ LABKEY.Exp.ProtocolApplication = function (config) {
     LABKEY.Exp.ProtocolApplication.superclass.constructor.call(this, config);
     config = config || {};
 
-    //this.dataInputs
-    //this.inputDatas
-    //this.outputDatas
-    //this.materialInputs
-    //this.inputMaterials
-    //this.outputMaterials
-    //this.protocol
-    //this.run
-    //this.actionSequence
-    //this.applicationType
-    //this.activityDate
-    //this.comments
 };
 Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
