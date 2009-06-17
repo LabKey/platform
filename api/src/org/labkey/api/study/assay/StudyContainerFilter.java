@@ -42,6 +42,12 @@ public class StudyContainerFilter extends ContainerFilter
     {
         if (_ids == null)
         {
+            if (_schema.getUser().isAdministrator())
+            {
+                // Administrators can see everything
+                return null;
+            }
+            
             if (_schema.getTargetStudy() != null)
             {
                 _ids = Collections.singleton(_schema.getTargetStudy().getId());
