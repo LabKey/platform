@@ -732,6 +732,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     "        var win = new Ext.Window({\n" +
                     "           title: txtTitle,\n" +
                     "           border: false,\n" +
+                    "           constrain: true,\n" +
                     "           html: txtMsg,\n" +
                     "           closeAction:'close',\n" +
                     "           autoScroll: true,\n" +

@@ -185,7 +185,7 @@ public class ReportUtil
     public static String getReportKey(String schema, String query)
     {
         if (StringUtils.isEmpty(schema))
-            return " ";
+            throw new IllegalArgumentException("schema name cannot be blank");
         
         StringBuilder sb = new StringBuilder(toPattern.matcher(schema).replaceAll("%2F"));
         if (!StringUtils.isEmpty(query))

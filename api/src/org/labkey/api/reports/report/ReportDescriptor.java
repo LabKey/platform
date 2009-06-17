@@ -321,17 +321,24 @@ public class ReportDescriptor extends Entity implements SecurableResource
         ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
         {
-            ReportPropertyList.Prop prop = props.addNewProp();
-
-            prop.setName(entry.getKey());
             final Object value = entry.getValue();
             if (value instanceof List)
             {
                 for (Object item : ((List)value))
+                {
+                    ReportPropertyList.Prop prop = props.addNewProp();
+
+                    prop.setName(entry.getKey());
                     prop.setStringValue(String.valueOf(item));
+                }
             }
             else if (value != null)
+            {
+                ReportPropertyList.Prop prop = props.addNewProp();
+
+                prop.setName(entry.getKey());
                 prop.setStringValue(String.valueOf(value));
+            }
         }
         return doc;
     }
