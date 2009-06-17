@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ContextListener;
@@ -330,8 +332,9 @@ public class StudyReload
                     //noinspection ThrowableInstanceNeverThrown
                     BindException errors = new BindException(c, "reload");
                     ActionURL manageStudyURL = new ActionURL(StudyController.ManageStudyAction.class, c);
-                    StudyImporter importer = new StudyImporter(c, null, manageStudyURL, root, errors);
-                    //importer.process();
+                    User reloadUser = UserManager.getUser(StudyManager.getInstance().getStudy(c).getReloadUser());
+                    StudyImporter importer = new StudyImporter(c, reloadUser, manageStudyURL, root, errors);
+                    importer.process();
                     LOG.info("Handling " + c.getPath());
                 }
                 catch (InterruptedException e)

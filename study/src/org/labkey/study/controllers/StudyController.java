@@ -5921,6 +5921,7 @@ public class StudyController extends BaseStudyController
                 study = study.createMutable();
                 study.setAllowReload(form.isAllowReload());
                 study.setReloadInterval(0 != form.getInterval() ? form.getInterval() : null);
+                study.setReloadUser(getUser().getUserId());
                 StudyManager.getInstance().updateStudy(getUser(), study);
                 StudyReload.initializeTimer(study);
             }

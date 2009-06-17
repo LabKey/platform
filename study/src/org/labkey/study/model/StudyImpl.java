@@ -58,6 +58,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private boolean _isAllowReload;
     private Integer _reloadInterval;
     private Date _lastReload;
+    private Integer _reloadUser;
 
     public StudyImpl()
     {
@@ -358,6 +359,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setLastReload(Date lastReload)
     {
         _lastReload = lastReload;
+    }
+
+    public Integer getReloadUser()
+    {
+        return _reloadUser;
+    }
+
+    public void setReloadUser(Integer reloadUser)
+    {
+        _reloadUser = reloadUser;
     }
 
     public static class SummaryStatistics

@@ -45,6 +45,7 @@ import java.util.*;
 public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 {
     private Issue _issue;
+    private Issue _prevIssue;
     private List<Issue> _issueList = Collections.emptyList();
     private IssueManager.CustomColumnConfiguration _ccc;
     private Set<String> _editable = Collections.emptySet();
@@ -65,6 +66,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public void setIssue(Issue issue)
     {
         _issue = issue;
+    }
+
+    public Issue getPrevIssue()
+    {
+        return _prevIssue;
+    }
+
+    public void setPrevIssue(Issue prevIssue)
+    {
+        _prevIssue = prevIssue;
     }
 
     public void setPrint(boolean print)

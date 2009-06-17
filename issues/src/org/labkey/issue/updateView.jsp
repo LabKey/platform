@@ -185,8 +185,9 @@
 <%
     }
 %>
-    <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(issue)%>">
+    <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=bean.getAction()%>">
+    <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
 </form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById("<%=focusId%>").focus();} catch (x) {}</script>
 <script type="text/javascript">

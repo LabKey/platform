@@ -20,6 +20,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentParent;
@@ -456,6 +457,7 @@ public class IssuesController extends SpringActionController
 
             page.setAction("insert");
             page.setIssue(_issue);
+            page.setPrevIssue(_issue);
             page.setCustomColumnConfiguration(ccc);
             page.setBody(form.getComment() == null ? form.getBody() : form.getComment());
             page.setCallbackURL(form.getCallbackURL());
@@ -523,9 +525,9 @@ public class IssuesController extends SpringActionController
 
             final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), getViewContext());
             if (assignedTo != null)
-                sendUpdateEmail(_issue, url, "opened and assigned to " + assignedTo, form.getAction());
+                sendUpdateEmail(_issue, null, url, "opened and assigned to " + assignedTo, form.getAction());
             else
-                sendUpdateEmail(_issue, url, "opened", form.getAction());
+                sendUpdateEmail(_issue, null, url, "opened", form.getAction());
 
             return true;
         }
@@ -580,6 +582,7 @@ public class IssuesController extends SpringActionController
             User user = getUser();
 
             Issue issue = form.getBean();
+            Issue prevIssue = (Issue)form.getOldValues();
             requiresUpdatePermission(user, issue);
             ActionURL detailsUrl;
 
@@ -600,7 +603,7 @@ public class IssuesController extends SpringActionController
                 else
                     issue.Change(user);
 
-                Issue.Comment comment = addComment(issue, (Issue)form.getOldValues(), user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                Issue.Comment comment = addComment(issue, prevIssue, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
                 IssueManager.saveIssue(openSession(), user, c, issue);
                 AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
                 if (ownsTransaction)
@@ -622,12 +625,12 @@ public class IssuesController extends SpringActionController
             //    ...if someone other than "assigned to" is updating, reopening, or resolving a bug
             if ("close".equals(form.getAction()))
             {
-                sendUpdateEmail(issue, detailsUrl, "closed", form.getAction());
+                sendUpdateEmail(issue, prevIssue, detailsUrl, "closed", form.getAction());
             }
             else
             {
                 String change = ("open".equals(form.getAction()) || "reopen".equals(form.getAction()) ? "reopened" : form.getAction() + "d");
-                sendUpdateEmail(issue, detailsUrl, change, form.getAction());
+                sendUpdateEmail(issue, prevIssue, detailsUrl, change, form.getAction());
             }
             return true;
         }
@@ -728,6 +731,7 @@ public class IssuesController extends SpringActionController
             if (_issue == null)
                 HttpView.throwNotFound();
 
+            Issue prevIssue = (Issue)_issue.clone();
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
@@ -738,6 +742,7 @@ public class IssuesController extends SpringActionController
 
             page.setAction("update");
             page.setIssue(_issue);
+            page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
             page.setBody(form.getComment());
             page.setEditable(getEditableFields(page.getAction(), ccc));
@@ -789,11 +794,12 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
-            int issueId = form.getBean().getIssueId();
+            int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             if (null == _issue)
                 HttpView.throwNotFound();
 
+            Issue prevIssue = (Issue)_issue.clone();
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
@@ -816,6 +822,7 @@ public class IssuesController extends SpringActionController
 
             page.setAction("resolve");
             page.setIssue(_issue);
+            page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
             page.setBody(form.getComment());
             page.setEditable(getEditableFields(page.getAction(), ccc));
@@ -843,6 +850,7 @@ public class IssuesController extends SpringActionController
             if (null == _issue)
                 HttpView.throwNotFound();
 
+            Issue prevIssue = (Issue)_issue.clone();
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
@@ -855,6 +863,7 @@ public class IssuesController extends SpringActionController
 
             page.setAction("close");
             page.setIssue(_issue);
+            page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
             page.setBody(form.getComment());
             page.setEditable(getEditableFields(page.getAction(), ccc));
@@ -879,6 +888,7 @@ public class IssuesController extends SpringActionController
         {
             int issueId = form.getBean().getIssueId();
             _issue = getIssue(issueId);
+            Issue prevIssue = (Issue)_issue.clone();
 
             User user = getUser();
             requiresUpdatePermission(user, _issue);
@@ -893,6 +903,7 @@ public class IssuesController extends SpringActionController
 
             page.setAction("reopen");
             page.setIssue(_issue);
+            page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
             page.setBody(form.getComment());
             page.setEditable(getEditableFields(page.getAction(), ccc));
@@ -1059,11 +1070,11 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private void sendUpdateEmail(Issue issue, ActionURL detailsURL, String change, String action)
+    private void sendUpdateEmail(Issue issue, Issue prevIssue, ActionURL detailsURL, String change, String action)
     {
         try
         {
-            final String to = getEmailAddresses(issue, action);
+            final String to = getEmailAddresses(issue, prevIssue, action);
             if (to.length() > 0)
             {
                 Issue.Comment lastComment = issue.getLastComment();
@@ -1097,12 +1108,33 @@ public class IssuesController extends SpringActionController
      * Builds the list of email addresses for notification based on the user
      * preferences and the explicit notification list.
      */
-    private String getEmailAddresses(Issue issue, String action) throws ServletException
+    private String getEmailAddresses(Issue issue, Issue prevIssue, String action) throws ServletException
     {
         final Set<String> emailAddresses = new HashSet<String>();
-        final int filter = getNotificationFilter(action);
         final Container c = getContainer();
+        int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
+        int assignedToPrevPref = prevIssue != null ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
+        int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
 
+
+        if ("insert".equals(action))
+        {
+            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
+                emailAddresses.add(UserManager.getEmailForId(issue.getAssignedTo()));
+        }
+        else
+        {
+            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                emailAddresses.add(UserManager.getEmailForId(issue.getAssignedTo()));
+
+            if ((assignedToPrevPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                emailAddresses.add(UserManager.getEmailForId(prevIssue.getAssignedTo()));
+
+            if ((createdByPref & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
+                emailAddresses.add(UserManager.getEmailForId(issue.getCreatedBy()));
+        }
+
+/*
         if ((filter & IssueManager.getUserEmailPreferences(c, issue.getAssignedTo())) != 0)
         {
             emailAddresses.add(UserManager.getEmailForId(issue.getAssignedTo()));
@@ -1112,6 +1144,7 @@ public class IssuesController extends SpringActionController
         {
             emailAddresses.add(UserManager.getEmailForId(issue.getCreatedBy()));
         }
+*/
 
         // add any explicit notification list addresses
         final HString notify = issue.getNotifyList();
@@ -1141,14 +1174,6 @@ public class IssuesController extends SpringActionController
             }
         }
         return sb.toString();
-    }
-
-    private int getNotificationFilter(String action)
-    {
-        if ("insert".equals(action))
-            return IssueManager.NOTIFY_ASSIGNEDTO_OPEN;
-        else
-            return IssueManager.NOTIFY_ASSIGNEDTO_UPDATE | IssueManager.NOTIFY_CREATED_UPDATE;
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -1830,6 +1855,11 @@ public class IssuesController extends SpringActionController
             {
                 return getDetailsForwardURL(getViewContext(), getBean());
             }
+        }
+
+        public int getIssueId()
+        {
+            return NumberUtils.toInt(_stringValues.get("issueId"));
         }
     }
 
