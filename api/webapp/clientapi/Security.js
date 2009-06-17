@@ -530,6 +530,10 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties:
          * @param {Boolean} config.includeSubfolders If set to true, the response will include subfolders
          * and their contained securable resources (defaults to false).
+         * @param {Boolean} config.includeEffectivePermissions If set to true, the response will include the
+         * list of effective permissions (unique names) the current user has to each resource (defaults to false).
+         * These permissions are calcualted based on the current user's group memberships and role assignments, and
+         * represent the actual permissions the user has to these resources at the time of the API call.
          * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -544,6 +548,8 @@ LABKEY.Security = new function()
          *      <li>parentId: The parent resource's id (may be omitted if no parent)</li>
          *      <li>parentContainerPath: The parent resource's container path (may be omitted if no parent)</li>
          *      <li>children: An array of child resource objects.</li>
+         *      <li>effectivePermissions: An array of permission unique names the current user has on the resource. This will be
+         *          present only if the includeEffectivePermissions property was set to true on the config object.</li>
          *  </ul>
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
@@ -563,6 +569,8 @@ LABKEY.Security = new function()
             var params = {};
             if(undefined != config.includeSubfolders)
                 params.includeSubfolders = config.includeSubfolders;
+            if(undefined != config.includeEffectivePermissions)
+                params.includeEffectivePermissions = config.includeEffectivePermissions;
 
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getSecurableResources", config.containerPath),
