@@ -425,6 +425,7 @@ public class SecurityApiActions
     public static class GetSecurableResourcesForm
     {
         private boolean _includeSubfolders = false;
+        private boolean _includeEffectivePermissions = false;
 
         public boolean isIncludeSubfolders()
         {
@@ -435,16 +436,28 @@ public class SecurityApiActions
         {
             _includeSubfolders = includeSubfolders;
         }
+
+        public boolean isIncludeEffectivePermissions()
+        {
+            return _includeEffectivePermissions;
+        }
+
+        public void setIncludeEffectivePermissions(boolean includeEffectivePermissions)
+        {
+            _includeEffectivePermissions = includeEffectivePermissions;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
     public static class GetSecurableResourcesAction extends ApiAction<GetSecurableResourcesForm>
     {
         private boolean _includeSubfolders = false;
+        private boolean _includePermissions = false;
 
         public ApiResponse execute(GetSecurableResourcesForm form, BindException errors) throws Exception
         {
             _includeSubfolders = form.isIncludeSubfolders();
+            _includePermissions = form.isIncludeEffectivePermissions();
             Container container = getViewContext().getContainer();
             return new ApiSimpleResponse("resources", getResourceProps(container));
         }
@@ -466,6 +479,19 @@ public class SecurityApiActions
                 props.put("parentId", parent.getResourceId());
                 props.put("parentContainerPath", parent.getResourceContainer().getPath());
             }
+            if (_includePermissions)
+            {
+                List<String> permNames = new ArrayList<String>();
+                SecurityPolicy policy = SecurityManager.getPolicy(resource);
+                Set<Class<? extends Permission>> effectivePermClasses = policy.getPermissions(getViewContext().getUser());
+                for (Class<? extends Permission> permClass : effectivePermClasses)
+                {
+                    Permission perm = RoleManager.getPermission(permClass);
+                    permNames.add(perm.getUniqueName());
+                }
+                props.put("effectivePermissions", permNames);
+            }
+
             return props;
         }
 
