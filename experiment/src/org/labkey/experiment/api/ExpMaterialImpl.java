@@ -16,17 +16,18 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.*;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.User;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implements ExpMaterial
 {
