@@ -2005,6 +2005,7 @@ study/src/org/labkey/study/controllers/samples/SpringSpecimenController.java -te
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
+study/src/org/labkey/study/designer/JSONSerializer.java -text
 study/src/org/labkey/study/designer/MapArrayExcelWriter.java -text
 study/src/org/labkey/study/designer/SaveException.java -text
 study/src/org/labkey/study/designer/StudyDefinitionServiceImpl.java -text

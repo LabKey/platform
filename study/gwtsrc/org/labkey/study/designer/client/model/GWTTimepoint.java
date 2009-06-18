@@ -62,8 +62,12 @@ public class GWTTimepoint implements Comparable, IsSerializable
             return -1;
 
         if (days - p.days == 0)
-            return name.compareTo(p.name);
-        
+        {
+            if (null == name)
+                return null == p.name ? 0 : -1;
+            return p.name == null ? 1 : name.compareTo(p.name);
+        }
+
         return days - p.days;
     }
 

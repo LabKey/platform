@@ -97,6 +97,16 @@ public class StudyDesignManager
         return Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
     }
 
+    public StudyDesignInfo[] getStudyDesignsForAllFolders(User u, Container root) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter();
+        ContainerFilter cf = new ContainerFilter.CurrentAndSubfolders(u);
+        filter.addInClause("Container", cf.getIds(root));
+
+        return Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
+    }
+
+
     public StudyDesignInfo moveStudyDesign(User user, StudyDesignInfo design, Container newContainer) throws SQLException {
         Container oldContainer = design.getContainer();
         design.setContainer(newContainer);

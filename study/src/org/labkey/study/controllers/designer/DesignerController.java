@@ -33,6 +33,8 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -48,6 +50,8 @@ import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -283,7 +287,60 @@ public class DesignerController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetStudyDesigns extends ApiAction<GetStudyDesignsForm>
+    {
 
+        public ApiResponse execute(GetStudyDesignsForm getStudyDesignsForm, BindException errors) throws Exception
+        {
+            JSONArray jsonDesigns = new JSONArray();
+            StudyDesignInfo[] designs;
+            if (getStudyDesignsForm.isIncludeSubfolders())
+                designs = StudyDesignManager.get().getStudyDesignsForAllFolders(getUser(), getContainer());
+            else
+                designs = StudyDesignManager.get().getStudyDesigns(getContainer());
+            for (StudyDesignInfo info : designs)
+            {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("publicRevision", info.getPublicRevision());
+                jsonObject.put("sourceContainer", containerJSON(info.getSourceContainer()));
+                jsonObject.put("label", info.getLabel());
+                jsonObject.put("studyId", info.getStudyId());
+                jsonObject.put("container", containerJSON(info.getContainer()));
+                jsonObject.put("studyDefinition", JSONSerializer.toJSON(StudyDesignManager.get().getGWTStudyDefinition(getContainer(), info)));
+                jsonDesigns.put(jsonObject);
+            }
+
+            ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
+            writer.write(new ApiSimpleResponse("studyDesigns", jsonDesigns));
+            return null;
+        }
+
+        Map<String,Object> containerJSON(Container c)
+        {
+            JSONObject j = new JSONObject();
+            j.put("id", c.getId());
+            j.put("path", c.getPath());
+            j.put("name", c.getName());
+            
+            return j;
+        }
+    }
+
+    public static class GetStudyDesignsForm
+    {
+        private boolean includeSubfolders;
+
+        public boolean isIncludeSubfolders()
+        {
+            return includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            this.includeSubfolders = includeSubfolders;
+        }
+    }
     @RequiresPermission(ACL.PERM_READ)
     public class GetSpecimenExcelAction extends ExportAction<CreateRepositoryForm>
     {

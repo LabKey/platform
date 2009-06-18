@@ -435,8 +435,21 @@ public class FileContentController extends SpringActionController
 
        public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors) throws Exception
        {
-           if (null == form.getRootPath() && null != AttachmentService.get().getWebRoot(getContainer()))
-               form.setRootPath(AttachmentService.get().getWebRoot(getContainer()).getCanonicalPath());
+           File attachmentServiceRoot = AttachmentService.get().getWebRoot(getContainer());
+           if (null == form.getRootPath() && null != attachmentServiceRoot)
+           {
+               String path = attachmentServiceRoot.getPath();
+               try
+               {
+                   NetworkDrive.ensureDrive(path);
+                   path = attachmentServiceRoot.getCanonicalPath();
+               }
+               catch (Exception e)
+               {
+                   logger.error("Could not get canonical path for " + attachmentServiceRoot.getPath() + ", using path as entered.", e);
+               }
+               form.setPath(path);
+           }
            JspView adminView = new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form, errors);
            return adminView;
        }

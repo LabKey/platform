@@ -347,8 +347,10 @@ public class XMLSerializer
     {
         SampleMeasure sm = SampleMeasure.Factory.newInstance();
         sm.setAmount(gwtSampleMeasure.getAmount());
-        sm.setType(gwtSampleMeasure.getType().toString());
-        sm.setUnit(gwtSampleMeasure.getUnit().getStorageName());
+        if (null != gwtSampleMeasure.getType())
+            sm.setType(gwtSampleMeasure.getType().toString());
+        if (null != gwtSampleMeasure.getUnit())
+            sm.setUnit(gwtSampleMeasure.getUnit().getStorageName());
 
         return sm;
     }
