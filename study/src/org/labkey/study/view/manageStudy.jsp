@@ -130,12 +130,6 @@
         <td>Manage QC states for this Study</td>
         <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
     </tr>
-<%
-    } // admin permission
-
-    if(c.hasPermission(user, ManageRequestSettingsPermission.class))
-    {
-%>
     <tr>
         <td colspan="3" class="labkey-announcement-title"><span>Specimen Repository Settings</span></td>
     </tr>
@@ -145,16 +139,22 @@
         <td>This study uses the <%=study.getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
         <td><%=textLink("Change Repository Type", new ActionURL("Study-Samples", "showManageRepositorySettings.view", c))%></td>
     </tr>
-    <%
-        if (study.getRepositorySettings().isEnableRequests())
-        {
-    %>
     <tr>
         <th align="left">Display and Behavior</th>
         <td>Manage warnings, comments, and workflow</td>
         <td><%= textLink("Manage Display and Behavior",
                 new ActionURL("Study-Samples", "manageDisplaySettings.view", c)) %></td>
     </tr>
+<%
+    } // admin permission
+
+    if(c.hasPermission(user, ManageRequestSettingsPermission.class))
+    {
+%>
+    <%
+        if (study.getRepositorySettings().isEnableRequests())
+        {
+    %>
     <tr>
         <td colspan="3" class="labkey-announcement-title"><span>Specimen Request Settings</span></td>
     </tr>

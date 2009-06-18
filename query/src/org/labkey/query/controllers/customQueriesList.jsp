@@ -21,6 +21,7 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -105,7 +106,7 @@
     </tr>
     <% } %>
 </table>
-<% if (form.getSchema().getTableAndQueryNames(false).size() > 0) { %>
+<% if (getViewContext().getContainer().getPolicy().hasPermission(getViewContext().getUser(), AdminPermission.class) && form.getSchema().getTableAndQueryNames(false).size() > 0) { %>
 <p>
     [<a title="Create New Query" href="<%=currentSchema.urlFor(QueryAction.newQuery)%>">create new query</a>]
 </p>

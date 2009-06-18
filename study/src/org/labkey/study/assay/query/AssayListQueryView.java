@@ -23,6 +23,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -49,7 +50,7 @@ public class AssayListQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class, InsertPermission.class))
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
             ActionButton insert = new ActionButton("New Assay Design", insertURL);
