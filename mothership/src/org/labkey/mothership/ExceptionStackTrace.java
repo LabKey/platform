@@ -107,7 +107,8 @@ public class ExceptionStackTrace
                     // Don't include lines that depend on Groovy view numbers
                     if (!line.trim().startsWith("at sun.reflect.")
                             && !(line.trim().startsWith("..."))
-                            && !(line.trim().startsWith("at script") && line.contains("run(script") && line.contains(".groovy:")))
+                            && !(line.trim().startsWith("at script") && line.contains("run(script") && line.contains(".groovy:"))
+                            && !line.trim().startsWith("Detail:")) // Postgres stack traces can include a second details line
                     {
                         // Don't include line numbers that depend on non-labkey version install
                         if (line.trim().startsWith("Caused by:") && line.indexOf(":", line.indexOf(":") + 1) != -1)

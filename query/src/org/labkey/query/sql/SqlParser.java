@@ -16,26 +16,28 @@
 
 package org.labkey.query.sql;
 
-import antlr.RecognitionException;
 import antlr.ASTFactory;
+import antlr.RecognitionException;
 import antlr.TokenStreamRecognitionException;
-
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.PrintWriter;
-import java.util.*;
-
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 import org.labkey.query.sql.antlr.SqlBaseTokenTypes;
 import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.query.QueryParseException;
-import org.apache.log4j.Logger;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -233,7 +235,7 @@ public class SqlParser
             "new","not","null",
             "of","on","or","order","outer",
             "right",
-            "select","set","some","sum",
+            "select","set","some","stddev","sum",
             "trailing","then","true",
             "union","update","user",
             "versioned",

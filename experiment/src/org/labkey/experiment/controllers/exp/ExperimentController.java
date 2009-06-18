@@ -41,10 +41,8 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
@@ -1784,6 +1782,41 @@ public class ExperimentController extends SpringActionController
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException
         {
             ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(true));
+        }
+    }
+
+    public static class DeleteRunForm
+    {
+        private int _runId;
+
+        public int getRunId()
+        {
+            return _runId;
+        }
+
+        public void setRunId(int runId)
+        {
+            _runId = runId;
+        }
+    }
+
+    /** Separate delete action from the client API */
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
+    {
+        public ApiResponse execute(DeleteRunForm form, BindException errors) throws Exception
+        {
+            ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
+            if (run == null)
+            {
+                throw new NotFoundException("Could not find run with ID " + form.getRunId());
+            }
+            if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
+            {
+                throw new UnauthorizedException("Not permitted");
+            }
+            run.delete(getUser());
+            return new ApiSimpleResponse("success", true);
         }
     }
 

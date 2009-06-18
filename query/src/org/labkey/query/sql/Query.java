@@ -174,7 +174,8 @@ public class Query
 		{
             TableInfo table = relation.getTableInfo();
             boolean foundColumn = false;
-			for (FieldKey field : table.getDefaultVisibleColumns())
+            List<FieldKey> defaultVisibleColumns = table.getDefaultVisibleColumns();
+            for (FieldKey field : defaultVisibleColumns)
 			{
 				if (field.getParent() != null)
 					continue;
@@ -188,6 +189,18 @@ public class Query
 				qfield.appendSource(builder);
 				builder.nextPrefix(",");
                 foundColumn = true;
+
+                // Check if there's a corresponding OORIndicator that's not part of the default set, and add it
+                FieldKey oorFieldKey = new FieldKey(field.getParent(), field.getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+                if (table.getColumn(oorFieldKey.getName()) != null && !defaultVisibleColumns.contains(oorFieldKey))
+                {
+                    List<String> oorParts = new ArrayList<String>();
+                    oorParts.add(key.getName());
+                    oorParts.addAll(oorFieldKey.getParts());
+                    QFieldKey oorQField = QFieldKey.of(FieldKey.fromParts(oorParts));
+                    oorQField.appendSource(builder);
+                    builder.nextPrefix(",");
+                }
 			}
             if (!foundColumn)
             {
