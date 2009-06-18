@@ -50,6 +50,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
@@ -447,10 +448,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         Container c = getContainer();
         User u = getUser();
         SecurityPolicy policy = c.getPolicy();
-        Set<Role> contextualRoles = new HashSet<Role>();
-
-        if(protocol.getCreatedBy().equals(u))
-            contextualRoles.add(RoleManager.getRole(OwnerRole.class));
-        return policy.hasPermission(u, UpdatePermission.class, contextualRoles);
+        return policy.hasPermission(u, DesignAssayPermission.class);
     }
 }

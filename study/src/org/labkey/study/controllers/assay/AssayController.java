@@ -270,7 +270,7 @@ public class AssayController extends SpringActionController
                 return null; // return to hide intellij warnings
             }
 
-            ContainerTree tree = new ContainerTree("/", getUser(), ACL.PERM_INSERT, null)
+            ContainerTree tree = new ContainerTree("/", getUser(), DesignAssayPermission.class, null, null)
             {
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)

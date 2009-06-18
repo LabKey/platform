@@ -50,7 +50,7 @@ public class AssayListQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class, InsertPermission.class))
+        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
             ActionButton insert = new ActionButton("New Assay Design", insertURL);
@@ -60,7 +60,7 @@ public class AssayListQueryView extends QueryView
         }
 
         Container project = getContainer().getProject();
-        if (!project.equals(getContainer()) && project.hasPermission(getUser(), ACL.PERM_INSERT))
+        if (!project.equals(getContainer()) && project.hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL manageProjectAssays = new ActionURL(AssayController.BeginAction.class, project);
             ActionButton sharedButton = new ActionButton("Manage Project Assays", manageProjectAssays);
