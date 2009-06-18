@@ -108,12 +108,12 @@ public class WikiEditModel
 
     public String getName()
     {
-        return null == _wiki ? getDefName() : PageFlowUtil.jsString(_wiki.getName());
+        return null == _wiki ? getDefName() : PageFlowUtil.jsString(_wiki.getName().getSource());
     }
 
     public String getTitle()
     {
-        return null == _wikiVersion || null == _wikiVersion.getTitle() ? "null" : PageFlowUtil.jsString(_wikiVersion.getTitle());
+        return null == _wikiVersion || null == _wikiVersion.getTitle() ? "null" : PageFlowUtil.jsString(_wikiVersion.getTitle().getSource());
     }
 
     public String getEntityId()

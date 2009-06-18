@@ -2977,8 +2977,8 @@ public class WikiController extends SpringActionController
             HashMap<String,Object> wikiProps = new HashMap<String,Object>();
             wikiProps.put("entityId", wiki.getEntityId());
             wikiProps.put("rowId", wiki.getRowId());
-            wikiProps.put("name", wiki.getName());
-            wikiProps.put("title", wikiversion.getTitle());
+            wikiProps.put("name", wiki.getName().getSource()); //HString source will be JS encoded
+            wikiProps.put("title", wikiversion.getTitle().getSource());
             wikiProps.put("body", wikiversion.getBody()); //CONSIDER: do we really need to return the body here?
             wikiProps.put("rendererType", wikiversion.getRendererType());
             wikiProps.put("parent", wiki.getParent());
