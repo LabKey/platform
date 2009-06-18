@@ -354,6 +354,40 @@ LABKEY.Exp.Run = function (config) {
     this.materialInputs = config.materialInputs || [];
     this.materialOutputs = config.materialOutputs || [];
     this.objectProperties = config.objectProperties || {};
+
+    /**
+     * Deletes the run from the database.
+     * @param config An object that contains the following configuration parameters
+     * @param {Function} config.successCallback A reference to a function to call with the API results. This
+     * function will be passed the following parameters:
+     * <ul>
+     * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+     * function will be passed the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     */
+    this.deleteRun = function(config)
+    {
+        if(!config.successCallback)
+        {
+            Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.Run.deleteRun()!");
+            return;
+        }
+
+        Ext.Ajax.request(
+        {
+            url : LABKEY.ActionURL.buildURL("experiment", "deleteRun"),
+            method : 'POST',
+            params : { runId : this.id },
+            success: LABKEY.Utils.getCallbackWrapper(config.successCallback, this, false),
+            failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, this, true)
+        });
+    };
 };
 Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
 
@@ -668,7 +702,10 @@ LABKEY.Exp.Data = function (config) {
     this.getContent = function(config)
     {
         if(!config.successCallback)
+        {
             Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.Data.getContent()!");
+            return;
+        }
 
         Ext.Ajax.request(
         {

@@ -26,19 +26,13 @@ import org.labkey.api.query.AliasedColumn;
  */
 public class OORDisplayColumnFactory implements DisplayColumnFactory
 {
-    private ColumnInfo _oorColumnInfo;
     public static final String NUMBER_COLUMN_SUFFIX = "Number";
     public static final String IN_RANGE_COLUMN_SUFFIX = "InRange";
     public static final String OORINDICATOR_COLUMN_SUFFIX = "OORIndicator";
 
-    public OORDisplayColumnFactory(ColumnInfo oorColumnInfo)
-    {
-        _oorColumnInfo = oorColumnInfo;
-    }
-
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
-        return new OutOfRangeDisplayColumn(colInfo, _oorColumnInfo);
+        return new OutOfRangeDisplayColumn(colInfo);
     }
 
     public static void addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
@@ -64,7 +58,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
             return;
         }
 
-        combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory(wrappedOORIndicatorCol));
+        combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());
 
         ColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
         wrappedNumberColumn.setCaption(caption + " " + NUMBER_COLUMN_SUFFIX);

@@ -136,16 +136,8 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%" + getDataRowLsidPrefix() + "%'");
         addCondition(dataRowClause, "ObjectURI");
 
-        String sqlRunLSID = "(SELECT RunObjects.objecturi FROM exp.Object AS DataRowParents, " +
-                "    exp.Object AS RunObjects, exp.Data d, exp.ExperimentRun r WHERE \n" +
-                "    DataRowParents.ObjectUri = d.lsid AND\n" +
-                "    r.RowId = d.RunId AND\n" +
-                "    RunObjects.ObjectURI = r.lsid AND\n" +
-                "    DataRowParents.ObjectID IN (SELECT OwnerObjectId FROM exp.Object AS DataRowObjects\n" +
-                "    WHERE DataRowObjects.ObjectId = " + ExprColumn.STR_TABLE_ALIAS + ".ObjectId))";
-
-        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(sqlRunLSID), Types.VARCHAR);
-        runColumn.setFk(new LookupForeignKey("LSID")
+        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
+        runColumn.setFk(new LookupForeignKey("RowID")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -154,15 +146,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         });
         addColumn(runColumn);
 
-        String sqlRunRowId = "(SELECT r.RowId FROM exp.Object AS DataRowParents, " +
-                "    exp.Object AS RunObjects, exp.Data d, exp.ExperimentRun r WHERE \n" +
-                "    DataRowParents.ObjectUri = d.lsid AND\n" +
-                "    r.RowId = d.RunId AND\n" +
-                "    RunObjects.ObjectURI = r.lsid AND\n" +
-                "    DataRowParents.ObjectID IN (SELECT OwnerObjectId FROM exp.Object AS DataRowObjects\n" +
-                "    WHERE DataRowObjects.ObjectId = " + ExprColumn.STR_TABLE_ALIAS + ".ObjectId))";
-
-        ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(sqlRunRowId), Types.INTEGER);
+        ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
         ColumnInfo addedRunIdColumn = addColumn(runIdColumn);
         addedRunIdColumn.setIsHidden(true);
 

@@ -15,11 +15,10 @@
  */
 package org.labkey.api.study.query;
 
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.query.FilteredTable;
 /*
  * User: brittp
  * Date: Mar 15, 2009
@@ -40,7 +39,7 @@ public class ProtocolFilteredObjectTable extends FilteredTable
     public SQLFragment getFromSQL()
     {
         SQLFragment fromSQL = new SQLFragment("(");
-        fromSQL.append("SELECT o.* FROM " + getFromTable() + " o\n" +
+        fromSQL.append("SELECT o.*, d.RowID as DataID, r.RowID AS RunID FROM " + getFromTable() + " o\n" +
                 "\tJOIN exp.Object parent ON \n" +
                 "\t\to.OwnerObjectId = parent.ObjectId \n" +
                 "\tJOIN exp.Data d ON \n" +

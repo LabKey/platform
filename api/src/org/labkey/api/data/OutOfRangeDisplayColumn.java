@@ -16,10 +16,15 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Set;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -27,15 +32,20 @@ import java.util.Set;
  */
 public class OutOfRangeDisplayColumn extends DataColumn
 {
-    private final ColumnInfo _oorIndicatorColumn;
+    private ColumnInfo _oorIndicatorColumn;
     private boolean _doneWithSuperclassConstructor = true;
+
+    /** Look up the OORIndicator column through QueryService */
+    public OutOfRangeDisplayColumn(ColumnInfo numberColumn)
+    {
+        this(numberColumn, null);
+    }
 
     public OutOfRangeDisplayColumn(ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
     {
         super(numberColumn);
         _oorIndicatorColumn = oorIndicatorColumn;
     }
-
 
     public Class getDisplayValueClass()
     {
@@ -111,6 +121,14 @@ public class OutOfRangeDisplayColumn extends DataColumn
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         super.addQueryColumns(columns);
+
+        if (_oorIndicatorColumn == null)
+        {
+            FieldKey fk = new FieldKey(getBoundColumn().getFieldKey().getParent(), getBoundColumn().getFieldKey().getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+            Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getBoundColumn().getParentTable(), Collections.singleton(fk));
+            _oorIndicatorColumn = cols.get(fk);
+        }
+
         if (_oorIndicatorColumn != null)
         {
             columns.add(_oorIndicatorColumn);

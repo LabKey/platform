@@ -36,6 +36,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     private static final String ASSAY_SUBQUERY_SUFFIX = "$AssayJoin";
     private static final String SPECIMEN_SUBQUERY_SUFFIX = "$SpecimenJoin";
+    private static final String STUDY_SUBQUERY_SUFFIX = "$StudyJoin";
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
@@ -53,6 +54,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         tableInfo.setContainerFilter(_studyContainerFilter);
 
         String specimenAlias = ExprColumn.STR_TABLE_ALIAS + SPECIMEN_SUBQUERY_SUFFIX;
+        String studyAlias = ExprColumn.STR_TABLE_ALIAS + STUDY_SUBQUERY_SUFFIX;
         String targetStudyAlias = ExprColumn.STR_TABLE_ALIAS + ASSAY_SUBQUERY_SUFFIX;
 
         SQLFragment sql = new SQLFragment();
@@ -70,7 +72,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         if (participantIdCol != null || visitIdCol != null || dateCol != null)
         {
             // We want NULL if there's no match based on specimen id
-            sql.append("CASE WHEN (" + specimenAlias + ".DateBased IS NULL) THEN NULL ELSE (CASE WHEN (");
+            sql.append("CASE WHEN (" + studyAlias + ".DateBased IS NULL) THEN NULL ELSE (CASE WHEN (");
             if (participantIdCol != null)
             {
                 // Check if the participants match, or if they're both NULL
@@ -87,7 +89,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 if (visitIdCol != null)
                 {
                     // Check if we're in a visit-based study and the visits match or are both NULL
-                    sql.append("((" + specimenAlias + ".DateBased IS NULL OR " + specimenAlias + ".DateBased = ?) AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL)))");
+                    sql.append("((" + studyAlias + ".DateBased IS NULL OR " + studyAlias + ".DateBased = ?) AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL)))");
                     sql.add(Boolean.FALSE);
                     if (dateCol != null)
                     {
@@ -98,7 +100,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 {
                     // Check if we're in a date-based study and the visits match or are both NULL
                     SqlDialect dialect = tableInfo.getSqlDialect();
-                    sql.append("((" + specimenAlias + ".DateBased = ? OR " + specimenAlias + ".DateBased IS NULL) AND (" +
+                    sql.append("((" + studyAlias + ".DateBased = ? OR " + studyAlias + ".DateBased IS NULL) AND (" +
                             dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
                             dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL)))");
                     sql.add(Boolean.TRUE);
@@ -184,19 +186,27 @@ public class SpecimenForeignKey extends LookupForeignKey
             if (targetStudyCol != null || targetStudy != null)
             {
                 ColumnInfo objectIdCol = columns.get(objectIdFK);
+                Sort sort = null;
+                if (getParentTable().getSqlDialect().isPostgreSQL())
+                {
+                    // This sort is a hack to get Postgres to choose a better plan - it flips the query from using a nested loop
+                    // join to a merge join on the aggregate query
+                    sort = new Sort(objectIdCol.getName());
+                }
                 // Select all the assay-side specimen columns that we'll need to do the comparison
-                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, 0);
+                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, sort, Table.ALL_ROWS, 0);
                 SQLFragment sql = new SQLFragment(" LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
                 String assaySubqueryAlias = parentAlias + ASSAY_SUBQUERY_SUFFIX;
                 String specimenSubqueryAlias = parentAlias + SPECIMEN_SUBQUERY_SUFFIX;
+                String studySubqueryAlias = parentAlias + STUDY_SUBQUERY_SUFFIX;
                 ColumnInfo parentKeyCol = foreignKey.getParentTable().getPkColumns().get(0);
                 ColumnInfo specimenColumnInfo = columns.get(specimenFK);
                 sql.append(") AS " + assaySubqueryAlias + " ON " + assaySubqueryAlias + "." + objectIdCol.getAlias() + " = " + parentAlias + "." + parentKeyCol.getName());
                 sql.append(" LEFT OUTER JOIN ");
                 // Select all the study-side specimen columns that we'll need to do the comparison
-                sql.append(" (SELECT specimen.RowId, specimen.GlobalUniqueId, specimen.Container, specimen.PTID AS ParticipantId, specimen.drawtimestamp AS Date, specimen.VisitValue AS Visit, s.DateBased ");
-                sql.append(" FROM study.specimen specimen, study.study s WHERE s.Container = specimen.Container) AS " + specimenSubqueryAlias);
+                sql.append(" (SELECT specimen.RowId, specimen.GlobalUniqueId, specimen.Container, specimen.PTID AS ParticipantId, specimen.drawtimestamp AS Date, specimen.VisitValue AS Visit ");
+                sql.append(" FROM study.specimen specimen) AS " + specimenSubqueryAlias);
                 sql.append(" ON " + specimenSubqueryAlias + ".GlobalUniqueId = " + assaySubqueryAlias + "." + specimenColumnInfo.getAlias());
                 if (targetStudy != null)
                 {
@@ -209,6 +219,8 @@ public class SpecimenForeignKey extends LookupForeignKey
                     // Match based on the target study associated with the assay data
                     sql.append(" AND " + assaySubqueryAlias + "." + targetStudyCol.getAlias() + " = " + specimenSubqueryAlias + ".Container");
                 }
+                sql.append("\n\tLEFT OUTER JOIN study.study AS " + studySubqueryAlias);
+                sql.append(" ON " + studySubqueryAlias + ".Container = " + specimenSubqueryAlias + ".Container");
 
                 // Last join to the specimen table based on RowId
                 sql.append("\n\tLEFT OUTER JOIN ");
