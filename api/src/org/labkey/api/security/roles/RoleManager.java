@@ -151,7 +151,8 @@ public class RoleManager
         {
             for(Class<? extends Role> roleClass : roleClasses)
             {
-                roles.add(getRole(roleClass));
+                if (null != roleClass)
+                    roles.add(getRole(roleClass));
             }
         }
         return roles;
