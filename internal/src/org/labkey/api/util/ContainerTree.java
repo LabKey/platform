@@ -20,6 +20,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
@@ -35,7 +37,7 @@ public class ContainerTree
 
     private Container _root;
     private User _user;
-    private int _perm;
+    private Class<? extends Permission> _perm;
     private ActionURL _url;
     private String _purpose;
     private int _initialLevel = 0;
@@ -56,12 +58,22 @@ public class ContainerTree
         init(rootPath, user, perm, url, purpose);
     }
 
+    public ContainerTree(String rootPath, User user, Class<? extends Permission> perm, ActionURL url, String purpose)
+    {
+        init(rootPath, user, perm, url, purpose);
+    }
 
     private void init(String rootPath, User user, int perm, ActionURL url, String purpose)
+    {
+        init(rootPath, user, ACL.translatePermission(perm), url, purpose);
+    }
+
+    private void init(String rootPath, User user, Class<? extends Permission> perm, ActionURL url, String purpose)
     {
         _root = ContainerManager.getForPath(rootPath);
         _user = user;
         _perm = perm;
+        assert null != _perm;
         setUrl(url);
         _purpose = purpose;
     }

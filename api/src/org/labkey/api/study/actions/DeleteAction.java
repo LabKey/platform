@@ -29,6 +29,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -61,7 +62,7 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
         ViewContext ctx = getViewContext();
         User user = ctx.getUser();
 
-        Set<Role> contextualRoles = RoleManager.roleSet(user.equals(protocol.getCreatedBy()) ? OwnerRole.class : null);
-        return ctx.getContainer().hasPermission(user, DeletePermission.class, contextualRoles);
+        //user must have both design assay AND delete permission, as this will delete both the design and updloaded data
+        return protocol.getContainer().getPolicy().hasPermissions(user, DesignAssayPermission.class, DeletePermission.class);
     }
 }

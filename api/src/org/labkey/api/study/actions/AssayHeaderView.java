@@ -156,13 +156,14 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
     {
         ViewContext ctx = getViewContext();
         Container container = protocol.getContainer();
-        return container.getPolicy().hasPermissions(ctx.getUser(), DesignAssayPermission.class, UpdatePermission.class);
+        return container.getPolicy().hasPermission(ctx.getUser(), DesignAssayPermission.class);
     }
 
     protected boolean allowDelete(ExpProtocol protocol)
     {
         ViewContext ctx = getViewContext();
         Container container = protocol.getContainer();
+        //deleting will delete data as well as design, so user must have both design assay and delete perms
         return container.getPolicy().hasPermissions(ctx.getUser(), DesignAssayPermission.class, DeletePermission.class);
     }
 }
