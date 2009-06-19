@@ -37,6 +37,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     private static final String ASSAY_SUBQUERY_SUFFIX = "$AssayJoin";
     private static final String SPECIMEN_SUBQUERY_SUFFIX = "$SpecimenJoin";
     private static final String STUDY_SUBQUERY_SUFFIX = "$StudyJoin";
+    private static final String DRAW_DT_COLUMN_NAME = "DrawDT";
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
@@ -63,12 +64,20 @@ public class SpecimenForeignKey extends LookupForeignKey
         FieldKey participantFK = tableMetadata.getParticipantIDFieldKey();
         FieldKey visitFK = tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
         FieldKey dateFK = tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
+        FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
         AssaySchema assaySchema = AssayService.get().createSchema(studySchema.getUser(), studySchema.getContainer());
-        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(assaySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK));
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(assaySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK, drawDateFK));
 
         ColumnInfo participantIdCol = columns.get(participantFK);
         ColumnInfo visitIdCol = columns.get(visitFK);
         ColumnInfo dateCol = columns.get(dateFK);
+        SqlDialect dialect = tableInfo.getSqlDialect();
+        if (dateCol == null)
+        {
+            // Check for an alternate column name
+            dateCol = columns.get(drawDateFK);
+        }
+        
         if (participantIdCol != null || visitIdCol != null || dateCol != null)
         {
             // We want NULL if there's no match based on specimen id
@@ -76,7 +85,18 @@ public class SpecimenForeignKey extends LookupForeignKey
             if (participantIdCol != null)
             {
                 // Check if the participants match, or if they're both NULL
-                sql.append("(" + specimenAlias + ".ParticipantId = " + targetStudyAlias + "." + participantIdCol.getAlias() + " OR ");
+                sql.append("(" + specimenAlias + ".ParticipantId = ");
+
+                // See if we need to cast - Postgres 8.3 is picky about these comparisons
+                if (participantIdCol.getJavaClass() != String.class)
+                {
+                    sql.append("CAST(" + targetStudyAlias + "." + participantIdCol.getAlias() + " AS VARCHAR)");
+                }
+                else
+                {
+                    sql.append(targetStudyAlias + "." + participantIdCol.getAlias());
+                }
+                sql.append(" OR ");
                 sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + participantIdCol.getAlias() + " IS NULL))");
             }
             if (visitIdCol != null || dateCol != null)
@@ -88,18 +108,24 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append("(");
                 if (visitIdCol != null)
                 {
-                    // Check if we're in a visit-based study and the visits match or are both NULL
-                    sql.append("((" + studyAlias + ".DateBased IS NULL OR " + studyAlias + ".DateBased = ?) AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL)))");
+                    // If we're in a visit-based study, check that both the visits and the dates match or are null
+                    sql.append("((" + studyAlias + ".DateBased IS NULL OR " + studyAlias + ".DateBased = ?)");
                     sql.add(Boolean.FALSE);
+                    sql.append(" AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL))");
                     if (dateCol != null)
                     {
+                        sql.append(" AND (" + dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL))");
+                        sql.append(")");
                         sql.append(" OR ");
+                    }
+                    else
+                    {
+                        sql.append(")");
                     }
                 }
                 if (dateCol != null)
                 {
-                    // Check if we're in a date-based study and the visits match or are both NULL
-                    SqlDialect dialect = tableInfo.getSqlDialect();
+                    // If we're in a date-based study, check that the dates match or are both NULL
                     sql.append("((" + studyAlias + ".DateBased = ? OR " + studyAlias + ".DateBased IS NULL) AND (" +
                             dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
                             dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL)))");
@@ -113,7 +139,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         }
         else
         {
-            sql.append("NULL");
+            sql.append("CAST(NULL AS " + dialect.getBooleanDatatype() + ")");
         }
 
         tableInfo.addColumn(new ExprColumn(tableInfo, AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME, sql, Types.BOOLEAN));
@@ -177,8 +203,10 @@ public class SpecimenForeignKey extends LookupForeignKey
             FieldKey specimenFK = tableMetadata.getSpecimenIDFieldKey();
             FieldKey visitFK = tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
             FieldKey dateFK = tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
+            // Need to support this other name for dates
+            FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
             FieldKey objectIdFK = tableMetadata.getResultRowIdFieldKey();
-            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK));
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK, drawDateFK));
 
             ColumnInfo targetStudyCol = columns.get(targetStudyFK);
             Container targetStudy = _schema.getTargetStudy();
