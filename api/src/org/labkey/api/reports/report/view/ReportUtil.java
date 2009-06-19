@@ -185,7 +185,7 @@ public class ReportUtil
     public static String getReportKey(String schema, String query)
     {
         if (StringUtils.isEmpty(schema))
-            throw new IllegalArgumentException("schema name cannot be blank");
+            return " ";
         
         StringBuilder sb = new StringBuilder(toPattern.matcher(schema).replaceAll("%2F"));
         if (!StringUtils.isEmpty(query))
@@ -316,8 +316,8 @@ public class ReportUtil
         /**
          * Returns the run and edit urls for query views
          */
-        public ActionURL getViewRunURL(ViewContext context, QueryDefinition def, CustomView view);
-        public ActionURL getViewEditURL(ViewContext context, QueryDefinition def, CustomView view);
+        public ActionURL getViewRunURL(ViewContext context, CustomViewInfo view);
+        public ActionURL getViewEditURL(ViewContext context, CustomViewInfo view);
     }
 
     public static class DefaultReportFilter implements ReportFilter
@@ -327,17 +327,14 @@ public class ReportUtil
             return true;
         }
 
-        public ActionURL getViewRunURL(ViewContext context, QueryDefinition qd, CustomView view)
+        public ActionURL getViewRunURL(ViewContext context, CustomViewInfo view)
         {
-            return qd.urlFor(QueryAction.executeQuery, context.getContainer()).
-                    addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, view.getName());
+            return QueryService.get().urlFor(context.getContainer(), QueryAction.executeQuery, view.getSchemaName(), view.getQueryName());
         }
 
-        public ActionURL getViewEditURL(ViewContext context, QueryDefinition qd, CustomView view)
+        public ActionURL getViewEditURL(ViewContext context, CustomViewInfo view)
         {
-            return qd.urlFor(QueryAction.chooseColumns, context.getContainer()).
-                    addParameter(QueryParam.queryName, qd.getName()).
-                    addParameter(QueryParam.viewName, view.getName());
+            return QueryService.get().urlFor(context.getContainer(), QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName());
         }
     }
 
@@ -426,7 +423,7 @@ public class ReportUtil
         }
         if (includeQueries)
         {
-            for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), schemaName, queryName))
+            for (CustomViewInfo view : QueryService.get().getCustomViewInfos(context.getUser(), context.getContainer(), schemaName, queryName))
             {
                 if (view.isHidden())
                     continue;
@@ -437,18 +434,17 @@ public class ReportUtil
                 Map<String, String> record = new HashMap<String, String>();
 
                 User createdBy = view.getCreatedBy();
-                QueryDefinition qd = view.getQueryDefinition();
 
                 record.put("queryView", "true");
 
                 // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
-                Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), qd.getSchemaName(),
-                        QueryParam.queryName.name(), qd.getName(),
+                Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), view.getSchemaName(),
+                        QueryParam.queryName.name(), view.getQueryName(),
                         QueryParam.viewName.name(), view.getName());
                 record.put("reportId", PageFlowUtil.encode(PageFlowUtil.toQueryString(viewId.entrySet())));
                 record.put("name", view.getName());
-                record.put("query", qd.getName());
-                record.put("schema", qd.getSchemaName());
+                record.put("query", view.getQueryName());
+                record.put("schema", view.getSchemaName());
                 record.put("type", "query view");
                 record.put("editable", "false");
                 record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
@@ -457,9 +453,9 @@ public class ReportUtil
                 boolean inherited = isInherited(view, context.getContainer());
                 if (!inherited)
                 {
-                    record.put("editUrl", filter.getViewEditURL(context, qd, view).getLocalURIString());
+                    record.put("editUrl", filter.getViewEditURL(context, view).getLocalURIString());
                 }
-                record.put("runUrl", filter.getViewRunURL(context, qd, view).getLocalURIString());
+                record.put("runUrl", filter.getViewRunURL(context, view).getLocalURIString());
                 record.put("container", view.getContainer().getPath());
                 record.put("inherited", String.valueOf(inherited));
 
@@ -484,7 +480,7 @@ public class ReportUtil
         return true;
     }
 
-    public static boolean isInherited(CustomView view, Container container)
+    public static boolean isInherited(CustomViewInfo view, Container container)
     {
         if (view != null && view.canInherit())
         {

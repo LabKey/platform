@@ -16,72 +16,27 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.VirtualFile;
-import org.labkey.data.xml.queryCustomView.PropertyName;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
 
-public interface CustomView
+public interface CustomView extends CustomViewInfo
 {
-
-
-    enum ColumnProperty
-    {
-        columnTitle(PropertyName.COLUMN_TITLE);
-
-        private PropertyName.Enum _xmlEnum;
-
-        private ColumnProperty(PropertyName.Enum xmlEnum)
-        {
-            _xmlEnum = xmlEnum;
-        }
-
-        public PropertyName.Enum getXmlPropertyEnum()
-        {
-            return _xmlEnum;
-        }
-
-        public static ColumnProperty getForXmlEnum(PropertyName.Enum xmlEnum)
-        {
-            // There's only one possible value right now... once we add more, turn this into a loop or map lookup
-            return columnTitle.getXmlPropertyEnum() == xmlEnum ? columnTitle : null;
-        }
-    }
-
     QueryDefinition getQueryDefinition();
-    String getName();
-    User getOwner();
-    User getCreatedBy();
-
-    Container getContainer();
-    boolean canInherit();
     void setCanInherit(boolean f);
-    boolean isHidden();
     void setIsHidden(boolean f);
-    boolean isEditable();
-    String getCustomIconUrl();
-
-    List<FieldKey> getColumns();
-    List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties();
     void setColumns(List<FieldKey> columns);
     void setColumnProperties(List<Map.Entry<FieldKey, Map<ColumnProperty,String>>> list);
 
     void applyFilterAndSortToURL(ActionURL url, String dataRegionName);
     void setFilterAndSortFromURL(ActionURL url, String dataRegionName);
 
-    // TODO: To reduce confusion, rename these methods to *FilterAndSort()
-    String getFilter();
-    void setFilter(String filter);
-
-    String getContainerFilterName();
-    
-    boolean hasFilterOrSort();
+    void setFilterAndSort(String filter);
 
     void save(User user, HttpServletRequest request) throws QueryException;
     void delete(User user, HttpServletRequest request) throws QueryException;

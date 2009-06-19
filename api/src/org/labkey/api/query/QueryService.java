@@ -57,6 +57,7 @@ abstract public class QueryService
     abstract public ActionURL urlFor(Container container, QueryAction action, String schema, String queryName);
     abstract public UserSchema getUserSchema(User user, Container container, String schema);
     abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
+    abstract public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
     abstract public void importCustomViews(User user, Container container, File viewDir);
 

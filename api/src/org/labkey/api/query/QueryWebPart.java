@@ -124,7 +124,11 @@ public class QueryWebPart extends WebPartView
                 queryView.setShadeAlternatingRows(true);
                 queryView.setShowBorders(true);
                 if(null != _buttonBarPosition)
+                {
                     queryView.setButtonBarPosition(_buttonBarPosition);
+                    if (_buttonBarPosition == DataRegion.ButtonBarPosition.NONE)
+                        queryView.setShowRecordSelectors(false);
+                }
                 view = queryView;
             }
         }

@@ -118,7 +118,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
                 {
                     snapshot.setColumns(customSrc.getColumns());
                     if (customSrc.hasFilterOrSort())
-                        snapshot.setFilter(customSrc.getFilter());
+                        snapshot.setFilter(customSrc.getFilterAndSort());
                 }
             }
             return snapshot;
