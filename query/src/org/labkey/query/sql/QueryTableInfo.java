@@ -46,4 +46,12 @@ public class QueryTableInfo extends AbstractTableInfo
         // return _relation.getSql();
         return _subquery.getFromSQL();
     }
+
+    @Override
+    public boolean needsContainerClauseAdded()
+    {
+        // Let the underlying schemas do whatever filtering they need on the data, especially since
+        // after columns are part of a query we lose track of what was on the base table and what's been joined in
+        return false;
+    }
 }

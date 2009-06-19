@@ -16,19 +16,21 @@
 
 package org.labkey.bigiron.mssql;
 
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.data.*;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import java.sql.*;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
-
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 
 /**
@@ -624,7 +626,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
                     }
                 }
             }
-            return sb.length() > 0 ? sb.toString() : null;
+            return sb.length() > 0 ? sb.toString() : "No other threads with active database connections to report.";
         }
         return null;
     }
