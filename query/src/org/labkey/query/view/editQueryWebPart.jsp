@@ -85,6 +85,8 @@
     }
 
     boolean querySelected = pm.get("queryName") != null && !"".equals(pm.get("queryName").trim());
+
+    String btnBarPosition = StringUtils.defaultString(pm.get("buttonBarPosition"), "BOTH");
     
 %>
 <script type="text/javascript">
@@ -146,6 +148,8 @@
         var schemaName = document.getElementById('schemaName');
         if (schemaName != undefined)
             updateQueries(schemaName.value);
+
+        document.getElementById('queryName').value = "<%=pm.get("queryName")%>";
     });
 
 </script>
@@ -233,6 +237,17 @@
                 <select name="allowChooseView">
                     <option value="true"<%=allowChooseView ? " selected" : ""%>>Yes</option>
                     <option value="false"<%=allowChooseView ? "" : " selected"%>>No</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Button bar position:</td>
+            <td>
+                <select name="buttonBarPosition">
+                    <option value="BOTH"<%="BOTH".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>Both</option>
+                    <option value="TOP"<%="TOP".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>Top</option>
+                    <option value="BOTTOM"<%="BOTTOM".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>Bottom</option>
+                    <option value="NONE"<%="NONE".equalsIgnoreCase(btnBarPosition) ? " selected" : ""%>>None</option>
                 </select>
             </td>
         </tr>

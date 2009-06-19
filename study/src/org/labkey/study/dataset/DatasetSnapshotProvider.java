@@ -243,7 +243,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         // create a temporary custom view to add additional display columns to the base query definition
         CustomView custView = def.createCustomView(form.getViewContext().getUser(), "tempCustomView");
         custView.setColumns(snapshotDef.getColumns());
-        custView.setFilter(snapshotDef.getFilter());
+        custView.setFilterAndSort(snapshotDef.getFilter());
         form.setCustomView(custView);
 
         return form;

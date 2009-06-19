@@ -21,14 +21,12 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.queryCustomView.*;
 import org.labkey.query.design.*;
 import org.labkey.query.persist.CstmView;
-import org.labkey.query.persist.QueryManager;
 import org.labkey.query.view.CustomViewSetKey;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,28 +35,24 @@ import java.sql.SQLException;
 import java.util.*;
 import java.io.IOException;
 
-public class CustomViewImpl implements CustomView
+public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 {
     private static final Logger _log = Logger.getLogger(CustomViewImpl.class);
-    private static final String FILTER_PARAM_PREFIX = "filter";
-    private static final String CONTAINER_FILTER_NAME = "containerFilterName";
     boolean _dirty;
-    final QueryManager _mgr = QueryManager.get();
     final QueryDefinitionImpl _queryDef;
-    CstmView _cstmView;
 
     public CustomViewImpl(QueryDefinitionImpl queryDef, CstmView view)
     {
+        super(view);
         _queryDef = queryDef;
-        _cstmView = view;
         _dirty = false;
     }
 
     public CustomViewImpl(QueryDefinitionImpl queryDef, User user, String name)
     {
+        super(new CstmView());
         _queryDef = queryDef;
         _dirty = true;
-        _cstmView = new CstmView();
         _cstmView.setContainer(queryDef.getContainer().getId());
         _cstmView.setSchema(queryDef.getSchemaName());
         _cstmView.setQueryName(queryDef.getName());
@@ -76,39 +70,6 @@ public class CustomViewImpl implements CustomView
     public QueryDefinition getQueryDefinition()
     {
         return _queryDef;
-    }
-
-    public String getName()
-    {
-        return null == _cstmView ? null : _cstmView.getName();
-    }
-
-    public User getOwner()
-    {
-        Integer userId = _cstmView.getCustomViewOwner();
-        if (userId == null)
-            return null;
-        return UserManager.getUser(userId.intValue());
-    }
-
-    public User getCreatedBy()
-    {
-        return UserManager.getUser(_cstmView.getCreatedBy());
-    }
-
-    public Container getContainer()
-    {
-        return ContainerManager.getForId(_cstmView.getContainerId());
-    }
-
-    public List<FieldKey> getColumns()
-    {
-        List<FieldKey> ret = new ArrayList<FieldKey>();
-        for (Map.Entry<FieldKey, Map<ColumnProperty, String>> entry : getColumnProperties())
-        {
-            ret.add(entry.getKey());
-        }
-        return ret;
     }
 
     static String encodeProperties(List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> list)
@@ -129,56 +90,6 @@ public class CustomViewImpl implements CustomView
         return ret.toString();
     }
 
-    static List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> decodeProperties(String value)
-    {
-        if (value == null)
-        {
-            return Collections.emptyList();
-        }
-        String[] values = StringUtils.split(value, "&");
-        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey, Map<ColumnProperty, String>>>();
-        for (String entry : values)
-        {
-            int ichEquals = entry.indexOf("=");
-            Map<ColumnProperty,String> properties;
-            FieldKey field;
-            if (ichEquals < 0)
-            {
-                field = FieldKey.fromString(PageFlowUtil.decode(entry));
-                properties = Collections.emptyMap();
-            }
-            else
-            {
-                properties = new EnumMap<ColumnProperty,String>(ColumnProperty.class);
-                field = FieldKey.fromString(PageFlowUtil.decode(entry.substring(0, ichEquals)));
-                for (Map.Entry<String, String> e : PageFlowUtil.fromQueryString(PageFlowUtil.decode(entry.substring(ichEquals + 1))))
-                {
-                    properties.put(ColumnProperty.valueOf(e.getKey()), e.getValue());
-                }
-
-            }
-            ret.add(Pair.of(field, properties));
-        }
-        return Collections.unmodifiableList(ret);
-    }
-
-    public List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties()
-    {
-        return decodeProperties(_cstmView.getColumns());
-    }
-
-    public Map<FieldKey, Map<ColumnProperty, String>> getColumnPropertiesMap()
-    {
-        Map<FieldKey, Map<ColumnProperty, String>> ret = new HashMap<FieldKey, Map<ColumnProperty, String>>();
-        for (Map.Entry<FieldKey, Map<ColumnProperty, String>> entry : getColumnProperties())
-        {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-        return ret;
-    }
-
-
-
     public void setColumnProperties(List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> map)
     {
         edit().setColumns(encodeProperties(map));
@@ -193,11 +104,6 @@ public class CustomViewImpl implements CustomView
     public boolean hasColumnList()
     {
         return StringUtils.trimToNull(_cstmView.getColumns()) != null;
-    }
-
-    public boolean hasFilterOrSort()
-    {
-        return StringUtils.trimToNull(_cstmView.getFilter()) != null;
     }
 
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
@@ -221,24 +127,6 @@ public class CustomViewImpl implements CustomView
             // do nothing
         }
 
-    }
-
-    public String getContainerFilterName()
-    {
-        if (!hasFilterOrSort())
-            return null;
-        try
-        {
-            URLHelper src = new URLHelper(_cstmView.getFilter());
-            String[] containerFilterNames = src.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
-            if (containerFilterNames.length > 0)
-                return containerFilterNames[containerFilterNames.length - 1];
-            return null;
-        }
-        catch (URISyntaxException use)
-        {
-            return null;
-        }
     }
 
     public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)
@@ -270,12 +158,7 @@ public class CustomViewImpl implements CustomView
         }
     }
 
-    public String getFilter()
-    {
-        return _cstmView.getFilter();
-    }
-
-    public void setFilter(String filter)
+    public void setFilterAndSort(String filter)
     {
         edit().setFilter(filter);
     }
@@ -440,35 +323,14 @@ public class CustomViewImpl implements CustomView
         return _cstmView.getCustomViewId() == 0;
     }
 
-    public boolean canInherit()
-    {
-        return _mgr.canInherit(_cstmView.getFlags());
-    }
-
     public void setCanInherit(boolean f)
     {
         edit().setFlags(_mgr.setCanInherit(_cstmView.getFlags(), f));
     }
 
-    public boolean isHidden()
-    {
-        return _mgr.isHidden(_cstmView.getFlags());
-    }
-
     public void setIsHidden(boolean b)
     {
         edit().setFlags(_mgr.setIsHidden(_cstmView.getFlags(), b));
-    }
-
-    public boolean isEditable()
-    {
-        return true;
-    }
-
-    public String getCustomIconUrl()
-    {
-        //might support this in the future
-        return null;
     }
 
     public ViewDocument getDesignDocument(QuerySchema schema)
@@ -707,11 +569,6 @@ public class CustomViewImpl implements CustomView
         }
         _cstmView = _cstmView.clone();
         _dirty = true;
-        return _cstmView;
-    }
-
-    public CstmView getCstmView()
-    {
         return _cstmView;
     }
 }

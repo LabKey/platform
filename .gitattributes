@@ -1494,6 +1494,7 @@ query/src/META-INF/query/scripts/sql[!!-~]server/query-8.30-9.10.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.31-8.32.sql -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
+query/src/org/labkey/query/CustomViewInfoImpl.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
 query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
 query/src/org/labkey/query/ModuleCustomView.java -text

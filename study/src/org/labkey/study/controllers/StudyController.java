@@ -780,8 +780,11 @@ public class StudyController extends BaseStudyController
                         button.addMenuItem(item);
                     }
 
-                    button.addSeparator();
-                    button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, getContainer()));
+                    if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+                    {
+                        button.addSeparator();
+                        button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, getContainer()));
+                    }
                     buttonBar.add(button);
                 }
             }
@@ -3308,7 +3311,8 @@ public class StudyController extends BaseStudyController
             String defaultView = getDefaultView(context, datasetId);
             if (!StringUtils.isEmpty(defaultView))
             {
-                if (NumberUtils.isNumber(defaultView))
+                ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+                if (reportId != null)
                     url.addParameter("Dataset.reportId", defaultView);
                 else
                     url.addParameter("Dataset.viewName", defaultView);

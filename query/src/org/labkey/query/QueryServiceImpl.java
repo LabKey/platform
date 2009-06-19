@@ -20,6 +20,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.Cache;
 import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -28,10 +29,9 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
@@ -256,6 +256,21 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
+    public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query)
+    {
+        try {
+            List<CustomViewInfo> views = new ArrayList<CustomViewInfo>();
+            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
+                views.add(new CustomViewInfoImpl(cstmView));
+
+            return views;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView cstmView, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
     {
         QueryDefinition qd = queryDefs.get(new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName()));
@@ -286,7 +301,7 @@ public class QueryServiceImpl extends QueryService
             // owner == null since we're exporting/importing only shared views
             CustomView cv = qd.createCustomView(null, reader.getName());
             cv.setColumnProperties(reader.getColList());
-            cv.setFilter(reader.getFilterAndSortString());
+            cv.setFilterAndSort(reader.getFilterAndSortString());
             cv.setIsHidden(reader.isHidden());
             cv.save(user, request);
         }
@@ -432,7 +447,7 @@ public class QueryServiceImpl extends QueryService
             if (column == null)
                 continue;
             DisplayColumn displayColumn = column.getRenderer();
-            String caption = entry.getValue().get(CustomView.ColumnProperty.columnTitle);
+            String caption = entry.getValue().get(CustomViewInfo.ColumnProperty.columnTitle);
             if (caption != null)
             {
                 displayColumn.setCaption(caption);

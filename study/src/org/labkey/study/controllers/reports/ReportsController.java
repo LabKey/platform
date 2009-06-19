@@ -23,6 +23,7 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -37,15 +38,16 @@ import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
@@ -820,6 +822,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
     public class CrosstabExportAction extends SimpleViewAction<ReportDesignBean>
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception

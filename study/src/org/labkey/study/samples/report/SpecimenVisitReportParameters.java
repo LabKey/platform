@@ -7,7 +7,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.study.model.*;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
@@ -296,7 +295,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         {
             String name = viewEntry.getKey();
             CustomView view = viewEntry.getValue();
-            if (view.getFilter() != null)
+            if (view.getFilterAndSort() != null)
             {
                 if (name == null)
                 {

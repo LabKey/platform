@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.data.xml.queryCustomView.*;
@@ -206,7 +207,7 @@ public class CustomViewXmlReader
             {
                 for(PropertyType propDef : propsList.getPropertyArray())
                 {
-                    CustomView.ColumnProperty colProp = CustomView.ColumnProperty.getForXmlEnum(propDef.getName());
+                    CustomView.ColumnProperty colProp = CustomViewInfo.ColumnProperty.getForXmlEnum(propDef.getName());
 
                     if(null == colProp)
                         continue;

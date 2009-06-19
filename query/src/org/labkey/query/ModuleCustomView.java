@@ -105,6 +105,16 @@ public class ModuleCustomView implements CustomView
         return _customViewDef.getCustomIconUrl();
     }
 
+    public String getSchemaName()
+    {
+        return _customViewDef.getSchema();
+    }
+
+    public String getQueryName()
+    {
+        return _customViewDef.getQuery();
+    }
+
     public List<FieldKey> getColumns()
     {
         List<FieldKey> ret = new ArrayList<FieldKey>();
@@ -151,12 +161,12 @@ public class ModuleCustomView implements CustomView
         throw new UnsupportedOperationException("Can't set the filter or sort of a module-based custom view!");
     }
 
-    public String getFilter()
+    public String getFilterAndSort()
     {
         return _customViewDef.getFilterAndSortString();
     }
 
-    public void setFilter(String filter)
+    public void setFilterAndSort(String filter)
     {
         throw new UnsupportedOperationException("Can't set filter on a module-based custom view!");
     }

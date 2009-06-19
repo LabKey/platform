@@ -15,25 +15,25 @@
  */
 package org.labkey.query.reports.view;
 
-import org.labkey.api.reports.report.view.*;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reports.ExternalScriptEngineFactory;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.InternalScriptEngineReport;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.view.*;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.security.ACL;
 
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptEngineFactory;
-import java.util.Map;
-import java.util.List;
+import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
+import java.util.List;
 
 /*
  * User: Karl Lum
@@ -84,10 +84,12 @@ public class ReportUIProvider extends DefaultReportUIProvider
         }
 
         // query snapshot
-        QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
-        if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
-            designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", provider.getCreateWizardURL(settings, context)));
-
+        if (context.hasPermission(ACL.PERM_ADMIN))
+        {
+            QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
+            if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
+                designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", provider.getCreateWizardURL(settings, context)));
+        }
         return designers;
     }
 

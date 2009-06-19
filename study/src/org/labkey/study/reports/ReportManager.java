@@ -34,12 +34,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
-import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.samples.SamplesController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.model.*;
 
@@ -353,29 +350,29 @@ public class ReportManager implements StudyManager.UnmaterializeListener
             return _datasets;
         }
 
-        public ActionURL getViewRunURL(ViewContext context, QueryDefinition def, CustomView view)
+        public ActionURL getViewRunURL(ViewContext context, CustomViewInfo view)
         {
             Map<String, DataSetDefinition> datasets = getDatasets(context);
-            if (datasets.containsKey(def.getName()))
+            if (datasets.containsKey(view.getQueryName()))
             {
                 return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, datasets.get(def.getName()).getDataSetId()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDataSetId()).
                         addParameter("Dataset.viewName", view.getName());
             }
 
             // any specimen views
-            if ("SpecimenDetail".equals(def.getName()))
+            if ("SpecimenDetail".equals(view.getQueryName()))
             {
                 return new ActionURL(SpringSpecimenController.SamplesAction.class, context.getContainer()).
                         addParameter("showVials", "true").
                         addParameter("SpecimenDetail." + QueryParam.viewName, view.getName());
             }
-            else if ("SpecimenSummary".equals(def.getName()))
+            else if ("SpecimenSummary".equals(view.getQueryName()))
             {
                 return new ActionURL(SpringSpecimenController.SamplesAction.class, context.getContainer()).
                         addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
-            return super.getViewRunURL(context, def, view);
+            return super.getViewRunURL(context, view);
         }
     }
 

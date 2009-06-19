@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.apache.commons.lang.math.NumberUtils" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
+<%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <%
@@ -57,7 +59,9 @@
         doneUrl.deleteParameter("defaultView");
         doneUrl.deleteParameter("Dataset.reportId");
         doneUrl.deleteParameter("Dataset.viewName");
-        if (NumberUtils.isNumber(defaultView))
+
+        ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+        if (reportId != null)
             doneUrl.addParameter("Dataset.reportId", defaultView);
         else
             doneUrl.addParameter("Dataset.viewName", defaultView);
