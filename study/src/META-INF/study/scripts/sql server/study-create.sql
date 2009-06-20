@@ -21,30 +21,45 @@ GO
 
 CREATE VIEW study.VialCounts AS
         SELECT Container, SpecimenHash,
+        SUM(Volume) AS TotalVolume,
+        SUM(CASE Available WHEN 1 THEN Volume ELSE 0 END) AS AvailableVolume,
         COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepositoryCount,
         SUM(CASE Available WHEN 1 THEN 1 ELSE 0 END) AS AvailableCount,
         (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN 0 THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
-    FROM study.Specimen
+    FROM study.Vial
     GROUP BY Container, SpecimenHash
 GO
 
-CREATE VIEW study.SpecimenSummary AS
-    SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue,
-		SUM(Volume) AS TotalVolume, SUM(CASE Available WHEN 1 THEN Volume ELSE 0 END) AS AvailableVolume,
-        VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
-        ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
-        PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
-        COUNT(GlobalUniqueId) AS VialCount,
-        SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequestCount,
-        SUM(CASE AtRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepositoryCount,
-        SUM(CASE Available WHEN 1 THEN 1 ELSE 0 END) AS AvailableCount,
-        (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN 0 THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
-    FROM study.Specimen
-    GROUP BY Container, SpecimenHash, Ptid, VisitDescription,
-        VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
-        PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
-        DrawTimestamp, SalReceiptDate, ClassId, ProtocolNumber, SubAdditiveDerivative,
-        OriginatingLocationId
+CREATE VIEW study.SpecimenSummary AS SELECT * FROM study.Specimen;
 GO
+
+CREATE VIEW study.SpecimenDetail AS
+	SELECT Vial.*,
+      Specimen.Ptid,
+      Specimen.TotalVolume,
+      Specimen.AvailableVolume,
+      Specimen.VisitDescription,
+      Specimen.VisitValue,
+      Specimen.VolumeUnits,
+      Specimen.PrimaryVolume,
+      Specimen.PrimaryVolumeUnits,
+      Specimen.PrimaryTypeId,
+      Specimen.AdditiveTypeId,
+      Specimen.DerivativeTypeId,
+      Specimen.DerivativeTypeId2,
+      Specimen.SubAdditiveDerivative,
+      Specimen.DrawTimestamp,
+      Specimen.SalReceiptDate,
+      Specimen.ClassId,
+      Specimen.ProtocolNumber,
+      Specimen.OriginatingLocationId,
+      Specimen.VialCount,
+      Specimen.LockedInRequestCount,
+      Specimen.AtRepositoryCount,
+      Specimen.AvailableCount,
+      Specimen.ExpectedAvailableCount
+    FROM study.Vial AS Vial
+	INNER JOIN study.Specimen AS Specimen
+      ON Vial.SpecimenId = Specimen.RowId;

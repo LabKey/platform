@@ -21,7 +21,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.Cache;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -39,6 +38,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.settings.AppProps;
 import org.labkey.study.model.*;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
@@ -65,7 +65,7 @@ public class SampleManager
     private static SampleManager _instance;
 
     private final QueryHelper<SampleRequestEvent> _requestEventHelper;
-    private final QueryHelper<Specimen> _specimenHelper;
+    private final QueryHelper<Specimen> _specimenDetailHelper;
     private final QueryHelper<SpecimenEvent> _specimenEventHelper;
     private final QueryHelper<AdditiveType> _additiveHelper;
     private final QueryHelper<DerivativeType> _derivativeHelper;
@@ -106,11 +106,11 @@ public class SampleManager
                 return StudySchema.getInstance().getTableInfoSampleRequestEvent();
             }
         }, SampleRequestEvent.class);
-        _specimenHelper = new QueryHelper<Specimen>(new TableInfoGetter()
+        _specimenDetailHelper = new QueryHelper<Specimen>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
             {
-                return StudySchema.getInstance().getTableInfoSpecimen();
+                return StudySchema.getInstance().getTableInfoSpecimenDetail();
             }
         }, Specimen.class);
         _specimenEventHelper = new QueryHelper<SpecimenEvent>(new TableInfoGetter()
@@ -149,7 +149,7 @@ public class SampleManager
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, "ptid"));
         filter.addCondition("VisitValue", visit);
         filter.addCondition("Container", container.getId());
-        return _specimenHelper.get(container, filter);
+        return _specimenDetailHelper.get(container, filter);
     }
 
     public RequirementProvider<SampleRequestRequirement, SampleRequestActor> getRequirementsProvider()
@@ -159,7 +159,7 @@ public class SampleManager
 
     public Specimen getSpecimen(Container container, int rowId) throws SQLException
     {
-        return _specimenHelper.get(container, rowId);
+        return _specimenDetailHelper.get(container, rowId);
     }
 
     /** Looks for any specimens that have the given id as a globalUniqueId  */
@@ -168,7 +168,7 @@ public class SampleManager
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
         filter.addCondition("Container", container.getId());
-        Specimen[] matches = _specimenHelper.get(container, filter);
+        Specimen[] matches = _specimenDetailHelper.get(container, filter);
         if (matches == null || matches.length == 0)
             return null;
         if (matches.length != 1)
@@ -184,7 +184,7 @@ public class SampleManager
         endCal.add(Calendar.DATE, 1);
         filter.addClause(new SimpleFilter.SQLClause("DrawTimestamp >= ? AND DrawTimestamp < ?", new Object[] {date, endCal.getTime()}));
         filter.addCondition("Container", container.getId());
-        return _specimenHelper.get(container, filter);
+        return _specimenDetailHelper.get(container, filter);
     }
 
     public SpecimenEvent[] getSpecimenEvents(Specimen sample) throws SQLException
@@ -396,8 +396,89 @@ public class SampleManager
         {
             specimen.setLockedInRequest(lockedInRequest);
             specimen.setAvailable(isAvailable(specimen));
-            Table.update(user, StudySchema.getInstance().getTableInfoSpecimen(), specimen, specimen.getRowId(), null);
+            Table.update(user, StudySchema.getInstance().getTableInfoVial(), specimen, specimen.getRowId(), null);
         }
+        updateSpecimenCounts(specimens);
+    }
+
+    private Container getContainer(Specimen[] specimens)
+    {
+        Container container = specimens[0].getContainer();
+        if (AppProps.getInstance().isDevMode())
+        {
+            for (int i = 1; i < specimens.length; i++)
+            {
+                if (!container.equals(specimens[i].getContainer()))
+                    throw new IllegalStateException("All specimens must be from the same container");
+            }
+        }
+        return container;
+    }
+
+    private static final String UPDATE_SPECIMEN_COUNT_SQL_PREFIX =
+            "UPDATE study.Specimen SET\n" +
+                    "    TotalVolume = VialCounts.TotalVolume,\n" +
+                    "    AvailableVolume = VialCounts.AvailableVolume,\n" +
+                    "    VialCount = VialCounts.VialCount,\n" +
+                    "    LockedInRequestCount = VialCounts.LockedInRequestCount,\n" +
+                    "    AtRepositoryCount = VialCounts.AtRepositoryCount,\n" +
+                    "    AvailableCount = VialCounts.AvailableCount,\n" +
+                    "    ExpectedAvailableCount = VialCounts.ExpectedAvailableCount\n" +
+                    "FROM (\n" +
+                    "\tSELECT SpecimenId,\n" +
+                    "\t\tSUM(Volume) AS TotalVolume,\n" +
+                    "\t\tSUM(CASE Available WHEN ? THEN Volume ELSE 0 END) AS AvailableVolume,\n" +
+                    "\t\tCOUNT(GlobalUniqueId) AS VialCount,\n" +
+                    "\t\tSUM(CASE LockedInRequest WHEN ? THEN 1 ELSE 0 END) AS LockedInRequestCount,\n" +
+                    "\t\tSUM(CASE AtRepository WHEN ? THEN 1 ELSE 0 END) AS AtRepositoryCount,\n" +
+                    "\t\tSUM(CASE Available WHEN ? THEN 1 ELSE 0 END) AS AvailableCount,\n" +
+                    "\t\t(COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN ? THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN ? THEN 1 ELSE 0 END)) AS ExpectedAvailableCount\n" +
+                    "\tFROM study.Vial\n" +
+                    "\tWHERE study.Vial.Container = ?\n";
+
+    private static final String UPDATE_SPECIMEN_COUNT_SQL_SUFFIX =
+                    "\tGROUP BY SpecimenId\n" +
+                    ") VialCounts\n" +
+                    "WHERE study.Specimen.RowId = VialCounts.SpecimenId";
+
+
+    private void updateSpecimenCounts(Container container, Specimen[] specimens) throws SQLException
+    {
+        SQLFragment updateSql = new SQLFragment(UPDATE_SPECIMEN_COUNT_SQL_PREFIX,
+                Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, container.getId());
+        if (specimens != null && specimens.length > 0)
+        {
+            Set<Integer> specimenIds = new HashSet<Integer>();
+            for (Specimen specimen : specimens)
+                specimenIds.add(specimen.getSpecimenId());
+
+            updateSql.append(" AND study.Vial.SpecimenId IN (");
+            String sep = "";
+            for (Integer id : specimenIds)
+            {
+                updateSql.append(sep).append("?");
+                updateSql.add(id);
+                sep = ", ";
+            }
+            updateSql.append(")\n");
+        }
+        updateSql.append(UPDATE_SPECIMEN_COUNT_SQL_SUFFIX);
+        Table.execute(StudySchema.getInstance().getSchema(), updateSql);
+    }
+
+    public void updateSpecimenCounts(Container container) throws SQLException
+    {
+        updateSpecimenCounts(container, null);
+    }
+
+
+    public void updateSpecimenCounts(Specimen[] specimens) throws SQLException
+    {
+        if (specimens.length == 0)
+            return;
+        Container container = getContainer(specimens);
+        for (int start = 0; start < specimens.length; start += 1000)
+            updateSpecimenCounts(container, Arrays.copyOfRange(specimens, start, Math.min(start + 1000, specimens.length)));
     }
 
     public SampleRequestRequirement[] getRequestRequirements(SampleRequest request)
@@ -650,10 +731,10 @@ public class SampleManager
         return _requestEventHelper.create(user, event);
     }
 
-    private static final String REQUEST_SPECIMEN_JOIN = "SELECT specimen.* FROM study.SampleRequest AS request, " +
-            "study.SampleRequestSpecimen AS map, study.Specimen AS specimen\n" +
-            "WHERE request.RowId = map.SampleRequestId AND specimen.GlobalUniqueId = map.SpecimenGlobalUniqueId\n" +
-            "AND request.Container = map.Container AND map.Container = specimen.Container AND " +
+    private static final String REQUEST_SPECIMEN_JOIN = "SELECT SpecimenDetail.* FROM study.SampleRequest AS request, " +
+            "study.SampleRequestSpecimen AS map, study.SpecimenDetail AS SpecimenDetail\n" +
+            "WHERE request.RowId = map.SampleRequestId AND SpecimenDetail.GlobalUniqueId = map.SpecimenGlobalUniqueId\n" +
+            "AND request.Container = map.Container AND map.Container = SpecimenDetail.Container AND " +
             "request.RowId = ? AND request.Container = ?;";
 
     public Specimen[] getRequestSpecimens(SampleRequest request) throws SQLException
@@ -1061,7 +1142,7 @@ public class SampleManager
             uniqueRowIds.add(sampleRowId);
         List<Integer> rowIds = new ArrayList<Integer>(uniqueRowIds);
         filter.addInClause("RowId", rowIds);
-        Specimen[] specimens = _specimenHelper.get(container, filter);
+        Specimen[] specimens = _specimenDetailHelper.get(container, filter);
         if (specimens.length != rowIds.size())
             throw new IllegalStateException("One or more specimen RowIds had no matching specimen.");
         return specimens;
@@ -1164,7 +1245,7 @@ public class SampleManager
             "\t\tstudy.Specimen.DerivativeTypeId,\n" +
             "\t\tstudy.Specimen.AdditiveTypeId,\n" +
             "\t\t? AS Container,\n" +
-            "\t\tCount(*) AS VialCount\n" +
+            "\t\tSUM(study.Specimen.VialCount) AS VialCount\n" +
             "\tFROM study.Specimen\n" +
             "\tWHERE study.Specimen.Container = ?\n" +
             "\tGROUP BY study.Specimen.PrimaryTypeId,\n" +
@@ -1186,7 +1267,7 @@ public class SampleManager
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
     {
         String cacheKey = container.getId() + "/SpecimenTypeSummary";
-        SpecimenTypeSummary summary = (SpecimenTypeSummary) DbCache.get(StudySchema.getInstance().getTableInfoSpecimen(), cacheKey);
+        SpecimenTypeSummary summary = (SpecimenTypeSummary) DbCache.get(StudySchema.getInstance().getTableInfoVial(), cacheKey);
 
         if (summary != null)
             return summary;
@@ -1197,7 +1278,7 @@ public class SampleManager
                     new Object[] { container.getId(), container.getId() }, SpecimenTypeSummaryRow.class);
 
             summary = new SpecimenTypeSummary(rows);
-            DbCache.put(StudySchema.getInstance().getTableInfoSpecimen(), cacheKey, summary, 8 * Cache.HOUR);
+            DbCache.put(StudySchema.getInstance().getTableInfoVial(), cacheKey, summary, 8 * Cache.HOUR);
             return summary;
         }
         catch (SQLException e)
@@ -1299,7 +1380,7 @@ public class SampleManager
     public List<String> getMissingSpecimens(SampleRequest sampleRequest) throws SQLException
     {
         String sql = "SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen WHERE SampleRequestId = ? and Container = ? and \n" +
-                "SpecimenGlobalUniqueId NOT IN (SELECT GlobalUniqueId FROM study.specimen WHERE Container = ?);";
+                "SpecimenGlobalUniqueId NOT IN (SELECT GlobalUniqueId FROM study.Vial WHERE Container = ?);";
         ResultSet rs = null;
         List<String> missingSpecimens = new ArrayList<String>();
         try
@@ -1330,7 +1411,7 @@ public class SampleManager
                 globalUniqueIds.put(comment.getGlobalUniqueId(), comment);
 
             SQLFragment sql = new SQLFragment();
-            sql.append("SELECT * FROM ").append(StudySchema.getInstance().getTableInfoSpecimen()).append(" WHERE GlobalUniqueId IN (");
+            sql.append("SELECT * FROM ").append(StudySchema.getInstance().getTableInfoSpecimenDetail()).append(" WHERE GlobalUniqueId IN (");
             sql.append("SELECT DISTINCT GlobalUniqueId FROM ").append(StudySchema.getInstance().getTableInfoSpecimenComment());
             sql.append(" WHERE Container = ?");
             sql.add(container.getId());
@@ -1358,7 +1439,7 @@ public class SampleManager
         filter.addInClause("SpecimenHash", hashes);
         if (onlyAvailable)
             filter.addCondition("Available", true);
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimen().toString() + " ");
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().toString() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
         Map<String, List<Specimen>> map = new HashMap<String, List<Specimen>>();
@@ -1527,8 +1608,10 @@ public class SampleManager
         assert set.add(_requestStatusHelper.getTableInfo());
         Table.delete(_specimenEventHelper.getTableInfo(), containerFilter);
         assert set.add(_specimenEventHelper.getTableInfo());
-        Table.delete(_specimenHelper.getTableInfo(), containerFilter);
-        assert set.add(_specimenHelper.getTableInfo());
+        Table.delete(StudySchema.getInstance().getTableInfoVial(), containerFilter);
+        assert set.add(StudySchema.getInstance().getTableInfoVial());
+        Table.delete(StudySchema.getInstance().getTableInfoSpecimen(), containerFilter);
+        assert set.add(StudySchema.getInstance().getTableInfoSpecimen());
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenAdditive(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenAdditive());
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenDerivative(), containerFilter);
@@ -1548,6 +1631,7 @@ public class SampleManager
         // Views
         assert set.add(StudySchema.getInstance().getSchema().getTable("LockedSpecimens"));
         assert set.add(StudySchema.getInstance().getSchema().getTable("SpecimenSummary"));
+        assert set.add(StudySchema.getInstance().getSchema().getTable("SpecimenDetail"));
         assert set.add(StudySchema.getInstance().getSchema().getTable("VialCounts"));
     }
 
@@ -1555,11 +1639,11 @@ public class SampleManager
     public void clearCaches(Container c)
     {
         _requestEventHelper.clearCache(c);
-        _specimenHelper.clearCache(c);
+        _specimenDetailHelper.clearCache(c);
         _specimenEventHelper.clearCache(c);
         _requestHelper.clearCache(c);
         _requestStatusHelper.clearCache(c);
-        DbCache.clear(StudySchema.getInstance().getTableInfoSpecimen());
+        DbCache.clear(StudySchema.getInstance().getTableInfoVial());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenSummary(), c.getId());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenAdditive(), c.getId());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenDerivative(), c.getId());
@@ -1988,7 +2072,7 @@ public class SampleManager
 
     public Set<SiteImpl> getEnrollmentSitesWithRequests(Container container)
     {
-        SQLFragment sql = new SQLFragment("SELECT Participant.EnrollmentSiteId FROM study.Specimen AS Specimen, " +
+        SQLFragment sql = new SQLFragment("SELECT Participant.EnrollmentSiteId FROM study.SpecimenDetail AS Specimen, " +
                 "study.SampleRequestSpecimen AS RequestSpecimen, \n" +
                 "study.SampleRequest AS Request, study.SampleRequestStatus AS Status,\n" +
                 "study.Participant AS Participant\n" +
@@ -2008,7 +2092,7 @@ public class SampleManager
 
     public Set<SiteImpl> getEnrollmentSitesWithSpecimens(Container container)
     {
-        SQLFragment sql = new SQLFragment("SELECT EnrollmentSiteId FROM study.Specimen AS Specimen, study.Participant AS Participant\n" +
+        SQLFragment sql = new SQLFragment("SELECT EnrollmentSiteId FROM study.SpecimenDetail AS Specimen, study.Participant AS Participant\n" +
                 "WHERE Specimen.Ptid = Participant.ParticipantId AND\n" +
                 "\tSpecimen.Container = Participant.Container AND\n" +
                 "\tSpecimen.Container = ?\n" +

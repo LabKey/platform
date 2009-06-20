@@ -59,7 +59,7 @@ public class SpecimenWriter implements Writer<StudyImpl>
         for (SpecimenColumn column : columns)
         {
             SpecimenImporter.TargetTable tt = column.getTargetTable();
-            TableInfo tinfo = tt.isEvents() ? schema.getTableInfoSpecimenEvent() : schema.getTableInfoSpecimen();
+            TableInfo tinfo = tt.isEvents() ? schema.getTableInfoSpecimenEvent() : schema.getTableInfoSpecimenDetail();
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
 
             ci.setCaption(column.getTsvColumnName());
@@ -70,7 +70,11 @@ public class SpecimenWriter implements Writer<StudyImpl>
 
             if (null == column.getFkColumn())
             {
-                sql.append(tt.isSpecimens() ? "s." : "se.").append(column.getDbColumnName());
+                // Note that columns can be events, vials, or specimens (grouped vials); the SpecimenDetail view that's
+                // used for export joins vials and specimens into a single view which we're calling 's'.  isEvents catches
+                // those columns that are part of the events table, while !isEvents() catches the rest.  (equivalent to
+                // isVials() || isSpecimens().)
+                sql.append(tt.isEvents() ? "se." : "s.").append(column.getDbColumnName());
             }
             else
             {
@@ -81,7 +85,7 @@ public class SpecimenWriter implements Writer<StudyImpl>
             comma = ", ";
         }
 
-        sql.append("\nFROM ").append(schema.getTableInfoSpecimenEvent()).append(" se JOIN ").append(schema.getTableInfoSpecimen()).append(" s ON SpecimenId = s.RowId");
+        sql.append("\nFROM ").append(schema.getTableInfoSpecimenEvent()).append(" se JOIN ").append(schema.getTableInfoSpecimenDetail()).append(" s ON se.SpecimenId = s.RowId");
 
         for (SpecimenColumn column : columns)
         {

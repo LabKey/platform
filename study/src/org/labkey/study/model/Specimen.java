@@ -28,6 +28,7 @@ import java.util.Date;
 public class Specimen extends AbstractStudyCachable<Specimen>
 {
     private int _rowId; // INT NOT NULL, -- FK exp.Material
+    private int _specimenId; // INT NOT NULL, -- FK exp.Material
     private Container _container; // ENTITYID NOT NULL,
     private String _globalUniqueId; // NVARCHAR(20) NOT NULL,
     private String _ptid; // NVARCHAR(32),
@@ -60,6 +61,16 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     public Integer getAdditiveTypeId()
     {
         return _additiveTypeId;
+    }
+
+    public int getSpecimenId()
+    {
+        return _specimenId;
+    }
+
+    public void setSpecimenId(int specimenId)
+    {
+        _specimenId = specimenId;
     }
 
     public void setAdditiveTypeId(Integer additiveTypeId)

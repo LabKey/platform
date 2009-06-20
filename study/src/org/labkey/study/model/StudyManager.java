@@ -1099,7 +1099,7 @@ public class StudyManager
 
     private final static String selectSummaryStats =  "SELECT " +
                     "(SELECT count(study.Participant.participantid) FROM study.Participant WHERE study.participant.container=study.study.Container) AS participantCount," +
-                    "(SELECT count(study.specimen.rowid) FROM study.Specimen WHERE study.specimen.container=study.study.Container) AS specimenCount," +
+                    "(SELECT Sum(study.specimen.vialcount) FROM study.Specimen WHERE study.specimen.container=study.study.Container) AS specimenCount," +
                     "(SELECT count(rowid) FROM study.site WHERE study.site.container=study.study.Container) AS siteCount" +
                     "FROM study.study WHERE study.study.container=?";
 

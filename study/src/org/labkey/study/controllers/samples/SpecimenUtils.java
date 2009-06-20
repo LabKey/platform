@@ -826,8 +826,8 @@ public class SpecimenUtils
                                                    SiteImpl destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = new DataRegion();
-        dr.setTable(StudySchema.getInstance().getTableInfoSpecimen());
-        dr.setColumns(StudySchema.getInstance().getTableInfoSpecimen().getColumns(
+        dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());
+        dr.setColumns(StudySchema.getInstance().getTableInfoSpecimenDetail().getColumns(
                 "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
                         "DrawTimestamp, ProtocolNumber"));
         RenderContext ctx = new RenderContext(getViewContext());
@@ -845,8 +845,8 @@ public class SpecimenUtils
                                                  SiteImpl destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = new DataRegion();
-        dr.setTable(StudySchema.getInstance().getTableInfoSpecimen());
-        dr.setColumns(StudySchema.getInstance().getTableInfoSpecimen().getColumns(
+        dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());
+        dr.setColumns(StudySchema.getInstance().getTableInfoSpecimenDetail().getColumns(
                 "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
                         "DrawTimestamp, ProtocolNumber"));
         RenderContext ctx = new RenderContext(getViewContext());

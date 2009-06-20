@@ -29,7 +29,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 {
     public SpecimenDetailTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
 
         ColumnInfo pvColumn = new ParticipantVisitColumn(
                 "ParticipantVisit",
@@ -108,31 +108,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
 
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
-
-        ColumnInfo vialCountColumn = wrapColumn("SiblingVials", getRealTable().getColumn("SpecimenHash"));
-        vialCountColumn.setFk(new QueryForeignKey(_schema, "SpecimenVialCount", "SpecimenHash", "Vials"));
-        addColumn(vialCountColumn);
-
-//        // add the vial count columns from specimen summary
-//        String sqlVialCount = "( SELECT a.VialCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
-//                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
-//        ColumnInfo colVialCount = new ExprColumn(this, "VialCount", new SQLFragment(sqlVialCount), Types.INTEGER);
-//        addColumn(colVialCount);
-//
-//        String sqlLockedInRequest = "( SELECT a.LockedInRequestCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
-//                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
-//        ColumnInfo colLockedInRequest = new ExprColumn(this, "LockedInRequestCount", new SQLFragment(sqlLockedInRequest), Types.INTEGER);
-//        addColumn(colLockedInRequest);
-//
-//        String sqlAtRepositoryCount = "( SELECT a.AtRepositoryCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
-//                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
-//        ColumnInfo colAtRepositoryCount = new ExprColumn(this, "AtRepositoryCount", new SQLFragment(sqlAtRepositoryCount), Types.INTEGER);
-//        addColumn(colAtRepositoryCount);
-//
-//        String sqlAvailableCount = "( SELECT a.AvailableCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
-//                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
-//        ColumnInfo colAvailableCount = new ExprColumn(this, "AvailableCount", new SQLFragment(sqlAvailableCount), Types.INTEGER);
-//        addColumn(colAvailableCount);
     }
 
     public static class SiteNameDisplayColumn extends DataColumn

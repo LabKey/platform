@@ -83,7 +83,7 @@ public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
             for (SiteImpl site : sites)
             {
                 SimpleFilter filter = new SimpleFilter();
-                String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.Specimen AS Specimen,\n" +
+                String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.SpecimenDetail AS Specimen,\n" +
                         "study.SampleRequestSpecimen AS RequestSpecimen,\n" +
                         "study.SampleRequest AS Request, study.SampleRequestStatus AS Status,\n" +
                         "study.Participant AS Participant\n" +

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 CREATE VIEW study.LockedSpecimens AS
   SELECT map.SpecimenGlobalUniqueId AS GlobalUniqueId, map.Container FROM study.SampleRequest AS request
       JOIN study.SampleRequestStatus AS status ON request.StatusId = status.RowId AND status.SpecimensLocked = True
@@ -21,28 +20,44 @@ CREATE VIEW study.LockedSpecimens AS
 
 CREATE VIEW study.VialCounts AS
         SELECT Container, SpecimenHash,
+        SUM(Volume) AS TotalVolume,
+        SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
         COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN True THEN 1 ELSE 0 END) AS AtRepositoryCount,
         SUM(CASE Available WHEN True THEN 1 ELSE 0 END) AS AvailableCount,
         (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN False THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
-    FROM study.Specimen
+    FROM study.Vial
     GROUP BY Container, SpecimenHash;
 
-CREATE VIEW study.SpecimenSummary AS
-        SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue,
-        SUM(Volume) AS TotalVolume, SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
-        VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
-        ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
-        PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
-        COUNT(GlobalUniqueId) AS VialCount,
-        SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) AS LockedInRequestCount,
-        SUM(CASE AtRepository WHEN True THEN 1 ELSE 0 END) AS AtRepositoryCount,
-        SUM(CASE Available WHEN True THEN 1 ELSE 0 END) AS AvailableCount,
-        (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN False THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
-    FROM study.Specimen
-    GROUP BY Container, SpecimenHash, Ptid, VisitDescription,
-        VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
-        PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
-        DrawTimestamp, SalReceiptDate, ClassId, ProtocolNumber, SubAdditiveDerivative,
-        OriginatingLocationId;
+CREATE VIEW study.SpecimenSummary AS SELECT * FROM study.Specimen;
+
+
+CREATE VIEW study.SpecimenDetail AS
+	SELECT Vial.*,
+      Specimen.Ptid,
+      Specimen.TotalVolume,
+      Specimen.AvailableVolume,
+      Specimen.VisitDescription,
+      Specimen.VisitValue,
+      Specimen.VolumeUnits,
+      Specimen.PrimaryVolume,
+      Specimen.PrimaryVolumeUnits,
+      Specimen.PrimaryTypeId,
+      Specimen.AdditiveTypeId,
+      Specimen.DerivativeTypeId,
+      Specimen.DerivativeTypeId2,
+      Specimen.SubAdditiveDerivative,
+      Specimen.DrawTimestamp,
+      Specimen.SalReceiptDate,
+      Specimen.ClassId,
+      Specimen.ProtocolNumber,
+      Specimen.OriginatingLocationId,
+      Specimen.VialCount,
+      Specimen.LockedInRequestCount,
+      Specimen.AtRepositoryCount,
+      Specimen.AvailableCount,
+      Specimen.ExpectedAvailableCount
+    FROM study.Vial AS Vial
+	INNER JOIN study.Specimen AS Specimen
+      ON Vial.SpecimenId = Specimen.RowId;

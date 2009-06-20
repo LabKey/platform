@@ -2432,7 +2432,7 @@ public class SpringSpecimenController extends BaseStudyController
                         protected Specimen[] getSpecimenList() throws SQLException
                         {
                             SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingSite, type);
-                            return Table.select(StudySchema.getInstance().getTableInfoSpecimen(), Table.ALL_COLUMNS, filter, null, Specimen.class);
+                            return Table.select(StudySchema.getInstance().getTableInfoSpecimenDetail(), Table.ALL_COLUMNS, filter, null, Specimen.class);
                         }
 
                         @Override

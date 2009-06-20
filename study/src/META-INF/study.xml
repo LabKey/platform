@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>           
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
  * Copyright (c) 2006-2009 LabKey Corporation
@@ -304,9 +304,76 @@
       <ns:column columnName="orphaned"/>
     </ns:columns>
   </ns:table>
+    <ns:table tableName="Vial" tableDbType="TABLE">
+      <ns:columns>
+          <ns:column columnName="RowId"/>
+          <ns:column columnName="Container"/>
+          <ns:column columnName="SpecimenHash"/>
+          <ns:column columnName="SpecimenId"/>
+          <ns:column columnName="GlobalUniqueId"/>
+          <ns:column columnName="Volume">
+            <ns:formatString>#,###.0#</ns:formatString>
+          </ns:column>
+          <ns:column columnName="requestable"/>
+          <ns:column columnName="CurrentLocation" />
+        <ns:column columnName="FrozenTime">
+          <ns:formatString>H:mm:ss</ns:formatString>
+        </ns:column>
+        <ns:column columnName="ProcessingTime">
+          <ns:formatString>H:mm:ss</ns:formatString>
+        </ns:column>
+        <ns:column columnName="AtRepository"/>
+        <ns:column columnName="LockedInRequest"/>
+        <ns:column columnName="Available"/>
+        <ns:column columnName="ProcessedByInitials"/>
+        <ns:column columnName="ProcessingDate"/>
+        <ns:column columnName="ProcessingLocation"/>
+      </ns:columns>
+    </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Ptid"/>
+      <ns:column columnName="DrawTimestamp">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
+      <ns:column columnName="SalReceiptDate"/>
+      <ns:column columnName="SpecimenHash"/>
+      <ns:column columnName="ClassId"/>
+      <ns:column columnName="VisitValue">
+        <ns:formatString>0.####</ns:formatString>
+      </ns:column>
+      <ns:column columnName="ProtocolNumber"/>
+      <ns:column columnName="VisitDescription"/>
+      <ns:column columnName="VolumeUnits"/>
+      <ns:column columnName="SubAdditiveDerivative"/>
+      <ns:column columnName="PrimaryTypeId"/>
+      <ns:column columnName="DerivativeTypeId"/>
+      <ns:column columnName="AdditiveTypeId"/>
+      <ns:column columnName="originatinglocationid"/>
+      <ns:column columnName="DerivativeTypeId2">
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>SpecimenDerivative</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="PrimaryVolume"/>
+      <ns:column columnName="PrimaryVolumeUnits"/>
+      <ns:column columnName="AtRepositoryCount"/>
+      <ns:column columnName="AvailableCount"/>
+      <ns:column columnName="AvailableVolume"/>
+      <ns:column columnName="ExpectedAvailableCount"/>
+      <ns:column columnName="LockedInRequestCount"/>
+      <ns:column columnName="TotalVolume"/>
+      <ns:column columnName="VialCount"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="SpecimenId"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="GlobalUniqueId"/>
       <ns:column columnName="Ptid"/>
@@ -321,17 +388,12 @@
       </ns:column>
       <ns:column columnName="ProtocolNumber"/>
       <ns:column columnName="VisitDescription"/>
-      <ns:column columnName="Volume">
-        <ns:formatString>#,###.0#</ns:formatString>
-      </ns:column>
       <ns:column columnName="VolumeUnits"/>
       <ns:column columnName="SubAdditiveDerivative"/>
       <ns:column columnName="PrimaryTypeId"/>
       <ns:column columnName="DerivativeTypeId"/>
       <ns:column columnName="AdditiveTypeId"/>
       <ns:column columnName="originatinglocationid"/>
-      <ns:column columnName="requestable"/>
-      <ns:column columnName="CurrentLocation" />
       <ns:column columnName="DerivativeTypeId2">
         <ns:fk>
           <ns:fkColumnName>RowId</ns:fkColumnName>
@@ -339,14 +401,26 @@
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
+      <ns:column columnName="PrimaryVolume"/>
+      <ns:column columnName="PrimaryVolumeUnits"/>
+      <ns:column columnName="AtRepositoryCount"/>
+      <ns:column columnName="AvailableCount"/>
+      <ns:column columnName="AvailableVolume"/>
+      <ns:column columnName="ExpectedAvailableCount"/>
+      <ns:column columnName="LockedInRequestCount"/>
+      <ns:column columnName="TotalVolume"/>
+      <ns:column columnName="VialCount"/>
+      <ns:column columnName="Volume">
+        <ns:formatString>#,###.0#</ns:formatString>
+      </ns:column>
+      <ns:column columnName="requestable"/>
+      <ns:column columnName="CurrentLocation" />
       <ns:column columnName="FrozenTime">
         <ns:formatString>H:mm:ss</ns:formatString>
       </ns:column>
       <ns:column columnName="ProcessingTime">
         <ns:formatString>H:mm:ss</ns:formatString>
       </ns:column>
-      <ns:column columnName="PrimaryVolume"/>
-      <ns:column columnName="PrimaryVolumeUnits"/>
       <ns:column columnName="AtRepository"/>
       <ns:column columnName="LockedInRequest"/>
       <ns:column columnName="Available"/>
@@ -358,6 +432,7 @@
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
     <ns:columns>
       <ns:column columnName="Container"/>
+      <ns:column columnName="RowId"/>
       <ns:column columnName="Ptid"/>
       <ns:column columnName="DrawTimestamp">
         <ns:formatString>DateTime</ns:formatString>
@@ -644,7 +719,7 @@
       <ns:column columnName="rowid"/>
       <ns:column columnName="label"/>
       <ns:column columnName="container"/>
-      <ns:column columnName="LSID"/>  
+      <ns:column columnName="LSID"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenComment" tableDbType="TABLE">
@@ -679,7 +754,7 @@
             <ns:fkDbSchema>core</ns:fkDbSchema>
           </ns:fk>
       </ns:column>
-      <ns:column columnName="Comment"/>  
+      <ns:column columnName="Comment"/>
       <ns:column columnName="QualityControlFlag"/>
       <ns:column columnName="QualityControlFlagForced"/>
       <ns:column columnName="QualityControlComments"/>
@@ -689,6 +764,8 @@
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="SpecimenHash"/>
+      <ns:column columnName="AvailableVolume"/>
+      <ns:column columnName="TotalVolume"/>
       <ns:column columnName="LockedInRequestCount"/>
       <ns:column columnName="AtRepositoryCount"/>
       <ns:column columnName="AvailableCount"/>

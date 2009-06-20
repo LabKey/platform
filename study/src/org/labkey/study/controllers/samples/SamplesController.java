@@ -1296,7 +1296,7 @@ public class SamplesController extends ViewController
         }
         else if (SpecimenService.CompletionType.SpecimenGlobalUniqueId.name().equals(form.getType()))
         {
-            tinfo = StudySchema.getInstance().getTableInfoSpecimen();
+            tinfo = StudySchema.getInstance().getTableInfoVial();
             column = "GlobalUniqueId";
             insensitiveCompare = true;
         }

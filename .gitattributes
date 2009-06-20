@@ -1832,6 +1832,7 @@ study/src/META-INF/study/scripts/postgresql/study-9.13-9.14.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.14-9.15.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.18-9.19.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.19-9.191.sql -text
+study/src/META-INF/study/scripts/postgresql/study-9.191-9.192.sql -text
 study/src/META-INF/study/scripts/postgresql/study-create.sql -text
 study/src/META-INF/study/scripts/postgresql/study-drop.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.11.sql -text
@@ -1941,6 +1942,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-9.13-9.14.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.14-9.15.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.18-9.19.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.19-9.191.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-9.191-9.192.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-create.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-drop.sql -text
 study/src/org/labkey/study/QueryHelper.java -text

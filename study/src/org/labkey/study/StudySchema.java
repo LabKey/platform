@@ -132,6 +132,11 @@ public class StudySchema
         return getSchema().getTable("SampleRequestSpecimen");
     }
 
+    public TableInfo getTableInfoVial()
+    {
+        return getSchema().getTable("Vial");
+    }
+
     public TableInfo getTableInfoSpecimen()
     {
         return getSchema().getTable("Specimen");
@@ -140,6 +145,11 @@ public class StudySchema
     public TableInfo getTableInfoSpecimenEvent()
     {
         return getSchema().getTable("SpecimenEvent");
+    }
+
+    public TableInfo getTableInfoSpecimenDetail()
+    {
+        return getSchema().getTable("SpecimenDetail");
     }
 
     public TableInfo getTableInfoSpecimenSummary()

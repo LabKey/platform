@@ -3,7 +3,6 @@ package org.labkey.study.visitmanager;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.study.Study;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;

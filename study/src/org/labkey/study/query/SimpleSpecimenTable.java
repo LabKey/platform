@@ -25,7 +25,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
     public SimpleSpecimenTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
 
         getColumn("ParticipantId").setFk(null);
 
