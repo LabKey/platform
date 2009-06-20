@@ -478,7 +478,11 @@ public class SampleManager
             return;
         Container container = getContainer(specimens);
         for (int start = 0; start < specimens.length; start += 1000)
-            updateSpecimenCounts(container, Arrays.copyOfRange(specimens, start, Math.min(start + 1000, specimens.length)));
+        {
+            Specimen[] subset = new Specimen[Math.min(1000, specimens.length - start)];
+            System.arraycopy(specimens, start, subset, 0, subset.length);
+            updateSpecimenCounts(container, subset);
+        }
     }
 
     public SampleRequestRequirement[] getRequestRequirements(SampleRequest request)
