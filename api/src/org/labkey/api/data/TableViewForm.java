@@ -163,7 +163,7 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
             set("container", _c.getId());
 
         Object[] pkVal = getPkVals();
-        Map newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal, null);
+        Map newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
         setTypedValues(newMap, true);
     }
 
@@ -184,13 +184,13 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
         if (null != _selectedRows && _selectedRows.length > 0)
         {
             for (String _selectedRow : _selectedRows)
-                Table.delete(_tinfo, _selectedRow, null);
+                Table.delete(_tinfo, _selectedRow);
         }
         else
         {
             Object[] pkVal = getPkVals();
             if (null != pkVal && null != pkVal[0])
-                Table.delete(_tinfo, pkVal, null);
+                Table.delete(_tinfo, pkVal);
             else //Hmm, thow an exception here????
                 _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
         }

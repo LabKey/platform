@@ -278,7 +278,7 @@ public class Portal
 
     public static void updatePart(User u, WebPart part) throws SQLException
     {
-        Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getPageId(), part.getIndex()}, null);
+        Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getPageId(), part.getIndex()});
         _clearCache(part.getPageId());
     }
 

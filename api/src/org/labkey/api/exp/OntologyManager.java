@@ -1876,7 +1876,7 @@ public class OntologyManager
 	public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd) throws SQLException
 	{
 		assert pd.getPropertyId() != 0;
-		pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId(), null);
+		pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
 		propDescCache.put(getCacheKey(pd), pd);
 		return pd;
 	}
@@ -1908,7 +1908,7 @@ public class OntologyManager
     public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd) throws SQLException
     {
         assert dd.getDomainId() != 0;
-        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId(), null);
+        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
         domainDescCache.put(getCacheKey(dd),dd);
         return dd;
     }
@@ -3011,7 +3011,7 @@ public class OntologyManager
                     throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
                 }
             }
-            PropertyDescriptor update = Table.update(user, getTinfoPropertyDescriptor(), pdNew, pdOld.getPropertyId(), null);
+            PropertyDescriptor update = Table.update(user, getTinfoPropertyDescriptor(), pdNew, pdOld.getPropertyId());
 
             if (pdOld.isRequired() != pdNew.isRequired())
                 ensurePropertyDomain2(pdNew.getPropertyURI(), domainURI, pdNew.getContainer(), pdNew.isRequired());

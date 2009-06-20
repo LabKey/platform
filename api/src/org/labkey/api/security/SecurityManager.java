@@ -1768,7 +1768,7 @@ public class SecurityManager
             }
             else
             {
-                Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResource().getResourceId(), null);
+                Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResource().getResourceId());
             }
 
             TableInfo table = core.getTableInfoRoleAssignments();

@@ -758,7 +758,7 @@ public class ModuleLoader implements Filter
             if (null == stored)
                 Table.insert(null, getTableInfoModules(), context);
             else
-                Table.update(null, getTableInfoModules(), context, context.getName(), null);
+                Table.update(null, getTableInfoModules(), context, context.getName());
         }
         catch (SQLException x)
         {

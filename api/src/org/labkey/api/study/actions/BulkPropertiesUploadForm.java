@@ -101,7 +101,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
             catch (IOException e)
             {
                 // Shouldn't get this from an in-memory TSV parse
-                throw new UnexpectedException(e);
+                throw new ExperimentException(e);
             }
 
             Set<String> identifiers = new CaseInsensitiveHashSet();

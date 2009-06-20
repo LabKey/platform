@@ -655,7 +655,7 @@ public class UserManager
         typedValues.put("phone", PageFlowUtil.formatPhoneNo((String) typedValues.get("phone")));
         typedValues.put("mobile", PageFlowUtil.formatPhoneNo((String) typedValues.get("mobile")));
         typedValues.put("pager", PageFlowUtil.formatPhoneNo((String) typedValues.get("pager")));
-        Table.update(currentUser, _core.getTableInfoUsers(), typedValues, pkVal, null);
+        Table.update(currentUser, _core.getTableInfoUsers(), typedValues, pkVal);
         clearUserList(currentUser.getUserId());
 
         User principal = UserManager.getUser((Integer)pkVal);
@@ -767,7 +767,7 @@ public class UserManager
         try
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
-                    Collections.singletonMap("Active", active), userId, null);
+                    Collections.singletonMap("Active", active), userId);
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " + 
                     (active ? "re-enabled" : "disabled"));
         }

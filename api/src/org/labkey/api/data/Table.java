@@ -780,61 +780,6 @@ public class Table
     }
 
 
-    protected static Map _previous(TableInfo table, Object key, Object version)
-            throws SQLException
-    {
-        ResultSet rs = null;
-
-        try
-        {
-            rs = select(table, ALL_COLUMNS, new PkFilter(table, key), null);
-
-            if (!rs.next())
-                throw OptimisticConflictException.create(ERROR_DELETED);
-
-            ColumnInfo columnVersion = table.getColumn(table.getVersionColumnName());
-            Map previous = ResultSetUtil.mapRow(rs);
-
-            if (null != version && null != columnVersion)
-            {
-                if (!_versionEquals(version, previous.get(columnVersion.getName())))
-                    throw OptimisticConflictException.create(ERROR_ROWVERSION);
-            }
-
-            return previous;
-        }
-        finally
-        {
-            if (null != rs)
-                rs.close();
-        }
-    }
-
-
-    static private boolean _versionEquals(Object x, Object y)
-    {
-        assert x.getClass() == y.getClass();
-
-        if (x instanceof Comparable)
-            //noinspection unchecked
-            return 0 == ((Comparable)x).compareTo(y);
-
-        if (x.getClass().isArray())
-        {
-            byte[] xbuf = (byte[])x;
-            byte[] ybuf = (byte[])y;
-            if (xbuf.length != ybuf.length)
-                return false;
-            for (int i=0 ; i<xbuf.length ; i++)
-                if (xbuf[i] != ybuf[i])
-                    return false;
-            return true;
-        }
-
-        return x.equals(y);
-    }
-
-
     static private void _setProperty(Object fields, String propName, Object value)
     {
         if (fields instanceof Map)
@@ -977,13 +922,11 @@ public class Table
     }
 
 
-    public static <K> K update(User user, TableInfo table, K fieldsIn, Object rowId, Object rowVersion)
+    public static <K> K update(User user, TableInfo table, K fieldsIn, Object rowId)
             throws SQLException
     {
         assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != rowId;
-
-        _previous(table, rowId, rowVersion);
 
         // _executeTriggers(table, previous, fields);
 
@@ -1014,15 +957,6 @@ public class Table
             whereSQL.append("=?");
             parametersWhere.add(pkVals[i]);
             whereAND = " AND ";
-        }
-
-        if (null != rowVersion && null != table.getVersionColumnName())
-        {
-            ColumnInfo columnVersion = table.getColumn(table.getVersionColumnName());
-            whereSQL.append(whereAND);
-            whereSQL.append(columnVersion.getSelectName());
-            whereSQL.append("=?");
-            parametersWhere.add(rowVersion);
         }
 
         //noinspection unchecked
@@ -1071,8 +1005,10 @@ public class Table
             int count = execute(conn, updateSQL, parameters);
 
             // check for concurrency problem
-            if (0 == count)
-                _previous(table, rowId, rowVersion);
+            if (count == 0)
+            {
+                throw OptimisticConflictException.create(ERROR_DELETED);
+            }
 
             _copyUpdateSpecialFields(table, fieldsIn, fields);
             notifyTableUpdate(table);
@@ -1092,11 +1028,9 @@ public class Table
     }
 
 
-    public static void delete(TableInfo table, Object rowId, Object rowVersion)
+    public static void delete(TableInfo table, Object rowId)
             throws SQLException
     {
-        _previous(table, rowId, rowVersion);
-
         List<ColumnInfo> columnPK = table.getPkColumns();
         Object[] pkVals;
 
@@ -1113,11 +1047,14 @@ public class Table
             filter.addCondition(columnPK.get(i), pkVals[i]);
 
         // UNDONE -- rowVersion
-        delete(table, filter);
+        if (delete(table, filter) == 0)
+        {
+            throw OptimisticConflictException.create(ERROR_DELETED);
+        }
     }
 
 
-    public static void delete(TableInfo table, Filter filter)
+    public static int delete(TableInfo table, Filter filter)
             throws SQLException
     {
         assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): (table.getName() + " is not in the physical database.");
@@ -1125,9 +1062,10 @@ public class Table
         SQLFragment where = filter.getSQLFragment(table, null);
 
         String deleteSQL = "DELETE FROM " + table.getSelectName() + "\n\t" + where.getSQL();
-        Table.execute(table.getSchema(), deleteSQL, where.getParams().toArray());
+        int result = Table.execute(table.getSchema(), deleteSQL, where.getParams().toArray());
 
         notifyTableUpdate(table);
+        return result;
     }
 
 

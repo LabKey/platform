@@ -611,7 +611,7 @@ public class DbSchema
 
             testSchema.getScope().beginTransaction();
             m.put("IntNotNull", 1);
-            m = Table.update(ctx.getUser(), testTable, m, rowId, null);
+            m = Table.update(ctx.getUser(), testTable, m, rowId);
             assertTrue("Update is consistent in transaction?", (Integer) m.get("IntNotNull") == 1);
             testSchema.getScope().rollbackTransaction();
 
@@ -650,7 +650,7 @@ public class DbSchema
 
 
             //Does cache get cleared on delete
-            Table.delete(testTable, rowId, null);
+            Table.delete(testTable, rowId);
             m2 = (Map) DbCache.get(testTable, key);
             assertNull(m2);
 

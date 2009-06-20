@@ -99,7 +99,7 @@ public class SqlScriptManager
     {
         Object[] pk = new Object[]{script.getProvider().getProviderName(), script.getDescription()};
 
-        Table.update(user, _core.getTableInfoSqlScripts(), new HashMap(), pk, null);  // Update user and modified date
+        Table.update(user, _core.getTableInfoSqlScripts(), new HashMap(), pk);  // Update user and modified date
     }
 
     static void runScript(User user, SqlScript script, ModuleContext moduleContext) throws SqlScriptException, SQLException

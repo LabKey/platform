@@ -146,9 +146,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
             setFormatString(col.getFormatString());
-        setInputLength(col.getInputLength());
+        // Don't call the getter, because if it hasn't been explicitly set we want to
+        // fetch the value lazily so we don't have to traverse FKs to get the display
+        // field at this point.
+        setInputLength(col.inputLength);
+        setInputType(col.inputType);
+
         setInputRows(col.getInputRows());
-        setInputType(col.getInputType());
         setNullable(col.getNullable());
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setScale(col.getScale());
