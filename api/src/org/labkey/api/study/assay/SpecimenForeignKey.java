@@ -234,7 +234,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append(" LEFT OUTER JOIN ");
                 // Select all the study-side specimen columns that we'll need to do the comparison
                 sql.append(" (SELECT specimen.RowId, specimen.GlobalUniqueId, specimen.Container, specimen.PTID AS ParticipantId, specimen.drawtimestamp AS Date, specimen.VisitValue AS Visit ");
-                sql.append(" FROM study.specimen specimen) AS " + specimenSubqueryAlias);
+                sql.append(" FROM study.SpecimenDetail specimen) AS " + specimenSubqueryAlias);
                 sql.append(" ON " + specimenSubqueryAlias + ".GlobalUniqueId = " + assaySubqueryAlias + "." + specimenColumnInfo.getAlias());
                 if (targetStudy != null)
                 {
