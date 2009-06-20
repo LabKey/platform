@@ -18,19 +18,14 @@ package org.labkey.experiment.api.property;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.apache.beehive.netui.pageflow.PageFlowUtils;
-import org.springframework.validation.BindException;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -157,7 +152,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
         }
         else
             return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator,
-                    new Integer(getRowId()), null));
+                    new Integer(getRowId())));
     }
 
     public void delete()
@@ -172,7 +167,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     
     public void delete(User user) throws SQLException
     {
-        Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()), null);
+        Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()));
     }
 
     public boolean validate(String field, Object value, List<ValidationError> errors)

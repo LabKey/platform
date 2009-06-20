@@ -70,7 +70,7 @@ public class BtManager
         // also delete all the entities associated with this server
         SimpleFilter filter = new SimpleFilter("ServerId", id);
         Table.delete(getTinfoEntity(), filter);
-        Table.delete(getTinfoServer(), id, null);
+        Table.delete(getTinfoServer(), id);
     }
     
     public Server insertServer(User user, Server server) throws SQLException
@@ -80,7 +80,7 @@ public class BtManager
 
     public Server updateServer(User user, Server server) throws SQLException
     {
-        return Table.update(user, getTinfoServer(), server, server.getRowId(), null);
+        return Table.update(user, getTinfoServer(), server, server.getRowId());
     }
 
     public Entity[] getEntities(Server server, Entity parent) throws SQLException
@@ -136,7 +136,7 @@ public class BtManager
 
     public Entity updateEntity(Entity entity) throws SQLException
     {
-        return Table.update(null, getTinfoEntity(), entity, entity.getRowId(), null);
+        return Table.update(null, getTinfoEntity(), entity, entity.getRowId());
     }
 
     public Server insert(Server server) throws SQLException
@@ -151,7 +151,7 @@ public class BtManager
 
     public Session update(Session session) throws SQLException
     {
-        return Table.update(null, getTinfoSession(), session, session.getRowId(), null);
+        return Table.update(null, getTinfoSession(), session, session.getRowId());
     }
 
     public Session getSession(int rowid)

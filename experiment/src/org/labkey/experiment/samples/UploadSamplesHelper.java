@@ -468,7 +468,9 @@ public class UploadSamplesHelper
         public String beforeImportObject(Map<String, Object> map) throws SQLException
         {
             String name = decideName(map, _idCols);
-            String lsid = new Lsid(_source.getMaterialLSIDPrefix() + name).toString();
+            Lsid l = new Lsid(_source.getMaterialLSIDPrefix() + "test");
+            l.setObjectId(name);
+            String lsid = l.toString();
 
             ExpMaterial material;
             if (!_reusedMaterialLSIDs.contains(lsid))

@@ -1996,7 +1996,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             Table.execute(getExpSchema(), "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", new Object[] { source.getLSID() } );
 
-            Table.delete(getTinfoMaterialSource(), rowId, null);
+            Table.delete(getTinfoMaterialSource(), rowId);
 
             if (!containingTrans)
                 getExpSchema().getScope().commitTransaction();
@@ -2421,7 +2421,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             else
             {
-                result = Table.update(user, getTinfoProtocol(), protocol, protocol.getRowId(), null);
+                result = Table.update(user, getTinfoProtocol(), protocol, protocol.getRowId());
             }
 
             Collection<ProtocolParameter> protocolParams = protocol.retrieveProtocolParameters().values();
@@ -2654,7 +2654,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         }
                         outputMaterial.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
                         outputMaterial.setRun(run);
-                        Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId(), null);
+                        Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
                     }
 
                     for (ExpData outputData : outputDatas.keySet())
@@ -2669,7 +2669,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         }
                         outputData.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
                         outputData.setRun(run);
-                        Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId(), null);
+                        Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
                     }
 
                     ProtocolAction action3 = actions[2];

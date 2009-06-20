@@ -136,19 +136,19 @@ public class QueryManager
 
     public QueryDef update(User user, QueryDef queryDef) throws SQLException
     {
-        return Table.update(user, getTableInfoQueryDef(), queryDef, queryDef.getQueryDefId(), null);
+        return Table.update(user, getTableInfoQueryDef(), queryDef, queryDef.getQueryDefId());
     }
 
     public void delete(User user, QueryDef queryDef) throws SQLException
     {
-        Table.delete(getTableInfoQueryDef(), queryDef.getQueryDefId(), null);
+        Table.delete(getTableInfoQueryDef(), queryDef.getQueryDefId());
     }
 
     public void delete(User user, QuerySnapshotDef querySnapshotDef) throws SQLException
     {
-        Table.delete(getTableInfoQuerySnapshotDef(), querySnapshotDef.getRowId(), null);
+        Table.delete(getTableInfoQuerySnapshotDef(), querySnapshotDef.getRowId());
         if (querySnapshotDef.getQueryDefId() != null)
-            Table.delete(getTableInfoQueryDef(), querySnapshotDef.getQueryDefId(), null);
+            Table.delete(getTableInfoQueryDef(), querySnapshotDef.getQueryDefId());
     }
 
     public QuerySnapshotDef insert(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
@@ -165,7 +165,7 @@ public class QueryManager
     {
         if (queryDef != null && snapshotDef.getQueryTableName() == null)
             update(user, queryDef);
-        return Table.update(user, getTableInfoQuerySnapshotDef(), snapshotDef, snapshotDef.getRowId(), null);
+        return Table.update(user, getTableInfoQuerySnapshotDef(), snapshotDef, snapshotDef.getRowId());
     }
 
     public CstmView getCustomView(int id) throws SQLException
@@ -225,7 +225,7 @@ public class QueryManager
 
     public CstmView update(User user, CstmView view) throws SQLException
     {
-        return Table.update(user, getTableInfoCustomView(), view, view.getCustomViewId(), null);
+        return Table.update(user, getTableInfoCustomView(), view, view.getCustomViewId());
     }
 
     public CstmView insert(User user, CstmView view) throws SQLException
@@ -235,7 +235,7 @@ public class QueryManager
 
     public void delete(User user, CstmView view) throws SQLException
     {
-        Table.delete(getTableInfoCustomView(), view.getCustomViewId(), null);
+        Table.delete(getTableInfoCustomView(), view.getCustomViewId());
     }
 
     public boolean canInherit(int flag)
@@ -286,13 +286,13 @@ public class QueryManager
 
     public DbUserSchemaDef update(User user, DbUserSchemaDef def) throws Exception
     {
-        DbUserSchemaDef ret = Table.update(user, getTableInfoDbUserSchema(), def, def.getDbUserSchemaId(), null);
+        DbUserSchemaDef ret = Table.update(user, getTableInfoDbUserSchema(), def, def.getDbUserSchemaId());
         return ret;
     }
 
     public void delete(User user, DbUserSchemaDef def) throws Exception
     {
-        Table.delete(getTableInfoDbUserSchema(), def.getDbUserSchemaId(), null);
+        Table.delete(getTableInfoDbUserSchema(), def.getDbUserSchemaId());
     }
 
 

@@ -94,7 +94,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             }
             else
             {
-                _object = Table.update(user, ExperimentServiceImpl.get().getTinfoData(), _object, getRowId(), null);
+                _object = Table.update(user, ExperimentServiceImpl.get().getTinfoData(), _object, getRowId());
             }
         }
         catch (SQLException e)

@@ -131,19 +131,19 @@ public class QueryHelper<K extends StudyCachable>
     public K update(User user, K obj, Object[] pk) throws SQLException
     {
         clearCache(obj);
-        return Table.update(user, getTableInfo(), obj, pk, null);
+        return Table.update(user, getTableInfo(), obj, pk);
     }
 
     public void delete(K obj, Object rowId, Object rowVersion) throws SQLException
     {
         clearCache(obj);
-        Table.delete(getTableInfo(), rowId, rowVersion);
+        Table.delete(getTableInfo(), rowId);
     }
 
     public void delete(K obj) throws SQLException
     {
         clearCache(obj);
-        Table.delete(getTableInfo(), obj.getPrimaryKey(), null);
+        Table.delete(getTableInfo(), obj.getPrimaryKey());
     }
 
     public TableInfo getTableInfo()

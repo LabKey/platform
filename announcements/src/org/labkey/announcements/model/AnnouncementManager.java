@@ -232,7 +232,7 @@ public class AnnouncementManager
                 emailPref.setEmailOptionId(emailPreference);
                 emailPref.setLastModifiedBy(currentUser.getUserId());
                 Table.update(currentUser, _comm.getTableInfoEmailPrefs(), emailPref,
-                        new Object[]{c.getId(), projectUser.getUserId()}, null);
+                        new Object[]{c.getId(), projectUser.getUserId()});
             }
         }
     }
@@ -336,13 +336,13 @@ public class AnnouncementManager
     public static void updateAnnouncement(User user, Announcement update) throws SQLException
     {
         update.beforeUpdate(user);
-        Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId(), null);
+        Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
     }
 
 
     private static void deleteAnnouncement(Announcement ann) throws SQLException
     {
-        Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId(), null);
+        Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
         AttachmentService.get().deleteAttachments(ann);
     }
 

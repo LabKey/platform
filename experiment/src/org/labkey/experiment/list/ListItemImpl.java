@@ -309,7 +309,7 @@ public class ListItemImpl implements ListItem
             }
             else if (_itmOld != null)
             {
-                _itm = Table.update(user, _list.getIndexTable(), _itm, new Object[] { _itmOld.getListId(), _itmOld.getKey()}, null);
+                _itm = Table.update(user, _list.getIndexTable(), _itm, new Object[] { _itmOld.getListId(), _itmOld.getKey()});
                 _itmOld = null;
             }
 

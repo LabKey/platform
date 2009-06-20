@@ -34,7 +34,7 @@ public abstract class DefaultRequirement<R extends DefaultRequirement<R>> implem
     {
         try
         {
-            return Table.update(user, getTableInfo(), (R) this, getPrimaryKeyValue(), null);
+            return Table.update(user, getTableInfo(), (R) this, getPrimaryKeyValue());
         }
         catch (SQLException e)
         {
@@ -46,7 +46,7 @@ public abstract class DefaultRequirement<R extends DefaultRequirement<R>> implem
     {
         try
         {
-            Table.delete(getTableInfo(), getPrimaryKeyValue(), null);
+            Table.delete(getTableInfo(), getPrimaryKeyValue());
         }
         catch (SQLException e)
         {

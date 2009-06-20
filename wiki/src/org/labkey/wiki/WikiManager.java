@@ -202,7 +202,7 @@ public class WikiManager
 
             //store initial version reference in Pages table
             wikiInsert.setPageVersionId(wikiversion.getRowId());
-            Table.update(user, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId(), null);
+            Table.update(user, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
 
             AttachmentService.get().addAttachments(user, wikiInsert, files);
 
@@ -230,7 +230,7 @@ public class WikiManager
 
             //update Pages table
             //UNDONE: should take RowId, not EntityId
-            Table.update(user, comm.getTableInfoPages(), wikiUpdate, wikiUpdate.getEntityId(), null);
+            Table.update(user, comm.getTableInfoPages(), wikiUpdate, wikiUpdate.getEntityId());
 
             if(wikiversion != null)
             {
@@ -245,7 +245,7 @@ public class WikiManager
 
                 //update version reference in Pages table.
                 wikiUpdate.setPageVersionId(wikiversion.getRowId());
-                Table.update(user, comm.getTableInfoPages(), wikiUpdate, wikiUpdate.getEntityId(), null);
+                Table.update(user, comm.getTableInfoPages(), wikiUpdate, wikiUpdate.getEntityId());
             }
             scope.commitTransaction();
         }
@@ -274,7 +274,7 @@ public class WikiManager
             scope.beginTransaction();
 
             wiki.setPageVersionId(null);
-            Table.update(user, comm.getTableInfoPages(), wiki, wiki.getEntityId(), null);
+            Table.update(user, comm.getTableInfoPages(), wiki, wiki.getEntityId());
             Table.delete(comm.getTableInfoPageVersions(),
                     new SimpleFilter("pageentityId", wiki.getEntityId()));
             Table.delete(comm.getTableInfoPages(),

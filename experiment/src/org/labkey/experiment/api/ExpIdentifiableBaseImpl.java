@@ -96,7 +96,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
             }
             else
             {
-                _object = Table.update(user, table, _object, getRowId(), null);
+                _object = Table.update(user, table, _object, getRowId());
             }
         }
         catch (SQLException e)

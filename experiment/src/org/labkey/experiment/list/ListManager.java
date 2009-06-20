@@ -79,6 +79,6 @@ public class ListManager
 
     public ListDef update(User user, ListDef def) throws SQLException
     {
-        return Table.update(user, getTinfoList(), def, def.getRowId(), null);
+        return Table.update(user, getTinfoList(), def, def.getRowId());
     }
 }

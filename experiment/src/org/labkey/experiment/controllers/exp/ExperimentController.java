@@ -2289,7 +2289,7 @@ public class ExperimentController extends SpringActionController
             {
                 HttpView.throwNotFound("MaterialSource with LSID " + _source.getLSID());
             }
-            Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId(), null);
+            Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId());
             ExperimentServiceImpl.get().clearCaches();
             return true;
         }

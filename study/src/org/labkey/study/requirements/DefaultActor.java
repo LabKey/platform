@@ -151,7 +151,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     {
         try
         {
-            return Table.update(user, getTableInfo(), (A) this, getPrimaryKey(), null);
+            return Table.update(user, getTableInfo(), (A) this, getPrimaryKey());
         }
         catch (SQLException e)
         {
@@ -171,7 +171,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
                 transactionOwner = true;
             }
             deleteAllGroups();
-            Table.delete(getTableInfo(), getPrimaryKey(), null);
+            Table.delete(getTableInfo(), getPrimaryKey());
 
             if (transactionOwner)
                 scope.commitTransaction();

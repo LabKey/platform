@@ -945,7 +945,7 @@ public class XarReader extends AbstractXarImporter
 
         if (changed)
         {
-            Table.update(getUser(), tableInfo, output, output.getRowId(), null);
+            Table.update(getUser(), tableInfo, output, output.getRowId());
         }
     }
 

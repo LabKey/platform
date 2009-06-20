@@ -110,7 +110,7 @@ public class StudyDesignManager
     public StudyDesignInfo moveStudyDesign(User user, StudyDesignInfo design, Container newContainer) throws SQLException {
         Container oldContainer = design.getContainer();
         design.setContainer(newContainer);
-        Table.update(user, getStudyDesignTable(), design, design.getStudyId(), null);
+        Table.update(user, getStudyDesignTable(), design, design.getStudyId());
         String sql = "UPDATE " + getStudyVersionTable() + " SET Container = ? WHERE Container = ? AND StudyId = ?";
         Table.execute(getSchema(), sql, new Object[] {newContainer.getId(), oldContainer.getId(), design.getStudyId()});
         
@@ -248,7 +248,7 @@ public class StudyDesignManager
                 getSchema().getScope().beginTransaction();
             version = Table.insert(user, getStudyVersionTable(), version);
             designInfo.setPublicRevision(version.getRevision());
-            Table.update(user, getStudyDesignTable(), designInfo, designInfo.getStudyId(), null);
+            Table.update(user, getStudyDesignTable(), designInfo, designInfo.getStudyId());
             if (ownTransaction)
                 getSchema().getScope().commitTransaction();
         }
@@ -282,7 +282,7 @@ public class StudyDesignManager
             {
                 //First mark as inactive
                 studyDesign.setActive(false);
-                Table.update(HttpView.currentContext().getUser(), getStudyDesignTable(), studyDesign, studyDesign.getStudyId(), null);
+                Table.update(HttpView.currentContext().getUser(), getStudyDesignTable(), studyDesign, studyDesign.getStudyId());
                 if (!c.equals(studyDesign.getSourceContainer()))
                     moveStudyDesign(HttpView.currentContext().getUser(), studyDesign, studyDesign.getSourceContainer());
             }
@@ -378,7 +378,7 @@ public class StudyDesignManager
         moveStudyDesign(user, info, study.getContainer());
         info.setActive(true);
         //and attach to this study
-        Table.update(user, getStudyDesignTable(), info, info.getStudyId(), null);
+        Table.update(user, getStudyDesignTable(), info, info.getStudyId());
 
         Portal.addPart(study.getContainer(), StudyModule.studyDesignSummaryWebPartFactory, null, 0);
         

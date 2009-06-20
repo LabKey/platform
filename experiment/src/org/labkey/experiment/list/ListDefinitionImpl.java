@@ -289,7 +289,7 @@ public class ListDefinitionImpl implements ListDefinition
                     continue;
                 ListItemImpl.deleteListItemContents(itm, getContainer(), user);
             }
-            Table.delete(ListManager.get().getTinfoList(), getListId(), null);
+            Table.delete(ListManager.get().getTinfoList(), getListId());
             Domain domain = getDomain();
             domain.delete(user);
             if (fTransaction)

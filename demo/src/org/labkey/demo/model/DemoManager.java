@@ -92,7 +92,7 @@ public class DemoManager
             person.setContainerId(c.getId());
         if (!person.getContainerId().equals(c.getId()))
             throw new IllegalStateException("Can't update a row with a null rowId");
-        return Table.update(user, DemoSchema.getInstance().getTableInfoPerson(), person, person.getRowId(), ts);
+        return Table.update(user, DemoSchema.getInstance().getTableInfoPerson(), person, person.getRowId());
     }
 
 

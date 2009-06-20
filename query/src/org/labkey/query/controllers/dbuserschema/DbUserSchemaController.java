@@ -209,7 +209,7 @@ public class DbUserSchemaController extends SpringActionController
                         return;
                     }
                 }
-                Table.update(getUser(), table.getRealTable(), values, pkVal, null);
+                Table.update(getUser(), table.getRealTable(), values, pkVal);
             }
         }
         catch (SQLException x)

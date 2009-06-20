@@ -101,7 +101,7 @@ public class IssueManager
         else
         {
             issue.beforeUpdate(user);
-            Table.update(user, _issuesSchema.getTableInfoIssues(), issue, new Integer(issue.getIssueId()), null);
+            Table.update(user, _issuesSchema.getTableInfoIssues(), issue, new Integer(issue.getIssueId()));
         }
         saveComments(user, issue);
     }

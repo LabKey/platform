@@ -401,7 +401,7 @@ public class StudyManager
                     "WHERE Container=? AND VisitRowId=?",
                     new Object[] {study.getContainer().getId(), visit.getRowId()});
             // UNDONE broken _visitHelper.delete(visit);
-            Table.delete(schema.getTableInfoVisit(), new Object[] {study.getContainer(), visit.getRowId()}, null);
+            Table.delete(schema.getTableInfoVisit(), new Object[] {study.getContainer(), visit.getRowId()});
             _visitHelper.clearCache(visit);
 
             schema.getSchema().getScope().commitTransaction();
@@ -433,8 +433,8 @@ public class StudyManager
         Table.update(user,
                 _tableInfoParticipant,
                 participant,
-                new Object[] {participant.getContainer().getId(), participant.getParticipantId()}, 
-                null);
+                new Object[] {participant.getContainer().getId(), participant.getParticipantId()}
+        );
     }
 
 
@@ -602,14 +602,14 @@ public class StudyManager
     public QCState updateQCState(User user, QCState state) throws SQLException
     {
         DbCache.remove(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(state.getContainer()));
-        return Table.update(user, StudySchema.getInstance().getTableInfoQCState(), state, state.getRowId(), null);
+        return Table.update(user, StudySchema.getInstance().getTableInfoQCState(), state, state.getRowId());
     }
 
     public void deleteQCState(QCState state) throws SQLException
     {
         QCState[] preDeleteStates = getQCStates(state.getContainer());
         DbCache.remove(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(state.getContainer()));
-        Table.delete(StudySchema.getInstance().getTableInfoQCState(), state.getRowId(), null);
+        Table.delete(StudySchema.getInstance().getTableInfoQCState(), state.getRowId());
 
         // removing our last QC state affects the columns in our materialized datasets
         // (removing a QC State column), so we unmaterialize them here:
@@ -1209,7 +1209,7 @@ public class StudyManager
         {
             // need to remove an existing VisitMap entry:
             Table.delete(_tableInfoVisitMap,
-                    new Object[] { container.getId(), visitId, dataSetId}, null);
+                    new Object[] { container.getId(), visitId, dataSetId});
         }
         else if ((VisitDataSetType.OPTIONAL == type && vds.isRequired()) ||
                  (VisitDataSetType.REQUIRED == type && !vds.isRequired()))
@@ -1217,7 +1217,7 @@ public class StudyManager
             Map<String,Object> required = new HashMap<String, Object>(1);
             required.put("Required", VisitDataSetType.REQUIRED == type ? Boolean.TRUE : Boolean.FALSE);
             Table.update(user, _tableInfoVisitMap, required,
-                    new Object[]{container.getId(), visitId, dataSetId}, null);
+                    new Object[]{container.getId(), visitId, dataSetId});
         }
     }
 
@@ -3100,7 +3100,7 @@ public class StudyManager
         else
         {
             view.beforeUpdate(user);
-            return Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId(), null);
+            return Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId());
         }
     }
 

@@ -278,7 +278,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         ReportDB reportDB = new ReportDB(c, user.getUserId(), key, descriptor);
         if (null != reportId && reportExists(reportId.getRowId()))
-            reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId(), null);
+            reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId());
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 

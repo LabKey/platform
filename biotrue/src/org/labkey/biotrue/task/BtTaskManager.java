@@ -77,7 +77,7 @@ public class BtTaskManager
                 return null;
             Task task = tasks[0];
             task.setStarted(new Date());
-            task = Table.update(null, getTable(), task, task.getRowId(), null);
+            task = Table.update(null, getTable(), task, task.getRowId());
             notifyAll();
             return createTask(task);
         }
@@ -98,7 +98,7 @@ public class BtTaskManager
     {
         if (task.getStarted() == null)
             throw new IllegalStateException("Task was not started");
-        Table.delete(getTable(), task.getRowId(), null);
+        Table.delete(getTable(), task.getRowId());
     }
 
     private BtTask createTask(Task task)

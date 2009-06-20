@@ -88,7 +88,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
         convertTypes(rowStripped);
         setSpecialColumns(user, container, getTable(), row);
-        Map<String,Object> updatedRow = Table.update(user, getTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys), null);
+        Map<String,Object> updatedRow = Table.update(user, getTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys));
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes
         //the primary key columns as well as those marked read-only. So we can't simply return the map returned
@@ -99,7 +99,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Table.delete(getTable(), getKeys(keys), null);
+        Table.delete(getTable(), getKeys(keys));
         return keys;
     }
 

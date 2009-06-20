@@ -217,7 +217,7 @@ public class DomainImpl implements Domain
             }
             else if (_ddOld != null)
             {
-                _dd = Table.update(user, OntologyManager.getTinfoDomainDescriptor(), _dd, _dd.getDomainId(), null);
+                _dd = Table.update(user, OntologyManager.getTinfoDomainDescriptor(), _dd, _dd.getDomainId());
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
             boolean propChanged = false;

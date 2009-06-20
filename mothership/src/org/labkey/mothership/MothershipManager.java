@@ -237,7 +237,7 @@ public class MothershipManager
                 existingInstallation.setServerIP(installation.getServerIP());
                 existingInstallation.setServerHostName(hostName);
                 existingInstallation.setSystemDescription(getBestString(existingInstallation.getSystemDescription(), installation.getSystemDescription()));
-                installation = Table.update(null, getTableInfoServerInstallation(), existingInstallation,  existingInstallation.getServerInstallationId(), null);
+                installation = Table.update(null, getTableInfoServerInstallation(), existingInstallation,  existingInstallation.getServerInstallationId());
             }
 
             Date now = new Date();
@@ -260,7 +260,7 @@ public class MothershipManager
                 existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
                 existingSession.setLdapEnabled(getBestBoolean(existingSession.isLdapEnabled(), session.isLdapEnabled()));
 
-                session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId(), null);
+                session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
             }
 
             scope.commitTransaction();
@@ -395,7 +395,7 @@ public class MothershipManager
 
     public void updateExceptionStackTrace(ExceptionStackTrace stackTrace, User user) throws SQLException
     {
-        Table.update(user, getTableInfoExceptionStackTrace(), stackTrace, stackTrace.getExceptionStackTraceId(), null);
+        Table.update(user, getTableInfoExceptionStackTrace(), stackTrace, stackTrace.getExceptionStackTraceId());
     }
 
     public String getIssuesContainer(Container c)
@@ -423,7 +423,7 @@ public class MothershipManager
     public SoftwareRelease updateSoftwareRelease(Container container, User user, SoftwareRelease bean) throws SQLException
     {
         bean.setContainer(container.getId());
-        return Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId(), null);
+        return Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
     }
 
     public ServerInstallation[] getServerInstallationsActiveOn(Calendar cal) throws SQLException

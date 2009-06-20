@@ -136,8 +136,7 @@ public class PipelineStatusManager
         else
         {
             sfSet.beforeUpdate(user, sfExist);
-            Table.update(user, _schema.getTableInfoStatusFiles(), sfSet,
-                    new Integer(sfExist.getRowId()), null);
+            Table.update(user, _schema.getTableInfoStatusFiles(), sfSet, sfExist.getRowId());
         }
 
         if (notifyOnError && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
@@ -218,7 +217,7 @@ public class PipelineStatusManager
     public static void updateStatusFile(PipelineStatusFileImpl sf) throws SQLException
     {
         sf.beforeUpdate(null, sf);
-        Table.update(null, _schema.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()), null);
+        Table.update(null, _schema.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()));
     }
 
     /**

@@ -396,7 +396,7 @@ public class SampleManager
         {
             specimen.setLockedInRequest(lockedInRequest);
             specimen.setAvailable(isAvailable(specimen));
-            Table.update(user, StudySchema.getInstance().getTableInfoVial(), specimen, specimen.getRowId(), null);
+            Table.update(user, StudySchema.getInstance().getTableInfoVial(), specimen, specimen.getRowId());
         }
         updateSpecimenCounts(specimens);
     }
@@ -2373,7 +2373,7 @@ public class SampleManager
             {
                 if (comment != null)
                 {
-                    Table.delete(commentTable, comment.getRowId(), null);
+                    Table.delete(commentTable, comment.getRowId());
                     auditSpecimenComment(user, vial, comment.getComment(), null, comment.isQualityControlFlag(), false);
                 }
                 if (transactionOwner)
@@ -2390,7 +2390,7 @@ public class SampleManager
                     comment.setQualityControlFlag(qualityControlFlag);
                     comment.setQualityControlFlagForced(qualityControlFlagForced);
                     comment.beforeUpdate(user);
-                    SpecimenComment updated = Table.update(user, commentTable, comment, comment.getRowId(), null);
+                    SpecimenComment updated = Table.update(user, commentTable, comment, comment.getRowId());
                     auditSpecimenComment(user, vial, prevComment, updated.getComment(), prevConflictState, updated.isQualityControlFlag());
                     if (transactionOwner)
                         scope.commitTransaction();

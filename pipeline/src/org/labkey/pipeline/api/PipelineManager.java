@@ -162,7 +162,7 @@ public class PipelineManager
         {
             if (oldValue != null)
             {
-                Table.delete(PipelineSchema.getInstance().getTableInfoPipelineRoots(), oldValue.getPipelineRootId(), null);
+                Table.delete(PipelineSchema.getInstance().getTableInfoPipelineRoots(), oldValue.getPipelineRootId());
             }
         }
         else
@@ -188,7 +188,7 @@ public class PipelineManager
             }
             else
             {
-                Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId(), null);
+                Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId());
             }
         }
 

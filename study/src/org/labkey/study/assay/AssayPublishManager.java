@@ -621,7 +621,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 ul.setDescription(description == null ? "" : description + "\n" + new Date() + ":" + x.getMessage());
                 try
                 {
-                    ul = Table.update(user, StudySchema.getInstance().getTableInfoUploadLog(), ul, ul.getRowId(), null);
+                    ul = Table.update(user, StudySchema.getInstance().getTableInfoUploadLog(), ul, ul.getRowId());
                     return Pair.of(lsids, ul);
                 }
                 catch (SQLException s)
@@ -636,7 +636,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             //Update the status
             assert ul != null : "Upload log should always exist if no errors have occurred.";
             ul.setStatus("SUCCESS");
-            ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId(), null);
+            ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId());
         }
         else if (ul != null)
         {
@@ -649,7 +649,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 sep = "\n";
             }
             ul.setDescription(sb.toString());
-            ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId(), null);
+            ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId());
         }
         return Pair.of(lsids,ul);
     }
