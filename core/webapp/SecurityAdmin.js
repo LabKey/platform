@@ -1167,6 +1167,10 @@ var GroupPicker = Ext.extend(Ext.Panel,{
         this.cache.principalsStore.on("add",this.onDataChanged, this);
         this.cache.principalsStore.on("remove",this.onDataChanged, this);
         this.cache.principalsStore.on("update",this.onDataUpdated, this);
+        this.cache.membershipStore.on("datachanged",this.onDataChanged, this);
+        this.cache.membershipStore.on("add",this.onDataChanged, this);
+        this.cache.membershipStore.on("remove",this.onDataChanged, this);
+        this.cache.membershipStore.on("update",this.onDataUpdated, this);
 
         this.view = new Ext.DataView({
             tpl: this.tpl,

@@ -237,10 +237,13 @@ Ext.onReady(function(){
 
     Ext.onReady(function()
     {
-        if (<%=c.isRoot() ? "false" : "true"%>)
-            makeGroupsPanel(<%=PageFlowUtil.jsString(null == project ? "" : project.getId())%>, isProjectAdmin, 'groupsFrame');
-        if (isSiteAdmin)
-            makeGroupsPanel(null, isSiteAdmin, 'siteGroupsFrame');
+        securityCache.onReady(function()
+        {
+            if (<%=c.isRoot() ? "false" : "true"%>)
+                makeGroupsPanel(<%=PageFlowUtil.jsString(null == project ? "" : project.getId())%>, isProjectAdmin, 'groupsFrame');
+            if (isSiteAdmin)
+                makeGroupsPanel(null, isSiteAdmin, 'siteGroupsFrame');
+        });
     });
 
     </script>
