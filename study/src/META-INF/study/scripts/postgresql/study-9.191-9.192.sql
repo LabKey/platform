@@ -152,7 +152,7 @@ WHERE study.Specimen.Container = VialCounts.Container AND study.Specimen.Specime
 
 -- Finally update hash codes for all specimens, vials, and comments
 
-UPDATE study.Specimen OuterSpecimen SET SpecimenHash =
+UPDATE study.Specimen SET SpecimenHash =
 (SELECT
     'Fld-' || CAST(core.Containers.RowId AS VARCHAR)
     ||'~'|| CASE WHEN OriginatingLocationId IS NOT NULL THEN CAST(OriginatingLocationId AS VARCHAR) ELSE '' END
@@ -170,7 +170,7 @@ UPDATE study.Specimen OuterSpecimen SET SpecimenHash =
     ||'~'|| CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS VARCHAR) ELSE '' END
 FROM study.Specimen InnerSpecimen
 JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId
-WHERE InnerSpecimen.RowId = OuterSpecimen.RowId);
+WHERE InnerSpecimen.RowId = study.Specimen.RowId);
 
 UPDATE study.Vial SET SpecimenHash =
 	(SELECT SpecimenHash FROM study.Specimen WHERE study.Vial.SpecimenId = study.Specimen.RowId);
