@@ -616,6 +616,7 @@ api/src/org/labkey/api/security/ValidEmail.java -text
 api/src/org/labkey/api/security/permissions/AbstractPermission.java -text
 api/src/org/labkey/api/security/permissions/AdminPermission.java -text
 api/src/org/labkey/api/security/permissions/DeletePermission.java -text
+api/src/org/labkey/api/security/permissions/EditSharedViewPermission.java -text
 api/src/org/labkey/api/security/permissions/InsertPermission.java -text
 api/src/org/labkey/api/security/permissions/Permission.java -text
 api/src/org/labkey/api/security/permissions/PermissionManager.java -text
