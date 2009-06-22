@@ -25,6 +25,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
@@ -481,13 +482,33 @@ public class SecurityApiActions
             }
             if (_includePermissions)
             {
+                User user = getViewContext().getUser();
                 List<String> permNames = new ArrayList<String>();
-                SecurityPolicy policy = SecurityManager.getPolicy(resource);
-                Set<Class<? extends Permission>> effectivePermClasses = policy.getPermissions(getViewContext().getUser());
-                for (Class<? extends Permission> permClass : effectivePermClasses)
+
+                //horrible, nasty, icky, awful HACK! See bug 8183.
+                //Study datasets use special logic for determining read/write so we need to ask it directly.
+                //this needs to be fixed in a future release so that we can tree all securable resources the same.
+                if (resource instanceof DataSet)
                 {
-                    Permission perm = RoleManager.getPermission(permClass);
-                    permNames.add(perm.getUniqueName());
+                    DataSet ds = (DataSet)resource;
+                    if (ds.canRead(user))
+                        permNames.add(RoleManager.getPermission(ReadPermission.class).getUniqueName());
+                    if (ds.canWrite(user))
+                    {
+                        permNames.add(RoleManager.getPermission(InsertPermission.class).getUniqueName());
+                        permNames.add(RoleManager.getPermission(UpdatePermission.class).getUniqueName());
+                        permNames.add(RoleManager.getPermission(DeletePermission.class).getUniqueName());
+                    }
+                }
+                else
+                {
+                    SecurityPolicy policy = SecurityManager.getPolicy(resource);
+                    Set<Class<? extends Permission>> effectivePermClasses = policy.getPermissions(user);
+                    for (Class<? extends Permission> permClass : effectivePermClasses)
+                    {
+                        Permission perm = RoleManager.getPermission(permClass);
+                        permNames.add(perm.getUniqueName());
+                    }
                 }
                 props.put("effectivePermissions", permNames);
             }
