@@ -55,4 +55,8 @@ public interface DataSet extends StudyEntity
     Cohort getCohort();
 
     Integer getProtocolId();
+
+    public boolean canRead(User user);
+
+    public boolean canWrite(User user);
 }

@@ -31,6 +31,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
@@ -669,7 +670,9 @@ public class QueryView extends WebPartView<Object>
             }
         }
         addCustomizeViewItems(button);
-        addManageViewItems(button);
+        //FIX: 8153 -- user must have admin perm to see manage views item
+        if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
+            addManageViewItems(button);
         addFilterItems(button);
 
         return button;
