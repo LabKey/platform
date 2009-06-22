@@ -40,6 +40,7 @@ import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
@@ -481,6 +482,9 @@ public class AssayController extends SpringActionController
     {
         protected File getTargetFile(String filename) throws IOException
         {
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
+                throw new UploadException("Pipeline root must be configured before uploading assay files", HttpServletResponse.SC_NOT_FOUND);
+            
             AssayFileWriter writer = new AssayFileWriter();
             try
             {
@@ -513,6 +517,9 @@ public class AssayController extends SpringActionController
         @Override
         public ModelAndView getView(AssayRunUploadForm form, BindException errors) throws Exception
         {
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
+                HttpView.throwNotFound("Pipeline root must be configured before uploading assay files");
+
             _protocol = getProtocol(form);
 
             AssayProvider ap = AssayService.get().getProvider(_protocol);
