@@ -30,6 +30,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -2114,7 +2115,7 @@ public class QueryControllerSpring extends SpringActionController
             }
             if (view.getOwner() == null)
             {
-                if (!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+                if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                     HttpView.throwUnauthorized();
             }
             view.delete(getUser(), getViewContext().getRequest());

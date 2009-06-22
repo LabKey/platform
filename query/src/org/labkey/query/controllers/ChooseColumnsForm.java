@@ -21,6 +21,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.query.CustomViewImpl;
 import org.springframework.beans.MutablePropertyValues;
@@ -305,7 +307,7 @@ public class ChooseColumnsForm extends DesignForm
 
     public boolean canSaveForAllUsers()
     {
-        return getContainer().hasPermission(getUser(), ACL.PERM_ADMIN);
+        return getContainer().hasPermission(getUser(), EditSharedViewPermission.class);
     }
 
     public boolean canEdit()

@@ -17,6 +17,7 @@ package org.labkey.study.security.roles;
 
 import org.labkey.api.security.roles.AbstractRole;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.study.StudyModule;
 import org.labkey.study.security.permissions.*;
@@ -44,7 +45,8 @@ public class SpecimenCoordinatorRole extends AbstractRole
                 ManageSpecimenActorsPermission.class,
                 ManageStudyPermission.class,
                 RequestSpecimensPermission.class,
-                SetSpecimenCommentsPermission.class
+                SetSpecimenCommentsPermission.class,
+                EditSharedViewPermission.class //spec-coord needs to be able to set global default view for specimens queries 
                 );
     }
 }
