@@ -60,10 +60,7 @@ import org.xml.sax.*;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.servlet.ServletOutputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -2141,7 +2138,12 @@ public class PageFlowUtil
             return;
         ActionURL clone = url.clone();
         clone.deleteParameter(scope + DataRegion.LAST_FILTER_PARAM);
-        context.getRequest().getSession().setAttribute(url.getPath() + "#" + scope + DataRegion.LAST_FILTER_PARAM, clone);
+        HttpSession session = context.getRequest().getSession(false);
+        // We should already have a session at this point, but check anyway - see bug #7761
+        if (session != null)
+        {
+            session.setAttribute(url.getPath() + "#" + scope + DataRegion.LAST_FILTER_PARAM, clone);
+        }
     }
 
     public static ActionURL getLastFilter(ViewContext context, ActionURL url)

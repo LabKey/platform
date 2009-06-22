@@ -36,6 +36,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     private static final String ASSAY_SUBQUERY_SUFFIX = "$AssayJoin";
     private static final String SPECIMEN_SUBQUERY_SUFFIX = "$SpecimenJoin";
+    private static final String VIAL_SUBQUERY_SUFFIX = "$VialJoin";
     private static final String STUDY_SUBQUERY_SUFFIX = "$StudyJoin";
     private static final String DRAW_DT_COLUMN_NAME = "DrawDT";
 
@@ -227,26 +228,27 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append(targetStudySQL);
                 String assaySubqueryAlias = parentAlias + ASSAY_SUBQUERY_SUFFIX;
                 String specimenSubqueryAlias = parentAlias + SPECIMEN_SUBQUERY_SUFFIX;
+                String vialSubqueryAlias = parentAlias + VIAL_SUBQUERY_SUFFIX;
                 String studySubqueryAlias = parentAlias + STUDY_SUBQUERY_SUFFIX;
                 ColumnInfo parentKeyCol = foreignKey.getParentTable().getPkColumns().get(0);
                 ColumnInfo specimenColumnInfo = columns.get(specimenFK);
                 sql.append(") AS " + assaySubqueryAlias + " ON " + assaySubqueryAlias + "." + objectIdCol.getAlias() + " = " + parentAlias + "." + parentKeyCol.getName());
-                sql.append(" LEFT OUTER JOIN ");
-                // Select all the study-side specimen columns that we'll need to do the comparison
-                sql.append(" (SELECT specimen.RowId, specimen.GlobalUniqueId, specimen.Container, specimen.PTID AS ParticipantId, specimen.drawtimestamp AS Date, specimen.VisitValue AS Visit ");
-                sql.append(" FROM study.SpecimenDetail specimen) AS " + specimenSubqueryAlias);
-                sql.append(" ON " + specimenSubqueryAlias + ".GlobalUniqueId = " + assaySubqueryAlias + "." + specimenColumnInfo.getAlias());
+                sql.append("\n\tLEFT OUTER JOIN study.vial AS " + vialSubqueryAlias);
+                sql.append(" ON " + vialSubqueryAlias + ".GlobalUniqueId = " + assaySubqueryAlias + "." + specimenColumnInfo.getAlias());
                 if (targetStudy != null)
                 {
                     // We're in the middle of a copy to study, so ignore what the user selected as the target when they uploaded
-                    sql.append(" AND " + specimenSubqueryAlias + ".Container = ?");
+                    sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
                     sql.add(targetStudy.getId());
                 }
                 else
                 {
                     // Match based on the target study associated with the assay data
-                    sql.append(" AND " + assaySubqueryAlias + "." + targetStudyCol.getAlias() + " = " + specimenSubqueryAlias + ".Container");
+                    sql.append(" AND " + assaySubqueryAlias + "." + targetStudyCol.getAlias() + " = " + vialSubqueryAlias + ".Container");
                 }
+                // Select all the study-side specimen columns that we'll need to do the comparison
+                sql.append("\n\tLEFT OUTER JOIN (SELECT RowId, Container, PTID AS ParticipantId, drawtimestamp AS Date, VisitValue AS Visit ");
+                sql.append(" FROM study.Specimen) AS " + specimenSubqueryAlias + " ON " + specimenSubqueryAlias + ".RowId = " + vialSubqueryAlias + ".SpecimenID");
                 sql.append("\n\tLEFT OUTER JOIN study.study AS " + studySubqueryAlias);
                 sql.append(" ON " + studySubqueryAlias + ".Container = " + specimenSubqueryAlias + ".Container");
 
