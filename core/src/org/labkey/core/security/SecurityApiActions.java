@@ -597,7 +597,7 @@ public class SecurityApiActions
             // - don't include restricted reader
             if (!container.isProject())
                 relevantRoles.remove(RoleManager.getRole(ProjectAdminRole.class).getUniqueName());
-            if (null == StudyService.get().getStudy(container))
+            if (!branchContainsStudy(container))
             {
                 for (Role studyRole : StudyService.get().getStudyRoles())
                 {
@@ -610,6 +610,20 @@ public class SecurityApiActions
 
             resp.put("relevantRoles", relevantRoles);
             return resp;
+        }
+
+        private boolean branchContainsStudy(Container container)
+        {
+            if (null != StudyService.get().getStudy(container))
+                return true;
+
+            for (Container child : container.getChildren())
+            {
+                if (branchContainsStudy(child))
+                    return true;
+            }
+
+            return false;
         }
     }
 
