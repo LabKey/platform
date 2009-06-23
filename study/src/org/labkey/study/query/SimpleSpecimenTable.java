@@ -25,12 +25,12 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
     public SimpleSpecimenTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen());
 
         getColumn("ParticipantId").setFk(null);
 
         addSpecimenVisitColumn(false);
 
-        addVolumeAndTypeColumns(false);
+        addSpecimenTypeColumns();
     }
 }

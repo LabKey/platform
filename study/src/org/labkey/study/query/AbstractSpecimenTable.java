@@ -15,15 +15,9 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.study.StudySchema;
-
-import java.io.Writer;
-import java.io.IOException;
-import java.sql.Types;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.TableInfo;
 
 /**
  * Superclass for specimen tables that adds and configures all the common columns.
@@ -40,13 +34,11 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         rowIdColumn.setKeyField(true);
         addWrapColumn(_rootTable.getColumn("Container")).setFk(new ContainerForeignKey());
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
-        addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
         addWrapParticipantColumn("PTID").setKeyField(true);
     }
 
-    protected void addVolumeAndTypeColumns(final boolean joinBackToSpecimens)
+    protected void addSpecimenTypeColumns()
     {
-        addWrapColumn(_rootTable.getColumn("Volume"));
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
         addWrapTypeColumn("PrimaryType", "PrimaryTypeId");
         addWrapTypeColumn("DerivativeType", "DerivativeTypeId");
@@ -56,59 +48,12 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
-        addWrapColumn(_rootTable.getColumn("FrozenTime"));
-        addWrapColumn(_rootTable.getColumn("ProcessingTime"));
 
         addWrapLocationColumn("Clinic", "OriginatingLocationId");
 
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
-
-        ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
-        LookupForeignKey commentsFK = new LookupForeignKey("GlobalUniqueId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                SpecimenCommentTable result = new SpecimenCommentTable(_schema, joinBackToSpecimens);
-                result.setContainerFilter(ContainerFilter.EVERYTHING);
-                return result;
-            }
-        };
-        commentsFK.setJoinOnContainer(true);
-        commentsColumn.setFk(commentsFK);
-        commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new CommentDisplayColumn(colInfo);
-            }
-        });
-        addColumn(commentsColumn);
-    }
-    
-    public static class CommentDisplayColumn extends DataColumn
-    {
-        public CommentDisplayColumn(ColumnInfo commentColumn)
-        {
-            super(commentColumn);
-        }
-
-        public Object getDisplayValue(RenderContext ctx)
-        {
-            Object value = getDisplayColumn().getValue(ctx);
-            if (value == null)
-                return "";
-            else
-                return value;
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            Object value = getDisplayColumn().getValue(ctx);
-            if (value != null  && value instanceof String)
-                out.write((String) value);
-        }
     }
 
 }

@@ -31,6 +31,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
 
+        addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
+        
         ColumnInfo pvColumn = new ParticipantVisitColumn(
                 "ParticipantVisit",
                 new AliasedColumn(this, "PVParticipant", getRealTable().getColumn("PTID")),
@@ -45,7 +47,13 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         });
 
         addSpecimenVisitColumn(_schema.getStudy().isDateBased());
-        addVolumeAndTypeColumns(true);
+        addWrapColumn(_rootTable.getColumn("Volume"));
+        addSpecimenTypeColumns();
+        addWrapColumn(_rootTable.getColumn("FrozenTime"));
+        addWrapColumn(_rootTable.getColumn("ProcessingTime"));
+
+        addVialCommentsColumn(true);
+
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
         addWrapColumn(_rootTable.getColumn("Requestable"));

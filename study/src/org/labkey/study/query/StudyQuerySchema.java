@@ -42,6 +42,7 @@ public class StudyQuerySchema extends UserSchema
     boolean _mustCheckPermissions;
 
     private Map<Integer, List<Double>> _datasetSequenceMap;
+    public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
 
     public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
@@ -80,8 +81,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add("SpecimenEvent");
             ret.add("SpecimenDetail");
             ret.add("SpecimenVialCount");
-            ret.add("SimpleSpecimen");
-            ret.add("SpecimenSummary");
+            ret.add(SIMPLE_SPECIMEN_TABLE_NAME);
             ret.add("SpecimenRequest");
             ret.add("SpecimenRequestStatus");
             ret.add("VialRequest");
@@ -158,9 +158,13 @@ public class StudyQuerySchema extends UserSchema
 
         // Expose the simplified specimen table even if there's no study in this container. The caller may
         // want to set a container filter to look at specimens across the entire site
-        if ("SimpleSpecimen".equalsIgnoreCase(name))
+        if (SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new SimpleSpecimenTable(this);
+            return createSimpleSpecimenTable();
+        }
+        if ("Vial".equalsIgnoreCase(name))
+        {
+            return new VialTable(this);
         }
 
         if (_study == null)
@@ -268,6 +272,11 @@ public class StudyQuerySchema extends UserSchema
             return null;
         }
         return getDataSetTable(dsd);
+    }
+
+    public SimpleSpecimenTable createSimpleSpecimenTable()
+    {
+        return new SimpleSpecimenTable(this);
     }
 
     @Nullable

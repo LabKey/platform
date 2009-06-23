@@ -21,6 +21,8 @@ import org.labkey.api.query.*;
 import org.labkey.study.StudySchema;
 
 import java.sql.Types;
+import java.io.Writer;
+import java.io.IOException;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -116,4 +118,51 @@ public abstract class BaseStudyTable extends FilteredTable
         visitColumn.setKeyField(true);
     }
 
+    protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
+    {
+        ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
+        LookupForeignKey commentsFK = new LookupForeignKey("GlobalUniqueId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                SpecimenCommentTable result = new SpecimenCommentTable(_schema, joinBackToSpecimens);
+                result.setContainerFilter(ContainerFilter.EVERYTHING);
+                return result;
+            }
+        };
+        commentsFK.setJoinOnContainer(true);
+        commentsColumn.setFk(commentsFK);
+        commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new CommentDisplayColumn(colInfo);
+            }
+        });
+        addColumn(commentsColumn);
+    }
+
+    public static class CommentDisplayColumn extends DataColumn
+    {
+        public CommentDisplayColumn(ColumnInfo commentColumn)
+        {
+            super(commentColumn);
+        }
+
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            Object value = getDisplayColumn().getValue(ctx);
+            if (value == null)
+                return "";
+            else
+                return value;
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            Object value = getDisplayColumn().getValue(ctx);
+            if (value != null  && value instanceof String)
+                out.write((String) value);
+        }
+    }
 }
