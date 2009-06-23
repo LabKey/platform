@@ -1674,7 +1674,7 @@ public class StudyManager
                 {
                     TableSnapshotInfo snapshotInfo = bean.getTableSnapshotInfo(category, sourceName);
                     if (null != snapshotInfo && snapshotInfo.snapshot && null != snapshotInfo.getTableInfo())
-                        Table.snapshot(snapshotInfo.getTableInfo(), schemaName + "." + snapshotInfo.destTableName);
+                        Table.snapshot(snapshotInfo.getTableInfo(), schemaName + "." + bean.getDestTableName(category, sourceName));
                 }
             }
 

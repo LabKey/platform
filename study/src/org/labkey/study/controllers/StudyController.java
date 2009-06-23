@@ -4266,7 +4266,14 @@ public class StudyController extends BaseStudyController
 
             String[] category = form.getCategory();
             String[] source = form.getSourceName();
-            Set<String> categoryAndSourceToSnapshot = new HashSet<String>(Arrays.asList(form.getCategoryAndSourceToSnapshot()));
+            Set<String> categoryAndSourceToSnapshot;
+            if (null == form.getCategoryAndSourceToSnapshot() || form.getCategoryAndSourceToSnapshot().length == 0)
+            {
+                errors.reject("manageSnapshot", "No datasets selected. Please select datasets to snapshot.");
+                categoryAndSourceToSnapshot = Collections.emptySet();
+            }
+            else
+                categoryAndSourceToSnapshot = new HashSet<String>(Arrays.asList(form.getCategoryAndSourceToSnapshot()));
 
             String[] destName = form.getDestName();
             for (int i = 0; i < category.length; i++)
