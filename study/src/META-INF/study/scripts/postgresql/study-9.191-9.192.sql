@@ -17,7 +17,37 @@
 -- This script creates a hard table to hold static specimen data.  Dynamic data (available counts, etc)
 -- is calculated on the fly via aggregates.
 
--- First, we rename 'specimen' to 'vial' to correct a long-standing bad name
+-- First, a defensive update to all specimen hash codes- it's important that they are accurate for this upgrade,
+-- and there's no way to guarantee that no one has manipulated the specimen data since the hashes were calculated
+UPDATE study.Specimen SET SpecimenHash =
+(SELECT
+    'Fld-' || CAST(core.Containers.RowId AS VARCHAR)
+    ||'~'|| CASE WHEN OriginatingLocationId IS NOT NULL THEN CAST(OriginatingLocationId AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN Ptid IS NOT NULL THEN CAST(Ptid AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN DrawTimestamp IS NOT NULL THEN CAST(DrawTimestamp AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN SalReceiptDate IS NOT NULL THEN CAST(SalReceiptDate AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN ClassId IS NOT NULL THEN CAST(ClassId AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN VisitValue IS NOT NULL THEN CAST(VisitValue AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN ProtocolNumber IS NOT NULL THEN CAST(ProtocolNumber AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN PrimaryVolume IS NOT NULL THEN CAST(PrimaryVolume AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN PrimaryVolumeUnits IS NOT NULL THEN CAST(PrimaryVolumeUnits AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN VisitDescription IS NOT NULL THEN CAST(VisitDescription AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN VolumeUnits IS NOT NULL THEN CAST(VolumeUnits AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN SubAdditiveDerivative IS NOT NULL THEN CAST(SubAdditiveDerivative AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN PrimaryTypeId IS NOT NULL THEN CAST(PrimaryTypeId AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN DerivativeTypeId IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN DerivativeTypeId2 IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS VARCHAR) ELSE '' END
+
+FROM study.Specimen InnerSpecimen
+JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId
+WHERE InnerSpecimen.RowId = study.Specimen.RowId);
+
+UPDATE study.SpecimenComment SET SpecimenHash =
+	(SELECT SpecimenHash FROM study.Specimen
+	WHERE study.SpecimenComment.Container = study.Specimen.Container AND study.SpecimenComment.GlobalUniqueId = study.Specimen.GlobalUniqueId);
+
+-- Rename 'specimen' to 'vial' to correct a long-standing bad name
 ALTER TABLE study.Specimen
 	DROP CONSTRAINT FK_SpecimenOrigin_Site;
 
@@ -162,11 +192,14 @@ UPDATE study.Specimen SET SpecimenHash =
     ||'~'|| CASE WHEN ClassId IS NOT NULL THEN CAST(ClassId AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN VisitValue IS NOT NULL THEN CAST(VisitValue AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN ProtocolNumber IS NOT NULL THEN CAST(ProtocolNumber AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN PrimaryVolume IS NOT NULL THEN CAST(PrimaryVolume AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN PrimaryVolumeUnits IS NOT NULL THEN CAST(PrimaryVolumeUnits AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN VisitDescription IS NOT NULL THEN CAST(VisitDescription AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN VolumeUnits IS NOT NULL THEN CAST(VolumeUnits AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN SubAdditiveDerivative IS NOT NULL THEN CAST(SubAdditiveDerivative AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN PrimaryTypeId IS NOT NULL THEN CAST(PrimaryTypeId AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN DerivativeTypeId IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN DerivativeTypeId2 IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS VARCHAR) ELSE '' END
 FROM study.Specimen InnerSpecimen
 JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId

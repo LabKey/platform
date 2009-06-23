@@ -17,6 +17,34 @@
 -- This script creates a hard table to hold static specimen data.  Dynamic data (available counts, etc)
 -- is calculated on the fly via aggregates.
 
+UPDATE study.Specimen SET SpecimenHash =
+(SELECT
+    'Fld-' + CAST(core.Containers.RowId AS NVARCHAR)
+    +'~'+ CASE WHEN OriginatingLocationId IS NOT NULL THEN CAST(OriginatingLocationId AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN Ptid IS NOT NULL THEN CAST(Ptid AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN DrawTimestamp IS NOT NULL THEN CAST(DrawTimestamp AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN SalReceiptDate IS NOT NULL THEN CAST(SalReceiptDate AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN ClassId IS NOT NULL THEN CAST(ClassId AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN VisitValue IS NOT NULL THEN CAST(VisitValue AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN ProtocolNumber IS NOT NULL THEN CAST(ProtocolNumber AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN PrimaryVolume IS NOT NULL THEN CAST(PrimaryVolume AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN PrimaryVolumeUnits IS NOT NULL THEN CAST(PrimaryVolumeUnits AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN VisitDescription IS NOT NULL THEN CAST(VisitDescription AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN VolumeUnits IS NOT NULL THEN CAST(VolumeUnits AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN SubAdditiveDerivative IS NOT NULL THEN CAST(SubAdditiveDerivative AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN PrimaryTypeId IS NOT NULL THEN CAST(PrimaryTypeId AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN DerivativeTypeId IS NOT NULL THEN CAST(DerivativeTypeId AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN DerivativeTypeId2 IS NOT NULL THEN CAST(DerivativeTypeId2 AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS NVARCHAR) ELSE '' END
+FROM study.Specimen InnerSpecimen
+JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId
+WHERE InnerSpecimen.RowId = study.Specimen.RowId)
+
+UPDATE study.SpecimenComment SET SpecimenHash =
+	(SELECT SpecimenHash FROM study.Specimen
+	WHERE study.SpecimenComment.Container = study.Specimen.Container AND
+          study.SpecimenComment.GlobalUniqueId = study.Specimen.GlobalUniqueId);
+
 -- First, we rename 'specimen' to 'vial' to correct a long-standing bad name
 ALTER TABLE study.Specimen
 	DROP CONSTRAINT FK_SpecimenOrigin_Site
@@ -172,11 +200,14 @@ UPDATE study.Specimen SET SpecimenHash =
     +'~'+ CASE WHEN ClassId IS NOT NULL THEN CAST(ClassId AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN VisitValue IS NOT NULL THEN CAST(VisitValue AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN ProtocolNumber IS NOT NULL THEN CAST(ProtocolNumber AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN PrimaryVolume IS NOT NULL THEN CAST(PrimaryVolume AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN PrimaryVolumeUnits IS NOT NULL THEN CAST(PrimaryVolumeUnits AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN VisitDescription IS NOT NULL THEN CAST(VisitDescription AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN VolumeUnits IS NOT NULL THEN CAST(VolumeUnits AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN SubAdditiveDerivative IS NOT NULL THEN CAST(SubAdditiveDerivative AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN PrimaryTypeId IS NOT NULL THEN CAST(PrimaryTypeId AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN DerivativeTypeId IS NOT NULL THEN CAST(DerivativeTypeId AS NVARCHAR) ELSE '' END
+    +'~'+ CASE WHEN DerivativeTypeId2 IS NOT NULL THEN CAST(DerivativeTypeId2 AS NVARCHAR) ELSE '' END
     +'~'+ CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS NVARCHAR) ELSE '' END
 FROM study.Specimen InnerSpecimen
 JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId
