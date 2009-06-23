@@ -5895,6 +5895,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudy();
 
+            // If the "allow reload" state or the interval changes then update the study and initialize the timer
             if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval()))
             {
                 study = study.createMutable();

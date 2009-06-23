@@ -31,12 +31,12 @@
 <%=errors%>
 <form action="" method="post">
     <table>
-        <tr><td>Choose export file format:</td></tr>
-        <tr><td><input type="radio" name="format" value="new" checked>New XML format (e.g., <%=XmlVisitMapWriter.FILENAME%>, <%=SchemaXmlWriter.SCHEMA_FILENAME%>)</td></tr>
-        <tr><td><input type="radio" name="format" value="old">Old file format (e.g., <%=DataFaxVisitMapWriter.FILENAME%>, <%=SchemaTsvWriter.FILENAME%>)</td></tr>
+        <tr><td>Export file formats:</td></tr>
+        <tr><td><input type="radio" name="format" value="new" checked>New XML file formats<%=PageFlowUtil.helpPopup("New XML Formats", "Selecting this option will export study meta data using XML file formats (e.g., " + XmlVisitMapWriter.FILENAME + " and " + SchemaXmlWriter.SCHEMA_FILENAME + "). This is the recommended setting.")%></td></tr>
+        <tr><td><input type="radio" name="format" value="old">Legacy file formats<%=PageFlowUtil.helpPopup("Legacy File Formats", "Selecting this option will export some meta data using older, non-XML file formats (e.g, " + DataFaxVisitMapWriter.FILENAME + " and " + SchemaTsvWriter.FILENAME + "). This setting is not recommended since the non-XML formats contain less information than the XML formats. This option is provided to support older studies that haven't switched to XML file formats yet.")%></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td>Choose the study objects you wish to export:</td>
+            <td>Study objects to export:</td>
         </tr>
         <%
             List<Writer<StudyImpl>> writers = StudyWriter.getWriters();

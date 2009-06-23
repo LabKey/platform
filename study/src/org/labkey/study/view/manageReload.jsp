@@ -17,15 +17,29 @@
 %>
 <%@ page import="org.labkey.study.importer.StudyReload.*" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     boolean allowReload = getStudy().isAllowReload();
     ReloadInterval currentInterval = ReloadInterval.getForSeconds(getStudy().getReloadInterval());
 %>
 <form action="" method="post">
-    <table>
+    <table width="80%">
         <tr>
-            <td colspan=2>A study can be configured to reload study data from the file system, either manually or automatically at pre-set intervals.</td>
+            <td colspan=2>A study can be configured to reload its data from the pipeline root, either manually or automatically at preset intervals:
+                <ul>
+                    <li><strong>Manual Reload:</strong> Check the "Allow Study Reload" box and set the "Reload Interval" to &lt;Never&gt; to
+                        configure the study for manual reload. A reload attempt can be initiated by an administrator
+                        clicking the "Attempt Reload Now" button below or by an external script invoking that same URL.</li>
+                    <li><strong>Automatic Reload:</strong> Check the "Allow Study Reload" box and set the "Reload Interval" to a time interval
+                        to configure the study for automatic reload. In this case, a reload is attempted automatically each
+                        time the specified interval elapses.</li>
+                </ul>
+                In either case, a reload attempt causes the server to locate a file named <strong>studyload.txt</strong> in the
+                pipeline root. If this file has changed (i.e., the file's modification time has changed) since the last
+                reload then the server will reload the study data from the pipeline.  For more information about the file
+                formats used see the <a href="<%=new HelpTopic("importExportStudy", HelpTopic.Area.STUDY)%>" target="help">Import/Export/Reload a Study documentation page</a>.
+            </td>
         </tr>
         <tr>
             <td colspan=2>&nbsp;</td>
@@ -46,7 +60,7 @@
         <tr>
             <td width=200>&nbsp;</td>
             <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", "checkForReload.view", null, "id=\"reloadNow\"") :
-                                 PageFlowUtil.generateButton("Attempt Reload Now", "javascript:return false;", null, "id=\"reloadNow\"")%></td>
+                                 PageFlowUtil.generateButton("Attempt Reload Now", "javascript:return%20false;", null, "id=\"reloadNow\"")%></td>
         </tr>
         <tr>
             <td><%=generateSubmitButton("Update")%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%></td>

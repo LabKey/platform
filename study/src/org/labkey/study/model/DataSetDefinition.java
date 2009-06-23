@@ -190,7 +190,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         if (null == _fileName)
         {
-            NumberFormat dsf = new DecimalFormat("plate000.tsv");
+            NumberFormat dsf = new DecimalFormat("dataset000.tsv");
 
             return dsf.format(getDataSetId());
         }
