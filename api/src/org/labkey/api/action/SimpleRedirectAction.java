@@ -28,9 +28,19 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
 {
     public ModelAndView getView(FORM form, BindException errors) throws Exception
     {
-        ActionURL url = getRedirectURL(form);
+        ActionURL url;
+
+        try
+        {
+            url = getRedirectURL(form);
+        }
+        catch (Exception e)
+        {
+            return getErrorView(e, errors);
+        }
+
         if (null != getViewContext().getRequest().getHeader("template"))
-            url.addParameter("_template",getViewContext().getRequest().getHeader("template"));
+            url.addParameter("_template", getViewContext().getRequest().getHeader("template"));
         return HttpView.redirect(url);
     }
 
@@ -40,6 +50,13 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
     }
 
     public abstract ActionURL getRedirectURL(FORM form) throws Exception;
+
+    // Called whenever getRedirectURL() throws an exception.  Standard code rethrows the exception.  Override this
+    // method to customize the handling of certain exceptions (e.g., display an error view). 
+    protected ModelAndView getErrorView(Exception e, BindException errors) throws Exception
+    {
+        throw e;
+    }
 
     protected String getCommandClassMethodName()
     {

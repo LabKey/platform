@@ -17,13 +17,11 @@
 package org.labkey.api.reports.report;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.reports.Report;
 
-import java.util.Date;
 import java.io.IOException;
+import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Nov 3, 2006
  */
@@ -42,9 +40,11 @@ public class ReportDB
     private int _flags;
 
     public ReportDB(){}
+
     public ReportDB(Container c, int userId, String key, ReportDescriptor descriptor)
     {
-        try {
+        try
+        {
             _containerId = c.getId();
             _entityId = descriptor.getEntityId();
             _createdBy = descriptor.getCreatedBy();

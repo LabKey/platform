@@ -34,8 +34,16 @@ public class WebTheme
 
     WebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
     {
-        _friendlyName = friendlyName;
+        if (null == friendlyName)
+            throw new IllegalArgumentException("You must specify a name for this theme");
 
+        // perform testing on the color code
+        parseColor(navBarColor);
+        parseColor(headerLineColor);
+        parseColor(editFormColor);
+        parseColor(fullScreenBorderColor);
+
+        _friendlyName = friendlyName;
         _navBarColor = navBarColor;
         _headerLineColor = headerLineColor;
         _editFormColor = editFormColor;
@@ -45,16 +53,14 @@ public class WebTheme
         // UNDONE: save restore this color
         _titleColor = new Color(0x003399);
 
-        // perform testing on the colour code
-        Color _testColor;
-        _testColor = parseColor(navBarColor);
-        _testColor = parseColor(headerLineColor);
-        _testColor = parseColor(editFormColor);
-        _testColor = parseColor(fullScreenBorderColor);
     }
 
     private Color parseColor(String s)
     {
+        if (null == s)
+        {
+            throw new IllegalArgumentException("You must specify a value for every color");
+        }
         if (s.length() != 6)
         {
             throw new IllegalArgumentException("Colors must be 6 hex digits, but was " + s);

@@ -136,7 +136,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public void setProperty(String key, String value){_props.put(key, value);}
     public void setProperties(List<Pair<String,String>> props)
     {
-        init(props.toArray(new Pair[0]));
+        init(props.toArray(new Pair[props.size()]));
     }
 
     public String getProperty(String key){return (String)_props.get(key);}
@@ -181,6 +181,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     }
 
     public Integer getOwner(){return _owner;}
+
     public void setOwner(Integer owner){_owner = owner;}
 
     public void initFromQueryString(String queryString)
@@ -208,9 +209,10 @@ public class ReportDescriptor extends Entity implements SecurableResource
     protected void init(Pair<String, String>[] params)
     {
         Map<String, Object> m = mapFromQueryString(params);
-        for (Map.Entry entry : m.entrySet())
+
+        for (Map.Entry<String,Object> entry : m.entrySet())
         {
-            _props.put((String)entry.getKey(), entry.getValue());
+            _props.put(entry.getKey(), entry.getValue());
         }
     }
 
@@ -284,7 +286,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
                 }
                 else
                 {
-                    final List list = new ArrayList<String>();
+                    final List<String> list = new ArrayList<String>();
                     list.add(p.getValue());
                     m.put(p.getKey(), list);
                 }
@@ -389,7 +391,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     public static ReportDescriptor createFromXML(Reader reader) throws IOException
     {
-        try {
+        try
+        {
             XmlOptions options = new XmlOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
@@ -404,13 +407,14 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
                 for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
                 {
-                    props.add(new Pair(prop.getName(), prop.getStringValue()));
+                    props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
                 }
 
                 descriptor.init(props.toArray(new Pair[props.size()]));
 
                 return descriptor;
             }
+
             return null;
         }
         catch (XmlException e)
@@ -430,7 +434,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
             List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
             for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
-                props.add(new Pair(prop.getName(), prop.getStringValue()));
+                props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
 
             return props;
         }

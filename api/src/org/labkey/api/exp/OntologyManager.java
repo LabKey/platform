@@ -1988,7 +1988,7 @@ public class OntologyManager
             BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
 
             boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
-            boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("Hidden"))).booleanValue();
+            boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
             boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
 
             String description = (String) m.get("description");
