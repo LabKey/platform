@@ -52,7 +52,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     public TableInfo getLookupTableInfo()
     {
         UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), "study");
-        FilteredTable tableInfo = (FilteredTable)studySchema.getTable("SimpleSpecimen");
+        FilteredTable tableInfo = (FilteredTable)studySchema.getTable("Vial");
         tableInfo.setContainerFilter(_studyContainerFilter);
 
         String specimenAlias = ExprColumn.STR_TABLE_ALIAS + SPECIMEN_SUBQUERY_SUFFIX;
@@ -269,7 +269,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 String colTableAlias = getTableAlias();
                 sql.append(" AS ").append(colTableAlias);
                 sql.append(" ON ");
-                sql.append(specimenSubqueryAlias + ".RowId = " + colTableAlias + ".RowId");
+                sql.append(vialSubqueryAlias + ".RowId = " + colTableAlias + ".RowId");
 
                 map.put(specimenSubqueryAlias, sql);
             }
