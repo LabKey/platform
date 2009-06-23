@@ -109,13 +109,14 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append("(");
                 if (visitIdCol != null)
                 {
-                    // If we're in a visit-based study, check that both the visits and the dates match or are null
+                    // If we're in a visit-based study, check that both the visits match or are null. Also,
+                    // if the assay has a date column and it has a value, it needs to match as well.
                     sql.append("((" + studyAlias + ".DateBased IS NULL OR " + studyAlias + ".DateBased = ?)");
                     sql.add(Boolean.FALSE);
                     sql.append(" AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL))");
                     if (dateCol != null)
                     {
-                        sql.append(" AND (" + dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL))");
+                        sql.append(" AND (" + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL OR " + dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL))");
                         sql.append(")");
                         sql.append(" OR ");
                     }
