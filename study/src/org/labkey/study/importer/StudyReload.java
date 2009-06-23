@@ -164,6 +164,12 @@ public class StudyReload
     }
 
 
+    public static void cancelTimer(Container c)
+    {
+        cancelTimer(c.getId());
+    }
+
+
     private static void cancelTimer(String containerId)
     {
         initializeTimer(containerId, false, 0);
@@ -183,7 +189,7 @@ public class StudyReload
         if (allowReload && null != secondsInterval && 0 != secondsInterval.intValue())
         {
             int reasonableInterval = Math.max(secondsInterval.intValue(), 10);
-            future = SCHEDULER.scheduleAtFixedRate(new ReloadTask(containerId), reasonableInterval, reasonableInterval, TimeUnit.SECONDS);
+            future = SCHEDULER.scheduleAtFixedRate(new ReloadTask(containerId), reasonableInterval /* TODO: Randomize this? */, reasonableInterval, TimeUnit.SECONDS);
             FUTURES.put(containerId, future);
         }
     }

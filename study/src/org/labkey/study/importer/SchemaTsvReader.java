@@ -97,14 +97,12 @@ public class SchemaTsvReader implements SchemaReader
                 {
                     if (!info.name.equals(typeName))
                     {
-                        errors.reject("SchemaTsvReader", "Type ID " + typeName + " is associated with multiple " +
-                                "type names ('" + typeName + "' and '" + info.name + "').");
+                        errors.reject("SchemaTsvReader", "Type ID " + typeName + " is associated with multiple type names ('" + typeName + "' and '" + info.name + "').");
                         return;
                     }
                     if (!info.isHidden == isHidden)
                     {
-                        errors.reject("SchemaTsvReader", "Type ID " + typeName + " is set as both hidden and "
-                        + "not hidden in different fields.");
+                        errors.reject("SchemaTsvReader", "Type ID " + typeName + " is set as both hidden and not hidden in different fields.");
                         return;
                     }
                 }

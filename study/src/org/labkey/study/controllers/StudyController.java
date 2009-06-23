@@ -5893,38 +5893,6 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(ReloadForm form, final BindException errors) throws Exception
         {
-//            if (form.isAllowReload())
-//            {
-//                ReloadStatus status = new ReloadStatus();
-//                _lastReload.put(getContainer(), status);
-//
-//                _timer.schedule(new TimerTask() {
-//                    public void run()
-//                    {
-//                        try
-//                        {
-//                            if (!importStudy(errors, getPipelineRoot()))
-//                            {
-//                                for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
-//                                    _log.error(error.getDefaultMessage());
-//                            }
-//                        }
-//                        catch (Exception e)
-//                        {
-//                            _log.error("Error loading study", e);
-//                        }
-//                        finally
-//                        {
-//                            cancel();
-//                        }
-//                    }
-//                }, 10 * 1000);
-//            }
-//            else
-//            {
-//                _lastReload.remove(getContainer());
-//            }
-//
             StudyImpl study = getStudy();
 
             if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval()))
@@ -5933,6 +5901,7 @@ public class StudyController extends BaseStudyController
                 study.setAllowReload(form.isAllowReload());
                 study.setReloadInterval(0 != form.getInterval() ? form.getInterval() : null);
                 study.setReloadUser(getUser().getUserId());
+                study.setLastReload(new Date());
                 StudyManager.getInstance().updateStudy(getUser(), study);
                 StudyReload.initializeTimer(study);
             }

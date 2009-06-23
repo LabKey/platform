@@ -2637,6 +2637,21 @@ public class AdminController extends SpringActionController
 
             return redirectURL;
         }
+
+        @Override
+        protected ModelAndView getErrorView(Exception e, BindException errors) throws Exception
+        {
+            try
+            {
+                throw e;
+            }
+            catch (IllegalArgumentException iae)
+            {
+                errors.reject(ERROR_MSG, "Error: " + iae.getMessage());
+                getPageConfig().setTemplate(Template.Dialog);
+                return new SimpleErrorView(errors);
+            }
+        }
     }
 
 

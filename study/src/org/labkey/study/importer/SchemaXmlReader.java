@@ -22,6 +22,8 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
+import org.labkey.study.importer.StudyImporter.InvalidFileException;
+import org.labkey.study.importer.StudyImporter.StudyImportException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 
@@ -45,7 +47,7 @@ public class SchemaXmlReader implements SchemaReader
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
 
-    public SchemaXmlReader(StudyImpl study, File root, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImporter.StudyImportException
+    public SchemaXmlReader(StudyImpl study, File root, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImportException
     {
         TablesDocument tablesDoc;
 
@@ -55,7 +57,7 @@ public class SchemaXmlReader implements SchemaReader
         }
         catch (XmlException e)
         {
-            throw new StudyImporter.InvalidFileException(root, metaDataFile, e);
+            throw new InvalidFileException(root, metaDataFile, e);
         }
 
         TablesDocument.Tables tablesXml = tablesDoc.getTables();
@@ -69,6 +71,9 @@ public class SchemaXmlReader implements SchemaReader
 
             DataSetImportInfo info = new DataSetImportInfo(datasetName);
             DatasetImportProperties tableProps = extraImportProps.get(datasetName);
+
+            if (null == tableProps)
+                throw new StudyImportException("Dataset \"" + datasetName + "\" was specified in " + metaDataFile.getName() + " but not in the dataset manifest file.");
 
             info.category = tableProps.getCategory();
             info.name = datasetName;
@@ -84,7 +89,7 @@ public class SchemaXmlReader implements SchemaReader
             _datasetInfoMap.put(tableProps.getId(), info);
 
             // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "Hidden", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery");
+            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery");
 
             for (ColumnType columnXml : tableXml.getColumns().getColumnArray())
             {

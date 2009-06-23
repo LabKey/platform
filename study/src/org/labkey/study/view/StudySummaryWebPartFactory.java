@@ -26,7 +26,6 @@ import org.springframework.validation.BindException;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Aug 9, 2006
  * Time: 4:38:42 PM

@@ -196,13 +196,15 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         //ensure that descriptor id is a DbReportIdentifier
         DbReportIdentifier reportId;
-        if(report.getDescriptor().getReportId() instanceof DbReportIdentifier)
+
+        if (report.getDescriptor().getReportId() instanceof DbReportIdentifier)
             reportId = (DbReportIdentifier)(report.getDescriptor().getReportId());
         else
             throw new RuntimeException("Can't save a report that is not stored in the database!");
 
         DbScope scope = getTable().getSchema().getScope();
         boolean ownsTransaction = !scope.isTransactionActive();
+
         try
         {
             if (ownsTransaction)
@@ -372,7 +374,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public Report[] getReports(User user, Container c, String key) throws SQLException
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<ReportDescriptor>();
-        for(Module module : c.getActiveModules())
+
+        for (Module module : c.getActiveModules())
         {
             List<ReportDescriptor> descriptors = module.getReportDescriptors(key);
             if(null != descriptors)
@@ -380,7 +383,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
 
         List<Report> reports = new ArrayList<Report>();
-        for(ReportDescriptor descriptor : moduleReportDescriptors)
+
+        for (ReportDescriptor descriptor : moduleReportDescriptors)
         {
             String type = descriptor.getReportType();
             Report report = createReportInstance(type);
@@ -392,8 +396,10 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
 
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
+
         if (key != null)
             filter.addCondition("ReportKey", key);
+
         reports.addAll(Arrays.asList(_getReports(user, filter)));
         return reports.toArray(new Report[reports.size()]);
     }
@@ -401,6 +407,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
+
         if (key != null)
             filter.addCondition("ReportKey", key);
 
@@ -458,6 +465,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
                 return iconPath;
             }
         }
+
         return null;
     }
 
@@ -483,27 +491,22 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public Report deserialize(Reader reader) throws IOException
     {
-        BufferedReader br = null;
+        ReportDescriptor descriptor = ReportDescriptor.createFromXML(reader);
 
-        try {
-            ReportDescriptor descriptor = ReportDescriptor.createFromXML(reader);
-            if (descriptor != null)
-            {
-                //descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
-                //descriptor.setOwner(r.getReportOwner());
-
-                String type = descriptor.getReportType();
-                Report report = createReportInstance(type);
-                if (report != null)
-                    report.setDescriptor(descriptor);
-                return report;
-            }
-        }
-        finally
+        if (descriptor != null)
         {
-            if (br != null)
-                try {br.close();} catch(IOException ioe) {}
+            //descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
+            //descriptor.setOwner(r.getReportOwner());
+
+            String type = descriptor.getReportType();
+            Report report = createReportInstance(type);
+
+            if (report != null)
+                report.setDescriptor(descriptor);
+
+            return report;
         }
+
         return null;
     }
 

@@ -25,8 +25,10 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -34,13 +36,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.ResultSet;
@@ -115,10 +113,10 @@ public class ChartReportView extends AbstractReportView
         if (dataset != null)
             setShowWithDataset(Integer.parseInt(dataset));
         
-        List<Pair<String, String>> params = new ArrayList();
-        params.add(new Pair("datasetId", dataset));
+        List<Pair<String, String>> params = new ArrayList<Pair<String, String>>();
+        params.add(new Pair<String, String>("datasetId", dataset));
         if (!StringUtils.isEmpty(chartsPerRow))
-            params.add(new Pair("chartsPerRow", chartsPerRow));
+            params.add(new Pair<String, String>("chartsPerRow", chartsPerRow));
 
         ReportDescriptor descriptor = getDescriptor();
         descriptor.setProperty(QueryParam.schemaName.toString(), StudyManager.getSchemaName());
@@ -196,11 +194,13 @@ public class ChartReportView extends AbstractReportView
         else
         {
             Integer owner = getDescriptor().getOwner();
+
             for (Report report : getChildReports(context))
             {
                 if (owner != report.getDescriptor().getOwner())
                 {
-                    try {
+                    try
+                    {
                         report.getDescriptor().setOwner(owner);
                         ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
                     }
@@ -215,7 +215,8 @@ public class ChartReportView extends AbstractReportView
 
     public void beforeDelete(ViewContext context)
     {
-        try {
+        try
+        {
             for (Report report : getChildReports(context))
                 ReportService.get().deleteReport(context, report);
         }
@@ -238,7 +239,8 @@ public class ChartReportView extends AbstractReportView
     {
         if (_reports == null)
         {
-            try {
+            try
+            {
                 final String key = getDescriptor().getProperty(REPORT_GUID);
                 _reports = ReportService.get().getReports(context.getUser(), context.getContainer(), key);
             }

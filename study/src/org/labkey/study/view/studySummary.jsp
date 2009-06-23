@@ -24,6 +24,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.study.importer.StudyReload" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
@@ -36,10 +39,17 @@ if (null == getStudy())
     {
         ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
         out.println(generateButton("Create Study", createURL));
-        ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
-        out.println(generateButton("Import Study", importStudyURL));
-        ActionURL manageReloadURL = new ActionURL(StudyController.ManageReloadAction.class, c);
-        out.println(generateButton("Manage Reload", manageReloadURL));
+
+        if (null != StudyReload.getPipelineRoot(c))
+        {
+            ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
+            out.println(generateButton("Import Study", importStudyURL));
+        }
+        else
+        {
+            ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
+            out.println(generateButton("Pipeline Setup", pipelineURL));
+        }
     }
     else
     {

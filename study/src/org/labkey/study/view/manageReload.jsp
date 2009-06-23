@@ -45,7 +45,8 @@
         </tr>
         <tr>
             <td width=200>&nbsp;</td>
-            <td><%=PageFlowUtil.generateButton("Attempt Reload Now", "", null, "id=\"reloadNow\"")%></td>
+            <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", "checkForReload.view", null, "id=\"reloadNow\"") :
+                                 PageFlowUtil.generateButton("Attempt Reload Now", "javascript:return false;", null, "id=\"reloadNow\"")%></td>
         </tr>
         <tr>
             <td><%=generateSubmitButton("Update")%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%></td>
@@ -55,12 +56,14 @@
 <script type="text/javascript">
     function updateDisplay()
     {
-        var show = document.getElementById("allowReload").checked;
-        document.getElementById("interval").disabled = !show;
-        document.getElementById("reloadNow").className = show ? "labkey-button" : "labkey-disabled-button";
-        document.getElementById("reloadNow").href = show ? "checkForReload.view" : "javascript:return false;";
+        document.getElementById("interval").disabled = !document.getElementById("allowReload").checked;
     }
 </script>
-<script for=window event=onload>
+<script type="text/javascript" for=window event=onload>
     updateDisplay();
+    <%
+        // If reload is not enabled, override the default class to disable the button
+        if (!allowReload)
+            out.println("    document.getElementById(\"reloadNow\").className = \"labkey-disabled-button\";");
+    %>
 </script>

@@ -70,6 +70,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
+import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.DateVisitManager;
@@ -1409,6 +1410,9 @@ public class StudyManager
 
     public void deleteAllStudyData(Container c, User user, boolean deleteDatasetData, boolean deleteStudyDesigns) throws SQLException
     {
+        // Cancel any reload timer
+        StudyReload.cancelTimer(c);
+
         // Before we delete any data, we need to go fetch the Dataset definitions.
         StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition[] dsds;

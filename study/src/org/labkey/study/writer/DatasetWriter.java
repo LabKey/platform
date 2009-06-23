@@ -108,7 +108,7 @@ public class DatasetWriter implements Writer<StudyImpl>
         }
 
         if (categories.isEmpty())
-            dsXml.unsetCategories();     // Didn't need <categories> element after all
+            dsXml.unsetCategories();     // Don't need the <categories> element after all
         else
             categoriesXml.setCategoryArray(categories.toArray(new String[categories.size()]));
 
@@ -150,7 +150,7 @@ public class DatasetWriter implements Writer<StudyImpl>
                 "# NOTE: if there are NO explicit import definitions, we will try to import all files matching pattern\n" +
                 "# NOTE: if there are ANY explicit mapping, we will only import listed datasets\n" +
                 "\n" +
-                "default.filePattern=plate(\\\\d\\\\d\\\\d).tsv\n" +
+                "default.filePattern=plate(\\\\d*).tsv\n" +
                 "default.importAllMatches=TRUE");
         writer.close();
 

@@ -916,4 +916,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         _protocolId = protocolId;
     }
+
+    @Override
+    public String toString()
+    {
+        return "DataSetDefinition: " + getLabel() + " " + getDataSetId();
+    }
 }

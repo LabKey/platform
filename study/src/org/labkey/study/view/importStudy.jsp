@@ -17,9 +17,6 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    
-%>
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>
