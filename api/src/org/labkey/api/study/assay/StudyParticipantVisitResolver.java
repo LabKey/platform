@@ -36,6 +36,23 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
         super(runContainer, targetStudyContainer);
     }
 
+    private ParticipantVisit mergeParticipantVisitInfo(ParticipantVisitImpl originalInfo, ParticipantVisit studyInfo)
+    {
+        if (studyInfo == null)
+            return originalInfo;
+        // Because the user can specify a subset of properties (specimen id and participant id, for example) while
+        // leaving others blank (visit id, for example), we merge the "correct" data provided by the study into the
+        // user-provided properties, using the study value when the user did not specify a value, but otherwise trusting
+        // that the user knows best.  This allows the user to upload assay data for a study for which all specimens have
+        // not yet been loaded into the system.
+        return new ParticipantVisitImpl(
+                originalInfo.getSpecimenID() == null ? studyInfo.getSpecimenID() : originalInfo.getSpecimenID(),
+                originalInfo.getParticipantID() == null ? studyInfo.getParticipantID() : originalInfo.getParticipantID(),
+                originalInfo.getVisitID() == null ? studyInfo.getVisitID() : originalInfo.getVisitID(),
+                originalInfo.getDate() == null ? studyInfo.getDate() : originalInfo.getDate(),
+                getRunContainer());
+    }
+
     @NotNull
     protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date)
     {
@@ -45,17 +62,17 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
         {
             try
             {
-                if (participantID != null && (visitID != null))
+                if (specimenID != null)
                 {
-                    return SpecimenService.get().getSampleInfo(getTargetStudyContainer(), participantID, visitID);
+                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(getTargetStudyContainer(), specimenID));
+                }
+                else if (participantID != null && (visitID != null))
+                {
+                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(getTargetStudyContainer(), participantID, visitID));
                 }
                 else if (participantID != null && date != null)
                 {
-                    return SpecimenService.get().getSampleInfo(getTargetStudyContainer(), participantID, date);
-                }
-                else if (specimenID != null)
-                {
-                    return SpecimenService.get().getSampleInfo(getTargetStudyContainer(), specimenID);
+                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(getTargetStudyContainer(), participantID, date));
                 }
             }
             catch (SQLException e)

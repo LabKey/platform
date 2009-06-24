@@ -298,7 +298,13 @@ public class ViewServlet extends HttpServlet
             ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + DataRegion.LAST_FILTER_PARAM);
             if (null != expand)
             {
-                // CONSIDER: preserve other parameters on URL?
+                // any parameters on the URL override those stored in the last filter:
+                for (Pair<String, String> parameter : url.getParameters())
+                {
+                    // don't add the .lastFilter parameter (or we'll have an infinite redirect):
+                    if (!DataRegion.LAST_FILTER_PARAM.equals(parameter.getKey()))
+                        expand.replaceParameter(parameter.getKey(), parameter.getValue());
+                }
                 if (request.getMethod().equals("GET"))
                     throw new RedirectException(expand.getLocalURIString());
                 _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
