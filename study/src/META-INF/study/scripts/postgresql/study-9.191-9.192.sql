@@ -36,7 +36,7 @@ UPDATE study.Specimen SET SpecimenHash =
     ||'~'|| CASE WHEN SubAdditiveDerivative IS NOT NULL THEN CAST(SubAdditiveDerivative AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN PrimaryTypeId IS NOT NULL THEN CAST(PrimaryTypeId AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN DerivativeTypeId IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN DerivativeTypeId2 IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
+    ||'~'|| CASE WHEN DerivativeTypeId2 IS NOT NULL THEN CAST(DerivativeTypeId2 AS VARCHAR) ELSE '' END
     ||'~'|| CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS VARCHAR) ELSE '' END
 
 FROM study.Specimen InnerSpecimen
@@ -179,35 +179,3 @@ FROM (SELECT
     GROUP BY Container, SpecimenHash
     ) VialCounts
 WHERE study.Specimen.Container = VialCounts.Container AND study.Specimen.SpecimenHash = VialCounts.SpecimenHash;
-
--- Finally update hash codes for all specimens, vials, and comments
-
-UPDATE study.Specimen SET SpecimenHash =
-(SELECT
-    'Fld-' || CAST(core.Containers.RowId AS VARCHAR)
-    ||'~'|| CASE WHEN OriginatingLocationId IS NOT NULL THEN CAST(OriginatingLocationId AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN Ptid IS NOT NULL THEN CAST(Ptid AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN DrawTimestamp IS NOT NULL THEN CAST(DrawTimestamp AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN SalReceiptDate IS NOT NULL THEN CAST(SalReceiptDate AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN ClassId IS NOT NULL THEN CAST(ClassId AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN VisitValue IS NOT NULL THEN CAST(VisitValue AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN ProtocolNumber IS NOT NULL THEN CAST(ProtocolNumber AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN PrimaryVolume IS NOT NULL THEN CAST(PrimaryVolume AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN PrimaryVolumeUnits IS NOT NULL THEN CAST(PrimaryVolumeUnits AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN VisitDescription IS NOT NULL THEN CAST(VisitDescription AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN VolumeUnits IS NOT NULL THEN CAST(VolumeUnits AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN SubAdditiveDerivative IS NOT NULL THEN CAST(SubAdditiveDerivative AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN PrimaryTypeId IS NOT NULL THEN CAST(PrimaryTypeId AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN DerivativeTypeId IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN DerivativeTypeId2 IS NOT NULL THEN CAST(DerivativeTypeId AS VARCHAR) ELSE '' END
-    ||'~'|| CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS VARCHAR) ELSE '' END
-FROM study.Specimen InnerSpecimen
-JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId
-WHERE InnerSpecimen.RowId = study.Specimen.RowId);
-
-UPDATE study.Vial SET SpecimenHash =
-	(SELECT SpecimenHash FROM study.Specimen WHERE study.Vial.SpecimenId = study.Specimen.RowId);
-
-UPDATE study.SpecimenComment SET SpecimenHash =
-	(SELECT SpecimenHash FROM study.Vial
-	WHERE study.SpecimenComment.Container = study.Vial.Container AND study.SpecimenComment.GlobalUniqueId = study.Vial.GlobalUniqueId);

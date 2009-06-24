@@ -113,6 +113,8 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
     public static class CommentDisplayColumn extends DataColumn
     {
+        private ColumnInfo _specimenHashColumn;
+
         public CommentDisplayColumn(ColumnInfo commentColumn)
         {
             super(commentColumn);
@@ -131,8 +133,20 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
-            columns.add(getColumnInfo().getParentTable().getColumn("Comments"));
-            columns.add(getColumnInfo().getParentTable().getColumn("SpecimenHash"));
+            FieldKey me = getBoundColumn().getFieldKey();
+            FieldKey specimenHashKey = new FieldKey(me.getParent(), "SpecimenHash");
+            // select the base 'comments' column (our bound column is an exprcolumn that doesn't simply select the base value):
+            FieldKey commentsHashKey = new FieldKey(me.getParent(), "Comments");
+            Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+            fieldKeys.add(specimenHashKey);
+            fieldKeys.add(commentsHashKey);
+            Map<FieldKey, ColumnInfo> requiredColumns = QueryService.get().getColumns(getBoundColumn().getParentTable(), fieldKeys);
+            _specimenHashColumn = requiredColumns.get(specimenHashKey);
+            if (_specimenHashColumn != null)
+                columns.add(_specimenHashColumn);
+            ColumnInfo col = requiredColumns.get(commentsHashKey);
+            if (col != null)
+                columns.add(col);
         }
 
         private Map<String, String> _commentCache;
@@ -222,9 +236,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         private String getCommentText(RenderContext ctx, String specimenHash, String lineSeparator) throws SQLException
         {
-            Map<String, String> commentCache = null;
-            if (true)
-                commentCache = getCommentCache(ctx, lineSeparator);
+            Map<String, String> commentCache = getCommentCache(ctx, lineSeparator);
             if (commentCache != null)
                 return commentCache.get(specimenHash);
             else
@@ -238,6 +250,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         private String getDisplayText(RenderContext ctx, String lineSeparator)
         {
+            if (_specimenHashColumn == null)
+                return "ERROR: SpecimenHash column must be added to query to retrive comment information.";
+
             String maxPossibleCount = (String) getValue(ctx);
             // the string compare below is a big of a hack, but it's cheaper than converting the string to a number and
             // equally effective.  The column type is string so that exports to excel correctly set the column type as string.

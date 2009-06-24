@@ -171,9 +171,19 @@ public class SampleManager
         Specimen[] matches = _specimenDetailHelper.get(container, filter);
         if (matches == null || matches.length == 0)
             return null;
-        if (matches.length != 1)
-            throw new IllegalStateException("Only one specimen expected per Global Unique Id.");
-        return matches[0];
+        if (matches.length > 1)
+        {
+            // we apparently have two specimens with IDs that differ only in case; do a case sensitive check
+            // here to find the right one:
+            for (Specimen specimen : matches)
+            {
+                if (specimen.getGlobalUniqueId().equals(globalUniqueId))
+                    return specimen;
+            }
+            throw new IllegalStateException("Expected at least one vial to exactly match the specified global unique ID: " + globalUniqueId);
+        }
+        else
+            return matches[0];
     }
 
     public Specimen[] getSpecimens(Container container, String participantId, Date date) throws SQLException

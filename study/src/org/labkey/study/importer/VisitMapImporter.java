@@ -103,15 +103,14 @@ public class VisitMapImporter
             scope.beginTransaction();
             saveDataSets(user, study, records);
             saveVisits(user, study, records);
-            SequenceVisitManager visitManager = (SequenceVisitManager) StudyManager.getInstance().getVisitManager(study);
-            if (!visitManager.validateVisitRanges(errors))
-            {
-                scope.rollbackTransaction();
-                return false;
-            }
             saveVisitMap(user, study, records);
             scope.commitTransaction();
             return true;
+        }
+        catch (StudyManager.VisitCreationException e)
+        {
+            errors.add(e.getMessage());
+            return false;
         }
         finally
         {

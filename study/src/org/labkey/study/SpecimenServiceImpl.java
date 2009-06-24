@@ -121,22 +121,16 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         if (null == studyContainer || null == StringUtils.trimToNull(participantId) || null == date)
             return new StudyParticipantVisit(studyContainer, null, participantId, null, date);
-        
-        Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, date);
-        if (matches.length > 0)
-            return new StudyParticipantVisit(studyContainer, matches[0].getGlobalUniqueId(), participantId, matches[0].getVisitValue(), matches[0].getDrawTimestamp());
-        else
-            return new StudyParticipantVisit(studyContainer, null, participantId, null, date);
+
+        // don't just grab any old specimen from the study, even if there are vials that match the ptid/date-
+        // we have no way of knowing which was actually used in the assay.
+        return new StudyParticipantVisit(studyContainer, null, participantId, null, date);
     }
 
     public ParticipantVisit getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException
     {
-        if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
-        {
-            Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, visit);
-            if (matches.length > 0)
-                return new StudyParticipantVisit(studyContainer, matches[0].getGlobalUniqueId(), participantId, matches[0].getVisitValue(), matches[0].getDrawTimestamp());
-        }
+        // don't just grab any old specimen from the study, even if there are vials that match the ptid/visit- 
+        // we have no way of knowing which was actually used in the assay.
         return new StudyParticipantVisit(studyContainer, null, participantId, visit, null);
     }
 

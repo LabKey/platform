@@ -109,36 +109,7 @@ public class SequenceVisitManager extends VisitManager
             ResultSetUtil.close(rows);
         }
     }
-
-
-    /** return true if OK, false if validation error */
-    public boolean validateVisitRanges(List<String> errors)
-    {
-        int errorSize = errors.size();
-        TreeMap<Double, VisitImpl> map = getVisitSequenceMap();
-        VisitImpl prev = null;
-        for (VisitImpl v : map.values())
-        {
-            // this shouldn't happen, as this gets validated early
-            if (v.getSequenceNumMin() > v.getSequenceNumMax())
-            {
-                errors.add("Invalid sequence range: " + v.getDisplayString());
-                continue;
-            }
-            if (prev != null)
-            {
-                if (prev.getSequenceNumMax() >= v.getSequenceNumMin())
-                {
-                    errors.add("Overrlapping sequence range: " + prev.getDisplayString() + " and " + v.getDisplayString());
-                    continue;
-                }
-            }
-            prev = v;
-        }
-        return errorSize == errors.size();
-    }
-
-
+    
     protected void updateParticipantVisitTable(User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();

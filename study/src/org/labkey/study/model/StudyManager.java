@@ -308,31 +308,38 @@ public class StudyManager
         return maxCount == null || maxCount.intValue() <= 1;
     }
 
+    public static class VisitCreationException extends RuntimeException
+    {
+        public VisitCreationException(String message)
+        {
+            super(message);
+        }
+    }
 
     public int createVisit(Study study, User user, VisitImpl visit) throws SQLException
     {
         if (visit.getContainer() != null && !visit.getContainer().getId().equals(study.getContainer().getId()))
-            throw new IllegalStateException("Visit container does not match study");
+            throw new VisitCreationException("Visit container does not match study");
         visit.setContainer(study.getContainer());
 
         if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
-            throw new IllegalStateException("SequenceNumMin must be less than or equal to SequenceNumMax");
+            throw new VisitCreationException("SequenceNumMin must be less than or equal to SequenceNumMax");
         VisitImpl[] visits = getVisits(study);
         for (VisitImpl existingVisit : visits)
         {
             if (existingVisit.getSequenceNumMin() > existingVisit.getSequenceNumMax())
-                throw new IllegalStateException("Corrupt existing visit " + existingVisit.getLabel() +
+                throw new VisitCreationException("Corrupt existing visit " + existingVisit.getLabel() +
                         ": SequenceNumMin must be less than or equal to SequenceNumMax");
             boolean disjoint = visit.getSequenceNumMax() < existingVisit.getSequenceNumMin() ||
                                visit.getSequenceNumMin() > existingVisit.getSequenceNumMax();
             if (!disjoint)
-                throw new IllegalStateException("New visit " + visit.getLabel() + " overlaps existing visit " + existingVisit.getLabel());
+                throw new VisitCreationException("New visit " + visit.getLabel() + " overlaps existing visit " + existingVisit.getLabel());
         }
 
         visit = _visitHelper.create(user, visit);
 
         if (visit.getRowId() == 0)
-            throw new IllegalStateException("Visit rowId has not been set properly");
+            throw new VisitCreationException("Visit rowId has not been set properly");
 
         return visit.getRowId();
     }
@@ -2823,7 +2830,7 @@ public class StudyManager
             Object modified = map.get(modifiedURI);
             Long timeModified = null == modified ? _lastModified : toMs(modified);
             Long visitDate = toMs(map.get(_visitDatePropertyURI));
-            assert !_study.isDateBased() || null != visitDate;
+            assert _dataset.isDemographicData() || !_study.isDateBased() || null != visitDate;
             String sourceLsid = (String) map.get(sourceLsidURI);
             Integer qcState = (Integer) map.get(qcStateURI);
 

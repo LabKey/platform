@@ -134,16 +134,19 @@ public class AllParticipantData
                     case BOOLEAN:
                         val = row.get("FloatValue");
                         defaultFormat = defaultNumberFormat;
-                        switch (pd.getPropertyType())
+                        if (val != null)
                         {
-                            case INTEGER:
-                                val = ((Double) val).intValue();
-                                break;
-                            case BOOLEAN:
-                                val = ((Double) val) == 0 ? Boolean.FALSE : Boolean.TRUE;
-                               break;
-                            default:
-                                break;
+                            switch (pd.getPropertyType())
+                            {
+                                case INTEGER:
+                                    val = ((Double) val).intValue();
+                                    break;
+                                case BOOLEAN:
+                                    val = ((Double) val) == 0 ? Boolean.FALSE : Boolean.TRUE;
+                                   break;
+                                default:
+                                    break;
+                            }
                         }
                         break;
                     case DATE_TIME:
@@ -177,7 +180,7 @@ public class AllParticipantData
                     else
                         keyMap.set(propMap);
                 }
-                propMap.put(propertyId, PropertyUtil.formatValue(pd, val, defaultFormat));
+                propMap.put(propertyId, val != null ? PropertyUtil.formatValue(pd, val, defaultFormat) : null);
             }
 
             return new AllParticipantData(datasetIds, visitSeqMap, allData);

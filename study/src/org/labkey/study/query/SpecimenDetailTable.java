@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.Types;
 import java.util.Set;
+import java.util.Map;
+import java.util.Collections;
 
 public class SpecimenDetailTable extends AbstractSpecimenTable
 {
@@ -128,21 +130,33 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         private ColumnInfo getInRequestColumn()
         {
-            return getColumnInfo().getParentTable().getColumn("LockedInRequest");
+            FieldKey me = getBoundColumn().getFieldKey();
+            FieldKey inRequestKey = new FieldKey(me.getParent(), "LockedInRequest");
+            Map<FieldKey, ColumnInfo> requiredColumns = QueryService.get().getColumns(getBoundColumn().getParentTable(), Collections.singleton(inRequestKey));
+            return requiredColumns.get(inRequestKey);
         }
 
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             super.addQueryColumns(columns);
-            columns.add(getInRequestColumn());
+            ColumnInfo inRequestCol = getInRequestColumn();
+            if (inRequestCol != null)
+                columns.add(inRequestCol);
         }
 
         private String getNoSiteText(RenderContext ctx)
         {
-            Object inRequest = getInRequestColumn().getValue(ctx);
-            boolean requested = (inRequest instanceof Boolean && ((Boolean) inRequest).booleanValue()) ||
-                (inRequest instanceof Integer && ((Integer) inRequest).intValue() == 1);
-            return NO_SITE_DISPLAY_VALUE + (requested ? ": Requested" : "");
+            ColumnInfo inRequestColumn = getInRequestColumn();
+            boolean requested = false;
+            if (inRequestColumn != null)
+            {
+                Object inRequest = inRequestColumn.getValue(ctx);
+                requested = (inRequest instanceof Boolean && ((Boolean) inRequest).booleanValue()) ||
+                    (inRequest instanceof Integer && ((Integer) inRequest).intValue() == 1);
+                return NO_SITE_DISPLAY_VALUE + (requested ? ": Requested" : "");
+            }
+            else
+                return NO_SITE_DISPLAY_VALUE + ": Request status unknown";
         }
 
         public Object getDisplayValue(RenderContext ctx)
