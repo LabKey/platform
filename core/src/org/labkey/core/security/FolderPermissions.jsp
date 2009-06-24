@@ -14,6 +14,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -35,6 +36,8 @@
 <%
     SecurityController.FolderPermissions me = (SecurityController.FolderPermissions)HttpView.currentView();
     ActionURL doneURL = me.doneURL;
+    if (null == doneURL)
+        doneURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getViewContext().getContainer());
     Container c = getViewContext().getContainer();
     Container project = c.getProject();
     Container root = ContainerManager.getRoot();
@@ -54,7 +57,7 @@ var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
 var $dom = Ext.DomHelper;
 
-$('bodypanel').addClass('extContainer');
+//$('bodypanel').addClass('extContainer');
 
 var securityCache = new SecurityCache({
     root:<%=PageFlowUtil.jsString(root.getId())%>,
@@ -101,7 +104,7 @@ Ext.onReady(function(){
 
     if (doneURL)
     {
-        var doneBtn = new Ext.Button({text:'Done', style:{display:'inline'}, handler:done});
+        var doneBtn = new Ext.Button({text:'Save and Finish', style:{display:'inline'}, handler:done});
         doneBtn.render($('buttonDiv'));
         $('buttonDiv').createChild('&nbsp;');
     }
@@ -130,7 +133,7 @@ Ext.onReady(function(){
             return;
         var xy = tabPanel.el.getXY();
         var size = {
-            width : Math.max(100,w-xy[0]-20),
+            width : Math.max(100,w-xy[0]-50),
             height : Math.max(100,h-xy[1]-20)};
         tabPanel.setSize(size.width, autoScroll ? size.height : undefined);
         tabPanel.doLayout();

@@ -30,6 +30,7 @@ import org.labkey.api.util.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
@@ -197,9 +198,23 @@ public class SecurityController extends SpringActionController
             String root = getContainer().getId();
             String resource = root;
             ActionURL doneURL = form.isWizard() ? getContainer().getFolderType().getStartURL(getContainer(), getUser()) : null;
-            
-            FolderPermissions view = new FolderPermissions(root, resource, doneURL);
-            return view;
+
+            Container container = getViewContext().getContainer();
+            FolderPermissions permsView = new FolderPermissions(root, resource, doneURL);
+            ContainersView cview = new ContainersView(container.getProject());
+            cview.setTitle("Folders");
+
+            LookAndFeelProperties props = LookAndFeelProperties.getInstance(container);
+
+            HBox box = new HBox();
+            box.addView(cview, props.getNavigationBarWidth());
+            box.addView(permsView);
+
+            cview.setFrame(WebPartView.FrameType.TITLE);            
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setTitle("Permissions for " + container.getPath());
+
+            return box;
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -24,6 +24,11 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
         SecurityCacheStore.superclass.constructor.call(this,config);
         this.addEvents("ready");
         this.remoteSort = false;
+
+        //NOTE: all props in this second argument to Ext.extend become prototype props,
+        // so any instance properties (such as this ready flag), should be set via code
+        // in the constructor
+        this.ready = false; 
         
         // consider the component 'ready' after first successful load
         this.on("load", function()
@@ -57,9 +62,7 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
         var record = this.getById(id);
         if (record)
             this.remove(record);
-    },
-    
-    ready : false
+    }
 });
 
 
