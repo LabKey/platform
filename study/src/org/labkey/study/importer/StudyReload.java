@@ -234,7 +234,7 @@ public class StudyReload
             }
         }
 
-        public String attemptReload() throws SQLException, StudyImporter.StudyImportException
+        public ReloadStatus attemptReload() throws SQLException, StudyImporter.StudyImportException
         {
             Container c = ContainerManager.getForId(_studyContainerId);
 
@@ -282,7 +282,7 @@ public class StudyReload
                                 study.setLastReload(new Date(lastModified));
                                 StudyManager.getInstance().updateStudy(null, study);
 
-                                return "Attempting to reload " + getDescription(study);
+                                return new ReloadStatus("Reloading " + getDescription(study), true);
                             }
                             else
                             {
@@ -291,7 +291,7 @@ public class StudyReload
                         }
                         else
                         {
-                            return "Skipping reload of " + getDescription(study) + ": this study is up-to-date";
+                            return new ReloadStatus("Skipping reload of " + getDescription(study) + ": this study is up-to-date", false);
                         }
                     }
                     else
@@ -305,6 +305,29 @@ public class StudyReload
         private static String getDescription(Study study)
         {
             return study.getLabel();
+        }
+    }
+
+
+    public static class ReloadStatus
+    {
+        private final String _message;
+        private final boolean _reloadQueued;
+
+        private ReloadStatus(String message, boolean reloadQueued)
+        {
+            _message = message;
+            _reloadQueued = reloadQueued;
+        }
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public boolean isReloadQueued()
+        {
+            return _reloadQueued;
         }
     }
 

@@ -5927,6 +5927,7 @@ public class StudyController extends BaseStudyController
     {
         private boolean allowReload = false;
         private int interval = 0;
+        private boolean _ui = false;
 
         public boolean isAllowReload()
         {
@@ -5947,35 +5948,60 @@ public class StudyController extends BaseStudyController
         {
             this.interval = interval;
         }
+
+        public boolean isUi()
+        {
+            return _ui;
+        }
+
+        public void setUi(boolean ui)
+        {
+            _ui = ui;
+        }
     }
 
 
     @RequiresPermission(ACL.PERM_NONE)
-    public class CheckForReload extends SimpleViewAction
+    public class CheckForReload extends ManageReloadAction    // Subclassing makes it easier to redisplay errors, etc.
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(ReloadForm form, boolean reshow, BindException errors) throws Exception
         {
             ReloadTask task = new ReloadTask(getContainer().getId());
             String message;
 
             try
             {
-                message = task.attemptReload();
+                ReloadStatus status = task.attemptReload();
+
+                if (status.isReloadQueued() && form.isUi())
+                    return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
+
+                message = status.getMessage();
             }
             catch (StudyImporter.StudyImportException e)
             {
                 message = "Error: " + e.getMessage();
             }
 
-            // Consider: Template.None
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            // If this was initiated from the UI and reload was not queued up then reshow the form and display the message
+            if (form.isUi())
+            {
+                errors.reject(ERROR_MSG, message);
+                return super.getView(form, false, errors);
+            }
+            else
+            {
+                // Plain text response for scripts
+                HttpServletResponse response = getViewContext().getResponse();
+                response.setContentType("text/plain");
+                PrintWriter out = response.getWriter();
+                out.print(message);
+                out.close();
+                response.flushBuffer();
 
-            return new HtmlView(message);  // TODO: Add Done button or something
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+                return null;
+            }
         }
     }
 

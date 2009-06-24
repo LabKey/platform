@@ -1,3 +1,4 @@
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -15,9 +16,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.importer.StudyReload.*" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.study.importer.StudyReload.*" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     boolean allowReload = getStudy().isAllowReload();
@@ -25,6 +26,7 @@
 %>
 <form action="" method="post">
     <table width="80%">
+        <%=formatMissedErrorsInTable("form", 2)%>
         <tr>
             <td colspan=2>A study can be configured to reload its data from the pipeline root, either manually or automatically at preset intervals:
                 <ul>
@@ -59,7 +61,7 @@
         </tr>
         <tr>
             <td width=200>&nbsp;</td>
-            <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", "checkForReload.view", null, "id=\"reloadNow\"") :
+            <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", "checkForReload.view?ui=1", null, "id=\"reloadNow\"") :
                                  PageFlowUtil.generateButton("Attempt Reload Now", "javascript:return%20false;", null, "id=\"reloadNow\"")%></td>
         </tr>
         <tr>
