@@ -129,6 +129,12 @@ public class StudyReload
     }
 
 
+    private static String getDescription(Study study)
+    {
+        return study.getLabel();
+    }
+
+
     public static void initializeTimer(StudyImpl study)
     {
         initializeTimer(study.getContainer().getId(), study.isAllowReload(), study.getReloadInterval());
@@ -301,11 +307,6 @@ public class StudyReload
                 }
             }
         }
-
-        private static String getDescription(Study study)
-        {
-            return study.getLabel();
-        }
     }
 
 
@@ -352,19 +353,34 @@ public class StudyReload
         @Override
         public void run()
         {
+            StudyManager manager = StudyManager.getInstance();
+
             while (true)
             {
+                StudyImpl study = null;
+                Container c = null;
+
                 try
                 {
-                    Container c = QUEUE.take();
+                    c = QUEUE.take();
                     File root = StudyReload.getPipelineRoot(c);
+                    study = manager.getStudy(c);
                     //noinspection ThrowableInstanceNeverThrown
                     BindException errors = new BindException(c, "reload");
                     ActionURL manageStudyURL = new ActionURL(StudyController.ManageStudyAction.class, c);
-                    User reloadUser = UserManager.getUser(StudyManager.getInstance().getStudy(c).getReloadUser());
+
+                    User reloadUser = null;
+                    Integer reloadUserId = study.getReloadUser();
+
+                    if (null != reloadUserId)
+                        reloadUser = UserManager.getUser(reloadUserId.intValue());
+
+                    if (null == reloadUser)
+                        throw new StudyImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
+
+                    LOG.info("Handling " + c.getPath());
                     StudyImporter importer = new StudyImporter(c, reloadUser, manageStudyURL, root, errors);
                     importer.process();
-                    LOG.info("Handling " + c.getPath());
                 }
                 catch (InterruptedException e)
                 {
@@ -372,7 +388,9 @@ public class StudyReload
                 }
                 catch (Throwable t)
                 {
-                    LOG.error("Error while reloading study", t);
+                    String studyDescription = (null != study ? " \"" + getDescription(study) + "\"" : "");
+                    String folderPath = (null != c ? " in folder " + c.getPath() : "");
+                    LOG.error("Error while reloading study" + studyDescription + folderPath, t);
                 }
             }
         }

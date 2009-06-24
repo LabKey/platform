@@ -35,9 +35,7 @@ public class StudyImportJob extends PipelineJob
     private final ImportContext _ctx;
     private final File _root;
 
-    // Note: At the moment, this just updates manual cohorts, which must be done after dataset and specimen uploads.
-    // It could be extended to do other end-of-import tasks and/or wrap the dataset load, specimen load, and final
-    // tasks in a single job.
+    // Job that handles all tasks that depend on the completion of previous pipeline import jobs (e.g., datasets & specimens).
     public StudyImportJob(StudyImpl study, ImportContext ctx, File root)
     {
         super(null, new ViewBackgroundInfo(ctx.getContainer(), ctx.getUser(), ctx.getUrl()));

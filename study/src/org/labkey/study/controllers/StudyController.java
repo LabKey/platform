@@ -5888,7 +5888,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ReloadForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<ReloadForm>(getStudy(true), "manageReload.jsp", form, errors);
+            return new StudyJspView<ReloadForm>(getStudy(), "manageReload.jsp", form, errors);
         }
 
         public boolean handlePost(ReloadForm form, final BindException errors) throws Exception

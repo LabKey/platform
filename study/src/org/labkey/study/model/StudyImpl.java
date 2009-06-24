@@ -72,6 +72,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    public String toString()
+    {
+        return getDisplayString();
+    }
+
+    @Override
     public SecurableResource getParentResource()
     {
         //overriden to return the container
