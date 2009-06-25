@@ -88,7 +88,8 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         {
             for (DataSet def : StudyManager.getInstance().getDataSetDefinitions(study))
             {
-                datasets.add(new GWTPair(def.getLabel(), Integer.toString(def.getDataSetId())));
+                if (def.canRead(getUser()))
+                    datasets.add(new GWTPair(def.getLabel(), Integer.toString(def.getDataSetId())));
             }
         }
         return datasets;

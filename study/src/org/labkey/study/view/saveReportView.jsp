@@ -20,19 +20,15 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.reports.ReportManager" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
@@ -131,8 +127,8 @@
 <%
         for (DataSet def : defs)
         {
-%>
-            <option <%=def.getDataSetId() == showWithDataset ? " selected" : ""%> value="<%=def.getDataSetId()%>"><%=PageFlowUtil.filter(def.getLabel())%></option>
+            if (def.canRead(context.getUser())) %>
+                <option <%=def.getDataSetId() == showWithDataset ? " selected" : ""%> value="<%=def.getDataSetId()%>"><%=PageFlowUtil.filter(def.getLabel())%></option>
 <%
         }
 %>
