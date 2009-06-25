@@ -316,7 +316,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
         public String getDescription()
         {
-            return "task " + getJobId();
+            return "test job";
         }
 
         public ActionURL getStatusHref()

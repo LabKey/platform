@@ -1357,10 +1357,12 @@ public class MothershipController extends SpringActionController
             super(new DataRegion(), form, errors);
 
             ButtonBar bb = new ButtonBar();
-            ActionButton b = new ActionButton(new ActionURL(UpdateStackTraceAction.class, c), "Save");
+            ActionURL saveURL = new ActionURL(UpdateStackTraceAction.class, c);
+            ActionButton b = new ActionButton(saveURL, "Save");
             b.setDisplayPermission(ACL.PERM_UPDATE);
             bb.add(b);
             getDataRegion().setButtonBar(bb);
+            getDataRegion().setFormActionUrl(saveURL);
 
             getDataRegion().setTable(MothershipManager.get().getTableInfoExceptionStackTrace());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionStackTrace(), "ExceptionStackTraceId,StackTrace,BugNumber,Comments");

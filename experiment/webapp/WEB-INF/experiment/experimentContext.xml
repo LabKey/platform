@@ -17,12 +17,12 @@
 
         <property name="pipelines">
             <list>
-                <!-- X! Tandem search pipeline -->
+                <!-- Move runs job pipeline -->
                 <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
                     <constructor-arg type="java.lang.Class" value="org.labkey.experiment.pipeline.MoveRunsPipelineJob"/>
                     <property name="taskProgressionSpec">
                         <list>
-                            <bean id="tppTask" class="org.labkey.api.pipeline.TaskId">
+                            <bean id="moveRuns" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.experiment.pipeline.MoveRunsTask</value></constructor-arg>
                             </bean>
                         </list>

@@ -56,6 +56,21 @@
         <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
     </connector>
 
+    <connector name="jmsConnectorFastaCheckWork" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
+        <properties>
+            <!-- JMS connector from JNDI. -->
+            <property name="connectionFactoryJndiName" value="java:comp/env/jms/ConnectionFactory"/>
+            <property name="jndiInitialFactory" value="org.apache.naming.java.javaURLContextFactory"/>
+            <property name="persistentDelivery" value="true"/>
+
+            <property name="specification" value="1.1"/>
+        </properties>
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
+                maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
+
+        <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
+    </connector>
+
     <connector name="jmsConnectorGlobus" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
         <properties>
             <!-- JMS connector from JNDI. -->
@@ -181,6 +196,10 @@
 
             <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
+            <properties>
+                <property name="location" value="webserver-high-priority" />
+            </properties>
         </mule-descriptor>
 
         <mule-descriptor name="PipelineJobRunnerGlobusUMO"
@@ -201,6 +220,36 @@
 
             <properties>
                 <property name="location" value="cluster" />
+            </properties>
+        </mule-descriptor>
+
+        <!-- Define a worker for doing FASTA checks  -->
+        <mule-descriptor name="PipelineJobRunnerFastaCheckUMO"
+            implementation="org.labkey.pipeline.mule.PipelineTaskRunner">
+            <inbound-router>
+                <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
+                        responseTransformers="NoOpTransformer" connector="jmsConnectorFastaCheckWork">
+                    <filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">
+                        <properties>
+                            <property name="location" value="webserver-fasta-check"/>
+                        </properties>
+                    </filter>
+                </endpoint>
+            </inbound-router>
+
+            <!-- Return to job queue (task runner cannot complete) -->
+            <outbound-router>
+                <router className="org.mule.routing.outbound.OutboundPassThroughRouter">
+                    <endpoint type="sender" address="JobMQ" transformers="JobToJMSMessage"
+                            connector="jmsConnectorFastaCheckWork" />
+                </router>
+            </outbound-router>
+
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
+            <properties>
+                <property name="location" value="webserver-fasta-check" />
             </properties>
         </mule-descriptor>
 

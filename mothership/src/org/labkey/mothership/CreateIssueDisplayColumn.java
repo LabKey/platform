@@ -66,7 +66,9 @@ public class CreateIssueDisplayColumn extends DataColumn
         String firstLocation = reader.readLine();
         String location = firstLocation;
         String separator = " in ";
-        while (location != null && !location.contains("org.labkey") && !location.contains("org.fhcrc") && location.contains(ConnectionWrapper.class.getName()))
+        while (location != null &&
+                (!location.contains("org.labkey") || location.contains(ConnectionWrapper.class.getPackage().getName())) &&
+                !location.contains("org.fhcrc"))
         {
             location = reader.readLine();
             separator = " from ";
