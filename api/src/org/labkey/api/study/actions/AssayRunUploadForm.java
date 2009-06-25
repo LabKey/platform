@@ -437,9 +437,15 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         DefaultValueService.get().clearDefaultValues(getContainer(), domain, getUser());
     }
 
-    public void saveDefaultValues(Map<DomainProperty, String> values) throws ExperimentException
+    public void saveDefaultBatchValues() throws ExperimentException
     {
-        Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(values);
+        Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getBatchProperties());
+        DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
+    }
+
+    public void saveDefaultRunValues() throws ExperimentException
+    {
+        Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getRunProperties());
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
     }
 

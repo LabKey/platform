@@ -39,7 +39,6 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -644,7 +643,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             throw new UnsupportedOperationException("Not Supported");
         }
 
-        public void saveDefaultValues(Map<DomainProperty, String> values) throws ExperimentException
+        public void saveDefaultBatchValues() throws ExperimentException
+        {
+            throw new UnsupportedOperationException("Not Supported");
+        }
+
+        public void saveDefaultRunValues() throws ExperimentException
         {
             throw new UnsupportedOperationException("Not Supported");
         }

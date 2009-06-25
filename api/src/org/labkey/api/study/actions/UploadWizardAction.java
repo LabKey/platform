@@ -22,16 +22,17 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.PropertyValidationError;
@@ -42,11 +43,9 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.util.Pair;
-import org.labkey.api.qc.TransformResult;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -662,15 +661,13 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 exp = ExperimentService.get().getExpExperiment(form.getBatchId().intValue());
             }
 
-            AssayProvider provider = form.getProvider();
-
             Pair<ExpRun, ExpExperiment> insertedValues = form.getProvider().saveExperimentRun(form, exp);
 
             ExpRun run = insertedValues.getKey();
             form.setBatchId(insertedValues.getValue().getRowId());
 
-            form.saveDefaultValues(form.getBatchProperties());
-            form.saveDefaultValues(form.getRunProperties());
+            form.saveDefaultBatchValues();
+            form.saveDefaultRunValues();
             getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
             AssayDataCollector collector = form.getSelectedDataCollector();
             if (collector != null)

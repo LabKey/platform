@@ -1140,7 +1140,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void debug(Object message, Throwable t)
         {
-            getClassLogger().debug(message, t);
+            getClassLogger().debug(getSystemLogMessage(message), t);
             super.debug(message, t);
         }
 
@@ -1151,7 +1151,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void info(Object message, Throwable t)
         {
-            getClassLogger().info(message, t);
+            getClassLogger().info(getSystemLogMessage(message), t);
             super.info(message, t);
         }
 
@@ -1162,7 +1162,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void warn(Object message, Throwable t)
         {
-            getClassLogger().warn(message, t);
+            getClassLogger().warn(getSystemLogMessage(message), t);
             super.warn(message, t);
         }
 
@@ -1173,7 +1173,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void error(Object message, Throwable t)
         {
-            getClassLogger().error(message, t);
+            getClassLogger().error(getSystemLogMessage(message), t);
             super.error(message, t);
             setErrorStatus(message);
         }
@@ -1185,9 +1185,22 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void fatal(Object message, Throwable t)
         {
-            getClassLogger().error(message, t);
+            getClassLogger().fatal(getSystemLogMessage(message), t);
             super.fatal(message, t);
             setErrorStatus(message);
+        }
+
+        private String getSystemLogMessage(Object message)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("From pipeline job log file ");
+            sb.append(getLogFile().getPath());
+            if (message != null)
+            {
+                sb.append("\n");
+                sb.append(message);
+            }
+            return sb.toString();
         }
 
         public void setErrorStatus(Object message)

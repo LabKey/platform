@@ -71,7 +71,9 @@ public interface AssayRunUploadContext
 
     void saveDefaultValues(Map<DomainProperty, String> values, String scope) throws ExperimentException;
 
-    void saveDefaultValues(Map<DomainProperty, String> values) throws ExperimentException;
+    void saveDefaultBatchValues() throws ExperimentException;
+
+    void saveDefaultRunValues() throws ExperimentException;
 
     void clearDefaultValues(Domain domain) throws ExperimentException;
 

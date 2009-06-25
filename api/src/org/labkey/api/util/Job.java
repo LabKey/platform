@@ -16,11 +16,10 @@
 
 package org.labkey.api.util;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: jeckels
@@ -28,16 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 */
 public abstract class Job implements Future, Runnable
 {
-    private static AtomicInteger _counter = new AtomicInteger(0);
-
     transient Future _task = null;
-    transient int _jobId;
     transient long _startTime = 0;
     transient long _finishTime = 0;
 
     public Job()
     {
-        _jobId = _counter.incrementAndGet();
         //assert MemTracker.put(this);
     }
 
@@ -49,11 +44,6 @@ public abstract class Job implements Future, Runnable
     {
         if (null != t)
             JobRunner._log.error("Uncaught exception in Job: " + this.toString(), t);
-    }
-
-    public int getJobId()
-    {
-        return _jobId;
     }
 
     //
@@ -98,7 +88,7 @@ public abstract class Job implements Future, Runnable
 
     public String toString()
     {
-        return "" + getJobId() + "(" + stateString(this) + ")";
+        return "(" + stateString(this) + ")";
     }
 
     private static String stateString(Job job)

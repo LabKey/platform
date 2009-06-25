@@ -66,12 +66,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
                     Map<String, Object> values = getBulkProperties();
                     for (DomainProperty prop : _runProperties.keySet())
                     {
-                        Object value = values.get(prop.getName());
-                        if (value == null)
-                        {
-                            value = values.get(prop.getLabel());
-                        }
-                        _runProperties.put(prop, value == null ? null : value.toString());
+                        _runProperties.put(prop, getPropertyValue(values, prop));
                     }
                 }
                 catch (ExperimentException e)
@@ -81,6 +76,17 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
             }
         }
         return _runProperties;
+    }
+
+    /** @return String-ified version of the property from the bulk set of values */
+    protected String getPropertyValue(Map<String, Object> values, DomainProperty prop)
+    {
+        Object value = values.get(prop.getName());
+        if (value == null)
+        {
+            value = values.get(prop.getLabel());
+        }
+        return value == null ? null : value.toString();
     }
 
     protected List<Map<String, Object>> getParsedBulkProperties() throws ExperimentException
@@ -121,6 +127,16 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
         }
         return _bulkProperties;
     }
+
+    public void saveDefaultRunValues() throws ExperimentException
+    {
+        if (!isBulkUploadAttempted())
+        {
+            // Only save values that the user entered into the form, not ones from a pasted TSV
+            super.saveDefaultRunValues();
+        }
+    }
+
 
     public String getRawBulkProperties()
     {
