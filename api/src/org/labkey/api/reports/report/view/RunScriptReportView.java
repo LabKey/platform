@@ -72,7 +72,7 @@ public class RunScriptReportView extends RunReportView
         }
     }
 
-    protected Report getReport() throws Exception
+    protected Report getReport()
     {
         return _report;
     }

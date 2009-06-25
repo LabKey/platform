@@ -43,7 +43,7 @@ public class RunChartReportView extends RunReportView
             _reportId = _report.getDescriptor().getReportId();
     }
     
-    protected Report getReport() throws Exception
+    protected Report getReport()
     {
         return _report;
     }

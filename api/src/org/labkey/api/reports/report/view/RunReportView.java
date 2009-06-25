@@ -113,7 +113,7 @@ public abstract class RunReportView extends TabStripView
         _errors = errors;
     }
 
-    protected abstract Report getReport() throws Exception;
+    protected abstract Report getReport();
 
     protected static class ReportTabInfo extends TabInfo
     {
