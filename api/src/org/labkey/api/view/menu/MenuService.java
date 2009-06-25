@@ -48,7 +48,7 @@ public class MenuService
             //menus.add(new HomeLinkMenu());
             menus.add(new ContainerMenu(context));
             menus.add(new ProjectsMenu(context));
-            menus.add(new FolderAdminMenu(context));
+            //menus.add(new FolderAdminMenu(context));
             menus.add(new ProjectAdminMenu(context));
             menus.add(new SiteAdminMenu(context));
             menus.add(new FooterMenu(context, page));

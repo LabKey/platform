@@ -87,10 +87,6 @@ public class PopupAdminView extends PopupMenuView
             projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
             navTree.addChild(projectAdmin);
 
-            NavTree folderAdmin = new NavTree("Manage Folder");
-            folderAdmin.addChildren(FolderAdminMenu.getNavTree(context));
-            navTree.addChild(folderAdmin);
-
             c.getFolderType().addManageLinks(navTree, c);
 
             Comparator<Module> moduleComparator = new Comparator<Module>()
