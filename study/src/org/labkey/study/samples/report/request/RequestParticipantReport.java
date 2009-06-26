@@ -4,7 +4,6 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.view.ActionURL;
@@ -34,9 +33,11 @@ import java.sql.SQLException;
  */
 public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.RequestSummaryByVisitType>
 {
-    public RequestParticipantReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    private boolean _completeRequestsOnly;
+    public RequestParticipantReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
     {
         super(titlePrefix, visits, filter, parameters);
+        _completeRequestsOnly = parameters.isCompletedRequestsOnly();
     }
 
     public Collection<Row> createRows()
@@ -45,7 +46,8 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         {
             SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
             SampleManager.RequestSummaryByVisitType[] countSummary =
-                    SampleManager.getInstance().getRequestSummaryBySite(_container, getUser(), _filter, isViewPtidList(), level, getBaseCustomView());
+                    SampleManager.getInstance().getRequestSummaryBySite(_container, getUser(), _filter,
+                            isViewPtidList(), level, getBaseCustomView(), _completeRequestsOnly);
             Map<String, Row> rows = new TreeMap<String, Row>();
             for (SampleManager.RequestSummaryByVisitType count : countSummary)
             {
@@ -112,6 +114,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
     protected String getFilterQueryString(VisitImpl visit, SampleManager.RequestSummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
-                SpecimenQueryView.PARAMS.showRequestedBySite + "=" + summary.getDestinationSiteId();
+                (_completeRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedBySite : SpecimenQueryView.PARAMS.showRequestedBySite)
+                + "=" + summary.getDestinationSiteId();
     }
 }

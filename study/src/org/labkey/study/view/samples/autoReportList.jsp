@@ -26,6 +26,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ReportConfigurationBean> me = (JspView<SpringSpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -36,6 +37,7 @@
     CohortImpl[] cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
+    String optionLabelStyle = "text-align:right";
 %>
 <script type="text/javascript">
     function showOrHide(suffix)
@@ -52,6 +54,7 @@
             reportParameters.style.display = "none";
             showOptionsLink.innerHTML = "show options";
         }
+        return false;
     }
 </script>
 <%
@@ -73,24 +76,23 @@
             String formName = "form" + showHideSuffix;
 %>
     <form action="<%=  new ActionURL(factory.getAction(), container).getLocalURIString() %>" name="<%= formName %>" method="GET">
+        <%
+            if (bean.isListView())
+            {
+        %>
+            <tr class="<%= rowClass %>">
+                <th style="text-align:right"><%= h(factory.getLabel())%></th>
+                <td class="<%= rowClass %>">
+                    [<a href="#" id="showOptionsLink<%= showHideSuffix %>" onclick="return showOrHide('<%= showHideSuffix %>')">show options</a>]
+                <td valign="top" align="left" class="<%= rowClass %>">
+                    <%= generateSubmitButton("View") %>
+                </td>
+            </tr>
+        <%
+            }
+        %>
         <tr class="<%= rowClass %>">
-            <%
-                if (bean.isListView())
-                {
-            %>
-            <th style="text-align:right;vertical-align:top"><%= h(factory.getLabel())%></th>
-            <%
-                }
-            %>
-            <td class="<%= rowClass %>">
-                <%
-                    if (bean.isListView())
-                    {
-                %>
-                [<a href="#" id="showOptionsLink<%= showHideSuffix %>" onclick="showOrHide('<%= showHideSuffix %>')">show options</a>]<br>
-                <%
-                    }
-                %>
+            <td colspan="3">
                 <span id="reportParameters<%= showHideSuffix %>" style="display:<%= bean.isListView() ? "none" : "block" %>">
                     <table>
                 <%
@@ -98,6 +100,7 @@
                     {
                 %>
                     <tr>
+                        <td style="<%= optionLabelStyle %>">Cohort filter</td>
                         <td>
                             <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>">
                                 <option value="">All Cohorts</option>
@@ -121,6 +124,7 @@
                     {
                 %>
                     <tr>
+                        <td style="<%= optionLabelStyle %>">Availability status</td>
                         <td>
                             <select name="statusFilterName">
                             <%
@@ -143,6 +147,7 @@
                         String viewPickerHtml = factory.getCustomViewPicker();
                 %>
                     <tr>
+                        <td style="<%= optionLabelStyle %>">Base view</td>
                         <td>
                             <%= viewPickerHtml %>
                         </td>
@@ -150,12 +155,13 @@
                 <%
                     }
 
-                    List<String> additionalFormInputs = factory.getAdditionalFormInputHtml();
-                    for (String html : additionalFormInputs)
+                    List<Pair<String, String>> additionalFormInputs = factory.getAdditionalFormInputHtml();
+                    for (Pair<String, String> inputPair : additionalFormInputs)
                     {
                 %>
                     <tr>
-                        <td><%= html %></td>
+                        <td style="<%= optionLabelStyle %>"><%= h(inputPair.getKey()) %></td>
+                        <td><%= inputPair.getValue() %></td>
                     </tr>
                 <%
                     }
@@ -165,6 +171,7 @@
                             factory.isViewPtidList();
                 %>
                     <tr>
+                        <td>&nbsp;</td>
                         <td>
                             <input type="checkbox" name="hideEmptyColumns" <%= factory.isHideEmptyColumns() ? "CHECKED" : "" %>> Hide Empty Columns<br>
                             <input type="checkbox" name="viewVialCount" <%= !atLeastOneChecked || factory.isViewVialCount() ? "CHECKED" : "" %>> Vial Counts<br>
@@ -184,7 +191,7 @@
                     {
                 %>
                     <tr>
-                        <td>
+                        <td colspan="2">
                         <%= buttonImg("Refresh",  "document['" + formName + "']['excelExport'].value=false;") %>
                         <%= buttonImg("Print View", "document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
                         <%= buttonImg("Export to Excel", "document['" + formName + "']['excelExport'].value=true;") %>
@@ -196,16 +203,6 @@
                 </table>
                 </span>
             </td>
-            <%
-                if (bean.isListView())
-                {
-            %>
-            <td valign="top" align="left" class="<%= rowClass %>">
-                <%= generateSubmitButton("View") %>
-            </td>
-            <%
-                }
-            %>
         </tr>
         <input type="hidden" name="_print" value="">
         <input type="hidden" name="excelExport" value="">

@@ -1,7 +1,6 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
@@ -10,6 +9,7 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.study.Site;
 
 import java.util.List;
@@ -35,7 +35,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 24, 2008 1:38:40 PM
 */
-public class RequestSiteReportFactory extends TypeReportFactory
+public class RequestSiteReportFactory extends BaseRequestReportFactory
 {
     private Integer _siteId;
 
@@ -83,16 +83,24 @@ public class RequestSiteReportFactory extends TypeReportFactory
             for (SiteImpl site : sites)
             {
                 SimpleFilter filter = new SimpleFilter();
+                Object[] params;
+                if (isCompletedRequestsOnly())
+                    params = new Object[] { Boolean.TRUE, Boolean.TRUE, site.getRowId(), getContainer().getId()};
+                else
+                    params = new Object[] { Boolean.TRUE, site.getRowId(), getContainer().getId()};
                 filter.addWhereClause("globaluniqueid IN\n" +
                         "(\n" +
                         "     SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE samplerequestid IN\n" +
                         "     (\n" +
                         "          SELECT r.rowid FROM study.SampleRequest r JOIN study.SampleRequestStatus rs ON\n" +
-                        "           r.StatusId = rs.RowId AND rs.SpecimensLocked = ? WHERE destinationsiteid = ? AND r.container = ?\n" +
+                        "           r.StatusId = rs.RowId\n" +
+                        "           AND rs.SpecimensLocked = ?\n" +
+                        (isCompletedRequestsOnly() ? "           AND rs.FinalState = ?\n" : "") +
+                        "           WHERE destinationsiteid = ? AND r.container = ?\n" +
                         "     )\n" +
-                        ")", new Object[] { Boolean.TRUE, site.getRowId(), getContainer().getId()});
+                        ")", params);
                 addBaseFilters(filter);
-                reports.add(new RequestSiteReport(site.getLabel(), filter, this, visits, site.getRowId()));
+                reports.add(new RequestSiteReport(site.getLabel(), filter, this, visits, site.getRowId(), isCompletedRequestsOnly()));
             }
             return reports;
         }
@@ -107,7 +115,7 @@ public class RequestSiteReportFactory extends TypeReportFactory
         return SpringSpecimenController.RequestSiteReportAction.class;
     }
 
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         try
         {
@@ -124,8 +132,8 @@ public class RequestSiteReportFactory extends TypeReportFactory
                 builder.append("</option>\n");
             }
             builder.append("</select>");
-            List<String> inputs = new ArrayList<String>(super.getAdditionalFormInputHtml());
-            inputs.add(builder.toString());
+            List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
+            inputs.add(new Pair<String, String>("Requesting location(s)", builder.toString()));
             return inputs;
         }
         catch (SQLException e)

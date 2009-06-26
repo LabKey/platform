@@ -3,6 +3,7 @@ package org.labkey.study.samples.report.specimentype;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.SampleManager;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -27,9 +28,9 @@ import java.util.ArrayList;
  */
 public abstract class TypeReportFactory extends SpecimenVisitReportParameters
 {
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<String> inputs = new ArrayList<String>();
+        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>();
         inputs.addAll(super.getAdditionalFormInputHtml());
 
         StringBuilder builder = new StringBuilder();
@@ -44,7 +45,7 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
             builder.append(PageFlowUtil.filter(level.getLabel())).append("</option>");
         }
         builder.append("</select>");
-        inputs.add(builder.toString());
+        inputs.add(new Pair<String, String>("Type breakdown", builder.toString()));
         return inputs;
     }
 }

@@ -28,14 +28,20 @@ import org.labkey.study.SampleManager;
 public class RequestEnrollmentSiteReport extends SpecimenTypeVisitReport
 {
     private int _siteId;
-    public RequestEnrollmentSiteReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, VisitImpl[] visits, int siteId)
+    private boolean _completedRequestsOnly;
+
+    public RequestEnrollmentSiteReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters,
+                                       VisitImpl[] visits, int siteId, boolean completedRequestsOnly)
     {
         super(titlePrefix, visits, filter, parameters);
         _siteId = siteId;
+        _completedRequestsOnly = completedRequestsOnly;
     }
 
     protected String getFilterQueryString(VisitImpl visit, SampleManager.SummaryByVisitType summary)
     {
-        return super.getFilterQueryString(visit, summary)  + "&" + SpecimenQueryView.PARAMS.showRequestedByEnrollmentSite + "=" + _siteId;
+        return super.getFilterQueryString(visit, summary)  + "&" +
+                (_completedRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedByEnrollmentSite :
+                                          SpecimenQueryView.PARAMS.showRequestedByEnrollmentSite) + "=" + _siteId;
     }
 }

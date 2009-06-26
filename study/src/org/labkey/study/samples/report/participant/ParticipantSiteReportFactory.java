@@ -10,6 +10,7 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Site;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -87,9 +88,9 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         return false;
     }
 
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<String> inputs = new ArrayList<String>(super.getAdditionalFormInputHtml());
+        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
         Set<SiteImpl> sites = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", sites, _enrollmentSiteId));
         return inputs;

@@ -1,7 +1,6 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
@@ -10,6 +9,7 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Site;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.Collections;
@@ -35,7 +35,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 24, 2008 1:38:40 PM
 */
-public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
+public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
 {
     private Integer _enrollmentSiteId;
 
@@ -96,24 +96,27 @@ public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
                         "     Participant.Container = Specimen.Container AND\n" +
                         "     Participant.ParticipantId = Specimen.Ptid AND\n" +
                         "     Status.SpecimensLocked = ? AND\n" +
+                        (isCompletedRequestsOnly() ? "     Status.FinalState = ? AND\n" : "") +
                         "     Specimen.Container = ? AND\n" +
                         "     Participant.EnrollmentSiteId ";
-                Object[] params;
+                List<Object> paramList = new ArrayList<Object>();
+                paramList.add(Boolean.TRUE);
+                if (isCompletedRequestsOnly())
+                    paramList.add(Boolean.TRUE);
+                paramList.add(getContainer().getId());
+
                 if (site == null)
-                {
                     sql += "IS NULL)";
-                    params = new Object[] { Boolean.TRUE, getContainer().getId()};
-                }
                 else
                 {
                     sql += "= ?)";
-                    params = new Object[] { Boolean.TRUE, getContainer().getId(), site.getRowId() };
+                    paramList.add(site.getRowId());
                 }
 
-                filter.addWhereClause(sql, params, "GlobalUniqueId");
+                filter.addWhereClause(sql, paramList.toArray(new Object[paramList.size()]), "GlobalUniqueId");
                 addBaseFilters(filter);
                 reports.add(new RequestEnrollmentSiteReport(site == null ? "[Unassigned enrollment site]" : site.getLabel(),
-                        filter, this, visits, site != null ? site.getRowId() : -1));
+                        filter, this, visits, site != null ? site.getRowId() : -1, isCompletedRequestsOnly()));
             }
             return reports;
         }
@@ -128,9 +131,9 @@ public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
         return SpringSpecimenController.RequestEnrollmentSiteReportAction.class;
     }
 
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<String> inputs = new ArrayList<String>(super.getAdditionalFormInputHtml());
+        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
         Set<SiteImpl> sites = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", sites, _enrollmentSiteId));
         return inputs;

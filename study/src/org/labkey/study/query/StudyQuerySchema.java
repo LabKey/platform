@@ -80,6 +80,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add("Visit");
             ret.add("SpecimenEvent");
             ret.add("SpecimenDetail");
+            ret.add("SpecimenSummary");
             ret.add("SpecimenVialCount");
             ret.add(SIMPLE_SPECIMEN_TABLE_NAME);
             ret.add("SpecimenRequest");

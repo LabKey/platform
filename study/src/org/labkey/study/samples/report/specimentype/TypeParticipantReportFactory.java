@@ -8,6 +8,7 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.Pair;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -118,9 +119,9 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         return SpringSpecimenController.TypeParticipantReportAction.class;
     }
 
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<String> inputs = new ArrayList<String>();
+        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>();
         inputs.addAll(super.getAdditionalFormInputHtml());
         inputs.add(getParticipantPicker("participantId", _participantId));
         return inputs;

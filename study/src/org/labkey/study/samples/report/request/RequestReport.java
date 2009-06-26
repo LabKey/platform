@@ -27,13 +27,17 @@ import org.labkey.study.SampleManager;
  */
 public class RequestReport extends SpecimenTypeVisitReport
 {
-    public RequestReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, VisitImpl[] visits)
+    private boolean _completedRequestsOnly;
+
+    public RequestReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, VisitImpl[] visits, boolean completedRequestsOnly)
     {
         super(titlePrefix, visits, filter, parameters);
+        _completedRequestsOnly = completedRequestsOnly;
     }
 
     protected String getFilterQueryString(VisitImpl visit, SampleManager.SummaryByVisitType summary)
     {
-        return super.getFilterQueryString(visit, summary)  + "&" + SpecimenQueryView.PARAMS.showRequestedOnly + "=true";
+        return super.getFilterQueryString(visit, summary)  + "&" +
+                (_completedRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedOnly  : SpecimenQueryView.PARAMS.showRequestedOnly) + "=true";
     }
 }

@@ -2201,6 +2201,7 @@ study/src/org/labkey/study/samples/report/participant/ParticipantSiteReportFacto
 study/src/org/labkey/study/samples/report/participant/ParticipantSummaryReportFactory.java -text
 study/src/org/labkey/study/samples/report/participant/ParticipantTypeReportFactory.java -text
 study/src/org/labkey/study/samples/report/participant/ParticipantVisitReport.java -text
+study/src/org/labkey/study/samples/report/request/BaseRequestReportFactory.java -text
 study/src/org/labkey/study/samples/report/request/RequestEnrollmentSiteReport.java -text
 study/src/org/labkey/study/samples/report/request/RequestEnrollmentSiteReportFactory.java -text
 study/src/org/labkey/study/samples/report/request/RequestParticipantReport.java -text

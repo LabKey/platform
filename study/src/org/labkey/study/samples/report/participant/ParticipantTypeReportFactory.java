@@ -8,6 +8,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -62,7 +63,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return false;
     }
 
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         return Collections.singletonList(getSpecimenTypePicker());
     }
@@ -137,7 +138,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return null;
     }
 
-    protected String getSpecimenTypePicker()
+    protected Pair<String, String> getSpecimenTypePicker()
     {
         StringBuilder builder = new StringBuilder();
         SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
@@ -156,7 +157,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
         appendOptions(summary.getPrimaryTypes(), builder, null, _selectedType, 0);
         builder.append("</select>");
-        return builder.toString();
+        return new Pair<String, String>("Specimen type", builder.toString());
     }
 
     public String getLabel()

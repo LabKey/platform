@@ -4,6 +4,7 @@ import org.labkey.api.view.ViewFormData;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.CustomView;
@@ -55,10 +56,12 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
     public enum Status
     {
         ALL("All vials"),
-        AVAILABLE("Only available vials"),
-        UNAVAILABLE("Only unavailable vials"),
-        REQUESTED("Only requested vials"),
-        NOT_REQUESTED("Only non-requested vials");
+        AVAILABLE("Available vials"),
+        UNAVAILABLE("Unavailable vials"),
+        REQUESTED_INPROCESS("Vials in any request (including in-process)"),
+        NOT_REQUESTED_INPROCESS("Vials not in in any request (including in-process)"),
+        REQUESTED_COMPLETE("Vials in completed requests"),
+        NOT_REQUESTED_COMPLETE("Vials not in completed requests");
 
         private String _caption;
         public String getCaption()
@@ -118,7 +121,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         return _cohort;
     }
 
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         return Collections.emptyList();
     }
@@ -217,6 +220,13 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
             addCohortFilter(filter, getCohortId());
     }
 
+    public static final String COMPLETED_REQUESTS_FILTER_SQL =
+            "SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen\n" +
+                "\tJOIN study.SampleRequest ON study.SampleRequestSpecimen.SampleRequestId = study.SampleRequest.RowId\n" +
+                "\tJOIN study.SampleRequestStatus ON study.SampleRequest.StatusId = study.SampleRequestStatus.RowId\n" +
+                "\tWHERE study.SampleRequestStatus.SpecimensLocked = ? AND study.SampleRequestStatus.FinalState = ?\n" +
+                "\tAND study.SampleRequest.Container = ?";
+
     protected void addAvailabilityFilter(SimpleFilter filter, Status status)
     {
         switch (status)
@@ -229,11 +239,19 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
             case UNAVAILABLE:
                 filter.addCondition("Available", Boolean.FALSE);
                 break;
-            case REQUESTED:
+            case REQUESTED_INPROCESS:
                 filter.addCondition("LockedInRequest", Boolean.TRUE);
                 break;
-            case NOT_REQUESTED:
+            case NOT_REQUESTED_INPROCESS:
                 filter.addCondition("LockedInRequest", Boolean.FALSE);
+                break;
+            case REQUESTED_COMPLETE:
+                filter.addWhereClause("GlobalUniqueId IN (\n" + COMPLETED_REQUESTS_FILTER_SQL + ")", 
+                        new Object[] { Boolean.TRUE, Boolean.TRUE, getContainer().getId()});
+                break;
+            case NOT_REQUESTED_COMPLETE:
+                filter.addWhereClause("GlobalUniqueId NOT IN (\n" + COMPLETED_REQUESTS_FILTER_SQL + ")",
+                        new Object[] { Boolean.TRUE, Boolean.TRUE, getContainer().getId()});
                 break;
         }
     }
@@ -256,7 +274,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         }
     }
 
-    protected String getEnrollmentSitePicker(String inputName, Set<SiteImpl> sites, Integer selectedSiteId)
+    protected Pair<String, String> getEnrollmentSitePicker(String inputName, Set<SiteImpl> sites, Integer selectedSiteId)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"").append(inputName).append("\">");
@@ -279,7 +297,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
             }
         }
         builder.append("</select>");
-        return builder.toString();
+        return new Pair<String, String>("Enrollment site", builder.toString());
     }
 
     public String getCustomViewPicker()
@@ -317,7 +335,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         return builder.toString();
     }
 
-    protected String getParticipantPicker(String inputName, String selectedParticipantId)
+    protected Pair<String, String> getParticipantPicker(String inputName, String selectedParticipantId)
     {
         try
         {
@@ -340,7 +358,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
                 first = false;
             }
             builder.append("</select>");
-            return builder.toString();
+            return new Pair<String, String>("Participant(s)", builder.toString());
         }
         catch (SQLException e)
         {

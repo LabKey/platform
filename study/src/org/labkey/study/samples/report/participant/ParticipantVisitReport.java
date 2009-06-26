@@ -109,7 +109,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         {
             String filterQueryString = getFilterQueryString(visit, summary);
             if (filterQueryString != null && filterQueryString.length() > 0)
-                linkHtml += "&" + getFilterQueryString(visit, summary);
+                linkHtml += "&" + filterQueryString;
         }
         return buildCellHtml(visit, summary, linkHtml);
     }

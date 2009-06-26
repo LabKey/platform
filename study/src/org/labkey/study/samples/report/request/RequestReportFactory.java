@@ -1,7 +1,6 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
@@ -31,7 +30,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 24, 2008 1:38:40 PM
 */
-public class RequestReportFactory extends TypeReportFactory
+public class RequestReportFactory extends BaseRequestReportFactory
 {
     public String getLabel()
     {
@@ -52,12 +51,21 @@ public class RequestReportFactory extends TypeReportFactory
                 return Collections.emptyList();
             List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
             VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
-                SimpleFilter filter = new SimpleFilter();
+            SimpleFilter filter = new SimpleFilter();
+            if (isCompletedRequestsOnly())
+            {
+                filter.addWhereClause("globaluniqueid IN\n" +
+                        "(" + COMPLETED_REQUESTS_FILTER_SQL + ")",
+                        new Object[] { Boolean.TRUE, Boolean.TRUE, getContainer().getId()});
+            }
+            else
+            {
                 filter.addWhereClause("globaluniqueid IN\n" +
                         "(SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE container = ?)",
                         new Object[] { getContainer().getId()});
-                addBaseFilters(filter);
-                reports.add(new RequestReport("All Requested Specimens", filter, this, visits));
+            }
+            addBaseFilters(filter);
+            reports.add(new RequestReport("All Requested Specimens", filter, this, visits, isCompletedRequestsOnly()));
             return reports;
         }
         catch (SQLException e)

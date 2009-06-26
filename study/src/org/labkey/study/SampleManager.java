@@ -2212,7 +2212,7 @@ public class SampleManager
                 ptidSpecimenSQL, sqlHelper.getViewSql().getParamsArray(), SummaryByVisitParticipant.class);
     }
 
-    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantLists, SpecimenTypeLevel level, CustomView baseView) throws SQLException
+    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantLists, SpecimenTypeLevel level, CustomView baseView, boolean completeRequestsOnly) throws SQLException
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2240,12 +2240,15 @@ public class SampleManager
                 "JOIN study.SampleRequestStatus AS Status ON\n" +
                 "\tStatus.Container = Request.Container AND\n" +
                 "\tStatus.RowId = Request.StatusId and Status.SpecimensLocked = ?\n" +
+                (completeRequestsOnly ? "\tAND Status.FinalState = ?\n" : "") +
                 "GROUP BY Specimen.Container, Specimen.ParticipantId, Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit\n" +
                 "ORDER BY Specimen.Container, Specimen.ParticipantId, Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit";
 
-        Object[] params = new Object[sqlHelper.getViewSql().getParamsArray().length + 1];
+        Object[] params = new Object[sqlHelper.getViewSql().getParamsArray().length + 1 + (completeRequestsOnly ? 1 : 0)];
         System.arraycopy(sqlHelper.getViewSql().getParamsArray(), 0, params, 0, sqlHelper.getViewSql().getParamsArray().length);
         params[params.length - 1] = Boolean.TRUE;
+        if (completeRequestsOnly)
+            params[params.length - 2] = Boolean.TRUE;
         ResultSet rs = null;
         List<SummaryByVisitType> ret;
         try

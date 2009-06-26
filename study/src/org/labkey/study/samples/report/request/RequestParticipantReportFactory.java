@@ -1,7 +1,6 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.SampleManager;
 import org.labkey.study.model.StudyManager;
@@ -10,6 +9,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.Pair;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -32,7 +32,7 @@ import java.sql.SQLException;
  * User: brittp
  * Created: Feb 5, 2008 2:03:52 PM
  */
-public class RequestParticipantReportFactory extends TypeReportFactory
+public class RequestParticipantReportFactory extends BaseRequestReportFactory
 {
     private String _participantId;
 
@@ -61,9 +61,9 @@ public class RequestParticipantReportFactory extends TypeReportFactory
         return false;
     }
 
-    public List<String> getAdditionalFormInputHtml()
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
-        List<String> inputs = new ArrayList<String>();
+        List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>();
         inputs.addAll(super.getAdditionalFormInputHtml());
         inputs.add(getParticipantPicker("participantId", _participantId));
         return inputs;
