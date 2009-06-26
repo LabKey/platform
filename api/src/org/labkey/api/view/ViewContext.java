@@ -33,6 +33,7 @@ import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -115,10 +116,29 @@ public class ViewContext extends BoundMap implements MessageSource
                 put(key, value[0]);
             else
             {
-                List list = new ArrayList(Arrays.asList(value));
+                List list = new ArrayList<String>(Arrays.asList(value));
                 put(key, list);
             }
         }
+    }
+
+
+    // Needed by background threads that call entrypoints that require ViewContexts
+    // TODO: Well-behaved interfaces should not take ViewContexts -- clean up query, et al to remove ViewContext params
+    @Deprecated
+    public static ViewContext getMockViewContext(User user, Container c, ActionURL url)
+    {
+        ViewContext context = new ViewContext();
+        context.setUser(user);
+        context.setContainer(c);
+        context.setActionURL(url);
+
+        HttpServletRequest request = AppProps.getInstance().createMockRequest();
+        if (request instanceof MockHttpServletRequest)
+            ((MockHttpServletRequest)request).setUserPrincipal(user);
+
+        HttpView.initForRequest(context, request, null);
+        return context;
     }
 
 
