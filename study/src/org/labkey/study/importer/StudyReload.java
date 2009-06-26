@@ -274,24 +274,35 @@ public class StudyReload
                     if (studyload.exists() && studyload.isFile())
                     {
                         long lastModified = studyload.lastModified();
+                        Date lastReload = study.getLastReload();
 
-                        if (null == study.getLastReload() || studyload.lastModified() > (study.getLastReload().getTime() + 1000))  // Add a second since SQL Server rounds datetimes
+                        if (null == lastReload || studyload.lastModified() > (lastReload.getTime() + 1000))  // Add a second since SQL Server rounds datetimes
                         {
                             // Try to add this study to the reload queue; if it's full, wait until next time
                             // We could submit reload pipeline jobs directly, but:
                             //  1) we need a way to throttle automatic reloads and
                             //  2) the initial import steps happen synchronously; they aren't part of the pipeline job
+
                             // TODO: Better throttling behavior (e.g., prioritize studies that check infrequently)
+
+                            // Careful: Naive approach would be to offer the container to the queue and set last reload
+                            // time on the study only if successful.  This will introduce a race condition, since the
+                            // import job and the update are likely to be updating the study at roughly the same time.
+                            // Instead, we optimistically update the last reload time before offering the container and
+                            // back out that change if the queue is full.
+                            study = study.createMutable();
+                            study.setLastReload(new Date(lastModified));
+                            StudyManager.getInstance().updateStudy(null, study);
+
                             if (QUEUE.offer(c))
                             {
-                                study = study.createMutable();
-                                study.setLastReload(new Date(lastModified));
-                                StudyManager.getInstance().updateStudy(null, study);
-
                                 return new ReloadStatus("Reloading " + getDescription(study), true);
                             }
                             else
                             {
+                                // Restore last reload so we'll try this again later
+                                study.setLastReload(lastReload);
+                                StudyManager.getInstance().updateStudy(null, study);
                                 throw new StudyImportException("Skipping reload of " + getDescription(study) + ": reload queue is full");
                             }
                         }

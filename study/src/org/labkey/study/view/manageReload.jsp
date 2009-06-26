@@ -1,4 +1,3 @@
-<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -16,13 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.importer.StudyReload.*" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    boolean allowReload = getStudy().isAllowReload();
-    ReloadInterval currentInterval = ReloadInterval.getForSeconds(getStudy().getReloadInterval());
+    StudyImpl study = getStudy();
+    boolean allowReload = study.isAllowReload();
+    ReloadInterval currentInterval = ReloadInterval.getForSeconds(study.getReloadInterval());
+
+    User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser().intValue()) : null);
 %>
 <form action="" method="post">
     <table width="80%">
@@ -58,6 +64,10 @@
                         out.println("<option value=\"" + interval.getSeconds() + "\"" + (interval == currentInterval ? " selected>" : ">") + h(interval.getDropDownLabel()) + "</option>");
             %>
             </select></td>
+        </tr>
+        <tr>
+            <th align="left" width=200>Reload User</th>
+            <td><%=allowReload ? (null == reloadUser ? "<div class=\"labkey-error\">Error: Reload user not defined!</div>" : h(reloadUser.getDisplayName(getViewContext()))) : ""%></td>
         </tr>
         <tr>
             <td width=200>&nbsp;</td>

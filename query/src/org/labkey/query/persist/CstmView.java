@@ -51,7 +51,11 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         }
         public void setName(String name)
         {
-            addCondition(Column.name, name);
+            // Blank name means default view(s) (null means don't filter on name)
+            if (0 == name.length())
+                addIsNull(Column.name);
+            else
+                addCondition(Column.name, name);
         }
         
         public void setUser(User user)

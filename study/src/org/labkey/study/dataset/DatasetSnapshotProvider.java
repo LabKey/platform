@@ -16,6 +16,7 @@
 package org.labkey.study.dataset;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -27,21 +28,20 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.IdentifierString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 /*
  * User: Karl Lum
@@ -457,18 +457,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             return HttpView.currentContext();
         else
         {
-            ViewContext context = new ViewContext();
             User user = def.getModifiedBy() != null ? def.getModifiedBy() : def.getCreatedBy();
-            context.setUser(user);
-            context.setContainer(def.getContainer());
-            context.setActionURL(new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()));
 
-            HttpServletRequest request = AppProps.getInstance().createMockRequest();
-            if (request instanceof MockHttpServletRequest)
-                ((MockHttpServletRequest)request).setUserPrincipal(user);
-
-            HttpView.initForRequest(context, request, null);
-            return context;
+            return ViewContext.getMockViewContext(user, def.getContainer(), new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()));
         }
     }
 

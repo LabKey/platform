@@ -34,6 +34,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 
 import java.beans.PropertyChangeEvent;
 import java.io.*;
@@ -200,7 +201,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         if (report.getDescriptor().getReportId() instanceof DbReportIdentifier)
             reportId = (DbReportIdentifier)(report.getDescriptor().getReportId());
         else
-            throw new RuntimeException("Can't save a report that is not stored in the database!");
+            throw new RuntimeException("Can't delete a report that is not stored in the database!");
 
         DbScope scope = getTable().getSchema().getScope();
         boolean ownsTransaction = !scope.isTransactionActive();
@@ -378,7 +379,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         for (Module module : c.getActiveModules())
         {
             List<ReportDescriptor> descriptors = module.getReportDescriptors(key);
-            if(null != descriptors)
+            if (null != descriptors)
                 moduleReportDescriptors.addAll(descriptors);
         }
 
@@ -532,6 +533,21 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         ReportDescriptor descriptor = report.getDescriptor();
 
         String key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
+
+        ViewContext context = null;
+        Report[] existingReports = getReports(user, container, key);
+
+        for (Report existingReport : existingReports)
+        {
+            if (existingReport.getDescriptor().getReportName().equalsIgnoreCase(descriptor.getReportName()))
+            {
+                if (null == context)
+                    context = ViewContext.getMockViewContext(user, container, new ActionURL());
+
+                deleteReport(context, existingReport);
+            }
+        }
+
         int rowId = _saveReport(user, container, key, descriptor).getRowId();
 
         descriptor.setReportId(new DbReportIdentifier(rowId));

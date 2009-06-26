@@ -17,6 +17,7 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang.math.NumberUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;
@@ -24,13 +25,13 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -90,7 +91,7 @@ public class StudyQueryReport extends QueryReport
 
     public ReportIdentifier renameReport(ViewContext context, String newKey, String newName) throws SQLException
     {
-        ReportIdentifier reportId = null;
+        ReportIdentifier reportId;
         // delete the wrapped custom query before creating the new one
         CustomView oldView = getCustomView(context);
         List<FieldKey> columns = null;
@@ -120,8 +121,9 @@ public class StudyQueryReport extends QueryReport
 
     protected CustomView getCustomView(ViewContext context)
     {
-        try {
-            StudyQuerySchema schema = getStudyQuerySchema(context.getUser(), ACL.PERM_READ, context);
+        try
+        {
+            StudyQuerySchema schema = getStudyQuerySchema(context.getUser(), ACL.PERM_READ, context.getContainer());
             String viewName = getDescriptor().getProperty(QueryParam.viewName.toString());
             QuerySettings qs = new QuerySettings(context, getDescriptor().getProperty(QueryParam.dataRegionName.toString()));
             qs.setSchemaName(schema.getSchemaName());
@@ -137,11 +139,11 @@ public class StudyQueryReport extends QueryReport
         }
     }
 
-    protected StudyQuerySchema getStudyQuerySchema(User user, int perm, ViewContext context) throws ServletException
+    protected StudyQuerySchema getStudyQuerySchema(User user, int perm, Container c) throws ServletException
     {
         if (perm != ACL.PERM_READ)
             throw new IllegalArgumentException("only PERM_READ supported");
-        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         return new StudyQuerySchema(study, user, true);
     }
 

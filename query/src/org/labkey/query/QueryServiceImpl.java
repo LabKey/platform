@@ -258,7 +258,8 @@ public class QueryServiceImpl extends QueryService
 
     public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query)
     {
-        try {
+        try
+        {
             List<CustomViewInfo> views = new ArrayList<CustomViewInfo>();
             for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
                 views.add(new CustomViewInfoImpl(cstmView));
@@ -290,6 +291,7 @@ public class QueryServiceImpl extends QueryService
             }
         });
 
+        QueryManager mgr = QueryManager.get();
         HttpServletRequest request = new MockHttpServletRequest();
 
         for (File viewFile : viewFiles)
@@ -297,6 +299,24 @@ public class QueryServiceImpl extends QueryService
             CustomViewXmlReader reader = new CustomViewXmlReader(viewFile);
 
             QueryDefinition qd = QueryService.get().createQueryDef(container, reader.getSchema(), reader.getQuery());
+            String viewName = reader.getName();
+
+            if (null == viewName)
+                throw new IllegalStateException(viewFile.getName() + ": Must specify a view name");
+
+            try
+            {
+                // Get all shared views on this query with the same name
+                CstmView[] views = mgr.getCstmViews(container, qd.getSchemaName(), qd.getName(), viewName, null, false);
+
+                // Delete them
+                for (CstmView view : views)
+                    mgr.delete(null, view);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
 
             // owner == null since we're exporting/importing only shared views
             CustomView cv = qd.createCustomView(null, reader.getName());

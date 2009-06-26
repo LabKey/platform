@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -99,16 +100,47 @@ public class StudyImporter
 
         StudyDocument.Study studyXml = studyDoc.getStudy();
 
-        // Create study
-        StudyController.StudyPropertiesForm studyForm = new StudyController.StudyPropertiesForm();
-        studyForm.setLabel(studyXml.getLabel());
-        studyForm.setDateBased(studyXml.getDateBased());
+        StudyImpl study = getStudy(true);
 
-        if (null != studyXml.getStartDate())
-            studyForm.setStartDate(studyXml.getStartDate().getTime());
+        // Create the study if it doesn't exist... otherwise, modify the existing properties
+        if (null == study)
+        {
+            // Create study
+            StudyController.StudyPropertiesForm studyForm = new StudyController.StudyPropertiesForm();
 
-        studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
-        StudyController.createStudy(getStudy(true), _c, _user, studyForm);
+            if (studyXml.isSetLabel())
+                studyForm.setLabel(studyXml.getLabel());
+
+            if (studyXml.isSetDateBased())
+                studyForm.setDateBased(studyXml.getDateBased());
+
+            if (studyXml.isSetStartDate())
+                studyForm.setStartDate(studyXml.getStartDate().getTime());
+
+            if (studyXml.isSetSecurityType())
+                studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
+
+            StudyController.createStudy(getStudy(true), _c, _user, studyForm);
+        }
+        else
+        {
+            // TODO: Change these props and save only if values have changed
+            study = study.createMutable();
+
+            if (studyXml.isSetLabel())
+                study.setLabel(studyXml.getLabel());
+
+            if (studyXml.isSetDateBased())
+                study.setDateBased(studyXml.getDateBased());
+
+            if (studyXml.isSetStartDate())
+                study.setStartDate(studyXml.getStartDate().getTime());
+
+            if (studyXml.isSetSecurityType())
+                study.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
+
+            StudyManager.getInstance().updateStudy(_user, study);            
+        }
 
         new MissingValueImporter().process(ctx);
         new QcStatesImporter().process(getStudy(), ctx);
