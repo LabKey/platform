@@ -37,6 +37,7 @@ import org.labkey.api.study.Study;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.StudyController;
 import org.apache.commons.lang.StringUtils;
 
@@ -133,7 +134,9 @@ public class ReportQueryViewFactory
         public MenuButton createViewButton(ReportService.ItemFilter filter)
         {
             MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());
-            button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+            String id = getViewContext().getRequest().getParameter(DataSetDefinition.DATASETKEY);
+            if (id != null)
+                button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 
             return button;
         }

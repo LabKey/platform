@@ -1768,7 +1768,9 @@ public class StudyController extends BaseStudyController
                 // 2379
                 // see DatasetBatch.prepareImport()
                 columnMap.put("visit", DataSetDefinition.getSequenceNumURI());
-                columnMap.put("date", DataSetDefinition.getVisitDateURI());
+
+                if (getStudy().isDateBased())
+                    columnMap.put("date", DataSetDefinition.getVisitDateURI());
                 columnMap.put("ptid", DataSetDefinition.getParticipantIdURI());
                 columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
                 columnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name

@@ -36,15 +36,13 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.IdentifierString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.query.reports.chart.ChartServiceImpl;
@@ -976,12 +974,11 @@ public class ReportsController extends SpringActionController
     }
 */
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadInputDataAction extends SimpleViewAction<RReportBean>
     {
         public ModelAndView getView(RReportBean form, BindException errors) throws Exception
         {
-            validatePermissions();
             Report report = form.getReport();
             if (report instanceof RReport)
             {
