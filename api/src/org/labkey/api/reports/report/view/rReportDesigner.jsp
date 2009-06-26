@@ -148,7 +148,7 @@
         <tr class="labkey-wp-header"><th align="left">R View Builder</th></tr>
         <tr><td>Create an R script to be executed on the server:<br/></td></tr>
 <%
-        if (!readOnly && hasData) {
+        if (hasData) {
 %>
         <tr><td><a href="javascript:void(0)" onclick="javascript:downloadData()">Download input data
             <%=PageFlowUtil.helpPopup("Download input data", "LabKey Server automatically exports your chosen dataset into " +

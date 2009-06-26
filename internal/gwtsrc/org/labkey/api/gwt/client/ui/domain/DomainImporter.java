@@ -199,7 +199,33 @@ public class DomainImporter
         });
     }
 
-    protected void importData(GWTDomain domain)
+    @SuppressWarnings("unchecked")
+    private void resetDomainFields(GWTDomain domain)
+    {
+        service.getDomainDescriptor(domain.getDomainURI(), new AsyncCallback<GWTDomain>()
+        {
+            public void onFailure(Throwable caught)
+            {
+                handleServerFailure(caught);
+            }
+
+            public void onSuccess(GWTDomain result)
+            {
+                final GWTDomain newDomain = new GWTDomain(result);
+                newDomain.getFields().clear();
+                service.updateDomainDescriptor(result, newDomain, new AsyncCallback<List<String>>()
+                {
+                    public void onFailure(Throwable caught)
+                    {
+                        handleServerFailure(caught);
+                    }
+                    public void onSuccess(List<String> errors){}
+                });
+            }
+        });
+    }
+
+    protected void importData(final GWTDomain domain)
     {
         Map<String,String> columnMap;
         if (columnMapper != null)
@@ -210,6 +236,7 @@ public class DomainImporter
         {
             public void onFailure(Throwable caught)
             {
+                resetDomainFields(domain);
                 handleServerFailure(caught);
             }
 
@@ -221,6 +248,7 @@ public class DomainImporter
                 }
                 else
                 {
+                    resetDomainFields(domain);
                     handleServerFailure(errors);
                 }
             }

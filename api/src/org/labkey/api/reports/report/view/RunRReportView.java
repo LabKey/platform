@@ -60,11 +60,7 @@ public class RunRReportView extends RunScriptReportView
 
         tabs.add(new ScriptTabInfo(TAB_VIEW, TAB_VIEW, url, saveChanges));
         tabs.add(new ScriptTabInfo(TAB_SOURCE, TAB_SOURCE, url, saveChanges));
-
-        Report report = getReport();
-        if (report != null && report.getDescriptor().canEdit(getViewContext()))
-            tabs.add(new ScriptTabInfo(TAB_DATA, TAB_DATA, url, saveChanges));
-
+        tabs.add(new ScriptTabInfo(TAB_DATA, TAB_DATA, url, saveChanges));
         tabs.add(new ScriptTabInfo(TAB_SYNTAX, TAB_SYNTAX, url, saveChanges));
 
         return tabs;
