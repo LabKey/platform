@@ -102,7 +102,7 @@
 
                 Ext.Msg.show({
                         title : 'Convert Query',
-                        msg : "Are you sure you want to convert the query view into a report query view?",
+                        msg : "Converting a query view into a top-level view will allow finer grained permission control. Are you sure you want to continue?",
                         buttons: Ext.Msg.YESNO,
                         icon: Ext.Msg.QUESTION,
                         fn: function(btn, text) {
@@ -190,7 +190,7 @@
                             <% if (context.hasPermission(ACL.PERM_ADMIN)) { %>
                                 '<tpl if="!queryView && !inherited">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
                             <% } %>
-                                '<tpl if="queryView && !inherited">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>convert to view</a>]</tpl></td></tr>',
+                                '<tpl if="queryView && !inherited">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>make top-level view</a>]</tpl></td></tr>',
                         '</table>')
                 }),
             createMenu :[{
