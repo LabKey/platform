@@ -119,6 +119,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             Date date = null;
             DomainProperty participantProperty = null;
             DomainProperty visitProperty = null;
+            DomainProperty dateProperty = null;
             DomainProperty specimenIDProperty = null;
             for (Map.Entry<DomainProperty, String> property : properties.entrySet())
             {
@@ -147,6 +148,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                 }
                 else if (DATE_PROPERTY_NAME.equals(property.getKey().getName()))
                 {
+                    dateProperty = property.getKey();
                     try
                     {
                         date = (Date) ConvertUtils.convert(property.getValue(), Date.class);
@@ -168,6 +170,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                     wellgroupProperties.put(participantProperty, pv.getParticipantID());
                 if (visitProperty != null)
                     wellgroupProperties.put(visitProperty, pv.getVisitID() != null ? "" + pv.getVisitID() : null);
+                if (dateProperty != null)
+                    wellgroupProperties.put(dateProperty, pv.getDate() != null ? "" + pv.getDate() : null);
             }
             originalMaterials.put(wellgroup, originalMaterial);
         }

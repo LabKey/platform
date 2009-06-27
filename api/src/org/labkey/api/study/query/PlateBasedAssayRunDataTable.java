@@ -152,6 +152,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
 
         Set<String> hiddenProperties = new HashSet<String>();
         hiddenProperties.add(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
+        hiddenProperties.add(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
         Domain runDomain = provider.getRunDomain(protocol);
         for (DomainProperty prop : runDomain.getProperties())
         {
@@ -162,7 +163,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         for (DomainProperty prop : uploadSetDomain.getProperties())
         {
             if (!hiddenProperties.contains(prop.getName()))
-                visibleColumns.add(FieldKey.fromParts("Run", AssayService.RUN_PROPERTIES_COLUMN_NAME, prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
         setDefaultVisibleColumns(visibleColumns);
     }
