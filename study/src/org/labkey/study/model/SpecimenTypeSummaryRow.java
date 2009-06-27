@@ -22,11 +22,11 @@ public class SpecimenTypeSummaryRow
 {
     private Integer _primaryTypeId;
     private String _primaryType;
-    private Integer _derivativeId;
+    private Integer _derivativeTypeId;
     private String _derivative;
-    private Integer _additiveId;
+    private Integer _additiveTypeId;
     private String _additive;
-    private int _vialCount;
+    private Integer _vialCount;
 
     public Integer getPrimaryTypeId()
     {
@@ -48,14 +48,14 @@ public class SpecimenTypeSummaryRow
         _primaryType = primaryType;
     }
 
-    public Integer getDerivativeId()
+    public Integer getDerivativeTypeId()
     {
-        return _derivativeId;
+        return _derivativeTypeId;
     }
 
-    public void setDerivativeId(Integer derivativeId)
+    public void setDerivativeTypeId(Integer derivativeTypeId)
     {
-        _derivativeId = derivativeId;
+        _derivativeTypeId = derivativeTypeId;
     }
 
     public String getDerivative()
@@ -68,14 +68,14 @@ public class SpecimenTypeSummaryRow
         _derivative = derivative;
     }
 
-    public Integer getAdditiveId()
+    public Integer getAdditiveTypeId()
     {
-        return _additiveId;
+        return _additiveTypeId;
     }
 
-    public void setAdditiveId(Integer additiveId)
+    public void setAdditiveTypeId(Integer additiveTypeId)
     {
-        _additiveId = additiveId;
+        _additiveTypeId = additiveTypeId;
     }
 
     public String getAdditive()
@@ -88,12 +88,12 @@ public class SpecimenTypeSummaryRow
         _additive = additive;
     }
 
-    public int getVialCount()
+    public Integer getVialCount()
     {
-        return _vialCount;
+        return _vialCount != null ? _vialCount : new Integer(0);
     }
 
-    public void setVialCount(int vialCount)
+    public void setVialCount(Integer vialCount)
     {
         _vialCount = vialCount;
     }

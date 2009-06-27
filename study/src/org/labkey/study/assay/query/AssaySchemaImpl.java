@@ -165,10 +165,12 @@ public class AssaySchemaImpl extends AssaySchema
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.CreatedBy));
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.RunCount));
         List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+        Set<String> hiddenCols = new HashSet<String>();
+        hiddenCols.add(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
         for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
         {
             pds.add(prop.getPropertyDescriptor());
-            if (!prop.isHidden())
+            if (!prop.isHidden() && !hiddenCols.contains(prop.getName()))
                 defaultCols.add(FieldKey.fromParts(AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
 
@@ -212,16 +214,18 @@ public class AssaySchemaImpl extends AssaySchema
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
+        Set<String> hiddenCols = new HashSet<String>();
+        hiddenCols.add(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
         FieldKey runKey = FieldKey.fromString(AssayService.RUN_PROPERTIES_COLUMN_NAME);
         for (PropertyDescriptor runColumn : runColumns)
         {
-            if (!runColumn.isHidden())
+            if (!runColumn.isHidden() && !hiddenCols.contains(runColumn.getName()))
                 visibleColumns.add(new FieldKey(runKey, runColumn.getName()));
         }
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName(), AssayService.BATCH_PROPERTIES_COLUMN_NAME);
         for (DomainProperty col : provider.getBatchDomain(protocol).getProperties())
         {
-            if (!col.isHidden())
+            if (!col.isHidden() && !hiddenCols.contains(col.getName()))
                 visibleColumns.add(new FieldKey(batchPropsKey, col.getName()));
         }
 

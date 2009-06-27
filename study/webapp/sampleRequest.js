@@ -459,7 +459,10 @@ function createRequest()
     // delete any stored request.  when we return to this page, we want to see the newly created request,
     // which will be at the top of the list:
     LABKEY.Utils.deleteCookie("selectedRequest", true);
-    document.location = CREATE_REQUEST_BASE_LINK + '&sampleIds=' + _requestWin.specOrVialIdArray.toString();
+    if (_requestWin.specOrVialIdArray)
+        document.location = CREATE_REQUEST_BASE_LINK + '&sampleIds=' + _requestWin.specOrVialIdArray.toString();
+    else
+        document.location = CREATE_REQUEST_BASE_LINK;
 }
 
 function initRequestList()

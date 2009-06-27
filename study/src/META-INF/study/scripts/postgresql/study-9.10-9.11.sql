@@ -39,3 +39,25 @@ ALTER TABLE study.SpecimenEvent
   ADD ProcessingTime TIMESTAMP,
   ADD PrimaryVolume FLOAT,
   ADD PrimaryVolumeUnits VARCHAR(20);
+
+UPDATE study.SpecimenEvent SET
+	Ptid = study.Specimen.Ptid,
+	DrawTimestamp = study.Specimen.DrawTimestamp,
+	SalReceiptDate = study.Specimen.SalReceiptDate,
+	ClassId = study.Specimen.ClassId,
+	VisitValue = study.Specimen.VisitValue,
+	ProtocolNumber = study.Specimen.ProtocolNumber,
+	VisitDescription = study.Specimen.VisitDescription,
+	Volume = study.Specimen.Volume,
+	VolumeUnits = study.Specimen.VolumeUnits,
+	SubAdditiveDerivative = study.Specimen.SubAdditiveDerivative,
+	PrimaryTypeId = study.Specimen.PrimaryTypeId,
+	DerivativeTypeId = study.Specimen.DerivativeTypeId,
+	AdditiveTypeId = study.Specimen.AdditiveTypeId,
+	DerivativeTypeId2 = study.Specimen.DerivativeTypeId2,
+	OriginatingLocationId = study.Specimen.OriginatingLocationId,
+	FrozenTime = study.Specimen.FrozenTime,
+	ProcessingTime = study.Specimen.ProcessingTime,
+	PrimaryVolume = study.Specimen.PrimaryVolume,
+	PrimaryVolumeUnits = study.Specimen.PrimaryVolumeUnits
+FROM study.Specimen WHERE study.Specimen.RowId = study.SpecimenEvent.SpecimenId;

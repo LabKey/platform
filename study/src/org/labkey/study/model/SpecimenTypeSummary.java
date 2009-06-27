@@ -169,7 +169,7 @@ public class SpecimenTypeSummary
                 current = new PrimaryTypeCount(row.getPrimaryTypeId(), row.getPrimaryType());
                 counts.add(current);
             }
-            current.setVialCount(current.getVialCount() + row.getVialCount());
+            current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
         }
         return counts;
     }
@@ -187,14 +187,14 @@ public class SpecimenTypeSummary
         {
             if (primaryType == null || integersEqual(primaryType.getRowId(), row.getPrimaryTypeId()))
             {
-                String key = row.getDerivative() + "/" + row.getDerivativeId();
+                String key = row.getDerivative() + "/" + row.getDerivativeTypeId();
                 current = counts.get(key);
                 if (current == null)
                 {
-                    current = new DerivativeTypeCount(primaryType, row.getDerivativeId(), row.getDerivative());
+                    current = new DerivativeTypeCount(primaryType, row.getDerivativeTypeId(), row.getDerivative());
                     counts.put(key, current);
                 }
-                current.setVialCount(current.getVialCount() + row.getVialCount());
+                current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
             }
         }
         List<DerivativeTypeCount> returnValues = new ArrayList<DerivativeTypeCount>();
@@ -218,17 +218,17 @@ public class SpecimenTypeSummary
         AdditiveTypeCount current;
         for (SpecimenTypeSummaryRow row : _rows)
         {
-            if ((derivativeType == null || integersEqual(derivativeType.getRowId(), row.getDerivativeId())) &&
+            if ((derivativeType == null || integersEqual(derivativeType.getRowId(), row.getDerivativeTypeId())) &&
                  (primaryType == null || integersEqual(primaryType.getRowId(), row.getPrimaryTypeId())))
             {
-                String key = row.getAdditive() + "/" + row.getAdditiveId();
+                String key = row.getAdditive() + "/" + row.getAdditiveTypeId();
                 current = counts.get(key);
                 if (current == null)
                 {
-                    current = new AdditiveTypeCount(derivativeType, row.getAdditiveId(), row.getAdditive());
+                    current = new AdditiveTypeCount(derivativeType, row.getAdditiveTypeId(), row.getAdditive());
                     counts.put(key, current);
                 }
-                current.setVialCount(current.getVialCount() + row.getVialCount());
+                current.setVialCount(current.getVialCount() + row.getVialCount().intValue());
             }
         }
         if (counts.size() == 1)

@@ -41,3 +41,26 @@ ALTER TABLE study.SpecimenEvent ADD
   PrimaryVolume FLOAT,
   PrimaryVolumeUnits NVARCHAR(20)
 GO
+
+UPDATE study.SpecimenEvent SET
+	study.SpecimenEvent.Ptid = study.Specimen.Ptid,
+	study.SpecimenEvent.DrawTimestamp = study.Specimen.DrawTimestamp,
+	study.SpecimenEvent.SalReceiptDate = study.Specimen.SalReceiptDate,
+	study.SpecimenEvent.ClassId = study.Specimen.ClassId,
+	study.SpecimenEvent.VisitValue = study.Specimen.VisitValue,
+	study.SpecimenEvent.ProtocolNumber = study.Specimen.ProtocolNumber,
+	study.SpecimenEvent.VisitDescription = study.Specimen.VisitDescription,
+	study.SpecimenEvent.Volume = study.Specimen.Volume,
+	study.SpecimenEvent.VolumeUnits = study.Specimen.VolumeUnits,
+	study.SpecimenEvent.SubAdditiveDerivative = study.Specimen.SubAdditiveDerivative,
+	study.SpecimenEvent.PrimaryTypeId = study.Specimen.PrimaryTypeId,
+	study.SpecimenEvent.DerivativeTypeId = study.Specimen.DerivativeTypeId,
+	study.SpecimenEvent.AdditiveTypeId = study.Specimen.AdditiveTypeId,
+	study.SpecimenEvent.DerivativeTypeId2 = study.Specimen.DerivativeTypeId2,
+	study.SpecimenEvent.OriginatingLocationId = study.Specimen.OriginatingLocationId,
+	study.SpecimenEvent.FrozenTime = study.Specimen.FrozenTime,
+	study.SpecimenEvent.ProcessingTime = study.Specimen.ProcessingTime,
+	study.SpecimenEvent.PrimaryVolume = study.Specimen.PrimaryVolume,
+	study.SpecimenEvent.PrimaryVolumeUnits = study.Specimen.PrimaryVolumeUnits
+FROM study.Specimen WHERE study.Specimen.RowId = study.SpecimenEvent.SpecimenId
+GO
