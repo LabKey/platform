@@ -26,7 +26,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -67,7 +66,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         {
             if (allowUpdate(protocol))
             {
-                String editLink = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_protocol.getContainer(), _protocol, false).toString();
+                String editLink = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_protocol.getContainer(), _protocol, false, null).toString();
                 if (!protocol.getContainer().equals(getViewContext().getContainer()))
                 {
                     editLink = "javascript: if (window.confirm('This assay is defined in the " + _protocol.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";

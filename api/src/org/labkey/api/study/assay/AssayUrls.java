@@ -34,11 +34,14 @@ public interface AssayUrls extends UrlProvider
     ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL);
 
     /**
+     * Returns the URL for the assay designer
      * @param container container in which the assay definition should live
      * @param protocol if null, start a new design from scratch. If not null, either the design to edit or the design to copy
      * @param copy if true, create a copy of the protocol that's passed in and start editing it
+     * @param returnUrl a return URL to use, or null to use default
+     * @return The assay designer URL with the proper query string arguments
      */
-    ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy);
+    ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, ActionURL returnUrl);
     ActionURL getAssayListURL(Container container);
     ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
     ActionURL getAssayRunsURL(Container container, ExpProtocol protocol);

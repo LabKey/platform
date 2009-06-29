@@ -130,7 +130,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
                     new NavTree("Add Runs", "#"),
                     new NavTree("View Runs", urls.getAssayRunsURL(getContainer(), protocol)),
                     new NavTree("View Data", urls.getAssayResultsURL(getContainer(), protocol)),
-                    new NavTree("Manage", urls.getDesignerURL(getContainer(), protocol, false)));
+                    new NavTree("Manage", urls.getDesignerURL(getContainer(), protocol, false, null)));
         }
         else
         {
