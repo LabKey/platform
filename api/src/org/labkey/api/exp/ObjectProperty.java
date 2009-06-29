@@ -342,8 +342,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
             return false;
 
         ObjectProperty pv = (ObjectProperty) o;
-        if (pv.getObjectId() != objectId ||
-                !pv.getPropertyURI().equals(propertyURI))
+        if (pv.getObjectId() != objectId || !pv.getPropertyURI().equals(propertyURI))
             return false;
 
         Object value = value();
