@@ -98,6 +98,11 @@ function save()
         policyEditor.save();
 }
 
+function cancel()
+{
+    window.location = doneURL;
+}
+
 var autoScroll = false;
 
 Ext.onReady(function(){
@@ -110,6 +115,10 @@ Ext.onReady(function(){
     }
     var saveBtn = new Ext.Button({text:'Save', style:{display:'inline'}, handler:save});
     saveBtn.render($('buttonDiv'));
+
+    var cancelBtn = new Ext.Button({text:'Cancel', style:{display:'inline'}, handler:cancel});
+    $('buttonDiv').createChild('&nbsp;');
+    cancelBtn.render($('buttonDiv'));
 
     for (var i=0 ; i<tabItems.length ; i++)
         tabItems[i].contentEl = $(tabItems[i].contentEl);
