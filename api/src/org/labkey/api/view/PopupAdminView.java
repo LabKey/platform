@@ -118,7 +118,7 @@ public class PopupAdminView extends PopupMenuView
 
             if (!disabledModules.isEmpty())
             {
-                NavTree disabledModuleMenu = new NavTree("Disabled modules");
+                NavTree disabledModuleMenu = new NavTree("More Modules");
                 addModulesToMenu(context, disabledModules, defaultModule, disabledModuleMenu);
                 if (disabledModuleMenu.hasChildren())
                 {
