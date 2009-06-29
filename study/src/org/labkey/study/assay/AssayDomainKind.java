@@ -26,7 +26,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -117,7 +116,7 @@ public class AssayDomainKind extends DomainKind
         ExpProtocol protocol = findProtocol(domain);
         if (protocol != null)
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(domain.getContainer(), protocol, false);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(domain.getContainer(), protocol, false, null);
         }
         return null;
     }

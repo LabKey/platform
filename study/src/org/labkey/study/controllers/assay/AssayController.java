@@ -34,6 +34,8 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -41,6 +43,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
@@ -271,12 +274,20 @@ public class AssayController extends SpringActionController
                 return null; // return to hide intellij warnings
             }
 
+            final Container currentContainer = getViewContext().getContainer();
+            final User user = getViewContext().getUser();
+            final ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
+
             ContainerTree tree = new ContainerTree("/", getUser(), DesignAssayPermission.class, null, null)
             {
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
                 {
-                    ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true);
+                    //if user doesn't have read permission to the target container, set the return URL to be
+                    //the current container
+                    ActionURL returnURL = (c.hasPermission(user, ReadPermission.class)) ? projectUrls.getStartURL(c) : projectUrls.getStartURL(currentContainer);
+
+                    ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true, returnURL);
                     html.append("<a href=\"");
                     html.append(copyURL.getEncodedLocalURIString());
                     html.append("\">");
@@ -284,7 +295,7 @@ public class AssayController extends SpringActionController
                     html.append("</a>");
                 }
             };
-            ActionURL copyHereURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true);
+            ActionURL copyHereURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true, null);
             HtmlView fileTree = new HtmlView("<table><tr><td><b>Select destination folder:</b></td></tr>" +
                     tree.render().toString() + "</table>");
             HtmlView bbar = new HtmlView(
@@ -645,7 +656,7 @@ public class AssayController extends SpringActionController
             return url;
         }
 
-        public ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy)
+        public ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, ActionURL returnUrl)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
@@ -654,6 +665,8 @@ public class AssayController extends SpringActionController
             if (copy)
                 url.addParameter("copy", "true");
             url.addParameter("providerName", provider.getName());
+            if (null != returnUrl)
+                url.addParameter("returnURL", returnUrl.toString());
             return url;
         }
 
