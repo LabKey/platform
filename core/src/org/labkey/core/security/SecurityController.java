@@ -201,6 +201,13 @@ public class SecurityController extends SpringActionController
 
             Container container = getViewContext().getContainer();
             FolderPermissions permsView = new FolderPermissions(root, resource, doneURL);
+
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setTitle("Permissions for " + container.getPath());
+
+            if (container.isRoot())
+                return permsView;
+
             ContainersView cview = new ContainersView(container.getProject());
             cview.setTitle("Folders");
 
@@ -211,8 +218,6 @@ public class SecurityController extends SpringActionController
             box.addView(permsView);
 
             cview.setFrame(WebPartView.FrameType.TITLE);            
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            getPageConfig().setTitle("Permissions for " + container.getPath());
 
             return box;
         }
