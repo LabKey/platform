@@ -243,9 +243,9 @@ Ext.onReady(function(){
     };
 
     if (<%=c.isRoot() ? "false" : "true"%>)
-        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoScroll:true});
+        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoScroll:autoScroll, autoHeight: !autoScroll});
     if (isSiteAdmin)
-        tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoScroll:true});
+        tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoScroll:autoScroll, autoHeight: !autoScroll});
 
     Ext.onReady(function()
     {
