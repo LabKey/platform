@@ -1839,6 +1839,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("manuallyDefineSchema", HelpTopic.Area.STUDY));
             _appendNavTrailDatasetAdmin(root);
             return root.addChild("Bulk Import");
         }

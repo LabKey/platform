@@ -22,6 +22,7 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%
     BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm> me = (BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm>) HttpView.currentView();
     StudyController.BulkImportTypesForm bean = me.getModelBean();
@@ -42,8 +43,12 @@
 Use this form to import schemas for multiple datasets.
 </p>
 <p>
-Paste in a tab delimited file with the following columns, as well as columns for type
-name and type id.  Additional columns will just be ignored.
+Paste in a tab delimited file with the following columns, as well as columns for type name and type id.  Additional
+columns will be ignored.
+</p>
+<p>
+For more information about the schema definition format, see
+<a href="<%=new HelpTopic("manuallyDefineSchema", HelpTopic.Area.STUDY).getHelpTopicLink()%>" target="help">the dataset schema definition documentation page</a>. 
 </p>
 <table>
     <tr>
