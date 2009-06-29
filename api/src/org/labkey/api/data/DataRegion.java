@@ -805,7 +805,7 @@ public class DataRegion extends DisplayElement
         out.write("LABKEY.requiresScript('clientapi/ActionURL.js');\n");
         out.write("</script>\n");
         out.write("<script type=\"text/javascript\">\n");
-        out.write("Ext.lib.Event.onAvailable('" + PageFlowUtil.encodeJavascriptStringLiteral("dataregion_" + getName()) + "',\n");
+        out.write("Ext.onReady(\n");
         out.write("function () {new LABKEY.DataRegion({\n");
         out.write("'name' : '" + PageFlowUtil.filter(getName()) + "',\n");
 //        out.write("'schemaName' : '" + "xxx" + "',\n");
