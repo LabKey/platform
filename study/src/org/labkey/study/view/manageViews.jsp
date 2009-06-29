@@ -195,32 +195,32 @@
                 }),
             createMenu :[{
                 id: 'create_rView',
-                text:'New R View',
+                text:'R View',
                 hidden: <%=!RReport.isEnabled()%>,
                 disabled: <%=!RReport.canCreateScript(context)%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}
             },{
                 id: 'create_gridView',
-                text:'New Grid View',
+                text:'Grid View',
                 disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_crosstabView',
-                text:'New Crosstab View',
+                text:'Crosstab View',
                 disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_exportXlsView',
-                text:'New Export to Workbook (.xls)',
+                text:'Workbook (.xls)',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_staticView',
-                text:'New Static View',
+                text:'Static View',
                 disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ShowUploadReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_enrollmentView',
-                text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "New Enrollment View"%>',
+                text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "Enrollment View"%>',
                 disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer())%>';}}
             }],

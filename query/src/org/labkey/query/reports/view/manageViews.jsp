@@ -62,7 +62,7 @@
             <% if (RReport.isEnabled()) { %>
             ,createMenu :[{
                 id: 'create_rView',
-                text:'New R View',
+                text:'R View',
                 disabled: <%=!RReport.canCreateScript(context)%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}}]
             <% } %>

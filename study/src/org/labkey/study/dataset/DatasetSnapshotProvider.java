@@ -43,6 +43,7 @@ import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
 import java.util.*;
+import java.sql.SQLException;
 /*
  * User: Karl Lum
  * Date: Jul 9, 2008
@@ -303,6 +304,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
                             addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
+                }
+                catch (SQLException e)
+                {
+                    ViewContext context = form.getViewContext();
+                    StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
+                            "Dataset snapshot was not updated. Cause of failure: " + e.getMessage(), null);
                 }
                 finally
                 {
