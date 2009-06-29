@@ -447,12 +447,12 @@ public class SpecimenImporter
             new SpecimenColumn("fr_position", "fr_position", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("frozen_time", "FrozenTime", DURATION_TYPE, TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.VIALS_AND_SPECIMEN_EVENTS)
+            new SpecimenColumn("frozen_time", "FrozenTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS)
         };
 
     public static final ImportableColumn[] ADDITIVE_COLUMNS = new ImportableColumn[]
@@ -1676,7 +1676,7 @@ public class SpecimenImporter
         return value;
     }
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {

@@ -314,19 +314,13 @@
           <ns:column columnName="Volume">
             <ns:formatString>#,###.0#</ns:formatString>
           </ns:column>
+          <ns:column columnName="PrimaryVolume"/>
+          <ns:column columnName="PrimaryVolumeUnits"/>
           <ns:column columnName="requestable"/>
           <ns:column columnName="CurrentLocation" />
-        <ns:column columnName="FrozenTime">
-          <ns:formatString>H:mm:ss</ns:formatString>
-        </ns:column>
-        <ns:column columnName="ProcessingTime">
-          <ns:formatString>H:mm:ss</ns:formatString>
-        </ns:column>
         <ns:column columnName="AtRepository"/>
         <ns:column columnName="LockedInRequest"/>
         <ns:column columnName="Available"/>
-        <ns:column columnName="ProcessedByInitials"/>
-        <ns:column columnName="ProcessingDate"/>
         <ns:column columnName="ProcessingLocation"/>
       </ns:columns>
     </ns:table>
@@ -359,8 +353,6 @@
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="PrimaryVolume"/>
-      <ns:column columnName="PrimaryVolumeUnits"/>
       <ns:column columnName="AtRepositoryCount"/>
       <ns:column columnName="AvailableCount"/>
       <ns:column columnName="AvailableVolume"/>
@@ -415,17 +407,9 @@
       </ns:column>
       <ns:column columnName="requestable"/>
       <ns:column columnName="CurrentLocation" />
-      <ns:column columnName="FrozenTime">
-        <ns:formatString>H:mm:ss</ns:formatString>
-      </ns:column>
-      <ns:column columnName="ProcessingTime">
-        <ns:formatString>H:mm:ss</ns:formatString>
-      </ns:column>
       <ns:column columnName="AtRepository"/>
       <ns:column columnName="LockedInRequest"/>
       <ns:column columnName="Available"/>
-      <ns:column columnName="ProcessedByInitials"/>
-      <ns:column columnName="ProcessingDate"/>
       <ns:column columnName="ProcessingLocation"/>
     </ns:columns>
   </ns:table>
@@ -487,8 +471,6 @@
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="PrimaryVolume"/>
-      <ns:column columnName="PrimaryVolumeUnits"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenAdditive" tableDbType="TABLE">

@@ -112,7 +112,7 @@ public class StudyModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.192;
+        return 9.193;
     }
 
     protected void init()

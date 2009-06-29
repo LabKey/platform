@@ -6,6 +6,8 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.*;
@@ -359,7 +361,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             customViewName = null;
         CustomView view = def.getCustomView(_parameters.getUser(), _parameters.getViewContext().getRequest(), customViewName);
         if (view == null)
-            throw new IllegalStateException("Custom view " + _parameters.getBaseCustomViewName() + " was not found.  It may have been deleted by another user.");
+            HttpView.throwNotFound("Custom view " + _parameters.getBaseCustomViewName() + " was not found.  It may have been deleted by another user.") ;
         return view;
     }
 }

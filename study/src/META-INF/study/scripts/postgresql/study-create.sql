@@ -41,8 +41,6 @@ CREATE VIEW study.SpecimenDetail AS
       Specimen.VisitDescription,
       Specimen.VisitValue,
       Specimen.VolumeUnits,
-      Specimen.PrimaryVolume,
-      Specimen.PrimaryVolumeUnits,
       Specimen.PrimaryTypeId,
       Specimen.AdditiveTypeId,
       Specimen.DerivativeTypeId,

@@ -1211,7 +1211,15 @@ public class SamplesController extends ViewController
         if (errors.size() > 0)
             return showUploadSpecimens(form);
 
-        importer.process(getUser(), getStudy().getContainer(), specimenRows);
+        try
+        {
+            importer.process(getUser(), getStudy().getContainer(), specimenRows);
+        }
+        catch (SQLException e)
+        {
+            errors.add("main", new ActionMessage("Error", "A database error was reported during import: " + e.getMessage()));
+            return showUploadSpecimens(form);
+        }
 
         String redir = form.getRedir();
         if (null != StringUtils.trimToNull(redir))
