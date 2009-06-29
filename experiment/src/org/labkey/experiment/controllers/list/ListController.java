@@ -632,10 +632,22 @@ public class ListController extends SpringActionController
 
         for (DisplayColumn dc : defaultGridColumns)
         {
+            assert null != dc;
+
+            // Occasionally in production this comes back null -- not sure why.  See #8088
+            if (null == dc)
+                continue;
+
             if (editableOnly)
             {
-                // In update/insert, skip non-editable and joined columns
-                if (!dc.isEditable() || dc.getColumnInfo() instanceof LookupColumn)
+                // In update/insert, skip non-editable columns
+                if (!dc.isEditable())
+                    continue;
+
+                ColumnInfo ci = dc.getColumnInfo();
+
+                // Skip joined columns that are not direct lookups -- see #8184
+                if (ci instanceof LookupColumn || !lqv.getTable().getName().equals(dc.getColumnInfo().getTableAlias()))
                     continue;
             }
 
