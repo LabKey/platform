@@ -821,6 +821,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
         }
         combo.selectText();
+        combo.clearValue();
     },
     
     Combo_onChange : function(combo,email)
@@ -833,6 +834,8 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             var userid = user.UserId;
             this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
         }, this);
+        combo.selectText();
+        combo.clearValue();
     },
 
     Combo_onKeyPress : function(combo, e)

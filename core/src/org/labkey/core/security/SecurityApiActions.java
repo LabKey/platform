@@ -1062,7 +1062,7 @@ public class SecurityApiActions
             if (null == form.getEmail() || form.getEmail().trim().length() == 0)
                 throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
             
-            ValidEmail email = new ValidEmail(form.getEmail().toString().trim());
+            ValidEmail email = new ValidEmail(form.getEmail().getSource().trim());
             String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
             User user = UserManager.getUser(email);
 
