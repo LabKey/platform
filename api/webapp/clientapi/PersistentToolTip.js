@@ -115,11 +115,6 @@ Ext.reg('persistenttip', LABKEY.ext.PersistentToolTip);
  * &lt;/div>
  */
 LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
-    targetAutoEl :
-            '<span class="labkey-callout-tip">' +
-            '<img src="/labkey/_.gif">' +
-            '</span>',
-
     overTargetCls : 'labkey-callout-tip-over',
 
     initComponent: function()
@@ -128,6 +123,14 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
           mouseOffset: [2, 8],
           autoWidth: true
       });
+
+      if (!this.targetAutoEl) {
+          this.targetAutoEl =
+              '<span class="labkey-callout-tip">' +
+              '<img src="' + LABKEY.contextPath + '/_.gif">' +
+              '</span>';
+      }
+
       LABKEY.ext.CalloutTip.superclass.initComponent.call(this);
     },
 
