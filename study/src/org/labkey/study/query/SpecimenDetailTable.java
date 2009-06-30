@@ -51,6 +51,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addSpecimenVisitColumn(_schema.getStudy().isDateBased());
         addWrapColumn(_rootTable.getColumn("Volume"));
         addSpecimenTypeColumns();
+        addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
+        addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
 
         addVialCommentsColumn(true);
 
