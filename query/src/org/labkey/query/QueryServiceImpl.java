@@ -260,11 +260,12 @@ public class QueryServiceImpl extends QueryService
     {
         try
         {
-            List<CustomViewInfo> views = new ArrayList<CustomViewInfo>();
+            Map<String, CustomViewInfo> views = new HashMap<String, CustomViewInfo>();
+            String key = StringUtils.defaultString(schema, "") + "-" + StringUtils.defaultString(query, "");
             for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
-                views.add(new CustomViewInfoImpl(cstmView));
+                views.put(key + "-" + cstmView.getName(), new CustomViewInfoImpl(cstmView));
 
-            return views;
+            return new ArrayList<CustomViewInfo>(views.values());
         }
         catch (SQLException e)
         {

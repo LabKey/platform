@@ -21,6 +21,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.UserSchema;
@@ -39,6 +40,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.ServletException;
@@ -144,6 +146,14 @@ public class ReportQueryViewFactory
         public void addCustomizeViewItems(MenuButton button)
         {
             button.addMenuItem("Customize View", urlFor(QueryAction.chooseColumns).toString());
+        }
+
+        @Override
+        public void addManageViewItems(MenuButton button)
+        {
+            button.addMenuItem("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).
+                    addParameter("schemaName", getSchema().getSchemaName()).
+                    addParameter("queryName", getSettings().getQueryName()));
         }
     }
 }
