@@ -112,6 +112,32 @@ LABKEY.Specimen = new function()
               });
           },
 
+        // GetProvidingLocationsAction
+        /**
+         * @param {Function} successCallback Required. Function called when the
+                 "getProvidingLocations" function executes successfully.  Will be called with the argument:
+                 {@link LABKEY.Specimen.Location[]}..
+         * @param {Function} [failureCallback] Function called when execution of the "getProvidingLocations" function fails.
+         * @param {String} [containerPath] The container path in which the relevant study is defined.
+         *       If not supplied, the current container path will be used.
+        * Retrieves an array of open requests within the specified study.
+        */
+          getProvidingLocations : function(successCallback, specimenHashArray, failureCallback, containerPath)
+          {
+              if (!failureCallback)
+                 failureCallback = LABKEY.Utils.displayAjaxErrorResponse;
+              Ext.Ajax.request({
+                  url : LABKEY.ActionURL.buildURL("study-samples-api", "getProvidingLocations", containerPath),
+                  method : 'POST',
+                  success: getSuccessCallbackWrapper(successCallback, 'locations'),
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
+                  jsonData : { specimenHashes : specimenHashArray },
+                  headers : {
+                      'Content-Type' : 'application/json'
+                  }
+              });
+          },
+
         // GetRequestAction
         /**
          * @param {Function} successCallback Required. Function called when the
