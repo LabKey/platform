@@ -223,6 +223,10 @@ public class ReportUtil
 
     public static void renderErrorImage(OutputStream outputStream, int width, int height, String errorMessage) throws IOException
     {
+        if (errorMessage == null)
+        {
+            errorMessage = "ERROR";
+        }
         BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = bi.createGraphics();
         g.setColor(Color.white);

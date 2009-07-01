@@ -16,17 +16,18 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.IdentifierString;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -230,6 +231,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
         _schemaName = name;
     }
 
+    @NotNull
     public IdentifierString getSchemaName()
     {
         return _schemaName == null ? new IdentifierString("", false) : _schemaName;
