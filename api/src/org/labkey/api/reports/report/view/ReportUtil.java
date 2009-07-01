@@ -334,7 +334,9 @@ public class ReportUtil
 
         public ActionURL getViewEditURL(ViewContext context, CustomViewInfo view)
         {
-            return QueryService.get().urlFor(context.getContainer(), QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName());
+            return QueryService.get().urlFor(context.getContainer(), QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName()).
+                    addParameter(QueryParam.queryName.name(), view.getQueryName()).
+                    addParameter(QueryParam.viewName.name(), view.getName());
         }
     }
 

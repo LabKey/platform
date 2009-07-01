@@ -24,6 +24,7 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -336,10 +337,10 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 {
                     public void update(Widget widget)
                     {
-                        assay.setProtocolTransformScript(((TextBox) widget).getText());
-                        if (!((TextBox) widget).getText().equals(assay.getProtocolTransformScript()))
+                        if (!((TextBox) widget).getText().equals(StringUtils.trimToEmpty(assay.getProtocolTransformScript())))
                         {
                             setDirty(true);
+                            assay.setProtocolTransformScript(StringUtils.trimToEmpty(((TextBox)widget).getText()));
                         }
                     }
                 }, this);
@@ -374,10 +375,10 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             {
                 public void update(Widget widget)
                 {
-                    assay.setProtocolValidationScript(((TextBox) widget).getText());
-                    if (!((TextBox) widget).getText().equals(assay.getProtocolValidationScript()))
+                    if (!((TextBox) widget).getText().equals(StringUtils.trimToEmpty(assay.getProtocolValidationScript())))
                     {
                         setDirty(true);
+                        assay.setProtocolValidationScript(StringUtils.trimToEmpty(((TextBox)widget).getText()));
                     }
                 }
             }, this);
