@@ -53,6 +53,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         String filePath = (String) cols.get("FilePath");
         String providerName = (String) cols.get("Provider");
         String containerId = (String) cols.get("Container");
+
         if (rowIdI != null && filePath != null && filePath.length() > 0)
         {
             File f = new File(filePath);
@@ -70,16 +71,16 @@ public class FileDisplayColumn extends SimpleDisplayColumn
 
                 // get files with .log, or same basename and .out
                 fileNames = dir.list(
-                        new FilenameFilter()
+                    new FilenameFilter()
+                    {
+                        public boolean accept(File dir, String name)
                         {
-                            public boolean accept(File dir, String name)
-                            {
-                                if (provider != null)
-                                    return provider.isStatusViewableFile(container, name, basename);
+                            if (provider != null)
+                                return provider.isStatusViewableFile(container, name, basename);
 
-                                return StatusController.isVisibleFile(name, basename);
-                            }
+                            return StatusController.isVisibleFile(name, basename);
                         }
+                    }
                 );
             }
         }
@@ -91,12 +92,12 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         else
         {
             Arrays.sort(fileNames);
-            for (int i = 0; i < fileNames.length; i++)
-            {
-                final String fileName = fileNames[i];
 
+            for (final String fileName : fileNames)
+            {
                 // make sure the files can be open for read
                 FileInputStream fis = null;
+
                 try
                 {
                     fis = new FileInputStream(new File(dir, fileName));
@@ -124,7 +125,6 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                         }
                     }
                 }
-
             }
         }
     }

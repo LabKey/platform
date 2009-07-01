@@ -25,13 +25,14 @@ import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * User: adam
  * Date: Apr 23, 2009
  * Time: 2:39:33 PM
  */
-public class SchemaTsvWriter implements Writer<DataSetDefinition[]>
+public class SchemaTsvWriter implements Writer<List<DataSetDefinition>>
 {
     public static final String FILENAME = "schema.tsv";
 
@@ -40,7 +41,7 @@ public class SchemaTsvWriter implements Writer<DataSetDefinition[]>
         return "Dataset Schema Description";
     }
 
-    public void write(DataSetDefinition[] definitions, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(List<DataSetDefinition> definitions, ExportContext ctx, VirtualFile fs) throws IOException
     {
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();

@@ -34,10 +34,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: adam
@@ -50,9 +47,11 @@ public class DatasetWriter implements Writer<StudyImpl>
     private static final String DEFAULT_DIRECTORY = "datasets";
     private static final String MANIFEST_FILENAME = "datasets_manifest.xml";
 
+    public static final String SELECTION_TEXT = "CRF Datasets";
+
     public String getSelectionText()
     {
-        return "Datasets";
+        return SELECTION_TEXT;
     }
 
     public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException
@@ -63,7 +62,8 @@ public class DatasetWriter implements Writer<StudyImpl>
         datasetsXml.setFile(MANIFEST_FILENAME);
 
         VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
-        DataSetDefinition[] datasets = study.getDataSets();
+        Set<String> dataTypes = ctx.getDataTypes();
+        List<DataSetDefinition> datasets = getDatasets(study, dataTypes.contains(getSelectionText()), dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT));
 
         DatasetsDocument manifestXml = DatasetsDocument.Factory.newInstance();
         DatasetsDocument.Datasets dsXml = manifestXml.addNewDatasets();
@@ -168,6 +168,17 @@ public class DatasetWriter implements Writer<StudyImpl>
             PrintWriter out = fs.getPrintWriter(def.getFileName());
             tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
         }
+    }
+
+    private List<DataSetDefinition> getDatasets(StudyImpl study, boolean includeCRF, boolean includeAssay)
+    {
+        List<DataSetDefinition> datasets = new LinkedList<DataSetDefinition>();
+
+        for (DataSetDefinition dataset : study.getDataSets())
+            if ((null == dataset.getProtocolId() && includeCRF) || (null != dataset.getProtocolId() && includeAssay))
+                datasets.add(dataset);
+
+        return datasets;
     }
 
     private static boolean shouldExport(ColumnInfo column)

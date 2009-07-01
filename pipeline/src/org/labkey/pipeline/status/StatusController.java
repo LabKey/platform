@@ -1083,8 +1083,7 @@ public class StatusController extends SpringActionController
 
     protected static boolean isVisibleFile(String name, String basename)
     {
-        if (name.endsWith(".log") ||
-                name.endsWith(".def") ||
+        if (name.endsWith(".def") ||
                 name.endsWith(".def.err") ||
                 name.equals("tandem.xml") ||
                 name.equals("tandem.xml.err"))
@@ -1092,7 +1091,7 @@ public class StatusController extends SpringActionController
         if (!name.startsWith(basename) || name.length() == basename.length() ||
                 name.charAt(basename.length()) != '.')
             return false;
-        return name.endsWith(".out") || name.endsWith(".err");
+        return name.endsWith(".log") || name.endsWith(".out") || name.endsWith(".err");
     }
 
     /////////////////////////////////////////////////////////////////////////

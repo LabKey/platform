@@ -19,6 +19,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.study.xml.StudyDocument;
 
+import java.util.Set;
+
 /**
  * User: adam
  * Date: May 16, 2009
@@ -27,12 +29,15 @@ import org.labkey.study.xml.StudyDocument;
 public class ExportContext extends AbstractContext
 {
     private final boolean _oldFormats;
+    private final Set<String> _dataTypes;
+
     private boolean _locked = false;
 
-    public ExportContext(User user, Container c, boolean oldFormats)
+    public ExportContext(User user, Container c, boolean oldFormats, Set<String> dataTypes)
     {
         super(user, c, StudyXmlWriter.getStudyDocument());
         _oldFormats = oldFormats;
+        _dataTypes = dataTypes;
     }
 
     public void lockStudyDocument()
@@ -53,5 +58,10 @@ public class ExportContext extends AbstractContext
     public boolean useOldFormats()
     {
         return _oldFormats;
+    }
+
+    public Set<String> getDataTypes()
+    {
+        return _dataTypes;
     }
 }

@@ -34,7 +34,7 @@ import java.util.List;
  * Date: May 27, 2009
  * Time: 11:12:33 AM
  */
-public class SchemaXmlWriter implements Writer<DataSetDefinition[]>
+public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
@@ -50,7 +50,7 @@ public class SchemaXmlWriter implements Writer<DataSetDefinition[]>
         return "Dataset Schema Description";
     }
 
-    public void write(DataSetDefinition[] definitions, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(List<DataSetDefinition> definitions, ExportContext ctx, VirtualFile fs) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();

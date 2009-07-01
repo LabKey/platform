@@ -72,7 +72,7 @@
         <tr>
             <td width=200>&nbsp;</td>
             <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", "checkForReload.view?ui=1", null, "id=\"reloadNow\"") :
-                                 PageFlowUtil.generateButton("Attempt Reload Now", "javascript:return%20false;", null, "id=\"reloadNow\"")%></td>
+                                 PageFlowUtil.generateButton("Attempt Reload Now", "javascript:void(0);", null, "id=\"reloadNow\"")%></td>
         </tr>
         <tr>
             <td><%=generateSubmitButton("Update")%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%></td>

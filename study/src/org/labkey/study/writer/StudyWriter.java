@@ -16,7 +16,6 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
@@ -33,18 +32,6 @@ public class StudyWriter implements Writer<StudyImpl>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
-    private final Set<String> _dataTypes;
-
-    public StudyWriter()
-    {
-        _dataTypes = null;   // All data types
-    }
-
-    public StudyWriter(String... dataTypes)
-    {
-        _dataTypes = PageFlowUtil.set(dataTypes);
-    }
-
     public String getSelectionText()
     {
         return null;
@@ -54,9 +41,16 @@ public class StudyWriter implements Writer<StudyImpl>
     {
         LOG.info("Exporting study to " + fs.getLocation());
 
+        Set<String> dataTypes = ctx.getDataTypes();
+
+        // Hack for now to allow selection of CRF vs. Assay datasets.  TODO: More flexible export UI definition mechanism
+        boolean exportDatasets = dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT) || dataTypes.contains(DatasetWriter.SELECTION_TEXT);
+
         for (Writer<StudyImpl> writer : getWriters())
         {
-            if (null == _dataTypes || null == writer.getSelectionText() || _dataTypes.contains(writer.getSelectionText()))
+            String text = writer.getSelectionText();
+
+            if (null == text || dataTypes.contains(text) || exportDatasets && text.endsWith("Datasets"))
                 writer.write(study, ctx, fs);
         }
 
@@ -71,6 +65,7 @@ public class StudyWriter implements Writer<StudyImpl>
             new CohortWriter(),
             new QcStateWriter(),
             new DatasetWriter(),
+            new AssayDatasetWriter(),
             new SpecimenArchiveWriter(),
             new QueryWriter(),
             new CustomViewWriter(),
