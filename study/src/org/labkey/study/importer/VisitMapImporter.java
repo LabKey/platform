@@ -19,16 +19,15 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
-import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.File;
 
 /**
  * User: brittp

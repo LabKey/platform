@@ -2304,6 +2304,7 @@ study/src/org/labkey/study/view/moduleNav.jsp -text
 study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text
+study/src/org/labkey/study/view/pipelineSetup.jsp -text
 study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/samples/addSamplesToRequest.jsp -text

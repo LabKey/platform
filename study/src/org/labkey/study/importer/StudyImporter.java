@@ -16,13 +16,12 @@
 package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.Study;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -83,7 +82,9 @@ public class StudyImporter
         if (!file.exists())
             throw new StudyImportException("Study.xml file does not exist.");
 
-        _log.info("Loading study: " + file.getAbsolutePath());
+        StudyImpl study = getStudy(true);
+
+        _log.info("Loading study to folder " + _c.getPath());
 
         StudyDocument studyDoc;
 
@@ -99,8 +100,6 @@ public class StudyImporter
         ImportContext ctx = new ImportContext(_user, _c, studyDoc, _url);
 
         StudyDocument.Study studyXml = studyDoc.getStudy();
-
-        StudyImpl study = getStudy(true);
 
         // Create the study if it doesn't exist... otherwise, modify the existing properties
         if (null == study)
@@ -156,7 +155,7 @@ public class StudyImporter
         // Queue up a pipeline job to handle all the tasks that must happen after dataset and specimen upload
         PipelineService.get().queueJob(new StudyImportJob(getStudy(), ctx, _root));
 
-        _log.info("Finished loading study: " + file.getAbsolutePath());
+        _log.info("Pipeline jobs initialized for study " + getStudy().getLabel() + " in folder " + _c.getPath());
 
         return true;
     }
@@ -227,7 +226,7 @@ public class StudyImporter
         return file;
     }
 
-    // Return a filepath relative to root... this provides help path information but hides the pipeline root path.
+    // Returns a filepath relative to root... this provides path information but hides the pipeline root path.
     public static String getRelativePath(File root, File file)
     {
         String rootPath = root.getAbsolutePath();

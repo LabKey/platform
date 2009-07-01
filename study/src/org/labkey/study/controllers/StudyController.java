@@ -1839,7 +1839,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("manuallyDefineSchema", HelpTopic.Area.STUDY));
+            getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition", HelpTopic.Area.STUDY));
             _appendNavTrailDatasetAdmin(root);
             return root.addChild("Bulk Import");
         }
@@ -3604,9 +3604,9 @@ public class StudyController extends BaseStudyController
             {
                 return new HtmlView("Existing study: " + study.getLabel() + "<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Delete Study") + "</form>");
             }
-            else if (null == StudyReload.getPipelineRoot(c))
+            else if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
-                return new HtmlView("You must set a pipeline root before importing a study.<br>" + PageFlowUtil.generateButton("Pipeline Setup", PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getContainer())));
+                return new PipelineSetupView("importing a study");
             }
             else
             {
@@ -3741,6 +3741,15 @@ public class StudyController extends BaseStudyController
     }
 
 
+    private static class PipelineSetupView extends JspView<String>
+    {
+        private PipelineSetupView(String actionDescription)
+        {
+            super("/org/labkey/study/view/pipelineSetup.jsp", actionDescription);
+        }
+    }
+
+
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ExportStudyAction extends FormViewAction<ExportForm>
     {
@@ -3753,7 +3762,10 @@ public class StudyController extends BaseStudyController
             if (reshow)
                 return null;
 
-            return new JspView<ExportForm>("/org/labkey/study/view/exportStudy.jsp", form, errors);
+            if (PipelineService.get().hasValidPipelineRoot(getContainer()))
+                return new JspView<ExportForm>("/org/labkey/study/view/exportStudy.jsp", form, errors);
+            else
+                return new PipelineSetupView("exporting a study");
         }
 
         public NavTree appendNavTrail(NavTree root)

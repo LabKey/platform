@@ -258,7 +258,7 @@ public class StudyReload
                 {
                     // Study must have been deleted
                     cancelTimer(_studyContainerId);
-                    throw new StudyImportException("Study does not exist in " + c.getPath());
+                    throw new StudyImportException("Study does not exist in folder " + c.getPath());
                 }
                 else
                 {
@@ -267,7 +267,10 @@ public class StudyReload
                     File root = getPipelineRoot(c);
 
                     if (null == root)
-                        throw new StudyImportException("Pipeline root does not exist");
+                        throw new StudyImportException("Pipeline root is not set in folder " + c.getPath());
+
+                    if (!root.exists())
+                        throw new StudyImportException("Pipeline root does not exist in folder " + c.getPath());
 
                     File studyload = new File(root, STUDY_LOAD_FILENAME);
 
