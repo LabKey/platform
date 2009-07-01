@@ -132,6 +132,7 @@ public class ViewContext extends BoundMap implements MessageSource
         context.setUser(user);
         context.setContainer(c);
         context.setActionURL(url);
+        context.setBindPropertyValues(url.getPropertyValues());
 
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
         if (request instanceof MockHttpServletRequest)
