@@ -218,7 +218,7 @@ public abstract class VisitManager
                 ColumnInfo col = tInfo.getColumn("StartDate");
                 if (null != col)
                 {
-                    String subselect = "(SELECT " + col.getSelectName() + " FROM " + tInfo + " WHERE ParticipantId=" + tableParticipant + ".ParticipantId)";
+                    String subselect = "(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo + " WHERE ParticipantId=" + tableParticipant + ".ParticipantId)";
                     String sql = "UPDATE " + tableParticipant + " SET StartDate= " + subselect + " WHERE " +
                             tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate=" + subselect;
                     count = Table.execute(StudyManager.getSchema(), sql, null);

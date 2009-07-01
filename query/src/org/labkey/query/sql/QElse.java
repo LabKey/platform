@@ -37,4 +37,10 @@ public class QElse extends QExpr
         }
         builder.append(")");
     }
+
+    @Override
+    public int getSqlType()
+    {
+        return getChildrenSqlType();
+    }
 }

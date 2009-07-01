@@ -1352,8 +1352,14 @@ public class SampleManager
                 try
                 {
                     if (isLookup)
+                    {
+                        if (tinfo instanceof ContainerFilterable)
+                        {
+                            ((ContainerFilterable)tinfo).setContainerFilter(new ContainerFilter.SimpleContainerFilter(Collections.singleton(container)));
+                        }
                         rs = Table.select(tinfo, Arrays.asList(tinfo.getColumn(tinfo.getTitleColumn())), null,
                                 new Sort(tinfo.getTitleColumn()));
+                    }
                     else
                     {
                         SQLFragment fromSQL = tinfo.getFromSQL();

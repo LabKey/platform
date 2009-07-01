@@ -24,6 +24,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ColumnInfo;
 
 import java.sql.Types;
+import java.util.List;
 
 
 abstract public class QExpr extends QNode
@@ -91,5 +92,35 @@ abstract public class QExpr extends QNode
     public QueryParseException fieldCheck(QNode parent)
     {
         return null;
+    }
+
+    /** If all the children are the same type, return as that type. Otherwise, return Types.OTHER */
+    protected int getChildrenSqlType()
+    {
+        List<QNode> children = childList();
+        if (children.isEmpty())
+        {
+            return Types.OTHER;
+        }
+        if (!(children.get(0) instanceof QExpr))
+        {
+            return Types.OTHER;
+        }
+        int result = ((QExpr)children.get(0)).getSqlType();
+        for (QNode qNode : childList())
+        {
+            if (qNode instanceof QExpr)
+            {
+                if (result != ((QExpr)qNode).getSqlType())
+                {
+                    return Types.OTHER;
+                }
+            }
+            else
+            {
+                return Types.OTHER;
+            }
+        }
+        return result;
     }
 }

@@ -1559,6 +1559,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 this.fileSystem.deletePath(selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
                 this.selectFile(null);
+                this.refreshDirectory();
             }).createDelegate(this);
 
             if (selectedRecord)

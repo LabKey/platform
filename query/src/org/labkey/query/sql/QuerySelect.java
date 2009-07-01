@@ -968,7 +968,7 @@ loop:
                 continue;
             }
             SelectColumn column = new SelectColumn(field);
-            if (dgColumn.isSetAlias())
+            if (dgColumn.isSetAlias() && dgColumn.getAlias().trim().length() > 0)
             {
                 column.setAlias(dgColumn.getAlias());
             }
@@ -1131,7 +1131,7 @@ loop:
             FieldKey key = _field.getFieldKey();
             if (null != key)
                 _key = new FieldKey(null, key.getName());
-            _alias = _aliasManager.decideAlias(getName());
+            _alias = getName() == null ? null : _aliasManager.decideAlias(getName());
         }
 
         public SelectColumn(QField field)

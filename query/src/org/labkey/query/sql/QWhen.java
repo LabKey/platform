@@ -35,4 +35,15 @@ public class QWhen extends QExpr
         getLastChild().appendSource(builder);
         builder.append(")");
     }
+
+    @Override
+    public int getSqlType()
+    {
+        QNode valueChild = getLastChild();
+        if (valueChild instanceof QExpr)
+        {
+            return ((QExpr)valueChild).getSqlType();
+        }
+        return super.getSqlType();
+    }
 }

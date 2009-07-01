@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import java.sql.Types;
+
 final public class QOperator extends QExpr
 {
     Operator _op;
@@ -90,5 +92,24 @@ final public class QOperator extends QExpr
             }
         }
         return ret.toString();
+    }
+
+    @Override
+    public int getSqlType()
+    {
+        if (_op.getResultType() == Operator.ResultType.bool)
+        {
+            return Types.BOOLEAN;
+        }
+        if (_op.getResultType() == Operator.ResultType.string)
+        {
+            return Types.VARCHAR;
+        }
+        if (_op.getResultType() == Operator.ResultType.arg)
+        {
+            return getChildrenSqlType();
+        }
+
+        return super.getSqlType();
     }
 }

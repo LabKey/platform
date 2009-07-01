@@ -37,4 +37,10 @@ public class QCase extends QExpr
         }
         builder.append("\nEND");
     }
+
+    @Override
+    public int getSqlType()
+    {
+        return getChildrenSqlType();
+    }
 }

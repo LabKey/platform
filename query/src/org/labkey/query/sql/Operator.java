@@ -21,15 +21,15 @@ import java.util.*;
 
 public enum Operator
 {
-    eq("=", Precedence.comparison, SqlTokenTypes.EQ),
-    ne("<>", Precedence.comparison, SqlTokenTypes.NE),
-    gt(">", Precedence.comparison, SqlTokenTypes.GT),
-    lt("<", Precedence.comparison, SqlTokenTypes.LT),
-    ge(">=", Precedence.comparison, SqlTokenTypes.GE),
-    le("<=", Precedence.comparison, SqlTokenTypes.LE),
-    is(" IS ", Precedence.comparison, SqlTokenTypes.IS),
-    is_not(" IS NOT ", Precedence.comparison, SqlTokenTypes.IS_NOT),
-    between(" BETWEEN ", Precedence.comparison, SqlTokenTypes.BETWEEN)
+    eq("=", Precedence.comparison, SqlTokenTypes.EQ, ResultType.bool),
+    ne("<>", Precedence.comparison, SqlTokenTypes.NE, ResultType.bool),
+    gt(">", Precedence.comparison, SqlTokenTypes.GT, ResultType.bool),
+    lt("<", Precedence.comparison, SqlTokenTypes.LT, ResultType.bool),
+    ge(">=", Precedence.comparison, SqlTokenTypes.GE, ResultType.bool),
+    le("<=", Precedence.comparison, SqlTokenTypes.LE, ResultType.bool),
+    is(" IS ", Precedence.comparison, SqlTokenTypes.IS, ResultType.bool),
+    is_not(" IS NOT ", Precedence.comparison, SqlTokenTypes.IS_NOT, ResultType.bool),
+    between(" BETWEEN ", Precedence.comparison, SqlTokenTypes.BETWEEN, ResultType.bool)
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
@@ -52,25 +52,25 @@ public enum Operator
             builder.popPrefix("");
         }
     },
-    add("+", Precedence.addition, SqlTokenTypes.PLUS),
-    subtract("-", Precedence.addition, SqlTokenTypes.MINUS),
-    plus("+", Precedence.unary, SqlTokenTypes.UNARY_PLUS)
+    add("+", Precedence.addition, SqlTokenTypes.PLUS, ResultType.arg),
+    subtract("-", Precedence.addition, SqlTokenTypes.MINUS, ResultType.arg),
+    plus("+", Precedence.unary, SqlTokenTypes.UNARY_PLUS, ResultType.arg)
     {
         public String getPrefix()
         {
             return "+";
         }
     },
-    minus("-", Precedence.unary, SqlTokenTypes.UNARY_MINUS)
+    minus("-", Precedence.unary, SqlTokenTypes.UNARY_MINUS, ResultType.arg)
     {
         public String getPrefix()
         {
             return "-";
         }
     },
-    multiply("*", Precedence.multiplication, SqlTokenTypes.STAR),
-    divide("/", Precedence.multiplication, SqlTokenTypes.DIV),
-    concat("||", Precedence.addition, SqlTokenTypes.CONCAT)
+    multiply("*", Precedence.multiplication, SqlTokenTypes.STAR, ResultType.arg),
+    divide("/", Precedence.multiplication, SqlTokenTypes.DIV, ResultType.arg),
+    concat("||", Precedence.addition, SqlTokenTypes.CONCAT, ResultType.string)
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
@@ -83,7 +83,7 @@ public enum Operator
             builder.popPrefix();
         }
     },
-    not(" NOT ", Precedence.not, SqlTokenTypes.NOT)
+    not(" NOT ", Precedence.not, SqlTokenTypes.NOT, ResultType.bool)
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
@@ -97,17 +97,22 @@ public enum Operator
             builder.append(")");
         }
     },
-    and(" AND ", Precedence.and, SqlTokenTypes.AND),
-    or(" OR ", Precedence.like, SqlTokenTypes.OR),
-    like(" LIKE ", Precedence.like, SqlTokenTypes.LIKE),
-    notLike(" NOT LIKE ", Precedence.like, SqlTokenTypes.NOT_LIKE),
-    in(" IN ", Precedence.like, SqlTokenTypes.IN),
-    notIn(" NOT IN ", Precedence.like, SqlTokenTypes.NOT_IN),
-    bit_and("&", Precedence.addition, SqlTokenTypes.BIT_AND),
-    bit_or("|", Precedence.bitwiseor, SqlTokenTypes.BIT_OR),
-    bit_xor("^", Precedence.bitwiseor, SqlTokenTypes.BIT_XOR),
+    and(" AND ", Precedence.and, SqlTokenTypes.AND, ResultType.bool),
+    or(" OR ", Precedence.like, SqlTokenTypes.OR, ResultType.bool),
+    like(" LIKE ", Precedence.like, SqlTokenTypes.LIKE, ResultType.bool),
+    notLike(" NOT LIKE ", Precedence.like, SqlTokenTypes.NOT_LIKE, ResultType.bool),
+    in(" IN ", Precedence.like, SqlTokenTypes.IN, ResultType.bool),
+    notIn(" NOT IN ", Precedence.like, SqlTokenTypes.NOT_IN, ResultType.bool),
+    bit_and("&", Precedence.addition, SqlTokenTypes.BIT_AND, ResultType.arg),
+    bit_or("|", Precedence.bitwiseor, SqlTokenTypes.BIT_OR, ResultType.arg),
+    bit_xor("^", Precedence.bitwiseor, SqlTokenTypes.BIT_XOR, ResultType.arg),
 
     ;
+
+    public enum ResultType
+    {
+        bool, arg, string
+    }
 
     public enum Associativity
     {
@@ -129,12 +134,14 @@ public enum Operator
     private final String _strOp;
     private final Precedence _precedence;
     private final int _tokenType;
+    private final ResultType _resultType;
 
-    private Operator(String strOp, Precedence precedence, int tokenType)
+    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType)
     {
         _strOp = strOp;
         _precedence = precedence;
         _tokenType = tokenType;
+        _resultType = resultType;
     }
 
     public Precedence getPrecedence()
@@ -222,5 +229,10 @@ public enum Operator
         if (!(expr instanceof QOperator))
             return false;
         return ((QOperator) expr).getOperator() == this;
+    }
+
+    public ResultType getResultType()
+    {
+        return _resultType;
     }
 }

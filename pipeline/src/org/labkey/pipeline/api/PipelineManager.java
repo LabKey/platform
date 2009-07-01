@@ -102,9 +102,7 @@ public class PipelineManager
     static public PipelineRoot[] getPipelineRoots(String type) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("Type", type);
-        PipelineRoot[] roots;
-        roots = Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
-        return roots;
+        return Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
     }
 
 
