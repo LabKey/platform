@@ -199,7 +199,7 @@ public class SampleManager
 
     public SpecimenEvent[] getSpecimenEvents(Specimen sample) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("SpecimenId", sample.getRowId());
+        SimpleFilter filter = new SimpleFilter("VialId", sample.getRowId());
         return _specimenEventHelper.get(sample.getContainer(), filter);
     }
 

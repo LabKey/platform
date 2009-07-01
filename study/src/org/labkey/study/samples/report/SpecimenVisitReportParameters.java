@@ -59,7 +59,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         AVAILABLE("Available vials"),
         UNAVAILABLE("Unavailable vials"),
         REQUESTED_INPROCESS("Vials in any request (including in-process)"),
-        NOT_REQUESTED_INPROCESS("Vials not in in any request (including in-process)"),
+        NOT_REQUESTED_INPROCESS("Vials not in in any request"),
         REQUESTED_COMPLETE("Vials in completed requests"),
         NOT_REQUESTED_COMPLETE("Vials not in completed requests");
 

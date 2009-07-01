@@ -27,7 +27,7 @@
     SpringSpecimenController.SelectSpecimenProviderBean bean = me.getModelBean();
 %>
 <labkey:errors/>
-<p>Vials from the selected speicmens can be shipped to you from multiple locations.  Please select your preferred location:</p>
+<p>Vials from the selected specimens can be shipped to you from multiple locations.  Please select your preferred location:</p>
 <form action="<%= bean.getFormTarget().getLocalURIString() %>" method="POST">
 <%= bean.getSourceForm().getHiddenFormInputs() %>
 <p>

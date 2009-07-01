@@ -1192,6 +1192,7 @@ public class SpringSpecimenController extends BaseStudyController
         private Integer _preferredLocation;
         private String _returnUrl;
         private boolean _ignoreReturnUrl;
+        private String[] _sampleIds;
 
         public String getHiddenFormInputs()
         {
@@ -1231,6 +1232,13 @@ public class SpringSpecimenController extends BaseStudyController
                 for (boolean required : _required)
                     builder.append("<input type=\"hidden\" name=\"required\" value=\"").append(required).append("\">\n");
             }
+
+            if (_sampleIds != null)
+            {
+                for (String sampleId : _sampleIds)
+                    builder.append("<input type=\"hidden\" name=\"sampleIds\" value=\"").append(PageFlowUtil.filter(sampleId)).append("\">\n");
+            }
+
             builder.append("<input type=\"hidden\" name=\"fromGroupedView\" value=\"").append(_fromGroupedView).append("\">\n");
             return builder.toString();
         }
@@ -1315,45 +1323,6 @@ public class SpringSpecimenController extends BaseStudyController
             _ignoreReturnUrl = ignoreReturnUrl;
         }
 
-        public SpecimenUtils.RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws SQLException,SpecimenUtils.AmbiguousLocationException
-        {
-            // first check for explicitly listed specimen row ids (this is the case when posting the final
-            // specimen request form):
-            Specimen[] requestedSamples = utils.getSpecimensFromRowIds(getSampleRowIds());
-            if (requestedSamples != null && requestedSamples.length > 0)
-                return new SpecimenUtils.RequestedSpecimens(requestedSamples);
-
-            if ("post".equalsIgnoreCase(getViewContext().getRequest().getMethod()) &&
-                    (getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
-            {
-                Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
-                if (isFromGroupedView())
-                    return utils.getRequestableBySampleHash(ids, getPreferredLocation());
-                else
-                    return utils.getRequestableByVialRowIds(ids);
-            }
-            return null;
-        }
-    }
-
-    public static class CreateQuickSampleRequestForm extends CreateSampleRequestForm
-    {
-        private String[] _sampleIds;
-
-        public SpecimenUtils.RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws SQLException,SpecimenUtils.AmbiguousLocationException
-        {
-            if (_sampleIds != null)
-            {
-                Set<String> ids = new HashSet<String>();
-                Collections.addAll(ids, _sampleIds);
-                if (isFromGroupedView())
-                    return utils.getRequestableBySampleHash(ids, getPreferredLocation());
-                else
-                    return utils.getRequestableByVialGlobalUniqueIds(ids);
-            }
-            return null;
-        }
-
         public String[] getSampleIds()
         {
             return _sampleIds;
@@ -1362,6 +1331,37 @@ public class SpringSpecimenController extends BaseStudyController
         public void setSampleIds(String[] sampleIds)
         {
             _sampleIds = sampleIds;
+        }
+
+        public SpecimenUtils.RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws SQLException,SpecimenUtils.AmbiguousLocationException
+        {
+            // first check for explicitly listed specimen row ids (this is the case when posting the final
+            // specimen request form):
+            Specimen[] requestedSamples = utils.getSpecimensFromRowIds(getSampleRowIds());
+            if (requestedSamples != null && requestedSamples.length > 0)
+                return new SpecimenUtils.RequestedSpecimens(requestedSamples);
+
+            Set<String> ids;
+            if ("post".equalsIgnoreCase(getViewContext().getRequest().getMethod()) &&
+                    (getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
+            {
+                ids = DataRegionSelection.getSelected(getViewContext(), true);
+                if (isFromGroupedView())
+                    return utils.getRequestableBySampleHash(ids, getPreferredLocation());
+                else
+                    return utils.getRequestableByVialRowIds(ids);
+            }
+            else if (_sampleIds != null && _sampleIds.length > 0)
+            {
+                ids = new HashSet<String>();
+                Collections.addAll(ids, _sampleIds);
+                if (isFromGroupedView())
+                    return utils.getRequestableBySampleHash(ids, getPreferredLocation());
+                else
+                    return utils.getRequestableByVialGlobalUniqueIds(ids);
+            }
+            else
+                return null;
         }
     }
 
@@ -1580,9 +1580,9 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
     @RequiresPermissionClass(RequestSpecimensPermission.class)
-    public class ShowAPICreateSampleRequestAction extends SimpleViewAction<CreateQuickSampleRequestForm>
+    public class ShowAPICreateSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
-        public ModelAndView getView(CreateQuickSampleRequestForm form, BindException errors) throws Exception
+        public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
         {
             return getCreateSampleRequestView(form, errors);
         }

@@ -755,7 +755,7 @@ public class SpecimenImporter
     private static void prepareQCComments(Container container, User user, Logger logger) throws SQLException
     {
         StringBuilder columnList = new StringBuilder();
-        columnList.append("SpecimenId");
+        columnList.append("VialId");
         for (SpecimenColumn col : SPECIMEN_COLUMNS)
         {
             if (col.getTargetTable() == TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS && col.getAggregateEventFunction() == null)
@@ -769,10 +769,10 @@ public class SpecimenImporter
         SQLFragment conflictedGUIDs = new SQLFragment("SELECT GlobalUniqueId FROM ");
         conflictedGUIDs.append(StudySchema.getInstance().getTableInfoVial());
         conflictedGUIDs.append(" WHERE RowId IN (\n");
-        conflictedGUIDs.append("SELECT SpecimenId FROM\n");
+        conflictedGUIDs.append("SELECT VialId FROM\n");
         conflictedGUIDs.append("(SELECT DISTINCT\n").append(columnList).append("\nFROM ").append(StudySchema.getInstance().getTableInfoSpecimenEvent());
         conflictedGUIDs.append("\nWHERE Container = ?\nGROUP BY\n").append(columnList).append(") ");
-        conflictedGUIDs.append("AS DupCheckView\nGROUP BY SpecimenId HAVING Count(SpecimenId) > 1");
+        conflictedGUIDs.append("AS DupCheckView\nGROUP BY VialId HAVING Count(VialId) > 1");
         conflictedGUIDs.add(container.getId());
         conflictedGUIDs.append("\n)");
 
@@ -1317,8 +1317,8 @@ public class SpecimenImporter
     {
         SQLFragment insertSql = new SQLFragment();
         insertSql.append("INSERT INTO study.SpecimenEvent\n" +
-                "(Container, SpecimenId, " + getSpecimenEventCols(info.getAvailableColumns()) + ")\n" +
-                "SELECT ? AS Container, study.Vial.RowId AS SpecimenId, \n" +
+                "(Container, VialId, " + getSpecimenEventCols(info.getAvailableColumns()) + ")\n" +
+                "SELECT ? AS Container, study.Vial.RowId AS VialId, \n" +
                 getSpecimenEventTempTableColumns(info) + " FROM " +
                 info.getTempTableName() + "\nJOIN study.Vial ON " +
                 info.getTempTableName() + ".GlobalUniqueId = study.Vial.GlobalUniqueId AND study.Vial.Container = ?");
@@ -1676,7 +1676,7 @@ public class SpecimenImporter
         return value;
     }
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {

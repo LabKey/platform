@@ -51,7 +51,7 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private String _specimenHash;
     private Date _frozenTime;
     private Date _processingTime;
-    private String _primaryVolume;
+    private Float _primaryVolume;
     private String _primaryVolumeUnits;
     private boolean _atRepository = false;
     private boolean _available = false;
@@ -318,12 +318,12 @@ public class Specimen extends AbstractStudyCachable<Specimen>
         _processingTime = processingTime;
     }
 
-    public String getPrimaryVolume()
+    public Float getPrimaryVolume()
     {
         return _primaryVolume;
     }
 
-    public void setPrimaryVolume(String primaryVolume)
+    public void setPrimaryVolume(Float primaryVolume)
     {
         _primaryVolume = primaryVolume;
     }

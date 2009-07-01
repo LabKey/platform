@@ -566,7 +566,9 @@ public class ListController extends SpringActionController
                 Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(getContainer(), tableForm.getDomain(), getUser());
                 for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
                 {
-                    defaults.put(ColumnInfo.propNameFromName(entry.getKey().getName()), entry.getValue());
+                    ColumnInfo tempCol = new ColumnInfo(entry.getKey().getName());
+                    String formFieldName = tableForm.getFormFieldName(tempCol);
+                    defaults.put(formFieldName, entry.getValue());
                 }
                 view.setInitialValues(defaults);
             }

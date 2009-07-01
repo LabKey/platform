@@ -313,8 +313,78 @@ function addToCurrentRequest()
     if (vialIdType != "SpecimenHash")
         LABKEY.Specimen.addVialsToRequest(succesfulAddCallback, requestId, specOrVialIdArray, vialIdType, failedAddCallback);
     else
-        LABKEY.Specimen.addSamplesToRequest(succesfulAddCallback, requestId, specOrVialIdArray, failedAddCallback);
+        LABKEY.Specimen.getProvidingLocations(verifyProvidingLocations, specOrVialIdArray, failedAddCallback);
 }
+
+function verifyProvidingLocations(locations)
+{
+    var requestId = LABKEY.Utils.getCookie("selectedRequest");
+    var specOrVialIdArray = _requestWin.specOrVialIdArray;
+    if (locations == null || locations.length <= 1)
+        LABKEY.Specimen.addSamplesToRequest(succesfulAddCallback, requestId, specOrVialIdArray, undefined, failedAddCallback);
+    else
+    {
+        var locationArray = [];
+        for (var i = 0; i < locations.length; i++)
+            locationArray[i] = [locations[i].rowId, locations[i].label];
+        var locationSelect = new Ext.form.ComboBox({
+            width: 300,
+            store: locationArray,
+            editable: false,
+            blankText: 'Select a location...',
+            selectOnFocus: true,
+            triggerAction: 'all',
+            disableKeyFilter: true,
+            border: false
+        });
+
+        var selectPanel  = new Ext.Panel({
+            style: { padding:'10px', backgroundColor: 'FFFFFF' },
+            border: false,
+            bodyBorder: false,
+            items: [
+                {
+                    html: "Vials of this specimen are available from multiple providing locations.  Please select your preferred providing location:<p>",
+                    border: false
+                },
+                locationSelect
+            ]
+        });
+
+        Ext.Msg.hide();
+        var selectLocationWin = new Ext.Window({
+            items: selectPanel,
+            title: "Multiple Providing Locations",
+            width: 400,
+            autoHeight: true,
+            modal: true,
+            resizable: false,
+            bbar: [
+               {
+                   text: "Select",
+                   handler: function() {
+                       if (!locationSelect.getValue())
+                       {
+                           Ext.Msg.alert("Location Required", "Please select a providing location.");
+                           return;
+                       }
+                       Ext.Msg.wait("Adding vial(s)...");
+                       LABKEY.Specimen.addSamplesToRequest(succesfulAddCallback, requestId,
+                               specOrVialIdArray, locationSelect.getValue(), failedAddCallback);
+                       selectLocationWin.close();
+                   }
+               },
+                {
+                   text: "Cancel",
+                   handler: function() {
+                       selectLocationWin.close();
+                   }
+               }
+            ]});
+        selectLocationWin.show();
+    }
+}
+
 
 var REQUEST_RECORD_CONSTRUCTOR = Ext.data.Record.create([
     {name: 'comments'},

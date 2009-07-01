@@ -503,7 +503,7 @@ public class SpecimenUtils
         return intersection;
     }
 
-    public Collection<Integer> getPreferredProvidingLocations(Collection<List<Specimen>> specimensBySample) throws SQLException
+    public static Collection<Integer> getPreferredProvidingLocations(Collection<List<Specimen>> specimensBySample) throws SQLException
     {
         Set<Integer> locationIntersection = null;
         for (List<Specimen> vials : specimensBySample)

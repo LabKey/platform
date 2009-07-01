@@ -30,7 +30,7 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     private int _rowId; // INT IDENTITY(1,1),
     private Container _container; // ENTITYID NOT NULL,
     private int _externalId; // INT NOT NULL,
-    private int _specimenId; // INT NOT NULL,
+    private int _vialId; // INT NOT NULL,
     private Integer _labId; // INT,
     private String _uniqueSpecimenId; // NVARCHAR(20),
     private Integer _parentSpecimenId; // INT,
@@ -202,15 +202,15 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
         _shipFlag = shipFlag;
     }
 
-    public int getSpecimenId()
+    public int getVialId()
     {
-        return _specimenId;
+        return _vialId;
     }
 
-    public void setSpecimenId(int specimenId)
+    public void setVialId(int vialId)
     {
         verifyMutability();
-        _specimenId = specimenId;
+        _vialId = vialId;
     }
 
     public String getStorageDate()

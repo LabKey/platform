@@ -15,19 +15,20 @@
  */
 package org.labkey.study.controllers.samples;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.action.*;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
 
+import javax.servlet.ServletException;
 import java.util.*;
 import java.sql.SQLException;
 /*
@@ -190,7 +191,7 @@ public class SpecimenApiController extends BaseStudyController
         return response;
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetRepositoriesAction extends ApiAction<SampleApiForm>
     {
@@ -214,7 +215,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetOpenRequestsAction extends ApiAction<GetRequestsForm>
     {
@@ -251,7 +252,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetRequestAction extends ApiAction<RequestIdForm>
     {
@@ -285,7 +286,46 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    public static class GetProvidingLocationsForm extends RequestIdForm
+    {
+        private String[] specimenHashes;
+
+        public String[] getSpecimenHashes()
+        {
+            return specimenHashes;
+        }
+
+        public void setSpecimenHashes(String[] specimenHashes)
+        {
+            this.specimenHashes = specimenHashes;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    @ApiVersion(9.1)
+    public class GetProvidingLocations extends ApiAction<GetProvidingLocationsForm>
+    {
+        public ApiResponse execute(GetProvidingLocationsForm form, BindException errors) throws Exception
+        {
+            Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(),
+                    PageFlowUtil.set(form.getSpecimenHashes()), true);
+            Collection<Integer> preferredLocations = SpecimenUtils.getPreferredProvidingLocations(vialsByHash.values());
+            final Map<String, Object> response = new HashMap<String, Object>();
+            List<Map<String, Object>> locations = new ArrayList<Map<String, Object>>();
+            for (Integer locationId : preferredLocations)
+                locations.add(getLocation(getContainer(), locationId));
+            response.put("locations", locations);
+            return new ApiResponse()
+            {
+                public Map<String, Object> getProperties()
+                {
+                    return response;
+                }
+            };
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetVialsByRowIdAction extends ApiAction<GetVialsByRowIdForm>
     {
@@ -374,7 +414,7 @@ public class SpecimenApiController extends BaseStudyController
     private SampleRequest getRequest(User user, Container container, int rowId, boolean checkOwnership, boolean checkEditability) throws SQLException
     {
         SampleRequest request = SampleManager.getInstance().getRequest(container, rowId);
-        boolean admin = container.hasPermission(user, ACL.PERM_ADMIN);
+        boolean admin = container.hasPermission(user, RequestSpecimensPermission.class);
         boolean adminOrOwner = request != null && (admin || request.getCreatedBy() == user.getUserId());
         if (request == null || (checkOwnership && !adminOrOwner))
             throw new RuntimeException("Request " + rowId + " was not found or the current user does not have permissions to access it.");
@@ -395,7 +435,7 @@ public class SpecimenApiController extends BaseStudyController
         return request;
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class AddVialsToRequestAction extends ApiAction<VialRequestForm>
     {
@@ -449,7 +489,7 @@ public class SpecimenApiController extends BaseStudyController
         return vial;
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class RemoveVialsFromRequestAction extends ApiAction<VialRequestForm>
     {
@@ -489,7 +529,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class AddSamplesToRequestAction extends ApiAction<AddSampleToRequestForm>
     {
@@ -513,7 +553,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class CancelRequestAction extends ApiAction<RequestIdForm>
     {
