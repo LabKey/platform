@@ -498,7 +498,7 @@
       <ns:column columnName="RowId"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="ExternalId"/>
-      <ns:column columnName="SpecimenId"/>
+      <ns:column columnName="VialId"/>
       <ns:column columnName="LabId"/>
       <ns:column columnName="UniqueSpecimenId"/>
       <ns:column columnName="ParentSpecimenId"/>
