@@ -20,6 +20,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.writer.AbstractContext;
+import org.apache.xmlbeans.XmlException;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * User: adam
@@ -29,11 +33,13 @@ import org.labkey.study.writer.AbstractContext;
 public class ImportContext extends AbstractContext
 {
     private final ActionURL _url;
+    private final File _root;
 
-    public ImportContext(User user, Container c, StudyDocument studyDoc, ActionURL url)
+    public ImportContext(User user, Container c, File root, ActionURL url)
     {
-        super(user, c, studyDoc);
+        super(user, c, null);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _url = url;
+        _root = root;
     }
 
     @Deprecated
@@ -41,5 +47,54 @@ public class ImportContext extends AbstractContext
     public ActionURL getUrl()
     {
         return _url;
+    }
+
+    @Override
+    protected synchronized StudyDocument getStudyDocument()
+    {
+        StudyDocument studyDoc = super.getStudyDocument();
+
+        // XStream can't seem to serialize the StudyDocument XMLBean, so we initially set to null and parse the file on demand
+        if (null == studyDoc)
+        {
+            try
+            {
+                studyDoc = readStudyDocument(_root);
+            }
+            catch (StudyImporter.StudyImportException e)
+            {
+                throw new RuntimeException(e);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            setStudyDocument(studyDoc);
+        }
+
+        return studyDoc;
+    }
+
+
+    private static StudyDocument readStudyDocument(File root) throws StudyImporter.StudyImportException, IOException
+    {
+        File file = new File(root, "study.xml");
+
+        if (!file.exists())
+            throw new StudyImporter.StudyImportException("Study.xml file does not exist.");
+
+        StudyDocument studyDoc;
+
+        try
+        {
+            studyDoc = StudyDocument.Factory.parse(file);
+        }
+        catch (XmlException e)
+        {
+            throw new StudyImporter.InvalidFileException(root, file, e);
+        }
+
+        return studyDoc;
     }
 }

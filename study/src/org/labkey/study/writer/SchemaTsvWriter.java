@@ -60,6 +60,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>>
             String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDataSetId() + '\t';
 
             TableInfo tinfo = def.getTableInfo(ctx.getUser());
+            String visitDatePropertyName = def.getVisitDatePropertyName();
 
             for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo.getColumns(), def, true))
             {
@@ -78,7 +79,10 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>>
                 writer.print(col.isNullable() ? "optional\t" : "required\t");
                 writer.print(StringUtils.trimToEmpty(col.getFormatString()) + "\t");     // TODO: Only export if non-null / != default
 
-                // TODO: ConceptURI?
+                // TODO: Export all ConceptURIs, not just visit date tag?
+                if (col.getColumnName().equals(visitDatePropertyName))
+                    writer.print(DataSetDefinition.getVisitDateURI());
+
                 writer.print("\t");
 
                 if (col.getName().equals(def.getKeyPropertyName()))

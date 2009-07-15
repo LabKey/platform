@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.CoreSchema;
 
 import java.sql.Types;
 
@@ -43,15 +44,23 @@ public class QString extends QExpr implements IConstant
         return "'" + StringUtils.replace(str, "'", "''") + "'";
     }
 
+    private boolean _addCast = true;
+
     public QString()
     {
 		super(false);
     }
 
     public QString(String value)
+    {
+        this(value, true);
+    }
+
+    public QString(String value, boolean addCast)
 	{
 		this();
         setTokenText(quote(value));
+        _addCast = addCast;
     }
 
     public String getValue()
@@ -61,7 +70,17 @@ public class QString extends QExpr implements IConstant
 
     public void appendSql(SqlBuilder builder)
     {
+//        if (_addCast)
+//        {
+//            builder.append("CAST (");
+//        }
         builder.appendStringLiteral(getValue());
+//        if (_addCast)
+//        {
+//            builder.append(" AS ");
+//            builder.append(CoreSchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR));
+//            builder.append(")");
+//        }
     }
 
     public void appendSource(SourceBuilder builder)

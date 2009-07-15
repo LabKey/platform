@@ -15,10 +15,15 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -30,14 +35,17 @@ public class ExportContext extends AbstractContext
 {
     private final boolean _oldFormats;
     private final Set<String> _dataTypes;
+    private final List<DataSetDefinition> _datasets = new LinkedList<DataSetDefinition>();
+    private final Set<Integer> _datasetIds = new HashSet<Integer>();
 
     private boolean _locked = false;
 
-    public ExportContext(User user, Container c, boolean oldFormats, Set<String> dataTypes)
+    public ExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes)
     {
         super(user, c, StudyXmlWriter.getStudyDocument());
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
+        initializeDatasets(study);
     }
 
     public void lockStudyDocument()
@@ -63,5 +71,30 @@ public class ExportContext extends AbstractContext
     public Set<String> getDataTypes()
     {
         return _dataTypes;
+    }
+
+    private void initializeDatasets(StudyImpl study)
+    {
+        boolean includeCRF = _dataTypes.contains(DatasetWriter.SELECTION_TEXT);
+        boolean includeAssay = _dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT);
+
+        for (DataSetDefinition dataset : study.getDataSets())
+        {
+            if ((null == dataset.getProtocolId() && includeCRF) || (null != dataset.getProtocolId() && includeAssay))
+            {
+                _datasets.add(dataset);
+                _datasetIds.add(dataset.getDataSetId());
+            }
+        }
+    }
+
+    public boolean isExportedDataset(Integer datasetId)
+    {
+        return _datasetIds.contains(datasetId);
+    }
+
+    public List<DataSetDefinition> getDatasets()
+    {
+        return _datasets;
     }
 }

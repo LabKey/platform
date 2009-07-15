@@ -83,7 +83,7 @@ public class DataFaxVisitMapWriter implements Writer<VisitImpl[]>
                 // Required datasets
                 for (VisitDataSet vd : vds)
                 {
-                    if (vd.isRequired())
+                    if (vd.isRequired() && ctx.isExportedDataset(vd.getDataSetId()))
                     {
                         out.print(s);
                         out.print(vd.getDataSetId());

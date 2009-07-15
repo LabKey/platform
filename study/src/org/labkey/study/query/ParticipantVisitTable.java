@@ -192,11 +192,11 @@ public class ParticipantVisitTable extends FilteredTable
 
             SQLFragment condition = new SQLFragment();
             condition.append("(");
-            condition.append(pvForeign._participantColumn.getValueSql());
+            condition.append(pvForeign._participantColumn.getValueSql(getTableAlias()));
             condition.append(" = ");
             condition.append(pvLookup._participantColumn.getValueSql(tableAliasName));
             condition.append(" AND " );
-            condition.append(pvForeign._visitColumn.getValueSql());
+            condition.append(pvForeign._visitColumn.getValueSql(getTableAlias()));
             condition.append(" = ");
             condition.append(pvLookup._visitColumn.getValueSql(tableAliasName));
             condition.append(")");

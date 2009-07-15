@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -245,8 +246,13 @@ public class UploadSamplesHelper
                 }
                 else if (_form.getOverwriteChoiceEnum() == OverwriteChoice.replace)
                 {
-                    for (Map<String, Object> map : maps)
+                    // 8309 : preserve comment property on existing materials
+                    descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
+
+                    ListIterator<Map<String, Object>> li = maps.listIterator();
+                    while (li.hasNext())
                     {
+                        Map<String, Object> map = li.next();
                         String lsid = new Lsid(source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs)).toString();
                         ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
                         if (material != null)
@@ -255,6 +261,15 @@ public class UploadSamplesHelper
                             {
                                 throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
                             }
+
+                            String comment = material.getComment();
+                            if (comment != null)
+                            {
+                                Map<String, Object> newMap = new HashMap<String, Object>(map);
+                                newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), comment);
+                                li.set(newMap);
+                            }
+
                             OntologyManager.deleteOntologyObjects(_form.getContainer(), material.getLSID());
                             reusedMaterialLSIDs.add(lsid);
                         }

@@ -28,13 +28,13 @@ public abstract class AbstractContext
 {
     private final User _user;
     private final Container _c;
-    private final StudyDocument _studyDoc;
+    private transient StudyDocument _studyDoc;   // XStream can't seem to serialize this XMLBean... so we load it on demand
 
     public AbstractContext(User user, Container c, StudyDocument studyDoc)
     {
         _user = user;
         _c = c;
-        _studyDoc = studyDoc;
+        setStudyDocument(studyDoc);
     }
 
     public User getUser()
@@ -53,8 +53,13 @@ public abstract class AbstractContext
         return getStudyDocument().getStudy();
     }
 
-    protected StudyDocument getStudyDocument()
+    protected synchronized StudyDocument getStudyDocument()
     {
         return _studyDoc;
+    }
+
+    protected synchronized void setStudyDocument(StudyDocument studyDoc)
+    {
+        _studyDoc = studyDoc;
     }
 }

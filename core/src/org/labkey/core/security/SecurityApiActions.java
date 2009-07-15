@@ -142,6 +142,7 @@ public class SecurityApiActions
                     effectiveRoleList.add(effectiveRole.getUniqueName());
                 }
                 groupPerms.put("roles", effectiveRoleList);
+                groupPerms.put("effectivePermissions", container.getEffectivePermissionNames(group));
 
                 groupsPerms.add(groupPerms);
             }
@@ -256,6 +257,7 @@ public class SecurityApiActions
                 effectiveRoles.add(effectiveRole.getUniqueName());
             }
             permsInfo.put("roles", effectiveRoles);
+            permsInfo.put("effectivePermissions", container.getEffectivePermissionNames(user));
 
             //add all groups the user belongs to in this container
             List<Group> groups = SecurityManager.getGroups(container, user);
@@ -283,6 +285,7 @@ public class SecurityApiActions
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
                 }
                 groupInfo.put("roles", groupEffectiveRoles);
+                groupInfo.put("effectivePermissions", container.getEffectivePermissionNames(group));
 
 
                 groupsInfo.add(groupInfo);

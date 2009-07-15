@@ -85,7 +85,7 @@ public class SpecimenWriter implements Writer<StudyImpl>
             comma = ", ";
         }
 
-        sql.append("\nFROM ").append(schema.getTableInfoSpecimenEvent()).append(" se JOIN ").append(schema.getTableInfoSpecimenDetail()).append(" s ON se.SpecimenId = s.RowId");
+        sql.append("\nFROM ").append(schema.getTableInfoSpecimenEvent()).append(" se JOIN ").append(schema.getTableInfoSpecimenDetail()).append(" s ON se.VialId = s.RowId");
 
         for (SpecimenColumn column : columns)
         {

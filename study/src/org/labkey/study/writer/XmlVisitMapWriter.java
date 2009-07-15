@@ -71,7 +71,7 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[]>
             if (null != visit.getCohort())
                 visitXml.setCohort(visit.getCohort().getLabel());
 
-            if (null != visit.getVisitDateDatasetId())
+            if (null != visit.getVisitDateDatasetId() && ctx.isExportedDataset(visit.getVisitDateDatasetId()))
                 visitXml.setVisitDateDatasetId(visit.getVisitDateDatasetId().intValue());
 
             List<VisitDataSet> vds = visit.getVisitDataSets();
@@ -82,9 +82,12 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[]>
 
                 for (VisitDataSet vd : vds)
                 {
-                    VisitMapDocument.VisitMap.Visit.Datasets.Dataset datasetXml = datasetsXml.addNewDataset();
-                    datasetXml.setId(vd.getDataSetId());
-                    datasetXml.setType(vd.isRequired() ? DatasetType.REQUIRED : DatasetType.OPTIONAL);
+                    if (ctx.isExportedDataset(vd.getDataSetId()))
+                    {
+                        VisitMapDocument.VisitMap.Visit.Datasets.Dataset datasetXml = datasetsXml.addNewDataset();
+                        datasetXml.setId(vd.getDataSetId());
+                        datasetXml.setType(vd.isRequired() ? DatasetType.REQUIRED : DatasetType.OPTIONAL);
+                    }
                 }
             }
         }

@@ -1363,7 +1363,14 @@ public class ExperimentController extends SpringActionController
             catch (IOException e)
             {
                 ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-                writer.write(e);
+                try
+                {
+                    writer.write(e);
+                }
+                catch (IllegalStateException ise)
+                {
+                    // Most likely that a disconnected client caused the IOException writing back the response
+                }
             }
 
             return null;

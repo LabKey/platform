@@ -27,11 +27,13 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.pipeline.browse.BrowseViewImpl;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
@@ -217,13 +219,19 @@ public class PipelineServiceImpl extends PipelineService
     public void setPipelineRoot(User user, Container container, URI root, String type,
                                 GlobusKeyPair globusKeyPair, boolean perlPipeline) throws SQLException
     {
+        if (!canModifyPipelineRoot(user, container))
+            throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");
+        
         PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type,
                 globusKeyPair, perlPipeline);
     }
 
     public boolean canModifyPipelineRoot(User user, Container container)
     {
-        return container != null && !container.isRoot() && user.isAdministrator();
+        //user must have admin permission at project level as well as the particular container
+        //see issue 8322.
+        return container != null && !container.isRoot() && container.hasPermission(user, AdminPermission.class) 
+                && container.getProject().hasPermission(user, AdminPermission.class);
     }
 
     public boolean usePerlPipeline(Container container) throws SQLException

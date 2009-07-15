@@ -41,7 +41,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     // TODO: applet and fileBrowser could use more consistent configuration parameters
     String rootName = c.getName();
     String webdavPrefix = context.getContextPath() + "/" + WebdavService.getServletPath();
-    String rootPath = webdavPrefix + c.getEncodedPath() + "@pipeline/";
+    String rootPath = webdavPrefix + c.getEncodedPath() + "%40pipeline/";
 
     if (root == null || !URIUtil.exists(root.getUri()))
     {
@@ -94,7 +94,7 @@ function updatePipelinePanel(record)
     var pipelinePanel = Ext.ComponentMgr.get('pipelinePanel');
     if (!pipelinePanel)
         return;
-    pipelinePanel.body.update('<i>loading...</i>');
+    pipelinePanel.body.update('<div style="padding: 5px;"><i>loading...</i></div>');
     activeMenus = {};
     fileMap = {};
     actionDivs = [];
@@ -112,7 +112,7 @@ function updatePipelinePanel(record)
             var o = eval('var $=' + response.responseText + ';$;');
             var actions = o.success ? o.actions : [];
             if (!actions || !actions.length)
-                pipelinePanel.body.update('<i>no actions</i>');
+                pipelinePanel.body.update('<div style="padding: 5px;"><i>no actions</i></div>');
             else
                 renderPipelineActions(actions);
         }
@@ -130,8 +130,9 @@ function renderPipelineActions(actions)
     // combine actions with same filesets action.links will be an array after this call
     actions = consolidateActions(actions);
 
-    var all = {id:'showAll', style:{display:'none'}, children:['[', {tag:'a', onClick:'showAllActions()', href:'#', children:['show all']},']']};
-    html.push(all);
+    // Always show all the actions for the current folder, even when a file is selected
+//    var all = {id:'showAll', style:{display:'none'}, children:['[', {tag:'a', onClick:'showAllActions()', href:'#', children:['show all']},']']};
+//    html.push(all);
     
     for (var i=0; i < actions.length; i++)
     {
@@ -240,9 +241,9 @@ function showActionMenu(el)
 }
 
 
-var styleAction = {display:'block', width:'', margin:'5px', padding:'3px', 'background-color':'#f8f8e0', border:'solid 1px #c0c0c0' }
-var styleHiddenAction = {display:'none'};
-var styleSelectedAction = {display:'block'};
+var styleAction = {display:'block', width:'', margin:'5px', padding:'3px', 'background-color':'#f8f8f8', border:'solid 1px #c0c0c0' }
+var styleDimmedAction = {'background-color':'#f8f8f8', border:'solid 1px #c0c0c0'};
+var styleSelectedAction = {'background-color':'#f8f8e0', border:'solid 1px #000000'};
 
 
 function showAllActions()
@@ -251,32 +252,32 @@ function showAllActions()
     for (i=0 ; i<actionDivs.length ; i++)
     {
         el = Ext.get(actionDivs[i]);
-        showAction(el);
+        dimAction(el);
     }
     if (Ext.get('showAll'))
         Ext.get('showAll').setStyle({display:'none'});
 }
 
-function showAction(el)
+function highlightAction(el)
 {
-    if (!('save' in el) || el.save.showing)
-        return;
-    el.scale(Ext.ComponentMgr.get('pipelinePanel').getEl().getWidth(), el.save.height, {duration:.1, afterStyle:styleAction});
-    //el.slideIn('r');
-    el.fadeIn({duration:.1});
-    el.save.showing = true;
+//    if (!('save' in el) || el.save.showing)
+//        return;
+    el.applyStyles(styleSelectedAction);
+//    el.scale(Ext.ComponentMgr.get('pipelinePanel').getEl().getWidth(), el.save.height, {duration:.1, afterStyle:styleAction});
+//    el.fadeIn({duration:.1});
+//    el.save.showing = true;
 }
 
-function hideAction(el)
+function dimAction(el)
 {
-    if (!('save' in el))
-        el.save = {showing:true, width:el.getWidth(), height:el.getHeight()};
-    if (!el.save.showing)
-        return;
-    //el.slideOut('r');
-    el.fadeOut({duration:.1});
-    el.scale(el.getWidth(), 0, {duration:.1, afterStyle:styleHiddenAction});
-    el.save.showing = false;
+//    if (!('save' in el))
+//        el.save = {showing:true, width:el.getWidth(), height:el.getHeight()};
+//    if (!el.save.showing)
+//        return;
+    el.applyStyles(styleDimmedAction);
+//    el.fadeOut({duration:.1});
+//    el.scale(Ext.ComponentMgr.get('pipelinePanel').getEl().getWidth(), el.save.height, {duration:.1, afterStyle:styleDimmedAction});
+//    el.save.showing = false;
 }
 
 function updateSelection(record)
@@ -296,17 +297,17 @@ function updateSelection(record)
     {
         el = Ext.get(actionDivs[i]);
         if (show[actionDivs[i]])
-            showAction(el);
+            highlightAction(el);
         else
-            hideAction(el);
+            dimAction(el);
     }
-    if (Ext.get('showAll'))
-    {
-        if (actionDivs.length == 0 || ids.length == actionDivs.length)
-            Ext.get('showAll').setStyle({display:'none'});
-        else
-            Ext.get('showAll').setStyle({display:'block'});
-    }
+//    if (Ext.get('showAll'))
+//    {
+//        if (actionDivs.length == 0 || ids.length == actionDivs.length)
+//            Ext.get('showAll').setStyle({display:'none'});
+//        else
+//            Ext.get('showAll').setStyle({display:'block'});
+//    }
 }
 
 Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
@@ -340,7 +341,7 @@ Ext.onReady(function()
         ,showFolderTree:true
         ,showDetails:true
         ,allowChangeDirectory:true
-        ,propertiesPanel:[{title:'Pipeline Actions', id:'pipelinePanel'}]
+        ,propertiesPanel:[{title:'Pipeline Actions', id:'pipelinePanel', autoScroll: true}]
         ,actions:{drop:dropAction}
         ,tbar:['parentFolder', 'download', 'deletePath', 'refresh', 'uploadTool']
     });

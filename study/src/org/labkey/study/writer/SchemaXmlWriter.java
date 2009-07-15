@@ -75,6 +75,8 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
             if (null == _defaultDateFormat)
                 _defaultDateFormat = DateUtil.getStandardDateFormatString();
 
+            String visitDatePropertyName = def.getVisitDatePropertyName();
+
             for (ColumnInfo column : columns)
             {
                 ColumnType columnXml = columnsXml.addNewColumn();
@@ -97,6 +99,9 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
 
                 if (!column.isNullable())
                     columnXml.setNullable(false);
+
+                if (columnName.equals(visitDatePropertyName))
+                    columnXml.setPropertyURI(DataSetDefinition.getVisitDateURI());
 
                 String formatString = column.getFormatString();
 

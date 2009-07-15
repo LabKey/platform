@@ -1780,7 +1780,7 @@ public class ReportsController extends BaseStudyController
 
     public static class PlotForm extends ViewFormData
     {
-        private int reportId;
+        private ReportIdentifier reportId;
         private int datasetId = 0;
         private int visitRowId = 0;
         private String _action;
@@ -1813,12 +1813,12 @@ public class ReportsController extends BaseStudyController
             this.visitRowId = visitRowId;
         }
 
-        public int getReportId()
+        public ReportIdentifier getReportId()
         {
             return reportId;
         }
 
-        public void setReportId(int reportId)
+        public void setReportId(ReportIdentifier reportId)
         {
             this.reportId = reportId;
         }
@@ -1950,14 +1950,14 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(PlotForm form, BindException errors) throws Exception
         {
             final ViewContext context = getViewContext();
-            Report report = ReportService.get().getReport(form.getReportId());
+            ReportIdentifier reportId = form.getReportId();
 
-            if (report == null)
-                report = ReportService.get().createFromQueryString(context.getActionURL().getQueryString());
-
-            if (report != null)
-                return report.renderReport(context);
-
+            if (reportId != null)
+            {
+                Report report = reportId.getReport();
+                if (report != null)
+                    return report.renderReport(context);
+            }
             return null;
         }
 

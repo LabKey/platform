@@ -51,6 +51,7 @@ LABKEY.requiresScript("SecurityAdmin.js", true);
 var isFolderAdmin = <%=c.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
 var isProjectAdmin = <%=project != null && project.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
 var isSiteAdmin = <%= user.isAdministrator() ? "true" : "false" %>;
+var isRoot = <%= c.isRoot() ? "true" : "false" %>;
 </script>
 <script type="text/javascript">
 var $ = Ext.get;
@@ -71,7 +72,9 @@ var policyEditor = null;
 <%--
     TABS
 --%>
-
+<% if (!c.isRoot()) { %>
+<div id="titleDiv" class="labkey-nav-page-header" style="padding: 5px">Permissions for <%=h(c.getPath())%></div>
+<% } %>
 <div id="buttonDiv"></div>
 <div id="tabBoxDiv" class="extContainer"><i>Loading...</i></div>
 <script type="text/javascript">
@@ -107,18 +110,18 @@ var autoScroll = false;
 
 Ext.onReady(function(){
 
-    if (doneURL)
+    var doneBtn = new Ext.Button({text: (isRoot ? 'Done' : 'Save and Finish'), style:{display:'inline'}, handler:done});
+    doneBtn.render($('buttonDiv'));
+    if (!isRoot)
     {
-        var doneBtn = new Ext.Button({text:'Save and Finish', style:{display:'inline'}, handler:done});
-        doneBtn.render($('buttonDiv'));
         $('buttonDiv').createChild('&nbsp;');
-    }
-    var saveBtn = new Ext.Button({text:'Save', style:{display:'inline'}, handler:save});
-    saveBtn.render($('buttonDiv'));
+        var saveBtn = new Ext.Button({text:'Save', style:{display:'inline'}, handler:save});
+        saveBtn.render($('buttonDiv'));
 
-    var cancelBtn = new Ext.Button({text:'Cancel', style:{display:'inline'}, handler:cancel});
-    $('buttonDiv').createChild('&nbsp;');
-    cancelBtn.render($('buttonDiv'));
+        var cancelBtn = new Ext.Button({text:'Cancel', style:{display:'inline'}, handler:cancel});
+        $('buttonDiv').createChild('&nbsp;');
+        cancelBtn.render($('buttonDiv'));
+    }
 
     for (var i=0 ; i<tabItems.length ; i++)
         tabItems[i].contentEl = $(tabItems[i].contentEl);
@@ -176,10 +179,11 @@ Ext.onReady(function(){
     <div id="groupsFrame"></div>
     <div id="siteGroupsFrame"></div>
     <script type="text/javascript">
-    function showPopup(group)
+    function showPopup(group, groupsList)
     {
         var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
         var w = new UserInfoPopup({userId:group.UserId, cache:securityCache, policy:null, modal:true, canEdit:canEdit});
+        w.on("close", function(){groupsList.onDataChanged();});
         w.show();
     }
 
@@ -188,7 +192,7 @@ Ext.onReady(function(){
         var formId = 'newGroupForm' + (project?'':'Site');
         var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoHeight:true, projectId:project});
         groupsList.on("select", function(list,group){
-            showPopup(group);
+            showPopup(group, groupsList);
         });
 
         var items = [];
@@ -233,7 +237,7 @@ Ext.onReady(function(){
             {
                 securityCache.createGroup((project||'/'), inputEl.getValue(), function(group)
                 {
-                    showPopup(group);
+                    showPopup(group, groupsList);
                 });
             };
             inputEl.addKeyListener(13, submit);

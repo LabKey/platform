@@ -92,7 +92,9 @@
     var _redirUrl = <%=model.getRedir()%>;
     var _cancelUrl = <%=model.getCancelRedir()%>;
 </script>
-<script type="text/javascript" src="<%=me.getViewContext().getContextPath()%>/wiki/js/wikiEdit.js"></script>
+<script type="text/javascript">
+    LABKEY.requiresScript("wiki/js/wikiEdit.js", true);
+</script>
 
 <div id="status" class="labkey-status-info" style="display:none;" width="99%">(status)</div>
 

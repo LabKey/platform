@@ -103,9 +103,20 @@ public class DatasetBatch extends StudyBatch implements Serializable
     public void prepareImport(List<String> errors) throws IOException, SQLException
     {
         File dir = _definitionFile.getParentFile();
-        InputStream is = new FileInputStream(_definitionFile);
-        Properties props = new Properties();
-        props.load(is);
+        InputStream is = null;
+        Properties props;
+
+        try
+        {
+            is = new FileInputStream(_definitionFile);
+            props = new Properties();
+            props.load(is);
+        }
+        finally
+        {
+            if (null != is)
+                is.close();
+        }
 
         StudyImpl study = getStudy();
         if (null == getStudy())

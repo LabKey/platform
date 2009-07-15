@@ -3673,8 +3673,14 @@ public class StudyController extends BaseStudyController
                             try { fos.close(); } catch (IOException e) {  }
                         }
 
-                        File importDir = new File(pipelineRoot, "unzip");
-                        FileUtil.deleteDir(importDir);
+                        String dirName = "unzip";
+                        File importDir = new File(pipelineRoot, dirName);
+
+                        if (importDir.exists() && !FileUtil.deleteDir(importDir))
+                        {
+                            errors.reject("studyImport", "Import failed: Could not delete the directory \"" + dirName + "\"");
+                            return false;
+                        }
 
                         try
                         {
@@ -3781,7 +3787,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudy();
             StudyWriter writer = new StudyWriter();
-            ExportContext ctx = new ExportContext(getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()));
+            ExportContext ctx = new ExportContext(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()));
 
             switch(form.getLocation())
             {

@@ -104,6 +104,6 @@ public class StudyImportJob extends PipelineJob
 
     public String getDescription()
     {
-        return "Study Import Finalization";
+        return "Finalize study import";
     }
 }

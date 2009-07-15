@@ -135,7 +135,7 @@ function loadToc()
     Ext.Ajax.request({
         url: LABKEY.ActionURL.buildURL('wiki', 'getWikiToc'),
         success: onTocSuccess,
-        failure: onTocError,
+        failure: LABKEY.Utils.getCallbackWrapper(onTocError, this, true),
         params: {currentPage: _wikiProps.name}
     });
 }
@@ -149,13 +149,9 @@ function onTocSuccess(response)
         showHideToc(true, false);
 }
 
-function onTocError(response)
+function onTocError(exceptionInfo)
 {
-    var json = Ext.util.JSON.decode(response.responseText);
-    if(!json.exception)
-        json.exception = response.statusText;
-
-    setError("Unable to load the wiki table of contents for this folder: " + json.exception);
+    setError("Unable to load the wiki table of contents for this folder: " + exceptionInfo.exception);
 }
 
 function createTocTree(pages)
@@ -225,7 +221,10 @@ function onSave()
     _doingSave = true;
 
     if(!isDirty())
+    {
         onSaveComplete();
+        return;
+    }
 
     var wikiDataNew = gatherProps();
 
@@ -234,7 +233,7 @@ function onSave()
         url : LABKEY.ActionURL.buildURL("wiki", "saveWiki"),
         method : 'POST',
         success: onSuccess,
-        failure: onError,
+        failure: LABKEY.Utils.getCallbackWrapper(onError, this, true),
         jsonData : wikiDataNew,
         headers : {
             'Content-Type' : 'application/json'
@@ -252,6 +251,7 @@ function onCancel()
 {
     //per bug 5957, don't prompt about losing changes if the user clicks cancel
     setClean();
+    _finished = true;
     window.location.href = _cancelUrl ? _cancelUrl : getRedirUrl();
 }
 
@@ -312,7 +312,7 @@ function onSuccess(response)
                 form: 'form-files',
                 isUpload: true,
                 success: onAttachmentSuccess,
-                failure: onAttachmentFailure
+                failure: LABKEY.Utils.getCallbackWrapper(onAttachmentFailure, this, true)
             });
         }
         else
@@ -364,28 +364,18 @@ function onAttachmentSuccess(response)
     onSaveComplete(status);
 }
 
-function onAttachmentFailure(response)
+function onAttachmentFailure(exceptionInfo)
 {
     _doingSave = false;
     _finished = false;
-    //parse the response JSON
-    var respJson = Ext.util.JSON.decode(response.responseText);
-    if(respJson.exception)
-        setError("Unable to save attachments: " + respJson.exception);
-    else
-        setError("Unable to save attachments: " + response.statusText);
+    setError("Unable to save attachments: " + exceptionInfo.exception);
 }
 
-function onError(response)
+function onError(exceptionInfo)
 {
     _doingSave = false;
     _finished = false;
-    //parse the response JSON
-    var respJson = Ext.util.JSON.decode(response.responseText);
-    if(respJson.exception)
-        setError("There was a problem while saving: " + respJson.exception);
-    else
-        setError("There was a problem while saving: " + response.statusText);
+    setError("There was a problem while saving: " + exceptionInfo.exception);
 }
 
 function onSaveComplete(statusMessage)
@@ -487,6 +477,8 @@ function updateBodyFormatCaption(rendererType)
 
 function setError(msg)
 {
+    if (_finished)
+        return;
     var elem = Ext.get("status");
     elem.update(msg);
     elem.dom.className = "labkey-status-error";
@@ -571,7 +563,7 @@ function saveEditorPreference(editor)
         url : LABKEY.ActionURL.buildURL("wiki", "setEditorPreference"),
         method : 'POST',
         success: onSaveEditorPrefSuccess,
-        failure: onSaveEditorPrefError,
+        failure: LABKEY.Utils.getCallbackWrapper(onSaveEditorPrefError, this, true),
         jsonData : params,
         headers : {
             'Content-Type' : 'application/json'
@@ -584,14 +576,9 @@ function onSaveEditorPrefSuccess(response)
     //for now, do nothing
 }
 
-function onSaveEditorPrefError(response)
+function onSaveEditorPrefError(exceptionInfo)
 {
-    //parse the response JSON and display the error
-    var respJson = Ext.util.JSON.decode(response.responseText);
-    if(respJson.exception)
-        setError("There was a problem while saving your editor preference: " + respJson.exception);
-    else
-        setError("There was a problem while saving your editor preference: " + response.statusText);
+    setError("There was a problem while saving your editor preference: " + exceptionInfo.exception);
 }
 
 function textContainsNonVisualElements(content)
@@ -856,7 +843,7 @@ function convertFormat()
         url : LABKEY.ActionURL.buildURL("wiki", "transformWiki"),
         method : 'POST',
         success: onConvertSuccess,
-        failure: onConvertError,
+        failure: LABKEY.Utils.getCallbackWrapper(onConvertError, this, true),
         jsonData : transData,
         headers : {
             'Content-Type' : 'application/json'
@@ -898,13 +885,9 @@ function onConvertSuccess(response)
     showEditingHelp(_wikiProps.rendererType);
 }
 
-function onConvertError(response)
+function onConvertError(exceptionInfo)
 {
-    var respJson = Ext.util.JSON.decode(response.responseText);
-    if(respJson.exception)
-        setError("Unable to convert your page to the new format for the following reason:<br/>" + respJson.exception);
-    else
-        setError("Unable to convert your page to the new format: " + response.statusText);
+    setError("Unable to convert your page to the new format for the following reason:<br/>" + exceptionInfo.exception);
 }
 
 function cancelConvertFormat()
@@ -972,7 +955,7 @@ function showHideToc(show, savePref)
             url : LABKEY.ActionURL.buildURL("wiki", "setTocPreference"),
             method : 'POST',
             success: onSaveTocPrefSuccess,
-            failure: onSaveTocPrefError,
+            failure: LABKEY.Utils.getCallbackWrapper(onSaveTocPrefError, this, true),
             jsonData : params,
             headers : {
                 'Content-Type' : 'application/json'
@@ -986,17 +969,13 @@ function onSaveTocPrefSuccess(response)
     //do nothing for now
 }
 
-function onSaveTocPrefError(response)
+function onSaveTocPrefError(exceptionInfo)
 {
-    //parse the response JSON and display the error
-    var respJson = Ext.util.JSON.decode(response.responseText);
-    if(respJson.exception)
-        setError("There was a problem while saving your show/hide page tree preference: " + respJson.exception);
-    else
-        setError("There was a problem while saving your show/hide page tree preference: " + response.statusText);
+    setError("There was a problem while saving your show/hide page tree preference: " + exceptionInfo.exception);
 }
 
 window.onbeforeunload = function(){
     if(isDirty())
         return "You have made changes that are not yet saved. Leaving this page now will abandon those changes.";
-}
+};
+

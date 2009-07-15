@@ -27,6 +27,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
@@ -134,7 +135,7 @@ public class PipelineController extends SpringActionController
         return url;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminPermission.class)
     public class SetupAction extends AbstractSetupAction<SetupForm>
     {
         protected SetupField getFormField()

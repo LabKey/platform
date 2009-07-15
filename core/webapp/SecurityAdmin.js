@@ -350,9 +350,26 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             }
         });
     },
+
+    isMemberOf : function(userid, groupid)
+    {
+        if (!this.mapGroupToMembers)
+            this._computeMembershipMaps();
+        var ids = this.mapGroupToMembers[groupid] || [];
+        for (var i=0 ; i<ids.length ; i++)
+        {
+            if (userid == ids[i])
+                return true;
+        }
+        return false;
+    },
     
     addMembership : function(groupid, userid, callback, scope)
     {
+        //if already a member, just return
+        if (this.isMemberOf(userid, groupid))
+            return;
+
         var group = this.getPrincipal(groupid);
         if (group && (group.Type == 'g' || group.Type == 'r'))
         {
@@ -475,6 +492,9 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         var admin = this.principalsStore.getById(this.groupAdministrators);
         if (admin)
             admin.data.Name = 'Site Administrators';
+        var users = this.principalsStore.getById(this.groupUsers);
+        if (users)
+            users.data.Name = 'All Site Users';
         // add a sortOrder field to each principal
         this.principalsStore.data.each(this._applyPrincipalsSortOrder);
         this.principalsStore.sort('sortOrder');
@@ -648,7 +668,18 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             width:400,
             height:300,
             autoScroll:true,
-            minHeight:200
+            minHeight:200,
+            buttons: [
+                {
+                    text: 'Done',
+                    listeners: {
+                        'click' : {
+                            fn: function(){this.close();},
+                            scope: this
+                        }
+                    }
+                }
+            ]
         });
         UserInfoPopup.superclass.constructor.call(this, config);
     },
@@ -1523,12 +1554,28 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             for (r=0 ; r<this.roles.length ; r++)
             {
                 role = this.roles[r];
-                var groups = policy.getAssignedPrincipals(role.uniqueName);
-                for (var g=0 ; g<groups.length ; g++)
+                var groupIds = policy.getAssignedPrincipals(role.uniqueName);
+
+                //resolve groupids into group objects
+                var groups = [];
+                var group;
+                var idx;
+                for (idx=0; idx < groupIds.length; idx++)
                 {
-                    var group = this.cache.getPrincipal(groups[g]);
+                    group = this.cache.getPrincipal(groupIds[idx]);
                     if (!group) continue;
-                    this.addButton(group,role,false);
+                    groups.push(group);
+                }
+
+                //sort groups
+                groups.sort(function(g1, g2){
+                    return g1.Name.localeCompare(g2.Name); //CONSIDER: should this be sorted only by name, or by type then name?
+                });
+
+                //add button for each group
+                for (idx=0 ; idx<groups.length ; idx++)
+                {
+                    this.addButton(groups[idx],role,false);
                 }
             }
             // make selenium testing easiers

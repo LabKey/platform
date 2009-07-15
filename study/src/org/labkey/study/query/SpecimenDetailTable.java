@@ -22,10 +22,8 @@ import org.labkey.study.StudySchema;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.*;
 import java.sql.Types;
-import java.util.Set;
-import java.util.Map;
-import java.util.Collections;
 
 public class SpecimenDetailTable extends AbstractSpecimenTable
 {
@@ -54,7 +52,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
 
-        addVialCommentsColumn(true);
+        boolean joinCommentsToSpecimens = true;
+        addVialCommentsColumn(joinCommentsToSpecimens);
 
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
@@ -65,7 +64,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return StudySchema.getInstance().getTableInfoSite();
+                return new SiteTable(_schema);
             }
         });
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -82,7 +81,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return StudySchema.getInstance().getTableInfoSite();
+                return new SiteTable(_schema);
             }
         });
         addColumn(siteLdmsCodeColumn);
@@ -92,30 +91,62 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         availableColumn.setKeyField(true);
         addColumn(availableColumn);
 
-        String innerSelect = "(SELECT QualityControlFlag FROM " +
-                StudySchema.getInstance().getTableInfoSpecimenComment() +
-                " WHERE GlobalUniqueId = " + ExprColumn.STR_TABLE_ALIAS + ".GlobalUniqueId" +
-                " AND Container = ?)";
-
-        // gross bit of SQL: this case statement ensures that we always get a 'true' or 'false' return from this
-        // subselect, even though the lookup might return null:
-        SQLFragment sqlFragConflicts = new SQLFragment("(CASE WHEN " + innerSelect + " = ? THEN ? ELSE ? END)");
-        sqlFragConflicts.add(getContainer().getId());
-        sqlFragConflicts.add(Boolean.TRUE);
-        sqlFragConflicts.add(Boolean.TRUE);
-        sqlFragConflicts.add(Boolean.FALSE);
-        addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, Types.BOOLEAN));
-
-        SQLFragment sqlFragQCComments = new SQLFragment("(SELECT QualityControlComments FROM " +
-                StudySchema.getInstance().getTableInfoSpecimenComment() +
-                " WHERE GlobalUniqueId = " + ExprColumn.STR_TABLE_ALIAS + ".GlobalUniqueId" +
-                " AND Container = ?)");
-        sqlFragQCComments.add(getContainer().getId());
-        addColumn(new ExprColumn(this, "QualityControlComments", sqlFragQCComments, Types.VARCHAR));
+        addColumn(new QualityControlFlagColumn(this));
+        addColumn(new QualityControlCommentsColumn(this));
 
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
 
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
+    }
+
+    public static class QualityControlColumn extends ExprColumn
+    {
+        protected static final String QUALITY_CONTROL_JOIN = "QualityControlJoin$";
+
+        public QualityControlColumn(TableInfo parent, String name, SQLFragment sql, int sqltype)
+        {
+            super(parent, name, sql, sqltype);
+        }
+
+        @Override
+        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+        {
+            super.declareJoins(parentAlias, map);
+
+            String tableAlias = parentAlias + "$" + QUALITY_CONTROL_JOIN;
+            if (map.containsKey(tableAlias))
+                return;
+
+            SQLFragment joinSql = new SQLFragment();
+            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment()).append(" AS ");
+            joinSql.append(tableAlias).append(" ON ");
+            joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
+            joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");
+
+            map.put(tableAlias, joinSql);
+        }
+    }
+
+    public static class QualityControlFlagColumn extends QualityControlColumn
+    {
+        public QualityControlFlagColumn(BaseStudyTable parent)
+        {
+            super(parent,
+                    "QualityControlFlag",
+                    new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlFlag = ? THEN ? ELSE ? END)", Boolean.TRUE, Boolean.TRUE, Boolean.FALSE),
+                    Types.BOOLEAN);
+        }
+    }
+
+    public static class QualityControlCommentsColumn extends QualityControlColumn
+    {
+        public QualityControlCommentsColumn(BaseStudyTable parent)
+        {
+            super(parent,
+                    "QualityControlComments",
+                    new SQLFragment("(" + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlComments)"),
+                    Types.VARCHAR);
+        }
     }
 
     public static class SiteNameDisplayColumn extends DataColumn

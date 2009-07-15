@@ -111,7 +111,7 @@ public class AssaySchemaImpl extends AssaySchema
     @Override
     public TableInfo createTable(String name)
     {
-        if (name.equals("AssayList"))
+        if (name.equalsIgnoreCase("AssayList"))
             return new AssayListTable(this);
         else
         {

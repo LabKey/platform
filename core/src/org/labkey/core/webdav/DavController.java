@@ -22,8 +22,9 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.json.JSONWriter;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,13 +35,11 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
-import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.webdav.WebdavResolverImpl;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -1573,9 +1572,10 @@ public class DavController extends SpringActionController
             if (resource.isFile())
             {
                 json.key("lastmodified").value(new Date(resource.getLastModified()));
-                json.key("contentlength").value(resource.getContentLength());
-                if (resource.getContentLength() >= 0)
-                    json.key("size").value(resource.getContentLength());
+                long length = resource.getContentLength();
+                json.key("contentlength").value(length);
+                if (length >= 0)
+                    json.key("size").value(length);
                 String contentType = resource.getContentType();
                 if (contentType != null)
                     json.key("contenttype").value(contentType);

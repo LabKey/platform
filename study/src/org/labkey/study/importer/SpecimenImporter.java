@@ -1361,8 +1361,18 @@ public class SpecimenImporter
             return;
         }
 
-        Iterator<Map<String, Object>> iter = loadTsv(potentialColumns, tsvFile, tableName);
-        mergeTable(schema, container, tableName, potentialColumns, iter, addEntityId);
+        CloseableIterator<Map<String, Object>> iter = null;
+
+        try
+        {
+            iter = loadTsv(potentialColumns, tsvFile, tableName);
+            mergeTable(schema, container, tableName, potentialColumns, iter, addEntityId);
+        }
+        finally
+        {
+            if (null != iter)
+                iter.close();
+        }
     }
 
     private void mergeTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, Iterator<Map<String, Object>> iter, boolean addEntityId) throws IOException, SQLException
@@ -1498,8 +1508,18 @@ public class SpecimenImporter
             return;
         }
 
-        CloseableIterator<Map<String, Object>> iter = loadTsv(potentialColumns, tsvFile, tableName);
-        replaceTable(schema, container, tableName, potentialColumns, iter, addEntityId);
+        CloseableIterator<Map<String, Object>> iter = null;
+
+        try
+        {
+            iter = loadTsv(potentialColumns, tsvFile, tableName);
+            replaceTable(schema, container, tableName, potentialColumns, iter, addEntityId);
+        }
+        finally
+        {
+            if (null != iter)
+                iter.close();
+        }
     }
 
     private void replaceTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, Iterator<Map<String, Object>> iter, boolean addEntityId) throws IOException, SQLException
@@ -1651,6 +1671,7 @@ public class SpecimenImporter
         finally
         {
             assert cpuPopulateTempTable.stop();
+            iter.close();
         }
 
         List<SpecimenColumn> loadedColumns = new ArrayList<SpecimenColumn>();

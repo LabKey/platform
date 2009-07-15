@@ -646,7 +646,7 @@ LABKEY.WebdavFileSystem = function(config)
             {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
             {name: 'options'}
         ]);
-    this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1"}});
+    this.connection = new Ext.data.Connection({method: "GET", timeout: 600000, headers: {"Method" : "PROPFIND", "Depth" : "1"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
     this.transferReader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
 
@@ -1736,8 +1736,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         if (this.tree)
         {
             var node = this.tree.getNodeById(this.currentDirectory.data.path);
-            if (node)
-                node.reload();
+//            if (node)
+//                node.reload();
         }
     },
 
@@ -2188,7 +2188,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 rootVisible:true,
                 title: 'Folders',
                 useArrows:true,
-                autoHeight:true,
+                margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
+                autoScroll:true,
                 animate:true,
                 enableDD:false,
                 containerScroll:true,
@@ -2341,19 +2342,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }
         if (this.showFolderTree)
         {
-            layoutItems.push(
-            {
-                region:'west',
-                id:'west-panel',
-                autoScroll:true,
-                split:true,
-                width: 200,
-                minSize: 100,
-                collapsible: true,
-                margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
-                layoutConfig:{animate:true},
-                items: [this.tree]
-            });
+            this.tree.region='west';
+            this.tree.split=true;
+            this.tree.width = 200;
+            layoutItems.push(this.tree);
         }
         layoutItems.push(
             {

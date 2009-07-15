@@ -51,6 +51,7 @@ import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -615,7 +616,7 @@ public class SampleManager
         Container container = request.getContainer();
         if (!container.hasPermission(user, RequestSpecimensPermission.class))
             return false;
-        if (user.isAdministrator() || container.hasPermission(user, AdminPermission.class))
+        if (container.hasPermission(user, ManageRequestsPermission.class))
             return true;
 
         if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(container))
@@ -1710,11 +1711,10 @@ public class SampleManager
             }
 
             SimpleFilter filter = new SimpleFilter("Container", container.getId());
-            String visitFilterCol = StudyManager.getInstance().getStudy(container).isDateBased() ? "VisitValue" : "SequenceNumMin";
-            filter.addInClause(visitFilterCol, visitIds);
+            filter.addInClause("SequenceNumMin", visitIds);
             if (cohort != null)
                 filter.addWhereClause("CohortId IS NULL OR CohortId = ?", new Object[] { cohort.getRowId() });
-            return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder," + visitFilterCol), VisitImpl.class);
+            return Table.select(StudySchema.getInstance().getTableInfoVisit(), Table.ALL_COLUMNS, filter, new Sort("DisplayOrder,SequenceNumMin"), VisitImpl.class);
         }
         catch (SQLException e)
         {

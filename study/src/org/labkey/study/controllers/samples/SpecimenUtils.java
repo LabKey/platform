@@ -31,6 +31,8 @@ import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.*;
 import org.labkey.study.query.SpecimenQueryView;
@@ -146,7 +148,7 @@ public class SpecimenUtils
             requestMenuButton.addMenuItem("View Existing Requests", urlFor(SpringSpecimenController.ViewRequestsAction.class));
             if (!commentsMode)
             {
-                if (getViewContext().hasPermission(ACL.PERM_INSERT))
+                if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     String dataRegionName = gridView.getSettings().getDataRegionName();
                     String createRequestURL = urlFor(SpringSpecimenController.ShowCreateSampleRequestAction.class,
@@ -157,8 +159,8 @@ public class SpecimenUtils
                             "if (verifySelected(document.forms['" + dataRegionName + "'], '" + createRequestURL +
                             "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit();");
 
-                    if (getUser().isAdministrator() || getViewContext().hasPermission(ACL.PERM_ADMIN) ||
-                            SampleManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext(). getContainer()))
+                    if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class) ||
+                            SampleManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext().getContainer()))
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request", "#",
                                 "if (verifySelected(document.forms['" + dataRegionName + "'], '#', " +
@@ -222,7 +224,7 @@ public class SpecimenUtils
             buttons.add(upload);
         }
 
-        if (settings.isEnableRequests() && getViewContext().hasPermission(ACL.PERM_INSERT))
+        if (settings.isEnableRequests() && getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
         {
             buttons.add(new ButtonBarLineBreak());
             buttons.add(new ExcludeSiteDropDown());

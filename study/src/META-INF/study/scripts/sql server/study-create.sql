@@ -32,7 +32,7 @@ CREATE VIEW study.VialCounts AS
     GROUP BY Container, SpecimenHash
 GO
 
-CREATE VIEW study.SpecimenSummary AS SELECT * FROM study.Specimen;
+CREATE VIEW study.SpecimenSummary AS SELECT * FROM study.Specimen
 GO
 
 CREATE VIEW study.SpecimenDetail AS
@@ -60,4 +60,5 @@ CREATE VIEW study.SpecimenDetail AS
       Specimen.ExpectedAvailableCount
     FROM study.Vial AS Vial
 	INNER JOIN study.Specimen AS Specimen
-      ON Vial.SpecimenId = Specimen.RowId;
+      ON Vial.SpecimenId = Specimen.RowId
+GO

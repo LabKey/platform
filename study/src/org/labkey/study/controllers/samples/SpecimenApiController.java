@@ -24,6 +24,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
@@ -227,7 +229,7 @@ public class SpecimenApiController extends BaseStudyController
             final Map<String, Object> response = new HashMap<String, Object>();
             if (user != null && shoppingCartStatus != null)
             {
-                boolean allUsers = getContainer().hasPermission(getUser(), ACL.PERM_ADMIN);
+                boolean allUsers = getContainer().hasPermission(getUser(), ManageRequestsPermission.class);
                 if (requestsForm.isAllUsers() != null)
                     allUsers = requestsForm.isAllUsers().booleanValue();
                 SampleRequest[] allUserRequests = SampleManager.getInstance().getRequests(container, allUsers ? null : user);

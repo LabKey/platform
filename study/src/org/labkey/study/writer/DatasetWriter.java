@@ -62,8 +62,7 @@ public class DatasetWriter implements Writer<StudyImpl>
         datasetsXml.setFile(MANIFEST_FILENAME);
 
         VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
-        Set<String> dataTypes = ctx.getDataTypes();
-        List<DataSetDefinition> datasets = getDatasets(study, dataTypes.contains(getSelectionText()), dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT));
+        List<DataSetDefinition> datasets = ctx.getDatasets();
 
         DatasetsDocument manifestXml = DatasetsDocument.Factory.newInstance();
         DatasetsDocument.Datasets dsXml = manifestXml.addNewDatasets();
@@ -168,17 +167,6 @@ public class DatasetWriter implements Writer<StudyImpl>
             PrintWriter out = fs.getPrintWriter(def.getFileName());
             tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
         }
-    }
-
-    private List<DataSetDefinition> getDatasets(StudyImpl study, boolean includeCRF, boolean includeAssay)
-    {
-        List<DataSetDefinition> datasets = new LinkedList<DataSetDefinition>();
-
-        for (DataSetDefinition dataset : study.getDataSets())
-            if ((null == dataset.getProtocolId() && includeCRF) || (null != dataset.getProtocolId() && includeAssay))
-                datasets.add(dataset);
-
-        return datasets;
     }
 
     private static boolean shouldExport(ColumnInfo column)

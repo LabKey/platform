@@ -774,4 +774,15 @@ class SqlDialectPostgreSQL extends SqlDialect
             }
         }
     }
+
+    public String getExtraInfo(SQLException e)
+    {
+        // Deadlock between two different DB connections
+        if ("40P01".equals(e.getSQLState()))
+        {
+            return getOtherDatabaseThreads();
+        }
+        return null;
+    }
+
 }

@@ -77,29 +77,11 @@ public class StudyImporter
 
     public boolean process() throws SQLException, ServletException, IOException, SAXException, ParserConfigurationException, XmlException, StudyImportException
     {
-        File file = new File(_root, "study.xml");
-
-        if (!file.exists())
-            throw new StudyImportException("Study.xml file does not exist.");
-
-        StudyImpl study = getStudy(true);
-
         _log.info("Loading study to folder " + _c.getPath());
 
-        StudyDocument studyDoc;
-
-        try
-        {
-            studyDoc = StudyDocument.Factory.parse(file);
-        }
-        catch (XmlException e)
-        {
-            throw new InvalidFileException(_root, file, e);
-        }
-
-        ImportContext ctx = new ImportContext(_user, _c, studyDoc, _url);
-
-        StudyDocument.Study studyXml = studyDoc.getStudy();
+        ImportContext ctx = new ImportContext(_user, _c, _root, _url);
+        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyImpl study = getStudy(true);
 
         // Create the study if it doesn't exist... otherwise, modify the existing properties
         if (null == study)

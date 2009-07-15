@@ -337,6 +337,8 @@ public class ListItemImpl implements ListItem
         boolean ret = true;
         for (IPropertyValidator validator : prop.getValidators())
         {
+            if (value instanceof ObjectProperty)
+                value = ((ObjectProperty)value).value();
             if (!validator.validate(prop.getLabel() != null ? prop.getLabel() : prop.getName(), value, errors)) ret = false;
         }
         return ret;

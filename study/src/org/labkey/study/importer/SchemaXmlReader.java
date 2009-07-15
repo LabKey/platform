@@ -64,6 +64,7 @@ public class SchemaXmlReader implements SchemaReader
 
         _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>(tablesXml.getTableArray().length);
         _importMaps = new ArrayList<Map<String, Object>>();
+        String visitDateURI = DataSetDefinition.getVisitDateURI();
 
         for (TableType tableXml : tablesXml.getTableArray())
         {
@@ -81,10 +82,10 @@ public class SchemaXmlReader implements SchemaReader
             info.label = tableXml.getTableTitle();
             info.description = tableXml.getDescription();
             info.demographicData = tableProps.isDemographicData();
+            info.visitDatePropertyName = null;
 
             // TODO: fill these in
             info.startDatePropertyName = null;
-            info.visitDatePropertyName = null;
 
             _datasetInfoMap.put(tableProps.getId(), info);
 
@@ -131,12 +132,20 @@ public class SchemaXmlReader implements SchemaReader
                 if (columnXml.getIsKeyField())
                 {
                     if (null != info.keyPropertyName)
-                        throw new IllegalStateException("More than one key specified: '" + info.keyPropertyName + "' and '" + columnName + "'");
+                        throw new IllegalStateException("Dataset " + datasetName + " has more than one key specified: '" + info.keyPropertyName + "' and '" + columnName + "'");
 
                     info.keyPropertyName = columnName;
 
                     if (columnXml.getIsAutoInc())
                         info.keyManaged = true;
+                }
+
+                if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getPropertyURI()))
+                {
+                    if (info.visitDatePropertyName == null)
+                        info.visitDatePropertyName = columnName;
+                    else
+                        throw new IllegalStateException("Dataset " + datasetName + " has multiple visitdate fields specified: '" + info.visitDatePropertyName + "' and '" + columnName + "'");
                 }
             }
         }

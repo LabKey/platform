@@ -15,20 +15,19 @@
  */
 package org.labkey.query.sql;
 
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ColumnInfo;
-//import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
-import static org.labkey.query.sql.SqlTokenTypes.*;
 import org.labkey.data.xml.ColumnType;
-import org.jetbrains.annotations.NotNull;
+import static org.labkey.query.sql.SqlTokenTypes.UNION;
+import static org.labkey.query.sql.SqlTokenTypes.UNION_ALL;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 public class QueryUnion extends QueryRelation
 {
@@ -36,7 +35,7 @@ public class QueryUnion extends QueryRelation
 	QOrder _qorderBy;
 
     List<QueryRelation> _termList = new ArrayList<QueryRelation>();
-    Map<String, UnionColumn> _unionColumns = new HashMap<String, UnionColumn>();
+    Map<String, UnionColumn> _unionColumns = new LinkedHashMap<String, UnionColumn>();
 
 
 	QueryUnion(Query query, QUnion qunion)
@@ -291,7 +290,7 @@ public class QueryUnion extends QueryRelation
 
         String getAlias()
         {
-            return _name;
+            return _first.getAlias();
         }
 
         QueryRelation getTable()

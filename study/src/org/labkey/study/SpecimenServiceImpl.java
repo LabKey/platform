@@ -27,7 +27,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.Specimen;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -117,21 +120,41 @@ public class SpecimenServiceImpl implements SpecimenService.Service
             return new StudyParticipantVisit(studyContainer, sampleId, null, null, null);
     }
 
-    public ParticipantVisit getSampleInfo(Container studyContainer, String participantId, Date date) throws SQLException
+    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Date date) throws SQLException
     {
-        if (null == studyContainer || null == StringUtils.trimToNull(participantId) || null == date)
-            return new StudyParticipantVisit(studyContainer, null, participantId, null, date);
-
-        // don't just grab any old specimen from the study, even if there are vials that match the ptid/date-
-        // we have no way of knowing which was actually used in the assay.
-        return new StudyParticipantVisit(studyContainer, null, participantId, null, date);
+        if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
+        {
+            Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, date);
+            if (matches.length > 0)
+            {
+                Set<ParticipantVisit> result = new HashSet<ParticipantVisit>();
+                for (Specimen match : matches)
+                {
+                    result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
+                }
+                return result;
+            }
+        }
+        
+        return Collections.<ParticipantVisit>singleton(new StudyParticipantVisit(studyContainer, null, participantId, null, date));
     }
 
-    public ParticipantVisit getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException
+    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException
     {
-        // don't just grab any old specimen from the study, even if there are vials that match the ptid/visit- 
-        // we have no way of knowing which was actually used in the assay.
-        return new StudyParticipantVisit(studyContainer, null, participantId, visit, null);
+        if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
+        {
+            Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, visit);
+            if (matches.length > 0)
+            {
+                Set<ParticipantVisit> result = new HashSet<ParticipantVisit>();
+                for (Specimen match : matches)
+                {
+                    result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
+                }
+                return result;
+            }
+        }
+        return Collections.<ParticipantVisit>singleton(new StudyParticipantVisit(studyContainer, null, participantId, visit, null));
     }
 
     public String getCompletionURLBase(Container studyContainer, SpecimenService.CompletionType type)

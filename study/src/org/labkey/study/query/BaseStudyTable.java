@@ -23,6 +23,7 @@ import org.labkey.study.StudySchema;
 import java.sql.Types;
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Map;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -90,12 +91,7 @@ public abstract class BaseStudyTable extends FilteredTable
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
             // could change to visitrowid but that changes datatype and displays rowid
             // instead of sequencenum when label is null
-            SQLFragment sqlFragVisit = new SQLFragment("(SELECT V.SequenceNumMin FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + " PV, " +
-                    StudySchema.getInstance().getTableInfoVisit() + " V WHERE V.RowId = PV.VisitRowId AND " +
-                    ExprColumn.STR_TABLE_ALIAS + ".Ptid = PV.ParticipantId AND " +
-                    ExprColumn.STR_TABLE_ALIAS + ".VisitValue = PV.SequenceNum AND " +
-                    ExprColumn.STR_TABLE_ALIAS + ".Container = PV.Container)");
-            visitColumn = addColumn(new ExprColumn(this, "Visit", sqlFragVisit, Types.VARCHAR));
+            visitColumn = addColumn(new DateVisitColumn(this));
             visitColumn.setCaption("Timepoint");
             visitDescriptionColumn.setIsHidden(true);
         }
@@ -116,6 +112,30 @@ public abstract class BaseStudyTable extends FilteredTable
         visitFK.setJoinOnContainer(true);
         visitColumn.setFk(visitFK);
         visitColumn.setKeyField(true);
+    }
+
+    private static class DateVisitColumn extends ExprColumn
+    {
+        private static final String DATE_VISIT_JOIN_ALIAS = "DateVisitJoin";
+        public DateVisitColumn(TableInfo parent)
+        {
+            super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + DATE_VISIT_JOIN_ALIAS + ".SequenceNumMin"), Types.VARCHAR);
+        }
+
+        @Override
+        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+        {
+            String pvAlias = parentAlias + "$PV";
+            String dateVisitJoinAlias = parentAlias + "$" + DATE_VISIT_JOIN_ALIAS;
+            SQLFragment join = new SQLFragment();
+            join.append(" LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoParticipantVisit() + " " + pvAlias + " ON\n" +
+                    parentAlias + ".Ptid = " + pvAlias + ".ParticipantId AND " +
+                    parentAlias + ".VisitValue = " + pvAlias + ".SequenceNum AND " +
+                    parentAlias + ".Container = " + pvAlias + ".Container\n");
+            join.append("LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " " + dateVisitJoinAlias +
+                    " ON " + dateVisitJoinAlias + ".RowId = " + pvAlias + ".VisitRowId");
+            map.put(DATE_VISIT_JOIN_ALIAS, join);
+        }
     }
 
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
