@@ -419,7 +419,10 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         if (engine != null)
             extension = engine.getFactory().getExtensions().get(0);
 
-        return FileUtil.makeLegalName(String.format("%s.%s.%s", descriptor.getReportName(), descriptor.getReportId(), extension));
+        if (descriptor.getReportId() != null)
+            return FileUtil.makeLegalName(String.format("%s.%s.%s", descriptor.getReportName(), descriptor.getReportId(), extension));
+        else
+            return FileUtil.makeLegalName(String.format("%s.%s", descriptor.getReportName(), extension));
     }
 
     @Override

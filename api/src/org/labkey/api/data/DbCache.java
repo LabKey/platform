@@ -31,7 +31,7 @@ import java.util.WeakHashMap;
 public class DbCache
 {
     // CONSIDER: move constant into web.xml
-    static int CACHE_SIZE = 10000;
+    static int CACHE_SIZE = 1000;
 
     static final WeakHashMap<TableInfo, DatabaseCache<Object>> tableCaches = new WeakHashMap<TableInfo, DatabaseCache<Object>>(100);
 
@@ -43,7 +43,7 @@ public class DbCache
             DatabaseCache<Object> cache = tableCaches.get(tinfo);
             if (null == cache)
             {
-                cache = new DatabaseCache<Object>(tinfo.getSchema().getScope(), CACHE_SIZE);
+                cache = new DatabaseCache<Object>(tinfo.getSchema().getScope(), tinfo.getCacheSize());
                 cache.setDebugName(tinfo.getName());
                 tableCaches.put(tinfo, cache);
             }

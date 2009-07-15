@@ -14,7 +14,7 @@ hta	application/hta
 unv	application/i-deas
 inf	application/inf
 acx	application/internet-property-stream
-js	application/javascript
+js	text/javascript
 hqx	application/mac-binhex40
 mrc	application/marc
 mbd	application/mbedlet

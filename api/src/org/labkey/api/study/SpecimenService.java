@@ -21,6 +21,7 @@ import org.labkey.api.exp.Lsid;
 
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -50,9 +51,9 @@ public class SpecimenService
         /** Does a search for matching GlobalUniqueIds  */
         ParticipantVisit getSampleInfo(Container studyContainer, String globalUniqueId) throws SQLException;
 
-        ParticipantVisit getSampleInfo(Container studyContainer, String participantId, Date date) throws SQLException;
+        Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Date date) throws SQLException;
 
-        ParticipantVisit getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException;
+        Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException;
 
         String getCompletionURLBase(Container studyContainer, CompletionType type);
 

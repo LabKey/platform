@@ -29,10 +29,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.*;
 
 import java.io.File;
 import java.sql.ResultSet;
@@ -1117,7 +1114,7 @@ public class OntologyManager
                         pdIn.getContainer().getId().equals(pdIn.getProject().getId()))
                 {
                     pdIn.setPropertyId(pd.getPropertyId());
-                     pd = updatePropertyDescriptor(pdIn);
+                    pd = updatePropertyDescriptor(pdIn);
                 }
                 return pd;
             }
@@ -1161,7 +1158,6 @@ public class OntologyManager
     private static List<String> comparePropertyDescriptors(PropertyDescriptor pdIn, PropertyDescriptor pd) throws SQLException
     {
         List<String> colDiffs = new ArrayList<String>();
-        String val;
 
         // if the returned pd is in a different project, it better be the shared project
         if (!pd.getProject().equals(pdIn.getProject()) && !pd.getProject().equals(_sharedContainer))
@@ -1176,37 +1172,44 @@ public class OntologyManager
         if (pdIn.getPropertyId() != 0 && !(pd.getPropertyId() == pdIn.getPropertyId()))
             colDiffs.add("PropertyId");
 
-        val = pdIn.getName();
-        if (null != val && (pd.getName() == null || !pd.getName().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getName(), pd.getName()))
             colDiffs.add("Name");
 
-        val = pdIn.getConceptURI();
-        if (null != val && (pd.getConceptURI() == null || !pd.getConceptURI().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getConceptURI(), pd.getConceptURI()))
             colDiffs.add("ConceptURI");
 
-        val = pdIn.getDescription();
-        if (null != val && (pd.getDescription() == null || !pd.getDescription().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getDescription(), pd.getDescription()))
             colDiffs.add("Description");
 
-        val = pdIn.getFormat();
-        if (null != val && (pd.getFormat() == null || !pd.getFormat().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getFormat(), pd.getFormat()))
             colDiffs.add("Format");
 
-        val = pdIn.getLabel();
-        if (null != val && (pd.getLabel() == null || !pd.getLabel().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getLabel(), pd.getLabel()))
             colDiffs.add("Label");
 
-        val = pdIn.getOntologyURI();
-        if (null != val && (pd.getOntologyURI() == null || !pd.getOntologyURI().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getOntologyURI(), pd.getOntologyURI()))
             colDiffs.add("OntologyURI");
 
-        val = pdIn.getSearchTerms();
-        if (null != val && (pd.getSearchTerms() == null || !pd.getSearchTerms().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getSearchTerms(), pd.getSearchTerms()))
             colDiffs.add("SearchTerms");
 
-        val = pdIn.getSemanticType();
-        if (null != val && (pd.getSemanticType() == null || !pd.getSemanticType().equals(val)))
+        if (PageFlowUtil.nullSafeEquals(pdIn.getSemanticType(), pd.getSemanticType()))
             colDiffs.add("SemanticType");
+
+        if (pdIn.isHidden() != pd.isHidden())
+            colDiffs.add("IsHidden");
+
+        if (pdIn.isMvEnabled() != pd.isMvEnabled())
+            colDiffs.add("IsMvEnabled");
+
+        if (PageFlowUtil.nullSafeEquals(pdIn.getLookupContainer(), pd.getLookupContainer()))
+            colDiffs.add("LookupContainer");
+
+        if (PageFlowUtil.nullSafeEquals(pdIn.getLookupSchema(), pd.getLookupSchema()))
+            colDiffs.add("LookupSchema");
+
+        if (PageFlowUtil.nullSafeEquals(pdIn.getLookupQuery(), pd.getLookupQuery()))
+            colDiffs.add("LookupQuery");
 
         return colDiffs;
     }
@@ -1354,8 +1357,12 @@ public class OntologyManager
 				{
                     PropertyDescriptor pdIn = new PropertyDescriptor(property.getPropertyURI(), property.getRangeURI(), property.getName(), c);
                     pdIn.setFormat(property.getFormat());
-                    pd = ensurePropertyDescriptor(pdIn);
-					descriptors.put(property.getPropertyURI(),pd);
+                    pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
+
+                    if (null == pd)
+                        pd = ensurePropertyDescriptor(pdIn);
+
+					descriptors.put(property.getPropertyURI(), pd);
 				}
 				property.setPropertyId(pd.getPropertyId());
                 validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property.value(), errors);
@@ -2539,19 +2546,30 @@ public class OntologyManager
                 String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
 
                 //Create objects in a transaction & make sure they are all gone.
-                OntologyManager.getExpSchema().getScope().beginTransaction();
-                OntologyManager.ensureObject(c, childObjectLsid, ownerObjectLsid);
-                OntologyObject oParent = OntologyManager.getOntologyObject(c, ownerObjectLsid);
-                assertNotNull(oParent);
-                OntologyObject oChild = OntologyManager.getOntologyObject(c, childObjectLsid);
-                assertNotNull(oChild);
+                OntologyObject oParent;
+                OntologyObject oChild;
+                String strProp;
+                String intProp;
 
-                String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
+                try
+                {
+                    OntologyManager.getExpSchema().getScope().beginTransaction();
+                    OntologyManager.ensureObject(c, childObjectLsid, ownerObjectLsid);
+                    oParent = OntologyManager.getOntologyObject(c, ownerObjectLsid);
+                    assertNotNull(oParent);
+                    oChild = OntologyManager.getOntologyObject(c, childObjectLsid);
+                    assertNotNull(oChild);
 
-                String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                    OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
-                OntologyManager.getExpSchema().getScope().rollbackTransaction();
+                    strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
+                    OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
+
+                    intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
+                        OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
+                }
+                finally
+                {
+                    OntologyManager.getExpSchema().getScope().rollbackTransaction();
+                }
 
                 assertEquals(0, OntologyManager.getObjectCount(c));
                 oParent = OntologyManager.getOntologyObject(c, ownerObjectLsid);
@@ -2567,10 +2585,16 @@ public class OntologyManager
                 OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
 
                 //Rollback transaction for one new property
-                OntologyManager.getExpSchema().getScope().beginTransaction();
-                intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
-                OntologyManager.getExpSchema().getScope().rollbackTransaction();
+                try
+                {
+                    OntologyManager.getExpSchema().getScope().beginTransaction();
+                    intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
+                    OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
+                }
+                finally
+                {
+                    OntologyManager.getExpSchema().getScope().rollbackTransaction();
+                }
 
                 oChild = OntologyManager.getOntologyObject(c, childObjectLsid);
                 assertNotNull(oChild);
@@ -2578,10 +2602,16 @@ public class OntologyManager
                 assertNotNull(m.get(strProp));
                 assertNull(m.get(intProp));
 
-                OntologyManager.getExpSchema().getScope().beginTransaction();
-                intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
-                OntologyManager.getExpSchema().getScope().commitTransaction();
+                try
+                {
+                    OntologyManager.getExpSchema().getScope().beginTransaction();
+                    intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
+                    OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
+                }
+                finally
+                {
+                    OntologyManager.getExpSchema().getScope().commitTransaction();
+                }
 
                 m = OntologyManager.getProperties(c, childObjectLsid);
                 assertNotNull(m.get(strProp));

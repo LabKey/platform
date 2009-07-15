@@ -45,34 +45,19 @@ abstract public class PipelineProvider
         String _label;
         ActionURL _href;
         String _imageURL;
-        boolean _isDirectory;
+        Boolean _isDirectory;
         Map<String, File> _files;  // Full list of files, if this is a directory.
         Map<Class, File[]> _fileSets;  // Sets of files already listed for this entry.
         List<FileAction> _actions;
+        private final boolean _open;
 
         public FileEntry(URI uri, ActionURL href, boolean open)
         {
+            _open = open;
             _label = URIUtil.getFilename(uri);
-            _isDirectory = URIUtil.isDirectory(uri);
             _uri = uri;
             _href = href.clone();
             _actions = new ArrayList<FileAction>();
-            ActionURL imageURL = _href.clone();
-            imageURL.deleteParameters();
-            imageURL.setAction((String)null);
-            imageURL.setExtraPath("images");
-            if (_isDirectory)
-            {
-                if (open)
-                    imageURL.setAction("folder_open.gif");
-                else
-                    imageURL.setAction("folder.gif");
-            }
-            else
-            {
-                imageURL.setAction("file.gif");
-            }
-            _imageURL = imageURL.toString();
         }
 
         public URI getURI()
@@ -82,6 +67,25 @@ abstract public class PipelineProvider
 
         public String getImageURL()
         {
+            if (_imageURL == null)
+            {
+                ActionURL imageURL = _href.clone();
+                imageURL.deleteParameters();
+                imageURL.setAction((String)null);
+                imageURL.setExtraPath("images");
+                if (isDirectory())
+                {
+                    if (_open)
+                        imageURL.setAction("folder_open.gif");
+                    else
+                        imageURL.setAction("folder.gif");
+                }
+                else
+                {
+                    imageURL.setAction("file.gif");
+                }
+                _imageURL = imageURL.toString();
+            }
             return _imageURL;
         }
 
@@ -97,7 +101,11 @@ abstract public class PipelineProvider
 
         public boolean isDirectory()
         {
-            return _isDirectory;
+            if (_isDirectory == null)
+            {
+                _isDirectory = URIUtil.isDirectory(_uri);
+            }
+            return _isDirectory.booleanValue();
         }
 
         public String getHref()
@@ -128,19 +136,18 @@ abstract public class PipelineProvider
                 _files = new LinkedHashMap<String, File>();
                 _fileSets = new HashMap<Class, File[]>();
 
-                if (_isDirectory)
+                if (isDirectory())
                 {
                     // Get the full set of files in the directory.
-                    File dir = new File(_uri);
+                    // Use a file object that caches its directory state.
+                    File dir = new FileCached(new File(_uri));
                     File[] files = dir.listFiles();
 
                     if (files != null)
                     {
-                        // Use a file object that caches its directory state.
                         for (File file : files)
                         {
-                            File f = new FileCached(file);
-                            _files.put(f.getName(), f);
+                            _files.put(file.getName(), file);
                         }
                     }
                 }
@@ -165,7 +172,7 @@ abstract public class PipelineProvider
          */
         public File[] listFiles(FileFilter filter)
         {
-            if (!_isDirectory)
+            if (!isDirectory())
                 return new File[0];
 
             ensureFiles();
@@ -502,22 +509,51 @@ abstract public class PipelineProvider
 
     public static class FileCached extends File
     {
-        boolean _dir;
+        private Boolean _dir;
+        private FileCached _parent;
+        private FileCached[] _children;
 
         public FileCached(File f)
         {
             super(f.getPath());
-            _dir = f.isDirectory();
         }
 
         public boolean isFile()
         {
-            return !_dir;
+            return !isDirectory();
         }
 
         public boolean isDirectory()
         {
-            return _dir;
+            if (_dir == null)
+            {
+                _dir = super.isDirectory();
+            }
+            return _dir.booleanValue();
+        }
+
+        public FileCached getParentFile()
+        {
+            if (_parent == null)
+            {
+                _parent = new FileCached(super.getParentFile());
+            }
+            return _parent;
+        }
+
+        public File[] listFiles()
+        {
+            if (_children == null)
+            {
+                File[] files = super.listFiles();
+                _children = new FileCached[files.length];
+                for (int i = 0; i < files.length; i++)
+                {
+                    _children[i] = new FileCached(files[i]);
+                    _children[i]._parent = this;
+                }
+            }
+            return _children;
         }
     }
 

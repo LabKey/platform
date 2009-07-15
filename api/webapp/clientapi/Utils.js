@@ -341,7 +341,11 @@ LABKEY.Utils = new function()
             }
             else
                 expires = "";
-            document.cookie = name + "=" + value + expires + "; path=" + (pageonly ? location.pathname : '/');
+            var path = "/";
+            if (pageonly)
+                path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
+            var cookieString = name + "=" + value + expires + "; path=" + path;
+            document.cookie = cookieString;
         },
 
         /**

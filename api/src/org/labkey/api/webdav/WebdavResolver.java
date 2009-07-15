@@ -16,20 +16,18 @@
 
 package org.labkey.api.webdav;
 
-import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.util.FileStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.User;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Date;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.

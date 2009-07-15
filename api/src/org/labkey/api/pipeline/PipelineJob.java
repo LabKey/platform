@@ -1193,13 +1193,13 @@ abstract public class PipelineJob extends Job implements Serializable
         private String getSystemLogMessage(Object message)
         {
             StringBuilder sb = new StringBuilder();
-            sb.append("From pipeline job log file ");
+            sb.append("(from pipeline job log file ");
             sb.append(getLogFile().getPath());
             if (message != null)
             {
-                sb.append("\n");
                 sb.append(message);
             }
+            sb.append(")");
             return sb.toString();
         }
 

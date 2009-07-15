@@ -324,10 +324,8 @@ public class ContainerManager
         }
         catch (SQLException e)
         {
-            _log.error(e);
+            throw new RuntimeSQLException(e);
         }
-
-        return null;
     }
 
     public static Container getForRowId(String idString)

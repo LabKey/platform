@@ -25,6 +25,7 @@
  * @param {Object} config A configuration object with the following possible properties:
  * @param {String} config.schemaName The name of the schema the web part will query
  * @param {String} config.queryName The name of the query within the schema the web part will select and display
+ * @param {String} [config.viewName] the name of a saved view you wish to display for the given schema and query name
  * @param {String} [config.renderTo] The id of the element inside of which the part should be rendered. This is typically a &lt;div&gt;.
  * If not supplied in the configuration, you must call the render() method to render the part into the page.
  * @param {String} [config.title] An optional title for the web part. If not supplied, the query name will be used as the title.

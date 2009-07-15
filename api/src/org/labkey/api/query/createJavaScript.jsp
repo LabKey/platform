@@ -26,7 +26,7 @@
         successCallback: onSuccess,
         errorCallback: onError,
         requiredVersion: 9.1,  //remove to get the 8.3 response format
-        sort: <%=PageFlowUtil.jsString(model.getSort())%>,
+        sort: <%=model.getSort()%>,
         filterArray: <%=model.getFilters()%>
     });
 

@@ -296,7 +296,12 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
             String participantId = participantIds != null && participantIds.length > index ? participantIds[index] : null;
             if (participantId == null || participantId.trim().length() == 0)
-                missingPtid = true;
+            {
+                if (selected)
+                {
+                    missingPtid = true;
+                }
+            }
             else
                 participantId = participantId.trim();
 

@@ -132,4 +132,6 @@ public interface TableInfo
     public boolean isMetadataOverrideable();
 
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name);
+
+    public int getCacheSize();
 }

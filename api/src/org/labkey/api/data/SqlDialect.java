@@ -63,6 +63,39 @@ public abstract class SqlDialect
         _dialects.add(dialect);
     }
 
+    protected String getOtherDatabaseThreads()
+    {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
+        {
+            Thread thread = entry.getKey();
+            // Dump out any thread that was talking to the database
+            Set<Integer> spids = ConnectionWrapper.getSPIDsForThread(thread);
+            if (!spids.isEmpty())
+            {
+                if (sb.length() == 0)
+                {
+                    sb.append("Other threads with active database connections:\n");
+                }
+                else
+                {
+                    sb.append("\n");
+                }
+                sb.append(thread.getName());
+                sb.append(", SPIDs = ");
+                sb.append(spids);
+                sb.append("\n");
+                for (StackTraceElement stackTraceElement : entry.getValue())
+                {
+                    sb.append("\t");
+                    sb.append(stackTraceElement);
+                    sb.append("\n");
+                }
+            }
+        }
+        return sb.length() > 0 ? sb.toString() : "No other threads with active database connections to report.";
+    }
+
 
     static
     {

@@ -37,6 +37,7 @@ abstract public class AbstractTableInfo implements TableInfo
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
     private String _titleColumn;
+    private int _cacheSize = DbCache.CACHE_SIZE;
 
     public ColumnInfo getColumnFromPropertyURI(String propertyURI)
     {
@@ -439,6 +440,8 @@ abstract public class AbstractTableInfo implements TableInfo
                 qpe.add(me);
             }
         }
+        if (xbTable.isSetCacheSize())
+            _cacheSize = xbTable.getCacheSize();
         if (xbTable.getColumns() != null)
         {
             List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
@@ -522,5 +525,10 @@ abstract public class AbstractTableInfo implements TableInfo
         if (fk == null)
             return null;
         return fk.createLookupColumn(parent, name);
+    }
+
+    public int getCacheSize()
+    {
+        return _cacheSize;
     }
 }

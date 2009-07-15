@@ -151,7 +151,8 @@ public class GroupManager
             HashSet<Integer> groupSet = new HashSet<Integer>();
             LinkedList<Integer> recurse = new LinkedList<Integer>();
             recurse.add(Group.groupGuests);
-            recurse.add(Group.groupUsers);
+            if (user.getUserId() != User.guest.getUserId())
+                recurse.add(Group.groupUsers);
             recurse.add(userId);
 
             while (!recurse.isEmpty())

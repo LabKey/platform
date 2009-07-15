@@ -795,6 +795,7 @@ public class DataRegion extends DisplayElement
         out.write("</td></tr>\n");
 
         renderMessageBox(ctx, out);
+        out.write("</table>");
     }
 
     protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage) throws IOException

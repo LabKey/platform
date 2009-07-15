@@ -879,4 +879,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         return true;
     }
+
+    public List<String> getEffectivePermissionNames(UserPrincipal principal)
+    {
+        Set<Class<? extends Permission>> perms = getPolicy().getPermissions(principal);
+        List<String> names = new ArrayList<String>(perms.size());
+        for (Class<? extends Permission> perm : perms)
+        {
+            names.add(RoleManager.getPermission(perm).getUniqueName());
+        }
+        return names;
+    }
 }

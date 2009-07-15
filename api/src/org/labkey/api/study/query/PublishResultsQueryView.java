@@ -34,6 +34,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.DataView;
 
 import java.io.IOException;
@@ -153,7 +154,8 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     protected DataRegion createDataRegion()
     {
-        DataRegion dr = super.createDataRegion();
+        DataRegion dr = new DataRegion();
+        initializeDataRegion(dr);
         dr.setShowFilters(false);
         dr.setSortable(false);
         dr.setShowPagination(true);
@@ -174,12 +176,17 @@ public class PublishResultsQueryView extends ResultsQueryView
                 dr.removeColumns(captionMatchColName);
             dr.addDisplayColumn(idx++, extra);
         }
-        Set<String> hiddenCols = getHiddenColumnCaptions();
+        Set<String> hiddenColNames = getHiddenColumnCaptions();
         for (Iterator<DisplayColumn> it = dr.getDisplayColumns().iterator(); it.hasNext();)
         {
             DisplayColumn current = it.next();
-            if (hiddenCols.contains(current.getCaption()))
-                it.remove();
+            for (String hiddenColName : hiddenColNames)
+            {
+                if (current.getCaption().endsWith(hiddenColName))
+                {
+                    current.setVisible(false);
+                }
+            }
             if (current instanceof DetailsColumn)
             {
                 it.remove();
@@ -192,7 +199,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     protected Set<String> getHiddenColumnCaptions()
     {
-        return Collections.singleton(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
+        return new HashSet<String>(Arrays.asList(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION, "Assay Match"));
     }
 
     public class ResolverHelper
@@ -202,15 +209,21 @@ public class PublishResultsQueryView extends ResultsQueryView
         private final ColumnInfo _ptidCol;
         private final ColumnInfo _visitIdCol;
         private final ColumnInfo _specimenIDCol;
+        private final ColumnInfo _assayMatchCol;
+        private final ColumnInfo _specimenPTIDCol;
+        private final ColumnInfo _specimenVisitCol;
         private Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<Integer, ParticipantVisitResolver>();
 
-        public ResolverHelper(ColumnInfo runIdCol, ColumnInfo objectIdCol, ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo specimenIDCol)
+        public ResolverHelper(ColumnInfo runIdCol, ColumnInfo objectIdCol, ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo specimenIDCol, ColumnInfo assayMatchCol, ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol)
         {
             _runIdCol = runIdCol;
             _objectIdCol = objectIdCol;
             _ptidCol = ptidCol;
             _visitIdCol = visitIdCol;
             _specimenIDCol = specimenIDCol;
+            _assayMatchCol = assayMatchCol;
+            _specimenPTIDCol = specimenPTIDCol;
+            _specimenVisitCol = specimenVisitCol;
         }
 
         public ParticipantVisitResolver getResolver(RenderContext ctx) throws IOException
@@ -262,7 +275,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return resolver.resolve(specimenID, participantID, visitID instanceof Double ? (Double) visitID : null, visitID instanceof Date ? (Date)visitID : null);
         }
 
-        public Object getVisitId(RenderContext ctx) throws IOException
+        public Object getUserVisitId(RenderContext ctx) throws IOException
         {
             if (_reshowVisits != null)
             {
@@ -278,7 +291,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return result;
         }
 
-        public String getParticipantId(RenderContext ctx) throws IOException
+        public String getUserParticipantId(RenderContext ctx) throws IOException
         {
             if (_reshowPtids != null)
             {
@@ -295,54 +308,172 @@ public class PublishResultsQueryView extends ResultsQueryView
             return result;
         }
 
-        public boolean hasMatch(RenderContext ctx) throws IOException
+        /** @return boolean to indicate if the row is considered to match, string with a message to explain why */
+        public Pair<Boolean, String> getMatchStatus(RenderContext ctx) throws IOException
         {
+            // First, figure out if we can match the specimen ID to the study
+            Boolean assayAndTargetSpecimenMatch;
+            if (_assayMatchCol == null)
+            {
+                assayAndTargetSpecimenMatch = null;
+            }
+            else
+            {
+                assayAndTargetSpecimenMatch = (Boolean)_assayMatchCol.getValue(ctx);
+            }
+
+            // Whether the input from the form matches up with the specimen from the assay row's specimen ID
+            Boolean userInputMatchesTargetSpecimen;
+
             try
             {
-                ParticipantVisit pv;
+                Set<ParticipantVisit> pvs;
+                String userParticipantId = getUserParticipantId(ctx);
                 if (_timepointType == TimepointType.VISIT)
                 {
-                    Object visitIdObject = getVisitId(ctx);
-                    Double visitId = null;
-                    if (visitIdObject instanceof Number)
+                    Double userVisitId = convertObjectToDouble(getUserVisitId(ctx));
+                    pvs = SpecimenService.get().getSampleInfo(_targetStudyContainer, userParticipantId, userVisitId);
+                    if (_specimenVisitCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
-                        visitId = ((Number)visitIdObject).doubleValue();
+                        // Need to grab the study specimen's participant and visit
+                        String targetSpecimenPTID = convertObjectToString(_specimenPTIDCol.getValue(ctx));
+                        Double targetSpecimenVisit = convertObjectToDouble(_specimenVisitCol.getValue(ctx));
+                        userInputMatchesTargetSpecimen = PageFlowUtil.nullSafeEquals(targetSpecimenPTID, userParticipantId) &&
+                                PageFlowUtil.nullSafeEquals(targetSpecimenVisit, userVisitId);
                     }
-                    else if (visitIdObject instanceof String)
+                    else
                     {
-                        try
-                        {
-                            visitId = Double.parseDouble((String)visitIdObject);
-                        }
-                        catch (NumberFormatException e) {}
+                        userInputMatchesTargetSpecimen = null;
                     }
-                    pv = SpecimenService.get().getSampleInfo(_targetStudyContainer, getParticipantId(ctx), visitId);
                 }
                 else
                 {
-                    Object dateObject = getDate(ctx);
-                    Date date = null;
-                    if (dateObject instanceof Date)
+                    Date userDate = convertObjectToDate(getUserDate(ctx));
+                    pvs = SpecimenService.get().getSampleInfo(_targetStudyContainer, userParticipantId, userDate);
+                    if (_specimenVisitCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
-                        date = (Date)dateObject;
-                    }
-                    else if (dateObject instanceof String)
-                    {
-                        try
+                        // Need to grab the study specimen's participant and date
+                        String targetSpecimenPTID = convertObjectToString(_specimenPTIDCol.getValue(ctx));
+                        Date targetSpecimenDate = convertObjectToDate(_specimenVisitCol.getValue(ctx));
+                        if (userDate == null || targetSpecimenDate == null)
                         {
-                            date = new Date(DateUtil.parseDateTime((String)dateObject));
+                            // Do a simple object equality on the dates if one or both of them is null
+                            userInputMatchesTargetSpecimen = PageFlowUtil.nullSafeEquals(targetSpecimenPTID, userParticipantId) &&
+                                    PageFlowUtil.nullSafeEquals(userDate, targetSpecimenDate);
                         }
-                        catch (ConversionException e) {}
+                        else
+                        {
+                            // All we care about is the date part, not the minutes and seconds, so pull those out
+                            Calendar targetSpecimenCal = new GregorianCalendar();
+                            targetSpecimenCal.setTime(targetSpecimenDate);
+                            Calendar userCal = new GregorianCalendar();
+                            userCal.setTime(userDate);
+
+                            userInputMatchesTargetSpecimen = PageFlowUtil.nullSafeEquals(targetSpecimenPTID, userParticipantId) &&
+                                    userCal.get(Calendar.YEAR) == targetSpecimenCal.get(Calendar.YEAR) &&
+                                    userCal.get(Calendar.MONTH) == targetSpecimenCal.get(Calendar.MONTH) &&
+                                    userCal.get(Calendar.DAY_OF_MONTH) == targetSpecimenCal.get(Calendar.DAY_OF_MONTH);
+                        }
                     }
-                    pv = SpecimenService.get().getSampleInfo(_targetStudyContainer, getParticipantId(ctx), date);
+                    else
+                    {
+                        // We don't have enough information to compare to the study specimens
+                        userInputMatchesTargetSpecimen = null;
+                    }
                 }
-                return pv.getSpecimenID() != null;
+                // See if the value in the form matches up with at least one specimen
+                boolean userInputMatchesASpecimen = pvs.size() > 0 && pvs.iterator().next().getSpecimenID() != null;
+
+                // Overall match is defined by either:
+                // Having no way to match to a specimen by ID and having the user's form entry match to a specimen OR
+                // having the user's form match up against the specimen pointed to by the specimen ID
+                boolean overallStatus = userInputMatchesASpecimen && (userInputMatchesTargetSpecimen == null || Boolean.TRUE.equals(userInputMatchesTargetSpecimen));
+
+                // Build up the smallest useful message about why the match looks good or bad
+                StringBuilder sb = new StringBuilder();
+                if (userInputMatchesTargetSpecimen == null || !userInputMatchesTargetSpecimen.booleanValue())
+                {
+                    // Only bother with this if we couldn't match up by specimen ID.
+                    sb.append("<p>Specimens were");
+                    if (!userInputMatchesASpecimen)
+                    {
+                        sb.append(" <strong>not</strong>");
+                    }
+                    sb.append(" collected for the Participant ID and ");
+                    sb.append( _timepointType == TimepointType.VISIT ? "Visit ID" : "Date");
+                    sb.append(" shown in this row.</p>");
+                }
+
+                // If we found a specimen based on the Specimen ID
+                if (userInputMatchesTargetSpecimen != null)
+                {
+                    sb.append("The Participant ID, ");
+                    sb.append( _timepointType == TimepointType.VISIT ? "Visit ID" : "Date");
+                    sb.append(", and Specimen ID in this row ");
+                    if (userInputMatchesTargetSpecimen.booleanValue())
+                    {
+                        sb.append("matches");
+                    }
+                    else
+                    {
+                        sb.append("does <strong>not</strong> match");
+                    }
+                    sb.append(" a vial in the study.</p>");
+                }
+                else if (_specimenIDCol != null && _specimenIDCol.getValue(ctx) != null)
+                {
+                    // Otherwise, if the assay row has a specimen ID let the user know what we couldn't resolve it
+                    sb.append("<p>The Specimen ID in this row does <strong>not</strong> match a vial in the study.</p>");
+                }
+
+                return new Pair<Boolean, String>(overallStatus, sb.toString());
             }
             catch (SQLException e)
             {
                 //noinspection ThrowableInstanceNeverThrown
                 throw (IOException)new IOException().initCause(e);
             }
+        }
+
+        private Date convertObjectToDate(Object dateObject)
+        {
+            Date date = null;
+            if (dateObject instanceof Date)
+            {
+                date = (Date)dateObject;
+            }
+            else if (dateObject instanceof String)
+            {
+                try
+                {
+                    date = new Date(DateUtil.parseDateTime((String)dateObject));
+                }
+                catch (ConversionException e) {}
+            }
+            return date;
+        }
+
+        public String convertObjectToString(Object o)
+        {
+            return o == null ? null : o.toString();
+        }
+
+        private Double convertObjectToDouble(Object visitIdObject)
+        {
+            Double visitId = null;
+            if (visitIdObject instanceof Number)
+            {
+                visitId = ((Number)visitIdObject).doubleValue();
+            }
+            else if (visitIdObject instanceof String)
+            {
+                try
+                {
+                    visitId = Double.parseDouble((String)visitIdObject);
+                }
+                catch (NumberFormatException e) {}
+            }
+            return visitId;
         }
 
         public void addQueryColumns(Set<ColumnInfo> set)
@@ -354,7 +485,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             if (_specimenIDCol != null) { set.add(_specimenIDCol); }
         }
 
-        public Object getDate(RenderContext ctx) throws IOException
+        public Object getUserDate(RenderContext ctx) throws IOException
         {
             if (_reshowVisits != null)
             {
@@ -437,7 +568,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         protected Object calculateValue(RenderContext ctx) throws IOException
         {
-            return _resolverHelper.getParticipantId(ctx);
+            return _resolverHelper.getUserParticipantId(ctx);
         }
     }
 
@@ -451,7 +582,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         protected Object calculateValue(RenderContext ctx) throws IOException
         {
-            return _resolverHelper.getVisitId(ctx);
+            return _resolverHelper.getUserVisitId(ctx);
         }
     }
 
@@ -465,7 +596,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         protected Object calculateValue(RenderContext ctx) throws IOException
         {
-            return _resolverHelper.getDate(ctx);
+            return _resolverHelper.getUserDate(ctx);
         }
     }
 
@@ -521,23 +652,50 @@ public class PublishResultsQueryView extends ResultsQueryView
         AssayTableMetadata tableMetadata = provider.getTableMetadata();
         FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
         FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
-        FieldKey ptidFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
-        FieldKey visitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, _timepointType);
+        FieldKey assayPTIDFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
+        FieldKey assayVisitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, _timepointType);
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
-        FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "AssayMatch");
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, ptidFieldKey, visitIDFieldKey, specimenIDFieldKey, matchFieldKey));
+        FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
+        FieldKey specimenPTIDFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID");
+        FieldKey specimenVisitFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), _timepointType == TimepointType.VISIT ? "Visit" : "DrawTimestamp");
+        Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, assayPTIDFieldKey, assayVisitIDFieldKey, specimenIDFieldKey, matchFieldKey, specimenPTIDFieldKey, specimenVisitFieldKey));
 
         // In case the assay definition doesn't have all the fields
         fieldKeys.remove(null);
+        
         Map<FieldKey, ColumnInfo> colInfos = QueryService.get().getColumns(getTable(), fieldKeys);
-//        assert colInfos.size() == fieldKeys.size();
         ColumnInfo objectIdCol = colInfos.get(objectIdFieldKey);
-        ColumnInfo ptidCol = colInfos.get(ptidFieldKey);
+        ColumnInfo assayPTIDCol = colInfos.get(assayPTIDFieldKey);
         ColumnInfo runIdCol = colInfos.get(runIdFieldKey);
-        ColumnInfo visitIdCol = colInfos.get(visitIDFieldKey);
+        ColumnInfo assayVisitIDCol = colInfos.get(assayVisitIDFieldKey);
         ColumnInfo specimenIDCol = colInfos.get(specimenIDFieldKey);
+        ColumnInfo matchCol = colInfos.get(matchFieldKey);
+        ColumnInfo specimenPTIDCol = colInfos.get(specimenPTIDFieldKey);
+        ColumnInfo specimenVisitCol = colInfos.get(specimenVisitFieldKey);
 
-        ResolverHelper resolverHelper = new ResolverHelper(runIdCol, objectIdCol, ptidCol, visitIdCol, specimenIDCol);
+        if (specimenPTIDCol != null)
+        {
+            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
+            DataColumn c = new DataColumn(specimenPTIDCol);
+            c.setVisible(false);
+            columns.add(c);
+        }
+        if (specimenVisitCol != null)
+        {
+            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
+            DataColumn c = new DataColumn(specimenVisitCol);
+            c.setVisible(false);
+            columns.add(c);
+        }
+        if (matchCol != null)
+        {
+            // This is ugly but we need to hold on to a reference to this ColumnInfo and make sure that it's in the select list
+            DataColumn c = new DataColumn(matchCol);
+            c.setVisible(false);
+            columns.add(c);
+        }
+
+        ResolverHelper resolverHelper = new ResolverHelper(runIdCol, objectIdCol, assayPTIDCol, assayVisitIDCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol);
 
         columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
 
@@ -547,21 +705,20 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(_targetStudyContainer,
                 SpecimenService.CompletionType.ParticipantId);
-        columns.add(new ParticipantIDDataInputColumn(ptidCompletionBase, resolverHelper, ptidCol));
+        columns.add(new ParticipantIDDataInputColumn(ptidCompletionBase, resolverHelper, assayPTIDCol));
 
         String visitCompletionBase = SpecimenService.get().getCompletionURLBase(_targetStudyContainer,
                 SpecimenService.CompletionType.VisitId);
         if (_timepointType == TimepointType.VISIT)
-            columns.add(new VisitIDDataInputColumn(visitCompletionBase, resolverHelper, visitIdCol));
+            columns.add(new VisitIDDataInputColumn(visitCompletionBase, resolverHelper, assayVisitIDCol));
         else
-            columns.add(new DateDataInputColumn(null, resolverHelper, visitIdCol));
+            columns.add(new DateDataInputColumn(null, resolverHelper, assayVisitIDCol));
 
         if (_mismatched)
         {
-            ColumnInfo matchColInfo = colInfos.get(matchFieldKey);
-            if (matchColInfo != null)
+            if (matchCol != null)
             {
-                columns.add(new DataColumn(matchColInfo));
+                columns.add(new DataColumn(matchCol));
             }
         }
 

@@ -209,8 +209,8 @@ function adjustAllTocEntries(parentId, notify, expand)
      while (nextRow != null && !nextRow.tagName)
         nextRow = nextRow.nextSibling;
 
-        if (nextRow == null || nextRow.tagName != "TR")
-            return null;
+     if (nextRow == null || nextRow.tagName != "TR")
+        return null;
 
      return nextRow;
  }

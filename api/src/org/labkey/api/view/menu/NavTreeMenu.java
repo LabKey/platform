@@ -154,14 +154,8 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
         if (level > 0)
         {
-            if (nav.getCanCollapse() && (null != link || null != onClickScript))
-            {
-                out.print("<tr class=\"labkey-nav-tree-row labkey-header\">");
-            }
-            else
-            {
-                out.print("<tr>");
-            }
+            out.print("<tr class=\"labkey-nav-tree-row labkey-header\">");
+
             out.print("<td class=\"labkey-nav-tree-node\">\n");
 
             if (hasChildren)

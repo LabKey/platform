@@ -78,6 +78,25 @@ public class JobRunner implements Executor
         return _defaultJobRunner;
     }
 
+    public void waitForCompletion()
+    {
+        synchronized (_jobs)
+        {
+            while (!_jobs.isEmpty())
+            {
+                try
+                {
+                    _jobs.wait();
+                }
+                catch (InterruptedException e) {}
+            }
+        }
+    }
+
+    public void shutdown()
+    {
+        _executor.shutdown();
+    }
 
     public void execute(Runnable command)
     {
@@ -195,6 +214,11 @@ public class JobRunner implements Executor
             }
 
             super.afterExecute(r, t);
+
+            synchronized (_jobs)
+            {
+                _jobs.notifyAll();
+            }
         }
     }
 

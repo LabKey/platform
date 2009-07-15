@@ -44,6 +44,14 @@ public class FileSystemResource extends AbstractResource
     String _name = null;
     WebdavResolver.Resource _folder;   // containing controller used for canList()
 
+    private FileType _type;
+    private long _length = UNKNOWN;
+    private long _lastModified = UNKNOWN;
+
+    private static final long UNKNOWN = -1;
+
+    private enum FileType { file, directory, notpresent }
+
     protected FileSystemResource(String path)
     {
         super(path);
@@ -69,7 +77,7 @@ public class FileSystemResource extends AbstractResource
         super(folder, relativePath);
         _folder = folder;
         _policy = folder._policy;
-        _file = FileUtil.canonicalFile(new File(folder._file, relativePath));
+        _file = new File(folder._file, relativePath);
     }
 
     public String getName()
@@ -79,13 +87,59 @@ public class FileSystemResource extends AbstractResource
 
     public boolean exists()
     {
-        return _file == null || _file.exists();
+        return _file == null || getType() != FileType.notpresent;
     }
 
+    /**
+     * Try to determine if this entry exists on disk, and its type (file or directory) with the minimum number of
+     * java.io.File method calls. Assume that entries are likely to exist, and that files are likely to have extensions.
+     * In most cases this reduces the number of java.io.File method calls to one to answer exists(), isDirectory(), and
+     * isFile().
+     */
+    private FileType getType()
+    {
+        if (_file == null)
+        {
+            return null;
+        }
+        if (_type == null)
+        {
+            if (_file.getName().indexOf(".") == -1)
+            {
+                // With no extension, first guess that it's a directory
+                if (_file.isDirectory())
+                {
+                    _type = FileType.directory;
+                }
+                else if (_file.isFile())
+                {
+                    _type = FileType.file;
+                }
+            }
+            else
+            {
+                // If it has an extension, guess that it's a file
+                if (_file.isFile())
+                {
+                    _type = FileType.file;
+                }
+                else if (_file.isDirectory())
+                {
+                    _type = FileType.directory;
+                }
+            }
+
+            if (_type == null)
+            {
+                _type = FileType.notpresent;
+            }
+        }
+        return _type;
+    }
 
     public boolean isCollection()
     {
-        if (null != _file && _file.isDirectory())
+        if (null != _file && getType() == FileType.directory)
             return true;
         return getPath().endsWith("/");
     }
@@ -100,7 +154,7 @@ public class FileSystemResource extends AbstractResource
 
     public boolean isFile()
     {
-        return _file != null && _file.isFile();
+        return _file != null && getType() == FileType.file;
     }
 
 
@@ -137,7 +191,10 @@ public class FileSystemResource extends AbstractResource
         if (null == _file)
             return null;
         if (!_file.exists())
+        {
             _file.createNewFile();
+            resetMetadata(FileType.file);
+        }
         return new FileOutputStream(_file);
     }
 
@@ -152,6 +209,7 @@ public class FileSystemResource extends AbstractResource
                 return -1;
             long len = FileUtil.copyData(is.openInputStream(), fos);
             fos.getFD().sync();
+            resetMetadata(FileType.file);
             return len;
         }
         finally
@@ -159,7 +217,13 @@ public class FileSystemResource extends AbstractResource
             IOUtils.closeQuietly(fos);
         }
     }
-    
+
+    private void resetMetadata(FileType type)
+    {
+        _length = UNKNOWN;
+        _lastModified = UNKNOWN;
+        _type = type;
+    }
 
     @NotNull
     public List<String> listNames()
@@ -203,10 +267,6 @@ public class FileSystemResource extends AbstractResource
     
     public long getCreated()
     {
-        if (_c != null && _c.getCreated() != null)
-            return _c.getCreated().getTime();
-        if (null != _file)
-            return _file.lastModified();
         return getLastModified();
     }
 
@@ -214,7 +274,14 @@ public class FileSystemResource extends AbstractResource
     public long getLastModified()
     {
         if (null != _file)
-            return _file.lastModified();
+        {
+            if (_lastModified == UNKNOWN)
+            {
+                _lastModified = _file.lastModified();
+//                _lastModified = 0;
+            }
+            return _lastModified;
+        }
         if (_c != null && _c.getCreated() != null)
             return _c.getCreated().getTime();
         return Long.MIN_VALUE;
@@ -225,7 +292,12 @@ public class FileSystemResource extends AbstractResource
     {
         if (!isFile() || _file == null)
             return 0;
-        return _file.length();
+        if (_length == UNKNOWN)
+        {
+            _length = _file.length();
+//            _length = 0;
+        }
+        return _length;
     }
 
 
@@ -278,7 +350,7 @@ public class FileSystemResource extends AbstractResource
         filter.addCondition("Key2", _file.getName());
         List<AuditLogEvent> logs = AuditLogService.get().getEvents(filter);
         if (null == logs)
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         List<WebdavResolver.History> history = new ArrayList<WebdavResolver.History>(logs.size());
         for (AuditLogEvent e : logs)
             history.add(new HistoryImpl(e.getCreatedBy(), e.getCreated(), e.getComment(), null));

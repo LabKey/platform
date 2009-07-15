@@ -1279,15 +1279,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 table.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
                 "(200)))";
 
-            final ExprColumn datasetColumn = new StudyDataSetColumn(table,
-                "dataset" + datasetIndex++,
-                new SQLFragment(datasetIdSQL),
-                studyContainer);
+            String datasetIdColumnName = "dataset" + datasetIndex++;
+            final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table,
+                datasetIdColumnName, studyContainer, protocol.getRowId(), this);
             datasetColumn.setIsHidden(true);
             table.addColumn(datasetColumn);
 
-            String studyCopiedSql = "(SELECT CASE WHEN " + datasetIdSQL +
-                " IS NOT NULL THEN 'copied' ELSE NULL END)";
+            String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
+                ".datasetid IS NOT NULL THEN 'copied' ELSE NULL END)";
 
             String studyName = StudyService.get().getStudyName(studyContainer);
             if (studyName == null)
@@ -1302,7 +1301,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
             final ExprColumn studyCopiedColumn = new ExprColumn(table,
                 studyColumnName,
                 new SQLFragment(studyCopiedSql),
-                Types.VARCHAR);
+                Types.VARCHAR,
+                datasetColumn);
             final String copiedToStudyColumnCaption = "Copied to " + studyName;
             studyCopiedColumn.setCaption(copiedToStudyColumnCaption);
 

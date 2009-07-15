@@ -100,12 +100,16 @@ public class FileType implements Serializable
      */
     public String getName(File parentDir, String basename)
     {
-        for (String suffix : _suffixes)
+        if (_suffixes.size() > 1)
         {
-            File f = new File(parentDir, basename + suffix);
-            if (NetworkDrive.exists(f))
+            // Only bother checking if we have more than one possible suffix
+            for (String suffix : _suffixes)
             {
-                return f.getName();
+                File f = new File(parentDir, basename + suffix);
+                if (NetworkDrive.exists(f))
+                {
+                    return f.getName();
+                }
             }
         }
         return basename + _defaultSuffix;

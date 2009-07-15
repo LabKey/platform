@@ -43,7 +43,7 @@
     <filter>
         <filter-name>Static Content Caching Filter</filter-name>
         <filter-class>org.labkey.api.view.StaticContentCachingFilter</filter-class>
-    </filter>                                                                        Java
+    </filter>
     <filter-mapping>
         <filter-name>Static Content Caching Filter</filter-name>
         <url-pattern>*.gif</url-pattern>

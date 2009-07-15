@@ -16,11 +16,11 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -65,14 +65,6 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
                 if (specimenID != null)
                 {
                     return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(getTargetStudyContainer(), specimenID));
-                }
-                else if (participantID != null && (visitID != null))
-                {
-                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(getTargetStudyContainer(), participantID, visitID));
-                }
-                else if (participantID != null && date != null)
-                {
-                    return mergeParticipantVisitInfo(originalInfo, SpecimenService.get().getSampleInfo(getTargetStudyContainer(), participantID, date));
                 }
             }
             catch (SQLException e)

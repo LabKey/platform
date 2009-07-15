@@ -243,11 +243,12 @@ function handleTabsInTextArea(event)
         var ss = t.selectionStart;
         var se = t.selectionEnd;
         var newSelectionStart = ss;
+        var scrollTop = t.scrollTop;
 
         if (ss != se)
         {
-            // In case selection was not of entire lines (e.g. selection begins in the middle of a line)
-            // we ought to tab at the beginning as well as at the start of every following line.
+            // In case selection was not the entire line (e.g. selection begins in the middle of a line)
+            // we need to tab at the beginning as well as at the start of every following line.
             var pre = t.value.slice(0,ss);
             var sel = t.value.slice(ss,se);
             var post = t.value.slice(se,t.value.length);
@@ -339,11 +340,12 @@ function handleTabsInTextArea(event)
                 else
                 {
                     ss++;
-                    se++
+                    se++;
                 }
             }
             t.setSelectionRange(ss, se);
         }
+        t.scrollTop = scrollTop;
 
         // Don't let the browser treat it as a focus traversal
         event.preventDefault();

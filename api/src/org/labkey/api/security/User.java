@@ -57,6 +57,12 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         {
             return true;
         }
+
+        @Override
+        public boolean isActive()
+        {
+            return true;
+        }
     }
 
 

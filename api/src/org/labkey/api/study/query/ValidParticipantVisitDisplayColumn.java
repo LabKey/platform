@@ -19,6 +19,8 @@ package org.labkey.api.study.query;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.settings.AppProps;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -30,8 +32,6 @@ import java.io.Writer;
 public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
 {
     private final PublishResultsQueryView.ResolverHelper _resolverHelper;
-    private boolean _firstMatch = true;
-    private boolean _firstNoMatch = true;
 
     public ValidParticipantVisitDisplayColumn(PublishResultsQueryView.ResolverHelper resolverHelper)
     {
@@ -41,23 +41,20 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        if (_resolverHelper.hasMatch(ctx))
+        Pair<Boolean,String> matchStatus = _resolverHelper.getMatchStatus(ctx);
+        boolean match = matchStatus.first;
+        String message = matchStatus.second;
+        out.write("<img src=\"");
+        out.write(AppProps.getInstance().getContextPath());
+        if (match)
         {
-            out.write("Y");
-            if (_firstMatch)
-            {
-                _firstMatch = false;
-                out.write(PageFlowUtil.helpPopup("Match", "There is a specimen in the target study that matches with this row's current participant and visit/date values"));
-            }
+            out.write("/_images/check.png\" />");
+            out.write(PageFlowUtil.helpPopup("Match", message, true));
         }
         else
         {
-            out.write("N");
-            if (_firstNoMatch)
-            {
-                _firstNoMatch = false;
-                out.write(PageFlowUtil.helpPopup("No match", "There are no specimens in the target study that matches this row's current participant and visit/date values"));
-            }
+            out.write("/_images/cancel.png\" />");
+            out.write(PageFlowUtil.helpPopup("No match", message, true));
         }
     }
 }

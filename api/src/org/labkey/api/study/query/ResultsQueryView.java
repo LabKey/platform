@@ -66,6 +66,12 @@ public class ResultsQueryView extends AssayBaseQueryView
     protected DataRegion createDataRegion()
     {
         ResultsDataRegion rgn = new ResultsDataRegion();
+        initializeDataRegion(rgn);
+        return rgn;
+    }
+
+    protected void initializeDataRegion(DataRegion rgn)
+    {
         rgn.setName(getDataRegionName());
         rgn.setTable(getTable());
         rgn.setDisplayColumns(getDisplayColumns());
@@ -76,7 +82,6 @@ public class ResultsQueryView extends AssayBaseQueryView
         rgn.setOffset(getOffset());
         rgn.setShowRows(getShowRows());
         rgn.setSelectionKey(getSelectionKey());
-        return rgn;
     }
 
     public DataView createDataView()

@@ -15,26 +15,25 @@
  */
 package org.labkey.api.webdav;
 
-import org.labkey.api.security.User;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.attachments.Attachment;
-import org.jetbrains.annotations.NotNull;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.*;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -116,7 +115,6 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     {
         return null;
     }
-
 
     public long getLastModified()
     {

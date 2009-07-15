@@ -56,6 +56,7 @@ public class SchemaTableInfo implements TableInfo
 
     protected SQLFragment selectName = null;
     private String _sequence = null;
+    private int _cacheSize = DbCache.CACHE_SIZE;
 
 
     protected SchemaTableInfo(DbSchema parentSchema)
@@ -198,6 +199,10 @@ public class SchemaTableInfo implements TableInfo
         return _tableType;
     }
 
+    public int getCacheSize()
+    {
+        return _cacheSize;
+    }
 
     public String toString()
     {
@@ -474,6 +479,8 @@ public class SchemaTableInfo implements TableInfo
         name = xmlTable.getTableName();
         title = xmlTable.getTableTitle();
         titleColumn = xmlTable.getTitleColumn();
+        if (xmlTable.isSetCacheSize())
+            _cacheSize = xmlTable.getCacheSize();
 
 
         ColumnType[] xmlColumnArray = xmlTable.getColumns().getColumnArray();

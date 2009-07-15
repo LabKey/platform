@@ -113,7 +113,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
 
         boolean directory = path.endsWith("/") || path.endsWith("/.") || path.endsWith("/..");
-        if (isRoot || !directory || r.isCollection())
+        if (isRoot || !directory || !r.isFile())
             return r;
         return null;
     }

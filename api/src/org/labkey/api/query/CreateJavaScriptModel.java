@@ -78,6 +78,6 @@ public class CreateJavaScriptModel extends ExportScriptModel
     {
         //remove enclosing double-quotes since we'll use PageFlowUtil.jsString() on the result
         String sort = super.getSort();
-        return null != sort ? sort.substring(1, sort.length() - 1) : "null";
+        return null != sort ? PageFlowUtil.jsString(sort.substring(1, sort.length() - 1)) : "null";
     }
 }
