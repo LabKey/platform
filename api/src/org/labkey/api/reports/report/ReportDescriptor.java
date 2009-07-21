@@ -421,6 +421,11 @@ public class ReportDescriptor extends Entity implements SecurableResource
         {
             throw new IOException(e.getMessage());
         }
+        finally
+        {
+            if (reader != null)
+                reader.close();
+        }
     }
 
     public static List<Pair<String, String>> createPropsFromXML(String xmlString) throws IOException

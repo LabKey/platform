@@ -60,6 +60,8 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     private Identifiable objectValue;
     private Map<String, ObjectProperty> _childProperties;
 
+    private AttachmentFile attachmentFile;
+
     // Don't delete this -- it's accessed via introspection
     public ObjectProperty()
     {
@@ -158,7 +160,10 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                 break;
             case ATTACHMENT:
                 if (value instanceof AttachmentFile)
-                    this.stringValue = ((AttachmentFile) value).getFilename();
+                {
+                    attachmentFile = (AttachmentFile)value;
+                    this.stringValue = attachmentFile.getFilename();
+                }
                 else
                     this.stringValue = (String) value;
                 break;
@@ -390,6 +395,11 @@ public class ObjectProperty extends OntologyManager.PropertyRow
             }
         }
         return _childProperties;
+    }
+
+    public AttachmentFile getAttachmentFile()
+    {
+        return attachmentFile;
     }
 
     public static class ObjectPropertyObjectFactory extends BeanObjectFactory<ObjectProperty>

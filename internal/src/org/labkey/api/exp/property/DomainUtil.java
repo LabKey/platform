@@ -314,6 +314,13 @@ public class DomainUtil
             }
         }
 
+        // Need to ensure that any new properties are given a unique PropertyURI.  See #8329
+        Set<String> propertyUrisInUse = new HashSet<String>(update.getFields().size());
+
+        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
+            if (!StringUtils.isEmpty(pd.getPropertyURI()))
+                propertyUrisInUse.add(pd.getPropertyURI());
+
         // now add properties
         for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
         {
@@ -321,7 +328,12 @@ public class DomainUtil
                 continue;
 
             if (StringUtils.isEmpty(pd.getPropertyURI()))
-                pd.setPropertyURI(update.getDomainURI() + "#" + pd.getName());
+            {
+                String newPropertyURI = createUniquePropertyURI(update.getDomainURI() + "#" + pd.getName(), propertyUrisInUse);
+                assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
+                pd.setPropertyURI(newPropertyURI);
+                propertyUrisInUse.add(newPropertyURI);
+            }
 
             // UNDONE: DomainProperty does not support all PropertyDescriptor fields
             DomainProperty p = d.addProperty();
@@ -364,6 +376,20 @@ public class DomainUtil
         }
 
         return errors.size() > 0 ? errors : null;
+    }
+
+    private static String createUniquePropertyURI(String base, Set<String> propertyUrisInUse)
+    {
+        String candidateURI = base;
+        int i = 0;
+
+        while (propertyUrisInUse.contains(candidateURI))
+        {
+            i++;
+            candidateURI = base + i;
+        }
+
+        return candidateURI;
     }
 
     private static void _copyProperties(DomainProperty p, GWTPropertyDescriptor pd, List<String> errors)

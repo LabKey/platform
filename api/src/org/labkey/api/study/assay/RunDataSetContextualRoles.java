@@ -19,7 +19,6 @@ import org.labkey.api.security.roles.HasContextualRoles;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.*;
@@ -28,7 +27,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.ExceptionUtil;
 import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang.math.NumberUtils;
 
@@ -108,13 +106,13 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         }
 
         // table contains no dataset columns if results haven't been copied
-        if (columnNames.size() == 0)
+        if (datasetColumnNames.size() == 0)
             return null;
 
         Map<String, Object>[] results = null;
         try
         {
-            results = Table.selectMaps(resultsTable, columnNames, new SimpleFilter("runid", run.getRowId()), null);
+            results = Table.selectMaps(resultsTable, datasetColumnNames, new SimpleFilter("runid", run.getRowId()), null);
         }
         catch (SQLException e)
         {
@@ -137,7 +135,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
 
                 Container studyContainer = ((StudyDataSetColumn)datasetColumn).getStudyContainer();
                 DataSet dataset = StudyService.get().getDataSet(studyContainer, datasetId.intValue());
-                SecurityPolicy policy = SecurityManager.getPolicy(dataset);
+                SecurityPolicy policy = dataset.getPolicy();
                 if (policy.hasPermission(user, ReadPermission.class))
                     return Collections.<Role>singleton(new ReaderRole());
             }

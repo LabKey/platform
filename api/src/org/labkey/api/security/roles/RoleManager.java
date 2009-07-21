@@ -123,6 +123,35 @@ public class RoleManager
         }
     }
 
+    /**
+     * This method is equivalent to registerPermission(perm, true)
+     * @param perm The permission singleton instance
+     */
+    public static void registerPermission(Permission perm)
+    {
+        registerPermission(perm, true);
+    }
+
+    /**
+     * Registers a new permission instance.
+     * If your permission is already statically defined as part of a role
+     * (i.e., it is added to a defined role before that role is registered)
+     * you do not need to call this method.
+     * This method should be called only when your module
+     * defines a new permission class that is not statically defined as part of any role.
+     * This method will ensure that the singleton instance of the permission class can
+     * be retrieved using the getPermission() method.
+     * @param perm The permission singleton instance
+     * @param addToAdminRoles true to add this to all admin roles, or false to not.
+     */
+    public static void registerPermission(Permission perm, boolean addToAdminRoles)
+    {
+        _nameToRoleMap.put(perm.getUniqueName(), perm);
+        _classToRoleMap.put(perm.getClass(), perm);
+        if (addToAdminRoles)
+            addPermissionToAdminRoles(perm.getClass());
+    }
+
     public static void addPermissionToAdminRoles(Class<? extends Permission> perm)
     {
         siteAdminRole.addPermission(perm);

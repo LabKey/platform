@@ -32,6 +32,10 @@
  * @param {String} [config.titleHref] If supplied, the title will be rendered as a hyperlink with this value as the href attribute.
  * @param {String} [config.buttonBarPosition] Specifies the button bar position for the web part.
  * This may be one of the following: 'none', 'top', 'bottom', 'both'.
+ * @param {boolean} [config.allowChooseQuery] If the button bar is showing, whether or not it should be include a button
+ * to let the user choose a different query.
+ * @param {boolean} [config.allowChooseView] If the button bar is showing, whether or not it should be include a button
+ * to let the user choose a different view. 
  * @param {String} [config.sort] A base sort order to use. This may be a comma-separated list of column names, each of
  * which may have a - prefix to indicate a descending sort.
  * @param {Array} [config.filters] A base set of filters to apply. This should be an array of LABKEY.Filter objects
