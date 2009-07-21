@@ -1560,6 +1560,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 this.fileSystem.deletePath(selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
                 this.selectFile(null);
                 this.refreshDirectory();
+                if (this.tree)
+                {
+                    var node = this.tree.getNodeById(this.currentDirectory.data.path);
+                    if (node)
+                        node.reload();
+                }
+
             }).createDelegate(this);
 
             if (selectedRecord)
@@ -1733,12 +1740,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             return;
         this.fileSystem.uncacheListing(this.currentDirectory);
         this.changeDirectory(this.currentDirectory, true);
-        if (this.tree)
-        {
-            var node = this.tree.getNodeById(this.currentDirectory.data.path);
-//            if (node)
-//                node.reload();
-        }
     },
 
 

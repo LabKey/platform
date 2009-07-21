@@ -57,8 +57,8 @@ public class ListItemImpl implements ListItem
     ListDefinitionImpl _list;
     ListItm _itmOld;
     ListItm _itm;
-    Map<String, Object> _properties;
-    Map<String, Object> _oldProperties;
+    Map<String, ObjectProperty> _properties;
+    Map<String, ObjectProperty> _oldProperties;
     private static final Object _autoIncrementLock = new Object();  // Consider: Synchronize each list separately
     private static final Logger _log = Logger.getLogger(ListItemImpl.class);
 
@@ -168,13 +168,13 @@ public class ListItemImpl implements ListItem
         return getOntologyObject();
     }
 
-    private Map<String, Object> ensureProperties()
+    private Map<String, ObjectProperty> ensureProperties()
     {
         if (_properties == null)
         {
             OntologyObject obj = getOntologyObject();
 
-            _properties = new HashMap<String, Object>();
+            _properties = new HashMap<String, ObjectProperty>();
 
             if (obj != null)
             {
@@ -195,19 +195,21 @@ public class ListItemImpl implements ListItem
         return _properties;
     }
 
-    private Map<String, Object> editProperties()
+    private Map<String, ObjectProperty> editProperties()
     {
         if (_oldProperties == null)
         {
             _oldProperties = ensureProperties();
-            _properties = new HashMap<String, Object>(_oldProperties);
+            _properties = new HashMap<String, ObjectProperty>(_oldProperties);
         }
         return _properties;
     }
 
     public Object getProperty(DomainProperty property)
     {
-        return ensureProperties().get(property.getPropertyURI());
+        ObjectProperty prop = ensureProperties().get(property.getPropertyURI());
+
+        return null != prop ? prop.value() : null;
     }
 
     public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
@@ -233,7 +235,7 @@ public class ListItemImpl implements ListItem
             if (_properties != null)
             {
                 List<ValidationError> errors = new ArrayList<ValidationError>();
-                for (Map.Entry<String, Object> entry : _properties.entrySet())
+                for (Map.Entry<String, ObjectProperty> entry : _properties.entrySet())
                 {
                     DomainProperty dp = dps.get(entry.getKey());
                     if (dp != null)
@@ -249,10 +251,11 @@ public class ListItemImpl implements ListItem
                 AttachmentParent parent = new ListItemAttachmentParent(this, _list.getContainer());
                 List<AttachmentFile> newAttachments = new ArrayList<AttachmentFile>();
                 OntologyObject obj = ensureOntologyObject();
-                for (Map.Entry<String, Object> entry : _properties.entrySet())
+                for (Map.Entry<String, ObjectProperty> entry : _properties.entrySet())
                 {
-                    Object oldValue = _oldProperties.get(entry.getKey());
-                    if (ObjectUtils.equals(oldValue, entry.getValue()))
+                    ObjectProperty newProperty = entry.getValue();
+                    ObjectProperty oldProperty = _oldProperties.get(entry.getKey());
+                    if (ObjectUtils.equals(oldProperty, newProperty))
                     {
                         continue;
                     }
@@ -261,27 +264,26 @@ public class ListItemImpl implements ListItem
                     {
                         continue;
                     }
-                    if (_oldProperties.containsKey(entry.getKey())) // oldValue may be null, but it could have a record
+                    if (_oldProperties.containsKey(entry.getKey())) // oldProperty may be null, but it could have a record
                     {
-                        if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && oldValue != null)
-                            AttachmentService.get().deleteAttachment(parent, (String)oldValue);
+                        if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && oldProperty != null)
+                            AttachmentService.get().deleteAttachment(parent, oldProperty.getStringValue());
                         OntologyManager.deleteProperty(obj.getObjectURI(), entry.getKey(), obj.getContainer(), obj.getContainer());
                     }
-                    if (entry.getValue() != null)
+                    if (newProperty.value() != null || newProperty.getMvIndicator() != null)
                     {
-                        Object value = entry.getValue();
+                        Object value = newProperty.value();
                         String mvIndicator = null;
-                        if (dp.isMvEnabled() && MvUtil.isMvIndicator(value.toString(), obj.getContainer()))
-                        {
-                            mvIndicator = value.toString();
-                            value = null;
-                        }
-                        ObjectProperty property = new ObjectProperty(obj.getObjectURI(), obj.getContainer(), entry.getKey(), value, dp.getPropertyDescriptor().getPropertyType(), dp.getPropertyDescriptor().getName());
-                        if (mvIndicator != null)
-                            property.setMvIndicator(mvIndicator);
+
+                        // TODO: Should be able to use newProperty instead of creating yet another ObjectProperty... but don't want to try to figure that out right now
+                        ObjectProperty insertProperty = new ObjectProperty(obj.getObjectURI(), obj.getContainer(), entry.getKey(), value, dp.getPropertyDescriptor().getPropertyType(), dp.getPropertyDescriptor().getName());
+
+                        insertProperty.setMvIndicator(newProperty.getMvIndicator());
+
                         if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-                            newAttachments.add((AttachmentFile)entry.getValue());
-                        OntologyManager.insertProperties(obj.getContainer(), obj.getObjectURI(), property);
+                            newAttachments.add(newProperty.getAttachmentFile());
+
+                        OntologyManager.insertProperties(obj.getContainer(), obj.getObjectURI(), insertProperty);
                     }
                 }
                 _oldProperties = null;
@@ -346,7 +348,8 @@ public class ListItemImpl implements ListItem
 
     public void setProperty(DomainProperty property, Object value)
     {
-        editProperties().put(property.getPropertyURI(), value);
+        ObjectProperty row = new ObjectProperty(null, property.getContainer(), property.getPropertyURI(), value, property.getPropertyDescriptor().getPropertyType(), property.getPropertyDescriptor().getName());
+        editProperties().put(property.getPropertyURI(), row);
     }
 
     private ListItm edit()
@@ -398,7 +401,7 @@ public class ListItemImpl implements ListItem
             AuditLogService.get().addEvent(event);
     }
 
-    private String _formatItemRecord(User user, Map<String, Object> props, Map<String, DomainProperty> dps, Object keyValue)
+    private String _formatItemRecord(User user, Map<String, ObjectProperty> props, Map<String, DomainProperty> dps, Object keyValue)
     {
         try
         {
@@ -418,21 +421,22 @@ public class ListItemImpl implements ListItem
 
                 Map<String, Object> rowMap = null;
 
-                for (Map.Entry<String, Object> entry : props.entrySet())
+                for (Map.Entry<String, ObjectProperty> entry : props.entrySet())
                 {
                     DomainProperty prop = dps.get(entry.getKey());
 
                     if (prop != null)
                     {
+                        ObjectProperty objectProperty = entry.getValue();
                         String value;
 
                         if (prop.getLookup() == null)
                         {
                             PropertyType type = prop.getPropertyDescriptor().getPropertyType();
                             if (type == PropertyType.ATTACHMENT && entry.getValue() instanceof AttachmentFile)
-                                value = "attachment uploaded : " + ObjectUtils.toString(entry.getValue(), null);
+                                value = "attachment uploaded : " + ObjectUtils.toString(objectProperty.getStringValue(), null);
                             else
-                                value = ObjectUtils.toString(entry.getValue(), null);
+                                value = ObjectUtils.toString(objectProperty.value(), null);
                         }
                         else
                         {
@@ -502,19 +506,20 @@ public class ListItemImpl implements ListItem
 
         StringBuilder sb = new StringBuilder();
         sb.append("<table>");
-        for (Map.Entry<String, Object> entry : _properties.entrySet())
+        for (Map.Entry<String, ObjectProperty> entry : _properties.entrySet())
         {
             DomainProperty prop = dps.get(entry.getKey());
             if (prop != null)
             {
+                Object newValue = entry.getValue().value();
                 if (_oldProperties != null)
                 {
                     _appendChange(sb, prop.getName(),
-                            ObjectUtils.toString(_oldProperties.get(entry.getKey()), ""),
-                            ObjectUtils.toString(entry.getValue(), ""));
+                            ObjectUtils.toString(_oldProperties.get(entry.getKey()).value(), ""),
+                            ObjectUtils.toString(newValue, ""));
                 }
                 else
-                    _appendChange(sb, prop.getName(), ObjectUtils.toString(entry.getValue(), ""), null);
+                    _appendChange(sb, prop.getName(), ObjectUtils.toString(newValue, ""), null);
             }
         }
         sb.append("</table>");

@@ -50,7 +50,7 @@ public class ImportContext extends AbstractContext
     }
 
     @Override
-    protected synchronized StudyDocument getStudyDocument()
+    protected synchronized StudyDocument getStudyDocument()      // TODO: Should throw StudyImportException
     {
         StudyDocument studyDoc = super.getStudyDocument();
 
@@ -65,7 +65,7 @@ public class ImportContext extends AbstractContext
             {
                 throw new RuntimeException(e);
             }
-            catch (IOException e)
+            catch (IOException e)  // TODO: Should wrap in StudyImportException
             {
                 throw new RuntimeException(e);
             }

@@ -404,7 +404,7 @@ public class SqlParser
         else if (node instanceof QIdentifier)
         {
 		    String s =  ((QIdentifier)node).getIdentifier();
-		    QString q = new QString(s.toUpperCase(), false);
+		    QString q = new QString(s.toUpperCase());
 		    q.setLineAndColumn(node);
 		    return q;
         }

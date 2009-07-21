@@ -72,7 +72,7 @@ public class DataSetColumnsTable extends FilteredTable
         result.append("\n" +
                 "JOIN exp.PropertyDomain AS PropertyDomain ON PropertyDomain.PropertyId = PropertyDescriptor.PropertyId\n" +
                 "JOIN exp.DomainDescriptor AS DomainDescriptor ON DomainDescriptor.DomainId = PropertyDomain.DomainId\n" +
-                "JOIN study.DataSet AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI\n");
+                "JOIN study.DataSet AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI)\n");
         return result;
     }
 }

@@ -96,6 +96,12 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
 
+        addWrapColumn(_rootTable.getColumn("VialCount"));
+        addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
+        addWrapColumn(_rootTable.getColumn("AtRepositoryCount"));
+        addWrapColumn(_rootTable.getColumn("AvailableCount"));
+        addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount"));
+
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
     }
 

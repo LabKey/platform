@@ -89,6 +89,7 @@ public class WikiModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
+        RoleManager.registerPermission(new IncludeScriptPermission(), false);
         RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);
         
         ContainerManager.addContainerListener(new WikiContainerListener());

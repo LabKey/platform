@@ -1098,7 +1098,7 @@ loop:
         public SelectColumn(FieldKey fk)
         {
             _field = QFieldKey.of(fk);
-            _key = fk;
+            _key = new FieldKey(null, fk.getName());
             _alias = _aliasManager.decideAlias(getName());
         }
 

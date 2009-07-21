@@ -3736,7 +3736,19 @@ public class StudyController extends BaseStudyController
 
         try
         {
-            return importer.process();
+            try
+            {
+                return importer.process();
+            }
+            catch (RuntimeException e)
+            {
+                Throwable cause = e.getCause();
+
+                if (cause instanceof StudyImporter.StudyImportException)
+                    throw (StudyImporter.StudyImportException)cause;
+                else
+                    throw e;
+            }
         }
         catch (StudyImporter.StudyImportException e)
         {
