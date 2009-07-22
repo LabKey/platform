@@ -16,11 +16,12 @@
 
 package org.labkey.study.plate;
 
-import org.apache.struts.upload.FormFile;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
-import org.labkey.api.attachments.StrutsAttachmentFile;
+import org.labkey.api.collections.Cache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpObject;
@@ -28,13 +29,11 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.*;
-import org.labkey.api.collections.Cache;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.plate.query.PlateSchema;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -674,9 +673,9 @@ public class PlateManager implements PlateService.Service
             AttachmentService.get().deleteAttachments(plate);
     }
 
-    public void setDataFile(User user, Plate plate, FormFile file) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+    public void setDataFile(User user, Plate plate, AttachmentFile file) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
-        AttachmentService.get().addAttachments(user, plate, StrutsAttachmentFile.createList(file));
+        AttachmentService.get().addAttachments(user, plate, Collections.singletonList(file));
     }
 
     public ActionURL getDataFileURL(Plate iplate, String pageFlow)

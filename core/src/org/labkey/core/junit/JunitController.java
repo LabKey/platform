@@ -16,15 +16,12 @@
 
 package org.labkey.core.junit;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestFailure;
 import junit.framework.TestResult;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -40,7 +37,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.Format;
 import java.util.*;
@@ -48,8 +44,7 @@ import java.util.*;
 
 public class JunitController extends SpringActionController
 {
-    private static ActionResolver _resolver = new DefaultActionResolver(JunitController.class);
-    private static Map<String, List<Class<? extends TestCase>>> _testCases;
+    private static final ActionResolver _resolver = new DefaultActionResolver(JunitController.class);
 
 
     public JunitController()
@@ -57,47 +52,6 @@ public class JunitController extends SpringActionController
         super();
         setActionResolver(_resolver);
     }
-
-    private Map<String, List<Class<? extends TestCase>>> getTestCases()
-    {
-        synchronized(JunitController.class)
-        {
-            Set<Class<? extends TestCase>> allCases = new HashSet<Class<? extends TestCase>>();
-
-            if (_testCases == null)
-            {
-                _testCases = new TreeMap<String, List<Class<? extends TestCase>>>();
-
-                for (Module module : ModuleLoader.getInstance().getModules())
-                {
-                    Set<Class<? extends TestCase>> clazzes = module.getJUnitTests();
-                    List<Class<? extends TestCase>> moduleClazzes = new ArrayList<Class<? extends TestCase>>();
-
-                    for (Class<? extends TestCase> clazz : clazzes)
-                    {
-                        if (allCases.contains(clazz))
-                            continue;
-
-                        allCases.add(clazz);
-                        moduleClazzes.add(clazz);
-                    }
-
-                    if (!moduleClazzes.isEmpty())
-                    {
-                        Collections.sort(moduleClazzes, new Comparator<Class<? extends TestCase>>(){
-                            public int compare(Class<? extends TestCase> c1, Class<? extends TestCase> c2)
-                            {
-                                return c1.getName().compareTo(c2.getName());
-                            }
-                        });
-                        _testCases.put(module.getName(), moduleClazzes);
-                    }
-                }
-            }
-            return _testCases;
-        }
-    }
-
 
     @RequiresSiteAdmin
     public class BeginAction extends SimpleViewAction
@@ -109,7 +63,7 @@ public class JunitController extends SpringActionController
                 @Override
                 public void renderInternal(Object model, PrintWriter out) throws Exception
                 {
-                    Map<String, List<Class<? extends TestCase>>> testCases = getTestCases();
+                    Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
 
                     out.println("<div><table class=\"labkey-data-region\">");
 
@@ -145,19 +99,18 @@ public class JunitController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class RunAction extends SimpleViewAction
+    public class RunAction extends SimpleViewAction<TestForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
-            HttpServletRequest request = getViewContext().getRequest();
-            TestContext.setTestContext(request, (User) request.getUserPrincipal());
+            TestContext.setTestContext(getViewContext().getRequest(), getUser());
             TestResult result = new TestResult();
 
-            String testCase = request.getParameter("testCase");
+            String testCase = form.getTestCase();
             if (null != testCase && 0 == testCase.length())
                 testCase = null;
 
-            Map<String, List<Class<? extends TestCase>>> testCases = getTestCases();
+            Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
 
             for (String module : testCases.keySet())
             {
@@ -168,7 +121,7 @@ public class JunitController extends SpringActionController
                     getViewContext().getResponse().flushBuffer();
                     // run test
                     if (null == testCase || testCase.equals(clazz.getName()))
-                        _run(clazz, result);
+                        JunitRunner.run(clazz, result);
                 }
             }
 
@@ -183,9 +136,25 @@ public class JunitController extends SpringActionController
     }
 
 
+    public static class TestForm
+    {
+        private String _testCase;
+
+        public String getTestCase()
+        {
+            return _testCase;
+        }
+
+        public void setTestCase(String testCase)
+        {
+            _testCase = testCase;
+        }
+    }
+
+
     private Class<? extends TestCase> findTestClass(String testCase)
     {
-        Map<String, List<Class<? extends TestCase>>> testCases = getTestCases();
+        Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
 
         for (String module : testCases.keySet())
         {
@@ -200,24 +169,8 @@ public class JunitController extends SpringActionController
     }
 
 
-    static void _run(Class<? extends TestCase> testCase, TestResult result) throws IllegalAccessException, InstantiationException
-    {
-        try
-        {
-            Method m = testCase.getDeclaredMethod("suite", (Class[]) null);
-            Test test = (Test) m.invoke(null);
-            test.run(result);
-        }
-        catch (Exception x)
-        {
-            TestCase dummy = testCase.newInstance();
-            result.addError(dummy, x);
-        }
-    }
-
-
-    static LinkedList<String> list = new LinkedList<String>();
-    static Format format = FastDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
+    private static final LinkedList<String> list = new LinkedList<String>();
+    private static final Format format = FastDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
 
     @RequiresPermission(ACL.PERM_NONE)
     public class AliveAction extends SimpleViewAction
@@ -234,7 +187,7 @@ public class JunitController extends SpringActionController
                 Class<? extends TestCase> test = findTestClass("org.labkey.api.data.DbSchema$TestCase");
 
                 if (null != test)
-                    _run(test, result);
+                    JunitRunner.run(test, result);
 
                 int status = HttpServletResponse.SC_OK;
                 if (result.failureCount() != 0)
