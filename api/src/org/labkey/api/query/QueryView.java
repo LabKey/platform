@@ -1111,7 +1111,7 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
         List<DisplayColumn> displayColumns = getExportColumns(rgn.getDisplayColumns());
-        // Need to remove special QC columns
+        // Need to remove special MV columns
         for (Iterator<DisplayColumn> it = displayColumns.iterator(); it.hasNext();)
         {
             DisplayColumn col = it.next();

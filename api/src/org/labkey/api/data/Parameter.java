@@ -16,10 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.apache.struts.upload.FormFile;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.util.HString;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.util.HString;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -107,7 +106,7 @@ public class Parameter
         }
 
         // Use AttachmentFile instead
-        assert !(value instanceof FormFile || value instanceof File || value instanceof MultipartFile);
+        assert !(value instanceof File || value instanceof MultipartFile);
 
         if (value instanceof AttachmentFile)
         {

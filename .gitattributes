@@ -86,7 +86,6 @@ api/src/org/labkey/api/attachments/DocumentWriter.java -text
 api/src/org/labkey/api/attachments/DownloadURL.java -text
 api/src/org/labkey/api/attachments/FileAttachmentFile.java -text
 api/src/org/labkey/api/attachments/SpringAttachmentFile.java -text
-api/src/org/labkey/api/attachments/StrutsAttachmentFile.java -text
 api/src/org/labkey/api/audit/AuditLogEvent.java -text
 api/src/org/labkey/api/audit/AuditLogService.java -text
 api/src/org/labkey/api/audit/DefaultAuditProvider.java -text

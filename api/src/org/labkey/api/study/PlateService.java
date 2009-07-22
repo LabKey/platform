@@ -16,16 +16,16 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.attachments.AttachmentService;
-import org.apache.struts.upload.FormFile;
+import org.labkey.api.view.ViewContext;
 
-import java.sql.SQLException;
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -196,7 +196,7 @@ public class PlateService
          * @throws IOException Thrown if the specified file cannot be read.
          * @throws org.labkey.api.attachments.AttachmentService.DuplicateFilenameException Thrown if the specified file has already been attached to this plate
          */
-        void setDataFile(User user, Plate plate, FormFile file) throws SQLException, IOException, AttachmentService.DuplicateFilenameException;
+        void setDataFile(User user, Plate plate, AttachmentFile file) throws SQLException, IOException, AttachmentService.DuplicateFilenameException;
 
         /**
          * Deletes a plate-associated data file.
