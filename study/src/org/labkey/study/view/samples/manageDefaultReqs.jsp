@@ -240,6 +240,6 @@ function verifyNewRequirement(prefix)
             </td>
         </tr>
     </table>
-    <input type="hidden" name="nextPage" value="manageDefaultReqs">
+    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpringSpecimenController.ManageDefaultReqsAction.class, getViewContext().getContainer()).getLocalURIString()%>">
 </form>
 <%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer())) %>

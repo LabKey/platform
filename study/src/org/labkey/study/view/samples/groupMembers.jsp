@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.controllers.samples.SamplesController"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.study.controllers.samples.ShowGroupMembersAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <%
-    JspView<SamplesController.GroupMembersBean> me = (org.labkey.api.view.JspView<SamplesController.GroupMembersBean>) HttpView.currentView();
-    SamplesController.GroupMembersBean bean = me.getModelBean();
-    String messages = bean.getMessages().length() > 0 ? bean.getMessages() + "<br>" : "";
+    JspView<ShowGroupMembersAction.GroupMembersBean> me = (org.labkey.api.view.JspView<ShowGroupMembersAction.GroupMembersBean>) HttpView.currentView();
+    ShowGroupMembersAction.GroupMembersBean bean = me.getModelBean();
 %>
-<%= messages %>
+<labkey:errors/>
 <span>
 <form action="showGroupMembers.post" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">

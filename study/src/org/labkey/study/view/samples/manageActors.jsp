@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
@@ -129,8 +130,8 @@
                 <%= generateSubmitButton("Save")%>&nbsp;
                 <%= buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")%>
                 <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
-                <%= buttonImg("Change Order", "document.manageActors.nextPage.value='manageActorOrder'; return true;")%>
-                <input type="hidden" name="nextPage" value="manageActors">
+                <%= buttonImg("Change Order", "document.manageActors.nextPage.value='" + new ActionURL(SpringSpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString() + "'; return true;")%>
+                <input type="hidden" name="nextPage" value="<%=new ActionURL(SpringSpecimenController.ManageActorsAction.class, study.getContainer()).getLocalURIString()%>">
             </td>
             <td>&nbsp;</td>
         </tr>

@@ -15,21 +15,20 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.study.controllers.samples.SamplesController" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.study.controllers.samples.ShowUploadSpecimensAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<SamplesController.UploadSpecimensForm> me = (JspView<SamplesController.UploadSpecimensForm>) HttpView.currentView();
-    SamplesController.UploadSpecimensForm bean = me.getModelBean();
+    JspView<ShowUploadSpecimensAction.UploadSpecimensForm> me = (JspView<ShowUploadSpecimensAction.UploadSpecimensForm>) HttpView.currentView();
+    ShowUploadSpecimensAction.UploadSpecimensForm bean = me.getModelBean();
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 Use this form to <b>replace all specimens</b> in the repository with a new list of specimens.<br>
 [<a href="getSpecimenExcel.view">Download a template workbook</a>]<br><br>
 Paste data in the area below
-<form action="handleUploadSpecimens.post" method="post" enctype="multipart/form-data">
+<form action="showUploadSpecimens.post" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
     <%=generateSubmitButton("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
 </form>

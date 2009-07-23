@@ -16,32 +16,29 @@
 
 package org.labkey.study.controllers.samples;
 
+import org.apache.beehive.netui.pageflow.FormData;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.*;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
-import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.view.*;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.*;
+import org.labkey.api.view.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.security.permissions.*;
+import org.labkey.study.designer.MapArrayExcelWriter;
+import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
@@ -68,17 +65,27 @@ import org.labkey.study.samples.report.request.RequestSiteReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeCohortReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeParticipantReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeSummaryReportFactory;
+import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.samples.settings.RequestNotificationSettings;
+import org.labkey.study.samples.settings.StatusSettings;
+import org.labkey.study.samples.settings.DisplaySettings;
+import org.labkey.study.security.permissions.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
+
+import jxl.Workbook;
+import jxl.WorkbookSettings;
+import jxl.Range;
 
 /**
  * User: brittp
@@ -87,8 +94,12 @@ import java.util.*;
  */
 public class SpringSpecimenController extends BaseStudyController
 {
-    private static DefaultActionResolver _actionResolver =
-            new BeehivePortingActionResolver(SamplesController.class, SpringSpecimenController.class);
+    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SpringSpecimenController.class,
+            ShowUploadSpecimensAction.class,
+            ShowGroupMembersAction.class,
+            ShowSearchAction.class,
+            AutoCompleteAction.class
+    );
 
     public SpringSpecimenController()
     {
@@ -2142,7 +2153,6 @@ public class SpringSpecimenController extends BaseStudyController
     @RequiresPermissionClass(ManageRequestRequirementsPermission.class)
     public class ManageDefaultReqsAction extends FormViewAction<DefaultRequirementsForm>
     {
-        private String _nextPage;
         public void validateCommand(DefaultRequirementsForm target, Errors errors)
         {
         }
@@ -2157,7 +2167,6 @@ public class SpringSpecimenController extends BaseStudyController
         public boolean handlePost(DefaultRequirementsForm form, BindException errors) throws Exception
         {
             getUtils().ensureSpecimenRequestsConfigured();
-            _nextPage = form.getNextPage();
             createDefaultRequirement(form.getOriginatorActor(), form.getOriginatorDescription(), SpecimenRequestRequirementType.ORIGINATING_SITE);
             createDefaultRequirement(form.getProviderActor(), form.getProviderDescription(), SpecimenRequestRequirementType.PROVIDING_SITE);
             createDefaultRequirement(form.getReceiverActor(), form.getReceiverDescription(), SpecimenRequestRequirementType.RECEIVING_SITE);
@@ -2178,15 +2187,10 @@ public class SpringSpecimenController extends BaseStudyController
             }
         }
 
-        public ActionURL getSuccessURL(DefaultRequirementsForm defaultRequirementsForm)
+        public ActionURL getSuccessURL(DefaultRequirementsForm form)
         {
-            if (_nextPage != null && _nextPage.length() > 0)
-            {
-                ActionURL url = getViewContext().cloneActionURL();
-                url.deleteParameters();
-                url.setAction(_nextPage);
-                return url;
-            }
+            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+                return new ActionURL(form.getNextPage());
             else
                 return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
         }
@@ -2198,7 +2202,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    public static class EmailSpecimenListForm extends SamplesController.IdForm
+    public static class EmailSpecimenListForm extends IdForm
     {
         private boolean _sendXls;
         private boolean _sendTsv;
@@ -2458,7 +2462,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class ExportSiteForm extends SamplesController.IdForm
+    public static class ExportSiteForm extends IdForm
     {
         private String _export;
         private String _specimenIds;
@@ -2576,7 +2580,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class LabSpecimenListsForm extends SamplesController.IdForm
+    public static class LabSpecimenListsForm extends IdForm
     {
         private String _listType;
 
@@ -3219,15 +3223,15 @@ public class SpringSpecimenController extends BaseStudyController
 
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ImportSpecimenData extends SimpleViewAction<SamplesController.PipelineForm>
+    public class ImportSpecimenData extends SimpleViewAction<PipelineForm>
     {
         private String _path = null;
 
-        public void validateCommand(SamplesController.PipelineForm target, Errors errors)
+        public void validateCommand(PipelineForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(SamplesController.PipelineForm form, BindException bindErrors) throws Exception
+        public ModelAndView getView(PipelineForm form, BindException bindErrors) throws Exception
         {
             _path = form.getPath();
             File dataFile = null;
@@ -3281,13 +3285,13 @@ public class SpringSpecimenController extends BaseStudyController
 
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class SubmitSpecimenImport extends FormHandlerAction<SamplesController.PipelineForm>
+    public class SubmitSpecimenImport extends FormHandlerAction<PipelineForm>
     {
-        public void validateCommand(SamplesController.PipelineForm target, Errors errors)
+        public void validateCommand(PipelineForm target, Errors errors)
         {
         }
 
-        public boolean handlePost(SamplesController.PipelineForm form, BindException errors) throws Exception
+        public boolean handlePost(PipelineForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
             String path = form.getPath();
@@ -3303,7 +3307,7 @@ public class SpringSpecimenController extends BaseStudyController
             return submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f);
         }
 
-        public ActionURL getSuccessURL(SamplesController.PipelineForm pipelineForm)
+        public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
             return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
@@ -3390,6 +3394,926 @@ public class SpringSpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ShowManageRepositorySettingsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<RepositorySettings>("/org/labkey/study/view/samples/manageRepositorySettings.jsp", SampleManager.getInstance().getRepositorySettings(getContainer()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Manage Repository Settings");
+            root.addChild("Study", new ActionURL(StudyController.BeginAction.class, getContainer()));
+            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(ManageStudyPermission.class)
+    public class ManageRepositorySettingsAction extends SimpleViewAction<ManageRepositorySettingsForm>
+    {
+        public ModelAndView getView(ManageRepositorySettingsForm form, BindException errors) throws Exception
+        {
+            RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+            settings.setSimple(form.isSimple());
+            settings.setEnableRequests(!form.isSimple()); //We only expose one setting for now...
+            SampleManager.getInstance().saveRepositorySettings(getContainer(), settings);
+
+            return HttpView.redirect(new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class ManageRepositorySettingsForm extends FormData
+    {
+        private boolean _simple;
+        private boolean _enableRequests;
+
+        public boolean isSimple()
+        {
+            return _simple;
+        }
+
+        public void setSimple(boolean simple)
+        {
+            _simple = simple;
+        }
+
+        public boolean isEnableRequests()
+        {
+            return _enableRequests;
+        }
+
+        public void setEnableRequests(boolean enableRequests)
+        {
+            _enableRequests = enableRequests;
+        }
+    }
+
+    @RequiresPermissionClass(ManageSpecimenActorsPermission.class)
+    public class ManageActorOrderAction extends DisplayManagementSubpageAction<BaseStudyController.BulkEditForm>
+    {
+        public ManageActorOrderAction()
+        {
+            super("manageActorOrder", "Manage Actor Order", "specimenRequest");
+        }
+
+        public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
+        {
+            String order = form.getOrder();
+            if (order != null && order.length() > 0)
+            {
+                String[] rowIds = order.split(",");
+                // get a map of id to actor objects before starting our updates; this prevents us from
+                // blowing then repopulating the cache with each update:
+                Map<Integer, SampleRequestActor> idToActor = getIdToRequestActorMap(getContainer());
+                for (int i = 0; i < rowIds.length; i++)
+                {
+                    int rowId = Integer.parseInt(rowIds[i]);
+                    SampleRequestActor actor = idToActor.get(rowId);
+                    if (actor != null && actor.getSortOrder() != i)
+                    {
+                        actor = actor.createMutable();
+                        actor.setSortOrder(i);
+                        actor.update(getUser());
+                    }
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(BulkEditForm bulkEditForm)
+        {
+            return new ActionURL(ManageActorsAction.class, getContainer());
+        }
+    }
+
+    private abstract class DisplayManagementSubpageAction<Form extends BulkEditForm> extends FormViewAction<Form>
+    {
+        private String _jsp;
+        private String _title;
+        private String _helpTopic;
+
+        public DisplayManagementSubpageAction(String jsp, String title, String helpTopic)
+        {
+            _jsp = jsp;
+            _title = title;
+            _helpTopic = helpTopic;
+        }
+
+        public void validateCommand(Form target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<StudyImpl>("/org/labkey/study/view/samples/" + _jsp + ".jsp", getStudy());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try {
+                setHelpTopic(new HelpTopic(_helpTopic, HelpTopic.Area.STUDY));
+
+                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+                root.addChild(_title);
+            }
+            catch (ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
+            return root;
+        }
+    }
+
+    private Map<Integer, SampleRequestActor> getIdToRequestActorMap(Container container) throws SQLException
+    {
+        SampleRequestActor[] actors = SampleManager.getInstance().getRequirementsProvider().getActors(container);
+        Map<Integer, SampleRequestActor> idToStatus = new HashMap<Integer, SampleRequestActor>();
+        for (SampleRequestActor actor : actors)
+            idToStatus.put(actor.getRowId(), actor);
+        return idToStatus;
+    }
+
+    @RequiresPermissionClass(ManageSpecimenActorsPermission.class)
+    public class ManageActorsAction extends DisplayManagementSubpageAction<ActorEditForm>
+    {
+        public ManageActorsAction()
+        {
+            super("manageActors", "Manage Actors", "specimenRequest");
+        }
+
+        public boolean handlePost(ActorEditForm form, BindException errors) throws Exception
+        {
+            int[] rowIds = form.getIds();
+            String[] labels = form.getLabels();
+            if (labels != null)
+            {
+                for (String label : labels)
+                {
+                    if (label == null || label.length() == 0)
+                        errors.reject(ERROR_MSG, "Actor name cannot be empty.");
+                }
+            }
+            if (!errors.hasErrors())
+            {
+                if (rowIds != null && rowIds.length > 0)
+                {
+                    // get a map of id to actor objects before starting our updates; this prevents us from
+                    // blowing then repopulating the cache with each update:
+                    Map<Integer, SampleRequestActor> idToActor = getIdToRequestActorMap(getContainer());
+                    for (int i = 0; i < rowIds.length; i++)
+                    {
+                        int rowId = rowIds[i];
+                        String label = labels[i];
+                        SampleRequestActor actor = idToActor.get(rowId);
+                        if (actor != null && !nullSafeEqual(label, actor.getLabel()))
+                        {
+                            actor = actor.createMutable();
+                            actor.setLabel(label);
+                            actor.update(getUser());
+                        }
+                    }
+                }
+
+                if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+                {
+                    SampleRequestActor actor = new SampleRequestActor();
+                    actor.setLabel(form.getNewLabel());
+                    SampleRequestActor[] actors = SampleManager.getInstance().getRequirementsProvider().getActors(getContainer());
+                    actor.setSortOrder(actors.length);
+                    actor.setContainer(getContainer());
+                    actor.setPerSite(form.isNewPerSite());
+                    actor.create(getUser());
+                }
+            }
+            return !errors.hasErrors();
+        }
+
+        public ActionURL getSuccessURL(ActorEditForm form)
+        {
+            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+                return new ActionURL(form.getNextPage());
+            else
+                return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+        }
+    }
+
+    public static class ActorEditForm extends BulkEditForm
+    {
+        boolean _newPerSite;
+
+        public boolean isNewPerSite()
+        {
+            return _newPerSite;
+        }
+
+        public void setNewPerSite(boolean newPerSite)
+        {
+            _newPerSite = newPerSite;
+        }
+    }
+
+    @RequiresPermissionClass(ManageSpecimenActorsPermission.class)
+    public class ManageStatusOrderAction extends DisplayManagementSubpageAction<BulkEditForm>
+    {
+        public ManageStatusOrderAction()
+        {
+            super("manageStatusOrder", "Manage Status Order", "specimenRequest");
+        }
+
+        public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
+        {
+            String order = form.getOrder();
+            if (order != null && order.length() > 0)
+            {
+                String[] rowIdStrings = order.split(",");
+                int[] rowIds = new int[rowIdStrings.length];
+                for (int i = 0; i < rowIdStrings.length; i++)
+                    rowIds[i] = Integer.parseInt(rowIdStrings[i]);
+                updateRequestStatusOrder(getContainer(), rowIds);
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(BulkEditForm bulkEditForm)
+        {
+            return new ActionURL(ManageStatusesAction.class, getContainer());
+        }
+    }
+
+    private void updateRequestStatusOrder(Container container, int[] rowIds) throws SQLException
+    {
+        // get a map of id to status objects before starting our updates; this prevents us from
+        // blowing then repopulating the cache with each update:
+        Map<Integer, SampleRequestStatus> idToStatus = getIdToRequestStatusMap(container);
+        for (int i = 0; i < rowIds.length; i++)
+        {
+            int rowId = rowIds[i];
+            SampleRequestStatus status = idToStatus.get(rowId);
+            if (status != null && !status.isSystemStatus() && status.getSortOrder() != i)
+            {
+                status = status.createMutable();
+                status.setSortOrder(i);
+                SampleManager.getInstance().updateRequestStatus(getUser(), status);
+            }
+        }
+    }
+
+    @RequiresPermissionClass(ManageRequestStatusesPermission.class)
+    public class ManageStatusesAction extends DisplayManagementSubpageAction<StatusEditForm>
+    {
+        public ManageStatusesAction()
+        {
+            super("manageStatuses", "Manage Statuses", "specimenRequest");
+        }
+
+        public boolean handlePost(StatusEditForm form, BindException errors) throws Exception
+        {
+            int[] rowIds = form.getIds();
+            String[] labels = form.getLabels();
+            if (rowIds != null && rowIds.length > 0)
+            {
+                // get a map of id to status objects before starting our updates; this prevents us from
+                // blowing then repopulating the cache with each update:
+                Map<Integer, SampleRequestStatus> idToStatus = getIdToRequestStatusMap(getContainer());
+                Set<Integer> finalStates = new HashSet<Integer>(form.getFinalStateIds().length);
+                for (int id : form.getFinalStateIds())
+                    finalStates.add(id);
+                Set<Integer> lockedSpecimenStates = new HashSet<Integer>(form.getSpecimensLockedIds().length);
+                for (int id : form.getSpecimensLockedIds())
+                    lockedSpecimenStates.add(id);
+
+                for (int i = 0; i < rowIds.length; i++)
+                {
+                    int rowId = rowIds[i];
+                    SampleRequestStatus status = idToStatus.get(rowId);
+                    if (status != null && !status.isSystemStatus())
+                    {
+                        String label = labels[i];
+                        boolean isFinalState = finalStates.contains(rowId);
+                        boolean specimensLocked = lockedSpecimenStates.contains(rowId);
+                        if (!nullSafeEqual(label, status.getLabel()) ||
+                                isFinalState != status.isFinalState() ||
+                                specimensLocked != status.isSpecimensLocked())
+                        {
+                            status = status.createMutable();
+                            status.setLabel(label);
+                            status.setFinalState(isFinalState);
+                            status.setSpecimensLocked(specimensLocked);
+                            SampleManager.getInstance().updateRequestStatus(getUser(), status);
+                        }
+                    }
+                }
+            }
+
+            if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+            {
+                SampleRequestStatus status = new SampleRequestStatus();
+                status.setLabel(form.getNewLabel());
+                SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
+                status.setSortOrder(statuses.length);
+                status.setContainer(getContainer());
+                status.setFinalState(form.isNewFinalState());
+                status.setSpecimensLocked(form.isNewSpecimensLocked());
+                SampleManager.getInstance().createRequestStatus(getUser(), status);
+            }
+
+            StatusSettings settings = SampleManager.getInstance().getStatusSettings(getContainer());
+            if (settings.isUseShoppingCart() != form.isUseShoppingCart())
+            {
+                settings.setUseShoppingCart(form.isUseShoppingCart());
+                SampleManager.getInstance().saveStatusSettings(getContainer(), settings);
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(StatusEditForm form)
+        {
+            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+                return new ActionURL(form.getNextPage());
+            else
+                return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+        }
+    }
+
+    public static class StatusEditForm extends BulkEditForm
+    {
+        private int[] _finalStateIds = new int[0];
+        private int[] _specimensLockedIds = new int[0];
+        private boolean _newSpecimensLocked;
+        private boolean _newFinalState;
+        private boolean _useShoppingCart;
+
+        public int[] getFinalStateIds()
+        {
+            return _finalStateIds;
+        }
+
+        public void setFinalStateIds(int[] finalStateIds)
+        {
+            _finalStateIds = finalStateIds;
+        }
+
+        public boolean isNewFinalState()
+        {
+            return _newFinalState;
+        }
+
+        public void setNewFinalState(boolean newFinalState)
+        {
+            _newFinalState = newFinalState;
+        }
+
+        public boolean isNewSpecimensLocked()
+        {
+            return _newSpecimensLocked;
+        }
+
+        public void setNewSpecimensLocked(boolean newSpecimensLocked)
+        {
+            _newSpecimensLocked = newSpecimensLocked;
+        }
+
+        public int[] getSpecimensLockedIds()
+        {
+            return _specimensLockedIds;
+        }
+
+        public void setSpecimensLockedIds(int[] specimensLockedIds)
+        {
+            _specimensLockedIds = specimensLockedIds;
+        }
+
+        public boolean isUseShoppingCart()
+        {
+            return _useShoppingCart;
+        }
+
+        public void setUseShoppingCart(boolean useShoppingCart)
+        {
+            _useShoppingCart = useShoppingCart;
+        }
+    }
+
+    private Map<Integer, SampleRequestStatus> getIdToRequestStatusMap(Container container) throws SQLException
+    {
+        SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(container, getUser());
+        Map<Integer, SampleRequestStatus> idToStatus = new HashMap<Integer, SampleRequestStatus>();
+        for (SampleRequestStatus status : statuses)
+            idToStatus.put(status.getRowId(), status);
+        return idToStatus;
+    }
+
+    @RequiresPermissionClass(ManageRequestStatusesPermission.class)
+    public class DeleteActorAction extends RedirectAction<IdForm>
+    {
+        public ActionURL getSuccessURL(IdForm idForm)
+        {
+            return new ActionURL(ManageActorsAction.class, getContainer());
+        }
+
+        public boolean doAction(IdForm form, BindException errors) throws Exception
+        {
+            SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
+            if (actor != null)
+                actor.delete();
+
+            return true;
+        }
+
+        public void validateCommand(IdForm target, Errors errors)
+        {
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeleteStatusAction extends RedirectAction<IdForm>
+    {
+        public ActionURL getSuccessURL(IdForm idForm)
+        {
+            return new ActionURL(ManageStatusesAction.class, getContainer());
+        }
+
+        public boolean doAction(IdForm form, BindException errors) throws Exception
+        {
+            SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
+            SampleRequestStatus status = SampleManager.getInstance().getRequestStatus(getContainer(), form.getId());
+            if (status != null)
+            {
+                SampleManager.getInstance().deleteRequestStatus(getUser(), status);
+                int[] remainingIds = new int[statuses.length - 1];
+                int idx = 0;
+                for (SampleRequestStatus remainingStatus : statuses)
+                {
+                    if (remainingStatus.getRowId() != form.getId())
+                        remainingIds[idx++] = remainingStatus.getRowId();
+                }
+                updateRequestStatusOrder(getContainer(), remainingIds);
+            }
+            return true;
+        }
+
+        public void validateCommand(IdForm target, Errors errors)
+        {
+        }
+    }
+
+    @RequiresPermissionClass(ManageNewRequestFormPermission.class)
+    public class HandleUpdateRequestInputsAction extends RedirectAction<ManageRequestInputsForm>
+    {
+        public ActionURL getSuccessURL(ManageRequestInputsForm manageRequestInputsForm)
+        {
+            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+        }
+
+        public boolean doAction(ManageRequestInputsForm form, BindException errors) throws Exception
+        {
+            SampleManager.SpecimenRequestInput[] inputs = new SampleManager.SpecimenRequestInput[form.getTitle().length];
+            for (int i = 0; i < form.getTitle().length; i++)
+            {
+                String title = form.getTitle()[i];
+                String helpText = form.getHelpText()[i];
+                inputs[i] = new SampleManager.SpecimenRequestInput(title, helpText, i);
+            }
+
+            for (int index : form.getMultiline())
+                inputs[index].setMultiLine(true);
+            for (int index : form.getRequired())
+                inputs[index].setRequired(true);
+            for (int index : form.getRememberSiteValue())
+                inputs[index].setRememberSiteValue(true);
+
+            SampleManager.getInstance().saveNewSpecimenRequestInputs(getContainer(), inputs);
+            return true;
+        }
+
+        public void validateCommand(ManageRequestInputsForm target, Errors errors)
+        {
+        }
+    }
+
+    public static final class ManageRequestInputsForm extends FormData
+    {
+        private String[] _title;
+        private String[] _helpText;
+        private int[] _multiline;
+        private int[] _required;
+        private int[] _rememberSiteValue;
+
+        public String[] getHelpText()
+        {
+            return _helpText;
+        }
+
+        public void setHelpText(String[] helpText)
+        {
+            _helpText = helpText;
+        }
+
+        public String[] getTitle()
+        {
+            return _title;
+        }
+
+        public void setTitle(String[] title)
+        {
+            _title = title;
+        }
+
+        public int[] getMultiline()
+        {
+            return _multiline;
+        }
+
+        public void setMultiline(int[] multiline)
+        {
+            _multiline = multiline;
+        }
+
+        public int[] getRememberSiteValue()
+        {
+            return _rememberSiteValue;
+        }
+
+        public void setRememberSiteValue(int[] rememberSiteValue)
+        {
+            _rememberSiteValue = rememberSiteValue;
+        }
+
+        public int[] getRequired()
+        {
+            return _required;
+        }
+
+        public void setRequired(int[] required)
+        {
+            _required = required;
+        }
+    }
+
+    @RequiresPermissionClass(ManageNewRequestFormPermission.class)
+    public class ManageRequestInputsAction extends SimpleViewAction<PipelineForm>
+    {
+        public ModelAndView getView(PipelineForm pipelineForm, BindException errors) throws Exception
+        {
+            return new JspView<ManageRequestInputsBean>("/org/labkey/study/view/samples/manageRequestInputs.jsp",
+                    new ManageRequestInputsBean(getViewContext()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try {
+                setHelpTopic(new HelpTopic("specimenRequest", HelpTopic.Area.STUDY));
+
+                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+                root.addChild("Manage New Request Form");
+
+                return root;
+            }
+            catch (ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static class PipelineForm extends FormData
+    {
+        private String _path;
+        private boolean _deleteLogfile;
+
+        public PipelineForm()
+        {
+//            System.err.println("PipelineForm");
+        }
+
+        public String getPath()
+        {
+            return _path;
+        }
+
+        public void setPath(String path)
+        {
+            this._path = path;
+        }
+
+        public boolean isDeleteLogfile()
+        {
+            return _deleteLogfile;
+        }
+
+        public void setDeleteLogfile(boolean deleteLogfile)
+        {
+            _deleteLogfile = deleteLogfile;
+        }
+    }
+
+    public static class ManageRequestInputsBean
+    {
+        private SampleManager.SpecimenRequestInput[] _inputs;
+        private Container _container;
+        private String _contextPath;
+
+        public ManageRequestInputsBean(ViewContext context) throws SQLException
+        {
+            _container = context.getContainer();
+            _inputs = SampleManager.getInstance().getNewSpecimenRequestInputs(_container);
+            _contextPath = context.getContextPath();
+        }
+
+        public SampleManager.SpecimenRequestInput[] getInputs()
+        {
+            return _inputs;
+        }
+
+        public Container getContainer()
+        {
+            return _container;
+        }
+
+        public String getContextPath()
+        {
+            return _contextPath;
+        }
+    }
+
+    @RequiresPermissionClass(ManageNotificationsPermission.class)
+    public class ManageNotificationsAction extends FormViewAction<ManageNotificationsForm>
+    {
+        public void validateCommand(ManageNotificationsForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(ManageNotificationsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            // try to get the settings from the form, just in case this is a reshow:
+            RequestNotificationSettings settings = form.getBean();
+            if (settings == null || settings.getReplyTo() == null)
+                settings = SampleManager.getInstance().getRequestNotificationSettings(getContainer());
+
+            return new JspView<RequestNotificationSettings>("/org/labkey/study/view/samples/manageNotifications.jsp", settings);
+        }
+
+        public boolean handlePost(ManageNotificationsForm form, BindException errors) throws Exception
+        {
+            RequestNotificationSettings settings = form.getBean();
+            if (!settings.isNewRequestNotifyCheckbox())
+                settings.setNewRequestNotify(null);
+            else
+            {
+                if (isNullOrBlank(settings.getNewRequestNotify()))
+                    errors.reject(ERROR_MSG, "New request notify is blank and send email is checked");
+            }
+            if (!settings.isCcCheckbox())
+                settings.setCc(null);
+            else
+            {
+                if (isNullOrBlank(settings.getCc()))
+                    errors.reject(ERROR_MSG, "Always CC is blank and send email is checked");
+            }
+            if (errors.hasErrors())
+                return false;
+
+            SampleManager.getInstance().saveRequestNotificationSettings(getContainer(), settings);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ManageNotificationsForm form)
+        {
+            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try {
+                setHelpTopic(new HelpTopic("specimenRequest", HelpTopic.Area.STUDY));
+
+                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+                root.addChild("Manage Notifications");
+
+                return root;
+            }
+            catch (ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+    private boolean isNullOrBlank(String toCheck)
+    {
+        return ((toCheck == null) || toCheck.equals(""));
+    }
+
+    public static class ManageNotificationsForm extends BeanViewForm<RequestNotificationSettings>
+    {
+        public ManageNotificationsForm()
+        {
+            super(RequestNotificationSettings.class);
+        }
+
+        @Override
+        public ActionErrors validate(ActionMapping actionMapping, HttpServletRequest servletRequest)
+        {
+            ActionErrors errors = null;
+            String replyTo = getBean().getReplyTo();
+            if (replyTo == null || replyTo.length() == 0)
+            {
+                errors = new ActionErrors();
+                errors.add("main", new ActionMessage("Error", "Reply-to cannot be empty."));
+            }
+            else if (!RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(replyTo))
+            {
+                try
+                {
+                    new ValidEmail(replyTo);
+                }
+                catch(ValidEmail.InvalidEmailException e)
+                {
+                    errors = new ActionErrors();
+                    errors.add("main", new ActionMessage("Error", replyTo + " is not a valid email address."));
+                }
+            }
+
+            String subjectSuffix = getBean().getSubjectSuffix();
+            if (subjectSuffix == null || subjectSuffix.length() == 0)
+            {
+                errors = new ActionErrors();
+                errors.add("main", new ActionMessage("Error", "Subject suffix cannot be empty."));
+            }
+
+            try
+            {
+                getBean().getNewRequestNotifyAddresses();
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors = new ActionErrors();
+                errors.add("main", new ActionMessage("Error", e.getBadEmail() + " is not a valid email address."));
+            }
+
+            try
+            {
+                getBean().getCCAddresses();
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors = new ActionErrors();
+                errors.add("main", new ActionMessage("Error", e.getBadEmail() + " is not a valid email address."));
+            }
+
+            return errors;
+        }
+    }
+
+    @RequiresPermissionClass(ManageDisplaySettingsPermission.class)
+    public class ManageDisplaySettingsAction extends FormViewAction<DisplaySettingsForm>
+    {
+        public void validateCommand(DisplaySettingsForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(DisplaySettingsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            // try to get the settings from the form, just in case this is a reshow:
+            DisplaySettings settings = form.getBean();
+            if (settings == null || settings.getLastVialEnum() == null)
+                settings = SampleManager.getInstance().getDisplaySettings(getContainer());
+
+            return new JspView<DisplaySettings>("/org/labkey/study/view/samples/manageDisplay.jsp", settings);
+        }
+
+        public boolean handlePost(DisplaySettingsForm form, BindException errors) throws Exception
+        {
+            DisplaySettings settings = form.getBean();
+            SampleManager.getInstance().saveDisplaySettings(getContainer(), settings);
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(DisplaySettingsForm displaySettingsForm)
+        {
+            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try {
+                setHelpTopic(new HelpTopic("specimenRequest", HelpTopic.Area.STUDY));
+
+                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+                root.addChild("Manage Display Settings");
+
+                return root;
+            }
+            catch (ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static class DisplaySettingsForm extends BeanViewForm<DisplaySettings>
+    {
+        public DisplaySettingsForm()
+        {
+            super(DisplaySettings.class);
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetSpecimenExcelAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            //Search for a template in all folders up to root.
+            Workbook inputWorkbook = null;
+            while (!c.equals(ContainerManager.getRoot()))
+            {
+                AttachmentDirectory dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+                if (null != dir && dir.getFileSystemDirectory().exists())
+                {
+                    if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
+                    {
+                        WorkbookSettings settings = new WorkbookSettings();
+                        settings.setGCDisabled(true);
+                        inputWorkbook = Workbook.getWorkbook(new File(dir.getFileSystemDirectory(), "Samples.xls"), settings);
+                    }
+                }
+                c = c.getParent();
+            }
+            int startRow = 0;
+            if (null != inputWorkbook)
+            {
+                Range[] range = inputWorkbook.findByName("specimen_headers");
+                if (null != range && range.length > 0)
+                    startRow = range[0].getTopLeft().getRow();
+                else
+                    inputWorkbook = null;
+            }
+
+            List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().isDateBased(), "ParticipantId");
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
+            for (ExcelColumn col : xlWriter.getColumns())
+                col.setCaption(importer.label(col.getName()));
+            xlWriter.setCurrentRow(startRow);
+            if (null != inputWorkbook)
+                xlWriter.setTemplate(inputWorkbook);
+
+            xlWriter.write(getViewContext().getResponse());
+
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class IdForm extends ViewFormData
+    {
+        public enum PARAMS
+        {
+            id
+        }
+
+        private int _id;
+
+        public IdForm()
+        {
+        }
+
+        public IdForm(int id)
+        {
+            _id = id;
+        }
+
+        public int getId()
+        {
+            return _id;
+        }
+
+        public void setId(int id)
+        {
+            _id = id;
         }
     }
 }

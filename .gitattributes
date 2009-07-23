@@ -2009,7 +2009,10 @@ study/src/org/labkey/study/controllers/plate/PlateController.java -text
 study/src/org/labkey/study/controllers/reports/ReportsController.java -text
 study/src/org/labkey/study/controllers/reports/StudyChartServiceImpl.java -text
 study/src/org/labkey/study/controllers/reports/StudyManageReportsBean.java -text
-study/src/org/labkey/study/controllers/samples/SamplesController.java -text
+study/src/org/labkey/study/controllers/samples/AutoCompleteAction.java -text
+study/src/org/labkey/study/controllers/samples/ShowGroupMembersAction.java -text
+study/src/org/labkey/study/controllers/samples/ShowSearchAction.java -text
+study/src/org/labkey/study/controllers/samples/ShowUploadSpecimensAction.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenApiController.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/samples/SpringSpecimenController.java -text

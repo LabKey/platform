@@ -56,7 +56,7 @@ function setElementDisplayByCheckbox(checkbox, element)
 %>
 
 <%=PageFlowUtil.getStrutsError(request, "main")%>
-<form action="handleUpdateNotifications.post" method="POST">
+<form action="manageNotifications.view" method="POST">
     <table class="labkey-manage-display" width="500">
         <tr>
             <td colspan="2">The specimen request system sends emails as requested by the specimen administrator.

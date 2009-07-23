@@ -15,21 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.study.controllers.samples.SamplesController" %>
-<%@ page import="org.labkey.api.data.DisplayColumn" %>
-<%@ page import="org.labkey.api.data.CompareType" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.data.CompareType"%>
+<%@ page import="org.labkey.api.data.DataColumn"%>
+<%@ page import="org.labkey.api.data.DisplayColumn"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.data.DataColumn" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<org.labkey.study.controllers.samples.SamplesController.SearchBean> me = (JspView<SamplesController.SearchBean>) HttpView.currentView();
-    SamplesController.SearchBean bean = me.getModelBean();
+    JspView<ShowSearchAction.SearchBean> me = (JspView<ShowSearchAction.SearchBean>) HttpView.currentView();
+    ShowSearchAction.SearchBean bean = me.getModelBean();
 
     Set<String> availableColumns = new HashSet<String>();
     for (DisplayColumn dc : bean.getDisplayColumns())
@@ -97,7 +95,7 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
 <%
     int paramNumber = 0;
 %>
-<form action="search.view" id="searchForm" method="POST">
+<form action="showSearch.view" id="searchForm" method="POST">
     <input type="hidden" name="showVials" value="<%= bean.isDetailsView() ? "true" : "false" %>" >
     <%
         for (int pass = 0; pass < 2; pass++)
