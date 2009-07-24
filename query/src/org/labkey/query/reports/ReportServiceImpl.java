@@ -532,14 +532,19 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         Report report = deserializeFromFile(reportFile);
         ReportDescriptor descriptor = report.getDescriptor();
 
-        String key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
+        String key = descriptor.getReportKey();
+        if (StringUtils.isBlank(key))
+        {
+            // use the default key used by query views
+            key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
+        }
 
         ViewContext context = null;
         Report[] existingReports = getReports(user, container, key);
 
         for (Report existingReport : existingReports)
         {
-            if (existingReport.getDescriptor().getReportName().equalsIgnoreCase(descriptor.getReportName()))
+            if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
             {
                 if (null == context)
                     context = ViewContext.getMockViewContext(user, container, new ActionURL());
@@ -585,7 +590,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         public int compare(Report o1, Report o2)
         {
-            
+
             return o1.getDescriptor().getReportId().toString().compareToIgnoreCase(o2.getDescriptor().getReportId().toString());
         }
     }

@@ -52,7 +52,7 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
     Requirements for retrieving data for a single site:
     <ol>
     <li>You must have imported a Specimen Archive in order for the "Sites" dropdown to list sites. The Specimen Archive defines a list of sites for your Study. </li>
-    <li>You must associate ParticipantIDs with CurrentSiteIds via a “Participant Dataset.” This step allows participant data records to be mapped to sites. .</li>
+    <li>You must associate ParticipantIDs with CurrentSiteIds via a "Participant Dataset". This step allows participant data records to be mapped to sites.</li>
     </ol> See the <a href="<%=new HelpTopic("exportExcel", HelpTopic.Area.STUDY).getHelpTopicLink()%>">help page</a> for more information.
 <% WebPartView.endTitleFrame(out);
 }
@@ -60,7 +60,7 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
 %>
 <%    WebPartView.startTitleFrame(out, "Configure", null, "600", null);%>
     <form action="exportExcel.view" method=GET>
-    <table><tr><th class="labkey-form-label">Site</th><td><select <%= isAdmin ? "onClick='siteId_onChange(this)'" : ""%> id=siteId name=siteId><option value="0">ALL</option>
+    <table><tr><th class="labkey-form-label">Site</th><td><select <%= isAdmin ? "onChange='siteId_onChange(this)'" : ""%> id=siteId name=siteId><option value="0">ALL</option>
 <%
 for (SiteImpl site : sites)
 {
@@ -76,7 +76,7 @@ for (SiteImpl site : sites)
         <tr><th class="labkey-form-label">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr><%
     } %>
 </table>
-<%=PageFlowUtil.generateSubmitButton("Export")%>        
+<%=PageFlowUtil.generateSubmitButton("Export")%>
         <% if (isAdmin)
         {   %>
             <input type=hidden name=reportType value="<%=ExportExcelReport.TYPE%>">
@@ -100,9 +100,9 @@ for (SiteImpl site : sites)
 
         function siteId_onChange(select)
         {
-            paramsInput = document.getElementById("params");
+            var paramsInput = document.getElementById("params");
             paramsInput.value = "siteId=" + select.value;
-            labelInput = document.getElementById("label");
+            var labelInput = document.getElementById("label");
             labelInput.value = "Export to worksheet: " + sites[select.value];
         }
         </script>
