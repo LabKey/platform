@@ -127,7 +127,7 @@ public abstract class AbstractReport implements Report
 
         if (descriptor.getReportId() != null)
         {
-            String fileName = String.format("%s.%s.report.xml", descriptor.getReportName(), descriptor.getReportId());
+            String fileName = String.format("%s.%s.report.xml", descriptor.getReportName() != null ? descriptor.getReportName() : descriptor.getReportType(), descriptor.getReportId());
             PrintWriter writer = null;
             try
             {

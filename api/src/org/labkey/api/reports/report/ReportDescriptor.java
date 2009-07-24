@@ -142,7 +142,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public String getProperty(String key){return (String)_props.get(key);}
 
     public Map<String, Object> getProperties() {return Collections.unmodifiableMap(_props);}
-    
+
     public void setProperty(ReportProperty prop, String value)
     {
         _props.put(prop.toString(), value);
@@ -169,7 +169,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         }
         return null;
     }
-    
+
     public void setDescriptorType(String type)
     {
         setProperty(Prop.descriptorType, type);
@@ -266,7 +266,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(type);
         if (descriptor != null)
             descriptor.init(props.toArray(new Pair[0]));
-        
+
         return descriptor;
     }
 
@@ -319,6 +319,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
         descriptor.setDescriptorType(getDescriptorType());
         descriptor.setReportName(getReportName());
+        descriptor.setReportKey(getReportKey());
 
         ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
@@ -403,6 +404,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
             if (descriptor != null)
             {
                 descriptor.setReportName(d.getReportName());
+                descriptor.setReportKey(d.getReportKey());
                 List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
 
                 for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
