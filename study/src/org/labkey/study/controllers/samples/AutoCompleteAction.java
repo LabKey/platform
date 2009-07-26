@@ -16,7 +16,6 @@
 
 package org.labkey.study.controllers.samples;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
@@ -106,7 +105,7 @@ public class AutoCompleteAction extends SimpleViewAction<AutoCompleteAction.Auto
         return null;
     }
 
-    public static class AutoCompletionForm extends FormData
+    public static class AutoCompletionForm
     {
         private String _prefix;
         private String _type;

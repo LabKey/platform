@@ -16,7 +16,6 @@
 
 package org.labkey.wiki;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -36,12 +35,12 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.DeveloperRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -50,7 +49,6 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.util.Pair;
 import org.labkey.wiki.model.*;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
 import org.springframework.validation.BindException;
@@ -752,7 +750,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    public static class CopyWikiForm extends FormData
+    public static class CopyWikiForm
     {
         private String _path;
         private String _sourceContainer;
@@ -1931,7 +1929,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    public static class CollapseExpandForm extends FormData
+    public static class CollapseExpandForm
     {
         private boolean collapse;
         private String path;

@@ -379,7 +379,6 @@ core/src/META-INF/core/scripts/sql[!!-~]server/test-0.00-1.00.sql -text
 core/src/META-INF/executables.txt -text
 core/src/META-INF/jars.txt -text
 core/src/META-INF/scripts.txt -text
-core/src/RootController.java -text
 core/src/org/labkey/core/CoreContainerListener.java -text
 core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text

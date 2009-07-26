@@ -31,7 +31,6 @@ import org.labkey.study.query.SpecimenQueryView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.apache.beehive.netui.pageflow.FormData;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -270,7 +269,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         }
     }
 
-    public static class ShowSearchForm extends FormData
+    public static class ShowSearchForm
     {
         private boolean _showVials;
 
