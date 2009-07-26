@@ -109,10 +109,6 @@ public interface TableInfo
 
     ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception;
 
-    Forward insert(User user, QueryUpdateForm form) throws Exception;
-
-    Forward update(User user, QueryUpdateForm form) throws Exception;
-
     /**
      * Return the method of a given name.  Methods are accessible via the QueryModule's query
      * language.  Most tables do not have methods. 

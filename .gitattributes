@@ -6,7 +6,6 @@ api/src/java/sql/NClob.java -text
 api/src/java/sql/RowId.java -text
 api/src/java/sql/SQLClientInfoException.java -text
 api/src/java/sql/SQLXML.java -text
-api/src/org/apache/beehive/netui/pageflow/PageFlowControllerFIXED.java -text
 api/src/org/json/CDL.java -text
 api/src/org/json/Cookie.java -text
 api/src/org/json/CookieList.java -text
@@ -855,7 +854,6 @@ api/src/org/labkey/api/view/ThemeFont.java -text
 api/src/org/labkey/api/view/TidyFilterView.java -text
 api/src/org/labkey/api/view/ViewBackgroundInfo.java -text
 api/src/org/labkey/api/view/ViewContext.java -text
-api/src/org/labkey/api/view/ViewController.java -text
 api/src/org/labkey/api/view/ViewForm.java -text
 api/src/org/labkey/api/view/WebPartFactory.java -text
 api/src/org/labkey/api/view/WebTheme.java -text
@@ -902,8 +900,6 @@ api/src/org/systemsbiology/jrap/SAX2ScanHeaderHandler.java -text
 api/src/org/systemsbiology/jrap/ScanHeader.java -text
 api/src/org/systemsbiology/jrap/SoftwareInfo.java -text
 api/webapp/WEB-INF/applicationContext.xml -text
-api/webapp/WEB-INF/beehive-netui-config.xml -text
-api/webapp/WEB-INF/beehive-netui-validator-rules.xml -text
 api/webapp/WEB-INF/labkey.tld -text
 api/webapp/WEB-INF/spring-form.tld -text
 api/webapp/WEB-INF/spring.tld -text

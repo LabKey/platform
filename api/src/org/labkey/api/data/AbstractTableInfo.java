@@ -16,12 +16,11 @@
 
 package org.labkey.api.data;
 
-import org.apache.beehive.netui.pageflow.Forward;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -302,16 +301,6 @@ abstract public class AbstractTableInfo implements TableInfo
     }
 
     public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public Forward insert(User user, QueryUpdateForm form) throws Exception
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public Forward update(User user, QueryUpdateForm form) throws Exception
     {
         throw new UnsupportedOperationException();
     }

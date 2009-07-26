@@ -17,17 +17,17 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.beehive.netui.pageflow.Forward;
-import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.TableType;
-import org.labkey.api.util.*;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.User;
+import org.labkey.api.util.SimpleNamedObject;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.NamedObjectList;
+import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -645,16 +645,6 @@ public class SchemaTableInfo implements TableInfo
     public boolean hasPermission(User user, int perm)
     {
         return false;
-    }
-
-    public Forward insert(User user, QueryUpdateForm form) throws Exception
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public Forward update(User user, QueryUpdateForm form) throws Exception
-    {
-        throw new UnsupportedOperationException();
     }
 
     public MethodInfo getMethod(String name)

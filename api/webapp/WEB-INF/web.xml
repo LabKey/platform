@@ -217,24 +217,6 @@
     </servlet>
     
     <servlet>
-        <servlet-name>action</servlet-name>
-        <servlet-class>org.apache.beehive.netui.pageflow.PageFlowActionServlet</servlet-class>
-        <init-param>
-            <param-name>config</param-name>
-            <param-value>/WEB-INF/classes/_pageflow/struts-config.xml</param-value>
-        </init-param>
-        <init-param>
-            <param-name>debug</param-name>
-            <param-value>2</param-value>
-        </init-param>
-        <init-param>
-            <param-name>detail</param-name>
-            <param-value>2</param-value>
-        </init-param>
-        <load-on-startup>2</load-on-startup>
-    </servlet>
-
-    <servlet>
         <servlet-name>SiteDownServlet</servlet-name>
         <servlet-class>org.labkey.api.view.SiteDownServlet</servlet-class>
         <init-param>
@@ -282,14 +264,6 @@
     <servlet-mapping>
         <servlet-name>ImageServlet</servlet-name>
         <url-pattern>*.image</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>action</servlet-name>
-        <url-pattern>*.jpf</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>action</servlet-name>
-        <url-pattern>*.do</url-pattern>
     </servlet-mapping>
     <!--
     maps http://host/labkey/files/proj/dir/test.html to

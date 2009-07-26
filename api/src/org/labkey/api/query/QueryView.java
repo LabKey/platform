@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.*;
@@ -1121,18 +1120,18 @@ public class QueryView extends WebPartView<Object>
         return new ExcelWriter(null, displayColumns);
     }
 
-    public Forward exportToExcel(HttpServletResponse response) throws Exception
+    public void exportToExcel(HttpServletResponse response) throws Exception
     {
-        return exportToExcel(response, false);
+        exportToExcel(response, false);
     }
 
     // Export with no data rows -- just captions
-    public Forward exportToExcelTemplate(HttpServletResponse response) throws Exception
+    public void exportToExcelTemplate(HttpServletResponse response) throws Exception
     {
-        return exportToExcel(response, true);
+        exportToExcel(response, true);
     }
 
-    private Forward exportToExcel(HttpServletResponse response, boolean templateOnly) throws Exception
+    private void exportToExcel(HttpServletResponse response, boolean templateOnly) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -1141,15 +1140,14 @@ public class QueryView extends WebPartView<Object>
             ExcelWriter ew = templateOnly ? getExcelTemplateWriter() : getExcelWriter();
             ew.write(response);
         }
-        return null;
     }
 
-    public Forward exportToTsv(HttpServletResponse response) throws Exception
+    public void exportToTsv(HttpServletResponse response) throws Exception
     {
-        return exportToTsv(response, false);
+        exportToTsv(response, false);
     }
 
-    public Forward exportToTsv(HttpServletResponse response, boolean isExportAsWebPage) throws Exception
+    public void exportToTsv(HttpServletResponse response, boolean isExportAsWebPage) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -1159,7 +1157,6 @@ public class QueryView extends WebPartView<Object>
             tsv.setExportAsWebPage(isExportAsWebPage);
             tsv.write(response);
         }
-        return null;
     }
 
     public void exportToApiResponse(ApiQueryResponse response) throws Exception

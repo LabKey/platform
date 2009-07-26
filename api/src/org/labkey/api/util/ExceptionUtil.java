@@ -16,16 +16,15 @@
 
 package org.labkey.api.util;
 
-import org.apache.beehive.netui.pageflow.ActionNotFoundException;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.*;
-import org.labkey.api.portal.ProjectUrls;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -151,7 +150,7 @@ public class ExceptionUtil
     public static void logExceptionToMothership(HttpServletRequest request, Throwable ex)
     {
         ex = unwrapException(ex);
-        if (isClientAbortException(ex) || ex instanceof RedirectException || ex instanceof NotFoundException || ex instanceof UnauthorizedException || ex instanceof ActionNotFoundException || ex instanceof ActionURLException)
+        if (isClientAbortException(ex) || ex instanceof RedirectException || ex instanceof NotFoundException || ex instanceof UnauthorizedException || ex instanceof ActionURLException)
         {
             // We don't need to log any of these
             return;
@@ -670,9 +669,9 @@ public class ExceptionUtil
             }
         }
 
-        if (ex instanceof NotFoundException || ex instanceof UnauthorizedException || ex instanceof ActionNotFoundException)
+        if (ex instanceof NotFoundException || ex instanceof UnauthorizedException)
         {
-            if (ex instanceof NotFoundException || ex instanceof ActionNotFoundException)
+            if (ex instanceof NotFoundException)
             {
                 responseStatus = HttpServletResponse.SC_NOT_FOUND;
                 if (ex instanceof NotFoundException && ex.getMessage() != null)
@@ -787,7 +786,7 @@ public class ExceptionUtil
         }
         catch (IOException x)
         {
-            _log.error("Global.handleException", x);
+            _log.error("doErrorRedirect", x);
         }
     }
 }

@@ -17,7 +17,6 @@ package org.labkey.api.util;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
@@ -1939,7 +1938,7 @@ public class PageFlowUtil
     }
 
 
-    public static Forward sendAjaxCompletions(HttpServletResponse response, List<AjaxCompletion> completions) throws IOException
+    public static void sendAjaxCompletions(HttpServletResponse response, List<AjaxCompletion> completions) throws IOException
     {
         response.setContentType("text/xml");
         response.setHeader("Cache-Control", "no-cache");
@@ -1954,7 +1953,6 @@ public class PageFlowUtil
             writer.write("</completion>\n");
         }
         writer.write("</completions>");
-        return null;
     }
 
 
