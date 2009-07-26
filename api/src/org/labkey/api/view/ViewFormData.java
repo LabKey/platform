@@ -16,7 +16,6 @@
 package org.labkey.api.view;
 
 import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -24,7 +23,6 @@ import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -100,44 +98,6 @@ public class ViewFormData extends FormData implements HasViewContext
     public void setUser(User user)
     {
         _user = user;
-    }
-
-
-    private String _toString(Object o)
-    {
-        return null == o ? "" : String.valueOf(o);
-    }
-
-    public Forward getForward(String action, boolean redirect) throws java.net.URISyntaxException
-    {
-        return getForward(action, (Pair[])null, redirect);
-    }
-
-    public Forward getForward(String action, Pair[] params, boolean redirect) throws java.net.URISyntaxException
-    {
-        ActionURL urlhelp = getContext().cloneActionURL();
-        urlhelp.setAction(action);
-        urlhelp.deleteParameters();
-
-        if (null != params)
-        {
-            for (Pair p : params)
-            {
-                if (null == p || null == p.getKey())
-                    continue;
-                urlhelp.replaceParameter(_toString(p.getKey()), _toString(p.getValue()));
-            }
-        }
-
-        Forward fwd = new ViewForward(urlhelp);
-        fwd.setRedirect(redirect);
-        return fwd;
-    }
-
-
-    public Forward getForward(String action, Pair param, boolean redirect) throws java.net.URISyntaxException
-    {
-        return getForward(action, new Pair[]{param}, redirect);
     }
 
 

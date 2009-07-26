@@ -16,30 +16,30 @@
 
 package org.labkey.api.data;
 
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.beanutils.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.labkey.api.security.ACL;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.security.ACL;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewFormData;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
-import org.springframework.beans.PropertyValues;
-import org.springframework.beans.PropertyValue;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.beans.Introspector;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -194,29 +194,6 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
             else //Hmm, thow an exception here????
                 _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
         }
-    }
-
-    /**
-     * Returns a new forward based on the pk.
-     * Forward will be to same PageFlow. All existing parameters will be
-     * deleted and a new parameter pkName=pkVal will be added where
-     * pkName is the name of the primary key and pkVal is the value of the
-     * primary key.
-     *
-     * @param action The action to forward to within this pageflow
-     */
-    public Forward getPkForward(String action) throws URISyntaxException
-    {
-        assert null != getPkVals();
-
-        ActionURL urlhelp = getViewContext().cloneActionURL();
-        urlhelp.setAction(action);
-        urlhelp.deleteParameters();
-        List<ColumnInfo> pkCols = _tinfo.getPkColumns();
-        Object[] pkVals = getPkVals();
-        for (int i = 0; i < pkCols.size(); i++)
-            urlhelp.replaceParameter(pkCols.get(i).getPropertyName(), pkVals[i].toString());
-        return new ViewForward(urlhelp);
     }
 
     /**

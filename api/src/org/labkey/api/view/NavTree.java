@@ -87,12 +87,6 @@ public class NavTree extends Pair<String, String> implements Collapsible
     }
 
 
-    public NavTree(String display, ViewForward forward)
-    {
-        super(display, forward != null ? forward.toString() : null);
-    }
-
-
     public NavTree(String display)
     {
         this(display, (String) null);
