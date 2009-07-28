@@ -18,7 +18,7 @@ tinyMCE.init({
     entity_encoding : "named",
     entities : "160,nbsp,60,lt,62,gt,38,amp",
     convert_urls: false,
-    plugins : "table,advhr,advlink,advimage,searchreplace,contextmenu,fullscreen,nonbreaking,cleanup,inlinepopups",
+    plugins : "table,advhr,advlink,advimage,searchreplace,contextmenu,fullscreen,nonbreaking,inlinepopups",
     theme_advanced_buttons1_add : "fontselect,fontsizeselect",
     theme_advanced_buttons2_add : "separator,forecolor,backcolor",
     theme_advanced_buttons2_add_before: "cut,copy,paste,separator,search,replace,separator",
