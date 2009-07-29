@@ -52,6 +52,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * NOTE: we act like java.io.File().  Paths start with forward-slash, but do not end with forward-slash.
  * The root container's name is '/'.  This means that it is not always the case that
  * me.getPath() == me.getParent().getPath() + "/" + me.getName()
+ *
+ * The synchronization goals are to keep invalid containers from creeping into the cache. For example, once
+ * a container is deleted, it should never get put back in the cache. We accomplish this by synchronizing on
+ * the removal from the cache, and the database lookup/cache insertion. While a container is in the middle
+ * of being deleted, it's OK for other clients to see it because FKs enforce that it's always internally
+ * consistent, even if some of the data has already been deleted.
  */
 public class ContainerManager
 {
@@ -305,7 +311,7 @@ public class ContainerManager
     }
 
 
-    public static List<Container> getChildren(Container parent)
+    public static synchronized List<Container> getChildren(Container parent)
     {
         List<Container> children = new ArrayList<Container>();
 
@@ -355,7 +361,7 @@ public class ContainerManager
     }
 
 
-    public static Container getForId(String id)
+    public static synchronized Container getForId(String id)
     {
         Container d = _getFromCacheId(id);
         if (null != d)
@@ -384,7 +390,7 @@ public class ContainerManager
     }
 
 
-    public static Container getForPath(String path)
+    public static synchronized Container getForPath(String path)
     {
         path = StringUtils.trimToEmpty(path);
 
@@ -833,12 +839,11 @@ public class ContainerManager
 
     // Move a container to another part of the container tree.  Careful: this method DOES NOT prevent you from orphaning
     // an entire tree (e.g., by setting a container's parent to one of its children); the UI in AdminController does this.
-    // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing but before the move.
     //
     // NOTE: Beware side-effect of changing ACLs and GROUPS if a container changes projects
     //
     // @return true if project has changed (should probably redirect to security page)
-    public static synchronized boolean move(Container c, Container newParent)
+    public static boolean move(Container c, Container newParent)
     {
         if (c.isRoot())
             throw new IllegalArgumentException("can't move root container");
@@ -951,13 +956,13 @@ public class ContainerManager
 
     // Delete a container from the database.
     // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
-    public static synchronized boolean delete(Container c, User user)
+    public static boolean delete(Container c, User user)
     {
         ResultSet rs = null;
 
         try
         {
-        // check to ensure no children exist
+            // check to ensure no children exist
             rs = Table.executeQuery(core.getSchema(), "SELECT EntityId FROM " + core.getTableInfoContainers() +
                     " WHERE Parent = ?", new Object[]{c.getId()});
             if (rs.next())
@@ -968,8 +973,7 @@ public class ContainerManager
         }
         catch (SQLException x)
         {
-            _removeFromCache(c); // just for paranoia since that wasn't in a transaction
-            return false;
+            throw new RuntimeSQLException(x);
         }
         finally
         {
@@ -1006,7 +1010,7 @@ public class ContainerManager
     }
 
 
-    public synchronized static void deleteAll(Container root, User user) throws UnauthorizedException
+    public static void deleteAll(Container root, User user) throws UnauthorizedException
     {
         if (!hasTreePermission(root, user, ACL.PERM_DELETE))
             throw new UnauthorizedException("You don't have delete permissions to all folders");
@@ -1029,38 +1033,42 @@ public class ContainerManager
         list.add(c);
     }
 
-    private static Container[] _getChildredFromCache(Container c)
+    private static synchronized Container[] _getChildrenFromCache(Container c)
     {
         return (Container[]) getCache().get(_containerChildrenPrefix + c.getId());
     }
 
-    private static synchronized void _addChildrenToCache(Container c, Container[] children)
+    private static void _addChildrenToCache(Container c, Container[] children)
     {
+        assert Thread.holdsLock(ContainerManager.class) : "Any insertion into the cache must be synchronized at a " +
+                "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
         getCache().put(_containerChildrenPrefix + c.getId(), children);
     }
 
 
-    private static Container _getFromCacheId(String id)
+    private static synchronized Container _getFromCacheId(String id)
     {
         return (Container) getCache().get(_containerPrefix + id);
     }
 
 
-    private static Container _getFromCachePath(String path)
+    private static synchronized Container _getFromCachePath(String path)
     {
         return (Container) getCache().get(_containerPrefix + path.toLowerCase());
     }
 
 
-    private static synchronized Container _addToCache(Container c)
+    private static Container _addToCache(Container c)
     {
+        assert Thread.holdsLock(ContainerManager.class) : "Any insertion into the cache must be synchronized at a " +
+                "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
         getCache().put( _containerPrefix + c.getPath().toLowerCase(), c);
         getCache().put(_containerPrefix + c.getId(), c);
         return c;
     }
 
 
-    private static void _removeFromCache(Container c)
+    private static synchronized void _removeFromCache(Container c)
     {
         Container p = c.getProject();
         if (p != null && p != c)
@@ -1074,7 +1082,7 @@ public class ContainerManager
     }
 
 
-    private static void _clearCache()
+    private static synchronized void _clearCache()
     {
         getCache().removeUsingPrefix(_containerPrefix);
         NavTreeManager.uncacheAll();
@@ -1093,27 +1101,9 @@ public class ContainerManager
     }
 
 
-    public static String[] getProjectIds()
+    public static synchronized Container[] getAllChildren(Container root)
     {
-        try
-        {
-            return Table.executeArray(
-                    core.getSchema(),
-                    "SELECT EntityId FROM " + core.getTableInfoContainers() + " WHERE Parent = ?",
-                    new Object[]{getRoot().getId()},
-                    String.class);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-            return null;
-        }
-    }
-
-
-    public static Container[] getAllChildren(Container root)
-    {
-        Container[] allChildren = _getChildredFromCache(root);
+        Container[] allChildren = _getChildrenFromCache(root);
         if (allChildren != null)
             return allChildren.clone(); // don't let callers modify the array in the cache
         ResultSet rs = null;

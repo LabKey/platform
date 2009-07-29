@@ -695,39 +695,64 @@ public class SecurityManager
         if (UserManager.userExists(email))
             throw new UserAlreadyExistsException(email.getEmailAddress());
 
-        if (!SecurityManager.isLdapEmail(email))
-        {
-            // Create a placeholder password that's hard to guess and a separate email verification
-            // key that gets emailed.
-            newUserBean.setLdap(false);
-
-            String tempPassword = SecurityManager.createTempPassword();
-            String verification = SecurityManager.createTempPassword();
-
-            SecurityManager.createLogin(email, tempPassword, verification);
-
-            newUserBean.setVerification(verification);
-        }
-        else
-        {
-            newUserBean.setLdap(true);
-        }
-
         User newUser;
+        DbScope scope = core.getSchema().getScope();
+
+        boolean startedTransaction = false;
+
         try
         {
-            newUser = UserManager.createUser(email);
+            if (!scope.isTransactionActive())
+            {
+                scope.beginTransaction();
+                startedTransaction = true;
+            }
+
+            if (!SecurityManager.isLdapEmail(email))
+            {
+                // Create a placeholder password that's hard to guess and a separate email verification
+                // key that gets emailed.
+                newUserBean.setLdap(false);
+
+                String tempPassword = SecurityManager.createTempPassword();
+                String verification = SecurityManager.createTempPassword();
+
+                SecurityManager.createLogin(email, tempPassword, verification);
+
+                newUserBean.setVerification(verification);
+            }
+            else
+            {
+                newUserBean.setLdap(true);
+            }
+
+            try
+            {
+                newUser = UserManager.createUser(email);
+            }
+            catch (SQLException e)
+            {
+                throw new UserManagementException(email, "Unable to create user.", e);
+            }
+
+            if (null == newUser)
+                throw new UserManagementException(email, "Couldn't create user.");
+
+            if (startedTransaction)
+                scope.commitTransaction();
+
+            newUserBean.setUser(newUser);
+            return newUserBean;
         }
         catch (SQLException e)
         {
             throw new UserManagementException(email, "Unable to create user.", e);
         }
-
-        if (null == newUser)
-            throw new UserManagementException(email, "Couldn't create user.");
-
-        newUserBean.setUser(newUser);
-        return newUserBean;
+        finally
+        {
+            if (startedTransaction && scope.isTransactionActive())
+                scope.rollbackTransaction();
+        }
     }
 
 

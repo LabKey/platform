@@ -17,18 +17,19 @@ package org.labkey.api.settings;
 
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.module.ModuleLoader;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Date;
-import java.io.File;
 
 /**
  * User: arauch
@@ -344,7 +345,21 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public String getServerGUID()
     {
-        return lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
+        String serverGUID = lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
+        if (serverGUID.equals(SERVER_SESSION_GUID))
+        {
+            try
+            {
+                WriteableAppProps writeable = WriteableAppProps.getWriteableInstance();
+                writeable.storeStringValue(SERVER_GUID, serverGUID);
+                writeable.save();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+        return serverGUID;
     }
 
     public boolean hasMascotServer()

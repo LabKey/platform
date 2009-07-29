@@ -454,7 +454,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     {
         var span = this.msgbox.dom.getElementsByTagName("span")[0];
         span.innerHTML = html;
-        this.msgbox.setVisible(true, true);
+        this.msgbox.setVisible(true);
     },
 
     hideMessage : function ()

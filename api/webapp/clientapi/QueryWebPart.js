@@ -98,10 +98,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     {
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
-        //need to require DataRegion.js now--the returned web part HTML
-        //will require it then, and will attempt to use it almost immediately
-        LABKEY.requiresScript('DataRegion.js', true);
-        
         Ext.apply(this, config, {
             dataRegionName: Ext.id(undefined, "aqwp")
         });

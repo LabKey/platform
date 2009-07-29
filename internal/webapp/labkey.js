@@ -203,6 +203,7 @@ LABKEY.requiresClientAPI = function(immediate)
     }
     else
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
+    LABKEY.requiresScript('DataRegion.js', immediate);
 };
 
 

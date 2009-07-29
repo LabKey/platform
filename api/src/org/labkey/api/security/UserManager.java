@@ -476,62 +476,83 @@ public class UserManager
     {
         Integer userId = null;
 
-        // Add row to Principals
-        Map<String, Object> fieldsIn = new HashMap<String, Object>();
-        fieldsIn.put("Name", email.getEmailAddress());
-        fieldsIn.put("Type", GroupManager.PrincipalType.USER.typeChar);
+        DbScope scope = _core.getSchema().getScope();
+
+        boolean startedTransaction = false;
+
         try
         {
-            Map returnMap = Table.insert(null, _core.getTableInfoPrincipals(), fieldsIn);
-            userId = (Integer) returnMap.get("UserId");
-        }
-        catch (SQLException e)
-        {
-            if (!"23000".equals(e.getSQLState()))
+            if (!scope.isTransactionActive())
             {
-                _log.debug("createUser: Something failed user: " + email, e);
-                throw e;
+                scope.beginTransaction();
+                startedTransaction = true;
             }
-        }
 
-        try
-        {
-            // If insert didn't return an id it must already exist... select it
-            if (null == userId)
-                userId = Table.executeSingleton(_core.getSchema(),
-                        "SELECT UserId FROM " + _core.getTableInfoPrincipals() + " WHERE Name = ?",
-                        new Object[]{email.getEmailAddress()}, Integer.class);
-        }
-        catch (SQLException x)
-        {
-            _log.debug("createUser: Something failed user: " + email, x);
-            throw x;
-        }
+            // Add row to Principals
+            Map<String, Object> fieldsIn = new HashMap<String, Object>();
+            fieldsIn.put("Name", email.getEmailAddress());
+            fieldsIn.put("Type", GroupManager.PrincipalType.USER.typeChar);
+            try
+            {
+                Map returnMap = Table.insert(null, _core.getTableInfoPrincipals(), fieldsIn);
+                userId = (Integer) returnMap.get("UserId");
+            }
+            catch (SQLException e)
+            {
+                if (!"23000".equals(e.getSQLState()))
+                {
+                    _log.debug("createUser: Something failed user: " + email, e);
+                    throw e;
+                }
+            }
 
-        if (null == userId)
-        {
-            assert false : "User should either exist or not; synchronization problem?";
-            _log.debug("createUser: Something failed user: " + email);
-            return null;
-        }
-
-        //
-        // Add row to UsersData table
-        //
-        try
-        {
-            Map<String, Object> m = new HashMap<String, Object>();
-            m.put("UserId", userId);
-            m.put("DisplayName", null == email.getPersonal() ? email.getEmailAddress() : email.getPersonal());
-            Table.insert(null, _core.getTableInfoUsersData(), m);
-        }
-        catch (SQLException x)
-        {
-            if (!"23000".equals(x.getSQLState()))
+            try
+            {
+                // If insert didn't return an id it must already exist... select it
+                if (null == userId)
+                    userId = Table.executeSingleton(_core.getSchema(),
+                            "SELECT UserId FROM " + _core.getTableInfoPrincipals() + " WHERE Name = ?",
+                            new Object[]{email.getEmailAddress()}, Integer.class);
+            }
+            catch (SQLException x)
             {
                 _log.debug("createUser: Something failed user: " + email, x);
                 throw x;
             }
+
+            if (null == userId)
+            {
+                assert false : "User should either exist or not; synchronization problem?";
+                _log.debug("createUser: Something failed user: " + email);
+                return null;
+            }
+
+            //
+            // Add row to UsersData table
+            //
+            try
+            {
+                Map<String, Object> m = new HashMap<String, Object>();
+                m.put("UserId", userId);
+                m.put("DisplayName", null == email.getPersonal() ? email.getEmailAddress() : email.getPersonal());
+                Table.insert(null, _core.getTableInfoUsersData(), m);
+            }
+            catch (SQLException x)
+            {
+                if (!"23000".equals(x.getSQLState()))
+                {
+                    _log.debug("createUser: Something failed user: " + email, x);
+                    throw x;
+                }
+            }
+
+            if (startedTransaction)
+                scope.commitTransaction();
+        }
+        finally
+        {
+            if (startedTransaction && scope.isTransactionActive())
+                scope.rollbackTransaction();
         }
 
         clearUserList(userId);

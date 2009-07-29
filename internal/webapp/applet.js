@@ -7,6 +7,7 @@
 LABKEY.Applet = Ext.extend(Ext.BoxComponent,
 {
     applet : null,
+    appletId: null,
 
     initComponent : function()
     {
@@ -50,6 +51,13 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
 //		tag = 'embed';
 //	if (navigator.appName.substr(0,9) == 'Microsoft')
 //		tag = 'object';
+
+        if (!applet.appletId)
+        {
+            applet.appletId = Ext.id();
+        }
+
+        this.appletId = applet.appletId;
 
         if (tag == 'embed')
         {
@@ -108,9 +116,9 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
             this.height = ct.getHeight();
 
         var html = this.markup();
-        var d = Ext.DomHelper.insertHtml(position||'beforeEnd',ct.dom,html);
-        this.el = Ext.get(d);
-        
+        Ext.DomHelper.insertHtml(position||'beforeEnd',ct.dom,html);
+        this.el = Ext.get(this.appletId);
+
         var task =
         {
             interval:100,

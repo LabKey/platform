@@ -801,13 +801,12 @@ public class DataRegion extends DisplayElement
     protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage) throws IOException
     {
         out.write("<script type=\"text/javascript\">\n");
-        out.write("LABKEY.requiresExtJs();\n");
-        out.write("LABKEY.requiresScript('DataRegion.js', true);\n");
-        out.write("LABKEY.requiresScript('clientapi/ActionURL.js');\n");
+        out.write("LABKEY.requiresClientAPI();\n");
         out.write("</script>\n");
         out.write("<script type=\"text/javascript\">\n");
         out.write("Ext.onReady(\n");
-        out.write("function () {new LABKEY.DataRegion({\n");
+        out.write("function () {\n");
+        out.write("new LABKEY.DataRegion({\n");
         out.write("'name' : '" + PageFlowUtil.filter(getName()) + "',\n");
 //        out.write("'schemaName' : '" + "xxx" + "',\n");
 //        out.write("'queryName' : '" + "xxx" + "',\n");
@@ -837,7 +836,7 @@ public class DataRegion extends DisplayElement
     protected void renderMessageBox(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<tr><td colspan=\"2\">");
-        out.write("<div class=\"labkey-status-info\" style=\"display:none;margin-bottom:8px;font-weight:normal;width:100%;\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
+        out.write("<div class=\"labkey-status-info\" style=\"display:none;margin-bottom:2px;font-weight:normal;width:100%;background-color:whitesmoke\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
         out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
         out.write("<span></span>");
         out.write("</div>");
