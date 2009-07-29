@@ -1164,6 +1164,7 @@ if (LABKEY.Applet)
                     user: LABKEY.user.email,
                     password: LABKEY.user.sessionid,
                     text : params.text,
+                    allowDirectoryUpload : params.allowDirectoryUpload,
                     overwrite : "true",
                     enabled : !('enabled' in params) || params.enabled,
                     dropFileLimit : 5000
@@ -1287,6 +1288,17 @@ if (LABKEY.Applet)
                 applet.setText(text);
             else if (!this.rendered)
                 this.params.text = text;
+            else
+                console.error("NYI: Do not call before isReady()!");
+        },
+
+        setAllowDirectoryUpload : function(b)
+        {
+            var applet = this.getApplet();
+            if (applet)
+                applet.setAllowDirectoryUpload(b ? true : false);
+            else if (!this.rendered)
+                this.params.allowDirectoryUpload = b ? 'true' : 'false';
             else
                 console.error("NYI: Do not call before isReady()!");
         },
@@ -1571,29 +1583,38 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             if (selectedRecord)
             {
+                var name = selectedRecord.data.name;
                 if (this.selectedRecord.data.file)
                 {
-                    fnDelete();
+                    Ext.MessageBox.confirm("Delete -- " + name, "Are you sure that you want to delete the file '" + name + "'?", function(answer)
+                    {
+                        if (answer == "yes")
+                        {
+                            fnDelete();
+                        }
+                    });
                 }
                 else
                 {
                     this.fileSystem.listFiles(selectedRecord.data.path, function(filesystem, success, parentPath, records)
                     {
+                        var message;
                         if (records.length == 0)
                         {
-                            fnDelete();
+                            message = "Are you sure that you want to delete the empty directory '" + name + "'?";
                         }
                         else
                         {
-                            var name = selectedRecord.data.name;
-                            var mb = Ext.MessageBox.confirm("Delete -- " + selectedRecord.data.name, "The directory '" + name + "' is not empty.  This operation is permanent.<br>Delete?", function(answer)
-                            {
-                                if (answer == "yes")
-                                {
-                                    fnDelete();    
-                                }
-                            });
+                            message = "The directory '" + name + "' is not empty.  This operation is permanent.<br>Delete?";
                         }
+
+                        Ext.MessageBox.confirm("Delete -- " + name, message, function(answer)
+                        {
+                            if (answer == "yes")
+                            {
+                                fnDelete();
+                            }
+                        });
                     }, this);
                 }
             }
@@ -1821,10 +1842,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     Tree_onSelectionchange : function(sm, node)
     {
-        if (this.grid)
-            this.grid.getSelectionModel().clearSelections();
         if (node)
         {
+            if (this.grid)
+                this.grid.getSelectionModel().clearSelections();
             this.selectFile(node.record);
             this.changeDirectory(node.record);
         }
@@ -2107,6 +2128,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             if (canWrite || canMkdir)
             {
                 this.applet.setEnabled(true);
+                this.applet.setAllowDirectoryUpload(canMkdir);
                 this.applet.setText( (canMkdir ? "Drop files and folders here" : "Drop files here") + "\nFolder: " +record.data.name);
             }
             else
@@ -2392,12 +2414,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         this.on(BROWSER_EVENTS.selectionchange, function(record)
         {
-            if (this.tree && record && !record.data.file)
-            {
-                var node = this.tree.getNodeById(record.data.path);
-                if (node && !node.isSelected())
-                    node.select();
-            }
             this.history = null;
             if (this.actions.showHistory)
                 this.actions.showHistory.disable();

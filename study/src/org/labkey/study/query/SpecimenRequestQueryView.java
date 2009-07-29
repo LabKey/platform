@@ -24,11 +24,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.SampleManager;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 
 import java.io.Writer;
@@ -55,8 +56,8 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         private boolean _showOptionLinks;
         private NavTree[] _extraLinks;
         private Integer _shoppingCartStatusRowId;
-        private boolean _userIsAdmin;
-        private boolean _userCanWrite;
+        private boolean _userIsSpecimenManager;
+        private boolean _userCanRequest;
         private int _userId;
         private boolean _cartEnabled;
 
@@ -66,8 +67,8 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
             _colCreatedBy = colCreatedBy;
             User user = context.getUser();
             _userId = user.getUserId();
-            _userIsAdmin = user.isAdministrator();
-            _userCanWrite = context.getContainer().hasPermission(user, ACL.PERM_INSERT);
+            _userIsSpecimenManager = context.getContainer().hasPermission(user, ManageRequestsPermission.class);
+            _userCanRequest = context.getContainer().hasPermission(user, RequestSpecimensPermission.class);
             _showOptionLinks = showOptionLinks;
             _extraLinks = extraLinks;
             setTextAlign("right");
@@ -118,7 +119,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                     }
                     Integer statusId = (Integer) _colStatus.getValue(ctx);
                     Integer ownerId = (Integer) _colCreatedBy.getValue(ctx);
-                    boolean canEdit = _userIsAdmin || (_userCanWrite && ownerId == _userId);
+                    boolean canEdit = _userIsSpecimenManager || (_userCanRequest && ownerId == _userId);
                     if (statusId.intValue() == _shoppingCartStatusRowId.intValue() && canEdit)
                     {
                         String submitLink = ctx.getViewContext().getActionURL().relativeUrl("submitRequest", "id=${requestId}");

@@ -1371,7 +1371,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             this.policy = policy;
             // we'd still like to get the inherited policy
             if (this.resource.parentId && this.resource.parentId != this.cache.rootId)
-                S.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy, scope:this});
+                S.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy,
+                    errorCallback: function(errorInfo, response){
+                        if (response.status != 401)
+                            Ext.Msg.alert("Error", "Error getting parent policy: " + errorInfo.exception);
+                    }, scope:this});
         }
         this.roles = [];
         for (var r=0 ; r<roles.length ; r++)

@@ -513,7 +513,6 @@ public class PlateManager implements PlateService.Service
         try
         {
             scope.beginTransaction();
-            OntologyManager.deleteAllObjects(container);
             Table.delete(StudySchema.getInstance().getTableInfoWell(), filter);
             Table.delete(StudySchema.getInstance().getTableInfoWellGroup(), filter);
             Table.delete(StudySchema.getInstance().getTableInfoPlate(), filter);

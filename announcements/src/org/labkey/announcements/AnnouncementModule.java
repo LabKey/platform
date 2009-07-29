@@ -59,7 +59,7 @@ public class AnnouncementModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.11;
+        return 9.20;
     }
 
     protected void init()

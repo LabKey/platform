@@ -41,7 +41,7 @@ public class CohortWriter implements Writer<StudyImpl>
 
     public String getSelectionText()
     {
-        return "Cohort settings";
+        return "Cohort Settings";
     }
 
     public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception

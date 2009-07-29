@@ -49,7 +49,7 @@ public class MothershipModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.10;
+        return 9.20;
     }
 
     protected void init()

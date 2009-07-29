@@ -44,6 +44,8 @@
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.exp.LsidManager" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -333,7 +335,7 @@
                                 String link = "&nbsp;";
                                 String sourceLsid = propMap.getSourceLsid();
 
-                                if (sourceLsid != null)
+                                if (sourceLsid != null && LsidManager.get().hasPermission(sourceLsid, getViewContext().getUser(), ReadPermission.class))
                                 {
                                     ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, context.getContainer());
                                     sourceURL.addParameter("sourceLsid", sourceLsid);

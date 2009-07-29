@@ -163,23 +163,31 @@ public class FtpController extends SpringActionController
             if (path == null)
                 return null;
 
-            WebdavResolverImpl.Resource  resource = _resolver.lookup(path);
+            WebdavResolverImpl.Resource  resource = _resolver.lookup(StringUtils.stripEnd(_resolver.getRootPath(),"/") + path);
             if (!(resource instanceof WebdavResolver.WebFolder))
                 return null;
 
             WebFolderInfo info = new WebFolderInfo();
             info.url = resource.getHref(_context);
             info.name = resource.getName();
-            info.path = resource.getPath();
+            String resourcePath = resource.getPath();
+            assert resourcePath.startsWith(_resolver.getRootPath());
+            resourcePath = resourcePath.substring(_resolver.getRootPath().length());
+            info.path = resourcePath.startsWith("/") ? resourcePath : "/" + resourcePath;
+
             info.created = resource.getCreated();
             info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());
             info.perm = ((WebdavResolver.WebFolder)resource).getIntPermissions(user);
             List<String> webFoldersNames = ((WebdavResolver.WebFolder)resource).getWebFoldersNames(user);
+
+            // Filter out wiki and files webdav trees - they're not supported over FTP
+            webFoldersNames.remove("@wiki");
+            webFoldersNames.remove("@files");
+
             info.subfolders = webFoldersNames.toArray(new String[webFoldersNames.size()]);
             return info;
         }
     }        
-
 
     static FtpConnector.FileSystemRoot initFileSystemRoot(File f)
     {

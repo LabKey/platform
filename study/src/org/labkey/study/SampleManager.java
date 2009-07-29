@@ -312,29 +312,48 @@ public class SampleManager
         return null;
     }
 
-    public Integer getProcessingSiteId(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    private boolean skipAsProcessingSite(SpecimenEvent event)
+    {
+        boolean allNullDates = event.getLabReceiptDate() == null && event.getStorageDate() == null && event.getShipDate() == null;
+        // 
+        return allNullDates && !safeComp(event.getLabId(), event.getOriginatingLocationId());
+    }
+
+    private SpecimenEvent getFirstEvent(List<SpecimenEvent> dateOrderedEvents)
     {
         if (!dateOrderedEvents.isEmpty())
         {
             SpecimenEvent firstEvent = dateOrderedEvents.get(0);
-            return firstEvent.getLabId();
+            // walk backwards through the events until we find an event with at least one date field filled in that isn't
+            // the first event.  Leaving all specimen event dates blank shouldn't make an event the processing location.
+            for (int i = 1; i < dateOrderedEvents.size() - 1 && skipAsProcessingSite(firstEvent); i++)
+                firstEvent = dateOrderedEvents.get(i);
+            return firstEvent;
         }
         return null;
+    }
+
+    public Integer getProcessingSiteId(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    {
+        SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
+        return firstEvent != null ? firstEvent.getLabId() : null;
     }
 
     public SiteImpl getOriginatingSite(Specimen specimen) throws SQLException
     {
         if (specimen.getOriginatingLocationId() != null)
         {
-            SiteImpl site = StudyManager.getInstance().getSite(specimen.getContainer(), specimen.getOriginatingLocationId());
+            SiteImpl site = StudyManager.getInstance().getSite(specimen.getContainer(), specimen.getOriginatingLocationId().intValue());
             if (site != null)
                 return site;
         }
 
         List<SpecimenEvent> events = getDateOrderedEventList(specimen);
-        if (!events.isEmpty())
-            return StudyManager.getInstance().getSite(specimen.getContainer(), events.get(0).getLabId());
-        return null;
+        Integer firstLabId = getProcessingSiteId(events);
+        if (firstLabId != null)
+            return StudyManager.getInstance().getSite(specimen.getContainer(), firstLabId.intValue());
+        else
+            return null;
     }
 
     public SampleRequest[] getRequests(Container c) throws SQLException

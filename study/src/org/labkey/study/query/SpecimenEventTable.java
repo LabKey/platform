@@ -54,6 +54,7 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapTypeColumn("AdditiveType", "AdditiveTypeId");
         addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
         addWrapColumn(_rootTable.getColumn("VisitValue"));
+        addWrapColumn(_rootTable.getColumn("VisitDescription"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
         addWrapColumn(_rootTable.getColumn("Volume"));

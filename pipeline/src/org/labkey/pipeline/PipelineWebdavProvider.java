@@ -22,10 +22,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
+import java.util.List;
+import java.util.Collections;
 import java.net.URI;
 
 /**
@@ -67,7 +70,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         return new PipelineFolderResource(folder, c, root);
     }
 
-    private class PipelineFolderResource extends FileSystemResource
+    private class PipelineFolderResource extends FileSystemResource implements WebdavResolver.WebFolder
     {
         Container c;
 
@@ -82,6 +85,27 @@ public class PipelineWebdavProvider implements WebdavService.Provider
                 _policy = org.labkey.api.security.SecurityManager.getPolicy(root);
                 _file = FileUtil.canonicalFile(uriRoot);
             }
+        }
+
+        public List<String> getWebFoldersNames(User user)
+        {
+            return Collections.emptyList();
+        }
+
+        public int getIntPermissions(User user)
+        {
+            int result = hasAccess(user) ? _policy.getPermsAsOldBitMask(user) : 0;
+            if ((result & ACL.PERM_DELETE) != 0)
+            {
+                result -= ACL.PERM_DELETE;
+            }
+            return result;
+        }
+
+        @Override
+        public boolean canDelete(User user)
+        {
+            return false;
         }
 
         @Override

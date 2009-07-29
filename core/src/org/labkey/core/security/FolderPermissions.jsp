@@ -165,7 +165,7 @@ Ext.onReady(function(){
     tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
     Ext.onReady(function()
     {
-        policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isSiteAdmin,
+        policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isProjectAdmin,
             resourceId:LABKEY.container.id});
         policyEditor.render($('permissionsFrame'));
     });

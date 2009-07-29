@@ -35,7 +35,7 @@ public class SpecimenArchiveWriter implements Writer<StudyImpl>
 
     public String getSelectionText()
     {
-        return "Specimen Archive";
+        return "Specimens";
     }
 
     public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws Exception

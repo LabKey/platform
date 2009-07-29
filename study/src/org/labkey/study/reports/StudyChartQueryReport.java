@@ -24,8 +24,12 @@ import org.labkey.api.reports.report.view.RunChartReportView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.StudyController;
+
+import java.io.Writer;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -69,5 +73,19 @@ public class StudyChartQueryReport extends ChartQueryReport
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
         return new StudyRunChartReportView(this);
+    }
+
+    @Override
+    public void serialize(Writer writer) throws IOException
+    {
+        // export of study participant charts not supported for 9.2
+        // todo: enable export/import for 9.3
+    }
+
+    @Override
+    public void serializeToFolder(VirtualFile fs) throws IOException
+    {
+        // export of study participant charts not supported for 9.2
+        // todo: enable export/import for 9.3
     }
 }

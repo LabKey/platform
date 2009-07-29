@@ -140,9 +140,9 @@ public class SpecimenImporter
             if (getJavaType() == String.class)
                 return Types.VARCHAR;
             else if (getJavaType() == java.util.Date.class)
-                return Types.DATE;
+                return Types.TIMESTAMP;
             else if (getJavaType() == TimeOnlyDate.class)
-                return Types.DATE;
+                return Types.TIMESTAMP;
             else if (getJavaType() == Float.class)
                 return Types.FLOAT;
             else if (getJavaType() == Integer.class)
@@ -1454,7 +1454,7 @@ public class SpecimenImporter
                     int colIndex = 0;
                     params[colIndex++] = container.getId();
                     for (ImportableColumn col : uniqueCols)
-                        params[colIndex++] = getValue(col, row);
+                        params[colIndex++] = getValueParameter(col, row);
 
                     rs = Table.executeQuery(schema, selectSql.toString(), params);
                     if (rs.next())
@@ -1474,7 +1474,7 @@ public class SpecimenImporter
                 if (addEntityId)
                     params[colIndex++] = GUID.makeGUID();
                 for (ImportableColumn col : availableColumns)
-                    params[colIndex++] = getValue(col, row);
+                    params[colIndex++] = getValueParameter(col, row);
                 Table.execute(schema, insertSql.toString(), params);
                 rowsAdded++;
             }
@@ -1484,12 +1484,12 @@ public class SpecimenImporter
                 for (ImportableColumn col : availableColumns)
                 {
                     if (!col.isUnique())
-                        params.add(getValue(col, row));
+                        params.add(getValueParameter(col, row));
                 }
                 params.add(container.getId());
 
                 for (ImportableColumn col : uniqueCols)
-                    params.add(getValue(col, row));
+                    params.add(getValueParameter(col, row));
                 Table.execute(schema, updateSql.toString(), params.toArray());
                 rowsUpdated++;
             }
@@ -1564,7 +1564,7 @@ public class SpecimenImporter
             if (addEntityId)
                 params.add(GUID.makeGUID());
             for (ImportableColumn col : availableColumns)
-                params.add(getValue(col, row));
+                params.add(getValueParameter(col, row));
             rows.add(params);
         }
 
@@ -1647,14 +1647,7 @@ public class SpecimenImporter
                 params.add(lsid.toString());
 
                 for (ImportableColumn col : SPECIMEN_COLUMNS)
-                {
-                    Object value = getValue(col, properties);
-                    if (value != null && !(value instanceof Parameter) && "FrozenTime".equals(col.getDbColumnName()))
-                    {
-                        int i = 5;
-                    }
-                    params.add(value);
-                }
+                    params.add(getValueParameter(col, properties));
 
                 rows.add(params);
 
@@ -1689,12 +1682,12 @@ public class SpecimenImporter
         return loadedColumns;
     }
 
-    private Object getValue(ImportableColumn col, Map tsvRow)
+    private Parameter getValueParameter(ImportableColumn col, Map tsvRow)
     {
         Object value = tsvRow.get(col.getTsvColumnName());
         if (value == null)
             return Parameter.nullParameter(col.getSQLType());
-        return value;
+        return new Parameter(value, col.getSQLType());
     }
 
     private static final boolean DEBUG = false;

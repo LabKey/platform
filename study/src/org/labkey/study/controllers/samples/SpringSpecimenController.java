@@ -1625,7 +1625,7 @@ public class SpringSpecimenController extends BaseStudyController
                 }
             }
             SimpleFilter filter = null;
-            if (!context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
+            if (!context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class))
             {
                 if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer()))
                     HttpView.throwUnauthorized();
@@ -1649,9 +1649,9 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    protected void requiresAdmin() throws ServletException
+    protected void requiresManageSpecimens() throws ServletException
     {
-        if (!getUser().isAdministrator() || !getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+        if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
             HttpView.throwUnauthorized();
     }
 
@@ -1661,7 +1661,7 @@ public class SpringSpecimenController extends BaseStudyController
         public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
         {
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
-                requiresAdmin();
+                requiresManageSpecimens();
             SpecimenUtils.RequestedSpecimens specimens = null;
             if (getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null)
             {
@@ -1743,7 +1743,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageRequestsPermission.class)
     public class DeleteRequirementAction extends RedirectAction<RequirementForm>
     {
         public void validateCommand(RequirementForm target, Errors errors)
@@ -1797,7 +1797,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageRequestsPermission.class)
     public class DeleteMissingRequestSpecimensAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2346,7 +2346,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageRequestsPermission.class)
     public class EmailLabSpecimenListsAction extends FormHandlerAction<EmailSpecimenListForm>
     {
         public void validateCommand(EmailSpecimenListForm target, Errors errors)
@@ -2522,7 +2522,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageRequestsPermission.class)
     public class DownloadSpecimenListAction extends SimpleViewAction<ExportSiteForm>
     {
         public ModelAndView getView(ExportSiteForm form, BindException errors) throws Exception
