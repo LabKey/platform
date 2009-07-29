@@ -36,6 +36,7 @@ public class QueryUnion extends QueryRelation
 
     List<QueryRelation> _termList = new ArrayList<QueryRelation>();
     Map<String, UnionColumn> _unionColumns = new LinkedHashMap<String, UnionColumn>();
+    List<UnionColumn> _allColumns = new ArrayList<UnionColumn>();
 
 
 	QueryUnion(Query query, QUnion qunion)
@@ -118,6 +119,15 @@ public class QueryUnion extends QueryRelation
             }
         }
 
+        if (_allColumns.isEmpty())
+        {
+            for (QueryRelation relation : _termList)
+            {
+                for (RelationColumn c : relation.getAllColumns())
+                    _allColumns.add(new UnionColumn(c.getName(), c));
+            }
+        }
+
 //        if (_tinfos.size() > 0)
 //			return;
 //		for (Object o : _termList)
@@ -175,12 +185,15 @@ public class QueryUnion extends QueryRelation
         SQLTableInfo sti = new SQLTableInfo(_schema.getDbSchema());
         sti.setName("_union");
         sti.setFromSQL(unionSql);
-        QueryTableInfo ret = new QueryTableInfo(this, sti, "_union");
+        UnionTableInfoImpl ret = new UnionTableInfoImpl(this, sti, "_union");
         for (UnionColumn unioncol : _unionColumns.values())
         {
             ColumnInfo ucol = new RelationColumnInfo(ret, unioncol);
             ret.addColumn(ucol);
         }
+        for (UnionColumn unioncol : _allColumns)
+            ret.addUnionColumn(new RelationColumnInfo(ret, unioncol));
+        
         assert unionSql.appendComment("</QueryUnion@" + System.identityHashCode(this) + ">");
 		_unionSql = unionSql;
         return ret;

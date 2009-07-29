@@ -428,7 +428,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 propertyMap = new HashMap<String, String>();
                 _snapshotPropertyMap.put(def.getId(), propertyMap);
 
-                QueryForm sourceForm = getQueryForm(def, getViewContext(def));
+                // can't assume that the dependency check is coming from the same container that
+                // the snapshot is defined in.
+                ViewContext context = new ViewContext(getViewContext(def));
+                context.setContainer(def.getContainer());
+
+                QueryForm sourceForm = getQueryForm(def, context);
                 QueryView view = QueryView.create(sourceForm);
                 view.setCustomView(sourceForm.getCustomView());
 

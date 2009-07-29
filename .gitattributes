@@ -8,6 +8,7 @@ announcements/src/META-INF/announcements/scripts/postgresql/comm-1.50-1.60.sql -
 announcements/src/META-INF/announcements/scripts/postgresql/comm-1.60-1.70.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-1.70-2.00.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-9.10-9.11.sql -text
+announcements/src/META-INF/announcements/scripts/postgresql/comm-9.10-9.20.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-create.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-drop.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -33,6 +34,7 @@ announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.50-1.60.
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.60-1.70.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.70-2.00.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-9.10-9.11.sql -text
+announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-9.10-9.20.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-create.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-drop.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/comm-0.00-1.00.sql -text
@@ -98,6 +100,7 @@ audit/src/META-INF/audit/scripts/postgresql/audit-8.20-8.30.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-8.21-8.22.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-8.23-8.24.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-9.10-9.11.sql -text
+audit/src/META-INF/audit/scripts/postgresql/audit-9.10-9.20.sql -text
 audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.00-0.01.sql -text
 audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.01-0.02.sql -text
 audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.02-0.03.sql -text
@@ -109,6 +112,7 @@ audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.20-8.30.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.21-8.22.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.23-8.24.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-9.10-9.11.sql -text
+audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-9.10-9.20.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.00-0.01.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.01-0.02.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.02-0.03.sql -text
@@ -251,6 +255,7 @@ core/src/META-INF/core/scripts/postgresql/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.30-8.31.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/postgresql/core-9.10-9.11.sql -text
+core/src/META-INF/core/scripts/postgresql/core-9.10-9.20.sql -text
 core/src/META-INF/core/scripts/postgresql/core-9.11-9.12.sql -text
 core/src/META-INF/core/scripts/postgresql/core-9.12-9.13.sql -text
 core/src/META-INF/core/scripts/postgresql/core-9.13-9.14.sql -text
@@ -319,6 +324,7 @@ core/src/META-INF/core/scripts/sql[!!-~]server/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-8.31.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-9.10-9.11.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-9.10-9.20.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-9.11-9.12.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-9.12-9.13.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-9.13-9.14.sql -text
@@ -533,6 +539,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-8.35-8.36.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.36-8.37.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.37-8.38.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-9.10-9.11.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-9.10-9.20.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-9.11-9.12.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-drop.sql -text
@@ -616,6 +623,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.35-8.36.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.36-8.37.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.37-8.38.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-9.10-9.11.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-9.10-9.20.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-9.11-9.12.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
@@ -1827,6 +1835,7 @@ study/src/META-INF/study/scripts/postgresql/study-8.34-8.35.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.38-8.39.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.39-8.40.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.10-9.11.sql -text
+study/src/META-INF/study/scripts/postgresql/study-9.10-9.20.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.11-9.12.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.12-9.13.sql -text
 study/src/META-INF/study/scripts/postgresql/study-9.13-9.14.sql -text
@@ -1940,6 +1949,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-8.34-8.35.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.38-8.39.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.39-8.40.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.10-9.11.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-9.10-9.20.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.11-9.12.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.12-9.13.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-9.13-9.14.sql -text
