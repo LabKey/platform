@@ -61,6 +61,7 @@ announcements/src/org/labkey/announcements/AnnouncementModule.java -text
 announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
+announcements/src/org/labkey/announcements/SendMessageAction.java -text
 announcements/src/org/labkey/announcements/announcementEmailDefaults.jsp -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text
 announcements/src/org/labkey/announcements/announcementThread.jsp -text
