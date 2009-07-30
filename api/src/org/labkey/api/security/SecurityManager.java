@@ -2240,7 +2240,7 @@ public class SecurityManager
             {
                 String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
                         email.getEmailAddress(), newUserBean.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
-                message.append(email.getEmailAddress()).append(" added as a new user to the sytem, but no email was sent.  Click ");
+                message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.  Click ");
                 message.append(href).append(" to change the password from the random one that was assigned.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
             }
