@@ -16,9 +16,7 @@
 package org.labkey.study.security.roles;
 
 import org.labkey.api.security.roles.AbstractRole;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.study.StudyModule;
 import org.labkey.study.security.permissions.*;
 

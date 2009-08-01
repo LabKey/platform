@@ -16,13 +16,10 @@
 
 package org.labkey.query.controllers;
 
-import org.apache.struts.action.ActionMapping;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class SourceForm extends QueryForm
 {
