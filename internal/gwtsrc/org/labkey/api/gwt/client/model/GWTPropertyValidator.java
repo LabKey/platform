@@ -65,7 +65,7 @@ public class GWTPropertyValidator implements Serializable
         d.setDescription(s.getDescription());
         d.setExpression(s.getExpression());
         d.setErrorMessage(s.getErrorMessage());
-        d.setProperties(s.getProperties());
+        d.getProperties().putAll(s.getProperties());
         d.setNew(s.isNew());
     }
 

@@ -87,7 +87,7 @@ public class GWTPropertyDescriptor implements IsSerializable
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
-            validators.add(v);
+            validators.add(new GWTPropertyValidator(v));
         }
     }
 
