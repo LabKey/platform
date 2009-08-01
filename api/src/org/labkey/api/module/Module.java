@@ -256,5 +256,4 @@ public interface Module extends Comparable<Module>
      */
     @NotNull
     public List<File> getStaticFileDirectories();
-
 }

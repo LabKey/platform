@@ -16,21 +16,20 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.api.ExpProtocol;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.qc.TransformResult;
-import org.apache.struts.upload.MultipartRequestHandler;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -62,8 +61,6 @@ public interface AssayRunUploadContext
     Map<String, File> getUploadedData() throws IOException, ExperimentException;
 
     AssayProvider getProvider();
-
-    MultipartRequestHandler getMultipartRequestHandler();
 
     Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException;
 

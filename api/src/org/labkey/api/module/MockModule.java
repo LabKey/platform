@@ -259,7 +259,6 @@ public class MockModule implements Module
     @NotNull
     public List<File> getStaticFileDirectories()
     {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
-
 }

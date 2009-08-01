@@ -54,8 +54,8 @@ public abstract class DefaultModule implements Module
 {
     public static final String CORE_MODULE_NAME = "Core";
 
-
-    static final Logger _log = Logger.getLogger(DefaultModule.class);
+    private static final Logger _log = Logger.getLogger(DefaultModule.class);
+    private static final Set<Pair<Class,String>> INSTANTIATED_MODULES = new HashSet<Pair<Class, String>>();
 
     protected static final FilenameFilter rReportFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
@@ -63,8 +63,6 @@ public abstract class DefaultModule implements Module
             return name.toLowerCase().endsWith(ModuleRReportDescriptor.FILE_EXTENSION);
         }
     };
-
-    private static final Set<Pair<Class,String>> INSTANTIATED_MODULES = new HashSet<Pair<Class,String>>();
 
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
@@ -498,7 +496,8 @@ public abstract class DefaultModule implements Module
     {
         Set<String> fileNames = new HashSet<String>();
         File dir;
-        if(_loadFromSource)
+
+        if (_loadFromSource)
             dir = new File(_sourcePath, getSqlScriptsPath(dialect));
         else
             dir = new File(_explodedPath, getSqlScriptsPath(dialect));
@@ -518,7 +517,7 @@ public abstract class DefaultModule implements Module
 
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
-        if(_loadFromSource)
+        if (_loadFromSource)
             return "src/META-INF/" + getName().toLowerCase() + "/scripts/" + dialect.getSQLScriptPath(true) + "/";
         else
             return "schemas/dbscripts/" + dialect.getSQLScriptPath(false) + "/";

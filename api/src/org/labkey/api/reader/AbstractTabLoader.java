@@ -537,7 +537,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                             int qcColumnIndex = getMvColumnIndex(column);
                             if (qcColumnIndex != -1)
                             {
-                                // There's a qc column that matches
+                                // There's an mv column that matches
                                 if (values[qcColumnIndex] == null)
                                 {
                                     MvFieldWrapper mvWrapper = new MvFieldWrapper();
@@ -555,7 +555,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                             }
                             else
                             {
-                                // No matching qc column, just put in a wrapper
+                                // No matching mv column, just put in a wrapper
                                 if (!MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
                                 {
                                     throw new ConversionException(fld + " is not a valid MV indicator");

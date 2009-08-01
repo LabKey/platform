@@ -18,7 +18,6 @@ package org.labkey.api.qc;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.upload.MultipartRequestHandler;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -621,11 +620,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         public AssayProvider getProvider()
         {
             return AssayService.get().getProvider(_protocol);
-        }
-
-        public MultipartRequestHandler getMultipartRequestHandler()
-        {
-            return null;
         }
 
         public Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException

@@ -212,10 +212,10 @@ public class ViewServlet extends HttpServlet
 
 
     // Would rather let controllers initialize lazily, but this is problematic when code other than the controller refers
-    // to an action class (e.g., new ActionURL(Class, Container)).  In particular, action classes defined outside the
-    // controller have no idea who their controller is until the controller initializes.  Instead of initializing
-    // everything at startup we could restrict the use of ActionURL(Class, Container), et al, to methods within a
-    // controller... which would guanantee that the controller was initialized before resolving the action class.
+    // to an action class (e.g., new ActionURL(Class<? extends Controller>, Container)).  In particular, action classes
+    // defined outside the controller have no idea who their controller is until the controller initializes.  Instead of
+    // initializing everything at startup we could restrict the use of ActionURL(Class, Container), et al, to methods
+    // within a controller... which would guarantee that the controller was initialized before resolving the action class.
     private static void initializeAllSpringControllers()
     {
         for (Module module : ModuleLoader.getInstance().getModules())
