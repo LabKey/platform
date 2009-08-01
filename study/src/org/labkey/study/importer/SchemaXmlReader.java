@@ -64,7 +64,6 @@ public class SchemaXmlReader implements SchemaReader
 
         _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>(tablesXml.getTableArray().length);
         _importMaps = new ArrayList<Map<String, Object>>();
-        String visitDateURI = DataSetDefinition.getVisitDateURI();
 
         for (TableType tableXml : tablesXml.getTableArray())
         {
