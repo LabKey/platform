@@ -23,6 +23,9 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.NodeList;
+import com.google.gwt.dom.client.Node;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
@@ -767,7 +770,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             _noneButton = new RadioButton("additionalKey", "None");
             _noneButton.setChecked(_dataset.getKeyPropertyName() == null);
-            DOM.setElementAttribute(_noneButton.getElement(), "id", "button_none");
+            setCheckboxId(_noneButton.getElement(), "button_none");
 
             if (fromAssay)
                 _noneButton.setEnabled(false);
@@ -779,7 +782,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel.setSpacing(2);
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
             final RadioButton dataFieldButton = new RadioButton("additionalKey", "Data Field:");
-            DOM.setElementAttribute(dataFieldButton.getElement(), "id", "button_dataField");
+            setCheckboxId(dataFieldButton.getElement(), "button_dataField");
             if (fromAssay)
                 dataFieldButton.setEnabled(false);
             dataFieldButton.setChecked(_dataset.getKeyPropertyName() != null && !_dataset.getKeyPropertyManaged());
@@ -803,7 +806,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel.setSpacing(2);
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
             final RadioButton managedButton = new RadioButton("additionalKey", "Managed Field:");
-            DOM.setElementAttribute(managedButton.getElement(), "id", "button_managedField");
+            setCheckboxId(managedButton.getElement(), "button_managedField");
             if (fromAssay)
                 managedButton.setEnabled(false);
             managedButton.setChecked(_dataset.getKeyPropertyManaged());
@@ -918,6 +921,16 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             //noinspection UnusedAssignment
             _table.getFlexCellFormatter().setColSpan(row++, 1, 3);
+        }
+
+        private void setCheckboxId(Element e, String id)
+        {
+            NodeList list = e.getElementsByTagName("input");
+            for (int i=0; i < list.getLength(); i++)
+            {
+                Node node = list.getItem(i);
+                ((Element)node).setId(id);
+            }
         }
 
         private void resetKeyListBoxes(BoundListBox dataFieldsBox, BoundListBox managedFieldsBox)
