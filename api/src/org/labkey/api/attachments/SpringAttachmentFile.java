@@ -16,14 +16,14 @@
 
 package org.labkey.api.attachments;
 
-import org.springframework.web.multipart.MultipartFile;
 import org.apache.struts.upload.CommonsMultipartRequestHandler;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 /**
  * User: adam
@@ -60,8 +60,6 @@ public class SpringAttachmentFile implements AttachmentFile
     {
         return _file.getSize();
     }
-
-    // TODO: this was null == _file || null == formFile.getFilename() || 0 == formFile.getFilename().length());
 
     public String getError()
     {
