@@ -50,6 +50,8 @@ import java.util.*;
  */
 public class TableViewForm extends ViewFormData implements DynaBean, HasBindParameters
 {
+    private static final Logger _log = Logger.getLogger(TableViewForm.class);
+
     protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<String>();
     protected Map<String, Object> _values = null;
     protected StringWrapperDynaClass _dynaClass;
@@ -57,7 +59,6 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
     protected TableInfo _tinfo = null;
     protected String[] _selectedRows = null;
     protected boolean _isDataLoaded;
-    private static Logger _log = Logger.getLogger(TableViewForm.class);
     private boolean _validateRequired = true;
 
     /**
@@ -592,6 +593,7 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
     }
 
 
+    @Override
     public void reset(ActionMapping arg0, HttpServletRequest request)
     {
         super.reset(arg0, request);

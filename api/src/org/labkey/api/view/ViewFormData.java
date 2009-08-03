@@ -101,6 +101,7 @@ public class ViewFormData extends FormData implements HasViewContext
     }
 
 
+    @Override
     public void reset(ActionMapping actionMapping, HttpServletRequest request)
     {
         _errors = null;
