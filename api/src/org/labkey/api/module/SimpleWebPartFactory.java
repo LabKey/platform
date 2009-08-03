@@ -156,6 +156,10 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         if(isStale())
             loadDefinition(_webPartFile);
 
+        //if loading the definition failed, we are not available
+        if (null == _webPartDef)
+            return false;
+
         //if super thinks it should be available, return true
         if(super.isAvailable(c, location))
             return true;

@@ -32,7 +32,9 @@ public class ProjectAdminRole extends AbstractRole
 {
     public ProjectAdminRole()
     {
-        super("Project Administrator", "Project Administrators have full control over the project, but not the entire system.",
+        super("Project Administrator",
+                "Project Administrators have full control over the project, but not the entire system. " +
+                        "By default, Project Administrators are added to the Folder Administrator role within all project folders.",
                 ReadPermission.class,
                 ReadSomePermission.class,
                 InsertPermission.class,
