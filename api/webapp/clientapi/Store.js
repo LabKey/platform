@@ -36,10 +36,17 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  * @param {String} [config.sort] A base sort specification in the form of '[-]column,[-]column' ('-' is used for descending sort).
  * @param {Array} [config.filterArray] An array of LABKEY.Filter.FilterDefinition objects to use as the base filters.
  * @param {String} [config.containerPath] The container path from which to get the data. If not specified, the current container is used.
+ * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
+ *      Supported values include:
+ *       <ul>
+ *           <li>"Current": Include the current folder only</li>
+ *           <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
+ *           <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
+ *           <li>"CurrentAndParents": Include the current folder and its parent folders</li>
+ *           <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
+ *           <li>"AllFolders": Include all folders for which the user has read permission</li>
+ *       </ul>
  * @example &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
-&lt;script type="text/javascript"&gt;
     var _grid, _store;
     Ext.onReady(function(){
 
