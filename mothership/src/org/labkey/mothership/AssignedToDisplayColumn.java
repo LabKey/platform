@@ -16,21 +16,19 @@
 
 package org.labkey.mothership;
 
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserComparator;
 
-import javax.servlet.ServletException;
-import java.io.Writer;
 import java.io.IOException;
-import java.util.Set;
-import java.util.List;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: jeckels
