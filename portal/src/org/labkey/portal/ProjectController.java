@@ -882,6 +882,7 @@ public class ProjectController extends SpringActionController
             containerProps.put("path", container.getPath());
             containerProps.put("sortOrder", container.getSortOrder());
             containerProps.put("userPermissions", container.getPolicy().getPermsAsOldBitMask(user));
+            containerProps.put("effectivePermissions", container.getPolicy().getPermissionNames(user));
 
             //recurse into children if requested
             if (recurse && depth < _requestedDepth)
