@@ -133,6 +133,20 @@ public class SecurityPolicy
     }
 
     @NotNull
+    public List<String> getPermissionNames(@NotNull UserPrincipal principal)
+    {
+        Set<Class<? extends Permission>> perms = getPermissions(principal);
+        List<String> names = new ArrayList<String>(perms.size());
+        for (Class<? extends Permission> perm : perms)
+        {
+            Permission permInst = RoleManager.getPermission(perm);
+            if (null != permInst)
+                names.add(permInst.getUniqueName());
+        }
+        return names;
+    }
+
+    @NotNull
     public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
     {
         Set<Role> allContextualRoles = getContextualRoles(principal);

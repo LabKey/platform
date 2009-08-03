@@ -134,6 +134,7 @@ LABKEY.Security = new function()
          *                              and each role grants the user a set of permissions. Use the getRoles() method to retrieve information
          *                              about the roles, including which permissions are granted by each role.
          *                  </li>
+         *                  <li>effectivePermissions: An array of effective permission unique names the group has.</li>
          *              </ul>
          *          </li>
          *          <li>children: if includeSubfolders was true, this will contain an array of objects, each of
@@ -228,6 +229,7 @@ LABKEY.Security = new function()
          *               and each role grants the user a set of permissions. Use the getRoles() method to retrieve information
          *               about the roles, including which permissions are granted by each role.
          *          </li>
+         *          <li>effectivePermissions: An array of effective permission unique names the user has.</li>
          *          <li>groups: an array of group objects to which the user belongs, each of which will have the following properties:
          *              <ul>
          *                  <li>id: the group id</li>
@@ -242,6 +244,7 @@ LABKEY.Security = new function()
          *                              and each role grants the user a set of permissions. Use the getRoles() method to retrieve information
          *                              about the roles, including which permissions are granted by each role.
          *                  </li>
+         *                  <li>effectivePermissions: An array of effective permission unique names the group has.</li>
          *              </ul>
          *          </li>
          *          <li>children: if includeSubfolders was true, this will contain an array of objects, each of
@@ -367,8 +370,9 @@ LABKEY.Security = new function()
          *      <li>name: the name of the requested container</li>
          *      <li>path: the path of the requested container</li>
          *      <li>sortOrder: the relative sort order of the requested container</li>
-         *      <li>userPermissions: the permissions the current user has in the requested container.
+         *      <li>userPermissions: (DEPRECATED) the permissions the current user has in the requested container.
          *          Use this value with the hasPermission() method to test for specific permissions.</li>
+         *      <li>effectivePermissions: An array of effective permission unique names the group has.</li>
          *      <li>children: if the includeSubfolders parameter was true, this will contain
          *          an array of child container objects with the same shape as the parent object.</li>
          *  </ul>
