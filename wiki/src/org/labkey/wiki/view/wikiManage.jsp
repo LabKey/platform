@@ -189,12 +189,6 @@ function orderModule(listName, down, targetName)
 <input type="hidden" name="nextAction" value="">
 <%=PageFlowUtil.generateSubmitButton("Save", "document.manage.nextAction.value = 'page'; return true;", "title=\"Save Changes\"")%>
 <%=PageFlowUtil.generateSubmitButton("Edit Content", "document.manage.nextAction.value = 'editWiki'; return true;", "title=\"Edit Content and Attachments\"")%>
-<% if (context.get("deleteLink") != null)
-    {
-    %>
-        <%=PageFlowUtil.generateButton("Delete Page", (String)context.get("deleteLink"), "title=\"Delete this Page\"")%><%
-    }
-%>
 
 <script type="text/javascript">
 existingWikiPages = [<% for (Wiki p : (List<Wiki>)context.get("pages")) out.print(PageFlowUtil.jsString(p.getName()) + ","); %>];
