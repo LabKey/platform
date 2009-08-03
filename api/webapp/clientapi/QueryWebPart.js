@@ -99,7 +99,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
         Ext.apply(this, config, {
-            dataRegionName: Ext.id(undefined, "aqwp")
+            dataRegionName: Ext.id(undefined, "aqwp"),
+            returnURL: encodeURI(window.location.href)
         });
 
         this.filters = this.filters || this.filterArray;
