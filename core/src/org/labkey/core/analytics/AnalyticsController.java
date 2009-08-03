@@ -64,6 +64,7 @@ public class AnalyticsController extends SpringActionController
             this.ff_trackingStatus = AnalyticsServiceImpl.TrackingStatus.valueOf(ff_trackingStatus);
         }
 
+        @Override
         public void reset(ActionMapping actionMapping, HttpServletRequest request)
         {
             super.reset(actionMapping, request);

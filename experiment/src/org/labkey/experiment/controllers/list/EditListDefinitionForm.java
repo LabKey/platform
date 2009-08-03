@@ -31,6 +31,7 @@ public class EditListDefinitionForm extends ListDefinitionForm
     public boolean ff_allowUpload;
     public boolean ff_allowExport;
 
+    @Override
     public void reset(ActionMapping actionMapping, HttpServletRequest request)
     {
         super.reset(actionMapping, request);

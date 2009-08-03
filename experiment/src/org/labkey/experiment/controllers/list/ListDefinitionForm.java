@@ -33,6 +33,7 @@ public class ListDefinitionForm extends ViewFormData
     private String[] _deletedAttachments;
     private boolean _showHistory = false;
 
+    @Override
     public void reset(ActionMapping actionMapping, HttpServletRequest request)
     {
         super.reset(actionMapping, request);

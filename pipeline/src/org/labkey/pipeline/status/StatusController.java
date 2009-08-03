@@ -699,7 +699,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static class EscalateMessageForm extends ViewFormData
+    public static class EscalateMessageForm
     {
         private String _escalateUser;
         private boolean _escalateAll;

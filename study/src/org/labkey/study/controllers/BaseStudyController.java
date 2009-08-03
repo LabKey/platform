@@ -21,23 +21,22 @@ import org.labkey.api.action.HasPageConfig;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Visit;
+import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.BaseStudyPage;
 import org.labkey.study.view.StudyNavigationView;
-import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.apache.beehive.netui.pageflow.FormData;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
@@ -342,7 +341,7 @@ public abstract class BaseStudyController extends SpringActionController
         }
     }
 
-    public static class BulkEditForm extends FormData
+    public static class BulkEditForm
     {
         private String _newLabel;
         private String _newId;

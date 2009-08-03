@@ -37,6 +37,7 @@ public class DomainForm extends ViewFormData
     private boolean _allowAttachmentProperties = false;
     private boolean _showDefaultValueSettings = false;
 
+    @Override
     public void reset(ActionMapping actionMapping, HttpServletRequest request)
     {
         super.reset(actionMapping, request);

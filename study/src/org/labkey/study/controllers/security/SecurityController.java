@@ -396,7 +396,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private static class StudySecurityForm extends ViewFormData
+    private static class StudySecurityForm
     {
         private SecurityType _securityType;
 
@@ -463,6 +463,7 @@ public class SecurityController extends SpringActionController
 
         /* use group (multi values) to set acl all at once */
 
+        @Override
         public void reset(ActionMapping actionMapping, HttpServletRequest httpServletRequest)
         {
             super.reset(actionMapping, httpServletRequest);

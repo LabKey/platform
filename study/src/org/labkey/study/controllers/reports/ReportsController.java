@@ -16,7 +16,6 @@
 
 package org.labkey.study.controllers.reports;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -1240,7 +1239,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class QueryReportForm extends FormData
+    public static class QueryReportForm
     {
         private String _queryName;
 
@@ -1254,6 +1253,7 @@ public class ReportsController extends BaseStudyController
             _queryName = queryName;
         }
     }
+
     public static class CreateCrosstabBean
     {
         private DataSetDefinition[] _datasets;
@@ -1337,7 +1337,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class UploadForm extends FormData
+    public static class UploadForm
     {
         private int reportId;
         private String label;
@@ -1407,7 +1407,7 @@ public class ReportsController extends BaseStudyController
         public BindException getErrors(){return _errors;}
     }
 
-    public static class ShowReportForm extends FormData
+    public static class ShowReportForm
     {
         private int reportId = -1;
         private String _reportView;
@@ -1445,7 +1445,7 @@ public class ReportsController extends BaseStudyController
     }
 
 
-    public static class ColumnPickerForm extends FormData
+    public static class ColumnPickerForm
     {
         private Integer datasetId = null;
         private double sequenceNum = -1;
@@ -2078,7 +2078,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class TimePlotForm extends FormData
+    public static class TimePlotForm
     {
         private ReportIdentifier reportId;
         private int datasetId;

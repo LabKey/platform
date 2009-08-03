@@ -31,6 +31,7 @@ public class InternalViewForm extends ViewFormData
     private int _customViewId;
     CstmView _view;
 
+    @Override
     public void reset(ActionMapping actionMapping, HttpServletRequest request)
     {
         super.reset(actionMapping, request);
@@ -57,7 +58,7 @@ public class InternalViewForm extends ViewFormData
         _customViewId = id;
     }
 
-    static public void checkEdit(ViewContext context, CstmView view) throws Exception
+    public static void checkEdit(ViewContext context, CstmView view) throws Exception
     {
         if (view == null)
         {
@@ -77,6 +78,5 @@ public class InternalViewForm extends ViewFormData
                 HttpView.throwUnauthorized();
             }
         }
-
     }
 }

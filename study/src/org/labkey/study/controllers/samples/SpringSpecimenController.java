@@ -16,7 +16,9 @@
 
 package org.labkey.study.controllers.samples;
 
-import org.apache.beehive.netui.pageflow.FormData;
+import jxl.Range;
+import jxl.Workbook;
+import jxl.WorkbookSettings;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -37,10 +39,10 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.designer.MapArrayExcelWriter;
-import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.designer.MapArrayExcelWriter;
+import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.query.SpecimenEventQueryView;
@@ -65,10 +67,10 @@ import org.labkey.study.samples.report.request.RequestSiteReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeCohortReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeParticipantReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeSummaryReportFactory;
+import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.labkey.study.samples.settings.StatusSettings;
-import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.security.permissions.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -82,10 +84,6 @@ import java.io.*;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
-
-import jxl.Workbook;
-import jxl.WorkbookSettings;
-import jxl.Range;
 
 /**
  * User: brittp
@@ -3434,7 +3432,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class ManageRepositorySettingsForm extends FormData
+    public static class ManageRepositorySettingsForm
     {
         private boolean _simple;
         private boolean _enableRequests;
@@ -3904,7 +3902,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static final class ManageRequestInputsForm extends FormData
+    public static final class ManageRequestInputsForm
     {
         private String[] _title;
         private String[] _helpText;
@@ -3990,15 +3988,10 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class PipelineForm extends FormData
+    public static class PipelineForm
     {
         private String _path;
         private boolean _deleteLogfile;
-
-        public PipelineForm()
-        {
-//            System.err.println("PipelineForm");
-        }
 
         public String getPath()
         {
@@ -4007,7 +4000,7 @@ public class SpringSpecimenController extends BaseStudyController
 
         public void setPath(String path)
         {
-            this._path = path;
+            _path = path;
         }
 
         public boolean isDeleteLogfile()

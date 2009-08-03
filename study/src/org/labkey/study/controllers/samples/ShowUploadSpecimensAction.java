@@ -15,9 +15,9 @@
  */
 package org.labkey.study.controllers.samples;
 
+import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -249,7 +249,6 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         {
             this.tsv = tsv;
         }
-
 
         @Override
         public ActionErrors validate(ActionMapping mapping, HttpServletRequest request)

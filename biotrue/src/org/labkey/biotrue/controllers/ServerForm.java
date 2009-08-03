@@ -16,10 +16,10 @@
 
 package org.labkey.biotrue.controllers;
 
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.view.ViewForm;
 import org.labkey.biotrue.objectmodel.BtServer;
 
-public class ServerForm extends ViewFormData
+public class ServerForm extends ViewForm
 {
     private int _serverId;
 

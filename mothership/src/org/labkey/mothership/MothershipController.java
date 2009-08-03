@@ -785,7 +785,7 @@ public class MothershipController extends SpringActionController
         return builder.toString();
     }
 
-    public static abstract class ServerInfoForm extends ViewFormData
+    public static abstract class ServerInfoForm
     {
         private String _svnRevision;
         private String _svnURL;
@@ -1483,7 +1483,7 @@ public class MothershipController extends SpringActionController
     }
 
 
-    public static class UpgradeMessageForm extends ViewFormData
+    public static class UpgradeMessageForm
     {
         private int _currentRevision;
         private String _message;
