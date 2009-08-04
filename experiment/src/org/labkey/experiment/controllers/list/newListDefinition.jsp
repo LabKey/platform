@@ -23,7 +23,8 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% NewListForm form = (NewListForm) __form;
+<%
+    NewListForm form = (NewListForm) __form;
     Map<String, String> keyTypes = new TreeMap<String, String>();
     for (ListDefinition.KeyType type : ListDefinition.KeyType.values())
     {

@@ -1799,8 +1799,8 @@ public class StudyController extends BaseStudyController
         {
             ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
-            if (StudyManager.getInstance().showQCStates(form.getContainer()))
-                url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(form.getContainer()).getFormValue());
+            if (StudyManager.getInstance().showQCStates(getContainer()))
+                url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(getContainer()).getFormValue());
             return url;
         }
 
@@ -2759,7 +2759,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ManageQCStatesForm extends ViewFormData
+    public static class ManageQCStatesForm
     {
         private int[] _ids;
         private String[] _labels;
@@ -5628,7 +5628,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ImportDataSetForm extends ViewFormData
+    public static class ImportDataSetForm
     {
         private int datasetId = 0;
         private String typeURI;

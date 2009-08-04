@@ -1442,7 +1442,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    public static class CreateIssueFinishedForm extends ViewFormData
+    public static class CreateIssueFinishedForm
     {
         private int _exceptionStackTraceId;
         private int _issueId;

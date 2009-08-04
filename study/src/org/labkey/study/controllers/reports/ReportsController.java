@@ -591,12 +591,12 @@ public class ReportsController extends BaseStudyController
                 return getDatasetForward(reportId, form.getRedirectToDataset());
             }
             else
-                return HttpView.redirect(new ActionURL("Study-Reports", "manageReports.view", getContainer()));
+                return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
     }
 

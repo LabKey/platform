@@ -16,20 +16,14 @@
  */
 %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<%@ page import="org.labkey.api.exp.OntologyManager"%>
-<%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<StudyController.ImportDataSetForm> me = (JspView<StudyController.ImportDataSetForm>) HttpView.currentView();
     StudyController.ImportDataSetForm form = me.getModelBean();
-    String typeURI = form.getTypeURI();
-    PropertyDescriptor[] pds = new PropertyDescriptor[0];
-    if (null != typeURI)
-        pds = OntologyManager.getPropertiesForType(typeURI, HttpView.currentContext().getContainer() );
 %>
 
 <labkey:errors/>

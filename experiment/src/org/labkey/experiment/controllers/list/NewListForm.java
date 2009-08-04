@@ -17,9 +17,9 @@
 package org.labkey.experiment.controllers.list;
 
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.view.ViewForm;
 
-public class NewListForm extends ViewFormData
+public class NewListForm extends ViewForm
 {
     public String ff_name;
     public String ff_keyType = ListDefinition.KeyType.AutoIncrementInteger.toString();

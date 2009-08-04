@@ -2946,7 +2946,8 @@ public class SpringSpecimenController extends BaseStudyController
         APPEND,
         REPLACE
     }
-    public static class UpdateSpecimenCommentsForm extends ViewFormData
+
+    public static class UpdateSpecimenCommentsForm
     {
         private String _comments;
         private int[] _rowId;
