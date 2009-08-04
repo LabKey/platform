@@ -16,18 +16,18 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.view.ViewFormData;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.view.ViewForm;
 
 /**
  * User: brittp
 * Date: Jul 26, 2007
 * Time: 7:02:45 PM
 */
-public class ProtocolIdForm extends ViewFormData
+public class ProtocolIdForm extends ViewForm
 {
     private ExpProtocol _protocol;
 

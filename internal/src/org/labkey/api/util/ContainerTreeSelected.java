@@ -28,8 +28,8 @@ public class ContainerTreeSelected extends ContainerTree
 {
     protected Container current;
 
-
-    public ContainerTreeSelected(String rootPath, User user, int perm, ActionURL url, String purpose) {
+    public ContainerTreeSelected(String rootPath, User user, int perm, ActionURL url, String purpose)
+    {
         super(rootPath, user, perm, url, purpose);
     }
     
