@@ -16,26 +16,17 @@
 
 package org.labkey.query.controllers;
 
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.security.ACL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.security.ACL;
-import org.apache.struts.action.ActionMapping;
+import org.labkey.api.view.ViewForm;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
 
-import javax.servlet.http.HttpServletRequest;
-
-public class InternalViewForm extends ViewFormData
+public class InternalViewForm extends ViewForm
 {
     private int _customViewId;
-    CstmView _view;
-
-    @Override
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
-    {
-        super.reset(actionMapping, request);
-    }
+    private CstmView _view;
 
     public CstmView getViewAndCheckPermission() throws Exception
     {
@@ -43,7 +34,7 @@ public class InternalViewForm extends ViewFormData
             return _view;
         QueryManager mgr = QueryManager.get();
         CstmView view = mgr.getCustomView(_customViewId);
-        checkEdit(getContext(), view);
+        checkEdit(getViewContext(), view);
         _view = view;
         return _view;
     }

@@ -16,7 +16,6 @@
 
 package org.labkey.core.analytics;
 
-import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -28,12 +27,10 @@ import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.view.ViewForm;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class AnalyticsController extends SpringActionController
 {
@@ -49,10 +46,10 @@ public class AnalyticsController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "analytics settings", new ActionURL(BeginAction.class, ContainerManager.getRoot()));
     }
 
-    static public class SettingsForm extends ViewFormData
+    static public class SettingsForm extends ViewForm
     {
-        public AnalyticsServiceImpl.TrackingStatus ff_trackingStatus;
-        public String ff_accountId;
+        public AnalyticsServiceImpl.TrackingStatus ff_trackingStatus = AnalyticsServiceImpl.get().getTrackingStatus();
+        public String ff_accountId = AnalyticsServiceImpl.get().getAccountId();
 
         public void setFf_accountId(String ff_accountId)
         {
@@ -62,14 +59,6 @@ public class AnalyticsController extends SpringActionController
         public void setFf_trackingStatus(String ff_trackingStatus)
         {
             this.ff_trackingStatus = AnalyticsServiceImpl.TrackingStatus.valueOf(ff_trackingStatus);
-        }
-
-        @Override
-        public void reset(ActionMapping actionMapping, HttpServletRequest request)
-        {
-            super.reset(actionMapping, request);
-            ff_trackingStatus = AnalyticsServiceImpl.get().getTrackingStatus();
-            ff_accountId = AnalyticsServiceImpl.get().getAccountId();
         }
     }
 
