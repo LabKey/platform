@@ -230,7 +230,7 @@ public class ReportDesignBean extends ReportForm
 
     public List<Pair<String, String>> getParameters()
     {
-        List<Pair<String, String>> list = new ArrayList();
+        List<Pair<String, String>> list = new ArrayList<Pair<String, String>>();
 
         if (!StringUtils.isEmpty(_queryName))
             list.add(new Pair<String, String>(QueryParam.queryName.toString(), _queryName));
