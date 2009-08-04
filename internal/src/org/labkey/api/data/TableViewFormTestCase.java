@@ -20,14 +20,13 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.struts.action.ActionErrors;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
