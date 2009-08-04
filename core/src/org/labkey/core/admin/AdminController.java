@@ -28,10 +28,10 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
+import org.labkey.api.collections.CacheMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
@@ -48,8 +48,6 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.collections.CacheMap;
-import org.labkey.api.util.Pair;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -3366,7 +3364,7 @@ public class AdminController extends SpringActionController
             if (getContainer().isRoot())
                 HttpView.throwNotFound();
 
-            return FormPage.getView(AdminController.class, form, "manageFolders.jsp");
+            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/manageFolders.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3377,7 +3375,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class ManageFoldersForm extends ViewFormData
+    public static class ManageFoldersForm
     {
         private String name;
         private String folder;
@@ -3417,18 +3415,6 @@ public class AdminController extends SpringActionController
         public void setName(String name)
         {
             this.name = name;
-        }
-
-        public String getProjectName()
-        {
-            String extraPath = getContainer().getPath();
-
-            int i = extraPath.indexOf("/", 1);
-
-            if (-1 == i)
-                return extraPath;
-            else
-                return extraPath.substring(0, i);
         }
 
         public boolean isConfirmed()

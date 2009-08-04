@@ -1504,7 +1504,7 @@ public class AnnouncementsController extends SpringActionController
             if (!c.getId().equals(update.getContainerId()))
                 HttpView.throwUnauthorized();
 
-            AnnouncementManager.updateAnnouncement(form.getUser(), update);
+            AnnouncementManager.updateAnnouncement(getUser(), update);
 
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()

@@ -1958,12 +1958,11 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
-
             UpdateView view = new UpdateView(form, errors);
             ButtonBar bb = new ButtonBar();
             bb.add(new ActionButton("adminEditDbUserSchema.post", "Update"));
             bb.add(new ActionButton("Cancel", getSuccessURL(form)));
-            ActionURL urlDelete = new ActionURL(AdminDeleteDbUserSchemaAction.class, form.getContainer());
+            ActionURL urlDelete = new ActionURL(AdminDeleteDbUserSchemaAction.class, getContainer());
             urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
             bb.add(new ActionButton("Delete", urlDelete));
             view.getDataRegion().setButtonBar(bb);
@@ -2047,7 +2046,7 @@ public class QueryControllerSpring extends SpringActionController
         {
             form.refreshFromDb();
             DbUserSchemaDef def = form.getBean();
-            ActionURL fwd = new ActionURL(AdminAction.class, form.getContainer());
+            ActionURL fwd = new ActionURL(AdminAction.class, getContainer());
             fwd.addParameter("reloadedSchema", def.getUserSchemaName());
             QueryManager.get().reloadDbUserSchema(def);
             return HttpView.redirect(getSuccessURL(form));

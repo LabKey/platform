@@ -16,10 +16,7 @@
 
 package org.labkey.experiment.controllers.list;
 
-import org.apache.struts.action.ActionMapping;
 import org.labkey.api.exp.list.ListDefinition;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class EditListDefinitionForm extends ListDefinitionForm
 {
@@ -27,29 +24,19 @@ public class EditListDefinitionForm extends ListDefinitionForm
     public String ff_description;
     public String ff_titleColumn;
     public ListDefinition.DiscussionSetting ff_discussionSetting;
-    public boolean ff_allowDelete;
-    public boolean ff_allowUpload;
-    public boolean ff_allowExport;
+    public boolean ff_allowDelete = false;
+    public boolean ff_allowUpload = false;
+    public boolean ff_allowExport = false;
 
-    @Override
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
-    {
-        super.reset(actionMapping, request);
-        ff_keyName = getList().getKeyName();
-        ff_description = getList().getDescription();
-        ff_discussionSetting = getList().getDiscussionSetting();
-
-        // Because of funky checkbox behavior, always assume false in post case
-        ff_allowDelete = false;
-        ff_allowUpload = false;
-        ff_allowExport = false;
-    }
-
+    // Use all the stored properties when first displaying the form 
     public void setDefaults()
     {
         ff_allowDelete = getList().getAllowDelete();
         ff_allowUpload = getList().getAllowUpload();
         ff_allowExport = getList().getAllowExport();
+        ff_keyName = getList().getKeyName();
+        ff_description = getList().getDescription();
+        ff_discussionSetting = getList().getDiscussionSetting();
     }
 
     public void setFf_keyName(String name)

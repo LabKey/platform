@@ -188,6 +188,8 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
+            form.validate(errors);
+
             _list = form.getList();
             if (_list == null)
                 HttpView.throwNotFound();
@@ -262,6 +264,8 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
+            form.validate(errors);
+
             _list = form.getList();
             if (_list == null)
                 HttpView.throwNotFound();
@@ -290,6 +294,8 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(EditListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
+            form.validate(errors);
+
             if (!reshow)
                 form.setDefaults();
 
@@ -340,6 +346,8 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
+            form.validate(errors);
+
             _list = form.getList();
             if (_list == null)
                 HttpView.throwNotFound();
@@ -393,11 +401,11 @@ public class ListController extends SpringActionController
 
         public void validateCommand(ListDefinitionForm target, Errors errors)
         {
-            // TODO: Call validate, move validation out of reset()
         }
 
         public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
+            form.validate(errors);
             _list = form.getList();
             if (null == _list)
                 HttpView.throwNotFound();
@@ -675,6 +683,8 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
+            form.validate(errors);
+
             _list = form.getList();
             if (null == _list)
                 HttpView.throwNotFound();
@@ -819,6 +829,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(UploadListItemsForm form, boolean reshow, BindException errors) throws Exception
         {
+            form.validate(errors);
             _list = form.getList();
             if (_list == null)
                 HttpView.throwNotFound();

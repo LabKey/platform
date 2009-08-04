@@ -1596,7 +1596,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class SaveReportForm extends ViewFormData
+    public static class SaveReportForm extends ViewForm
     {
         protected String label;
         protected String params;

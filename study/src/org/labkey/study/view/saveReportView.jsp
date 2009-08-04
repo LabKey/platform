@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
@@ -36,23 +37,17 @@
 <script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
 
 <%
-    JspView<org.labkey.study.controllers.reports.ReportsController.SaveReportViewForm> me = (JspView<ReportsController.SaveReportViewForm>) HttpView.currentView();
+    JspView<ReportsController.SaveReportViewForm> me = (JspView<ReportsController.SaveReportViewForm>) HttpView.currentView();
     ReportsController.SaveReportViewForm bean = me.getModelBean();
+    ViewContext context = me.getViewContext();
 
     Report report = bean.getReport();
-    org.labkey.api.view.ViewContext context = bean.getContext();
     boolean confirm = bean.getConfirmed() != null ? Boolean.parseBoolean(bean.getConfirmed()) : false;
 
     Container c = context.getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
     DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
     int showWithDataset = NumberUtils.toInt(report.getDescriptor().getProperty("showWithDataset"));
-
-    String dsName = "parent";
-    DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
-    if (dsDef != null)
-        dsName = dsDef.getLabel();
-
 %>
 
 <style type="text/css">

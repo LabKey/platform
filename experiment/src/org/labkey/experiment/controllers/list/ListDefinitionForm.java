@@ -16,41 +16,29 @@
 
 package org.labkey.experiment.controllers.list;
 
-import org.apache.struts.action.ActionMapping;
+import org.labkey.api.action.HasValidator;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ActionURLException;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewForm;
+import org.springframework.validation.Errors;
 
-import javax.servlet.http.HttpServletRequest;
-
-public class ListDefinitionForm extends ViewFormData
+public class ListDefinitionForm extends ViewForm implements HasValidator
 {
     protected ListDefinition _listDef;
     private String _returnUrl;
     private String[] _deletedAttachments;
     private boolean _showHistory = false;
+    private Integer _listId = null;
 
-    @Override
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
+    public void validate(Errors errors)
     {
-        super.reset(actionMapping, request);
-
-        // TODO: Use proper validate.  Also, share with ListQueryForm validate
-        String listIdParam = request.getParameter("listId");
-        if (null == listIdParam)
+        if (null == getListId())
             throw new NotFoundException("Missing listId parameter");
 
-        try
-        {
-            _listDef = ListService.get().getList(getContainer(), Integer.parseInt(listIdParam));
-        }
-        catch (NumberFormatException e)
-        {
-            throw new NotFoundException("Couldn't convert listId '" + listIdParam + "' to an integer");
-        }
+        _listDef = ListService.get().getList(getContainer(), getListId().intValue());
 
         if (null == _listDef)
             throw new NotFoundException("List does not exist in this container");
@@ -105,5 +93,15 @@ public class ListDefinitionForm extends ViewFormData
     public void setDeletedAttachments(String[] deletedAttachments)
     {
         _deletedAttachments = deletedAttachments;
+    }
+
+    public Integer getListId()
+    {
+        return _listId;
+    }
+
+    public void setListId(Integer listId)
+    {
+        _listId = listId;
     }
 }

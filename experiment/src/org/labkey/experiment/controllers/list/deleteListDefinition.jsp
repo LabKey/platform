@@ -20,7 +20,8 @@
 <%@ page import="org.labkey.experiment.controllers.list.ListDefinitionForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
-<% ListDefinitionForm form = (ListDefinitionForm) __form;
+<%
+    ListDefinitionForm form = (ListDefinitionForm) __form;
     ListDefinition list = form.getList();
 %>
 <form action="<%=list.urlFor(ListController.Action.deleteListDefinition)%>" method="POST">

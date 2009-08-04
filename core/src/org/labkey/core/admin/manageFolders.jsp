@@ -24,15 +24,14 @@
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.core.admin.AdminController.*"%>
 <%@ page import="java.util.List"%>
-<%@ page extends="org.labkey.api.jsp.FormPage" %>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
-    final ManageFoldersForm form = (ManageFoldersForm) __form;
-    final Container c = getContainer();
-    final ViewContext context = HttpView.currentContext();
-    final ActionURL currentUrl = context.cloneActionURL();
-    final ContainerTreeSelected ct = new ContainerTreeSelected(form.getProjectName(), getUser(), ACL.PERM_ADMIN, currentUrl, "managefolders");
+    HttpView<ManageFoldersForm> me = (HttpView<ManageFoldersForm>) HttpView.currentView();
+    final ViewContext ctx = me.getViewContext();
+    final Container c = ctx.getContainer();
+    final ActionURL currentUrl = ctx.cloneActionURL();
+    final ContainerTreeSelected ct = new ContainerTreeSelected(c.getProject().getName(), ctx.getUser(), ACL.PERM_ADMIN, currentUrl, "managefolders");
     Container parent = c.getParent();
     List<Container> siblings = parent == null ? null : parent.getChildren();
     boolean hasSiblings = siblings != null && siblings.size() > 1;
@@ -64,7 +63,7 @@
         <td><%= generateButton("Create Subfolder", create)%></td>
         <td><%= generateButton("Delete", delete)%></td><%
 
-        if (hasSiblings && !context.getContainer().isRoot() && !context.getContainer().getParent().isRoot())
+        if (hasSiblings && !c.isRoot() && !parent.isRoot())
         {
             %><td><%= generateButton("Change Display Order", reorder)%></td><%
         }

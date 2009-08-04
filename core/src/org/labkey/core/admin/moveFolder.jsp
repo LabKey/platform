@@ -22,11 +22,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.*" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     MoveFolderTreeView me = (MoveFolderTreeView) HttpView.currentView();
     ManageFoldersForm form = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
+    ViewContext ctx = me.getViewContext();
+    Container c = ctx.getContainer();
 
     String name = form.getName();
     if (null == name)
@@ -48,7 +50,7 @@
     <%
         boolean showAll = form.isShowAll() || c.isProject();
         ActionURL moveURL = AdminController.getMoveFolderURL(c, form.isAddAlias());    // Root is placeholder -- will get replaced by container tree
-        AdminController.MoveContainerTree ct = new AdminController.MoveContainerTree(showAll ? "/" : form.getProjectName(), HttpView.currentContext().getUser(), ACL.PERM_ADMIN, moveURL);
+        AdminController.MoveContainerTree ct = new AdminController.MoveContainerTree(showAll ? "/" : c.getProject().getName(), ctx.getUser(), ACL.PERM_ADMIN, moveURL);
         ct.setIgnore(c);        // Can't set a folder's parent to itself or its children
         ct.setInitialLevel(1);  // Use as left margin
     %>

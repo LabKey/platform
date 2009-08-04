@@ -1316,7 +1316,7 @@ public class MothershipController extends SpringActionController
 
                     ColumnInfo displayColumn = defaultServerInstallationColumn.getColumnInfo().getDisplayField();
 
-                    ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer)row.get("ServerInstallationId")).intValue(), form.getContainer().getId());
+                    ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer)row.get("ServerInstallationId")).intValue(), ctx.getContainer().getId());
                     if (si != null && si.getNote() != null && si.getNote().trim().length() > 0)
                     {
                         row.put(displayColumn.getAlias(), si.getNote());

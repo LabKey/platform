@@ -258,6 +258,7 @@ public class SecurityController extends SpringActionController
     private static class ReportPermissionsTabStrip extends TabStripView
     {
         private PermissionsForm _bean;
+
         public ReportPermissionsTabStrip(PermissionsForm bean)
         {
             _bean = bean;

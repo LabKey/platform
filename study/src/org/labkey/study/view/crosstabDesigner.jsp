@@ -34,7 +34,6 @@
     ReportsController.CrosstabDesignBean bean = me.getModelBean();
 
     List stats = Arrays.asList(bean.getStats());
-
 %>
 
 <form action="" method="post">
