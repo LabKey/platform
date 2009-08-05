@@ -76,11 +76,9 @@ public class ListController extends SpringActionController
             SetDefaultValuesListAction.class,
             ClearDefaultValuesAction.class
             );
-    //private static final Object ERROR_VALUE = new Object();
 
     public ListController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -111,11 +109,11 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_READ)
-    public class BeginAction extends SimpleViewAction<ViewFormData>
+    public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(ViewFormData form, BindException errors) throws Exception
+        public ModelAndView getView(Object form, BindException errors) throws Exception
         {
-            return FormPage.getView(ListController.class, form, "begin.jsp");
+            return new JspView("/org/labkey/experiment/controllers/list/begin.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)

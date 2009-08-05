@@ -15,8 +15,6 @@
  */
 package org.labkey.study.controllers.security;
 
-import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -27,11 +25,11 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.SecurityType;
@@ -46,14 +44,13 @@ import java.io.PrintWriter;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Apr 24, 2006
  * Time: 5:31:02 PM
  */
 public class SecurityController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(SecurityController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SecurityController.class);
 
     public SecurityController() throws Exception
     {
@@ -453,7 +450,7 @@ public class SecurityController extends SpringActionController
     public static final String TAB_REPORT = "tabReport";
     public static final String TAB_STUDY = "tabStudy";
 
-    public static class PermissionsForm extends FormData
+    public static class PermissionsForm
     {
         private ReportIdentifier reportId;
         private Integer remove = 0;
@@ -462,29 +459,19 @@ public class SecurityController extends SpringActionController
         private String _permissionType;
         private String _tabId;
 
-        /* use group (multi values) to set acl all at once */
-
-        @Override
-        public void reset(ActionMapping actionMapping, HttpServletRequest httpServletRequest)
+        // Not used, but needed for spring binding
+        public int[] getGroup()
         {
-            super.reset(actionMapping, httpServletRequest);
+            return null;
+        }
 
-            String[] groupParams = httpServletRequest.getParameterValues("group");
-            if (null == groupParams || groupParams.length == 0)
-                return;
-
+        // use group (multi values) to set acl all at once
+        public void setGroup(int[] groupArray)
+        {
             groups = new TreeSet<Integer>();
-            for (String groupParam : groupParams)
-            {
-                //noinspection EmptyCatchBlock
-                try
-                {
-                    groups.add(Integer.parseInt(groupParam));
-                }
-                catch (NumberFormatException x)
-                {
-                }
-            }
+
+            for (int group : groupArray)
+                groups.add(group);
         }
 
         public Set<Integer> getGroups()

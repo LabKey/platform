@@ -20,7 +20,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% InternalNewViewForm form = (InternalNewViewForm) HttpView.currentModel();
+<%
+    InternalNewViewForm form = (InternalNewViewForm) HttpView.currentModel();
     ActionURL urlPost = new ActionURL("query", "internalNewView", getViewContext().getContainer());
     ActionURL urlCancel = new ActionURL("query", "manageViews", getViewContext().getContainer());
 %>

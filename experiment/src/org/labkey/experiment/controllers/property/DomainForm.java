@@ -49,7 +49,7 @@ public class DomainForm extends ViewFormData
     }
 
     public void requiresPermission(int perm) throws ServletException
-        {
+    {
         if (!getContainer().hasPermission(getUser(), perm))
             HttpView.throwUnauthorized();
         if (_domain != null)
