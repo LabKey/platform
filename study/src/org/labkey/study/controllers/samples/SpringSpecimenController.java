@@ -1568,7 +1568,7 @@ public class SpringSpecimenController extends BaseStudyController
             // receives a post; therefore, it's safe to say that the selectSpecimenProvider.jsp form should always post to
             // HandleCreateSampleRequestAction.
             return new JspView<SelectSpecimenProviderBean>("/org/labkey/study/view/samples/selectSpecimenProvider.jsp",
-                    new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowCreateSampleRequestAction.class, getContainer())));
+                    new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowCreateSampleRequestAction.class, getContainer())), errors);
         }
 
         return new JspView<NewRequestBean>("/org/labkey/study/view/samples/requestSamples.jsp",
@@ -2257,25 +2257,6 @@ public class SpringSpecimenController extends BaseStudyController
         public void setListType(String listType)
         {
             _listType = listType;
-        }
-    }
-
-    public static class SubmissionForm extends ViewFormData
-    {
-        private int _id;
-
-        public SubmissionForm()
-        {
-        }
-
-        public int getId()
-        {
-            return _id;
-        }
-
-        public void setId(int id)
-        {
-            _id = id;
         }
     }
 
@@ -4030,25 +4011,65 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ManageNotificationsPermission.class)
-    public class ManageNotificationsAction extends FormViewAction<ManageNotificationsForm>
+    public class ManageNotificationsAction extends FormViewAction<RequestNotificationSettings>
     {
-        public void validateCommand(ManageNotificationsForm target, Errors errors)
+        public void validateCommand(RequestNotificationSettings form, Errors errors)
         {
+            String replyTo = form.getReplyTo();
+            if (replyTo == null || replyTo.length() == 0)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Reply-to cannot be empty.");
+            }
+            else if (!RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(replyTo))
+            {
+                try
+                {
+                    new ValidEmail(replyTo);
+                }
+                catch(ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, replyTo + " is not a valid email address.");
+                }
+            }
+
+            String subjectSuffix = form.getSubjectSuffix();
+            if (subjectSuffix == null || subjectSuffix.length() == 0)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Subject suffix cannot be empty.");
+            }
+
+            try
+            {
+                form.getNewRequestNotifyAddresses();
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getBadEmail() + " is not a valid email address.");
+            }
+
+            try
+            {
+                form.getCCAddresses();
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getBadEmail() + " is not a valid email address.");
+            }
         }
 
-        public ModelAndView getView(ManageNotificationsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors) throws Exception
         {
             // try to get the settings from the form, just in case this is a reshow:
-            RequestNotificationSettings settings = form.getBean();
+            RequestNotificationSettings settings = form;
             if (settings == null || settings.getReplyTo() == null)
                 settings = SampleManager.getInstance().getRequestNotificationSettings(getContainer());
 
-            return new JspView<RequestNotificationSettings>("/org/labkey/study/view/samples/manageNotifications.jsp", settings);
+            return new JspView<RequestNotificationSettings>("/org/labkey/study/view/samples/manageNotifications.jsp", settings, errors);
         }
 
-        public boolean handlePost(ManageNotificationsForm form, BindException errors) throws Exception
+        public boolean handlePost(RequestNotificationSettings form, BindException errors) throws Exception
         {
-            RequestNotificationSettings settings = form.getBean();
+            RequestNotificationSettings settings = form;
             if (!settings.isNewRequestNotifyCheckbox())
                 settings.setNewRequestNotify(null);
             else
@@ -4070,7 +4091,7 @@ public class SpringSpecimenController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(ManageNotificationsForm form)
+        public ActionURL getSuccessURL(RequestNotificationSettings form)
         {
             return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
         }
@@ -4096,67 +4117,6 @@ public class SpringSpecimenController extends BaseStudyController
     private boolean isNullOrBlank(String toCheck)
     {
         return ((toCheck == null) || toCheck.equals(""));
-    }
-
-    public static class ManageNotificationsForm extends BeanViewForm<RequestNotificationSettings>
-    {
-        public ManageNotificationsForm()
-        {
-            super(RequestNotificationSettings.class);
-        }
-
-        @Override
-        public ActionErrors validate(ActionMapping actionMapping, HttpServletRequest servletRequest)
-        {
-            ActionErrors errors = null;
-            String replyTo = getBean().getReplyTo();
-            if (replyTo == null || replyTo.length() == 0)
-            {
-                errors = new ActionErrors();
-                errors.add("main", new ActionMessage("Error", "Reply-to cannot be empty."));
-            }
-            else if (!RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(replyTo))
-            {
-                try
-                {
-                    new ValidEmail(replyTo);
-                }
-                catch(ValidEmail.InvalidEmailException e)
-                {
-                    errors = new ActionErrors();
-                    errors.add("main", new ActionMessage("Error", replyTo + " is not a valid email address."));
-                }
-            }
-
-            String subjectSuffix = getBean().getSubjectSuffix();
-            if (subjectSuffix == null || subjectSuffix.length() == 0)
-            {
-                errors = new ActionErrors();
-                errors.add("main", new ActionMessage("Error", "Subject suffix cannot be empty."));
-            }
-
-            try
-            {
-                getBean().getNewRequestNotifyAddresses();
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                errors = new ActionErrors();
-                errors.add("main", new ActionMessage("Error", e.getBadEmail() + " is not a valid email address."));
-            }
-
-            try
-            {
-                getBean().getCCAddresses();
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                errors = new ActionErrors();
-                errors.add("main", new ActionMessage("Error", e.getBadEmail() + " is not a valid email address."));
-            }
-
-            return errors;
-        }
     }
 
     @RequiresPermissionClass(ManageDisplaySettingsPermission.class)

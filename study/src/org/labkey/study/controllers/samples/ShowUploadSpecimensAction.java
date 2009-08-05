@@ -50,8 +50,10 @@ import java.util.*;
 @RequiresPermissionClass(AdminPermission.class)
 public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimensAction.UploadSpecimensForm> 
 {
-    public void validateCommand(UploadSpecimensForm target, Errors errors)
+    public void validateCommand(UploadSpecimensForm form, Errors errors)
     {
+        if (StringUtils.trimToNull(form.getTsv()) == null)
+            errors.reject(SpringActionController.ERROR_MSG, "Please supply data to upload");
     }
 
     public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors) throws Exception
@@ -60,7 +62,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         if (!settings.isSimple())
             return HttpView.redirect(new ActionURL("Pipeline", "browse", getViewContext().getContainer()));
 
-        return new JspView<UploadSpecimensForm>("/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp", form);
+        return new JspView<UploadSpecimensForm>("/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp", form, errors);
      }
 
     public boolean handlePost(UploadSpecimensForm form, BindException errors) throws Exception
@@ -235,7 +237,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         }
     }
 
-    public static class UploadSpecimensForm extends FormData
+    public static class UploadSpecimensForm
     {
         private String tsv;
         private String redir;
@@ -248,16 +250,6 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         public void setTsv(String tsv)
         {
             this.tsv = tsv;
-        }
-
-        @Override
-        public ActionErrors validate(ActionMapping mapping, HttpServletRequest request)
-        {
-            ActionErrors errors = PageFlowUtil.getActionErrors(request, true);
-            if (null == StringUtils.trimToNull(tsv))
-                errors.add("main", new ActionMessage("Error", "Please supply data to upload"));
-
-            return errors;
         }
 
         public String getRedir()

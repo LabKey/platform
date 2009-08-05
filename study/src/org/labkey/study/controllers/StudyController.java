@@ -1629,8 +1629,12 @@ public class StudyController extends BaseStudyController
     {
         DataSetDefinition _def;
 
-        public void validateCommand(DataSetForm target, Errors errors)
+        public void validateCommand(DataSetForm form, Errors errors)
         {
+            if (form.getDatasetId() < 1)
+                errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be greater than zero.");
+            if (null == StringUtils.trimToNull(form.getLabel()))
+                errors.reject(SpringActionController.ERROR_MSG, "Label is required.");
         }
 
         public ModelAndView getView(DataSetForm form, boolean reshow, BindException errors) throws Exception
@@ -5660,7 +5664,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DataSetForm extends ViewFormData
+    public static class DataSetForm
     {
         private String _name;
         private String _label;
@@ -5674,17 +5678,6 @@ public class StudyController extends BaseStudyController
         private Integer _cohortId;
         private boolean _demographicData;
         private boolean _create;
-
-        @Override
-        public ActionErrors validate(ActionMapping actionMapping, HttpServletRequest httpServletRequest)
-        {
-            if (_datasetId < 1)
-                addActionError("DatasetId must be greater than zero.");
-            if (null == StringUtils.trimToNull(_label))
-                addActionError("Label is required.");
-            return getActionErrors();
-        }
-
 
         public boolean isShowByDefault()
         {

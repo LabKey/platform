@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
 function setElementDisplayByCheckbox(checkbox, element)
@@ -55,7 +57,8 @@ function setElementDisplayByCheckbox(checkbox, element)
             bean.isCcCheckbox() : (h(bean.getCc()) != null && h(bean.getCc()).compareTo("") != 0));
 %>
 
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
+
 <form action="manageNotifications.view" method="POST">
     <table class="labkey-manage-display" width="500">
         <tr>
