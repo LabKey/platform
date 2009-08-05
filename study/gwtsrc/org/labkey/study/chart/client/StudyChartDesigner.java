@@ -196,31 +196,9 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         {
             if (validate())
             {
-                if (_isParticipantChart)
-                {
-                    // for participant view, name is implied, no need to prompt
-                    getService().saveChart(_chart, new AsyncCallback()
-                    {
-                        public void onFailure(Throwable caught)
-                        {
-                            Window.alert(caught.getMessage());
-                        }
-
-                        public void onSuccess(Object result)
-                        {
-                            if (_redirectUrl == null && result instanceof String)
-                                _redirectUrl = (String)result;
-
-                            cancelForm();
-                        }
-                    });
-                }
-                else
-                {
-                    SaveDialog dlg = new SaveDialog();
-                    dlg.setPopupPosition(sender.getAbsoluteLeft() + 25, sender.getAbsoluteTop() + 25);
-                    dlg.show();
-                }
+                SaveDialog dlg = new SaveDialog(_isParticipantChart);
+                dlg.setPopupPosition(sender.getAbsoluteLeft() + 25, sender.getAbsoluteTop() + 25);
+                dlg.show();
             }
         }
     }
@@ -259,12 +237,18 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
     {
         List _datasets;
         String _showWithDataset;
+        boolean _isParticipantChart;
 
-        public SaveDialog()
+        public SaveDialog(boolean isParticipantChart)
         {
             super(false, true);
 
-            asyncGetDatasets();
+            _isParticipantChart = isParticipantChart;
+            if (!_isParticipantChart)
+                asyncGetDatasets();
+            else
+                showUI();
+                
         }
 
         private void asyncGetDatasets()
@@ -295,65 +279,69 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
                     _chart.setReportName(((TextBox)widget).getText());
                 }
             });
+            name.setWidth("200px");
             panel.setWidget(row, 0, new HTML("Name"));
             panel.setWidget(row++, 1, name);
 
-            BoundListBox view = new BoundListBox(false, new WidgetUpdatable()
+            if (!_isParticipantChart)
             {
-                public void update(Widget widget)
-                {
-                    ListBox lb = (ListBox)widget;
-                    String selected = null;
-                    if (lb.getSelectedIndex() != -1)
-                        selected = lb.getValue(lb.getSelectedIndex());
-                    _chart.setProperty("showWithDataset", selected);
-                }
-            });
-            String selected = null;
-            for (Iterator it = _datasets.iterator(); it.hasNext();)
-            {
-                GWTPair pair = (GWTPair)it.next();
-                view.addItem(pair.getKey(), pair.getValue());
-                if (pair.getValue().equals(_datasetId))
-                    selected = pair.getKey();
-            }
-            view.setVisibleItemCount(1);
-            if (selected != null)
-                view.setSelected(new String[]{selected});
-            else
-                view.setItemSelected(0, true);
-            if (view.getSelectedIndex() != -1)
-            {
-                String showWithDataset = view.getValue(view.getSelectedIndex());
-                _chart.setProperty("showWithDataset", showWithDataset);
-            }
-            panel.setWidget(row, 0, new HTML("Add as Custom View for:"));
-            panel.setWidget(row++, 1, view);
-
-            BoundTextArea description = new BoundTextArea("description", "", new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _chart.setReportDescription(((TextArea)widget).getText());
-                }
-            });
-            description.setCharacterWidth(60);
-            description.setHeight("40px");
-
-            panel.setWidget(row, 0, new HTML("Description"));
-            panel.setWidget(row++, 1, description);
-
-            if (_isAdmin)
-            {
-                BoundCheckBox share = new BoundCheckBox("Make this view available to all users.", false, new WidgetUpdatable()
+                BoundListBox view = new BoundListBox(false, new WidgetUpdatable()
                 {
                     public void update(Widget widget)
                     {
-                        _chart.setShared(((CheckBox)widget).isChecked());
+                        ListBox lb = (ListBox)widget;
+                        String selected = null;
+                        if (lb.getSelectedIndex() != -1)
+                            selected = lb.getValue(lb.getSelectedIndex());
+                        _chart.setProperty("showWithDataset", selected);
                     }
                 });
-                share.setName("shareReport");
-                panel.setWidget(row++, 1, share);
+                String selected = null;
+                for (Iterator it = _datasets.iterator(); it.hasNext();)
+                {
+                    GWTPair pair = (GWTPair)it.next();
+                    view.addItem(pair.getKey(), pair.getValue());
+                    if (pair.getValue().equals(_datasetId))
+                        selected = pair.getKey();
+                }
+                view.setVisibleItemCount(1);
+                if (selected != null)
+                    view.setSelected(new String[]{selected});
+                else
+                    view.setItemSelected(0, true);
+                if (view.getSelectedIndex() != -1)
+                {
+                    String showWithDataset = view.getValue(view.getSelectedIndex());
+                    _chart.setProperty("showWithDataset", showWithDataset);
+                }
+                panel.setWidget(row, 0, new HTML("Add as Custom View for:"));
+                panel.setWidget(row++, 1, view);
+
+                BoundTextArea description = new BoundTextArea("description", "", new WidgetUpdatable()
+                {
+                    public void update(Widget widget)
+                    {
+                        _chart.setReportDescription(((TextArea)widget).getText());
+                    }
+                });
+                description.setCharacterWidth(60);
+                description.setHeight("40px");
+
+                panel.setWidget(row, 0, new HTML("Description"));
+                panel.setWidget(row++, 1, description);
+
+                if (_isAdmin)
+                {
+                    BoundCheckBox share = new BoundCheckBox("Make this view available to all users.", false, new WidgetUpdatable()
+                    {
+                        public void update(Widget widget)
+                        {
+                            _chart.setShared(((CheckBox)widget).isChecked());
+                        }
+                    });
+                    share.setName("shareReport");
+                    panel.setWidget(row++, 1, share);
+                }
             }
             ImageButton save = new ImageButton("OK");
             save.addClickListener(new ClickListener()

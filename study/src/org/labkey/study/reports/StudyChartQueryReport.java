@@ -74,18 +74,4 @@ public class StudyChartQueryReport extends ChartQueryReport
     {
         return new StudyRunChartReportView(this);
     }
-
-    @Override
-    public void serialize(Writer writer) throws IOException
-    {
-        // export of study participant charts not supported for 9.2
-        // todo: enable export/import for 9.3
-    }
-
-    @Override
-    public void serializeToFolder(VirtualFile fs) throws IOException
-    {
-        // export of study participant charts not supported for 9.2
-        // todo: enable export/import for 9.3
-    }
 }

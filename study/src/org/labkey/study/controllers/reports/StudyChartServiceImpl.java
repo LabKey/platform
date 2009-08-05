@@ -174,13 +174,19 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         }
         report.getDescriptor().setProperty("filterParam", "participantId");
         String key = report.getDescriptor().getProperty("datasetId");
-        ReportService.get().saveReport(_context, key, report);
+        if (!reportNameExists(_context, chart.getReportName(), key))
+        {
+            ReportService.get().saveReport(_context, key, report);
 
-        ActionURL url = new ActionURL("Study", "participant", _context.getContainer());
-        url.addParameter("datasetId", key);
-        url.addParameter("participantId", report.getDescriptor().getProperty("participantId"));
+            ActionURL url = new ActionURL("Study", "participant", _context.getContainer());
+            url.addParameter("datasetId", key);
+            url.addParameter("participantId", report.getDescriptor().getProperty("participantId"));
 
-        return url.getLocalURIString();
+            return url.getLocalURIString();
+        }
+        else
+            throw new SerializableException("There is already a report with the name of: '" + report.getDescriptor().getReportName() +
+                    "'. Please specify a different name.");
     }
 
     private String getReportKey(ReportDescriptor descriptor) throws ServletException
