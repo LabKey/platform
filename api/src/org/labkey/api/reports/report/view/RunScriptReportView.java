@@ -191,7 +191,7 @@ public class RunScriptReportView extends RunReportView
     {
         ScriptReportBean form = new ScriptReportBean();
         form.setReportId(_reportId);
-        form.reset(null, getViewContext().getRequest());
+        form.setViewContext(getViewContext());
 
         if (getErrors() != null)
             form.setErrors(getErrors());
