@@ -1403,9 +1403,9 @@ public class StudyController extends BaseStudyController
                 //check for overlapping visits
 
                 VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
-                if(null != visitMgr)
+                if (null != visitMgr)
                 {
-                    if(visitMgr.isVisitOverlapping(target.getBean()))
+                    if (visitMgr.isVisitOverlapping(target.getBean()))
                         errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
                 }
             }
@@ -1579,9 +1579,9 @@ public class StudyController extends BaseStudyController
 
                 //check for overlapping visits
                 VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
-                if(null != visitMgr)
+                if (null != visitMgr)
                 {
-                    if(visitMgr.isVisitOverlapping(target.getBean()))
+                    if (visitMgr.isVisitOverlapping(target.getBean()))
                         errors.reject(null, "Visit range overlaps an existing visit in this study. Please enter a different range.");
                 }
             }
@@ -2403,9 +2403,8 @@ public class StudyController extends BaseStudyController
         return key;
     }
 
-     public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, CohortImpl cohort, String encodedQCState)
+    public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, CohortImpl cohort, String encodedQCState)
     {
-
         Map<String, List<String>> map = getParticipantMapFromCache(context);
         map.put(getParticipantListCacheKey(dataset, viewName, cohort, encodedQCState), participants);
     }
@@ -2529,7 +2528,7 @@ public class StudyController extends BaseStudyController
         return Collections.emptyList();
     }
 
-    public static class VisitForm extends ViewFormData
+    public static class VisitForm extends ViewForm
     {
         private int[] _dataSetIds;
         private String[] _dataSetStatus;
@@ -2546,13 +2545,12 @@ public class StudyController extends BaseStudyController
         {
         }
 
-        /** NOTE: BeanViewForm doesn't handle int[], String[] */
-        @Override
-        public void reset(ActionMapping arg0, HttpServletRequest request)
+        public void validate(Errors errors, Study study)
         {
-            super.reset(arg0, request);
+            HttpServletRequest request = getRequest();
 
             if (null != StringUtils.trimToNull(request.getParameter(".oldValues")))
+            {
                 try
                 {
                     _visit = (VisitImpl) PageFlowUtil.decodeObject(request.getParameter(".oldValues"));
@@ -2561,18 +2559,8 @@ public class StudyController extends BaseStudyController
                 {
                     throw new RuntimeException(x);
                 }
+            }
 
-            _dataSetIds = new int[getParameterCount(request, "dataSetIds")];
-            String[] values = request.getParameterValues("dataSetIds");
-
-            for (int i=0 ; i<_dataSetIds.length ; i++)
-                _dataSetIds[i] = Integer.parseInt(values[i]);
-
-            _dataSetStatus = request.getParameterValues("dataSetStatus");
-        }
-
-        public void validate(Errors errors, Study study)
-        {
             //check for null min/max sequence numbers
             if (null == getSequenceNumMax() && null == getSequenceNumMin())
                 errors.reject(null, "You must specify at least a minimum or a maximum value for the visit range.");
@@ -2602,21 +2590,19 @@ public class StudyController extends BaseStudyController
         {
             if (null == _visit)
                 _visit = new VisitImpl();
+
             _visit.setContainer(getContainer());
+
             if (getTypeCode() != null)
                 _visit.setTypeCode(getTypeCode());
+
             _visit.setLabel(getLabel());
-            try
-            {
-                if (null != getSequenceNumMax())
-                    _visit.setSequenceNumMax(getSequenceNumMax().doubleValue());
-                if (null != getSequenceNumMin())
-                    _visit.setSequenceNumMin(getSequenceNumMin().doubleValue());
-            }
-            catch (NumberFormatException x)
-            {
-                addActionError("Sequence numbers must be numeric");
-            }
+
+            if (null != getSequenceNumMax())
+                _visit.setSequenceNumMax(getSequenceNumMax().doubleValue());
+            if (null != getSequenceNumMin())
+                _visit.setSequenceNumMin(getSequenceNumMin().doubleValue());
+
             _visit.setCohortId(getCohortId());
             _visit.setVisitDateDatasetId(getVisitDateDatasetId());
 
@@ -2726,12 +2712,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static int getParameterCount(HttpServletRequest r, String s)
-    {
-        String[] values = r.getParameterValues(s);
-        return values == null ? 0 : values.length;
-    }
-    
     public static class ManageQCStatesBean
     {
         private StudyImpl _study;

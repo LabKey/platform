@@ -22,7 +22,7 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    HttpView me = (HttpView) HttpView.currentView();
+    HttpView me = HttpView.currentView();
     StudyController.VisitForm form = (StudyController.VisitForm) me.getViewContext().get("form");
     VisitImpl v = form.getBean();
 %>
