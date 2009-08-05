@@ -1778,7 +1778,7 @@ public class ReportsController extends BaseStudyController
         public String getDataRegionName(){return _dataRegionName;}
     }
 
-    public static class PlotForm extends ViewFormData
+    public static class PlotForm
     {
         private ReportIdentifier reportId;
         private int datasetId = 0;

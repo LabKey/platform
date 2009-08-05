@@ -90,7 +90,6 @@ public class DemoController extends SpringActionController
 
     /**
      * Here is another Spring controller using a Spring base class
-     * It implements ViewAction in order to have its ViewContext handed in.
      */
 
     @RequiresPermission(ACL.PERM_INSERT)

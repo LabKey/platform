@@ -267,8 +267,6 @@ public class ChartReportView extends AbstractReportView
             {
                 final ReportsController.PlotForm form = new ReportsController.PlotForm();
                 form.setDatasetId(Integer.parseInt(dataset));
-                form.setContext(context);
-                form.setContainer(context.getContainer());
                 form.setReports(reports);
                 form.setAction("datasetView.plot");
                 if (participantId != null)

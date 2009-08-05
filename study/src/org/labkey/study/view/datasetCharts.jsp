@@ -23,15 +23,20 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     String contextPath = request.getContextPath();
     JspView<ReportsController.PlotForm> me = (JspView<ReportsController.PlotForm>) HttpView.currentView();
     ReportsController.PlotForm bean = me.getModelBean();
+    ViewContext ctx = me.getViewContext();
+    User user = ctx.getUser();
+    Container c = ctx.getContainer();
 
-    User user = (User) request.getUserPrincipal();
-    boolean updateAccess = bean.getContainer().hasPermission(user, org.labkey.api.security.ACL.PERM_READ);
+    boolean updateAccess = c.hasPermission(user, ACL.PERM_READ);
     int columns = bean.getChartsPerRow();
     int columnCount = 0;
     String plotAction = bean.getAction() == null ? "plot" : bean.getAction();
@@ -52,12 +57,12 @@
         if (updateAccess)
         {
 %>
-            <td><a href="<%=getReportURL(report, bean).addParameter("action", "delete")%>">
+            <td><a href="<%=getReportURL(ctx, report, bean).addParameter("action", "delete")%>">
             <img valign="top" src="<%=contextPath%>/_images/delete.gif" alt="Remove"></a></td>
 <%
         }
 %>
-        <td><img src="<%=getReportURL(report, bean).addParameter("action", plotAction)%>"></td>
+        <td><img src="<%=getReportURL(ctx, report, bean).addParameter("action", plotAction)%>"></td>
 <%
         columnCount++;
         if ((columnCount % columns) == 0)
@@ -71,16 +76,16 @@
 </table>
 
 <%!
-    ActionURL getReportURL(Report report, ReportsController.PlotForm bean)
+    ActionURL getReportURL(ViewContext ctx, Report report, ReportsController.PlotForm bean)
     {
-        ActionURL url = new ActionURL(ReportsController.PlotChartAction.class, bean.getContainer()).
+        ActionURL url = new ActionURL(ReportsController.PlotChartAction.class, ctx.getContainer()).
                                 addParameter("datasetId", bean.getDatasetId()).
                                 addParameter("reportId", report.getDescriptor().getReportId().toString()).
                                 addParameter("chartsPerRow", bean.getChartsPerRow()).
                                 addParameter("isPlotView", String.valueOf(bean.getIsPlotView())).
                                 addParameter("participantId", bean.getParticipantId());
 
-        ActionURL filterUrl = RenderContext.getSortFilterURLHelper(HttpView.currentContext());
+        ActionURL filterUrl = RenderContext.getSortFilterURLHelper(ctx);
         for (Pair<String, String> param : filterUrl.getParameters())
         {
             if (url.getParameter(param.getKey()) == null)
