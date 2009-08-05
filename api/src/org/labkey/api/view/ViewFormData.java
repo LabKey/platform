@@ -80,13 +80,6 @@ public class ViewFormData extends FormData implements HasViewContext
     }
 
 
-    @Deprecated
-    public void setContext(ViewContext context)
-    {
-        _context = context;
-    }
-
-
     public void setUser(User user)
     {
         _user = user;

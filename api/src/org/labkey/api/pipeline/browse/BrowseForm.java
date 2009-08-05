@@ -16,12 +16,14 @@
 
 package org.labkey.api.pipeline.browse;
 
-import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewForm;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
 
-abstract public class BrowseForm extends ViewFormData
+abstract public class BrowseForm extends ViewForm
 {
     public enum Param
     {
@@ -29,7 +31,6 @@ abstract public class BrowseForm extends ViewFormData
         fileFilter,
         file,
     }
-
 
     private String path;
     private String fileFilter;
