@@ -4267,7 +4267,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class IdForm extends ViewFormData
+    public static class IdForm
     {
         public enum PARAMS
         {

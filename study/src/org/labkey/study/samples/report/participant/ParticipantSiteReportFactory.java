@@ -1,22 +1,21 @@
 package org.labkey.study.samples.report.participant;
 
-import org.labkey.study.samples.report.SpecimenVisitReportParameters;
-import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.SiteImpl;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.study.Site;
-import org.labkey.api.util.Pair;
+import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.samples.report.SpecimenVisitReport;
+import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 
-import java.util.List;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
-import java.sql.SQLException;
 
 /**
  * Copyright (c) 2008-2009 LabKey Corporation

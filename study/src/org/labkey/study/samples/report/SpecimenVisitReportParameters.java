@@ -1,24 +1,27 @@
 package org.labkey.study.samples.report;
 
-import org.labkey.api.view.ViewFormData;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.study.Study;
-import org.labkey.study.model.*;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewForm;
 import org.labkey.study.SampleManager;
+import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.SiteImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.util.List;
-import java.util.Collections;
-import java.util.Set;
-import java.util.Map;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Copyright (c) 2008-2009 LabKey Corporation
@@ -38,7 +41,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 14, 2008 12:26:17 PM
 */
-public abstract class SpecimenVisitReportParameters extends ViewFormData
+public abstract class SpecimenVisitReportParameters extends ViewForm
 {
     public static final String DEFAULT_VIEW_ID = "~default~";
     public enum PARAMS

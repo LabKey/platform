@@ -2551,6 +2551,7 @@ public class StudyController extends BaseStudyController
         public void reset(ActionMapping arg0, HttpServletRequest request)
         {
             super.reset(arg0, request);
+
             if (null != StringUtils.trimToNull(request.getParameter(".oldValues")))
                 try
                 {
@@ -2563,22 +2564,24 @@ public class StudyController extends BaseStudyController
 
             _dataSetIds = new int[getParameterCount(request, "dataSetIds")];
             String[] values = request.getParameterValues("dataSetIds");
+
             for (int i=0 ; i<_dataSetIds.length ; i++)
                 _dataSetIds[i] = Integer.parseInt(values[i]);
+
             _dataSetStatus = request.getParameterValues("dataSetStatus");
         }
 
         public void validate(Errors errors, Study study)
         {
             //check for null min/max sequence numbers
-            if(null == getSequenceNumMax() && null == getSequenceNumMin())
+            if (null == getSequenceNumMax() && null == getSequenceNumMin())
                 errors.reject(null, "You must specify at least a minimum or a maximum value for the visit range.");
 
             //if min is null but max is not, set min to max
             //and vice-versa
-            if(null == getSequenceNumMin() && null != getSequenceNumMax())
+            if (null == getSequenceNumMin() && null != getSequenceNumMax())
                 setSequenceNumMin(getSequenceNumMax());
-            if(null == getSequenceNumMax() && null != getSequenceNumMin())
+            if (null == getSequenceNumMax() && null != getSequenceNumMin())
                 setSequenceNumMax(getSequenceNumMin());
 
             VisitImpl visit = getBean();
@@ -2591,7 +2594,7 @@ public class StudyController extends BaseStudyController
             }
             setBean(visit);
             // for date-based studies, values can be negative, but it's not allowed in visit-based studies
-            if ( (visit.getSequenceNumMin() < 0 || visit.getSequenceNumMax() < 0) && !study.isDateBased())
+            if ((visit.getSequenceNumMin() < 0 || visit.getSequenceNumMax() < 0) && !study.isDateBased())
                 errors.reject(null, "Sequence numbers must be greater than or equal to zero.");
         }
 
@@ -2605,9 +2608,9 @@ public class StudyController extends BaseStudyController
             _visit.setLabel(getLabel());
             try
             {
-                if(null != getSequenceNumMax())
+                if (null != getSequenceNumMax())
                     _visit.setSequenceNumMax(getSequenceNumMax().doubleValue());
-                if(null != getSequenceNumMin())
+                if (null != getSequenceNumMin())
                     _visit.setSequenceNumMin(getSequenceNumMin().doubleValue());
             }
             catch (NumberFormatException x)

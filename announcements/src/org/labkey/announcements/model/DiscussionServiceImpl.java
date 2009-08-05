@@ -22,8 +22,8 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.view.*;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Map;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * User: matthewb

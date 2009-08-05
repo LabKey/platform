@@ -137,7 +137,9 @@ public class BrowseViewImpl extends BrowseView
             return getForm().paramName(param); 
         }
     }
+
     Page page;
+
     public BrowseViewImpl(BrowseForm form)
     {
         page = (Page) FormPage.get(BrowseViewImpl.class, form, "browse.jsp");
@@ -148,5 +150,4 @@ public class BrowseViewImpl extends BrowseView
         JspView view = new JspView(page);
         view.render(request, response);
     }
-
 }
