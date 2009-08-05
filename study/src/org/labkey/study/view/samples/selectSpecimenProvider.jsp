@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="org.labkey.study.model.SiteImpl" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -29,7 +28,7 @@
 <labkey:errors/>
 <p>Vials from the selected specimens can be shipped to you from multiple locations.  Please select your preferred location:</p>
 <form action="<%= bean.getFormTarget().getLocalURIString() %>" method="POST">
-<%= bean.getSourceForm().getHiddenFormInputs() %>
+<%= bean.getSourceForm().getHiddenFormInputs(null) %>
 <p>
     <select name="preferredLocation">
     <%

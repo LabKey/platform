@@ -186,12 +186,8 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            form.validate(errors);
-
             _list = form.getList();
-            if (_list == null)
-                HttpView.throwNotFound();
-            Map<String,String> props = new HashMap<String,String>();
+            Map<String, String> props = new HashMap<String,String>();
 
             props.put("typeURI", _list.getDomain().getTypeURI());
 
@@ -262,11 +258,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            form.validate(errors);
-
             _list = form.getList();
-            if (_list == null)
-                HttpView.throwNotFound();
             return FormPage.getView(ListController.class, form, "showListDefinition.jsp");
         }
 
@@ -292,14 +284,10 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(EditListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.validate(errors);
-
             if (!reshow)
                 form.setDefaults();
 
             _list = form.getList();
-            if (_list == null)
-                HttpView.throwNotFound();
 
             return FormPage.getView(ListController.class, form, errors, "editListDefinition.jsp");
         }
@@ -344,11 +332,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.validate(errors);
-
             _list = form.getList();
-            if (_list == null)
-                HttpView.throwNotFound();
             return FormPage.getView(ListController.class, form, "deleteListDefinition.jsp");
         }
 
@@ -403,10 +387,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.validate(errors);
             _list = form.getList();
-            if (null == _list)
-                HttpView.throwNotFound();
             TableInfo table = _list.getTable(getUser());
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext().getRequest(), _list);
 
@@ -681,11 +662,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            form.validate(errors);
-
             _list = form.getList();
-            if (null == _list)
-                HttpView.throwNotFound();
             TableInfo table = _list.getTable(getUser());
 
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext().getRequest(), _list);
@@ -827,10 +804,7 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(UploadListItemsForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.validate(errors);
             _list = form.getList();
-            if (_list == null)
-                HttpView.throwNotFound();
             return FormPage.getView(ListController.class, form, errors, "uploadListItems.jsp");
         }
 

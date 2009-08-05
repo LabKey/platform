@@ -5353,7 +5353,7 @@ public class StudyController extends BaseStudyController
         return prefix + (getStudy().isDateBased() ? "Timepoint" : "Visit") + ".jsp";
     }
 
-    public static class ParticipantForm extends ViewFormData implements StudyManager.ParticipantViewConfig
+    public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig
     {
         private String participantId;
         private int datasetId;

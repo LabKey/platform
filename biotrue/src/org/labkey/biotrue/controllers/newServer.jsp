@@ -17,9 +17,12 @@
 %>
 <%@ page import="org.labkey.biotrue.controllers.NewServerForm" %>
 <%@ page import="org.labkey.biotrue.controllers.BtController" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% NewServerForm form = (NewServerForm) __form;%>
+<%
+    NewServerForm form = (NewServerForm)HttpView.currentModel();
+%>
 <labkey:errors />
 <form action="<%=BtController.Action.newServer.url(getContainer())%>" method="POST">
     <p>

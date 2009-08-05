@@ -16,9 +16,7 @@
 
 package org.labkey.query.controllers;
 
-import org.labkey.api.view.ViewFormData;
-
-public class InternalNewViewForm extends ViewFormData
+public class InternalNewViewForm
 {
     public String ff_schemaName;
     public String ff_queryName;

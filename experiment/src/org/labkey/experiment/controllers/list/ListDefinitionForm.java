@@ -16,16 +16,14 @@
 
 package org.labkey.experiment.controllers.list;
 
-import org.labkey.api.action.HasValidator;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ActionURLException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
-import org.springframework.validation.Errors;
 
-public class ListDefinitionForm extends ViewForm implements HasValidator
+public class ListDefinitionForm extends ViewForm
 {
     protected ListDefinition _listDef;
     private String _returnUrl;
@@ -33,19 +31,19 @@ public class ListDefinitionForm extends ViewForm implements HasValidator
     private boolean _showHistory = false;
     private Integer _listId = null;
 
-    public void validate(Errors errors)
-    {
-        if (null == getListId())
-            throw new NotFoundException("Missing listId parameter");
-
-        _listDef = ListService.get().getList(getContainer(), getListId().intValue());
-
-        if (null == _listDef)
-            throw new NotFoundException("List does not exist in this container");
-    }
-
     public ListDefinition getList()
     {
+        if (null == _listDef)
+        {
+            if (null == getListId())
+                throw new NotFoundException("Missing listId parameter");
+
+            _listDef = ListService.get().getList(getContainer(), getListId().intValue());
+
+            if (null == _listDef)
+                throw new NotFoundException("List does not exist in this container");
+        }
+
         return _listDef;
     }
 

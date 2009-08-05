@@ -16,13 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.pipeline.analysis.AnalysisController" %>
-<%@ page import="java.io.File" %>
+<%@ page import="org.labkey.pipeline.analysis.AnalysisController"%>
 <%@ page extends="org.labkey.pipeline.analysis.AnalyzePage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
     AnalysisController.AnalyzeForm form = getForm();
     PipelineUrls up = urlProvider(PipelineUrls.class);

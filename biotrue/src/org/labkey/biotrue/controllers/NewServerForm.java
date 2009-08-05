@@ -16,9 +16,7 @@
 
 package org.labkey.biotrue.controllers;
 
-import org.labkey.api.view.ViewFormData;
-
-public class NewServerForm extends ViewFormData
+public class NewServerForm
 {
     public String ff_name;
     public String ff_wsdlURL;

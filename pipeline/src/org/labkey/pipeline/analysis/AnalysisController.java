@@ -24,8 +24,8 @@ import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
-import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -33,7 +33,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -42,9 +42,9 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.sql.SQLException;
 
 /**
  * <code>AnalysisController</code>
@@ -473,7 +473,7 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    public static class AnalyzeForm extends ViewFormData
+    public static class AnalyzeForm extends ViewForm
     {
         public enum Params { path, nsClass, name, fileInputNames }
 

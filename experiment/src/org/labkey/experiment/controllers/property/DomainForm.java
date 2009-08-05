@@ -16,47 +16,48 @@
 
 package org.labkey.experiment.controllers.property;
 
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.DomainProperty;
-import org.apache.struts.action.ActionMapping;
+import org.labkey.api.view.ViewForm;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletException;
-import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
-public class DomainForm extends ViewFormData
+public class DomainForm extends ViewForm
 {
-    protected Domain _domain;
+    private Domain _domain;
     private boolean _allowFileLinkProperties = false;
     private boolean _allowAttachmentProperties = false;
     private boolean _showDefaultValueSettings = false;
-
-    @Override
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
-    {
-        super.reset(actionMapping, request);
-        String domainId = request.getParameter("domainId");
-        if (domainId != null)
-        {
-            _domain = PropertyService.get().getDomain(Integer.valueOf(domainId));
-        }
-    }
 
     public void requiresPermission(int perm) throws ServletException
     {
         if (!getContainer().hasPermission(getUser(), perm))
             HttpView.throwUnauthorized();
+
         if (_domain != null)
         {
             if (!_domain.getContainer().hasPermission(getUser(), perm))
                 HttpView.throwUnauthorized();
         }
+    }
+
+    public int getDomainId()
+    {
+        return -1;
+    }
+
+    public void setDomainId(int domainId)
+    {
+        _domain = PropertyService.get().getDomain(domainId);
     }
 
     public Domain getDomain()

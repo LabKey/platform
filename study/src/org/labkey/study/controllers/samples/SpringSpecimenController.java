@@ -564,7 +564,7 @@ public class SpringSpecimenController extends BaseStudyController
 
     public static interface HiddenFormInputGenerator
     {
-        String getHiddenFormInputs();
+        String getHiddenFormInputs(ViewContext ctx);
     }
 
     public static class AddToSampleRequestForm extends IdForm implements HiddenFormInputGenerator
@@ -588,7 +588,7 @@ public class SpringSpecimenController extends BaseStudyController
             _specimenIds = specimenIds;
         }
 
-        public String getHiddenFormInputs()
+        public String getHiddenFormInputs(ViewContext ctx)
         {
             StringBuilder builder = new StringBuilder();
             if (getId() != 0)
@@ -1185,7 +1185,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class CreateSampleRequestForm extends ViewFormData implements HiddenFormInputGenerator
+    public static class CreateSampleRequestForm implements HiddenFormInputGenerator
     {
         public enum PARAMS
         {
@@ -1203,7 +1203,7 @@ public class SpringSpecimenController extends BaseStudyController
         private boolean _ignoreReturnUrl;
         private String[] _sampleIds;
 
-        public String getHiddenFormInputs()
+        public String getHiddenFormInputs(ViewContext ctx)
         {
             StringBuilder builder = new StringBuilder();
             if (_inputs != null)
@@ -1222,12 +1222,12 @@ public class SpringSpecimenController extends BaseStudyController
             }
             else
             {
-                String dataRegionSelectionKey = getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY);
+                String dataRegionSelectionKey = ctx.getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY);
                 if (dataRegionSelectionKey != null)
                 {
                     builder.append("<input type=\"hidden\" name=\"").append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
                     builder.append("\" value=\"").append(dataRegionSelectionKey).append("\">\n");
-                    Set<String> specimenFormValues = DataRegionSelection.getSelected(getViewContext(), false);
+                    Set<String> specimenFormValues = DataRegionSelection.getSelected(ctx, false);
                     for (String formValue : specimenFormValues)
                     {
                         builder.append("<input type=\"hidden\" name=\"").append(DataRegion.SELECT_CHECKBOX_NAME).append("\" value=\"");
@@ -1351,10 +1351,10 @@ public class SpringSpecimenController extends BaseStudyController
                 return new SpecimenUtils.RequestedSpecimens(requestedSamples);
 
             Set<String> ids;
-            if ("post".equalsIgnoreCase(getViewContext().getRequest().getMethod()) &&
-                    (getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
+            if ("post".equalsIgnoreCase(utils.getViewContext().getRequest().getMethod()) &&
+                    (utils.getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
             {
-                ids = DataRegionSelection.getSelected(getViewContext(), true);
+                ids = DataRegionSelection.getSelected(utils.getViewContext(), true);
                 if (isFromGroupedView())
                     return utils.getRequestableBySampleHash(ids, getPreferredLocation());
                 else
@@ -1557,6 +1557,7 @@ public class SpringSpecimenController extends BaseStudyController
         getUtils().ensureSpecimenRequestsConfigured();
         
         SpecimenUtils.RequestedSpecimens requested;
+
         try
         {
             requested = form.getSelectedSpecimens(getUtils());
@@ -2846,22 +2847,6 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    public static class ReportListForm extends ViewFormData
-    {
-        private String getURL(Class<? extends SpecimenVisitReportAction> actionClass, TypeSummaryReportFactory.Status status)
-        {
-            ActionURL url = new ActionURL(actionClass, getContainer());
-            url.addParameter(TypeSummaryReportFactory.PARAMS.viewVialCount, Boolean.TRUE.toString());
-            url.addParameter(TypeSummaryReportFactory.PARAMS.statusFilterName, status.name());
-            return url.getLocalURIString();
-        }
-
-        public String getSummaryReportURL(TypeSummaryReportFactory.Status status)
-        {
-            return getURL(TypeSummaryReportAction.class, status);
-        }
-    }
-
     public static class ReportConfigurationBean
     {
         private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Collected Vials by Type and Timepoint";
@@ -2926,9 +2911,9 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class AutoReportListAction extends SimpleViewAction<ReportListForm>
+    public class AutoReportListAction extends SimpleViewAction
     {
-        public ModelAndView getView(ReportListForm form, BindException errors) throws Exception
+        public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             return new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
         }

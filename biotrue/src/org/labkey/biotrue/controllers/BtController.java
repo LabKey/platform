@@ -257,6 +257,7 @@ public class BtController extends SpringActionController
                 try
                 {
                     File dir = new File(form.ff_physicalRoot);
+
                     if (!dir.exists())
                     {
                         errors.reject("newServerForm", form.ff_physicalRoot + " does not exist.");
@@ -294,7 +295,7 @@ public class BtController extends SpringActionController
             if (!getViewContext().getUser().isAdministrator())
                 return HttpView.throwUnauthorized();
 
-            return FormPage.getView(BtController.class, form, errors, "newServer.jsp");
+            return new JspView<NewServerForm>(BtController.class, "newServer.jsp", form, errors);
         }
 
         public boolean handlePost(NewServerForm form, BindException errors) throws Exception

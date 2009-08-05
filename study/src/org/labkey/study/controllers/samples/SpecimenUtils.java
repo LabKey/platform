@@ -71,7 +71,7 @@ public class SpecimenUtils
         _controller = controller;
     }
 
-    private ViewContext getViewContext()
+    public ViewContext getViewContext()
     {
         return _controller.getViewContext();
     }
