@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.view;
 
 import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -37,7 +37,6 @@ public class ViewFormData extends FormData implements HasViewContext
     protected ViewContext _context = null;
     protected HttpServletRequest _request;
     protected ActionErrors _errors = null;
-    protected static Logger _formLog = Logger.getLogger(ViewFormData.class);
 
 
     public Container getContainer()
@@ -74,13 +73,6 @@ public class ViewFormData extends FormData implements HasViewContext
 
 
     public ViewContext getViewContext()
-    {
-        return getContext();
-    }
-
-
-    @Deprecated
-    public ViewContext getContext()
     {
         if (null == _context)
             _context = HttpView.currentContext();
