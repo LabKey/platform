@@ -1344,12 +1344,12 @@ public class PageFlowUtil
 
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, String linkOnClick)
     {
-        if (linkOnClick == null)
-            linkOnClick = "return false";
-
         if (title == null && !htmlHelpText)
         {
             // use simple tooltip
+            if (linkOnClick == null)
+                linkOnClick = "return false";
+
             StringBuilder link = new StringBuilder();
             link.append("<a href=\"#\" tabindex=\"-1\" onClick=\""+ linkOnClick + "\" title=\"");
             link.append(filter(helpText));
@@ -1358,20 +1358,24 @@ public class PageFlowUtil
         }
         else
         {
+            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
+            showHelpDivArgs.append(filter(jsString(filter(title)), true)).append(", ");
+            // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
+            // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
+            // Finally, since this is script inside of an attribute, it must be HTML escaped again.
+            showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
+            if (width != 0)
+                showHelpDivArgs.append(", ").append(filter(jsString(filter(String.valueOf(width) + "px"))));
+            if (linkOnClick == null)
+            {
+                linkOnClick = "return showHelpDiv(" + showHelpDivArgs + ");";
+            }
             StringBuilder link = new StringBuilder();
             link.append("<a href=\"#\" tabindex=\"-1\" " +
                     "onClick=\""+ linkOnClick + "\" " +
                     "onMouseOut=\"return hideHelpDivDelay();\" " +
-                    "onMouseOver=\"return showHelpDivDelay(this, ");
-            link.append(filter(jsString(filter(title)), true)).append(", ");
-
-            // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
-            // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
-            // Finally, since this is script inside of an attribute, it must be HTML escaped again.
-            link.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
-            if (width != 0)
-                link.append(", ").append(filter(jsString(filter(String.valueOf(width) + "px"))));
-            link.append(");\">").append(linkHtml).append("</a>");
+                    "onMouseOver=\"return showHelpDivDelay(" + showHelpDivArgs + ");\"");
+            link.append(">").append(linkHtml).append("</a>");
             return link.toString();
         }
     }
