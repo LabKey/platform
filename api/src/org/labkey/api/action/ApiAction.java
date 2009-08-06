@@ -280,7 +280,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
     }
 
-    public void validate(Object form, Errors errors)
+    public final void validate(Object form, Errors errors)
     {
         validateForm((FORM)form, errors);
     }

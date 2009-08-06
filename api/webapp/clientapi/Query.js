@@ -652,6 +652,25 @@ LABKEY.Query = new function()
             });
         },
 
+        validateQuery : function(config)
+        {
+            var params = {};
+
+            LABKEY.Utils.applyTranslated(params, config, {
+                successCallback: false,
+                errorCallback: false,
+                scope: false
+            });
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'validateQuery', config.containerPath),
+                method : 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                params: params
+            });
+        },
+
         /**
          * Returns the current date/time on the LabKey server.
          * @param config An object that contains the following configuration parameters
