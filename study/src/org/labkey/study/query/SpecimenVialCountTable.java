@@ -33,10 +33,10 @@ public class SpecimenVialCountTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("Container")).setIsHidden(true);
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
 
-        addColumn(new AliasedColumn("TotalCount", _rootTable.getColumn("VialCount")));
-        addColumn(new AliasedColumn("LockedInRequest", _rootTable.getColumn("LockedInRequestCount")));
-        addColumn(new AliasedColumn("AtRepository", _rootTable.getColumn("AtRepositoryCount")));
-        addColumn(new AliasedColumn("Available", _rootTable.getColumn("AvailableCount")));
-        addColumn(new AliasedColumn("ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount")));
+        addColumn(new AliasedColumn(this, "TotalCount", _rootTable.getColumn("VialCount")));
+        addColumn(new AliasedColumn(this, "LockedInRequest", _rootTable.getColumn("LockedInRequestCount")));
+        addColumn(new AliasedColumn(this, "AtRepository", _rootTable.getColumn("AtRepositoryCount")));
+        addColumn(new AliasedColumn(this, "Available", _rootTable.getColumn("AvailableCount")));
+        addColumn(new AliasedColumn(this, "ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount")));
     }
 }

@@ -68,7 +68,8 @@ import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
 {
-    private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class);
+    private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
+            ValidateQueryAction.class);
 
     public QueryControllerSpring() throws Exception
     {
@@ -2683,6 +2684,20 @@ public class QueryControllerSpring extends SpringActionController
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
             return new ApiSimpleResponse("date", new Date());
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ValidateQueriesAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/query/controllers/validateQueries.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Validate Queries");
         }
     }
 }

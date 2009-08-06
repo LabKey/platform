@@ -154,3 +154,6 @@
 {%>
     <labkey:link href='<%=new ActionURL("query", "admin", context.getContainer())%>' text="Schema Administration" />
 <% } %>
+<p>
+<labkey:link href='<%=new ActionURL("query", "validateQueries", context.getContainer())%>' text="Validate Queries" />
+</p>
