@@ -85,7 +85,6 @@ public class InsertView extends DataView
         if (form == null)
         {
             form = new TableViewForm(getTable());
-            form.reset(null, ctx.getRequest());
         }
 
         if (null != _initialValues)

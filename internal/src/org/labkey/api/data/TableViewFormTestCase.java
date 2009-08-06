@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.struts.action.ActionErrors;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -27,6 +26,9 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.HttpView;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -49,8 +51,8 @@ public class TableViewFormTestCase extends junit.framework.TestCase
     public void testBasic()
     {
         TestForm tf = new TestForm();
+        tf.setViewContext(HttpView.currentContext());
         TestContext ctx = TestContext.get();
-        tf.reset(null, ctx.getRequest());
 
         Assert.assertEquals(ctx.getRequest().getUserPrincipal(), tf.getUser());
 
@@ -74,8 +76,7 @@ public class TableViewFormTestCase extends junit.framework.TestCase
     public void testErrorHandling()
     {
         TestForm tf = new TestForm();
-        TestContext ctx = TestContext.get();
-        tf.reset(null, ctx.getRequest());
+        tf.setViewContext(HttpView.currentContext());
 
         //Should be invalid because of null fields.
         //BUG: Not differentiating between insert & update cases.
@@ -90,9 +91,12 @@ public class TableViewFormTestCase extends junit.framework.TestCase
         tf.set("bitNotNull", "1");
         tf.set("intNotNull", "20");
         tf.set("datetimeNull", "garbage");
-        ActionErrors errors = tf.validate(null, ctx.getRequest());
-        Assert.assertEquals("1 error", errors.size(), 1);
-        Assert.assertNotNull("Date conversion error", errors.get("datetimeNull"));
+
+        BindException errors = new BindException(tf, "form");
+        tf.validateBind(errors);
+        Assert.assertEquals("1 error", errors.getErrorCount(), 1);
+        Assert.assertEquals("Date conversion error", errors.getFieldErrors("datetimeNull").size(), 1);
+        Assert.assertEquals("Date conversion error", ((FieldError)errors.getFieldErrors("datetimeNull").get(0)).getDefaultMessage(), "Could not convert value: garbage");
 
         tf.setTypedValue("datetimeNull", new Date("6/20/2004"));
         Assert.assertTrue("Final form should be valid", tf.isValid());
@@ -102,14 +106,12 @@ public class TableViewFormTestCase extends junit.framework.TestCase
     public void testDbOperations() throws SQLException, ServletException
     {
         TestForm tf = new TestForm();
-        TestContext ctx = TestContext.get();
-        tf.reset(null, ctx.getRequest());
+        tf.setViewContext(HttpView.currentContext());
 
         Container test = JunitUtil.getTestContainer();
         MutableSecurityPolicy policy = new MutableSecurityPolicy(test);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ProjectAdminRole.class));
         SecurityManager.savePolicy(policy);
-        tf.setContainer(test);
 
         tf.set("datetimeNotNull", "6/20/2004");
         tf.set("bitNotNull", "1");

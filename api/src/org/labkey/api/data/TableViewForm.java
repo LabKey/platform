@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
@@ -30,7 +29,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.view.ViewForm;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -48,7 +47,7 @@ import java.util.*;
  * Supports insert, update, delete functionality with a minimum of fuss
  * <p/>
  */
-public class TableViewForm extends ViewFormData implements DynaBean, HasBindParameters
+public class TableViewForm extends ViewForm implements DynaBean, HasBindParameters
 {
     private static final Logger _log = Logger.getLogger(TableViewForm.class);
 
@@ -366,6 +365,7 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
          */
         Map<String, Object> values = new CaseInsensitiveHashMap<Object>();
         Set<String> keys = _stringValues.keySet();
+
         for (String propName : keys)
         {
             String str = _stringValues.get(propName);
@@ -387,13 +387,16 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
                 else if (_validateRequired && null != _tinfo)
                 {
                     ColumnInfo col = getColumnByFormFieldName(propName);
+
                     if (null == col || col.isNullable())
                         values.put(propName, null);
                     else
                         errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
                 }
                 else
+                {
                     values.put(propName, null);
+                }
             }
             catch (ConversionException e)
             {
@@ -403,6 +406,7 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
                 errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
             }
         }
+
         _values = values;
     }
 
@@ -548,14 +552,6 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
         throw new UnsupportedOperationException("No indexed properties in a table");
     }
 
-    @Override
-    public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1)
-    {
-        ActionErrors errors = PageFlowUtil.getActionErrors(arg1, true);
-        populateValues(errors);
-        return errors;
-    }
-
     public void validateBind(BindException errors)
     {
         populateValues(errors);
@@ -594,9 +590,15 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
 
 
     @Override
-    public void reset(ActionMapping arg0, HttpServletRequest request)
+    public void setViewContext(ViewContext context)
     {
-        super.reset(arg0, request);
+        super.setViewContext(context);
+        reset();
+    }
+
+
+    public void reset()
+    {
         /*
          * Checkboxes are weird. If set to FALSE they don't post
          * at all. So impossible to tell difference between values
@@ -606,10 +608,14 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
          * We set them all to false and struts will overwrite with true
          * if they are set.
          */
+        HttpServletRequest request = getRequest();
+
         String[] checkboxes = request.getParameterValues("~checkboxes");
+
         if (null != checkboxes)
             for (String checkbox : checkboxes)
                 set(checkbox, "0");
+
         // handle Spring style markers as well
         for (Enumeration e = request.getParameterNames(); e.hasMoreElements() ; )
         {
@@ -663,14 +669,13 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
     public BindException bindParameters(PropertyValues params)
     {
         BindException errors = new BindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
-        reset(null, getViewContext().getRequest());
+
+        for (PropertyValue pv : params.getPropertyValues())
         {
-            for (PropertyValue pv : params.getPropertyValues())
-            {
-                if (pv.getValue() instanceof String)
-                    set(pv.getName(), (String)pv.getValue());
-            }
+            if (pv.getValue() instanceof String)
+                set(pv.getName(), pv.getValue());
         }
+
         validateBind(errors);
         return errors;
     }

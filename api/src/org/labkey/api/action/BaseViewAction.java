@@ -16,37 +16,36 @@
 
 package org.labkey.api.action;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ConvertHelper;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.springframework.beans.*;
 import org.springframework.core.MethodParameter;
 import org.springframework.validation.*;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.ServletRequestParameterPropertyValues;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.BaseCommandController;
 import org.springframework.web.servlet.mvc.Controller;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -228,10 +227,10 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     protected FORM getCommand(HttpServletRequest request) throws Exception
     {
         FORM command =  (FORM)super.createCommand();
+
         if (command instanceof HasViewContext)
             ((HasViewContext)command).setViewContext(getViewContext());
-        if (command instanceof FormData) // for modicum of compatibilty
-            ((FormData)command).reset(null, getViewContext().getRequest());
+
         return command;
     }
 

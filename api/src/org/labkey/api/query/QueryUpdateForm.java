@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
@@ -38,16 +39,17 @@ public class QueryUpdateForm extends TableViewForm
      */
     public static final String PREFIX = "quf_";
 
-    public QueryUpdateForm(TableInfo table, HttpServletRequest request)
+    public QueryUpdateForm(TableInfo table, ViewContext ctx)
     {
-        this(table, request, Collections.<String,String>emptyMap());
+        this(table, ctx, Collections.<String, String>emptyMap());
     }
 
-    public QueryUpdateForm(TableInfo table, HttpServletRequest request, Map<String,String> extraParameters)
+    public QueryUpdateForm(TableInfo table, ViewContext ctx, Map<String, String> extraParameters)
     {
         _tinfo = table;
         _dynaClass = new QueryWrapperDynaClass(this);
-        reset(null, request);
+        HttpServletRequest request = ctx.getRequest();
+
         for (Enumeration en = request.getParameterNames(); en.hasMoreElements();)
         {
             String key = (String) en.nextElement();
@@ -57,16 +59,20 @@ public class QueryUpdateForm extends TableViewForm
                 set(key, value);
             }
         }
+
         for (Map.Entry<String,String> entry : extraParameters.entrySet())
         {
             set(entry.getKey(), entry.getValue());
         }
+
+        setViewContext(ctx);
     }
 
     public ColumnInfo getColumnByFormFieldName(String name)
     {
         if (name.length() < PREFIX.length())
             return null;
+
         return getTable().getColumn(name.substring(PREFIX.length()));
 //        ColumnInfo col = getTable().getColumn(name);
 //        if (col == null && name.length() > PREFIX.length())
