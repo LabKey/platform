@@ -4,8 +4,6 @@ annotations.jar|Compiler annotations|1.0|{link:JetBrains|http://www.jetbrains.co
 antlr-3.1.1.jar|ANTLR|3.1.1|{link:ANTLR|http://www.antlr.org/}|{link:BSD|http://www.antlr.org/license.html}|mbellew|Query language parsing
 axis.jar|Apache Axis|1.2RC2|{link:Apache|http://ws.apache.org/axis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web service implementation
 backport-util-concurrent-3.1.jar|JSR 166|3.1|{link:Emory|http://dcl.mathcs.emory.edu/util/backport-util-concurrent/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|jeckels|Pipeline (Mule dependency)
-beehive-controls.jar|Beehive|1.0|{link:Apache|http://beehive.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Pageflows
-beehive-netui-core.jar|Beehive|1.0|{link:Apache|http://beehive.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Pageflows
 collections-generic-4.01.jar|Commons Collections with Generics|4.01|{link:SourceForge|http://sourceforge.net/projects/collections}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Helpful collections
 commons-beanutils-1.7.jar|Commons Beanutils|1.7|{link:Apache|http://jakarta.apache.org/commons/beanutils/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Reading/writing beans
 commons-codec-1.3.jar|Commons Codec|1.3|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
