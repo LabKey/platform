@@ -2865,13 +2865,14 @@ public class SpringSpecimenController extends BaseStudyController
         {
             // we have to explicitly set the view context for these reports, since the factories aren't being newed-up by Spring in the usual way:
             factory.setViewContext(_viewContext);
-            factory.reset(null, _viewContext.getRequest());
             List<SpecimenVisitReportParameters> factories = _reportFactories.get(category);
+
             if (factories == null)
             {
                 factories = new ArrayList<SpecimenVisitReportParameters>();
                 _reportFactories.put(category, factories);
             }
+
             factories.add(factory);
         }
 

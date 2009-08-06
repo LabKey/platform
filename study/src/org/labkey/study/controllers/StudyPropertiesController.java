@@ -75,7 +75,7 @@ public class StudyPropertiesController extends BaseStudyController
             // that the query update form will use
             Map<String,String> containerInfo = Collections.singletonMap("container", getContainer().getId());
 
-            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext().getRequest(), containerInfo);
+            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext(), containerInfo);
 
             UpdateView view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
@@ -104,7 +104,7 @@ public class StudyPropertiesController extends BaseStudyController
 
         public boolean handlePost(StudyProperties studyPropertiesForm, BindException errors) throws Exception
         {
-            QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext().getRequest());
+            QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext());
             errors = updateForm.populateValues(errors);
 
             if (errors.getErrorCount() > 0)

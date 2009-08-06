@@ -15,12 +15,8 @@
  */
 package org.labkey.study.controllers.samples;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -43,7 +39,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.*;
 

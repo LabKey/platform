@@ -1182,7 +1182,7 @@ public class QueryControllerSpring extends SpringActionController
             if (returnURL != null)
                 forward = new ActionURL(returnURL);
             TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
-            QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext().getRequest());
+            QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext());
             if (!table.hasPermission(getUser(), ACL.PERM_DELETE))
             {
                 HttpView.throwUnauthorized();

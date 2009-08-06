@@ -81,7 +81,7 @@ public class DbUserSchemaController extends SpringActionController
             }
             _schemaName = form.getSchemaName().toString();
             _queryName = form.getQueryName();
-            QueryUpdateForm command = new QueryUpdateForm(table, getViewContext().getRequest());
+            QueryUpdateForm command = new QueryUpdateForm(table, getViewContext());
             BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
             command.validateBind(errors);
             return errors;

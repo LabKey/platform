@@ -117,7 +117,7 @@ public class DatasetController extends BaseStudyController
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());
-            QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext().getRequest());
+            QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
 
             DataView view;
             if (isInsert())
@@ -210,7 +210,7 @@ public class DatasetController extends BaseStudyController
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());
-            QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext().getRequest());
+            QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
             //noinspection ThrowableResultOfMethodCallIgnored
             updateForm.populateValues(errors);
 

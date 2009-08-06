@@ -18,8 +18,6 @@ package org.labkey.demo;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
@@ -30,12 +28,12 @@ import org.labkey.demo.model.DemoManager;
 import org.labkey.demo.model.Person;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.SimpleFormController;
 import org.springframework.web.servlet.mvc.AbstractController;
+import org.springframework.web.servlet.mvc.SimpleFormController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -377,16 +375,6 @@ public class DemoController extends SpringActionController
             set("rowid", String.valueOf(rowid));
         }
 
-
-        // struts
-        @Override
-        public ActionErrors validate(ActionMapping mapping, HttpServletRequest request)
-        {
-            super.validate(mapping, request);
-            BindException errors = new BindException(this, "Person");
-            DemoManager.validate(getBean(), errors);
-            return TableViewForm.convertErrorsToStruts(errors, request);
-        }
 
         // spring
         public void validate(BindException errors)
