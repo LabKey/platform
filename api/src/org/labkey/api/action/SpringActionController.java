@@ -16,24 +16,23 @@
 
 package org.labkey.api.action;
 
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.User;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.*;
-import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.multipart.MultipartException;
@@ -351,9 +350,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            Forward f = ExceptionUtil.handleException(request, response, x, null, false);
-            if (null != f)
-                ExceptionUtil.doErrorRedirect(response, f.toString());
+            ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
+            if (null != errorURL)
+                ExceptionUtil.doErrorRedirect(response, errorURL.toString());
             throwable = x;
         }
         finally

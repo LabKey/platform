@@ -16,7 +16,6 @@
 
 package org.labkey.api.util;
 
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.portal.ProjectUrls;
@@ -576,8 +575,8 @@ public class ExceptionUtil
         return false;
     }
 
-    // This is called by Global.java (to display unhandled exceptions) and called directly by ModuleLoader.doFilter() (to display startup errors and bypass normal request handling)
-    public static Forward handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure)
+    // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
+    public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure)
     {
         DbScope.rollbackAllTransactions();
 
@@ -619,7 +618,6 @@ public class ExceptionUtil
             {
                 // This is fine, just can't clear the existing reponse as its
                 // been at least partially written back to the client
-                // _log.error("Global.handleException", x);
             }
         }
 
@@ -633,7 +631,7 @@ public class ExceptionUtil
         {
             User user = (User) request.getUserPrincipal();
 
-            //If user has not logged in or agreed to terms, not really unauthorized yet...
+            // If user has not logged in or agreed to terms, not really unauthorized yet...
             if (user.isGuest() || ex instanceof TermsOfUseException)
             {
                 if (ex instanceof RequestBasicAuthException)
@@ -658,7 +656,7 @@ public class ExceptionUtil
                         redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURL());
                     }
 
-                    return new ViewForward(redirect);
+                    return redirect;
                 }
             }
 
