@@ -71,11 +71,18 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         private String _reportType;
         private String _label;
         private ActionURL _designerURL;
+        private String _description;
 
         public DesignerInfoImpl(String reportType, String label, ActionURL designerURL)
         {
+            this(reportType, label, null, designerURL);            
+        }
+
+        public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL)
+        {
             _reportType = reportType;
             _label = label;
+            _description = description;
             _designerURL = designerURL;
         }
 
@@ -92,6 +99,11 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         public ActionURL getDesignerURL()
         {
             return _designerURL;
+        }
+
+        public String getDescription()
+        {
+            return _description;
         }
     }
 }
