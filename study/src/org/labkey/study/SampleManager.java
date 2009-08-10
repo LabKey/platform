@@ -461,7 +461,12 @@ public class SampleManager
                     "\t\tSUM(CASE LockedInRequest WHEN ? THEN 1 ELSE 0 END) AS LockedInRequestCount,\n" +
                     "\t\tSUM(CASE AtRepository WHEN ? THEN 1 ELSE 0 END) AS AtRepositoryCount,\n" +
                     "\t\tSUM(CASE Available WHEN ? THEN 1 ELSE 0 END) AS AvailableCount,\n" +
-                    "\t\t(COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN ? THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN ? THEN 1 ELSE 0 END)) AS ExpectedAvailableCount\n" +
+                    "\t\t(COUNT(GlobalUniqueId) - SUM(\n" +
+                    "\t\tCASE\n" +
+                    "\t\t\t(CASE LockedInRequest WHEN ? THEN 1 ELSE 0 END) -- Null is considered false for LockedInRequest\n" +
+                    "\t\t\t| (CASE Requestable WHEN ? THEN 1 ELSE 0 END)-- Null is considered true for Requestable\n" +
+                    "\t\t\tWHEN 1 THEN 1 ELSE 0 END)\n" +
+                    "\t\t) AS ExpectedAvailableCount" +
                     "\tFROM study.Vial\n" +
                     "\tWHERE study.Vial.Container = ?\n";
 
@@ -474,7 +479,14 @@ public class SampleManager
     private void updateSpecimenCounts(Container container, Specimen[] specimens) throws SQLException
     {
         SQLFragment updateSql = new SQLFragment(UPDATE_SPECIMEN_COUNT_SQL_PREFIX,
-                Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, container.getId());
+                Boolean.TRUE, // AvailableVolume
+                Boolean.TRUE, // LockedInRequestCount
+                Boolean.TRUE, // AtRepositoryCount
+                Boolean.TRUE, // AvailableCount
+                Boolean.TRUE, // LockedInRequest case of ExpectedAvailableCount
+                Boolean.FALSE, // Requestable case of ExpectedAvailableCount
+                container.getId()); // container filter
+        
         if (specimens != null && specimens.length > 0)
         {
             Set<Integer> specimenIds = new HashSet<Integer>();

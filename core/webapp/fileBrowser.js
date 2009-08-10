@@ -1571,13 +1571,51 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 this.fileSystem.deletePath(selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
                 this.selectFile(null);
-                this.refreshDirectory();
                 if (this.tree)
                 {
                     var node = this.tree.getNodeById(this.currentDirectory.data.path);
                     if (node)
-                        node.reload();
+                    {
+                        // If the user deleted a directory, we need to clean up the folder tree
+                        if (!selectedRecord.data.file)
+                        {
+                            var parentNode;
+                            var childNodeToRemove;
+                            // The selection might be from the tree, or from the file list
+                            if (node.attributes.path == selectedRecord.data.path)
+                            {
+                                // If the path of the selected node in the tree matches what we deleted, use that node
+                                parentNode = node.parentNode;
+                                childNodeToRemove = node;
+                            }
+                            else
+                            {
+                                // Otherwise, the selection came from the list and we need to find the right child
+                                // node in the tree
+                                childNodeToRemove = node.findChild("path", selectedRecord.data.path);
+                                if (childNodeToRemove)
+                                {
+                                    parentNode = node;
+                                }
+                            }
+                            // Check if we found the child and parent nodes in the tree
+                            if (parentNode && childNodeToRemove)
+                            {
+                                // Want to make sure that the parent gets selected after the child is deleted
+                                parentNode.select();
+                                // Remove the child from the tree since it's been deleted from the disk
+                                parentNode.removeChild(childNodeToRemove);
+                            }
+                        }
+                        else
+                        {
+                            node.reload();
+                        }
+                    }
                 }
+
+                // Refresh the list view to make sure that we get rid of the deleted entry there too
+                this.refreshDirectory();
 
             }).createDelegate(this);
 

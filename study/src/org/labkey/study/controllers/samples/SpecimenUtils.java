@@ -812,7 +812,7 @@ public class SpecimenUtils
         whereClause.append(") AND Container = ?");
 
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause(whereClause.toString(), params);
+        filter.addWhereClause(whereClause.toString(), params, "RowId", "Container");
         return filter;
     }
 

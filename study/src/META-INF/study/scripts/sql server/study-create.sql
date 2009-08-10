@@ -27,7 +27,12 @@ CREATE VIEW study.VialCounts AS
         SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepositoryCount,
         SUM(CASE Available WHEN 1 THEN 1 ELSE 0 END) AS AvailableCount,
-        (COUNT(GlobalUniqueId) - SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) - SUM(CASE Requestable WHEN 0 THEN 1 ELSE 0 END)) AS ExpectedAvailableCount
+        (COUNT(GlobalUniqueId) - SUM(
+            CASE
+              (CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) -- Null is considered false for LockedInRequest
+              | (CASE Requestable WHEN 0 THEN 1 ELSE 0 END)-- Null is considered true for Requestable
+            WHEN 1 THEN 1 ELSE 0 END)
+            ) AS ExpectedAvailableCount
     FROM study.Vial
     GROUP BY Container, SpecimenHash
 GO
