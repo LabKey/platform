@@ -15,17 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.query.QueryParam"%>
-<%@ page import="org.labkey.api.reports.report.ReportDescriptor"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.query.DataSetQueryView" %>
-<%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
-<%@ page import="java.util.Arrays" %>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
+<%@ page import="java.util.Arrays"%>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -70,17 +65,6 @@
         </td>
     </tr>
     </table>
-
-    <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=StudyCrosstabReport.TYPE%>">
-<%--
-    <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=bean.getDatasetId()%>">
-    <input type="hidden" name="<%=Visit.VISITKEY%>" value="<%=bean.getVisitRowId()%>">
---%>
-    <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=bean.getQueryName()%>">
-    <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
-    <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=bean.getSchemaName()%>">
-    <input type="hidden" name="<%=QueryParam.dataRegionName%>" value="<%=DataSetQueryView.DATAREGION%>">
-
     <%=PageFlowUtil.generateSubmitButton("Submit")%>
 </form>
 

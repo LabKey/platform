@@ -16,20 +16,15 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.apache.commons.lang.math.NumberUtils" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
@@ -43,30 +38,9 @@
 
     Report report = bean.getReport();
     boolean confirm = bean.getConfirmed() != null ? Boolean.parseBoolean(bean.getConfirmed()) : false;
-
-    Container c = context.getContainer();
-    Study study = StudyManager.getInstance().getStudy(c);
-    DataSet[] defs = StudyManager.getInstance().getDataSetDefinitions(study);
-    int showWithDataset = NumberUtils.toInt(report.getDescriptor().getProperty("showWithDataset"));
 %>
 
-<style type="text/css">
-    .chartSection td {
-        padding: 0px 20px 0px 0px;
-    }
-</style>
-
 <script type="text/javascript">
-
-    function participantPlot()
-    {
-        var plotView = YAHOO.util.Dom.get("plotViewCheck");
-        var dataset = YAHOO.util.Dom.get("datasetSelection");
-        if (plotView && dataset)
-        {
-            dataset.disabled = plotView.checked;
-        }
-    }
 
     function validateForm()
     {
@@ -113,10 +87,9 @@
     }
 %>
         <input type=hidden name=reportType value="<%=report.getDescriptor().getReportType()%>">
-        <input type=hidden name=chartsPerRow value="<%=bean.getChartsPerRow()%>">
-        <input type=hidden name=isPlotView value="<%=bean.getIsPlotView()%>">
         <input type=hidden name=params value="<%=PageFlowUtil.filter(bean.getParams())%>"></td>
 
+<%--
         <td>Add as Custom View For:
             <select id="datasetSelection" name="showWithDataset">
 <%
@@ -129,6 +102,8 @@
 %>
             </select>
         </td>
+--%>
+        <td>&nbsp;</td>
         <td><%=PageFlowUtil.generateSubmitButton((confirm ? "Overwrite" : "Save"))%>
 <%
     if (confirm)
@@ -158,22 +133,4 @@
     }
 %>
     </table>
-<%--
-<%
-    if (allowPlotView) {
-%>
-    &nbsp;    
-    <table>
-        <tr>
-            <td><input id="plotViewCheck" type="checkbox" name="isPlotView" value="true" <%=bean.getIsPlotView() ? "checked" : ""%> onclick="participantPlot();"><b>Show chart for only one participant at a time</b></td>
-        </tr>
-        <tr>
-            <td><i>Select this check box to chart measures for an individual participant in the dataset. The report will
-                be available from all datasets.</i></td>
-        </tr>
-    </table>
-<%
-    }
-%>
---%>
 </form><hr/>

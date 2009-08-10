@@ -830,9 +830,9 @@ public class ReportsController extends BaseStudyController
             if (reportId != null)
             {
                 Report report = reportId.getReport();
-                if (report instanceof StudyCrosstabReport)
+                if (report instanceof CrosstabReport)
                 {
-                    ExcelWriter writer = ((StudyCrosstabReport)report).getExcelWriter(getViewContext());
+                    ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
                     writer.write(getViewContext().getResponse());
                 }
             }
@@ -860,7 +860,7 @@ public class ReportsController extends BaseStudyController
                 if (!StringUtils.isEmpty(viewName))
                     form.setViewName(viewName);
             }
-            form.setColumns(getDatasetColumns(form));
+            form.setColumns(getColumns(form));
 
             JspView<CrosstabDesignBean> view = new JspView<CrosstabDesignBean>("/org/labkey/study/view/crosstabDesigner.jsp", form);
             VBox v = new VBox(view);
@@ -884,21 +884,23 @@ public class ReportsController extends BaseStudyController
             return v;
         }
 
-        private Map<String, ColumnInfo> getDatasetColumns(CrosstabDesignBean form)
+        private Map<String, ColumnInfo> getColumns(CrosstabDesignBean form) throws ServletException
         {
+
             QuerySettings settings = new QuerySettings(getViewContext(), "Dataset");
             settings.setQueryName(form.getQueryName());
             settings.setSchemaName(form.getSchemaName());
             settings.setViewName(form.getViewName());
 
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), "study");
-            QueryView qv = new QueryView(schema, settings);
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+            QueryView qv = schema.createView(getViewContext(), settings);
             List<DisplayColumn> cols = qv.getDisplayColumns();
             Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<ColumnInfo>();
             for (DisplayColumn col : cols)
             {
                 ColumnInfo colInfo = col.getColumnInfo();
-                colMap.put(colInfo.getAlias(), colInfo);
+                if (colInfo != null)
+                    colMap.put(colInfo.getAlias(), colInfo);
             }
             return colMap;
         }
@@ -919,11 +921,14 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+/*
             ViewContext context = getViewContext();
             int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
             int visitRowId = null == context.get("visitRowId") ? 0 : Integer.parseInt((String) context.get("visitRowId"));
 
             return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
+*/
+            return root.addChild("Crosstab View Builder");
         }
     }
 

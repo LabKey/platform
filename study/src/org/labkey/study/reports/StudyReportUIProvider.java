@@ -20,13 +20,17 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.StudySchema;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.util.Map;
@@ -53,41 +57,47 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 }
             };
 
-    public List<ReportService.DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings)
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
 
         // crosstab designer
-        ActionURL crossTabURL = context.getActionURL().clone();
-        crossTabURL.setAction(ReportsController.ParticipantCrosstabAction.class);
+        ActionURL crossTabURL = new ActionURL(ReportsController.ParticipantCrosstabAction.class, context.getContainer());
+        crossTabURL.addParameter(QueryParam.schemaName, settings.getSchemaName());
+        crossTabURL.addParameter(QueryParam.queryName, settings.getQueryName());
+        crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
+        crossTabURL.addParameter("returnURL", context.getActionURL().getLocalURIString());
         designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", crossTabURL));
 
-        // chart designer
-        ChartDesignerBean chartBean = new ChartDesignerBean(settings);
-        chartBean.setReportType(StudyChartQueryReport.TYPE);
-
-        ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
-        url.addParameter(DataSetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), 0));
-        url.setAction(ReportsController.DesignChartAction.class);
-
-        designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url));
-
-        // r report
-        if (RReport.canCreateScript(context) && RReport.isEnabled())
+        if (StudyManager.getSchemaName().equals(settings.getSchemaName()))
         {
-            RReportBean rBean = new RReportBean(settings);
-            rBean.setReportType(StudyRReport.TYPE);
-            rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+            // chart designer
+            ChartDesignerBean chartBean = new ChartDesignerBean(settings);
+            chartBean.setReportType(StudyChartQueryReport.TYPE);
 
-            designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
-        }
+            ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
+            url.addParameter(DataSetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), 0));
+            url.setAction(ReportsController.DesignChartAction.class);
 
-        // external report
-        if (context.getUser().isAdministrator())
-        {
-            ActionURL buttonURL = context.getActionURL().clone();
-            buttonURL.setAction(ReportsController.ExternalReportAction.class);
-            designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", buttonURL));
+            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url));
+
+            // r report
+            if (RReport.canCreateScript(context) && RReport.isEnabled())
+            {
+                RReportBean rBean = new RReportBean(settings);
+                rBean.setReportType(StudyRReport.TYPE);
+                rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+
+                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
+            }
+
+            // external report
+            if (context.getUser().isAdministrator())
+            {
+                ActionURL buttonURL = context.getActionURL().clone();
+                buttonURL.setAction(ReportsController.ExternalReportAction.class);
+                designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", "An External Command Report", buttonURL));
+            }
         }
         return designers;
     }

@@ -2182,6 +2182,7 @@ study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/AttachmentReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/ChartReportView.java -text
+study/src/org/labkey/study/reports/CrosstabReport.java -text
 study/src/org/labkey/study/reports/CrosstabReportDescriptor.java -text
 study/src/org/labkey/study/reports/EnrollmentReport.java -text
 study/src/org/labkey/study/reports/ExportExcelReport.java -text
