@@ -426,25 +426,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/groovy-all-1.0-RC-01.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/struts.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/beehive-controls.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -457,35 +439,6 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/beehive-netui-core.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/tomcat-server" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/tags-html" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/tags-databinding" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/testRecorder" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/compiler" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/compiler-xdoclet" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/util" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/scoping" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/core" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/jar-assembly" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/compiler-core" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/javascript" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/bootstrap" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/tomcat-common" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/webapp-template" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/pageflow" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/tomcat-webapp" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/tags-template" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/apache-beehive-1.0-src.zip!/apache-beehive-1.0-src/src/netui/src/pageflow-jdk14" />
-        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">

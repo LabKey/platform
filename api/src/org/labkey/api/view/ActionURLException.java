@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.SkipMothershipLogging;
+
 /**
  * User: adam
  * Date: Sep 8, 2008
@@ -24,7 +26,7 @@ package org.labkey.api.view;
 // This can be used in places where we fail to convert user input or a URL parameter into a valid ActionURL (e.g., a form).
 // Often this is a malformed URL in a custom form built in a wiki; we want to give the form designer a clear exception but
 // want to avoid sending to mothership.
-public class ActionURLException extends RuntimeException
+public class ActionURLException extends RuntimeException implements SkipMothershipLogging
 {
     public ActionURLException(String urlString, Exception e)
     {

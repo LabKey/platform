@@ -149,9 +149,10 @@ public class ExceptionUtil
     public static void logExceptionToMothership(HttpServletRequest request, Throwable ex)
     {
         ex = unwrapException(ex);
-        if (isClientAbortException(ex) || ex instanceof RedirectException || ex instanceof NotFoundException || ex instanceof UnauthorizedException || ex instanceof ActionURLException)
+
+        if (ex instanceof SkipMothershipLogging || isClientAbortException(ex))
         {
-            // We don't need to log any of these
+            // Don't log these
             return;
         }
 

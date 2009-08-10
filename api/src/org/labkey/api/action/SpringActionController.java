@@ -43,6 +43,7 @@ import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.servlet.view.RedirectView;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -95,18 +96,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
         _classToDescriptor.put(ad.getActionClass(), ad);
     }
 
+    @NotNull
     private static ActionDescriptor getActionDescriptor(Class<? extends Controller> actionClass)
     {
         ActionDescriptor ad = _classToDescriptor.get(actionClass);
 
         if (null == ad)
-        {
-            // Should add a marker object to the map and just throw on null
-            if ("BeehiveForwardingAction".equals(actionClass.getSimpleName()))
-                return null;
-            else
-                throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
-        }
+            throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
 
         return ad;
     }
@@ -599,13 +595,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         public void addTime(Controller action, long elapsedTime)
         {
-            ActionDescriptor ad = getActionDescriptor(action.getClass());
-
-            // TODO: BeehiveForwardingAction?  Use marker object instead of null
-            if (null == ad)
-                return;
-
-            ad.addTime(elapsedTime);
+            getActionDescriptor(action.getClass()).addTime(elapsedTime);
         }
 
 

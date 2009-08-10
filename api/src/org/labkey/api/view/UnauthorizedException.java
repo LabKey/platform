@@ -16,10 +16,11 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.util.SkipMothershipLogging;
 
 import javax.servlet.http.HttpServletResponse;
 
-public class UnauthorizedException extends RuntimeException
+public class UnauthorizedException extends RuntimeException implements SkipMothershipLogging
 {
     public UnauthorizedException()
     {

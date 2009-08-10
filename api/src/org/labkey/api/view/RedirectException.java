@@ -15,9 +15,11 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.SkipMothershipLogging;
+
 import javax.servlet.ServletException;
 
-public class RedirectException extends ServletException
+public class RedirectException extends ServletException implements SkipMothershipLogging
 {
     String _url;
 

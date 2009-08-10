@@ -805,6 +805,7 @@ api/src/org/labkey/api/util/SearchHit.java -text
 api/src/org/labkey/api/util/SearchHitComparator.java -text
 api/src/org/labkey/api/util/ShutdownListener.java -text
 api/src/org/labkey/api/util/SimpleSearchHit.java -text
+api/src/org/labkey/api/util/SkipMothershipLogging.java -text
 api/src/org/labkey/api/util/StartupListener.java -text
 api/src/org/labkey/api/util/StringExpressionFactory.java -text
 api/src/org/labkey/api/util/StringSubstitution.java -text
@@ -853,6 +854,7 @@ api/src/org/labkey/api/view/TidyFilterView.java -text
 api/src/org/labkey/api/view/ViewBackgroundInfo.java -text
 api/src/org/labkey/api/view/ViewContext.java -text
 api/src/org/labkey/api/view/ViewForm.java -text
+api/src/org/labkey/api/view/WebPartConfigurationException.java -text
 api/src/org/labkey/api/view/WebPartFactory.java -text
 api/src/org/labkey/api/view/WebTheme.java -text
 api/src/org/labkey/api/view/WebThemeManager.java -text

@@ -15,9 +15,11 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.SkipMothershipLogging;
+
 import javax.servlet.http.HttpServletResponse;
 
-public class NotFoundException extends RuntimeException
+public class NotFoundException extends RuntimeException implements SkipMothershipLogging
 {
     public NotFoundException()
     {
