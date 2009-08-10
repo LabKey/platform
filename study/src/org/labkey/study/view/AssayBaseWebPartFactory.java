@@ -17,7 +17,7 @@ package org.labkey.study.view;
 
 import org.labkey.api.view.*;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.study.actions.ProtocolIdForm;
 
 public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 {
@@ -63,20 +63,25 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
         Integer protocolId = getProtocolId(webPart);
+        ProtocolIdForm protocolIdForm = new ProtocolIdForm();
+        protocolIdForm.setRowId(protocolId);
+        protocolIdForm.setUser(portalCtx.getUser());
+        protocolIdForm.setContainer(portalCtx.getContainer());
+
         boolean showButtons = Boolean.parseBoolean(webPart.getPropertyMap().get(SHOW_BUTTONS_KEY));
-        ExpProtocol protocol = null;
-        if (protocolId != null)
-            protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
+        ExpProtocol protocol;
         WebPartView view;
-        if (protocol == null)
+        try
         {
-            view = new HtmlView("This webpart does not reference a valid assay.  Please customize the webpart.");
-            view.setTitle(getName());
-        }
-        else
-        {
+            protocol = protocolIdForm.getProtocol(true);
             view = getWebPartView(portalCtx, webPart, protocol, showButtons);
         }
+        catch (NotFoundException e)
+        {
+            view = new HtmlView("This webpart does not reference a valid assay or provider.  Please customize this webpart.  <span class='labkey-error'>" + e.getMessage() + "</span>");
+            view.setTitle(getName());
+        }
+
         view.setFrame(WebPartView.FrameType.PORTAL);
         return view;
     }
