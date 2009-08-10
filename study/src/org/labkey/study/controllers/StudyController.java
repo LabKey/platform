@@ -23,8 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
 import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -78,7 +76,8 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.*;
-import org.labkey.study.importer.StudyReload.*;
+import org.labkey.study.importer.StudyReload.ReloadStatus;
+import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -3723,19 +3722,7 @@ public class StudyController extends BaseStudyController
 
         try
         {
-            try
-            {
-                return importer.process();
-            }
-            catch (RuntimeException e)
-            {
-                Throwable cause = e.getCause();
-
-                if (cause instanceof StudyImporter.StudyImportException)
-                    throw (StudyImporter.StudyImportException)cause;
-                else
-                    throw e;
-            }
+            return importer.process();
         }
         catch (StudyImporter.StudyImportException e)
         {

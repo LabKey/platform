@@ -22,6 +22,7 @@ import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
+import org.labkey.study.importer.StudyImporter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -41,7 +42,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>>
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(List<DataSetDefinition> definitions, ExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
     {
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();

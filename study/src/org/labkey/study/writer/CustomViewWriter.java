@@ -23,6 +23,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.importer.StudyImporter;
 
 import java.util.List;
 import java.util.Set;
@@ -74,7 +75,7 @@ public class CustomViewWriter implements Writer<StudyImpl>
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(ExportContext ctx, VirtualFile root)
+    private VirtualFile ensureViewDirectory(ExportContext ctx, VirtualFile root) throws StudyImporter.StudyImportException
     {
         if (null == _viewDir)
         {

@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.study.importer.StudyImporter.StudyImportException;
 import org.labkey.study.xml.StudyDocument;
 
 /**
@@ -48,12 +49,12 @@ public abstract class AbstractContext
     }
 
     // Study node -- interesting to any top-level writer that needs to set info into study.xml
-    public StudyDocument.Study getStudyXml()
+    public StudyDocument.Study getStudyXml() throws StudyImportException
     {
         return getStudyDocument().getStudy();
     }
 
-    protected synchronized StudyDocument getStudyDocument()
+    protected synchronized StudyDocument getStudyDocument() throws StudyImportException
     {
         return _studyDoc;
     }

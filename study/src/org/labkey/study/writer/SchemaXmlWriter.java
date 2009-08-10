@@ -117,8 +117,17 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
                 if (null != fk && null != fk.getLookupColumnName())
                 {
                     ColumnType.Fk fkXml = columnXml.addNewFk();
-                    Container lkContainer = (null != fk.getLookupContainerId() ? ContainerManager.getForId(fk.getLookupContainerId()) : null);
-                    fkXml.setFkFolderPath(lkContainer != null ? lkContainer.getPath() : null);
+
+                    String fkContainerId = fk.getLookupContainerId();
+
+                    // Null means current container... which means don't set anything in the XML
+                    if (null != fkContainerId)
+                    {
+                        Container fkContainer = ContainerManager.getForId(fkContainerId);
+
+                        if (null != fkContainer)
+                            fkXml.setFkFolderPath(fkContainer.getPath());
+                    }
 
                     TableInfo tinfo = fk.getLookupTableInfo();
                     fkXml.setFkDbSchema(tinfo.getPublicSchemaName());

@@ -19,6 +19,7 @@ import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.importer.StudyImporter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -40,7 +41,7 @@ public class DataFaxVisitMapWriter implements Writer<VisitImpl[]>
         return null;
     }
 
-    public void write(VisitImpl[] visits, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(VisitImpl[] visits, ExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();

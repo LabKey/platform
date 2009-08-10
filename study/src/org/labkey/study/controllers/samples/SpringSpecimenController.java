@@ -19,9 +19,6 @@ package org.labkey.study.controllers.samples;
 import jxl.Range;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
@@ -78,7 +75,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.sql.SQLException;

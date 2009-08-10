@@ -23,6 +23,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 
 import java.util.Map;
+import java.net.URISyntaxException;
+import java.text.ParseException;
 
 /**
  * User: adam
@@ -53,21 +55,51 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         User user = portalCtx.getUser();
         Map<String, String> props = webPart.getPropertyMap();
 
-        // Next two props are required.  TODO: throw if null -- see #7101
         String entityId = webPart.getPropertyMap().get("entityId");
 
+        if (null == entityId)
+            throw new WebPartConfigurationException(this, "parameter 'entityId' is required");
+
         String pageUrlString = props.get("pageURL");
-        ActionURL pageURL = null != pageUrlString ? new ActionURL(pageUrlString) : portalCtx.getActionURL();
+
+        ActionURL pageURL;
+
+        try
+        {
+            pageURL = null != pageUrlString ? new ActionURL(pageUrlString) : portalCtx.getActionURL();
+        }
+        catch (Exception e)
+        {
+            throw new WebPartConfigurationException(this, "invalid 'pageURL' parameter");
+        }
 
         String currentUrlString = props.get("currentURL");
-        URLHelper currentURL = (null != currentUrlString ? new URLHelper(currentUrlString) : portalCtx.getActionURL());
+        URLHelper currentURL;
+
+        try
+        {
+            currentURL = (null != currentUrlString ? new URLHelper(currentUrlString) : portalCtx.getActionURL());
+        }
+        catch (URISyntaxException e)
+        {
+            throw new WebPartConfigurationException(this, "invalid 'currentURL' parameter");
+        }
 
         String newDiscussionTitle = props.get("newDiscussionTitle");
         if (null == newDiscussionTitle)
             newDiscussionTitle = "New Discussion";
 
-        String allowMultipleDiscussionsString = props.get("allowMultipleDiscussions");
-        boolean allowMultipleDiscussions = (null != allowMultipleDiscussionsString && new BooleanFormat().parseObject(allowMultipleDiscussionsString).booleanValue());
+        boolean allowMultipleDiscussions;
+
+        try
+        {
+            String allowMultipleDiscussionsString = props.get("allowMultipleDiscussions");
+            allowMultipleDiscussions = (null != allowMultipleDiscussionsString && new BooleanFormat().parseObject(allowMultipleDiscussionsString).booleanValue());
+        }
+        catch (ParseException e)
+        {
+            throw new WebPartConfigurationException(this, "invalid 'allowMultipleDiscussions' parameter");
+        }
 
         WebPartView view = DiscussionService.get().getDisussionArea(c, user, currentURL, entityId, pageURL, newDiscussionTitle, allowMultipleDiscussions, true);
         view.setTitle("Discussion");

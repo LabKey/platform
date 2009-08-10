@@ -20,6 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.importer.StudyImporter;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -55,7 +56,7 @@ public class ExportContext extends AbstractContext
 
     @Override
     // Full study doc -- only interesting to StudyXmlWriter
-    public StudyDocument getStudyDocument()
+    public StudyDocument getStudyDocument() throws StudyImporter.StudyImportException
     {
         if (_locked)
             throw new IllegalStateException("Can't access StudyDocument after study.xml has been written");

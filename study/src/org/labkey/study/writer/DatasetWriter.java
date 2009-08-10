@@ -28,6 +28,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
+import org.labkey.study.importer.StudyImporter;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -54,7 +55,7 @@ public class DatasetWriter implements Writer<StudyImpl>
         return SELECTION_TEXT;
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException
+    public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImporter.StudyImportException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();

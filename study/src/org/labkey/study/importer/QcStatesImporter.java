@@ -28,7 +28,7 @@ import java.sql.SQLException;
  */
 public class QcStatesImporter
 {
-    void process(StudyImpl study, ImportContext ctx) throws SQLException
+    void process(StudyImpl study, ImportContext ctx) throws SQLException, StudyImporter.StudyImportException
     {
         // TODO: Generalize to all qc state properties
         StudyDocument.Study.QcStates qcStates = ctx.getStudyXml().getQcStates();

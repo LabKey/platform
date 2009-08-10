@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public class MissingValueImporter
 {
-    void process(ImportContext ctx) throws IOException, SQLException
+    void process(ImportContext ctx) throws IOException, SQLException, StudyImporter.StudyImportException
     {
         Container c = ctx.getContainer();
         StudyDocument.Study.MissingValueIndicators mvXml = ctx.getStudyXml().getMissingValueIndicators();

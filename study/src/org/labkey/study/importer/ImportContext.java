@@ -15,12 +15,14 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-import org.labkey.api.view.ActionURL;
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.writer.AbstractContext;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
+import org.labkey.study.importer.StudyImporter.InvalidFileException;
+import org.labkey.study.importer.StudyImporter.StudyImportException;
+import org.labkey.study.writer.AbstractContext;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +52,7 @@ public class ImportContext extends AbstractContext
     }
 
     @Override
-    protected synchronized StudyDocument getStudyDocument()      // TODO: Should throw StudyImportException
+    protected synchronized StudyDocument getStudyDocument() throws StudyImportException
     {
         StudyDocument studyDoc = super.getStudyDocument();
 
@@ -61,13 +63,9 @@ public class ImportContext extends AbstractContext
             {
                 studyDoc = readStudyDocument(_root);
             }
-            catch (StudyImporter.StudyImportException e)
+            catch (IOException e)
             {
-                throw new RuntimeException(e);
-            }
-            catch (IOException e)  // TODO: Should wrap in StudyImportException
-            {
-                throw new RuntimeException(e);
+                throw new StudyImportException("Exception loading study.xml file", e);
             }
 
             setStudyDocument(studyDoc);
@@ -77,12 +75,12 @@ public class ImportContext extends AbstractContext
     }
 
 
-    private static StudyDocument readStudyDocument(File root) throws StudyImporter.StudyImportException, IOException
+    private static StudyDocument readStudyDocument(File root) throws StudyImportException, IOException
     {
         File file = new File(root, "study.xml");
 
         if (!file.exists())
-            throw new StudyImporter.StudyImportException("Study.xml file does not exist.");
+            throw new StudyImportException("Study.xml file does not exist.");
 
         StudyDocument studyDoc;
 
@@ -92,7 +90,7 @@ public class ImportContext extends AbstractContext
         }
         catch (XmlException e)
         {
-            throw new StudyImporter.InvalidFileException(root, file, e);
+            throw new InvalidFileException(root, file, e);
         }
 
         return studyDoc;

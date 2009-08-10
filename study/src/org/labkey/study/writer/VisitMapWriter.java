@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.importer.StudyImporter;
 
 import java.io.IOException;
 
@@ -32,7 +33,7 @@ public class VisitMapWriter implements Writer<StudyImpl>
         return "Visit Map";
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
     {
         if (ctx.useOldFormats())
         {
