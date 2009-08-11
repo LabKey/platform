@@ -360,14 +360,14 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         Stack<ViewStackEntry> s = _viewContexts.get();
         // place holder view
         HttpView v = new ServletView(null, context);
-        s.push(new ViewStackEntry(v,request,response));
+        s.push(new ViewStackEntry(v, request,response));
     }
 
 
     protected static void pushView(ModelAndView mv, HttpServletRequest request, HttpServletResponse response)
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
-        s.push(new ViewStackEntry(mv,request,response));
+        s.push(new ViewStackEntry(mv, request,response));
     }
 
 

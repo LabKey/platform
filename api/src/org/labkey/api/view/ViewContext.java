@@ -58,7 +58,6 @@ public class ViewContext extends BoundMap implements MessageSource
     private String _scopePrefix = "";
     private Container _c = null;
     private int _perm = -1;
-    private ACL _acl = null;
     PropertyValues _pvsBind = null;              // may be set by SpringActionController, representing values used to bind command object
 
     public ViewContext()
@@ -80,6 +79,7 @@ public class ViewContext extends BoundMap implements MessageSource
         _request = copyFrom._request;
         _response = copyFrom._response;
         _url = copyFrom._url;
+        _user = copyFrom._user;
         _scopePrefix = copyFrom._scopePrefix;
         _c = copyFrom._c;
         _webApplicationContext = copyFrom._webApplicationContext;
@@ -138,7 +138,6 @@ public class ViewContext extends BoundMap implements MessageSource
         if (request instanceof MockHttpServletRequest)
             ((MockHttpServletRequest)request).setUserPrincipal(user);
 
-        HttpView.initForRequest(context, request, null);
         return context;
     }
 
