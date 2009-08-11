@@ -39,7 +39,6 @@
 
     if (null == titleColumn)
         titleColumn = "<AUTO> (" + list.getTable(user).getTitleColumn() + ")";
-
 %>
 <table>
     <tr><td colspan="2"><b>List Properties</b></td></tr>
