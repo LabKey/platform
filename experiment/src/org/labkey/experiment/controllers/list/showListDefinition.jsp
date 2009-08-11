@@ -34,6 +34,12 @@
     Domain domain = list.getDomain();
     User user = getViewContext().getUser();
     SecurityPolicy policy = getViewContext().getContainer().getPolicy();
+
+    String titleColumn = list.getTitleColumn();
+
+    if (null == titleColumn)
+        titleColumn = "<AUTO> (" + list.getTable(user).getTitleColumn() + ")";
+
 %>
 <table>
     <tr><td colspan="2"><b>List Properties</b></td></tr>
@@ -41,23 +47,27 @@
     <tr><td>Description:</td><td><%=h(list.getDescription())%></td></tr>
     <tr><td>Key Type:</td><td><%=h(list.getKeyType().getLabel())%></td></tr>
     <tr><td>Key Name:</td><td><%=h(list.getKeyName())%></td></tr>
-    <tr><td>Title Field:</td><td><%=h(list.getTitleColumn())%></td></tr>
+    <tr><td>Title Field:</td><td><%=h(titleColumn)%></td></tr>
     <tr><td>Discussion Links:</td><td><%=list.getDiscussionSetting().getText()%></td></tr>
     <tr><td>Allow Delete:</td><td><%=list.getAllowDelete() ? "Yes" : "No"%></td></tr>
     <tr><td>Allow Import:</td><td><%=list.getAllowUpload() ? "Yes" : "No"%></td></tr>
     <tr><td>Allow Export &amp; Print:</td><td><%=list.getAllowExport() ? "Yes" : "No"%></td></tr>
 </table>
-<% if (policy.hasPermission(user, DesignListPermission.class)) {
-    ActionURL setDefaultsURL = new ActionURL(SetDefaultValuesListAction.class, getContainer());
-    setDefaultsURL.addParameter("domainId", list.getDomain().getTypeId());
-    setDefaultsURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+<%
+    if (policy.hasPermission(user, DesignListPermission.class))
+    {
+        ActionURL setDefaultsURL = new ActionURL(SetDefaultValuesListAction.class, getContainer());
+        setDefaultsURL.addParameter("domainId", list.getDomain().getTypeId());
+        setDefaultsURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
 %>
     <labkey:link href="<%=list.urlEditDefinition()%>" text="edit design" />
     <labkey:link href="<%=list.urlFor(ListController.Action.deleteListDefinition)%>" text="delete list" />
     <labkey:link href="<%= setDefaultsURL.getLocalURIString() %>" text="set default values" />
 <% } %>
     <labkey:link href="<%=list.urlShowData()%>" text="view data" />
-<% if (policy.hasPermission(user, UpdatePermission.class) && list.getAllowUpload()) { %>
+<%
+    if (policy.hasPermission(user, UpdatePermission.class) && list.getAllowUpload())
+    { %>
     <labkey:link href="<%=list.urlFor(ListController.Action.uploadListItems)%>" text="import data" />
 <% } %>
 <br><br>
