@@ -228,7 +228,9 @@ public class TSVGridWriter extends TSVWriter
         {
             if (dc.isVisible(ctx))
             {
-                row.append(dc.getTsvFormattedValue(ctx));
+                // Remove all tab characters; see #8435
+                String value = dc.getTsvFormattedValue(ctx).replaceAll("\t", "");
+                row.append(value);
                 row.append('\t');
             }
         }
