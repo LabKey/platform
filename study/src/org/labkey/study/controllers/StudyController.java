@@ -3605,6 +3605,7 @@ public class StudyController extends BaseStudyController
 
             if (null != StudyManager.getInstance().getStudy(c))
             {
+                errors.reject("studyImport", "A study already exists in this folder.");
                 return false;
             }
 
