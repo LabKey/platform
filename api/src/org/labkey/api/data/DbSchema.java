@@ -857,7 +857,7 @@ public class DbSchema
             }
             Table.execute(coreSchema, createTempTableSql, new Object[]{});
             tTemplate.track();
-            Table.execute(coreSchema, sbCheck.toString(), sbCheck.getParams().toArray());
+            Table.execute(coreSchema, sbCheck);
 
             if (bfix)
             {

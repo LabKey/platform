@@ -203,7 +203,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         Map<String, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = _filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
 
-        String s = fromSQL.toString();
+        String s = fromSQL.getSQL();
         boolean simple = s.startsWith("SELECT *") && -1 == s.indexOf("WHERE");
         if (simple)
             return fromSQL.append(" ").append(filterFrag);

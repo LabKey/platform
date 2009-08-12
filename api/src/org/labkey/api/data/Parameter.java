@@ -24,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -45,19 +44,25 @@ import java.util.GregorianCalendar;
 
 public class Parameter
 {
-    int _sqlType = Types.JAVA_OBJECT;
-    String _charset = null; // null for unicode
-    Object _value = null;
+    final int _sqlType;
+    final Object _value;
     SqlDialect _dialect = null;
 
     public Parameter(Object value)
     {
-        _value = value;
+        this(value, Types.JAVA_OBJECT);
     }
 
     public Parameter(Object value, int sqlType)
     {
+        // Use AttachmentFile instead
+        assert !(value instanceof File || value instanceof MultipartFile);
+
         _value = value;
+        if (value == null && sqlType == Types.JAVA_OBJECT)
+        {
+            sqlType = Types.VARCHAR;
+        }
         _sqlType = sqlType;
     }
 
@@ -70,11 +75,25 @@ public class Parameter
      * @param value
      * @param useUnicode
      */
-    public Parameter(Object value, boolean useUnicode)
+    public Parameter(Object value, boolean useUnicode, SqlDialect dialect)
     {
-        _value = value;
-        _sqlType = Types.VARCHAR;
-        _charset = useUnicode ? null : "ISO-8859-1";
+        if (!useUnicode && dialect.isSqlServer())
+        {
+            try
+            {
+                _value = String.valueOf(value).getBytes("ISO-8859-1");
+                _sqlType = Types.VARBINARY;
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        else
+        {
+            _value = value;
+            _sqlType = Types.VARCHAR;
+        }
     }
 
     public static Parameter nullParameter(int sqlType)
@@ -84,29 +103,13 @@ public class Parameter
 
     public void bind(PreparedStatement stmt, int index) throws SQLException
     {
-        _bind(stmt, index, _value, _sqlType, _charset, _dialect);
-    }
+        Object value = getValueToBind();
 
-    public static void bindObject(PreparedStatement stmt, int index, Object value) throws SQLException
-    {
-        if (value instanceof Parameter)
-            ((Parameter)value).bind(stmt, index);
-        else
-            _bind(stmt, index, value, Types.JAVA_OBJECT, null, null);
-    }
-
-    private static void _bind(PreparedStatement stmt, int index, Object value, int sqlType, String charset, SqlDialect dialect)
-            throws SQLException
-
-    {
         if (null == value)
         {
-            stmt.setNull(index, sqlType == Types.JAVA_OBJECT ? Types.VARCHAR : sqlType);
+            stmt.setNull(index, _sqlType);
             return;
         }
-
-        // Use AttachmentFile instead
-        assert !(value instanceof File || value instanceof MultipartFile);
 
         if (value instanceof AttachmentFile)
         {
@@ -127,58 +130,59 @@ public class Parameter
                 throw sqlx;
             }
         }
-        
 
-        if (value instanceof java.util.Date)
-        {
-            if (!(value instanceof java.sql.Date) && !(value instanceof java.sql.Time) && !(value instanceof java.sql.Timestamp))
-                value = new java.sql.Timestamp(((java.util.Date) value).getTime());
-        }
-        else if (value instanceof GregorianCalendar)
-            value = new java.sql.Timestamp(((java.util.GregorianCalendar) value).getTimeInMillis());
-        else if (value.getClass() == java.lang.Character.class || value instanceof CharSequence)
-        {
-            if (value instanceof HString)
-                value = ((HString)value).getSource();
-            else
-                value = value.toString();
-        }
-        else if (value.getClass() == Container.class)
-            value = ((Container) value).getId();
-        else if (value instanceof Enum)
-            value = ((Enum)value).name();
-        else if (value instanceof Role)
-            value = ((Role)value).getUniqueName();
-
-        if (sqlType == Types.VARCHAR && null != charset)
-        {
-            if (dialect == null)
-            {
-                Connection conn = stmt.getConnection();
-                if (conn instanceof ConnectionWrapper)
-                    dialect = ((ConnectionWrapper)conn).getDialect();
-            }
-
-            if (dialect.isSqlServer())
-            {
-                try
-                {
-                    value = String.valueOf(value).getBytes(charset);
-                    sqlType = Types.VARBINARY;
-                }
-                catch (UnsupportedEncodingException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        if (sqlType == Types.JAVA_OBJECT)
+        if (_sqlType == Types.JAVA_OBJECT)
             stmt.setObject(index, value);
         else
-            stmt.setObject(index, value, sqlType);
+            stmt.setObject(index, value, _sqlType);
     }
 
+    public static void bindObject(PreparedStatement stmt, int index, Object value) throws SQLException
+    {
+        Parameter param;
+        if (value instanceof Parameter)
+            param = (Parameter)value;
+        else
+            param = new Parameter(value, Types.JAVA_OBJECT);
+
+        param.bind(stmt, index);
+    }
+
+    public Object getValueToBind()
+    {
+        if (_value == null)
+        {
+            return null;
+        }
+
+        if (_value instanceof AttachmentFile)
+        {
+            return _value;
+        }
+
+        if (_value instanceof java.util.Date)
+        {
+            if (!(_value instanceof java.sql.Date) && !(_value instanceof java.sql.Time) && !(_value instanceof java.sql.Timestamp))
+                return new java.sql.Timestamp(((java.util.Date) _value).getTime());
+        }
+        else if (_value instanceof GregorianCalendar)
+            return new java.sql.Timestamp(((java.util.GregorianCalendar) _value).getTimeInMillis());
+        else if (_value.getClass() == java.lang.Character.class || _value instanceof CharSequence)
+        {
+            if (_value instanceof HString)
+                return ((HString)_value).getSource();
+            else
+                return _value.toString();
+        }
+        else if (_value.getClass() == Container.class)
+            return ((Container) _value).getId();
+        else if (_value instanceof Enum)
+            return ((Enum)_value).name();
+        else if (_value instanceof Role)
+            return ((Role)_value).getUniqueName();
+
+        return _value;
+    }
 
     public String toString()
     {

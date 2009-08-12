@@ -96,6 +96,8 @@ public abstract class SqlDialect
         return sb.length() > 0 ? sb.toString() : "No other threads with active database connections to report.";
     }
 
+    public abstract String getBooleanLiteral(boolean b);
+
 
     static
     {

@@ -155,7 +155,7 @@ public class LookupColumn extends ColumnInfo
         strJoin.append(" AS ").append(colTableAlias);
         strJoin.append(" ON ");
         strJoin.append(getJoinCondition(baseAlias));
-        assert null == map.get(colTableAlias) || map.get(colTableAlias).toString().equals(strJoin.toString());
+        assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL());
         map.put(colTableAlias, strJoin);
     }
 

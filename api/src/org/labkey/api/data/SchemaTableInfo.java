@@ -94,7 +94,7 @@ public class SchemaTableInfo implements TableInfo
 
     public String getSelectName()
     {
-        return selectName.toString();
+        return selectName.getSQL();
     }
 
 
@@ -247,7 +247,7 @@ public class SchemaTableInfo implements TableInfo
 
         try
         {
-            sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + selectName + " ORDER BY " + titleColumn;
+            sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + selectName.getSQL() + " ORDER BY " + titleColumn;
 
             rs = Table.executeQuery(parentSchema, sql, null);
 

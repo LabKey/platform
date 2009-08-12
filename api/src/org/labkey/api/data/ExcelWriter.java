@@ -89,7 +89,7 @@ public class ExcelWriter
 
     public ExcelWriter(DbSchema schema, String query) throws SQLException
     {
-        ResultSet rs = Table.executeQuery(schema, query, null, MAX_ROWS);
+        ResultSet rs = Table.executeQuery(schema, new SQLFragment(query), MAX_ROWS);
         setResultSet(rs);
         createColumns(rs.getMetaData());
     }

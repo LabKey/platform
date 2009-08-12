@@ -241,10 +241,15 @@ public class Table
     }
 
 
-    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount)
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount)
             throws SQLException
     {
-        return (Table.TableResultSet) executeQuery(schema, sql, parameters, rowCount, 0, true, false, null, null);
+        return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, 0, true, false, null, null);
+    }
+
+    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount, boolean cache, boolean scrollable) throws SQLException
+    {
+        return executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, cache, scrollable);
     }
 
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache)
@@ -2029,9 +2034,9 @@ public class Table
                 Parameter.bindObject(stmt, 1, MyEnum.BETTY);
                 stmt.execute();
 
-                new Parameter("true", true).bind(stmt,1);
+                new Parameter("true", true, dialect).bind(stmt,1);
                 stmt.execute();
-                new Parameter("false", false).bind(stmt,1);
+                new Parameter("false", false, dialect).bind(stmt,1);
                 stmt.execute();
             }
             finally
