@@ -33,11 +33,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -539,19 +542,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
         }
 
-        ViewContext context = null;
+        ViewContext context = ViewContext.getMockViewContext(user, container, new ActionURL(), false);
         Report[] existingReports = getReports(user, container, key);
 
         for (Report existingReport : existingReports)
-        {
             if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
-            {
-                if (null == context)
-                    context = ViewContext.getMockViewContext(user, container, new ActionURL());
-
                 deleteReport(context, existingReport);
-            }
-        }
 
         int rowId = _saveReport(user, container, key, descriptor).getRowId();
 

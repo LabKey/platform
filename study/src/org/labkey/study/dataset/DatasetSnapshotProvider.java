@@ -474,7 +474,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         {
             User user = def.getModifiedBy() != null ? def.getModifiedBy() : def.getCreatedBy();
 
-            return ViewContext.getMockViewContext(user, def.getContainer(), new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()));
+            return ViewContext.getMockViewContext(user, def.getContainer(), new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()), true);
         }
     }
 
