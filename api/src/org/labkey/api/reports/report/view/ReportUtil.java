@@ -44,10 +44,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -243,7 +241,7 @@ public class ReportUtil
 
         String reportKey = ReportUtil.getReportKey(bean.getSchemaName(), bean.getQueryName());
         String reportName = bean.getReportName();
-        for (Report r : getReports(context, reportKey, true))
+        for (Report r : getReports(context.getContainer(), context.getUser(), reportKey, true))
         {
             if (!RReportDescriptor.class.isAssignableFrom(r.getDescriptor().getClass()))
                 continue;
@@ -253,33 +251,24 @@ public class ReportUtil
         return scripts;
     }
 
-    public static List<Report> getReports(ViewContext context, String reportKey, boolean inherited)
+    public static List<Report> getReports(Container c, User user, String reportKey, boolean inherited)
     {
-        try {
+        try
+        {
             List<Report> reports = new ArrayList<Report>();
-            Container container = context.getContainer();
-            for (Report report : ReportService.get().getReports(context.getUser(), container, reportKey))
-            {
-                reports.add(report);
-            }
+            reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey)));
 
             if (inherited)
             {
-                while (!container.isRoot())
+                while (!c.isRoot())
                 {
-                    container = container.getParent();
-                    for (Report report : ReportService.get().getReports(context.getUser(), container, reportKey, ReportDescriptor.FLAG_INHERITABLE, 1))
-                    {
-                        reports.add(report);
-                    }
+                    c = c.getParent();
+                    reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey, ReportDescriptor.FLAG_INHERITABLE, 1)));
                 }
 
                 // look for any reports in the shared project
-                if (!ContainerManager.getSharedContainer().equals(context.getContainer()))
-                {
-                    for (Report report : ReportService.get().getReports(context.getUser(), ContainerManager.getSharedContainer(), reportKey))
-                        reports.add(report);
-                }
+                if (!ContainerManager.getSharedContainer().equals(c))
+                    reports.addAll(Arrays.asList(ReportService.get().getReports(user, ContainerManager.getSharedContainer(), reportKey)));
             }
             return reports;
         }
@@ -315,30 +304,30 @@ public class ReportUtil
 
     public static interface ReportFilter
     {
-        public boolean accept(Report report, ViewContext context);
+        public boolean accept(Report report, Container c, User user);
 
         /**
          * Returns the run and edit urls for query views
          */
-        public ActionURL getViewRunURL(ViewContext context, CustomViewInfo view);
-        public ActionURL getViewEditURL(ViewContext context, CustomViewInfo view);
+        public ActionURL getViewRunURL(Container c, CustomViewInfo view);
+        public ActionURL getViewEditURL(Container c, CustomViewInfo view);
     }
 
     public static class DefaultReportFilter implements ReportFilter
     {
-        public boolean accept(Report report, ViewContext context)
+        public boolean accept(Report report, Container c, User user)
         {
             return true;
         }
 
-        public ActionURL getViewRunURL(ViewContext context, CustomViewInfo view)
+        public ActionURL getViewRunURL(Container c, CustomViewInfo view)
         {
-            return QueryService.get().urlFor(context.getContainer(), QueryAction.executeQuery, view.getSchemaName(), view.getQueryName());
+            return QueryService.get().urlFor(c, QueryAction.executeQuery, view.getSchemaName(), view.getQueryName());
         }
 
-        public ActionURL getViewEditURL(ViewContext context, CustomViewInfo view)
+        public ActionURL getViewEditURL(Container c, CustomViewInfo view)
         {
-            return QueryService.get().urlFor(context.getContainer(), QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName()).
+            return QueryService.get().urlFor(c, QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName()).
                     addParameter(QueryParam.queryName.name(), view.getQueryName()).
                     addParameter(QueryParam.viewName.name(), view.getName());
         }
@@ -351,6 +340,9 @@ public class ReportUtil
 
     public static List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, ReportFilter filter)
     {
+        Container c = context.getContainer();
+        User user = context.getUser();
+
         if (filter == null)
             throw new IllegalArgumentException("ReportFilter cannot be null");
         
@@ -361,9 +353,9 @@ public class ReportUtil
 
         List<Map<String, String>> views = new ArrayList<Map<String, String>>();
 
-        for (Report r : ReportUtil.getReports(context, reportKey, true))
+        for (Report r : ReportUtil.getReports(c, user, reportKey, true))
         {
-            if (!filter.accept(r, context))
+            if (!filter.accept(r, c, user))
                 continue;
 
             if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
@@ -373,7 +365,7 @@ public class ReportUtil
 
                 User createdBy = UserManager.getUser(descriptor.getCreatedBy());
                 User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
-                boolean inherited = descriptor.isInherited(context.getContainer());
+                boolean inherited = descriptor.isInherited(c);
                 String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
 
@@ -402,7 +394,7 @@ public class ReportUtil
                 }
                 else
                 {
-                    if (queryExists(context.getUser(), context.getContainer(), schema, query))
+                    if (queryExists(user, c, schema, query))
                         record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
                     else
                         continue;
@@ -429,7 +421,7 @@ public class ReportUtil
         }
         if (includeQueries)
         {
-            for (CustomViewInfo view : QueryService.get().getCustomViewInfos(context.getUser(), context.getContainer(), schemaName, queryName))
+            for (CustomViewInfo view : QueryService.get().getCustomViewInfos(user, c, schemaName, queryName))
             {
                 if (view.isHidden())
                     continue;
@@ -456,18 +448,21 @@ public class ReportUtil
                 record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
                 record.put("permissions", view.getOwner() != null ? "private" : "public");
 
-                boolean inherited = isInherited(view, context.getContainer());
+                boolean inherited = isInherited(view, c);
+
                 if (!inherited)
                 {
-                    record.put("editUrl", filter.getViewEditURL(context, view).getLocalURIString());
+                    record.put("editUrl", filter.getViewEditURL(c, view).getLocalURIString());
                 }
-                record.put("runUrl", filter.getViewRunURL(context, view).getLocalURIString());
+
+                record.put("runUrl", filter.getViewRunURL(c, view).getLocalURIString());
                 record.put("container", view.getContainer().getPath());
                 record.put("inherited", String.valueOf(inherited));
 
                 views.add(record);
             }
         }
+
         return views;
     }
 
