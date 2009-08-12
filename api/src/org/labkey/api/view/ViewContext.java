@@ -138,6 +138,7 @@ public class ViewContext extends BoundMap implements MessageSource
         if (request instanceof MockHttpServletRequest)
             ((MockHttpServletRequest)request).setUserPrincipal(user);
 
+        HttpView.initForRequest(context, request, null);
         return context;
     }
 
