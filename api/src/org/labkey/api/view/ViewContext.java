@@ -126,7 +126,7 @@ public class ViewContext extends BoundMap implements MessageSource
     // Needed by background threads that call entrypoints that require ViewContexts
     // TODO: Well-behaved interfaces should not take ViewContexts -- clean up query, et al to remove ViewContext params
     @Deprecated
-    public static ViewContext getMockViewContext(User user, Container c, ActionURL url)
+    public static ViewContext getMockViewContext(User user, Container c, ActionURL url, boolean pushViewContext)
     {
         ViewContext context = new ViewContext();
         context.setUser(user);
@@ -138,7 +138,10 @@ public class ViewContext extends BoundMap implements MessageSource
         if (request instanceof MockHttpServletRequest)
             ((MockHttpServletRequest)request).setUserPrincipal(user);
 
-        HttpView.initForRequest(context, request, null);
+        // Major hack -- QueryView needs the context pushed onto the ViewContext stack in thread local 
+        if (pushViewContext)
+            HttpView.initForRequest(context, request, null);
+
         return context;
     }
 
