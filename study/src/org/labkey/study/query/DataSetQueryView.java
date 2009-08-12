@@ -26,10 +26,9 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
@@ -40,8 +39,8 @@ import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.*;
-import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.ReportManager;
+import org.labkey.study.reports.StudyRReport;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -335,7 +334,8 @@ public class DataSetQueryView extends QueryView
     {
         String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
-        for (Report report : ReportUtil.getReports(getViewContext(), reportKey, true))
+
+        for (Report report : ReportUtil.getReports(getContainer(), getUser(), reportKey, true))
         {
             // Filter out reports that don't match what this view is supposed to show. This can prevent
             // reports that were created on the same schema and table/query from a different view from showing up on a

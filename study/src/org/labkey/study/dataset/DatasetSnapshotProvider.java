@@ -53,7 +53,7 @@ import java.sql.SQLException;
 public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.UnmaterializeListener
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
-    private static Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
+    private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
 
     // map of property uri to dataset id
     private static final Map<String, Map<String, Integer>> _datasetPropertyMap = new HashMap<String, Map<String, Integer>>();
@@ -126,8 +126,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         for (DisplayColumn c : view.getDisplayColumns())
         {
             /**
-             * The ObjectId column is present in datasets that are created from assays so that they can back to the
-             * original assay and the assay can tell which studies the data has been copied to. Having more than
+             * The ObjectId column is present in datasets that are created from assays so that they can get back to
+             * the original assay and the assay can tell which studies the data has been copied to. Having more than
              * one copy of the same object id value per study is illegal.
              */
             if ("objectid".equalsIgnoreCase(c.getName()))
@@ -172,9 +172,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+
             if (def != null)
             {
                 QuerySnapshotDefinition snapshot = createSnapshotDef(form);
+
                 if (snapshot == null)
                     throw new IllegalArgumentException("Unable to create the query snapshot definition");
 
@@ -187,6 +189,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName().toString()).getDisplayColumns(form))
                 {
                     ColumnInfo col = dc.getColumnInfo();
+
                     if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
                     {
                         columnMap.put(col.getAlias(), getPropertyURI(d, col));

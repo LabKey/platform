@@ -84,7 +84,8 @@ public class ReportManager implements StudyManager.UnmaterializeListener
     }
 
     private static final String _datasetLabelQuery;
-    static {
+    static
+    {
         StringBuilder sql = new StringBuilder();
         final SqlDialect dialect = StudyManager.getSchema().getSqlDialect();
 
@@ -92,7 +93,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         sql.append("AND (ReportKey = ? ");
         sql.append("OR ReportKey ");
         sql.append(dialect.getCaseInsensitiveLikeOperator());
-        sql.append(" ? " + dialect.getConcatenationOperator() + " '%')");
+        sql.append(" ? ").append(dialect.getConcatenationOperator()).append(" '%')");
 
         _datasetLabelQuery = sql.toString();
     }
@@ -105,7 +106,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
                 continue;
 
             String label = report.getDescriptor().getReportName();
-            labels.add(new Pair(label, report.getDescriptor().getReportId().toString()));
+            labels.add(new Pair<String, String>(label, report.getDescriptor().getReportId().toString()));
         }
     }
 
@@ -156,7 +157,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         {
             for (CustomView view: views.values())
                 if (null != view.getName() && !view.isHidden())
-                    labels.add(new Pair(view.getName(), view.getName()));
+                    labels.add(new Pair<String, String>(view.getName(), view.getName()));
         }
 
         Collections.sort(labels, new Comparator<Pair<String, String>>()
@@ -172,7 +173,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         });
 
         // add the default grid as the first element
-        labels.add(0, new Pair("Default Grid View", ""));
+        labels.add(0, new Pair<String, String>("Default Grid View", ""));
 
         return labels;
     }
@@ -304,7 +305,8 @@ public class ReportManager implements StudyManager.UnmaterializeListener
     {
         if (!user.isAdministrator())
         {
-            try {
+            try
+            {
                 // a non-admin can delete reports they own (non admins are not allowed to create shared reports).
                 Report report = ReportService.get().getReport(reportId);
                 if (report != null)
@@ -334,28 +336,33 @@ public class ReportManager implements StudyManager.UnmaterializeListener
     {
         Map<String, DataSetDefinition> _datasets;
 
-        public boolean accept(Report report, ViewContext context)
+        @Override
+        public boolean accept(Report report, Container c, User user)
         {
-            return ReportManager.get().canReadReport(context.getUser(), context.getContainer(), report);
+            return ReportManager.get().canReadReport(user, c, report);
         }
 
-        private Map<String, DataSetDefinition> getDatasets(ViewContext context)
+        private Map<String, DataSetDefinition> getDatasets(Container c)
         {
             if (_datasets == null)
             {
                 _datasets = new CaseInsensitiveHashMap<DataSetDefinition>();
-                for (DataSetDefinition ds : StudyManager.getInstance().getDataSetDefinitions(StudyManager.getInstance().getStudy(context.getContainer())))
+
+                for (DataSetDefinition ds : StudyManager.getInstance().getDataSetDefinitions(StudyManager.getInstance().getStudy(c)))
                     _datasets.put(ds.getLabel(), ds);
             }
+
             return _datasets;
         }
 
-        public ActionURL getViewRunURL(ViewContext context, CustomViewInfo view)
+        @Override
+        public ActionURL getViewRunURL(Container c, CustomViewInfo view)
         {
-            Map<String, DataSetDefinition> datasets = getDatasets(context);
+            Map<String, DataSetDefinition> datasets = getDatasets(c);
+
             if (datasets.containsKey(view.getQueryName()))
             {
-                return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
+                return new ActionURL(StudyController.DatasetReportAction.class, c).
                         addParameter(DataSetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDataSetId()).
                         addParameter("Dataset.viewName", view.getName());
             }
@@ -363,16 +370,17 @@ public class ReportManager implements StudyManager.UnmaterializeListener
             // any specimen views
             if ("SpecimenDetail".equals(view.getQueryName()))
             {
-                return new ActionURL(SpringSpecimenController.SamplesAction.class, context.getContainer()).
+                return new ActionURL(SpringSpecimenController.SamplesAction.class, c).
                         addParameter("showVials", "true").
                         addParameter("SpecimenDetail." + QueryParam.viewName, view.getName());
             }
             else if ("SpecimenSummary".equals(view.getQueryName()))
             {
-                return new ActionURL(SpringSpecimenController.SamplesAction.class, context.getContainer()).
+                return new ActionURL(SpringSpecimenController.SamplesAction.class, c).
                         addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
-            return super.getViewRunURL(context, view);
+
+            return super.getViewRunURL(c, view);
         }
     }
 
@@ -506,11 +514,9 @@ public class ReportManager implements StudyManager.UnmaterializeListener
 //            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
         if (def != null)
         {
-            ViewContext context = new ViewContext();
-            context.setContainer(def.getContainer());
             _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
             String reportKey = ReportUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
-            for (Report report : ReportUtil.getReports(context, reportKey, true))
+            for (Report report : ReportUtil.getReports(def.getContainer(), null, reportKey, true))
             {
                 report.clearCache();
             }
