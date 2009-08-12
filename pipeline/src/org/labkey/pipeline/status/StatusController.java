@@ -323,6 +323,10 @@ public class StatusController extends SpringActionController
             Container c = getContainerCheckAdmin();
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
+            if (sf == null)
+            {
+                throw new NotFoundException();
+            }
 
             if (sf.getDataUrl() != null)
             {

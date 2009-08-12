@@ -437,7 +437,7 @@ public class MothershipManager
         sql.add(cal.getTime());
         sql.add(cal.getTime());
 
-        return Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), ServerInstallation.class);
+        return Table.executeQuery(getSchema(), sql, ServerInstallation.class);
     }
 
     public ServerInstallation[] getServerInstallationsActiveBefore(Calendar cal) throws SQLException
@@ -450,7 +450,7 @@ public class MothershipManager
         sql.append(" WHERE earliestknowntime <= ?)");
         sql.add(cal.getTime());
 
-        return Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), ServerInstallation.class);
+        return Table.executeQuery(getSchema(), sql, ServerInstallation.class);
     }
 
     public ServerInstallation getServerInstallation(int id, String containerId)

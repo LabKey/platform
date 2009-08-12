@@ -3033,8 +3033,8 @@ public class StudyManager
 
                     // Find the set of cohorts specified in our dataset
                     SQLFragment sqlFragment = new SQLFragment();
-                    sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getValueSql("CO") + " FROM " + cohortDatasetTinfo.getSelectName() + " CO " +
-                            "\nWHERE " + cohortLabelCol.getValueSql("CO") + " IS NOT NULL AND " + cohortLabelCol.getValueSql("CO") + " NOT IN\n" +
+                    sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getValueSql("CO").getSQL() + " FROM " + cohortDatasetTinfo.getSelectName() + " CO " +
+                            "\nWHERE " + cohortLabelCol.getValueSql("CO").getSQL() + " IS NOT NULL AND " + cohortLabelCol.getValueSql("CO").getSQL() + " NOT IN\n" +
                             " (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
                     sqlFragment.add(study.getContainer().getId());
 
@@ -3061,7 +3061,7 @@ public class StudyManager
 
                     // update participants table to reference correct cohorts:
                     String datasetSelect = "SELECT MAX(CohortLabel) FROM (\n" +
-                            "\tSELECT " + cohortLabelCol.getValueSql("Visits") + " AS CohortLabel, Visits.ParticipantId FROM " + cohortDatasetTinfo + " Visits, (\n" +
+                            "\tSELECT " + cohortLabelCol.getValueSql("Visits").getSQL() + " AS CohortLabel, Visits.ParticipantId FROM " + cohortDatasetTinfo + " Visits, (\n" +
                             "\t\tSELECT ParticipantId, max(sequencenum) AS SequenceNum FROM " + cohortDatasetTinfo.getSelectName() + " GROUP BY ParticipantId\n" +
                             "\t) As LastVisit \n" +
                             "\tWHERE Visits.ParticipantId = LastVisit.ParticipantId AND Visits.SequenceNum = LastVisit.SequenceNum\n" +

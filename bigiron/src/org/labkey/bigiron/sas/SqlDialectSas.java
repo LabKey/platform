@@ -15,19 +15,18 @@
  */
 package org.labkey.bigiron.sas;
 
+import com.sas.net.sharenet.ShareNetDriver;
+import junit.framework.TestSuite;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
-import java.util.Map;
-import java.util.Collection;
-import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.ResultSet;
-
-import junit.framework.TestSuite;
-import com.sas.net.sharenet.ShareNetDriver;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * User: adam
@@ -269,6 +268,11 @@ public class SqlDialectSas extends SqlDialect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @Override
+    public String getBooleanLiteral(boolean b)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     // SAS has no database name, so override both getDatabaseName() methods and return null.
 

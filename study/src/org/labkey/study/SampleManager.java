@@ -33,11 +33,11 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.settings.AppProps;
 import org.labkey.study.model.*;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
@@ -45,12 +45,12 @@ import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.samples.report.SpecimenCountSummary;
-import org.labkey.study.samples.settings.StatusSettings;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.samples.settings.StatusSettings;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -1394,7 +1394,7 @@ public class SampleManager
                     else
                     {
                         SQLFragment fromSQL = tinfo.getFromSQL();
-                        SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct") + " FROM (");
+                        SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct").getSQL() + " FROM (");
                         sql.append(fromSQL);
                         sql.append(") _distinct");
                         rs = Table.executeQuery(tinfo.getSchema(), sql);
@@ -1724,7 +1724,7 @@ public class SampleManager
             // generate our select SQL:
             SQLFragment specimenDetailSql = Table.getSelectSQL(tinfo, cols, null, null);
             
-            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenDetailSql + ") SpecimenDetailQuery");
+            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenDetailSql.getSQL() + ") SpecimenDetailQuery");
             visitIdSQL.addAll(specimenDetailSql.getParamsArray());
             
             List<Double> visitIds = new ArrayList<Double>();
@@ -2047,7 +2047,7 @@ public class SampleManager
         String perPtidSpecimenSQL = "\t-- Inner SELECT gets the number of vials per participant/visit/type:\n" +
             "\tSELECT InnerView.Container, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + ",\n" +
             "\tInnerView.ParticipantId, COUNT(*) AS VialCount, SUM(InnerView.Volume) AS PtidVolume \n" +
-            "FROM (\n" + viewSqlHelper.getViewSql().toString() + "\n) InnerView\n" +
+            "FROM (\n" + viewSqlHelper.getViewSql().getSQL() + "\n) InnerView\n" +
             "\tGROUP BY InnerView.Container, InnerView.ParticipantId, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n";
 
         StringBuilder sql = new StringBuilder("-- Outer grouping allows us to count participants AND sum vial counts:\n" +
@@ -2234,7 +2234,7 @@ public class SampleManager
 
         String ptidSpecimenSQL = "SELECT SpecimenQuery.Visit AS SequenceNum, SpecimenQuery.ParticipantId,\n" +
                 "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n" +
-                "FROM (" + sqlHelper.getViewSql().toString() + ") AS SpecimenQuery\n" +
+                "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS SpecimenQuery\n" +
                 "LEFT OUTER JOIN study.Participant ON\n" +
                 "\tSpecimenQuery.ParticipantId = study.Participant.ParticipantId AND\n" +
                 "\tSpecimenQuery.Container = study.Participant.Container\n" +
@@ -2263,7 +2263,7 @@ public class SampleManager
         String sql = "SELECT Specimen.Container, Specimen.ParticipantId AS ParticipantId, Request.DestinationSiteId,\n" +
                 "Site.Label AS SiteLabel, Visit AS SequenceNum, \n" +
                  sqlHelper.getTypeGroupingColumns() + ", COUNT(*) AS VialCount, SUM(Volume) AS TotalVolume\n" +
-                "FROM (" + sqlHelper.getViewSql().toString() + ") AS Specimen\n" +
+                "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS Specimen\n" +
                 "JOIN study.SampleRequestSpecimen AS RequestSpecimen ON \n" +
                 "\tSpecimen.GlobalUniqueId = RequestSpecimen.SpecimenGlobalUniqueId AND\n" +
                 "\tSpecimen.Container = RequestSpecimen.Container\n" +

@@ -48,8 +48,6 @@ public class ExpPropertyCache
         ret.append(ExpPropertyCache.class.getName());
         ret.append("|||");
         ret.append(sql.toString());
-        ret.append("|||");
-        ret.append(sql.getParams().toString());
         return ret.toString();
     }
 

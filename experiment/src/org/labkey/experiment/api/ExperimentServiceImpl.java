@@ -385,7 +385,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
-            Map<String, Object>[] queryResults = Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), Map.class);
+            Map<String, Object>[] queryResults = Table.executeQuery(getSchema(), sql, Map.class);
             Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<String, ExpSampleSet>();
             ExpSampleSet defaultSampleSet = lookupActiveSampleSet(container);
             if (defaultSampleSet != null)
@@ -721,7 +721,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-            Experiment[] exp = Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), Experiment.class);
+            Experiment[] exp = Table.executeQuery(getSchema(), sql, Experiment.class);
             if (exp.length > 0)
             {
                 return new ExpExperimentImpl(exp[0]);

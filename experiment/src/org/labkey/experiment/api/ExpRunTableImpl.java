@@ -524,7 +524,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 {
                     SQLFragment sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
                     sql.append(ExperimentServiceImpl.get().getTinfoRunList());
-                    sql.append(" WHERE ExperimentRunId = " + parent.getValueSql() + " AND ExperimentId = " + exp.getRowId() + ")");
+                    sql.append(" WHERE ExperimentRunId = " + parent.getValueSql().getSQL() + " AND ExperimentId = " + exp.getRowId() + ")");
                     sql.append(" IS NOT NULL THEN 1 ELSE 0 END) AS ");
                     sql.append(parent.getSqlDialect().getBooleanDatatype());
                     sql.append("))");

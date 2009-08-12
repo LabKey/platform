@@ -405,6 +405,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "BIT";
     }
 
+    @Override
+    public String getBooleanLiteral(boolean b)
+    {
+        return b ? "1" : "0";
+    }
+
     /**
      * Wrap one or more INSERT statements to allow explicit specification
      * of values for autoincrementing columns (e.g. IDENTITY in SQL Server

@@ -1307,7 +1307,7 @@ public class SpecimenImporter
 
     private void logSQLFragment(SQLFragment sql)
     {
-        info(sql.toString());
+        info(sql.getSQL());
         info("Params: ");
         for (Object param : sql.getParams())
             info(param.toString());

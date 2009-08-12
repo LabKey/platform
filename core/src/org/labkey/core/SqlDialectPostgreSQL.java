@@ -268,6 +268,12 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "BOOLEAN";
     }
 
+    @Override
+    public String getBooleanLiteral(boolean b)
+    {
+        return Boolean.toString(b);
+    }
+
     public String getTempTableKeyword()
     {
         return "TEMPORARY";
