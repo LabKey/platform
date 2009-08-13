@@ -326,6 +326,7 @@ abstract public class AbstractTableInfo implements TableInfo
         _defaultVisibleColumns = list;
     }
 
+    /** @return unmodifiable list of the columns that should be shown by default for this table */
     public List<FieldKey> getDefaultVisibleColumns()
     {
         if (_defaultVisibleColumns instanceof List)
