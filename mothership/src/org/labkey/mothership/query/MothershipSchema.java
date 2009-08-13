@@ -39,11 +39,17 @@ public class MothershipSchema extends UserSchema
     public static final String SERVER_INSTALLATIONS_TABLE_NAME = "ServerInstallations";
     public static final String SERVER_SESSIONS_TABLE_NAME = "ServerSessions";
     public static final String EXCEPTION_REPORT_TABLE_NAME = "ExceptionReport";
+    public static final String EXCEPTION_REPORT_WITH_STACK_TABLE_NAME = "ExceptionReportWithStack";
     public static final String EXCEPTION_STACK_TRACE_TABLE_NAME = "ExceptionStackTrace";
     public static final String SOFTWARE_RELEASES_TABLE_NAME = "SoftwareReleases";
 
     private static Set<String> TABLE_NAMES = Collections.unmodifiableSet(new LinkedHashSet<String>(
-        Arrays.asList(SERVER_INSTALLATIONS_TABLE_NAME, SERVER_SESSIONS_TABLE_NAME, EXCEPTION_REPORT_TABLE_NAME, EXCEPTION_STACK_TRACE_TABLE_NAME)
+        Arrays.asList(
+            SERVER_INSTALLATIONS_TABLE_NAME,
+            SERVER_SESSIONS_TABLE_NAME,
+            EXCEPTION_REPORT_TABLE_NAME,
+            EXCEPTION_STACK_TRACE_TABLE_NAME,
+            EXCEPTION_REPORT_WITH_STACK_TABLE_NAME)
     ));
 
     public MothershipSchema(User user, Container container)
@@ -79,18 +85,19 @@ public class MothershipSchema extends UserSchema
         }
         else if (name.equalsIgnoreCase(EXCEPTION_STACK_TRACE_TABLE_NAME))
         {
-            FilteredTable result = createExceptionStackTraceTable();
-            return result;
+            return createExceptionStackTraceTable();
         }
         else if (name.equalsIgnoreCase(SOFTWARE_RELEASES_TABLE_NAME))
         {
-            FilteredTable result = createSoftwareReleasesTable();
-            return result;
+            return createSoftwareReleasesTable();
         }
         else if (name.equalsIgnoreCase(EXCEPTION_REPORT_TABLE_NAME))
         {
-            FilteredTable result = createExceptionReportTable();
-            return result;
+            return createExceptionReportTable();
+        }
+        else if (name.equalsIgnoreCase(EXCEPTION_REPORT_WITH_STACK_TABLE_NAME))
+        {
+            return createExceptionReportTableWithStack();
         }
         return null;
     }
@@ -288,6 +295,8 @@ public class MothershipSchema extends UserSchema
         result.getColumn("ExceptionStackTraceId").setCaption("Exception");
         result.getColumn("ExceptionStackTraceId").setFormatString("'#'0");
 
+        result.setTitleColumn("ExceptionStackTraceId");
+        result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
@@ -301,6 +310,24 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("StackTrace"));
         result.setDefaultVisibleColumns(defaultCols);
 
+        return result;
+    }
+
+    public FilteredTable createExceptionReportTableWithStack()
+    {
+        FilteredTable result = createExceptionReportTable();
+        List<FieldKey> defaultCols = new ArrayList<FieldKey>(result.getDefaultVisibleColumns());
+        for (Iterator<FieldKey> i = defaultCols.iterator(); i.hasNext(); )
+        {
+            if (i.next().getParts().get(0).equals("ServerSessionId"))
+            {
+                i.remove();
+            }
+        }
+        defaultCols.add(0, FieldKey.fromParts("ExceptionStackTraceId"));
+        defaultCols.add(1, FieldKey.fromParts("ExceptionStackTraceId", "StackTrace"));
+        result.setDefaultVisibleColumns(defaultCols);
+        result.setName(EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
         return result;
     }
 
@@ -355,7 +382,7 @@ public class MothershipSchema extends UserSchema
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts("ServerSessionId"));
         defaultCols.add(FieldKey.fromParts("Created"));
-        defaultCols.add(FieldKey.fromParts("ServerSessionId", "SVNRevision"));
+        defaultCols.add(FieldKey.fromParts("ServerSessionId", "SoftwareReleaseId"));
         defaultCols.add(FieldKey.fromParts("PageflowName"));
         defaultCols.add(FieldKey.fromParts("PageflowAction"));
         defaultCols.add(FieldKey.fromParts("Username"));

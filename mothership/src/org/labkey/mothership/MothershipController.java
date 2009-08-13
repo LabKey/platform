@@ -37,7 +37,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.UserManager;
@@ -349,6 +348,7 @@ public class MothershipController extends SpringActionController
             settings.setAllowChooseQuery(false);
 
             ExceptionSummaryQueryView queryView = new ExceptionSummaryQueryView(schema, settings);
+            queryView.setShowDetailsColumn(false);
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
 
@@ -493,7 +493,7 @@ public class MothershipController extends SpringActionController
             ServerSessionDetailView detailView = new ServerSessionDetailView(form);
             
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
+            QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             SessionExceptionReportGridView exceptionGridView = new SessionExceptionReportGridView(schema, settings, session.getServerSessionId());
 
@@ -1227,7 +1227,9 @@ public class MothershipController extends SpringActionController
             super(schema, settings);
 
             _exceptionStackTraceId = exceptionStackTraceId;
-            setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            setShowBorders(true);
+            setShadeAlternatingRows(true);
+            setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         }
 
         protected void setupDataView(DataView view)
@@ -1252,7 +1254,10 @@ public class MothershipController extends SpringActionController
         {
             super(schema, settings);
             _sessionId = sessionId;
+            setShadeAlternatingRows(true);
+            setShowBorders(true);
             setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+            setShowExportButtons(false);
         }
 
         protected void setupDataView(DataView view)
@@ -1263,12 +1268,8 @@ public class MothershipController extends SpringActionController
 
         protected TableInfo createTable()
         {
-            FilteredTable table = ((MothershipSchema) getSchema()).createExceptionReportTable();
+            FilteredTable table = ((MothershipSchema) getSchema()).createExceptionReportTableWithStack();
             table.addCondition(table.getRealTable().getColumn("ServerSessionId"), _sessionId);
-            List<FieldKey> defaultCols = new ArrayList<FieldKey>(table.getDefaultVisibleColumns());
-            defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId", "StackTrace"));
-            table.setDefaultVisibleColumns(defaultCols);
-            
             return table;
         }
     }
