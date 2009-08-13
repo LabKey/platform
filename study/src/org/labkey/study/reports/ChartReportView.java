@@ -132,6 +132,7 @@ public class ChartReportView extends AbstractReportView
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
         Report[] reports = getChildReports(context);
+
         if (reports.length == 1)
             return reports[0].getRunReportView(context);
         // Issue #5634, Backwards compatibility for when multiple charts could be embedded into a parent chart.
@@ -249,6 +250,7 @@ public class ChartReportView extends AbstractReportView
                 throw new RuntimeException(e);
             }
         }
+
         return _reports;
     }
 

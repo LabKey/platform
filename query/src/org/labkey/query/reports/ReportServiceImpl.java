@@ -80,6 +80,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         if (descriptor == null)
             throw new IllegalArgumentException("Invalid descriptor instance");
+
         synchronized(_descriptors)
         {
             if (_descriptors.containsKey(descriptor.getDescriptorType()))
