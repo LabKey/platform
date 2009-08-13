@@ -44,9 +44,16 @@ public class SpecimenArchiveImporter
             RepositoryType.Enum repositoryType = specimens.getRepositoryType();
             StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
 
-            File specimenDir = StudyImporter.getStudyDir(root, specimens.getDir(), "Study.xml");
-            File specimenFile = StudyImporter.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
-            SpringSpecimenController.submitSpecimenBatch(c, ctx.getUser(), ctx.getUrl(), specimenFile);
+            if (null != specimens.getDir())
+            {
+                File specimenDir = StudyImporter.getStudyDir(root, specimens.getDir(), "Study.xml");
+
+                if (null != specimens.getFile())
+                {
+                    File specimenFile = StudyImporter.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
+                    SpringSpecimenController.submitSpecimenBatch(c, ctx.getUser(), ctx.getUrl(), specimenFile);
+                }
+            }
         }
     }
 }
