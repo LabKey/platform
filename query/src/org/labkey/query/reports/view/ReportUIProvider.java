@@ -43,14 +43,14 @@ import java.util.List;
 
 public class ReportUIProvider extends DefaultReportUIProvider
 {
-    public List<ReportService.DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings)
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
 
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
         chartBean.setReportType(ChartQueryReport.TYPE);
         chartBean.setRedirectUrl(context.getActionURL().getLocalURIString());
-        designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", ReportUtil.getChartDesignerURL(context, chartBean)));
+        designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts", ReportUtil.getChartDesignerURL(context, chartBean)));
 
         if (RReport.canCreateScript(context) && RReport.isEnabled())
         {

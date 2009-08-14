@@ -57,7 +57,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 }
             };
 
-    public List<ReportService.DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings)
+    @Override
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
 
