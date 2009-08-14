@@ -775,6 +775,8 @@ api/src/org/labkey/api/util/CloseableIterator.java -text
 api/src/org/labkey/api/util/ContainerUtil.java -text
 api/src/org/labkey/api/util/ContextListener.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text
+api/src/org/labkey/api/util/ErrorRenderer.java -text
+api/src/org/labkey/api/util/ErrorView.java -text
 api/src/org/labkey/api/util/ExceptionReportingLevel.java -text
 api/src/org/labkey/api/util/ExceptionUtil.java -text
 api/src/org/labkey/api/util/FileCopyListener.java -text
@@ -817,6 +819,7 @@ api/src/org/labkey/api/util/UnexpectedException.java -text
 api/src/org/labkey/api/util/UsageReportingLevel.java -text
 api/src/org/labkey/api/util/VersionNumber.java -text
 api/src/org/labkey/api/util/VirtualFile.java -text
+api/src/org/labkey/api/util/WebPartErrorRenderer.java -text
 api/src/org/labkey/api/util/XmlBeansUtil.java -text
 api/src/org/labkey/api/util/ZipUtil.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
@@ -832,7 +835,9 @@ api/src/org/labkey/api/view/AjaxXmlResponse.java -text
 api/src/org/labkey/api/view/AlwaysAvailableWebPartFactory.java -text
 api/src/org/labkey/api/view/BaseWebPartFactory.java -text
 api/src/org/labkey/api/view/Collapsible.java -text
+api/src/org/labkey/api/view/ConfigurationException.java -text
 api/src/org/labkey/api/view/DefaultModelAndView.java -text
+api/src/org/labkey/api/view/ErrorRendererProperties.java -text
 api/src/org/labkey/api/view/ForbiddenProjectException.java -text
 api/src/org/labkey/api/view/GWTView.java -text
 api/src/org/labkey/api/view/GWTView.jsp -text

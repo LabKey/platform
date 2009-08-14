@@ -19,16 +19,17 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.Pair;
+import org.labkey.api.view.ConfigurationException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
@@ -39,9 +40,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
-import java.util.Date;
 
 public class DbSchema
 {
@@ -239,17 +242,37 @@ public class DbSchema
     {
         DbSchema dbSchema;
         Properties props = getDbSchemaProperties(jndiName);
+
+        if (props.isEmpty())
+            throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiName + "' is not properly configured in labkey.xml.");
+
         String schemaInfo = props.getProperty(dbSchemaName);
+
         if (null == schemaInfo)
         {
-            schemaInfo = props.getProperty("--default--") + "," + dbSchemaName;
+            String defaultDsName = props.getProperty("--default--");
+
+            if (null == defaultDsName)
+                throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiName + "' is not properly configured in labkey.xml.");
+
+            schemaInfo = defaultDsName + "," + dbSchemaName;
         }
 
         String[] schemaStrings = schemaInfo.split(",");
         String dsName = schemaStrings[0];
         String ownerName = "dbo";
 
-        DbScope scope = DbScope.getDbScope(dsName);
+        DbScope scope;
+
+        try
+        {
+            scope = DbScope.getDbScope(dsName);
+        }
+        catch (NamingException e)
+        {
+            throw new ConfigurationException("DataSource '" + dsName + "' is not properly configured in labkey.xml.", e);
+        }
+
         String dbName = scope.getDatabaseName();
 
         // Support old format that included catalog

@@ -23,6 +23,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.ErrorRenderer;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 import javax.servlet.ServletException;
@@ -227,7 +228,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     {
         int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         String message = "An unexpected error occurred";
-        ExceptionUtil.ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(status, message, t, request, true, false);
+        ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(status, message, t, request, true, false);
         renderer.renderStart(response.getWriter());
         renderer.renderContent(response.getWriter(), request);
         renderer.renderEnd(response.getWriter());
