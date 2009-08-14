@@ -132,6 +132,8 @@ public class ReportService
 
         /** the label to appear on any UI */
         public String getLabel();
+
+        public String getDescription();
     }
 
     public interface UIProvider
@@ -139,7 +141,7 @@ public class ReportService
         /**
          * Allows providers to add to the UI for creating reports (eg: the create view button).
          */
-        public List<DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings);
+        public List<DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings);
 
         /**
          * Returns the icon path to display for the specified report type

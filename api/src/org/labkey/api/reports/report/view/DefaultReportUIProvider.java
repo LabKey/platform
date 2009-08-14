@@ -31,7 +31,7 @@ import java.util.Collections;/*
 
 public class DefaultReportUIProvider implements ReportService.UIProvider
 {
-    public List<ReportService.DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings)
+    public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         return Collections.emptyList();
     }
@@ -75,7 +75,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
 
         public DesignerInfoImpl(String reportType, String label, ActionURL designerURL)
         {
-            this(reportType, label, null, designerURL);            
+            this(reportType, label, null, designerURL);
         }
 
         public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL)

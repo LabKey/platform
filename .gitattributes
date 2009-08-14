@@ -496,6 +496,7 @@ api/src/org/labkey/api/query/UserIdRenderer.java -text
 api/src/org/labkey/api/query/UserSchema.java -text
 api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
+api/src/org/labkey/api/query/ViewOptions.java -text
 api/src/org/labkey/api/query/createJavaScript.jsp -text
 api/src/org/labkey/api/query/exportRScript.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text

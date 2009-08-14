@@ -647,12 +647,12 @@ public class QueryView extends WebPartView<Object>
             getSettings().setSchemaName(getSchema().getSchemaName());
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
             {
-                reportDesigners.addAll(provider.getReportDesignURL(getViewContext(), getSettings()));
+                reportDesigners.addAll(provider.getDesignerInfo(getViewContext(), getSettings()));
             }
             NavTree submenu = null;
             for (ReportService.DesignerInfo designer : reportDesigners)
             {
-                if (_itemFilter.accept(designer.getReportType(), designer.getLabel()))
+                if (getItemFilter().accept(designer.getReportType(), designer.getLabel()))
                 {
                     if (submenu == null)
                     {
@@ -675,6 +675,43 @@ public class QueryView extends WebPartView<Object>
         addFilterItems(button);
 
         return button;
+    }
+
+    protected ReportService.ItemFilter getItemFilter()
+    {
+        try {
+            ViewOptions options = QueryService.get().getViewOptions(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName());
+            return new WrappedItemFilter(_itemFilter, options.getReportTypes());
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class WrappedItemFilter implements ReportService.ItemFilter
+    {
+        private ReportService.ItemFilter _filter;
+        private List<String> _extraTypes;
+
+        public WrappedItemFilter(ReportService.ItemFilter filter, List<String> extraTypes)
+        {
+            _filter = filter;
+            _extraTypes = extraTypes;
+        }
+
+        public boolean accept(String type, String label)
+        {
+            if (_filter.accept(type, label))
+                return true;
+
+            for (String reportType : _extraTypes)
+            {
+                if (StringUtils.equals(reportType, type))
+                    return true;
+            }
+            return false;
+        }
     }
 
     protected void addFilterItems(NavTreeMenuButton button)
@@ -783,7 +820,7 @@ public class QueryView extends WebPartView<Object>
             // Filter out reports that don't match what this view is supposed to show. This can prevent
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
-            if (_itemFilter.accept(report.getType(), null))
+            if (getItemFilter().accept(report.getType(), null))
             {
                 if (!views.containsKey(report.getType()))
                     views.put(report.getType(), new ArrayList<Report>());
@@ -1291,7 +1328,7 @@ public class QueryView extends WebPartView<Object>
     private ContainerFilter getContainerFilter()
     {
         String filterName = _settings.getContainerFilterName();
-        
+
         if (filterName == null && _customView != null)
             filterName = _customView.getContainerFilterName();
 
