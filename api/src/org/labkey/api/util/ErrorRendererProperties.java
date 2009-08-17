@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package org.labkey.api.view;
+package org.labkey.api.util;
 
 /*
 * User: adam
 * Date: Aug 13, 2009
 * Time: 5:41:47 PM
 */
+
+// Exceptions can implement this to customize the standard ErrorRenderer
 public interface ErrorRendererProperties
 {
     String getTitle();
     String getMessageHtml();
-    String getHeading();
+    String getHeading(boolean startup);
 }

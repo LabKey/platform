@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.factory.BeanFactory;
@@ -52,18 +53,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ModuleLoader implements Filter
 {
     private static ModuleLoader _instance = null;
-    private static Logger _log = Logger.getLogger(ModuleLoader.class);
     private boolean _deferUsageReport = false;
     private static Throwable _startupFailure = null;
-    private static Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
     private static boolean _newInstall = false;
+
+    private static final Logger _log = Logger.getLogger(ModuleLoader.class);
+    private static final Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
     private static final Map<String, Module> _pageFlowToModule = new HashMap<String, Module>();
     private static final Map<Package, String> _packageToPageFlowURL = new HashMap<Package, String>();
     private static final Map<String, Module> _schemaNameToModule = new HashMap<String, Module>();
     private static final Map<String, Module> _resourcePrefixToModule = new ConcurrentHashMap<String, Module>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new ConcurrentHashMap<String, Collection<ResourceFinder>>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
-    private static CoreSchema _core = CoreSchema.getInstance();
+    private static final CoreSchema _core = CoreSchema.getInstance();
 
     private File _webappDir;
 
@@ -202,7 +204,7 @@ public class ModuleLoader implements Filter
         }
         catch (NoSuchMethodException e)
         {
-            throw new RuntimeException("Could not find getModuleFiles() method - you probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
+            throw new ConfigurationException("Could not find getModuleFiles() method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
         }
         catch (InvocationTargetException e)
         {
@@ -211,6 +213,7 @@ public class ModuleLoader implements Filter
 
         //load module instances using Spring
         _modules = loadModules(explodedModuleDirs);
+
         for (Module module : _modules)
         {
             registerResourceLoaders(module.getResourceLoaders());
@@ -221,7 +224,7 @@ public class ModuleLoader implements Filter
         _modules = sorter.sortModulesByDependencies(_modules, _resourceLoaders);
 
         //initialize each module in turn
-        for(Module module : _modules)
+        for (Module module : _modules)
         {
             try
             {
@@ -355,7 +358,7 @@ public class ModuleLoader implements Filter
         if (null != javaVersion && (javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6")))
             return;
 
-        throw new ServletException("Unsupported Java runtime version: " + javaVersion + ".  LabKey requires Java 1.5 or Java 1.6.");
+        throw new ConfigurationException("Unsupported Java runtime version: " + javaVersion + ".  LabKey requires Java 1.5 or Java 1.6.");
     }
 
     private void removeAPIFiles(Set<File> unclaimedFiles, File webappRoot) throws IOException
@@ -437,7 +440,7 @@ public class ModuleLoader implements Filter
         // 2) get the name of the "master" database
         //
         // Only way to get the right dialect is to look up based on the driver class name.
-        SqlDialect dialect = SqlDialect.getFromDriverClassName(props.getDriverClassName());
+        SqlDialect dialect = SqlDialect.getFromDataSourceProperties(props);
 
         SQLException lastException = null;
 
@@ -500,7 +503,7 @@ public class ModuleLoader implements Filter
         }
 
         _log.error("Attempted to connect three times... giving up.", lastException);
-        throw new ServletException("Can't connect to datasource \"" + dsName + "\".  Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
+        throw new ConfigurationException("Can't connect to datasource \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
     }
 
 
@@ -580,7 +583,7 @@ public class ModuleLoader implements Filter
         else
         {
             if (coreContext.getInstalledVersion() < 2.0)
-                throw new ServletException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be 2.0 or later. Contact info@labkey.com for assistance.");
+                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be 2.0 or later.");
 
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
         }

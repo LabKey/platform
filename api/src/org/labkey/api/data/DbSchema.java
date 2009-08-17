@@ -29,7 +29,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.ConfigurationException;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 

@@ -265,7 +265,7 @@ public class ExceptionUtil
         {
             PrintWriter out = response.getWriter();
             _renderer.renderStart(out);
-            _renderer.renderContent(out, request);
+            _renderer.renderContent(out, request, null);
             _renderer.renderEnd(out);
         }
     }

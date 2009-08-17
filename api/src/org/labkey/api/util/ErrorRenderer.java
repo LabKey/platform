@@ -16,29 +16,28 @@
 
 package org.labkey.api.util;
 
-import org.labkey.api.view.ErrorRendererProperties;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.settings.AppProps;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletException;
-import java.io.PrintWriter;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.Enumeration;
+import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.Enumeration;
 
 public class ErrorRenderer
 {
     private final int _status;
-    private final String _message;
+    private final String _heading;
     private final Throwable _exception;
     private final boolean _isStartupFailure;
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
 
-    ErrorRenderer(int status, String message, Throwable x, boolean isStartupFailure)
+    ErrorRenderer(int status, String heading, Throwable x, boolean isStartupFailure)
     {
         _status = status;
         _exception = x;
@@ -47,12 +46,12 @@ public class ErrorRenderer
 
         if (null == _errorRendererProps)
         {
-            _message = message;
-            _title = status + ": Error Page" + (null != message ? " -- " + message : "");
+            _heading = heading;
+            _title = status + ": Error Page" + (null != heading ? " -- " + heading : "");
         }
         else
         {
-            _message = _errorRendererProps.getHeading();
+            _heading = _errorRendererProps.getHeading(_isStartupFailure);
             _title = _errorRendererProps.getTitle();
         }
     }
@@ -67,7 +66,7 @@ public class ErrorRenderer
         out.println("</td></tr></table>");
     }
 
-    public void renderContent(PrintWriter out, HttpServletRequest request) throws IOException, ServletException
+    public void renderContent(PrintWriter out, HttpServletRequest request, ButtonBarRenderer bbr) throws IOException, ServletException
     {
         if (null != _exception)
         {
@@ -77,7 +76,6 @@ public class ErrorRenderer
 
             if (null != _errorRendererProps)
             {
-                // TODO: Do something special for startup failures?
                 out.println(_errorRendererProps.getMessageHtml());
             }
             else
@@ -105,6 +103,10 @@ public class ErrorRenderer
                     out.println("</b><br>");
                 }
             }
+
+            // Render the button bar, if present
+            if (null != bbr)
+                bbr.render(out);
 
             if (!showDetails)
             {
@@ -190,9 +192,9 @@ public class ErrorRenderer
         return _status;
     }
 
-    public String getMessage()
+    public String getHeading()
     {
-        return _message;
+        return _heading;
     }
 
     public Throwable getException()

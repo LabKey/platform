@@ -18,26 +18,12 @@ package org.labkey.api.util;
 
 import java.io.PrintWriter;
 
-class WebPartErrorRenderer extends ErrorRenderer
+/*
+* User: adam
+* Date: Aug 16, 2009
+* Time: 8:22:05 PM
+*/
+public interface ButtonBarRenderer
 {
-    WebPartErrorRenderer(int status, String message, Throwable x, boolean isStartupFailure)
-    {
-        super(status, message, x, isStartupFailure);
-    }
-
-    public void renderStart(PrintWriter out)
-    {
-        out.println("<div style=\"height:200px; overflow:scroll;\">");
-        if (null != getHeading())
-        {
-            out.println("<h3 style=\"color:red;\">" + getHeading() + "</h3>");
-        }
-        super.renderStart(out);
-    }
-
-    public void renderEnd(PrintWriter out)
-    {
-        super.renderEnd(out);
-        out.println("</div>");
-    }
+    void render(PrintWriter out);
 }

@@ -25,6 +25,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.query.AliasManager;
 
 import javax.servlet.ServletException;
@@ -269,11 +270,11 @@ public abstract class SqlDialect
     }
 
 
-    public static class SqlDialectNotSupportedException extends ServletException
+    public static class SqlDialectNotSupportedException extends ConfigurationException
     {
-        private SqlDialectNotSupportedException(String message)
+        private SqlDialectNotSupportedException(String advice)
         {
-            super(message);
+            super("JDBC database driver is not supported.", advice);
         }
     }
 
@@ -281,14 +282,18 @@ public abstract class SqlDialect
     /**
      * Getting the SqlDialect from the driver class name won't return the version
      * specific dialect -- use getFromMetaData() if possible.
+     * @param props
+     * @return SqlDialect
      */
-    public static SqlDialect getFromDriverClassName(String driverClassName) throws SqlDialectNotSupportedException
+    public static SqlDialect getFromDataSourceProperties(DataSourceProperties props) throws ServletException
     {
+        String driverClassName = props.getDriverClassName();
+
         for (SqlDialect dialect : _dialects)
             if (dialect.claimsDriverClassName(driverClassName))
                 return dialect;
 
-        throw new SqlDialectNotSupportedException("Driver class name: " + driverClassName);
+        throw new SqlDialectNotSupportedException("The database driver '" + props.getDriverClassName() + "' associated with JDBC url '" + props.getUrl() + "' is not supported in your installation.");
     }
 
 
@@ -304,7 +309,7 @@ public abstract class SqlDialect
             if (dialect.claimsProductNameAndVersion(dataBaseProductName, majorVersion, minorVersion))
                 return dialect;
 
-        throw new SqlDialectNotSupportedException("Product name and version: " + dataBaseProductName + " " + majorVersion + "." + minorVersion);
+        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + majorVersion + "." + minorVersion + " -- is not supported in your installation.");
     }
 
     /**
@@ -589,7 +594,7 @@ public abstract class SqlDialect
         try
         {
             DataSourceProperties props = new DataSourceProperties(ds);
-            return getFromDriverClassName(props.getDriverClassName());
+            return getFromDataSourceProperties(props);
         }
         catch (SqlDialectNotSupportedException e)
         {

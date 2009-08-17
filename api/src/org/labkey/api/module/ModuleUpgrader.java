@@ -28,7 +28,7 @@ import java.util.ListIterator;
 public class ModuleUpgrader
 {
     private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
-    private List<Module> _modules;
+    private final List<Module> _modules;
 
     ModuleUpgrader(List<Module> modules)
     {

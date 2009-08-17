@@ -230,7 +230,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         String message = "An unexpected error occurred";
         ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(status, message, t, request, true, false);
         renderer.renderStart(response.getWriter());
-        renderer.renderContent(response.getWriter(), request);
+        renderer.renderContent(response.getWriter(), request, null);
         renderer.renderEnd(response.getWriter());
     }
 
