@@ -70,8 +70,6 @@ public class ErrorRenderer
     {
         if (null != _exception)
         {
-            boolean showDetails = AppProps.getInstance().isDevMode() || _isStartupFailure;
-
             String exceptionMessage = null;
 
             if (null != _errorRendererProps)
@@ -103,10 +101,15 @@ public class ErrorRenderer
                     out.println("</b><br>");
                 }
             }
+        }
 
-            // Render the button bar, if present
-            if (null != bbr)
-                bbr.render(out);
+        // Render the button bar, if present (regardless of whether exception has been nulled out)
+        if (null != bbr)
+            bbr.render(out);
+
+        if (null != _exception)
+        {
+            boolean showDetails = AppProps.getInstance().isDevMode() || _isStartupFailure;
 
             if (!showDetails)
             {
