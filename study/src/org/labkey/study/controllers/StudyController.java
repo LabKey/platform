@@ -3587,7 +3587,7 @@ public class StudyController extends BaseStudyController
 
             if (!reshow && null != study)
             {
-                return new HtmlView("Existing study: " + study.getLabel() + "<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Delete Study") + "</form>");
+                return new HtmlView("Existing study: " + study.getLabel() + "<br>" + PageFlowUtil.generateButton("Delete Study", new ActionURL(DeleteStudyAction.class, c)));
             }
             else if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
