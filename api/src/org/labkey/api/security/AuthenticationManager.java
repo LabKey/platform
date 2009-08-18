@@ -292,8 +292,9 @@ public class AuthenticationManager
 
             if (email != null)
             {
-                User user = SecurityManager.createUserIfNecessary(email);
-                if(!user.isActive())
+                User user = SecurityManager.afterAuthenticate(email);
+
+                if (!user.isActive())
                 {
                     AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
                             "Inactive user " + user.getEmail() + " attempted to login");

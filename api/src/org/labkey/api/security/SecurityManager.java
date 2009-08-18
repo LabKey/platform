@@ -334,7 +334,7 @@ public class SecurityManager
 
     // This user has been authenticated, but may not exist (if user was added to the database and is visiting for the first
     //  time or user authenticated using LDAP, SSO, etc.)
-    public static User createUserIfNecessary(ValidEmail email)
+    public static User afterAuthenticate(ValidEmail email)
     {
         User u = UserManager.getUser(email);
 

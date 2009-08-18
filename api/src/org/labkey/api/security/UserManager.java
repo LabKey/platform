@@ -555,7 +555,7 @@ public class UserManager
                 scope.rollbackTransaction();
         }
 
-        clearUserList(userId);
+        clearUserList(userId.intValue());
 
         User user = getUser(userId.intValue());
         fireAddUser(user);

@@ -311,7 +311,7 @@ public class ModuleLoader implements Filter
         List<Module> modules = new ArrayList<Module>();
         for(File moduleDir : explodedModuleDirs)
         {
-            Module module = null;
+            Module module;
             File moduleXml = new File(moduleDir, "config/module.xml");
             try
             {
@@ -340,6 +340,7 @@ public class ModuleLoader implements Filter
             catch (Throwable t)
             {
                 _log.error("Unable to instantiate module " + moduleDir, t);
+                //noinspection ThrowableResultOfMethodCallIgnored
                 _moduleFailures.put(moduleDir.getName(), t);
             }
         }
@@ -397,8 +398,8 @@ public class ModuleLoader implements Filter
 
 
 
-    // Enumerate each jdbc DataSource in labkey.xml and attempt a (non-pooled) connection to each.  If connection fails, attempt to create
-    // the database.
+    // Enumerate each jdbc DataSource in labkey.xml and attempt a (non-pooled) connection to each.  If connection fails,
+    // attempt to create the database.
     //
     // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
     private void ensureDataBases() throws ServletException
@@ -615,6 +616,7 @@ public class ModuleLoader implements Filter
 
     public void setModuleFailure(String moduleName, Throwable t)
     {
+        //noinspection ThrowableResultOfMethodCallIgnored
         _moduleFailures.put(moduleName, t);
     }
 
