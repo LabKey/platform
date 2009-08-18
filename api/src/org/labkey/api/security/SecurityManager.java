@@ -760,6 +760,7 @@ public class SecurityManager
     {
         MimeMessage m = createMessage(c, user, message, to, verificationURL);
         MailHelper.send(m);
+        MailHelper.addAuditEvent(user, c, m);
     }
 
     public static void renderEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException

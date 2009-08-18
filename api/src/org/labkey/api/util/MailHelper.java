@@ -22,6 +22,10 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.security.User;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.data.Container;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.mail.*;
@@ -41,6 +45,7 @@ public class MailHelper
 {
     private static Logger _log = Logger.getLogger(MailHelper.class);
     private static Session _session = null;
+    public static final String MESSAGE_AUDIT_EVENT = "MessageAuditEvent";
 
     static
     {
@@ -164,6 +169,46 @@ public class MailHelper
         }
     }
 
+    public static void addAuditEvent(Message m) throws MessagingException
+    {
+        addAuditEvent(null, null, m);
+    }
+
+    public static void addAuditEvent(User user, Container c, Message m) throws MessagingException
+    {
+        AuditLogEvent event = new AuditLogEvent();
+
+        try {
+            event.setEventType(MESSAGE_AUDIT_EVENT);
+            event.setCreatedBy(user);
+            if (c != null)
+                event.setContainerId(c.getId());
+            event.setComment("The Email Message: (" + m.getSubject() + ") was sent");
+            event.setKey1(getAddressStr(m.getFrom()));
+            event.setKey2(getAddressStr(m.getAllRecipients()));
+            event.setKey3(m.getContentType());
+
+            AuditLogService.get().addEvent(event);
+        }
+        catch (MessagingException me)
+        {
+            logMessagingException(m, me);
+        }
+    }
+
+    private static String getAddressStr(Address[] addresses)
+    {
+        StringBuilder sb = new StringBuilder();
+        String sep = "";
+        for (Address a : addresses)
+        {
+            sb.append(sep);
+            sb.append(a.toString());
+
+            sep = ", ";
+        }
+        return sb.toString();
+    }
 
     private static final String ERROR_MESSAGE = "Exception sending email; check your SMTP configuration in " + AppProps.getInstance().getWebappConfigurationFilename();
 
@@ -320,9 +365,15 @@ public class MailHelper
     public static class BulkEmailer extends Thread
     {
         private Map<Collection<String>, ViewMessage> _map = new HashMap<Collection<String>, ViewMessage>(10);
+        private User _user;
 
         public BulkEmailer()
         {
+        }
+
+        public void setUser(User user)
+        {
+            _user = user;
         }
 
         // Send message to multiple recipients
@@ -350,6 +401,7 @@ public class MailHelper
                     {
                         m.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
                         MailHelper.send(m);
+                        MailHelper.addAuditEvent(_user, null, m);
                     }
                     catch(MessagingException e)
                     {

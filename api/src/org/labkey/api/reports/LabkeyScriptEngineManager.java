@@ -84,22 +84,24 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     @Override
     public ScriptEngine getEngineByExtension(String extension)
     {
-        ScriptEngine engine = super.getEngineByExtension(extension);
-
-        if (engine == null)
+        if (!StringUtils.isBlank(extension))
         {
-            for (ExternalScriptEngineDefinition def : getEngineDefinitions())
+            ScriptEngine engine = super.getEngineByExtension(extension);
+
+            if (engine == null)
             {
-                if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
+                for (ExternalScriptEngineDefinition def : getEngineDefinitions())
                 {
-                    ScriptEngineFactory factory = new ExternalScriptEngineFactory(def);
-                    return factory.getScriptEngine();
+                    if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
+                    {
+                        ScriptEngineFactory factory = new ExternalScriptEngineFactory(def);
+                        return factory.getScriptEngine();
+                    }
                 }
             }
+            else if (isFactoryEnabled(engine.getFactory()))
+                return engine;
         }
-        else if (isFactoryEnabled(engine.getFactory()))
-            return engine;
-
         return null;
     }
 
