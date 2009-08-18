@@ -687,6 +687,7 @@ public class StatusController extends SpringActionController
                 {
                     m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(recipients));
                     MailHelper.send(m);
+                    MailHelper.addAuditEvent(getUser(), getContainer(), m);
                 }
             }
             catch (Exception e)

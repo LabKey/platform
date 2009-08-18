@@ -1759,6 +1759,7 @@ public class AnnouncementsController extends SpringActionController
 
         // Email all copies of this message in a background thread
         MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer();
+        emailer.setUser(getUser());
 
         if (a.isBroadcast())
         {

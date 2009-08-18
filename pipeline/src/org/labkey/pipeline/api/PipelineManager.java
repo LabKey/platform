@@ -270,7 +270,11 @@ public class PipelineManager
         try
         {
             if (message != null)
-                MailHelper.send(message.createMessage());
+            {
+                Message m = message.createMessage();
+                MailHelper.send(m);
+                MailHelper.addAuditEvent(m);
+            }
         }
         catch (MessagingException me)
         {
@@ -293,7 +297,11 @@ public class PipelineManager
             if (messages != null)
             {
                 for (PipelineDigestMessage msg : messages)
-                    MailHelper.send(msg.createMessage());
+                {
+                    Message m = msg.createMessage();
+                    MailHelper.send(m);
+                    MailHelper.addAuditEvent(m);
+                }
             }
         }
         catch (MessagingException me)

@@ -406,6 +406,7 @@ public class SpecimenUtils
 
                 message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
                 MailHelper.send(message);
+                MailHelper.addAuditEvent(getUser(), getContainer(), message);
             }
             if (notification.getRequirement() != null)
                 SampleManager.getInstance().createRequestEvent(getUser(), notification.getRequirement(),

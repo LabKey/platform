@@ -1095,6 +1095,7 @@ public class IssuesController extends SpringActionController
                     m.setTemplateContent(request, viewHtml, "text/html");
 
                     MailHelper.send(m);
+                    MailHelper.addAuditEvent(getUser(), getContainer(), m);
                 }
             }
         }

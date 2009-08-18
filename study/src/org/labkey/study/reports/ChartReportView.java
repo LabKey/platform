@@ -86,7 +86,7 @@ public class ChartReportView extends AbstractReportView
         super.setDescriptor(descriptor);
 
         // to help grouping in manage views
-        if (StringUtils.isBlank(descriptor.getProperty(ReportDescriptor.Prop.schemaName)))
+        if (StringUtils.isBlank(descriptor.getProperty(ReportDescriptor.Prop.schemaName)) && HttpView.hasCurrentView())
         {
             int datasetId = NumberUtils.toInt(descriptor.getProperty("datasetId"), -1);
             if (datasetId != -1)

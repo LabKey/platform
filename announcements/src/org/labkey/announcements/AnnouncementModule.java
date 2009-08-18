@@ -31,6 +31,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
+import org.labkey.api.audit.AuditLogService;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -119,6 +120,7 @@ public class AnnouncementModule extends DefaultModule
         ContainerManager.addContainerListener(listener);
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
+        AuditLogService.get().addAuditViewFactory(MessageAuditViewFactory.getInstance());
 
         DailyDigest.setTimer();
     }

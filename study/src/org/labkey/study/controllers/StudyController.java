@@ -536,6 +536,8 @@ public class StudyController extends BaseStudyController
                 List<?> list = (List<?>)datasetKeyObject;
                 datasetKeyObject = list.get(0);
             }
+            else if (datasetKeyObject == null)
+                return null;
             _datasetId = NumberUtils.toInt(datasetKeyObject.toString(), 0);
 
             String viewName = (String)context.get("Dataset.viewName");

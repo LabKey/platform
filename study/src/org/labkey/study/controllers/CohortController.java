@@ -130,6 +130,12 @@ public class CohortController extends BaseStudyController
         {
             StudyImpl study = getStudy();
 
+            if (form.isClearParticipants())
+            {
+                StudyManager.getInstance().clearParticipantCohorts(getUser(), study);
+                return true;
+            }
+
             if (form.isManualCohortAssignment() != study.isManualCohortAssignment())
             {
                 study.setManualCohortAssignment(form.isManualCohortAssignment());
@@ -188,6 +194,7 @@ public class CohortController extends BaseStudyController
         private Integer participantCohortDataSetId;
         private String participantCohortProperty;
         private boolean reshow;
+        private boolean clearParticipants;
 
         public int[] getCohortId() {return cohortId;}
         public void setCohortId(int[] cohortId) {this.cohortId = cohortId;}
@@ -206,6 +213,16 @@ public class CohortController extends BaseStudyController
 
         public boolean isReshow() {return reshow;}
         public void setReshow(boolean reshow) {this.reshow = reshow;}
+
+        public boolean isClearParticipants()
+        {
+            return clearParticipants;
+        }
+
+        public void setClearParticipants(boolean clearParticipants)
+        {
+            this.clearParticipants = clearParticipants;
+        }
     }
 
     private abstract class InsertUpdateAction extends FormViewAction<EditCohortForm>

@@ -4190,6 +4190,7 @@ public class AdminController extends SpringActionController
                 try
                 {
                     MailHelper.send(msg);
+                    MailHelper.addAuditEvent(getUser(), getContainer(), msg);
                 }
                 catch(MessagingException e)
                 {
