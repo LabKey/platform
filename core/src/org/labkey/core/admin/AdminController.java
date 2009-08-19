@@ -4245,4 +4245,68 @@ public class AdminController extends SpringActionController
             return AppProps.getInstance().getHomePageActionURL();
         }
     }
+
+
+    static public class LoggingForm
+    {
+        public boolean isLogging()
+        {
+            return logging;
+        }
+
+        public void setLogging(boolean logging)
+        {
+            this.logging = logging;
+        }
+
+        public boolean logging = false;
+    }
+
+
+    @RequiresLogin
+    public class SessionLoggingAction extends FormViewAction<LoggingForm>
+    {
+        public boolean handlePost(LoggingForm form, BindException errors) throws Exception
+        {
+            boolean on = SessionAppender.isLogging(getViewContext().getRequest());
+            if (form.logging != on)
+            {
+                if (!form.logging)
+                    Logger.getLogger(AdminController.class).info("turn session logging OFF");
+                SessionAppender.setLoggingForSession(getViewContext().getRequest(), form.logging);
+                if (form.logging)
+                    Logger.getLogger(AdminController.class).info("turn session logging ON");
+            }
+            return true;
+        }
+
+        public void validateCommand(LoggingForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(LoggingForm o, boolean reshow, BindException errors) throws Exception
+        {
+            return new LoggingView();
+        }
+
+        public ActionURL getSuccessURL(LoggingForm o)
+        {
+            return new ActionURL(SessionLoggingAction.class, getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getViewContext().getContainer()).getLocalURIString());
+            return root.addChild("View Event Log");
+        }
+    }
+
+
+    class LoggingView extends JspView
+    {
+        LoggingView()
+        {
+            super(AdminController.class, "logging.jsp", null);
+        }
+    }
 }
