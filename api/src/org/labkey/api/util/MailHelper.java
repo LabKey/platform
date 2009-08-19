@@ -180,7 +180,8 @@ public class MailHelper
 
         try {
             event.setEventType(MESSAGE_AUDIT_EVENT);
-            event.setCreatedBy(user);
+            if (user != null)
+                event.setCreatedBy(user);
             if (c != null)
                 event.setContainerId(c.getId());
             event.setComment("The Email Message: (" + m.getSubject() + ") was sent");
