@@ -1563,12 +1563,20 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_NONE)  // Special permission check below to support basic auth challenge
     public class RssAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
+
+            if (!c.hasPermission(getUser(), ReadPermission.class))
+            {
+                if (getUser().isGuest())
+                    throw new RequestBasicAuthException();
+                else
+                    throw new UnauthorizedException();
+            }
 
             // getFilter performs further permission checking on secure board (e.g., non-Editors only see threads where they're on the member list)
             SimpleFilter filter = getFilter(getSettings(), getPermissions(), true);
@@ -1579,8 +1587,6 @@ public class AnnouncementsController extends SpringActionController
             ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", null);
 
             WebPartView v = new RssView(pair.first, url.getURIString());
-
-//            v.addObject("homePageUrl", ActionURL.getBaseServerURL(request));
 
             getResponse().setContentType("text/xml");
             getPageConfig().setTemplate(PageConfig.Template.None);
