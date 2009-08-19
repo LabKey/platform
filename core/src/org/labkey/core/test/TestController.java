@@ -22,7 +22,10 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -487,5 +490,92 @@ public class TestController extends SpringActionController
     {
         //noinspection unchecked
         return new JspView(TestController.class, name, model, errors);
+    }
+
+
+    // NpeAction and ConfigurationExceptionAction allow simple testing of exception logging and display 
+
+    @RequiresSiteAdmin
+    public class NpeAction extends SimpleViewAction<ExceptionForm>
+    {
+        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        {
+            if (null == form.getMessage())
+                throw new NullPointerException();
+            else
+                throw new NullPointerException(form.getMessage());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    public static class ExceptionForm
+    {
+        private String _message;
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ConfigurationExceptionAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            throw new ConfigurationException("You have a configuration problem.", "What will make things better is if you stop visiting this action.");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class NotFoundAction extends SimpleViewAction<ExceptionForm>
+    {
+        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        {
+            if (null == form.getMessage())
+                throw new NotFoundException();
+            else
+                throw new NotFoundException(form.getMessage());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class UnauthorizedAction extends SimpleViewAction<ExceptionForm>
+    {
+        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        {
+            if (null == form.getMessage())
+                throw new UnauthorizedException();
+            else
+                throw new UnauthorizedException(form.getMessage());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
     }
 }

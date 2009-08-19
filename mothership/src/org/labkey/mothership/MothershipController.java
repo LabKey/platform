@@ -608,7 +608,6 @@ public class MothershipController extends SpringActionController
 
                 ServerSession session = form.toSession(getContainer());
 
-
                 ServerInstallation installation = new ServerInstallation();
                 installation.setServerIP(getViewContext().getRequest().getRemoteAddr());
                 installation.setServerInstallationGUID(form.getServerGUID());
@@ -644,7 +643,6 @@ public class MothershipController extends SpringActionController
         {
             return null;
         }
-
     }
 
     @RequiresPermission(ACL.PERM_READ)
