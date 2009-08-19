@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2007-2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -36,7 +35,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 6, 2007
  * Time: 8:55:54 AM
@@ -47,7 +45,8 @@ import java.util.ArrayList;
  *  jsp
  *  tags
  *  error handling
- *  binding 
+ *  binding
+ *  exceptions 
  */
 public class TestController extends SpringActionController
 {
@@ -493,7 +492,24 @@ public class TestController extends SpringActionController
     }
 
 
-    // NpeAction and ConfigurationExceptionAction allow simple testing of exception logging and display 
+    public static class ExceptionForm
+    {
+        private String _message;
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
+        }
+    }
+
+
+    // NpeAction, ConfigurationExceptionAction, NotFoundAction, and UnauthorizedAction allow simple testing of exception
+    // logging and display, both with and without a message
 
     @RequiresSiteAdmin
     public class NpeAction extends SimpleViewAction<ExceptionForm>
@@ -509,22 +525,6 @@ public class TestController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-
-    public static class ExceptionForm
-    {
-        private String _message;
-
-        public String getMessage()
-        {
-            return _message;
-        }
-
-        public void setMessage(String message)
-        {
-            _message = message;
         }
     }
 
