@@ -115,10 +115,9 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
     @Override
     public int hashCode()
     {
-        int result = _resourceId.hashCode();
+        int result = null == _resourceId ? 0 : _resourceId.hashCode();
         result = 31 * result + _userId;
-        result = 31 * result + _role.hashCode();
+        result = 31 * result + (null == _role ? 0 : _role.hashCode());
         return result;
     }
-
 }

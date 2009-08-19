@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SessionAppender;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.mvc.Controller;
@@ -91,7 +92,7 @@ public class ViewServlet extends HttpServlet
         long startTime = System.currentTimeMillis(); 
         request.setAttribute(REQUEST_STARTTIME, startTime);
         HttpSession session = request.getSession(true);
-        
+
         if (_debug)
         {
             User user = (User) request.getUserPrincipal();
@@ -100,6 +101,8 @@ public class ViewServlet extends HttpServlet
         }
 
         MemTracker.logMemoryUsage(++_requestNumber);
+
+        SessionAppender.initThread(request);
 
         String userAgent = request.getHeader("User-Agent");
         if (userAgent != null && (userAgent.indexOf("Googlebot") != -1 || userAgent.indexOf("Yahoo! Slurp") != -1 || userAgent.indexOf("msnbot") != -1))
