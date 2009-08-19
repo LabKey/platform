@@ -133,8 +133,6 @@ class ErrorView extends HttpView
 
     private void doButtonBar(PrintWriter out, Container c)
     {
-        out.println("<br>");
-
         if (_includeHomeButton)
         {
             out.print(PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL()));

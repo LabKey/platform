@@ -98,7 +98,7 @@ public class ErrorRenderer
                 {
                     out.println("<b style=\"color:red;\">");
                     out.println(PageFlowUtil.filter(exceptionMessage));
-                    out.println("</b><br>");
+                    out.println("</b><br><br>");
                 }
             }
         }

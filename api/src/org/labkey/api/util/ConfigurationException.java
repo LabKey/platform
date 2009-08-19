@@ -64,7 +64,7 @@ public class ConfigurationException extends ServletException implements SkipMoth
 
     public String getMessageHtml()
     {
-        return "<b style=\"color:red;\">" + getMessage() + (null != _advice ? " " + _advice : "") + "</b><br><br>This is a problem with your configuration.  Please contact <a href=\"http://www.labkey.com\">LabKey Software</a> at <a href=\"mailto:info@labkey.com\">info@labkey.com</a> for assistance.<br>";
+        return "<b style=\"color:red;\">" + getMessage() + (null != _advice ? " " + _advice : "") + "</b><br><br>This is a problem with your configuration.  Please contact <a href=\"http://www.labkey.com\">LabKey Software</a> at <a href=\"mailto:info@labkey.com\">info@labkey.com</a> for assistance.<br><br>";
     }
 
     public String getHeading(boolean startup)
