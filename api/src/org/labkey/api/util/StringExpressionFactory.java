@@ -159,9 +159,9 @@ public class StringExpressionFactory
                     Object o = null;
                     if (viewContext != null)
                     {
-                        if (portion.getValue().equals("contextPath"))
+                        if (portion.getValue().equalsIgnoreCase("contextPath"))
                             o = viewContext.getContextPath();
-                        else if (portion.getValue().equals("containerPath"))
+                        else if (portion.getValue().equalsIgnoreCase("containerPath"))
                             o = viewContext.getContainer().getPath();
                     }
 
