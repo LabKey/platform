@@ -17,6 +17,8 @@ package org.labkey.api.util;
 
 import org.labkey.api.collections.CacheMap;
 import org.labkey.api.collections.LimitedCacheMap;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -143,12 +145,28 @@ public class StringExpressionFactory
 
         public String eval(Map context)
         {
+            ViewContext viewContext = null;
+            if (context instanceof RenderContext)
+            {
+                viewContext = ((RenderContext)context).getViewContext();
+            }
+            
             StringBuilder builder = new StringBuilder();
             for (StringPortion portion : _parsedExpression)
             {
                 if (portion.isSubstitution())
                 {
-                    Object o = context.get(portion.getValue());
+                    Object o = null;
+                    if (viewContext != null)
+                    {
+                        if (portion.getValue().equals("contextPath"))
+                            o = viewContext.getContextPath();
+                        else if (portion.getValue().equals("containerPath"))
+                            o = viewContext.getContainer().getPath();
+                    }
+
+                    if (o == null)
+                        o = context.get(portion.getValue());
                     String s = o == null ? "null" : o.toString();
                     if (_urlEncodeSubstitutions)
                     {
