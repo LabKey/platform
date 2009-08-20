@@ -32,7 +32,7 @@ public class AliasedColumn extends ColumnInfo
         copyAttributesFrom(column);
         if (!name.equalsIgnoreCase(column.getName()))
         {
-            setCaption(null);
+            setLabel(null);
         }
         _column = column;
     }

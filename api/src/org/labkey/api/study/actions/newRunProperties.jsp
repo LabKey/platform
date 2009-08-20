@@ -65,7 +65,7 @@
             {
                 %>
                 <tr>
-                    <td class="labkey-form-label" nowrap="true"><%= h(entry.getKey().getPropertyDescriptor().getNonBlankLabel()) %></td>
+                    <td class="labkey-form-label" nowrap="true"><%= h(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %></td>
                     <td>
                         <%= h(bean.getBatchPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>
                     </td>

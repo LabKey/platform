@@ -162,7 +162,7 @@ public class Crosstab
 
         ColumnInfo col = getColumnMap().get(fieldName);
         if (null != col)
-            return col.getCaption();
+            return col.getLabel();
 
         return fieldName;
     }

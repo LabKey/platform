@@ -75,10 +75,10 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
                 PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getMvIndicatorSQL(), property.getPropertyId(), false),
                 Types.VARCHAR);
 
-        mvColumn.setCaption(mvColumnName);
+        mvColumn.setLabel(mvColumnName);
         mvColumn.setNullable(true);
         mvColumn.setUserEditable(false);
-        mvColumn.setIsHidden(true);
+        mvColumn.setHidden(true);
 
         valueColumn.setMvColumnName(mvColumn.getName());
 

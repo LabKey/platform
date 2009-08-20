@@ -540,7 +540,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             DomainProperty dp = entry.getKey();
             String value = entry.getValue();
-            String label = dp.getPropertyDescriptor().getNonBlankLabel();
+            String label = dp.getPropertyDescriptor().getNonBlankCaption();
             PropertyType type = dp.getPropertyDescriptor().getPropertyType();
             boolean missing = (value == null || value.length() == 0);
             if (dp.isRequired() && missing)

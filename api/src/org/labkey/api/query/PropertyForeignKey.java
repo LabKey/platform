@@ -198,13 +198,15 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     static public void initColumn(User user, ColumnInfo column, PropertyDescriptor pd)
     {
         if (pd.getLabel() != null)
-            column.setCaption(pd.getLabel());
+            column.setLabel(pd.getLabel());
         else
-            column.setCaption(ColumnInfo.captionFromName(pd.getName()));
+            column.setLabel(ColumnInfo.labelFromName(pd.getName()));
         if (pd.getFormat() != null)
             column.setFormatString(pd.getFormat());
         column.setNullable(!pd.isRequired());
-        column.setIsHidden(pd.isHidden());
+        column.setHidden(pd.isHidden());
+        column.setSqlTypeName(CoreSchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getPropertyType().getSqlType()));
+        column.setDescription(pd.getDescription());
         column.setFk(new PdLookupForeignKey(user, pd));
     }
 }

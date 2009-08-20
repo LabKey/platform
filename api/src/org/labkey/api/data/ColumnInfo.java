@@ -46,9 +46,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
     };
 
-    private String name;
     private String alias;
-    private String caption;
     private String sqlTypeName;
     private String textAlign = null;
     private String cssClass;
@@ -66,14 +64,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private boolean isReadOnly = false;
     private boolean isUserEditable = true;
     private boolean isUnselectable = false;
-    private boolean isHidden = false;
     private TableInfo parentTable = null;
     static Set<String> nonEditableColNames = null;
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private int sqlTypeInt = Types.NULL;
     private String metaDataName = null;
     private String selectName = null;
-    private String description = null;
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private DefaultValueType _defaultValueType = null;
@@ -113,11 +109,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         copyAttributesFrom(from);
     }
 
-    public String getName()
-    {
-        return name;
-    }
-
     public FieldKey getFieldKey()
     {
         return FieldKey.fromString(name);
@@ -139,8 +130,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         setAutoFillValue(col.getAutoFillValue());
         setAutoIncrement(col.isAutoIncrement());
-        if (col.caption != null)
-            setCaption(col.getCaption());
+        if (col.label != null)
+            setLabel(col.getLabel());
         setCssClass(col.getCssClass());
         setDefaultValue(col.getDefaultValue());
         setDescription(col.getDescription());
@@ -230,11 +221,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return parentTable.getSqlDialect();
     }
 
-    public String getCaption()
+    @Override
+    public String getLabel()
     {
-        if (null == caption)
-            caption = captionFromName(name);
-        return caption;
+        if (null == label)
+            label = labelFromName(name);
+        return label;
     }
 
     @Override
@@ -585,12 +577,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 xmlCol.setIsReadOnly(isReadOnly);
             if (!isUserEditable)
                 xmlCol.setIsUserEditable(isUserEditable);
-            if (isHidden)
-                xmlCol.setIsHidden(isHidden);
+            if (hidden)
+                xmlCol.setIsHidden(hidden);
             if (isUnselectable)
                 xmlCol.setIsUnselectable(isUnselectable);
-            if (null != caption)
-                xmlCol.setColumnTitle(caption);
+            if (null != label)
+                xmlCol.setColumnTitle(label);
             if (colIndex != 0)
                 xmlCol.setColumnIndex(colIndex);
             if (nullable)
@@ -631,7 +623,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         name = xmlCol.getColumnName();
         if (xmlCol.isSetColumnTitle())
-            setCaption(xmlCol.getColumnTitle());
+            setLabel(xmlCol.getColumnTitle());
         if (xmlCol.isSetInputLength())
             inputLength = xmlCol.getInputLength();
         if (xmlCol.isSetInputRows())
@@ -665,7 +657,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (xmlCol.isSetDescription())
             description = xmlCol.getDescription();
         if (xmlCol.isSetIsHidden())
-            isHidden = xmlCol.getIsHidden();
+            hidden = xmlCol.getIsHidden();
         if (xmlCol.isSetIsUnselectable())
             isUnselectable = xmlCol.getIsUnselectable();
         // UNDONE: errors sometimes???
@@ -682,7 +674,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             nullable = xmlCol.getNullable();
     }
 
-    public static String captionFromName(String name)
+    public static String labelFromName(String name)
     {
         if (name == null)
             return null;
@@ -856,16 +848,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
 
         return sb.toString();
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
     }
 
     static public class SchemaForeignKey implements ForeignKey
@@ -1212,24 +1194,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
     }
 
-
-    public void setCaption(String caption)
-    {
-        this.caption = caption;
-    }
-
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-
     public String getSqlTypeName()
     {
         return sqlTypeName;
     }
-
 
     public void setSqlTypeName(String sqlTypeName)
     {
@@ -1352,16 +1320,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public void setKeyField(boolean keyField)
     {
         isKeyField = keyField;
-    }
-
-    public boolean isHidden()
-    {
-        return isHidden;
-    }
-
-    public void setIsHidden(boolean hidden)
-    {
-        isHidden = hidden;
     }
 
     public boolean isMvEnabled()

@@ -43,10 +43,10 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
     public static void addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
     {
         ColumnInfo combinedCol = table.addWrapColumn(numberColumn);
-        combinedCol.setCaption(caption);
+        combinedCol.setLabel(caption);
 
         ColumnInfo wrappedOORIndicatorCol = table.addWrapColumn(oorIndicatorColumn);
-        wrappedOORIndicatorCol.setCaption(caption + " OOR Indicator");
+        wrappedOORIndicatorCol.setLabel(caption + " OOR Indicator");
 
         // Only add new columns if there is no name conflict with either the real or virtual table
         TableInfo realTable = table.getRealTable();
@@ -61,7 +61,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());
 
         ColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
-        wrappedNumberColumn.setCaption(caption + " " + NUMBER_COLUMN_SUFFIX);
+        wrappedNumberColumn.setLabel(caption + " " + NUMBER_COLUMN_SUFFIX);
 
         SQLFragment inRangeSQL = new SQLFragment("CASE WHEN ");
         inRangeSQL.append(oorIndicatorColumn.getName());
@@ -71,7 +71,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
 
         ColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
                     inRangeSQL, numberColumn.getSqlTypeInt(), wrappedNumberColumn, wrappedOORIndicatorCol));
-        inRangeColumn.setCaption(caption + " In Range");
+        inRangeColumn.setLabel(caption + " In Range");
         inRangeColumn.setFormatString(numberColumn.getFormatString());
     }
 }

@@ -107,7 +107,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected void setStandardPropertyAttributes(ColumnInfo colInfo, PropertyDescriptor studyPd)
     {
-        studyPd.setLabel(colInfo.getCaption());
+        studyPd.setLabel(colInfo.getLabel());
         studyPd.setDescription(colInfo.getDescription());
     }
 
@@ -891,7 +891,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         final ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).createRunsTable();
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
-        dataLinkColumn.setCaption("Assay Id");
+        dataLinkColumn.setLabel("Assay Id");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
         dataLinkColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -1282,7 +1282,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String datasetIdColumnName = "dataset" + datasetIndex++;
             final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table,
                 datasetIdColumnName, studyContainer, protocol.getRowId(), this);
-            datasetColumn.setIsHidden(true);
+            datasetColumn.setHidden(true);
             table.addColumn(datasetColumn);
 
             String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
@@ -1304,7 +1304,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 Types.VARCHAR,
                 datasetColumn);
             final String copiedToStudyColumnCaption = "Copied to " + studyName;
-            studyCopiedColumn.setCaption(copiedToStudyColumnCaption);
+            studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
 
             studyCopiedColumn.setDisplayColumnFactory(new DisplayColumnFactory()
             {

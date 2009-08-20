@@ -34,6 +34,11 @@ public class ColumnRenderProperties
     protected String excelFormatString;
     protected String tsvFormatString;
 
+    protected String label;
+    protected String name;
+    protected String description;
+    protected boolean hidden;
+
     public void copyTo(ColumnRenderProperties to)
     {
         to.sortDirection = sortDirection;
@@ -44,6 +49,8 @@ public class ColumnRenderProperties
         to.formatString = formatString;
         to.excelFormatString = excelFormatString;
         to.tsvFormatString = tsvFormatString;
+        to.label = label;
+        to.name = name;
     }
 
     public Sort.SortDirection getSortDirection()
@@ -124,5 +131,45 @@ public class ColumnRenderProperties
     public void setTsvFormatString(String tsvFormatString)
     {
         this.tsvFormatString = tsvFormatString;
+    }
+
+    public String getLabel()
+    {
+        return label;
+    }
+
+    public void setLabel(String label)
+    {
+        this.label = label;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription(String description)
+    {
+        this.description = description;
+    }
+
+    public boolean isHidden()
+    {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        this.hidden = hidden;
     }
 }

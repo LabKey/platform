@@ -53,6 +53,7 @@ public class SchemaTableInfo implements TableInfo
     private String _versionColumnName = null;
     private String metaDataName = null;
     private List<FieldKey> defaultVisibleColumns = null;
+    private String _description;
 
     protected SQLFragment selectName = null;
     private String _sequence = null;
@@ -703,5 +704,10 @@ public class SchemaTableInfo implements TableInfo
         if (fk == null)
             return null;
         return fk.createLookupColumn(parent, name);
+    }
+
+    public String getDescription()
+    {
+        return _description;
     }
 }

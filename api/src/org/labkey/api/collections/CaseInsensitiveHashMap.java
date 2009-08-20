@@ -67,7 +67,7 @@ public class CaseInsensitiveHashMap<V> extends HashMap<String, V>
     @Override
     public boolean containsKey(Object key)
     {
-        return super.containsKey(key) || super.containsKey(caseMap.get(((String) key).toLowerCase()));
+        return super.containsKey(key) || (key != null && super.containsKey(caseMap.get(((String) key).toLowerCase())));
     }
 
     @Override
@@ -76,7 +76,7 @@ public class CaseInsensitiveHashMap<V> extends HashMap<String, V>
         String key = (String) o;
         String correctCaseKey = caseMap.get(key);
         if (null == correctCaseKey)
-            correctCaseKey = caseMap.get(key.toLowerCase());
+            correctCaseKey = caseMap.get(key == null ? null : key.toLowerCase());
 
         V val = null == correctCaseKey ? null : super.get(correctCaseKey);
 
@@ -99,7 +99,7 @@ public class CaseInsensitiveHashMap<V> extends HashMap<String, V>
     @Override
     public V put(String str, V o1)
     {
-        String lcase = str.toLowerCase();
+        String lcase = str == null ? null : str.toLowerCase();
         String correctCase = caseMap.get(lcase);
         if (null == correctCase)
         {

@@ -84,8 +84,8 @@ public class ContainerForeignKey extends LookupForeignKey
             }
         });
         ret.addColumn(pathColumn);
-        ret.addWrapColumn(containersTable.getColumn("EntityId")).setIsHidden(true);
-        ret.addWrapColumn(containersTable.getColumn("RowId")).setIsHidden(true);
+        ret.addWrapColumn(containersTable.getColumn("EntityId")).setHidden(true);
+        ret.addWrapColumn(containersTable.getColumn("RowId")).setHidden(true);
         ret.setTitleColumn("Name");
         return ret;
     }

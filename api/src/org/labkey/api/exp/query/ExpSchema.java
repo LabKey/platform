@@ -103,7 +103,7 @@ public class ExpSchema extends AbstractExpSchema
         ExpExperimentTable ret = createExperimentsTable(EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME);
         if (_containerFilter != null)
             ret.setContainerFilter(_containerFilter);
-        ret.getColumn(ExpExperimentTable.Column.RunCount).setIsHidden(true);
+        ret.getColumn(ExpExperimentTable.Column.RunCount).setHidden(true);
 
         ret.addExperimentMembershipColumn(run);
         List<FieldKey> defaultCols = new ArrayList<FieldKey>(ret.getDefaultVisibleColumns());

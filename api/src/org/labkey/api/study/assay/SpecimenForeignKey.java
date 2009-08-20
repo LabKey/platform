@@ -168,7 +168,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         SpecimenLookupColumn ret = new SpecimenLookupColumn(foreignKey, lookupKey, lookupColumn);
         ret.copyAttributesFrom(lookupColumn);
-        ret.setCaption("Specimen " + lookupColumn.getCaption());
+        ret.setLabel("Specimen " + lookupColumn.getLabel());
         return ret;
     }
 

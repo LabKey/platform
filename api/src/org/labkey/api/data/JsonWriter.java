@@ -119,8 +119,8 @@ public class JsonWriter
             colModel.put("align", colInfo.getTextAlign());
         if (colInfo.getCssClass() != null)
             colModel.put("css", colInfo.getCssClass());
-        if (colInfo.getCaption() != null)
-            colModel.put("header", colInfo.getCaption());
+        if (colInfo.getLabel() != null)
+            colModel.put("header", colInfo.getLabel());
         if (colInfo.getDescription() != null)
             colModel.put("tooltip", colInfo.getDescription());
         if (colInfo.getWidth() != null)

@@ -214,7 +214,7 @@ public class FieldKey implements Comparable
 
     public String getCaption()
     {
-        return ColumnInfo.captionFromName(getName());
+        return ColumnInfo.labelFromName(getName());
     }
 
     public int compareTo(Object o)

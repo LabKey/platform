@@ -129,4 +129,6 @@ public interface TableInfo
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name);
 
     public int getCacheSize();
+
+    public String getDescription();
 }

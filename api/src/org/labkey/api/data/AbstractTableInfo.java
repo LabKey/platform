@@ -46,6 +46,7 @@ abstract public class AbstractTableInfo implements TableInfo
     protected final Map<String, ColumnInfo> _columnMap;
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
+    protected String _description;
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(0);
 
     public List<ColumnInfo> getPkColumns()
@@ -251,6 +252,16 @@ abstract public class AbstractTableInfo implements TableInfo
         return _name;
     }
 
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
+    }
+
     public boolean removeColumn(ColumnInfo column)
     {
         return _columnMap.remove(column.getName()) != null;
@@ -374,7 +385,7 @@ abstract public class AbstractTableInfo implements TableInfo
         column.setName(xbColumn.getColumnName());
         if (xbColumn.getColumnTitle() != null)
         {
-            column.setCaption(xbColumn.getColumnTitle());
+            column.setLabel(xbColumn.getColumnTitle());
         }
         if (xbColumn.isSetDescription())
         {
@@ -401,7 +412,7 @@ abstract public class AbstractTableInfo implements TableInfo
         }
         if (xbColumn.isSetIsHidden())
         {
-            column.setIsHidden(xbColumn.getIsHidden());
+            column.setHidden(xbColumn.getIsHidden());
         }
         if (xbColumn.isSetIsUnselectable())
         {

@@ -52,6 +52,6 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
         ColumnInfo column = _form.getColumnByFormFieldName(propName);
         if (column == null)
             return propName;
-        return column.getCaption();
+        return column.getLabel();
     }
 }

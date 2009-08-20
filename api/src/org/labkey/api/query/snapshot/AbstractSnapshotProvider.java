@@ -131,7 +131,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(column.getPropertyURI(), domain.getContainer());
 
         DomainProperty prop = domain.addProperty();
-        prop.setLabel(column.getCaption());
+        prop.setLabel(column.getLabel());
         prop.setName(column.getName());
 
         Class clz = column.getJavaClass();

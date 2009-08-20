@@ -35,11 +35,11 @@ public class LookupColumn extends ColumnInfo
         ret.copyAttributesFrom(lookupColumn);
         if (prefixColumnCaption)
         {
-            ret.setCaption(foreignKey.getCaption() + " " + lookupColumn.getCaption());
+            ret.setLabel(foreignKey.getLabel() + " " + lookupColumn.getLabel());
         }
         else
         {
-            ret.setCaption(lookupColumn.getCaption());
+            ret.setLabel(lookupColumn.getLabel());
         }
         if (ret.getFk() instanceof RowIdForeignKey)
         {

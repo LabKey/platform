@@ -98,7 +98,7 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
     protected String getTitleFromName(String name)
     {
         //convert camel case to separate words
-        return ColumnInfo.captionFromName(name);
+        return ColumnInfo.labelFromName(name);
     }
 
     protected void calculatePermissions()

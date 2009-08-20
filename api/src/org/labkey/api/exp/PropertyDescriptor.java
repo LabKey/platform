@@ -37,20 +37,16 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private int propertyId;
     private String propertyURI;
     private String ontologyURI;
-    private String name;
-    private String description;
     private String rangeURI;
     private String conceptURI;
 //    private PropertyDescriptor concept;
     private PropertyType propertyType;
-    private String label;
     private String searchTerms;
     private String semanticType;
     private String format;
     private Container container;
     private Container project;
     private boolean required;
-    private boolean hidden;
     private String lookupContainer;
     private String lookupSchema;
     private String lookupQuery;
@@ -98,7 +94,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         setDescription(col.getDescription());
         setRequired(!col.isNullable());
         setHidden(col.isHidden());
-        setLabel(col.getCaption());
+        setLabel(col.getLabel());
         setFormat(col.getFormatString());
     }
 
@@ -107,13 +103,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         this(propertyURI, rangeURI, name, null, container);
     }
 
-    public PropertyDescriptor(String propertyURI, String rangeURI, String name, String label, Container container)
+    public PropertyDescriptor(String propertyURI, String rangeURI, String name, String caption, Container container)
     {
         this();
         this.propertyURI = propertyURI;
         this.rangeURI = rangeURI;
         this.name = name;
-        this.label = label;
+        this.label = caption;
         setContainer(container);
     }
 
@@ -137,6 +133,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         this.propertyURI = propertyURI;
     }
 
+    @Override
     public String getName()
     {
         if (null == name && null != propertyURI)
@@ -153,30 +150,15 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         return name;
     }
 
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
-    }
-
     public String getOntologyURI()
-        {
+    {
         return ontologyURI;
-        }
+    }
 
     public void setOntologyURI(String ontologyURI)
-        {
+    {
         this.ontologyURI = ontologyURI;
-        }
+    }
 
     public String getRangeURI()
     {
@@ -216,23 +198,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         this.searchTerms = searchTerms == null ? null : searchTerms.toString();
     }
 
-    public String getLabel()
-    {
-        return label;
-    }
-
-    public String getNonBlankLabel()
+    public String getNonBlankCaption()
     {
         if (label == null || "".equals(label.trim()))
         {
             return getName();
         }
         return label;
-    }
-
-    public void setLabel(String label)
-    {
-        this.label = label;
     }
 
     public String getSemanticType()
@@ -317,16 +289,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     public void setRequired(boolean required)
     {
         this.required = required;
-    }
-
-    public boolean isHidden()
-    {
-        return hidden;
-    }
-
-    public void setHidden(boolean hidden)
-    {
-        this.hidden = hidden;
     }
 
     public boolean isMvEnabled()

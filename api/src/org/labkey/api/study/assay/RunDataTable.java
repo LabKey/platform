@@ -43,6 +43,7 @@ public class RunDataTable extends FilteredTable
     public RunDataTable(final AssaySchema schema, final ExpProtocol protocol)
     {
         super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
+        setDescription("Contains all of the results (and may contain raw data as well) for the " + protocol.getName() + " assay definition");
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
         objectIdColumn.setKeyField(true);

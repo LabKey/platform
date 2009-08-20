@@ -77,7 +77,7 @@ public class CrosstabMeasure
         _sourceColumn = sourceColumn;
         _aggregateFunction = aggFunction;
         _name = _aggregateFunction.name() + "_" + sourceColumn.getName();
-        _caption = _aggregateFunction.getCaption() + " of " + getSourceColumn().getCaption();
+        _caption = _aggregateFunction.getCaption() + " of " + getSourceColumn().getLabel();
     }
 
     public CrosstabMeasure(TableInfo table, FieldKey fieldKey, AggregateFunction aggFunction)

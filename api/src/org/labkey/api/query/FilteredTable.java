@@ -73,7 +73,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             ColumnInfo newCol = addWrapColumn(col);
             if (preserveHidden && col.isHidden())
             {
-                newCol.setIsHidden(col.isHidden());
+                newCol.setHidden(col.isHidden());
             }
         }
     }
@@ -103,7 +103,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         assert underlyingColumn.getParentTable() == _rootTable;
         ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getSqlTypeInt());
         ret.copyAttributesFrom(underlyingColumn);
-        ret.setCaption(ColumnInfo.captionFromName(alias));
+        ret.setLabel(ColumnInfo.labelFromName(alias));
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)
         {
             ret.setKeyField(false);

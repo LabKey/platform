@@ -72,7 +72,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         // unfortunately, we have to match on label/caption when mapping propertydescriptors to columninfo objects;
         // there are no other pieces of data that are the same.
         for (DomainProperty pd : unorderedColumns)
-            nameToCol.put(pd.getPropertyDescriptor().getNonBlankLabel(), pd);
+            nameToCol.put(pd.getPropertyDescriptor().getNonBlankCaption(), pd);
 
         List<DomainProperty> orderedColumns = new ArrayList<DomainProperty>();
         // add all columns that are found in the default view in the correct order:

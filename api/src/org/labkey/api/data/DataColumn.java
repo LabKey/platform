@@ -74,7 +74,7 @@ public class DataColumn extends DisplayColumn
         _inputType = _boundColumn.getInputType();
         _inputRows = _boundColumn.getInputRows();
         _inputLength = _boundColumn.getInputLength();
-        _caption = StringExpressionFactory.create(_boundColumn.getCaption());
+        _caption = StringExpressionFactory.create(_boundColumn.getLabel());
         _editable = !_boundColumn.isReadOnly() && _boundColumn.isUserEditable();
         _textAlign = _displayColumn.getTextAlign();
     }
@@ -579,7 +579,7 @@ public class DataColumn extends DisplayColumn
                 }
                 if (sb.length() > 0)
                 {
-                    out.write(PageFlowUtil.helpPopup(_boundColumn.getCaption(), sb.toString()));
+                    out.write(PageFlowUtil.helpPopup(_boundColumn.getLabel(), sb.toString()));
                 }
                 if (renderRequiredIndicators() && !_boundColumn.isNullable())
                     out.write(" *");

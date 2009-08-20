@@ -29,8 +29,8 @@ public class ContainerTable extends FilteredTable
     {
         super(CoreSchema.getInstance().getTableInfoContainers());
         wrapAllColumns(true);
-        getColumn("_ts").setIsHidden(true);
-        getColumn("EntityId").setIsHidden(true);
+        getColumn("_ts").setHidden(true);
+        getColumn("EntityId").setHidden(true);
 
         getColumn("Parent").setFk(new LookupForeignKey("EntityId", "Name")
         {

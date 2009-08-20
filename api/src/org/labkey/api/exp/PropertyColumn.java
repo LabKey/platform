@@ -42,7 +42,7 @@ public class PropertyColumn extends LookupColumn
         setName(ColumnInfo.legalNameFromName(pd.getName()));
         setAlias(ColumnInfo.legalNameFromName(pd.getName()));
         setNullable(!pd.isRequired());
-        setIsHidden(pd.isHidden());
+        setHidden(pd.isHidden());
         String description = pd.getDescription();
         if (null == description && null != pd.getConceptURI())
         {
@@ -51,7 +51,7 @@ public class PropertyColumn extends LookupColumn
                 description = concept.getDescription();
         }
         setDescription(description);
-        setCaption(pd.getLabel() == null ? getName() : pd.getLabel());
+        setLabel(pd.getLabel() == null ? getName() : pd.getLabel());
         this.pd = pd;
         setSqlTypeName(getPropertySqlType(OntologyManager.getSqlDialect()));
         String format = StringUtils.trimToNull(pd.getFormat());

@@ -244,7 +244,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
                     {
                         final ColumnInfo info = column.getColumnInfo();
                         if (info != null)
-                            _columnMap.put(info.getAlias(), info.getCaption());
+                            _columnMap.put(info.getAlias(), info.getLabel());
                     }
                 }
             }

@@ -28,6 +28,7 @@ public abstract class AssaySchema extends UserSchema
 {
     protected Container _targetStudy;
 
+    public static final String ASSAY_LIST_TABLE_NAME = "AssayList";
     public static String NAME = "assay";
 
     public AssaySchema(String name, User user, Container container, DbSchema dbSchema)

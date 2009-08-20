@@ -35,6 +35,14 @@ public class ExprColumn extends ColumnInfo
         setAlias(AliasManager.makeLegalName(name, parent.getSqlDialect()));
         setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(sqltype));
         _sql = sql;
+        for (ColumnInfo dependentColumn : dependentColumns)
+        {
+            if (dependentColumn == null)
+            {
+                // Enable after https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=8439 is fixed 
+//                throw new NullPointerException("Dependent columns may not be null");
+            }
+        }
         _dependentColumns = dependentColumns;
     }
 

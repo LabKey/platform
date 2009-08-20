@@ -32,9 +32,9 @@ public class RawValueColumn extends AliasedColumn
     public RawValueColumn(TableInfo table, ColumnInfo valueColumn)
     {
         super(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
-        setCaption(getName());
+        setLabel(getName());
         setUserEditable(false);
-        setIsHidden(true);
+        setHidden(true);
         setMvColumnName(null); // This column itself does not allow QC
         setNullable(true); // Otherwise we get complaints on import for required fields
     }

@@ -169,6 +169,7 @@ var _typeMap = {
     "DATE":"DATE",
     "DECIMAL":"DECIMAL",
     "DOUBLE":"DECIMAL",
+    "DOUBLE PRECISION":"DECIMAL",
     "FLOAT":"DECIMAL",
     "INTEGER":"INT",
     "LONGVARCHAR":"LONGTEXT",

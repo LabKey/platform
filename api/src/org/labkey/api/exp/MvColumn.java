@@ -43,9 +43,9 @@ public class MvColumn extends LookupColumn
         String name = ColumnInfo.legalNameFromName(pd.getName() + MV_INDICATOR_SUFFIX);
         setName(name);
         setAlias(name);
-        setCaption(name);
+        setLabel(name);
         setNullable(true);
-        setIsHidden(true);
+        setHidden(true);
         setUserEditable(false);
     }
 

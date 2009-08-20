@@ -296,8 +296,8 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     while (offsetElem.tagName != "BODY")
     {
-        posLeft += offsetElem.offsetLeft;
-        posTop += offsetElem.offsetTop;
+        posLeft += offsetElem.offsetLeft  - offsetElem.scrollLeft;
+        posTop += offsetElem.offsetTop - offsetElem.scrollTop;
         offsetElem = offsetElem.offsetParent;
     }
 

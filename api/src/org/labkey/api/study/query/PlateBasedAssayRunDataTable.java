@@ -89,7 +89,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                     ColumnInfo result = super.constructColumnInfo(parent, name, pd);
                     if (getInputMaterialPropertyName().equals(pd.getName()))
                     {
-                        result.setCaption("Specimen");
+                        result.setLabel("Specimen");
                         result.setFk(new LookupForeignKey("LSID")
                         {
                             public TableInfo getLookupTableInfo()
@@ -101,7 +101,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                                 {
                                     ((PropertyForeignKey)propertyCol.getFk()).addDecorator(new SpecimenPropertyColumnDecorator(provider, protocol, schema));
                                 }
-                                materials.addColumn(ExpMaterialTable.Column.LSID).setIsHidden(true);
+                                materials.addColumn(ExpMaterialTable.Column.LSID).setHidden(true);
                                 return materials;
                             }
                         });
@@ -148,7 +148,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
 
         ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), Types.INTEGER);
         ColumnInfo addedRunIdColumn = addColumn(runIdColumn);
-        addedRunIdColumn.setIsHidden(true);
+        addedRunIdColumn.setHidden(true);
 
         Set<String> hiddenProperties = new HashSet<String>();
         hiddenProperties.add(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);

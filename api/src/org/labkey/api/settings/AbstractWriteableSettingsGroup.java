@@ -142,7 +142,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
                 }
 
                 html.append("<tr><td class='labkey-form-label'>");
-                html.append(PageFlowUtil.filter(ColumnInfo.captionFromName(key)));
+                html.append(PageFlowUtil.filter(ColumnInfo.labelFromName(key)));
                 html.append("</td><td>");
                 html.append(PageFlowUtil.filter(oldValue));
                 html.append("&nbsp;&raquo;&nbsp;");
