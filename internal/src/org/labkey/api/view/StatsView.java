@@ -19,6 +19,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.arrays.DoubleArray;
 import org.labkey.api.util.PageFlowUtil;
+import org.springframework.validation.BindException;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class StatsView extends GridView
 
     public StatsView(DataRegion dataRegion, String statsString)
     {
-        super(dataRegion);
+        super(dataRegion, (BindException)null);
         cols = statsString.split(";");
         for (String col : cols)
             valueMap.put(col, new DoubleArray());

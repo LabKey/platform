@@ -216,7 +216,7 @@ public class DataRegionSelection
     public static int selectAll(ViewContext context, String key, QueryForm form)
             throws SQLException, IOException
     {
-        QueryView view = new QueryView(form);
+        QueryView view = new QueryView(form, null);
         TableInfo table = view.getTable();
         ResultSet rs = view.getResultset();
 

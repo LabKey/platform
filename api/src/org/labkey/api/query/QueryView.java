@@ -36,6 +36,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -86,7 +87,8 @@ public class QueryView extends WebPartView<Object>
     private QueryDefinition _queryDef;
     private CustomView _customView;
     private UserSchema _schema;
-    private List<QueryException> _errors = new ArrayList<QueryException>();
+    private BindException _errors;
+    private List<QueryException> _parseErrors = new ArrayList<QueryException>();
     private QuerySettings _settings;
     private boolean _showRecordSelectors = false;
     private boolean _initializeButtonBar = true;
@@ -115,9 +117,9 @@ public class QueryView extends WebPartView<Object>
 
     TableInfo _table;
 
-    public QueryView(QueryForm form)
+    public QueryView(QueryForm form, BindException errors)
     {
-        this(form.getSchema(), form.getQuerySettings());
+        this(form.getSchema(), form.getQuerySettings(), errors);
     }
 
 
@@ -127,11 +129,18 @@ public class QueryView extends WebPartView<Object>
         setSchema(schema);
     }
 
-    public QueryView(UserSchema schema, QuerySettings settings)
+    @Deprecated
+    protected QueryView(UserSchema schema, QuerySettings settings)
+    {
+        this(schema, settings, null);
+    }
+
+    public QueryView(UserSchema schema, QuerySettings settings, BindException errors)
     {
         setSchema(schema);
         if (null != settings)
             setSettings(settings);
+        _errors = errors;
     }
 
     public QuerySettings getSettings()
@@ -983,7 +992,7 @@ public class QueryView extends WebPartView<Object>
     public DataView createDataView()
     {
         DataRegion rgn = createDataRegion();
-        GridView ret = new GridView(rgn)
+        GridView ret = new GridView(rgn, _errors)
         {
             /**
              * Since we're using user-defined sql, we can get a SQLException that
@@ -1304,7 +1313,7 @@ public class QueryView extends WebPartView<Object>
 
     protected TableInfo createTable()
     {
-        return _queryDef != null ? _queryDef.getTable(_schema, _errors, true) : null;
+        return _queryDef != null ? _queryDef.getTable(_schema, _parseErrors, true) : null;
     }
 
     final public TableInfo getTable()
@@ -1365,7 +1374,7 @@ public class QueryView extends WebPartView<Object>
 
     public List<QueryException> getParseErrors()
     {
-        return _errors;
+        return _parseErrors;
     }
 
     public NavTrailConfig getNavTrailConfig()

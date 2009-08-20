@@ -16,7 +16,6 @@
 
 package org.labkey.api.attachments;
 
-import org.apache.struts.upload.CommonsMultipartRequestHandler;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -73,7 +72,7 @@ public class SpringAttachmentFile implements AttachmentFile
     {
         // For now, assume we're configured for the default maximum struts file size
         // TODO: Lame -- should query Spring to determine the configured max file size
-        return (CommonsMultipartRequestHandler.DEFAULT_SIZE_MAX / (1024 * 1024)) + "MB";
+        return "250MB";
     }
 
     public byte[] getBytes() throws IOException

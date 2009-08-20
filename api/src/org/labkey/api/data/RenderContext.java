@@ -84,16 +84,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public void setErrors(BindException errors)
     {
-//        // UNDONE: SpringFramework does not support org.apache.commons.beanutils.DynaBean
-//        if (errors.getTarget() instanceof DynaBean)
-//        {
-//            TableViewForm.copyErrorsToStruts(errors, _viewContext.getRequest());
-//            _errors = null;
-//        }
-//        else
-//        {
-//            _errors = errors;
-//        }
         _errors = errors;
     }
 
@@ -540,39 +530,42 @@ public class RenderContext extends BoundMap // extends ViewContext
         return ret;
     }
 
+
+    protected BindException getBindException()
+    {
+        if (null != _errors)
+            return _errors;
+        // CONSIDER: look in root view context?
+        return null;
+    }
+
     /*
      * Moved getErrors() from TableViewForm
      * 4927 : DataRegion needs to support Spring errors collection
      */
     public String getErrors(String paramName)
     {
-        if (null != _errors)
-        {
-            List list;
-            if ("main".equals(paramName))
-                list = _errors.getGlobalErrors();
-            else
-                list = _errors.getFieldErrors(paramName);
-            if (list == null || list.size() == 0)
-                return "";
-            StringBuilder sb = new StringBuilder();
-            String br = "<font class=\"labkey-error\">";
-            for (Object m : list)
-            {
-                sb.append(br);
-                sb.append(getViewContext().getMessage((MessageSourceResolvable)m));
-                br = "<br>";
-            }
-            if (sb.length() > 0)
-                sb.append("</font>");
-            return sb.toString();
-        }
+        BindException errors = getBindException();
+        if (null == errors)
+            return "";
+        List list;
+        if ("main".equals(paramName))
+            list = errors.getGlobalErrors();
         else
+            list = errors.getFieldErrors(paramName);
+        if (list == null || list.size() == 0)
+            return "";
+        StringBuilder sb = new StringBuilder();
+        String br = "<font class=\"labkey-error\">";
+        for (Object m : list)
         {
-            if (null == getRequest())
-                return null;
-            return PageFlowUtil.getStrutsError(getRequest(), paramName);
+            sb.append(br);
+            sb.append(getViewContext().getMessage((MessageSourceResolvable)m));
+            br = "<br>";
         }
+        if (sb.length() > 0)
+            sb.append("</font>");
+        return sb.toString();
     }
 
     public String getErrors(ColumnInfo column)

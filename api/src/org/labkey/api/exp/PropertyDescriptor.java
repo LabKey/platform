@@ -244,7 +244,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     @Override
     public String toString()
     {
-        return propertyURI + " name=" + name + " project="+  project.getPath() + " container="+  container.getPath() + " label=" + label + " range=" + rangeURI + " concept=" + conceptURI;
+        return propertyURI + " name=" + name + " project="+  (project == null ? "null" : project.getPath()) + " container="+  (container==null ? "null" : container.getPath()) + " label=" + label + " range=" + rangeURI + " concept=" + conceptURI;
     }
 
     public String getFormat()

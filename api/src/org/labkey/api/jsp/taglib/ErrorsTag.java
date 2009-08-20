@@ -44,7 +44,7 @@ public class ErrorsTag extends TagSupport
 
         try
         {
-            out.print(PageFlowUtil.getStrutsError((HttpServletRequest) pageContext.getRequest(), null));
+            //out.print(PageFlowUtil.getStrutsError((HttpServletRequest) pageContext.getRequest(), null));
 
             // There are spring tags for this.  But I want to make this work for migration beehive->spring
             int count=0;

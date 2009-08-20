@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.springframework.validation.BindException;
 
 import java.io.PrintWriter;
 
@@ -62,8 +63,9 @@ public class ContactWebPart extends WebPartView
         if (c == null)
             throw new IllegalStateException("There is a problem with this folder. Please see your administrator for assistance.");
 
-        GridView gridView = new GridView(getGridRegionWebPart());
+        GridView gridView = new GridView(getGridRegionWebPart(), (BindException)null);
         gridView.setFrame(FrameType.DIV);
+        
         gridView.setCustomizeLinks(getCustomizeLinks());
         gridView.setSort(new Sort("Email"));
         gridView.setContainer(c.getProject());

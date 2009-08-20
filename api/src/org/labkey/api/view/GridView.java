@@ -28,9 +28,9 @@ public class GridView extends DataView
 {
     private static Logger _log = Logger.getLogger(GridView.class);
 
-    public GridView(DataRegion dataRegion)
+    public GridView(DataRegion dataRegion, BindException errors)
     {
-        super(dataRegion, (BindException)null);
+        super(dataRegion, errors);
         setupSelectionKey(dataRegion);
     }
 
@@ -64,7 +64,9 @@ public class GridView extends DataView
 
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
     {
-        String err = PageFlowUtil.getStrutsError(ctx.getRequest(), "dataregion_" + getDataRegion().getName());
+        // UNDONE
+        //String err = PageFlowUtil.getStrutsError(ctx.getRequest(), "dataregion_" + getDataRegion().getName());
+        String err = null;
         if (err != null && err.length() > 0)
             out.write(err.replaceAll(System.getProperty("line.separator"), "<br>"));
 

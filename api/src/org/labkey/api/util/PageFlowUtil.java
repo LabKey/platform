@@ -22,10 +22,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.util.MessageResources;
-import org.apache.struts.validator.Resources;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
 import org.labkey.api.action.SpringActionController;
@@ -679,26 +675,12 @@ public class PageFlowUtil
         }
     }
 
-    public static ActionErrors getActionErrors(HttpServletRequest request)
-    {
-        return getActionErrors(request, false);
-    }
-    
-    public static ActionErrors getActionErrors(HttpServletRequest request, boolean create)
-    {
-        ActionErrors errors = (ActionErrors) request.getAttribute(org.apache.struts.Globals.ERROR_KEY);
-        if (create && null == errors)
-        {
-            errors = new ActionErrors();
-            request.setAttribute(org.apache.struts.Globals.ERROR_KEY, errors);
-        }
-        return errors;
-    }
 
     public static int[] toInts(Collection<String> strings)
     {
         return toInts(strings.toArray(new String[strings.size()]));
     }
+
 
     public static int[] toInts(String[] strings)
     {
@@ -719,123 +701,6 @@ public class PageFlowUtil
         {
             return MessageFormat.format(get(key), args);
         }
-    }
-
-
-    public static String getStrutsError(HttpServletRequest request, String key)
-    {
-        ActionErrors errors = getActionErrors(request);
-        if (null == errors)
-            return "";
-
-        String header = "";
-        String prefix = "";
-        String suffix = "";
-        String footer = "";
-
-        MessageFormatter formatter = null;
-        
-        final MessageResources resources = Resources.getMessageResources(request);
-        if (null != resources)
-        {
-            if (resources.isPresent("errors.header"))
-                header = resources.getMessage("errors.header");
-            prefix = resources.getMessage("errors.prefix", NO_ARGS);
-            suffix = resources.getMessage("errors.suffix", NO_ARGS);
-            if (resources.isPresent("errors.footer"))
-                footer = resources.getMessage("errors.footer");
-            formatter = new MessageFormatter()
-            {
-                public String get(String key)
-                {
-                    return resources.getMessage(key);
-                }
-            };
-        }
-        else
-        {
-            // HACK make this works with non-Struts controllers
-            final Properties props = new Properties();
-            props.put("errors.prefix","<font class=\"labkey-error\">");
-            props.put("errors.suffix","</font><br>");
-            props.put("Error","{0}");
-            props.put("ConversionError","Could not convert {0} to correct type.");
-            props.put("NullError","Field {0} cannot be null.");
-            props.put("UniqueViolationError","The value of the {0} field conflicts with another value in the database. Please enter a different value.");
-
-            try
-            {
-                InputStream is = PageFlowUtil.class.getClassLoader().getResourceAsStream("/messages/Validation.properties");
-                if (null != is)
-                    props.load(is);
-
-                header = StringUtils.trimToEmpty((String)props.get("errors.header"));
-                prefix = StringUtils.trimToEmpty((String)props.get("errors.prefix"));
-                suffix = StringUtils.trimToEmpty((String)props.get("errors.suffix"));
-                footer = StringUtils.trimToEmpty((String)props.get("errors.footer"));
-                formatter = new MessageFormatter()
-                {
-                    public String get(String key)
-                    {
-                        return (String)props.get(key);
-                    }
-                };
-            }
-            catch (IOException x)
-            {
-                _log.error("unexpected error", x);
-            }
-        }
-        if (formatter == null)
-            throw new IllegalStateException("JPF does not have an error resource - its annotation should be something like @Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = \"messages.Validation\")})");
-
-        Iterator iter = key == null ? errors.get() : errors.get(key);
-        if (!iter.hasNext())
-            return "";
-
-        StringBuffer sb = new StringBuffer();
-        sb.append(header);
-        
-        while (iter.hasNext())
-        {
-            ActionMessage message = (ActionMessage) iter.next();
-            String msg;
-
-            try
-            {
-                if (null != resources)
-                {
-                    if (message.getValues() == null)
-                        msg = resources.getMessage(message.getKey());
-                    else
-                        msg = resources.getMessage(message.getKey(), message.getValues());
-                }
-                else
-                {
-                    // UNDONE: make non-struts controller work
-                    if (message.getValues() == null)
-                        msg = message.getKey();
-                    else
-                        msg = String.valueOf(message.getValues()[0]);
-                }
-            }
-            catch (Exception x)
-            {
-                _log.error(x);
-                msg = message.getKey();
-                Object[] v = message.getValues();
-                if (null != v && 0 < v.length)
-                    msg += ": " + String.valueOf(v[0]);
-            }
-
-            if (null != prefix)
-                sb.append(prefix);
-            sb.append(filter(msg));
-            if (null != suffix)
-                sb.append(suffix);
-        }
-        sb.append(footer);
-        return sb.toString();
     }
 
 

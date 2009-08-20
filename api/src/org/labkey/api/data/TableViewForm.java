@@ -19,8 +19,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.SpringActionController;
@@ -344,13 +342,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         _validateRequired = validateRequired;
     }
 
-    public void populateValues(ActionErrors errors)
-    {
-        BindException bind = populateValues((BindException)null);
-        errors.add(convertErrorsToStruts(bind, getRequest()));
-    }
-
-
     protected void _populateValues(BindException errors)
     {
         // Don't do anything special if dynaclass is null
@@ -412,9 +403,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public boolean isValid()
     {
-        ActionErrors errors = new ActionErrors();
-        populateValues(errors);
-        return errors.isEmpty();
+        BindException bind = populateValues((BindException)null);
+        return bind.getErrorCount() == 0 && bind.getFieldErrorCount() == 0;        
     }
 
     public Object getTypedValue(String propName)
@@ -642,27 +632,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         catch (Exception x)
         {
         }
-    }
-
-
-    public static void copyErrorsToStruts(BindException errors, HttpServletRequest request)
-    {
-        PageFlowUtil.getActionErrors(request, true).add(convertErrorsToStruts(errors,request));
-    }
-
-
-    public static ActionErrors convertErrorsToStruts(BindException errors, HttpServletRequest request)
-    {
-        ViewContext context = HttpView.getRootContext();
-        ActionErrors struts = new ActionErrors();
-        // UNDONE: need to move errors where InsertView expects them
-        if (errors.hasGlobalErrors())
-            for (ObjectError e : (List<ObjectError>)errors.getGlobalErrors())
-                struts.add("main", new ActionMessage("Error", context.getMessage(e)));
-        if (errors.hasFieldErrors())
-            for (FieldError e : (List<FieldError>)errors.getFieldErrors())
-                struts.add(e.getField(), new ActionMessage("Error", context.getMessage(e)));
-        return struts;
     }
 
 
