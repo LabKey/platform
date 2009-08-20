@@ -42,7 +42,7 @@ public class ParticipantVisitTable extends FilteredTable
         _pvForeign = pv;
 
         ColumnInfo keyPV = new ParticipantVisitColumn("ParticipantVisit", this, _rootTable.getColumn("ParticipantId"), _rootTable.getColumn("SequenceNum"));
-        keyPV.setIsHidden(true);
+        keyPV.setHidden(true);
         keyPV.setIsUnselectable(true);
         addColumn(keyPV);
         for (ColumnInfo col : _rootTable.getColumns())
@@ -113,7 +113,7 @@ public class ParticipantVisitTable extends FilteredTable
     {
         ColumnInfo ret = new AliasedColumn(name, AliasManager.makeLegalName(name, _dialect), _pvForeign);
         ret.setFk(new PVForeignKey(dsd));
-        ret.setCaption(dsd.getLabel());
+        ret.setLabel(dsd.getLabel());
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -171,7 +171,7 @@ public class ParticipantVisitTable extends FilteredTable
         {
             super(foreignKey, lookupKey, lookupColumn);
             copyAttributesFrom(lookupColumn);
-            setCaption(foreignKey.getCaption() + " " + lookupColumn.getCaption());
+            setLabel(foreignKey.getLabel() + " " + lookupColumn.getLabel());
         }
 
         @Override

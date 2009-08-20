@@ -133,7 +133,7 @@ public class MothershipSchema extends UserSchema
                 return createServerInstallationTable();
             }
         });
-        result.getColumn("ServerInstallationId").setCaption("Server");
+        result.getColumn("ServerInstallationId").setLabel("Server");
 
         ColumnInfo earliestCol = result.getColumn("EarliestKnownTime");
         ColumnInfo latestCol = result.getColumn("LastKnownTime");
@@ -292,7 +292,7 @@ public class MothershipSchema extends UserSchema
         result.getColumn("BugNumber").setURL(issueURL.toString() + "issueId=${BugNumber}");
 
         result.getColumn("ExceptionStackTraceId").setURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()) + "exceptionStackTraceId=${ExceptionStackTraceId}");
-        result.getColumn("ExceptionStackTraceId").setCaption("Exception");
+        result.getColumn("ExceptionStackTraceId").setLabel("Exception");
         result.getColumn("ExceptionStackTraceId").setFormatString("'#'0");
 
         result.setTitleColumn("ExceptionStackTraceId");
@@ -354,7 +354,7 @@ public class MothershipSchema extends UserSchema
             }
         });
 
-        result.getColumn("ExceptionStackTraceId").setCaption("Exception");
+        result.getColumn("ExceptionStackTraceId").setLabel("Exception");
         result.getColumn("ExceptionStackTraceId").setFk(new LookupForeignKey("ExceptionStackTraceId")
         {
             public TableInfo getLookupTableInfo()
@@ -363,11 +363,11 @@ public class MothershipSchema extends UserSchema
             }
         });
 
-        result.getColumn("PageflowName").setCaption("Controller");
-        result.getColumn("PageflowAction").setCaption("Action");
+        result.getColumn("PageflowName").setLabel("Controller");
+        result.getColumn("PageflowAction").setLabel("Action");
 
         result.getColumn("ServerSessionId").setURL("showServerSessionDetail.view?serverSessionId=${ServerSessionId}");
-        result.getColumn("ServerSessionId").setCaption("Session");
+        result.getColumn("ServerSessionId").setLabel("Session");
         result.getColumn("ServerSessionId").setFormatString("'#'0");
         LookupForeignKey fk = new LookupForeignKey("ServerSessionId")
         {

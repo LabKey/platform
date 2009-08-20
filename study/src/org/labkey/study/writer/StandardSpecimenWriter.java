@@ -58,7 +58,7 @@ public class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.Que
             comma = ", ";
 
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
-            ci.setCaption(column.getTsvColumnName());
+            ci.setLabel(column.getTsvColumnName());
             DisplayColumn dc = new DataColumn(ci);
 
             if (column.getJavaType() == Boolean.class)

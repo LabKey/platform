@@ -127,7 +127,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
         if (col != null)
         {
-            col.setCaption("Target Study");
+            col.setLabel("Target Study");
             col.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -140,7 +140,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         col = table.getColumn("Property");
         if (col != null)
         {
-            col.setIsHidden(true);
+            col.setHidden(true);
             col.setIsUnselectable(true);
         }
     }

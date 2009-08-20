@@ -130,7 +130,7 @@ public class DataSetTable extends FilteredTable
                 if (StudyManager.getInstance().showQCStates(_schema.getContainer()))
                     defaultVisibleCols.add(FieldKey.fromParts(baseColumn.getName()));
                 else
-                    qcStateColumn.setIsHidden(true);
+                    qcStateColumn.setHidden(true);
             }
             else
             {
@@ -138,7 +138,7 @@ public class DataSetTable extends FilteredTable
 
                 // When copying a column, the hidden bit is not propagated, so we need to do it manually
                 if (baseColumn.isHidden())
-                    col.setIsHidden(true);
+                    col.setHidden(true);
                 
                 String propertyURI = col.getPropertyURI();
                 if (null != propertyURI && !standardURIs.contains(propertyURI))
@@ -164,9 +164,9 @@ public class DataSetTable extends FilteredTable
             }
         }
         ColumnInfo lsidColumn = getColumn("LSID");
-        lsidColumn.setIsHidden(true);
+        lsidColumn.setHidden(true);
         lsidColumn.setKeyField(true);
-        getColumn("SourceLSID").setIsHidden(true);
+        getColumn("SourceLSID").setHidden(true);
         setDefaultVisibleColumns(defaultVisibleCols);
     }
 
@@ -234,8 +234,8 @@ public class DataSetTable extends FilteredTable
      */
     public void hideParticipantLookups()
     {
-        getColumn("ParticipantID").setIsHidden(true);
-        getColumn("ParticipantVisit").setIsHidden(true);
+        getColumn("ParticipantID").setHidden(true);
+        getColumn("ParticipantVisit").setHidden(true);
     }
 
     @Override

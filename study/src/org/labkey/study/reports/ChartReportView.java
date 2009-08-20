@@ -362,7 +362,7 @@ public class ChartReportView extends AbstractReportView
                     if (table != null)
                     {
                         ColumnInfo info = table.getColumn(itemName);
-                        return info != null ? info.getCaption() : itemName;
+                        return info != null ? info.getLabel() : itemName;
                     }
                     return itemName;
                 }

@@ -43,7 +43,7 @@ public class ParticipantTable extends FilteredTable
         addColumn(rowIdColumn);
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
         datasetColumn.setIsUnselectable(true);
-        datasetColumn.setCaption("DataSet");
+        datasetColumn.setLabel("DataSet");
         datasetColumn.setFk(new AbstractForeignKey()
         {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)

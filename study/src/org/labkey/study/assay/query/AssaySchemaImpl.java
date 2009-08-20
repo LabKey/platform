@@ -70,7 +70,7 @@ public class AssaySchemaImpl extends AssaySchema
             }
         });
 
-        names.add("AssayList");
+        names.add(ASSAY_LIST_TABLE_NAME);
         for (ExpProtocol protocol : getProtocols())
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -111,7 +111,7 @@ public class AssaySchemaImpl extends AssaySchema
     @Override
     public TableInfo createTable(String name)
     {
-        if (name.equalsIgnoreCase("AssayList"))
+        if (name.equalsIgnoreCase(ASSAY_LIST_TABLE_NAME))
             return new AssayListTable(this);
         else
         {

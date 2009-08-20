@@ -43,7 +43,7 @@ public class TableXML
         {
             ColumnType xbColumn = columns.addNewColumn();
             xbColumn.setColumnName(column.getName());
-            xbColumn.setColumnTitle(column.getCaption());
+            xbColumn.setColumnTitle(column.getLabel());
             xbColumn.setDatatype(column.getSqlTypeName());
             if (column.isHidden())
             {
@@ -52,6 +52,10 @@ public class TableXML
             if (column.isUnselectable())
             {
                 xbColumn.setIsUnselectable(column.isUnselectable());
+            }
+            if (column.getDescription() != null)
+            {
+                xbColumn.setDescription(column.getDescription());
             }
             ForeignKey fk = column.getFk();
             if (fk instanceof RowIdForeignKey)

@@ -24,8 +24,8 @@ public class PrimaryTypeTable extends BaseStudyTable
     public PrimaryTypeTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenPrimaryType());
-        addWrapColumn(_rootTable.getColumn("RowId")).setIsHidden(true);
-        addWrapColumn(_rootTable.getColumn("ExternalId")).setIsHidden(true);
+        addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
+        addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("PrimaryTypeLdmsCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("PrimaryTypeLabwareCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("PrimaryType")));

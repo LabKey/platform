@@ -449,7 +449,7 @@ public class UserController extends SpringActionController
                 if (val == null || val.toString().trim().length() == 0)
                 {
                     if (errors.length > 0)
-                        errors[0] = new ActionMessage("Error", "The field: " + col.getCaption() + " is required");
+                        errors[0] = new ActionMessage("Error", "The field: " + col.getLabel() + " is required");
                     return false;
                 }
             }

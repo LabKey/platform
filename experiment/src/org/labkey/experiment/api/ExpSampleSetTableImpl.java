@@ -81,11 +81,11 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
 
     public void populate()
     {
-        addColumn(ExpSampleSetTable.Column.RowId).setIsHidden(true);
+        addColumn(ExpSampleSetTable.Column.RowId).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Name);
         addColumn(ExpSampleSetTable.Column.Description);
-        addColumn(ExpSampleSetTable.Column.LSID).setIsHidden(true);
-        addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setIsHidden(true);
+        addColumn(ExpSampleSetTable.Column.LSID).setHidden(true);
+        addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Created);
         addContainerColumn(ExpSampleSetTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
         addColumn(ExpSampleSetTable.Column.Active);

@@ -52,7 +52,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         addColumn(statusColumn);
 
         addWrapLocationColumn("Destination", "DestinationSiteId").setKeyField(true);
-        addWrapColumn(_rootTable.getColumn("StatusId")).setIsHidden(true);
+        addWrapColumn(_rootTable.getColumn("StatusId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("Comments"));
         // there are links to filter by 'createdby' in the UI; it's necessary that this column always
         // be available, so we set it as a key field.
@@ -61,7 +61,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ModifiedBy"));
         addWrapColumn(_rootTable.getColumn("Modified"));
         ColumnInfo hiddenColumn = addWrapColumn(_rootTable.getColumn("Hidden"));
-        hiddenColumn.setIsHidden(true);
+        hiddenColumn.setHidden(true);
         hiddenColumn.setIsUnselectable(true);
 
         List<FieldKey> fieldKeys = new ArrayList<FieldKey>();

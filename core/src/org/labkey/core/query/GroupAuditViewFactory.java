@@ -103,7 +103,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo col = table.getColumn("IntKey1");
         if (col != null)
         {
-            col.setCaption("User");
+            col.setLabel("User");
             UserIdForeignKey.initColumn(col);
             col.setDisplayColumnFactory(new DisplayColumnFactory()
             {
@@ -116,7 +116,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         col = table.getColumn("IntKey2");
         if (col != null)
         {
-            col.setCaption("Group");
+            col.setLabel("Group");
             col.setFk(new GroupForeignKey());
             col.setDisplayColumnFactory(new DisplayColumnFactory()
             {

@@ -24,8 +24,8 @@ public class DerivativeTypeTable extends BaseStudyTable
     public DerivativeTypeTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDerivative());
-        addWrapColumn(_rootTable.getColumn("RowId")).setIsHidden(true);
-        addWrapColumn(_rootTable.getColumn("ExternalId")).setIsHidden(true);
+        addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
+        addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("LdmsDerivativeCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("LabwareDerivativeCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("Derivative")));

@@ -60,7 +60,7 @@ public class ParticipantDataSetTable extends VirtualTable
         {
             column = new AliasedColumn(name, _colParticipantId);
         }
-        column.setCaption(def.getLabel());
+        column.setLabel(def.getLabel());
 
         if (def.isDemographicData()) // If it's demographic, there are no visits, so we can add the dataset fields directly
         {
@@ -109,7 +109,7 @@ public class ParticipantDataSetTable extends VirtualTable
                     if (displayField == null)
                         return null;
                     ColumnInfo ret = new ParticipantVisitDataSetTable(_schema, def, parent).getColumn(displayField);
-                    ret.setCaption(parent.getCaption() + " " + ret.getCaption());
+                    ret.setLabel(parent.getLabel() + " " + ret.getLabel());
                     return ret;
                 }
 

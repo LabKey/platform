@@ -66,7 +66,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             case BatchProtocolId:
             {
                 ColumnInfo batchProtocolCol = wrapColumn(alias, _rootTable.getColumn("BatchProtocolId"));
-                batchProtocolCol.setCaption("Batch Protocol");
+                batchProtocolCol.setLabel("Batch Protocol");
                 batchProtocolCol.setFk(getExpSchema().getProtocolForeignKey("RowId"));
                 return batchProtocolCol;
             }
@@ -94,7 +94,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 
         ColumnInfo expRowIdCol = getColumn(Column.RowId);
         ExprColumn result = new ExprColumn(this, "RunMembership", sql, Types.BOOLEAN, expRowIdCol);
-        result.setCaption("");
+        result.setLabel("");
         result.setDisplayColumnFactory(new ExperimentMembershipDisplayColumnFactory(expRowIdCol, run == null ? -1 : run.getRowId()));
         addColumn(result);
     }
@@ -116,7 +116,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     public void populate()
     {
         ColumnInfo colRowId = addColumn(Column.RowId);
-        colRowId.setIsHidden(true);
+        colRowId.setHidden(true);
         colRowId.setKeyField(true);
         colRowId.setFk(new RowIdForeignKey(colRowId));
         addColumn(Column.Name);
@@ -136,7 +136,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         defaultCols.add(FieldKey.fromParts(Column.RunCount.toString()));
         defaultCols.add(FieldKey.fromParts(Column.Folder.toString()));
         setDefaultVisibleColumns(defaultCols);
-        addColumn(Column.LSID).setIsHidden(true);
+        addColumn(Column.LSID).setHidden(true);
         setTitleColumn("Name");
 
         ActionURL detailsURL = new ActionURL(ExperimentController.DetailsAction.class, _schema.getContainer());

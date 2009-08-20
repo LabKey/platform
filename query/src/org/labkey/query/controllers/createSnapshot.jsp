@@ -95,7 +95,7 @@
             <tr>
                 <td><input type="checkbox" name="snapshotColumns" <%=columnMap.containsKey(col.getName()) ? "checked" : ""%> value="<%=col.getName()%>"></td>
                 <td><%=h(col.getName())%></td>
-                <td><%=h(info.getCaption())%></td>
+                <td><%=h(info.getLabel())%></td>
                 <td><%=h(info.getFriendlyTypeName())%></td>
                 <td><%=h(info.getDescription())%></td>
             </tr>

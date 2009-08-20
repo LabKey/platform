@@ -91,8 +91,8 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
 
                 columnXml.setDatatype(t.getSqlTypeName());
 
-                if (null != column.getCaption())
-                    columnXml.setColumnTitle(column.getCaption());
+                if (null != column.getLabel())
+                    columnXml.setColumnTitle(column.getLabel());
 
                 if (null != column.getDescription())
                     columnXml.setDescription(column.getDescription());

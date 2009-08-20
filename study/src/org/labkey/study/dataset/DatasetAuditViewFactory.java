@@ -37,8 +37,6 @@ import org.labkey.api.study.DataSet;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -108,7 +106,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
     {
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
         final ColumnInfo datasetDefColumn = table.getColumn("IntKey1");
-        datasetDefColumn.setCaption("Dataset");
+        datasetDefColumn.setLabel("Dataset");
 
         datasetDefColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {

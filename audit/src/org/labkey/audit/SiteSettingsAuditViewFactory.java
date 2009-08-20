@@ -91,7 +91,7 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
 
         ExprColumn detailsCol = new ExprColumn(table, "details", idCol.getValueSql(ExprColumn.STR_TABLE_ALIAS), idCol.getSqlTypeInt());
         detailsCol.copyAttributesFrom(idCol);
-        detailsCol.setCaption("Details");
+        detailsCol.setLabel("Details");
         detailsCol.setDisplayColumnFactory(new DisplayColumnFactory(){
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {

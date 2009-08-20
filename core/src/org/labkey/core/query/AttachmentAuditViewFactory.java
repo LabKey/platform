@@ -98,7 +98,7 @@ public class AttachmentAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo col = table.getColumn("Key1");
         if (col != null)
         {
-            col.setCaption("Attachment");
+            col.setLabel("Attachment");
             col.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)

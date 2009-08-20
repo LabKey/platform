@@ -105,7 +105,7 @@ public class BtSchema extends UserSchema
     public TableInfo createServersTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoServer(), _container);
-        ret.addWrapColumn(ret.getRealTable().getColumn("RowId")).setIsHidden(true);
+        ret.addWrapColumn(ret.getRealTable().getColumn("RowId")).setHidden(true);
         ret.addWrapColumn(ret.getRealTable().getColumn("Name"));
         ret.setTitleColumn("Name");
         ret.addWrapColumn(ret.getRealTable().getColumn("UserName"));

@@ -171,7 +171,7 @@
     </tr>
     <tr>
     <td onSelectStart="return false;" onMouseDown="return false;" class="labkey-tab" style="border-top:none;vertical-align:top;">
-        <div style="height:400px;width:300px;overflow:auto;" id="columnPicker">
+        <div style="height:400px;width:300px;overflow:auto;position:relative" id="columnPicker">
         </div>
     </td>
     <td>

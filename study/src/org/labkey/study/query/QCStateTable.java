@@ -34,7 +34,7 @@ public class QCStateTable extends FilteredTable
                 continue;
             ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
             if ("RowId".equalsIgnoreCase(name))
-                wrappedColumn.setIsHidden(true);
+                wrappedColumn.setHidden(true);
         }
     }
 }

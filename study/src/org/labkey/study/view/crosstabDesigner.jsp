@@ -108,7 +108,7 @@
 
             sb.append(h(col.getAlias()));
             sb.append("\">");
-            sb.append(h(col.getCaption()));
+            sb.append(h(col.getLabel()));
             sb.append("</option>\n");
         }
         sb.append("</select>");

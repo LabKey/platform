@@ -106,7 +106,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
             {
                 final ColumnInfo info = column.getColumnInfo();
                 if (info != null)
-                    labelMap.put(info.getAlias(), info.getCaption());
+                    labelMap.put(info.getAlias(), info.getLabel());
             }
         }
         return labelMap;
@@ -148,13 +148,13 @@ public abstract class AbstractChartRenderer implements ChartRenderer
         Collections.sort(columns, new Comparator<ColumnInfo>(){
             public int compare(ColumnInfo o1, ColumnInfo o2)
             {
-                return o1.getCaption().compareTo(o2.getCaption());
+                return o1.getLabel().compareTo(o2.getLabel());
             }
         });
 
         Map<String, String> displayColumns = new LinkedHashMap<String, String>();
         for (ColumnInfo col : columns)
-            displayColumns.put(col.getCaption(), col.getAlias());
+            displayColumns.put(col.getLabel(), col.getAlias());
 
         return displayColumns;
     }

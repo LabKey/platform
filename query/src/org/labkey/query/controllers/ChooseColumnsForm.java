@@ -20,8 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.query.CustomViewImpl;
@@ -215,7 +213,7 @@ public class ChooseColumnsForm extends DesignForm
         Map<FieldKey,ColumnInfo> columns = getAvailableColumns();
         ColumnInfo column = columns.get(fKey);
         if (column != null)
-            caption = column.getCaption();
+            caption = column.getLabel();
         return caption;
     }
 

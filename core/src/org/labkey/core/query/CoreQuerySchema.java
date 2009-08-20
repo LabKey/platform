@@ -27,7 +27,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
 
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.*;
 
 /**
@@ -139,7 +138,7 @@ public class CoreQuerySchema extends UserSchema
         //we expose userid, name and type via query
         ColumnInfo col = principals.wrapColumn(principalsBase.getColumn("UserId"));
         col.setKeyField(true);
-        col.setIsHidden(true);
+        col.setHidden(true);
         col.setReadOnly(true);
         principals.addColumn(col);
 
@@ -269,11 +268,11 @@ public class CoreQuerySchema extends UserSchema
 
         ColumnInfo userIdCol = users.addWrapColumn(usersBase.getColumn("UserId"));
         userIdCol.setKeyField(true);
-        userIdCol.setIsHidden(true);
+        userIdCol.setHidden(true);
         userIdCol.setReadOnly(true);
 
         ColumnInfo entityIdCol = users.addWrapColumn(usersBase.getColumn("EntityId"));
-        entityIdCol.setIsHidden(true);
+        entityIdCol.setHidden(true);
 
         ColumnInfo displayNameCol = users.addWrapColumn(usersBase.getColumn("DisplayName"));
         displayNameCol.setReadOnly(true);

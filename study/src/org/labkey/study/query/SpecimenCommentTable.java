@@ -55,7 +55,7 @@ public class SpecimenCommentTable extends FilteredTable
             {
                 ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
                 if ("RowId".equalsIgnoreCase(name) || "QualityControlFlagForced".equalsIgnoreCase(name))
-                    wrappedColumn.setIsHidden(true);
+                    wrappedColumn.setHidden(true);
             }
         }
         setTitleColumn("Comment");

@@ -41,11 +41,11 @@ public class CohortTable extends BaseStudyTable
         labelColumn.setNullable(false);
 
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("lsid"));
-        lsidColumn.setIsHidden(true);
+        lsidColumn.setHidden(true);
         lsidColumn.setUserEditable(false);
         
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
-        rowIdColumn.setIsHidden(true);
+        rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
 

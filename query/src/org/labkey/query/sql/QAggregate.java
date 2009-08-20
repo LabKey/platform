@@ -75,7 +75,7 @@ public class QAggregate extends QExpr
             {
                 QField field = (QField) children.get(0);
                 field.getRelationColumn().copyColumnAttributesTo(ret);
-                ret.setCaption(null);
+                ret.setLabel(null);
             }
         }
         return ret;

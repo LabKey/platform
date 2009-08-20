@@ -92,7 +92,7 @@ public class MessageAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo col1 = table.getColumn("Key1");
         if (col1 != null)
         {
-            col1.setCaption("From");
+            col1.setLabel("From");
             col1.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -108,7 +108,7 @@ public class MessageAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo col2 = table.getColumn("Key2");
         if (col2 != null)
         {
-            col2.setCaption("To");
+            col2.setLabel("To");
             col2.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -124,7 +124,7 @@ public class MessageAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo col3 = table.getColumn("Key3");
         if (col3 != null)
         {
-            col3.setCaption("Content Type");
+            col3.setLabel("Content Type");
             col3.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)

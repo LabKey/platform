@@ -67,7 +67,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>>
             {
                 writer.print(prefix);
                 writer.print(col.getColumnName() + '\t');
-                writer.print(col.getCaption() + '\t');
+                writer.print(col.getLabel() + '\t');
 
                 Class clazz = col.getJavaClass();
                 Type t = Type.getTypeByClass(clazz);

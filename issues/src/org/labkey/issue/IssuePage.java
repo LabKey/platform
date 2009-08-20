@@ -419,7 +419,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (_ccc.getColumnCaptions().containsKey(columnName.getSource()))
             name = _ccc.getColumnCaptions().get(columnName.getSource());
         else if (col != null)
-            name = col.getCaption();
+            name = col.getLabel();
         if (name != null && name.length() > 0)
         {
             String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");

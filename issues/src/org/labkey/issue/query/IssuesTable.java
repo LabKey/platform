@@ -68,7 +68,7 @@ public class IssuesTable extends FilteredTable
         });
 
         issueIdColumn.setKeyField(true);
-        issueIdColumn.setCaption(names.singularName.toString() + " ID");
+        issueIdColumn.setLabel(names.singularName.toString() + " ID");
         addColumn(issueIdColumn);
         addWrapColumn(_rootTable.getColumn("Type"));
         addWrapColumn(_rootTable.getColumn("Area"));

@@ -92,8 +92,8 @@ public abstract class BaseStudyTable extends FilteredTable
             // could change to visitrowid but that changes datatype and displays rowid
             // instead of sequencenum when label is null
             visitColumn = addColumn(new DateVisitColumn(this));
-            visitColumn.setCaption("Timepoint");
-            visitDescriptionColumn.setIsHidden(true);
+            visitColumn.setLabel("Timepoint");
+            visitDescriptionColumn.setHidden(true);
         }
         else
         {

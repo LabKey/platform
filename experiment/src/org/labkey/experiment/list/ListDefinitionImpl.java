@@ -358,7 +358,7 @@ public class ListDefinitionImpl implements ListDefinition
                     }
                     if (foundProperties.containsValue(property) && !property.isMvEnabled())
                     {
-                        errors.add("The fields '" + property.getName() + "' and '" + property.getNonBlankLabel() + "' refer to the same property.");
+                        errors.add("The fields '" + property.getName() + "' and '" + property.getNonBlankCaption() + "' refer to the same property.");
                     }
                     foundProperties.put(cd.name, property);
                     cd.name = property.getPropertyURI();

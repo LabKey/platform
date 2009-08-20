@@ -1477,7 +1477,7 @@ public class WikiController extends SpringActionController
             //look up page name
             LookupColumn entityIdLookup = new LookupColumn(tinfoVersions.getColumn("PageEntityId"),
                     tinfoPages.getColumn("EntityId"), tinfoPages.getColumn("Name"));
-            entityIdLookup.setCaption("Page Name");
+            entityIdLookup.setLabel("Page Name");
 
             //look up container (for filter)
             LookupColumn containerLookup = new LookupColumn(tinfoVersions.getColumn("PageEntityId"),

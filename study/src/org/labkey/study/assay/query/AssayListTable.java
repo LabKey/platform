@@ -35,12 +35,12 @@ public class AssayListTable extends FilteredTable
     public AssayListTable(AssaySchemaImpl schema)
     {
         super(ExperimentService.get().getTinfoProtocol(), schema.getContainer(), new ContainerFilter.CurrentPlusProject(schema.getUser()));
-
+        setDescription("Contains all of the assay definitions visible in this folder");
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
 
         _schema = schema;
 
-        addWrapColumn(_rootTable.getColumn("RowId")).setIsHidden(true);
+        addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));
         nameCol.setURL(getDetailsURL(Collections.singletonMap("RowId", getColumn("RowId"))));
         ColumnInfo desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
@@ -53,7 +53,7 @@ public class AssayListTable extends FilteredTable
         addColumn(ContainerForeignKey.initColumn(folderCol));
         
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
-        lsidColumn.setIsHidden(true);
+        lsidColumn.setHidden(true);
         ColumnInfo typeColumn = wrapColumn("Type", _rootTable.getColumn("LSID"));
         typeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {

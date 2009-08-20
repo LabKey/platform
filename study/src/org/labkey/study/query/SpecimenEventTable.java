@@ -31,7 +31,7 @@ public class SpecimenEventTable extends BaseStudyTable
 
         addWrapColumn(_rootTable.getColumn("VialId"));
         addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
-        addWrapLocationColumn("LabId", "LabId").setCaption("Location");
+        addWrapLocationColumn("LabId", "LabId").setLabel("Location");
         addWrapColumn(_rootTable.getColumn("Stored"));
         addWrapColumn(_rootTable.getColumn("StorageFlag"));
         addWrapColumn(_rootTable.getColumn("StorageDate"));

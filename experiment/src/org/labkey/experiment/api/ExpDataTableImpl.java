@@ -46,19 +46,19 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
     public void populate()
     {
-        addColumn(Column.RowId).setIsHidden(true);
+        addColumn(Column.RowId).setHidden(true);
         addColumn(Column.Name);
         ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
-        addColumn(Column.LSID).setIsHidden(true);
+        addColumn(Column.LSID).setHidden(true);
         addColumn(Column.DataFileUrl);
         addColumn(Column.Created);
         addColumn(Column.DownloadLink);
         addColumn(Column.ViewFileLink);
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
-        addColumn(Column.SourceProtocolApplication).setIsHidden(true);
-        addColumn(Column.Protocol).setIsHidden(true);
+        addColumn(Column.SourceProtocolApplication).setHidden(true);
+        addColumn(Column.Protocol).setHidden(true);
         addContainerColumn(Column.Folder, null);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
@@ -103,7 +103,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             {
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 ret.setFk(new RowIdForeignKey(ret));
-                ret.setIsHidden(true);
+                ret.setHidden(true);
                 return ret;
             }
             case Run:

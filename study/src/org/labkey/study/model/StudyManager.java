@@ -1987,7 +1987,7 @@ public class StudyManager
         }
         for (ColumnInfo col : tinfo.getColumns())
         {
-            String label = col.getCaption();
+            String label = col.getLabel();
             if (null != label && !propName2Col.containsKey(label))
                 propName2Col.put(label, col);
         }

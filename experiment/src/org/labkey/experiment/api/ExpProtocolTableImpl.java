@@ -52,13 +52,13 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
     public void populate()
     {
         ColumnInfo colRowId = addColumn(Column.RowId);
-        colRowId.setIsHidden(true);
+        colRowId.setHidden(true);
         colRowId.setFk(new RowIdForeignKey(colRowId));
         colRowId.setKeyField(true);
         ColumnInfo colName = addColumn(Column.Name);
         setTitleColumn(colName.getName());
         ColumnInfo colLSID = addColumn(Column.LSID);
-        colLSID.setIsHidden(true);
+        colLSID.setHidden(true);
         addContainerColumn(Column.Folder, null);
         ActionURL urlDetails = new ActionURL(ExperimentController.ProtocolDetailsAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));

@@ -102,7 +102,7 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
         if (col != null)
         {
             UserIdForeignKey.initColumn(col);
-            col.setCaption("User");
+            col.setLabel("User");
             col.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)

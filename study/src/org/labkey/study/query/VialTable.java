@@ -32,7 +32,7 @@ public class VialTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoVial());
 
-        addWrapColumn(getRealTable().getColumn("RowID")).setIsHidden(true);
+        addWrapColumn(getRealTable().getColumn("RowID")).setHidden(true);
         
         addWrapColumn(getRealTable().getColumn("GlobalUniqueID"));
         addWrapColumn(getRealTable().getColumn("Volume"));
@@ -52,6 +52,6 @@ public class VialTable extends BaseStudyTable
 
         ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn("Container"));
         containerCol.setFk(new ContainerForeignKey());
-        containerCol.setIsHidden(true);
+        containerCol.setHidden(true);
     }
 }

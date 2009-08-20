@@ -21,7 +21,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +51,7 @@ public class StudyPropertiesTable extends BaseStudyTable
 
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setUserEditable(false);
-        lsidColumn.setIsHidden(true);
+        lsidColumn.setHidden(true);
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 

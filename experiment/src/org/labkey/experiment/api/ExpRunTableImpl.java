@@ -214,7 +214,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 if (getPkColumns().isEmpty())
                     ret.setKeyField(true);
                 ret.setFk(new RowIdForeignKey(ret));
-                ret.setIsHidden(true);
+                ret.setHidden(true);
                 return ret;
             }
             case Flag:
@@ -334,8 +334,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addContainerColumn(Column.Folder, null);
-        addColumn(Column.FilePathRoot).setIsHidden(true);
-        addColumn(Column.LSID).setIsHidden(true);
+        addColumn(Column.FilePathRoot).setHidden(true);
+        addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
         addColumn(Column.Input);
@@ -530,7 +530,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     sql.append("))");
                     ExprColumn result = new ExprColumn(parent.getParentTable(), exp.getName(), sql, Types.BOOLEAN, parent);
                     FieldKey parentFieldKey = FieldKey.fromString(parent.getName());
-                    result.setCaption(parent.getCaption() + " " + exp.getName());
+                    result.setLabel(parent.getLabel() + " " + exp.getName());
                     result.setDisplayColumnFactory(new ExperimentMembershipDisplayColumnFactory(exp.getRowId(), parentFieldKey.getParent()));
                     result.setFormatString("Y;N");
                     return result;

@@ -83,7 +83,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
 
-
+    
     public void delete(User user) throws SQLException
     {
         if (!canEdit(user))

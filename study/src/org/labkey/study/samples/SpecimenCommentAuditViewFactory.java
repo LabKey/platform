@@ -85,7 +85,7 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
     {
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
         final ColumnInfo vialIdColumn = table.getColumn("Key1");
-        vialIdColumn.setCaption("Vial Id");
+        vialIdColumn.setLabel("Vial Id");
 
         vialIdColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {

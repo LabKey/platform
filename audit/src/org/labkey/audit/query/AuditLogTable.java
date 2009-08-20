@@ -120,15 +120,15 @@ public class AuditLogTable extends FilteredTable
                 throw new RuntimeSQLException(e);
             }
         }
-        getColumn("RowId").setIsHidden(true);
-        getColumn("Lsid").setIsHidden(true);
+        getColumn("RowId").setHidden(true);
+        getColumn("Lsid").setHidden(true);
 
         ColumnInfo projectId = getColumn("ProjectId");
-        projectId.setCaption("Project");
+        projectId.setLabel("Project");
         ContainerForeignKey.initColumn(projectId);
 
         ColumnInfo containerId = getColumn("ContainerId");
-        containerId.setCaption("Container");
+        containerId.setLabel("Container");
         ContainerForeignKey.initColumn(containerId);
 
         setDefaultVisibleColumns(visibleColumns);

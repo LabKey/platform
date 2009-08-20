@@ -190,7 +190,7 @@ function setDefaults()
 
 
         <%
-            if (specimens != null)
+            if (specimens != null && specimens.length > 0)
             {
         %>
             <tr>

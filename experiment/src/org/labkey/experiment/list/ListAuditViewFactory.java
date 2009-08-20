@@ -23,7 +23,6 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
@@ -135,7 +134,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
     {
         final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
-        col.setCaption("List");
+        col.setLabel("List");
         col.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -147,7 +146,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         col = table.getColumn("Property");
         if (col != null)
         {
-            col.setIsHidden(true);
+            col.setHidden(true);
             col.setIsUnselectable(true);
         }
     }

@@ -55,7 +55,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         }
         for (ColumnInfo columnInfo : getColumns())
         {
-            if (columnInfo.getCaption().equals(name))
+            if (name.equalsIgnoreCase(columnInfo.getLabel()))
             {
                 return columnInfo;
             }

@@ -168,7 +168,7 @@ def:    for (DataSetDefinition def : defs)
                 {
                     if (!column.isHidden() && (
                             parser.matches(column.getName()) ||
-                            parser.matches(column.getCaption()) ||
+                            parser.matches(column.getLabel()) ||
                             parser.matches(column.getDescription())
                     ))
                     {

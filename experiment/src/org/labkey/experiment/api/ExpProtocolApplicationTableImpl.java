@@ -117,7 +117,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addColumn(Column.RowId);
         addColumn(Column.Name);
         setTitleColumn(Column.Name.toString());
-        addColumn(Column.LSID).setIsHidden(true);
+        addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol);
     }
 }

@@ -125,8 +125,8 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 if (!uniqueLabel || hasSequenceRange)
                     label += " (" + VisitImpl.formatSequenceNum(seq) + ")";
                 ColumnInfo colSeq = createVisitDataSetColumn(name, seq, visit);
-                colSeq.setCaption(label);
-//                colSeq.setIsHidden(!hasSequenceRange);
+                colSeq.setLabel(label);
+//                colSeq.setHidden(!hasSequenceRange);
                 addColumn(colSeq);
                 this._seqColumnMap.put(seq, colSeq);
             }
@@ -138,7 +138,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 if (getColumn(name) != null)        // unlikely (label that looks like seq###.#)
                     continue;
                 ColumnInfo colLabel = createVisitDataSetColumn(name, Visit.formatSequenceNum(visit.getSequenceNumMin()));
-                colLabel.setIsHidden(hasSequenceRange);
+                colLabel.setHidden(hasSequenceRange);
                 addColumn(colLabel);
             }
 */

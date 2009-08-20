@@ -183,7 +183,7 @@ public class CrosstabView extends WebPartView
 
         ColumnInfo col = colMap.get(fieldName);
         if (null != col)
-            return col.getCaption();
+            return col.getLabel();
 
         return fieldName;
     }

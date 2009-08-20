@@ -209,7 +209,14 @@ function createColumnEditor(tab, dn, parent, insertBefore)
 
 
     td.appendChild(doc.createTextNode(tab.designer.getColumnLabel(dn)));
-    td.title = tab.designer.getColumnTitle(dn);
+    td.onmouseout = function() { return hideHelpDivDelay(); };
+    td.onmouseover = function()
+    {
+        var fieldKey = tab.designer.getFieldKeyString(dn);
+        var field = designer.fieldInfo(fieldKey);
+        return showColumnHelpPopupDelay(field, td);
+    };
+
     tr.appendChild(td);
     parent.insertBefore(tr, insertBefore);
     return ret;
@@ -1287,6 +1294,10 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
             {
                 return null;
             }
+    ret.getFieldKeyString = function()
+            {
+                return null;
+            }
     ret.allowDuplicateColumns = true;
     return ret;
 }
@@ -1460,6 +1471,12 @@ function ViewDesigner(tableInfoService)
     {
         this.columnPicker.setShowHiddenFields(show);        
     }
+    ret.getFieldKeyString = function(dn)
+    {
+        var dnValue = XMLUtil.getChildWithTagName(dn, 'value', nsQuery);
+        var dnField = XMLUtil.getChildWithTagName(dnValue, 'field', nsQuery);
+        return XMLUtil.getInnerText(dnField);
+    }
     ret.getColumnLabel = function(dn)
     {
         var label = new Bind_Metadata(ret, dn, 'columnTitle').getValue();
@@ -1467,9 +1484,7 @@ function ViewDesigner(tableInfoService)
         {
             return label;
         }
-        var dnValue = XMLUtil.getChildWithTagName(dn, 'value', nsQuery);
-        var dnField = XMLUtil.getChildWithTagName(dnValue, 'field', nsQuery);
-        var field = XMLUtil.getInnerText(dnField);
+        var field = this.getFieldKeyString(dn);
         var oField = this.fieldInfo(field);
         if (oField)
         {
@@ -1479,9 +1494,7 @@ function ViewDesigner(tableInfoService)
     }
     ret.getColumnTitle = function(dn)
     {
-        var dnValue = XMLUtil.getChildWithTagName(dn, 'value', nsQuery);
-        var dnField = XMLUtil.getChildWithTagName(dnValue, 'field', nsQuery);
-        var field = XMLUtil.getInnerText(dnField);
+        var field = this.getFieldKeyString(dn);
         return FieldKey.fromString(field).toDisplayString();
     }
     ret.filterTabActivated = function()

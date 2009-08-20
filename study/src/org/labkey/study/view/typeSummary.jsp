@@ -67,7 +67,7 @@
     {
         %><tr>
             <td><%=h(col.getName())%></td>
-            <td><%=h(col.getCaption())%></td>
+            <td><%=h(col.getLabel())%></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormatString())%></td>
             <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
@@ -84,7 +84,7 @@
 %>
         <tr>
             <td><%=isKeyColumn?"<b>":""%><%= col.getName()%><%=isKeyColumn?"</b>":""%></td>
-            <td><%= col.getCaption() %></td>
+            <td><%= col.getLabel() %></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormatString())%></td>
             <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>

@@ -33,7 +33,7 @@ public class DataSetsTable extends FilteredTable
 
             ColumnInfo colInfo = addWrapColumn(baseColumn);
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
-                colInfo.setIsHidden(true);
+                colInfo.setHidden(true);
         }
         setTitleColumn("name");
     }

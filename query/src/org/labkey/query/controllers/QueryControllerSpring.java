@@ -2573,8 +2573,8 @@ public class QueryControllerSpring extends SpringActionController
                     {
                         Map<String,Object> cinfo = new HashMap<String,Object>();
                         cinfo.put("name", col.getName());
-                        if(null != col.getCaption())
-                            cinfo.put("caption", col.getCaption());
+                        if(null != col.getLabel())
+                            cinfo.put("caption", col.getLabel());
                         if(null != col.getDescription())
                             cinfo.put("description", col.getDescription());
 

@@ -69,6 +69,7 @@ function TableInfoService(urlTableInfo)
             column.key = fieldKey(table.key, name);
             column.caption = elementText(xmlColumn, "columnTitle");
             column.hidden = elementText(xmlColumn, "isHidden") == "true";
+            column.description = elementText(xmlColumn, "description");
             column.datatype = elementText(xmlColumn, "datatype");
             column.unselectable = elementText(xmlColumn, "isUnselectable") == "true";
             var nlFK = XMLUtil.getChildrenWithTagName(xmlColumn, "fk", nsData);
@@ -435,6 +436,13 @@ function ColumnPicker(tableInfoService)
                 td.style.fontWeight = 'bold';
             }
 
+            td.onmouseout = function() { return hideHelpDivDelay(); };
+            td.sourceColumn = column;
+            td.onmouseover = function()
+            {
+                return showColumnHelpPopupDelay(this.sourceColumn, this);
+            };
+
             if (!unselectable)
             {
                 td.onclick = onClickHandler(columnPicker, column.key);
@@ -526,3 +534,21 @@ function ColumnPicker(tableInfoService)
     return columnPicker;
 }
 
+/** Show a help popup with information about the column after a delay */
+function showColumnHelpPopupDelay(field, element)
+{
+    var body = "<table>";
+    if (field.description)
+    {
+        body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + field.description + "</td></tr>";
+    }
+    body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + field.key + "</td></tr>";
+    var datatype = _typeMap[field.datatype.toUpperCase()];
+    if (datatype)
+    {
+        body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + datatype.toLowerCase() + "</td></tr>";
+    }
+    body += "<tr><td valign='top'><strong>Hidden:</strong></td><td>" + field.hidden + "</td></tr>";
+    body += "</table>";
+    return showHelpDivDelay(element, field.label, body);
+}

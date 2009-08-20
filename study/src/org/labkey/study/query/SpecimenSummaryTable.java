@@ -21,7 +21,6 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Types;
 import java.sql.SQLException;
@@ -71,7 +70,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
-        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
+        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
 
         // Create an ExprColumn to get the max *possible* comments for each specimen.  It's only the possible number
         // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen

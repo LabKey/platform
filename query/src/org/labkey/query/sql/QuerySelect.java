@@ -1182,7 +1182,7 @@ loop:
                 QExpr expr = getResolvedField();
                 _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
                 if (_aliasId != null)
-                    _colinfo.setCaption(ColumnInfo.captionFromName(getName()));
+                    _colinfo.setLabel(ColumnInfo.labelFromName(getName()));
             }
             return _colinfo;
         }

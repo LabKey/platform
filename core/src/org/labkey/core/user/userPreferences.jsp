@@ -37,7 +37,7 @@
         for (ColumnInfo info : bean.getColumns())
         {
     %>
-        <tr><td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%> value="<%=info.getName()%>"><%=info.getCaption()%></td></tr>
+        <tr><td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%> value="<%=info.getName()%>"><%=info.getLabel()%></td></tr>
     <%
         }
     %>

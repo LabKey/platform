@@ -78,6 +78,6 @@
         {
             return ccc.getColumnCaptions().get(col.getName());
         }
-        return col.getCaption();
+        return col.getLabel();
     }
 %>

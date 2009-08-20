@@ -30,8 +30,8 @@ public class SpecimenVialCountTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenVialCount());
 
-        addWrapColumn(_rootTable.getColumn("Container")).setIsHidden(true);
-        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
+        addWrapColumn(_rootTable.getColumn("Container")).setHidden(true);
+        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
 
         addColumn(new AliasedColumn(this, "TotalCount", _rootTable.getColumn("VialCount")));
         addColumn(new AliasedColumn(this, "LockedInRequest", _rootTable.getColumn("LockedInRequestCount")));

@@ -65,7 +65,7 @@ public class PublishedRecordQueryView extends DataSetQueryView
         TableInfo table = super.createTable();
         ColumnInfo sourceLsidCol = table.getColumn("SourceLSID");
         if (sourceLsidCol != null)
-            sourceLsidCol.setIsHidden(false);
+            sourceLsidCol.setHidden(false);
         return table;
     }
 

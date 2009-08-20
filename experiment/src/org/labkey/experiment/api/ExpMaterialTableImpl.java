@@ -99,7 +99,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             {
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 ret.setFk(new RowIdForeignKey(ret));
-                ret.setIsHidden(true);
+                ret.setHidden(true);
                 return ret;
             }
             case Property:
@@ -167,12 +167,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             setContainerFilter(new ContainerFilter.CurrentPlusExtras(_schema.getUser(), ss.getContainer()));
         }
 
-        addColumn(ExpMaterialTable.Column.RowId).setIsHidden(true);
+        addColumn(ExpMaterialTable.Column.RowId).setHidden(true);
         ColumnInfo appCol = addColumn(Column.SourceProtocolApplication);
-        appCol.setIsHidden(true);
+        appCol.setHidden(true);
         ColumnInfo sourceProtocolCol = addColumn(Column.SourceProtocolLSID);
-        sourceProtocolCol.setIsHidden(true);
-        sourceProtocolCol.setCaption("Source Protocol");
+        sourceProtocolCol.setHidden(true);
+        sourceProtocolCol.setLabel("Source Protocol");
         addColumn(ExpMaterialTable.Column.Name);
         ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
         typeColumnInfo.setFk(new LookupForeignKey("lsid")
@@ -185,7 +185,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
         addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
-        colLSID.setIsHidden(true);
+        colLSID.setHidden(true);
         addColumn(ExpMaterialTable.Column.Created);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();

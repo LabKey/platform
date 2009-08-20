@@ -105,7 +105,7 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
     {
         final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
-        col.setCaption("Domain");
+        col.setLabel("Domain");
         col.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -129,7 +129,7 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
 
         public String getName()
         {
-            return getColumnInfo().getCaption();
+            return getColumnInfo().getLabel();
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
