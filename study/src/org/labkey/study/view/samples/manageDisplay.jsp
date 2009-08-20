@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.samples.settings.DisplaySettings" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DisplaySettings> me =
@@ -30,7 +31,7 @@
     Container container = HttpView.getRootContext().getContainer();
 %>
 
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 <form action="handleUpdateDisplaySettings.post" method="POST">
     <table class="labkey-manage-display" width=600>
         <tr>

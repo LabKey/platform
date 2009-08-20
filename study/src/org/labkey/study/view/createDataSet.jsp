@@ -19,13 +19,13 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.DataSetForm> me = (JspView<StudyController.DataSetForm>) HttpView.currentView();
     StudyController.DataSetForm form = me.getModelBean();
-    String errors = PageFlowUtil.getStrutsError(request, "main");
 %>
-<%=errors%>
+<labkey:errors/>
 <form action="createDataSet.post" method="POST">
     <input type="hidden" name="action" value="create">
     <table>

@@ -19,6 +19,7 @@ package org.labkey.experiment.controllers.list;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.*;
+import org.springframework.validation.BindException;
 
 import java.util.Map;
 
@@ -70,7 +71,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     {
         private SingleListWebPart(ListQueryForm form, Map<String, String> props)
         {
-            super(form);
+            super(form, (BindException)null);
 
             ListDefinition list = form.getList();
             String title = props.get("title");

@@ -362,7 +362,7 @@ public class ListController extends SpringActionController
             _list = form.getList();
             if (null == _list)
                 throw new NotFoundException("List does not exist in this container");
-            return new ListQueryView(form);
+            return new ListQueryView(form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -604,7 +604,7 @@ public class ListController extends SpringActionController
     // TODO: Fix this... build into InsertView (or QueryInsertView or something)
     private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn, boolean editableOnly)
     {
-        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()));
+        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()), (BindException)null);
         List<DisplayColumn> defaultGridColumns = lqv.getDisplayColumns();
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(defaultGridColumns.size());
 

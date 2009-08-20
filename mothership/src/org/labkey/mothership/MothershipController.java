@@ -717,7 +717,7 @@ public class MothershipController extends SpringActionController
     {
         public ResultSetGridView(String title, String sql) throws SQLException
         {
-            super(new DataRegion());
+            super(new DataRegion(), (BindException)null);
             setTitle(title);
             TableInfo exceptionTableInfo = MothershipManager.get().getTableInfoServerInstallation();
             getDataRegion().setTable(exceptionTableInfo);

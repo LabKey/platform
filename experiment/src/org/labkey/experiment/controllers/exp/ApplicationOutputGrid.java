@@ -19,6 +19,7 @@ package org.labkey.experiment.controllers.exp;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
+import org.springframework.validation.BindException;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class ApplicationOutputGrid extends GridView
 {
     public ApplicationOutputGrid(Container c, Integer rowIdPA, TableInfo ti)
     {
-        super(new DataRegion());
+        super(new DataRegion(), (BindException)null);
         List<ColumnInfo> cols = ti.getColumns("RowId,Name");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);

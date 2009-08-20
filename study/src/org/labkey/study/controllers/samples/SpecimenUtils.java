@@ -43,6 +43,7 @@ import org.labkey.study.samples.notifications.RequestNotification;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
 import org.springframework.web.servlet.mvc.Controller;
+import org.springframework.validation.BindException;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -742,7 +743,7 @@ public class SpecimenUtils
         return new RequestedSpecimens(requestedSamples, providingLocations);
     }
     
-    public GridView getRequestEventGridView(HttpServletRequest request, SimpleFilter filter)
+    public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();
         TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
@@ -756,7 +757,7 @@ public class SpecimenUtils
         commentsColumn.setPreserveNewlines(true);
         rgn.addDisplayColumn(new AttachmentDisplayColumn(request));
         rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
-        GridView grid = new GridView(rgn);
+        GridView grid = new GridView(rgn, errors);
         grid.setFilter(filter);
         grid.setSort(new Sort("Created"));
         return grid;

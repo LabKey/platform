@@ -22,13 +22,13 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.writer.*" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.ExportForm> me = (JspView<StudyController.ExportForm>) HttpView.currentView();
     StudyController.ExportForm form = me.getModelBean();
-    String errors = PageFlowUtil.getStrutsError(request, "main");
 %>
-<%=errors%>
+<labkey:errors/>
 <form action="" method="post">
     <table>
         <tr><td>Export file formats:</td></tr>

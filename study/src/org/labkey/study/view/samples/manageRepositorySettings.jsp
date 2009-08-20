@@ -18,11 +18,12 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.samples.settings.RepositorySettings" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     RepositorySettings settings = (RepositorySettings) getModelBean();
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 
 <form action="manageRepositorySettings.post" method="POST">
     <table >

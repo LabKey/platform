@@ -72,7 +72,7 @@ public class PipelineWebPart extends WebPartView
             return;
         }
 
-        GridView gridView = StatusController.getPartView(c, getViewContext().getUser(),
+        GridView gridView = StatusController.getPartView(c, getViewContext().getUser(), null,
                 StatusController.ShowPartRegionAction.class);
         if (gridView == null)
         {

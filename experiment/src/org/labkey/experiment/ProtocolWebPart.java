@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.springframework.validation.BindException;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -88,7 +89,7 @@ public class ProtocolWebPart extends WebPartView
             dr.getDisplayColumn("Created").setVisible(false);
         }
 
-        GridView gridView = new GridView(dr);
+        GridView gridView = new GridView(dr, (BindException)null);
         gridView.getRenderContext().setBaseSort(new Sort("Name"));
 
         SimpleFilter filter = new SimpleFilter();

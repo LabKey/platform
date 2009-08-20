@@ -232,7 +232,7 @@ public class AnnouncementsController extends SpringActionController
             bb.add(bulkEdit);
             rgn.setButtonBar(bb);
 
-            GridView gridView = new GridView(rgn);
+            GridView gridView = new GridView(rgn, errors);
 
             ResultSet rs = null;
             try
@@ -2459,7 +2459,7 @@ public class AnnouncementsController extends SpringActionController
 
             rgn.addColumn(tinfo.getColumn("ResponseCreated"));
 
-            GridView gridView = new GridView(rgn);
+            GridView gridView = new GridView(rgn, (BindException)null);
             gridView.setFrame(FrameType.DIV);  // Prevent double title
             gridView.setContainer(c);
             gridView.setSort(settings.getSort());

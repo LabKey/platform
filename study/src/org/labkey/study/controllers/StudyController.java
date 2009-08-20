@@ -1907,7 +1907,7 @@ public class StudyController extends BaseStudyController
             TableInfo tInfo = StudySchema.getInstance().getTableInfoUploadLog();
             DataRegion dr = new DataRegion();
             dr.addColumns(tInfo, "RowId,Created,CreatedBy,Status,Description");
-            GridView gv = new GridView(dr);
+            GridView gv = new GridView(dr, errors);
             DisplayColumn dc = new SimpleDisplayColumn(null) {
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException

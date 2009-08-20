@@ -18,8 +18,6 @@ package org.labkey.pipeline.status;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.*;
@@ -52,6 +50,7 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
 
+
 public class StatusController extends SpringActionController
 {
     private static Logger _log = Logger.getLogger(StatusController.class);
@@ -69,20 +68,11 @@ public class StatusController extends SpringActionController
     private void reject(Errors errors, String message)
     {
         errors.reject(message);
-        addMessageToStrutsHack(message);
     }
 
     private void reject(BindException errors, String message)
     {
         errors.reject(message);
-        addMessageToStrutsHack(message);
-    }
-
-    // TODO: Fix spring rejecting to work for showing errors on the grid
-    private void addMessageToStrutsHack(String message)
-    {
-        ActionErrors actionErrors = PageFlowUtil.getActionErrors(getViewContext().getRequest(), true);
-        actionErrors.add(DATAREGION_STATUS, new ActionMessage("Error", message));
     }
 
     public StatusController()
@@ -147,7 +137,7 @@ public class StatusController extends SpringActionController
 
             setHelpTopic(getHelpTopic("Pipeline-Status/status"));
 
-            GridView gridView = getGridView(c, getUser(), ShowListRegionAction.class);
+            GridView gridView = getGridView(c, getUser(), errors, ShowListRegionAction.class);
             gridView.setTitle("Data Pipeline");
 
             if (!c.isRoot())
@@ -215,7 +205,7 @@ public class StatusController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            GridView gridView = getGridView(getContainer(), getUser(), null);
+            GridView gridView = getGridView(getContainer(), getUser(), errors, null);
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
             return null;
         }
@@ -226,7 +216,7 @@ public class StatusController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            GridView gridView = getPartView(getContainer(), getUser(), null);
+            GridView gridView = getPartView(getContainer(), getUser(), errors, null);
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
             return null;
         }
@@ -819,12 +809,12 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static GridView getGridView(Container c, User user, Class<? extends ApiAction> apiAction)
+    public static GridView getGridView(Container c, User user, BindException errors, Class<? extends ApiAction> apiAction)
             throws SQLException
     {
         StatusDataRegion rgn = getGrid(c, user);
         rgn.setApiAction(apiAction);
-        GridView gridView = new GridView(rgn);
+        GridView gridView = new GridView(rgn, errors);
         if (c == null || c.isRoot())
         {
             gridView.getRenderContext().setUseContainerFilter(false);
@@ -834,7 +824,7 @@ public class StatusController extends SpringActionController
         return gridView;
     }
 
-    public static GridView getPartView(Container c, User user, Class<? extends ApiAction> apiAction) throws SQLException
+    public static GridView getPartView(Container c, User user, BindException errors, Class<? extends ApiAction> apiAction) throws SQLException
     {
         URI uriRoot = null;
 
@@ -883,7 +873,7 @@ public class StatusController extends SpringActionController
 
         rgn.setButtonBar(bb, DataRegion.MODE_GRID);
 
-        GridView gridView = new GridView(rgn);
+        GridView gridView = new GridView(rgn, errors);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
         gridView.setFilter(filter);

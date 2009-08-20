@@ -67,8 +67,8 @@ public class DemoController extends SpringActionController
     public class BeginAction extends AbstractController implements NavTrailAction
     {
         public ModelAndView handleRequestInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
-        {
-            GridView gridView = new GridView(getDataRegion());
+        {                                                                    
+            GridView gridView = new GridView(getDataRegion(), (BindException)null);
             gridView.setSort(new Sort("LastName"));
             return gridView;
         }

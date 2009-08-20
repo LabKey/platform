@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="org.labkey.api.study.Site" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ManageRequestBean> me = (JspView<SpringSpecimenController.ManageRequestBean>) HttpView.currentView();
@@ -138,7 +139,7 @@
         }
     }
 </script>
-<%= PageFlowUtil.getStrutsError(request, "main") %>
+<labkey:errors/>
 <%
     if (bean.isSuccessfulSubmission())
     {

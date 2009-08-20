@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -25,7 +24,7 @@
 <%
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 
 <%
     if (!getViewContext().hasPermission(ACL.PERM_ADMIN))

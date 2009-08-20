@@ -1476,7 +1476,7 @@ public class QueryControllerSpring extends SpringActionController
             }
 
             //build a query view using the schema and settings
-            QueryView view = new QueryView(schema, settings);
+            QueryView view = new QueryView(schema, settings, errors);
             view.setShowRecordSelectors(false);
             view.setShowExportButtons(false);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
@@ -1575,7 +1575,7 @@ public class QueryControllerSpring extends SpringActionController
             }
 
             //build a query view using the schema and settings
-            QueryView view = new QueryView(schema, settings);
+            QueryView view = new QueryView(schema, settings, errors);
             view.setShowRecordSelectors(false);
             view.setShowExportButtons(false);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);

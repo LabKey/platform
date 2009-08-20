@@ -17,15 +17,14 @@
 %>
 <%@ page import="org.labkey.study.model.SampleRequestActor" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
@@ -46,7 +45,7 @@
         }
     }
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 <form action="manageActors.post" name="manageActors" method="POST">
     <table>
         <tr>

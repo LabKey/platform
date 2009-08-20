@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.controllers.designer.DesignerController;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -39,7 +40,7 @@ public class StudyDesignsWebPart extends GridView
 {
     public StudyDesignsWebPart(ViewContext ctx, boolean inPortal)
     {
-        super(new DataRegion());
+        super(new DataRegion(), (BindException)null);
         
         TableInfo table = StudyDesignManager.get().getStudyDesignTable();
         DataRegion dr = getDataRegion();

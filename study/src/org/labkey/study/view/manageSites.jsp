@@ -21,12 +21,13 @@
 <%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 <form action="manageSites.post" method="POST">
     <table>
         <tr>

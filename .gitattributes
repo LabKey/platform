@@ -811,7 +811,6 @@ experiment/src/org/labkey/experiment/controllers/list/AttachmentDisplayColumn.ja
 experiment/src/org/labkey/experiment/controllers/list/EditListDefinitionForm.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListController.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListDefinitionForm.java -text
-experiment/src/org/labkey/experiment/controllers/list/ListDetailsView.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListImportHelper.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListImportServiceImpl.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListItemAttachmentParent.java -text

@@ -22,8 +22,10 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.springframework.validation.BindException;
 
 import java.util.List;
+
 
 /**
  * User: jeckels
@@ -31,9 +33,10 @@ import java.util.List;
 */
 public class GraphMoreGrid extends GridView
 {
-    public GraphMoreGrid(Container c, ActionURL url)
+    public GraphMoreGrid(Container c, BindException errors, ActionURL url)
     {
-        super(new DataRegion());
+        super(new DataRegion(), errors);
+
         String objectType = DotGraph.TYPECODE_PROT_APP;
         String title = "Selected ";
         TableInfo ti;

@@ -23,6 +23,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.springframework.validation.BindException;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
 
     protected ProtocolSuccessorPredecessorView(String parentProtocolLSID, int actionSequence, Container c, String lsidSelectColumn, String sequenceSelectColumn, String filterColumn, String title)
     {
-        super(new DataRegion());
+        super(new DataRegion(), (BindException)null);
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocolActionPredecessorLSIDView();
         List<ColumnInfo> cols = ti.getColumns(lsidSelectColumn, sequenceSelectColumn);
         getDataRegion().setColumns(cols);

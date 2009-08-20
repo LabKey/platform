@@ -24,15 +24,14 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.DataCheckForm> me = (JspView<AdminController.DataCheckForm>) HttpView.currentView();
     AdminController.DataCheckForm bean = me.getModelBean();
-
-    String errors = PageFlowUtil.getStrutsError(request, "main");
 %>
 
-<span class="labkey-error"><%=errors%></span>
+<labkey:errors/>
 
 <form action="getSchemaXmlDoc.view" method="get">
     <table>

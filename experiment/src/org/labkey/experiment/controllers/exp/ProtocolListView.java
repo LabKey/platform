@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.springframework.validation.BindException;
 
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class ProtocolListView extends GridView
 {
     public ProtocolListView(ExpProtocol protocol, Container c)
     {
-        super(new DataRegion());
+        super(new DataRegion(), (BindException)null);
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocolActionDetails();
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,ActionSequence,ProtocolDescription");
         getDataRegion().setColumns(cols);

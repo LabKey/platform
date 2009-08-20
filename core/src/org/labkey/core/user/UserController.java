@@ -18,7 +18,6 @@ package org.labkey.core.user;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
-import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
@@ -434,7 +433,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    private static boolean validateRequiredColumns(Map<String, Object> resultMap, TableInfo table, ActionMessage[] errors)
+    private static boolean validateRequiredColumns(Map<String, Object> resultMap, TableInfo table)
     {
         final String requiredFields = UserManager.getRequiredUserFields();
         if (requiredFields == null || requiredFields.length() == 0)
@@ -448,8 +447,6 @@ public class UserController extends SpringActionController
                 final Object val = resultMap.get(key);
                 if (val == null || val.toString().trim().length() == 0)
                 {
-                    if (errors.length > 0)
-                        errors[0] = new ActionMessage("Error", "The field: " + col.getLabel() + " is required");
                     return false;
                 }
             }
@@ -496,7 +493,7 @@ public class UserController extends SpringActionController
             QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(true);
-            QueryView queryView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), settings)
+            QueryView queryView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), settings, errors)
             {
                 @Override
                 protected void setupDataView(DataView ret)
@@ -1078,7 +1075,6 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(UpdateForm form, boolean reshow, BindException errors) throws Exception
         {
-            TableViewForm.copyErrorsToStruts(errors, getViewContext().getRequest());
             User user = getUser();
             int userId = user.getUserId();
             if (null == form.getPkVal())
@@ -1164,7 +1160,7 @@ public class UserController extends SpringActionController
 			{
                 // this should really only return one row
                 if (trs.next())
-                    return !validateRequiredColumns(trs.getRowMap(), info, new ActionMessage[0]);
+                    return !validateRequiredColumns(trs.getRowMap(), info);
             }
             finally
             {

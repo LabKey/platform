@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.*" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -209,13 +210,8 @@ function validate()
     </td>
     <td width="30%" valign="top">
         <%WebPartView.startTitleFrame(out, "Modules", null, "100%", null);%>
-<%
-    String tabErrors = PageFlowUtil.getStrutsError(request,"tabs");
-    if (null != StringUtils.trimToNull(tabErrors))
-        {
-    %><br><%=tabErrors%><br><%
-        }
-%>
+
+        <labkey:errors/>
 <%
     int i = 0;
 Set<Module> requiredModules = folderType.getActiveModules() != null ? folderType.getActiveModules() : new HashSet<Module>();

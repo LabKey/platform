@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.springframework.validation.BindException" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
 <table>
@@ -42,7 +43,7 @@ VisitMap data can be imported to quickly define a study.  VisitMap data generall
     20|S|Two Week Followup|9|9 (mm/dd/yy)|14|0| 9 10||
     30|T|Termination Visit|9|9 (mm/dd/yy)|21|0| 11 12||
 </pre></p>
-<%= PageFlowUtil.getStrutsError(request,"main")%>
+<labkey:errors/>
 <form action="uploadVisitMap.post" method="post">
     Paste VisitMap content here:<br>
     <textarea name="content" cols="80" rows="30"></textarea><br>

@@ -1516,7 +1516,7 @@ public class WikiController extends SpringActionController
             //sort DESC on version number
             Sort sort = new Sort("-version");
 
-            GridView gridView = new GridView(dr);
+            GridView gridView = new GridView(dr, errors);
             gridView.setFilter(filter);
             gridView.setSort(sort);
 

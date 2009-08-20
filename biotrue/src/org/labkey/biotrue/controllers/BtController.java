@@ -209,7 +209,7 @@ public class BtController extends SpringActionController
             settings.setQueryName("Servers");
             settings.setAllowChooseQuery(false);
 
-            return new QueryView(schema, settings);
+            return new QueryView(schema, settings, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 
 //
@@ -48,7 +49,7 @@ for (found in foundSemanticTypes)
 	out.println(found + "<br>");
 */
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 <form action="findConcepts.view" method=GET>
 <table >
 	<tr><td class="labkey-form-label">Search for</td><td><input name=query style="width:320;" value="<%=PageFlowUtil.filter(form.getQuery())%>"></td></tr>

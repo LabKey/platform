@@ -37,7 +37,6 @@ spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.
 spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 stax-api-1.0.1.jar|Streaming API for XML|1.0.1|{link:Codehaus|http://stax.codehaus.org/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|XML pull parser API
-struts.jar|Struts|1.2.7|{link:Struts|http://struts.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Deprecated web framework
 tar.jar|Java Tar|2.5|{link:Ice Engineering|http://www.trustice.com/java/tar/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|adam|Reading SEQUEST/Comet tar.gz files
 tidy.jar|Java Tidy|svn r812|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
 wsdl4j.jar|Web Services Description Language for Java|1.5|{link:WSDL4J|http://sourceforge.net/projects/wsdl4j}|{link:CPL|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|WSDL support - required for webservices

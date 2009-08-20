@@ -1829,7 +1829,7 @@ public class SpringSpecimenController extends BaseStudyController
             SimpleFilter filter = new SimpleFilter("RequestId", requirement.getRequestId());
             filter.addCondition("RequirementId", requirement.getRowId());
             _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
-            _historyView = getUtils().getRequestEventGridView(context.getRequest(), filter);
+            _historyView = getUtils().getRequestEventGridView(context.getRequest(), null, filter);
             _finalState = SampleManager.getInstance().isInFinalState(request);
         }
         
@@ -1970,7 +1970,7 @@ public class SpringSpecimenController extends BaseStudyController
             _requestId = form.getId();
             HtmlView header = new HtmlView(PageFlowUtil.textLink("View Request", "manageRequest.view?id=" + form.getId()));
             SimpleFilter filter = new SimpleFilter("RequestId", form.getId());
-            GridView historyGrid = getUtils().getRequestEventGridView(getViewContext().getRequest(), filter);
+            GridView historyGrid = getUtils().getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);
         }
 

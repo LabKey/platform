@@ -19,16 +19,15 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.study.model.SampleRequestStatus"%>
 <%@ page import="org.labkey.study.model.SampleRequestActor"%>
-<%@ page import="org.labkey.api.study.Study" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
     SampleRequestActor[] actors = study.getSampleRequestActors();
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 <script type="text/javascript">
 function saveList(listName)
 {

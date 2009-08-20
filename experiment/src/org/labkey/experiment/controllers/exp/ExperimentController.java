@@ -367,7 +367,7 @@ public class ExperimentController extends SpringActionController
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(_source.getName());
             final String sourceName = _source.getName();
-            QueryView queryView = new QueryView(schema, settings)
+            QueryView queryView = new QueryView(schema, settings, errors)
             {
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
@@ -456,7 +456,7 @@ public class ExperimentController extends SpringActionController
             settings.setSchemaName(schema.getSchemaName());
             settings.setAllowChooseQuery(false);
             settings.setQueryName(ExpSchema.TableType.Materials.toString());
-            QueryView view = new QueryView(schema, settings)
+            QueryView view = new QueryView(schema, settings, errors)
             {
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
@@ -682,7 +682,7 @@ public class ExperimentController extends SpringActionController
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(ExpSchema.TableType.Materials.toString());
             settings.setAllowChooseQuery(false);
-            QueryView materialsView = new QueryView(schema, settings)
+            QueryView materialsView = new QueryView(schema, settings, null)
             {
                 protected TableInfo createTable()
                 {
@@ -3789,7 +3789,7 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
         {
             _form = form;
-            return new GraphMoreGrid(getContainer(), getViewContext().getActionURL());
+            return new GraphMoreGrid(getContainer(), errors, getViewContext().getActionURL());
         }
 
         public NavTree appendNavTrail(NavTree root)
