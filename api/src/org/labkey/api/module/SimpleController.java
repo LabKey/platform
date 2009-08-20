@@ -44,18 +44,32 @@ public class SimpleController extends SpringActionController implements SpringAc
         setActionResolver(this);
     }
 
+    private static File getViewFile(Module module, String actionName)
+    {
+        if (null == module)
+            return null;
+
+        File viewFile = new File(new File(module.getSourcePath(), "/src/" + VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+        if (viewFile.isFile())
+            return viewFile;
+
+        viewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+        if (viewFile.isFile())
+            return viewFile;
+
+        return null;
+    }
+
     public Controller resolveActionName(Controller actionController, String actionName)
     {
         String controllerName = getViewContext().getActionURL().getPageFlow();
         Module module = ModuleLoader.getInstance().getModuleForPageFlow(controllerName);
-        if(null == module)
-            return null;
 
-        File viewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        if(viewFile.exists() && viewFile.isFile())
+        File viewFile = getViewFile(module, actionName);
+        if (viewFile != null)
             return new SimpleAction(viewFile);
-        else
-            return null;
+
+        return null;
     }
 
     public void addTime(Controller action, long elapsedTime)
@@ -69,11 +83,11 @@ public class SimpleController extends SpringActionController implements SpringAc
 
     public static ActionURL getBeginViewUrl(Module module, Container container)
     {
-        File beginViewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), BEGIN_VIEW_NAME + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        if(beginViewFile.exists() && beginViewFile.isFile())
+        File beginViewFile = getViewFile(module, BEGIN_VIEW_NAME);
+        if (beginViewFile != null)
             return new ActionURL(module.getName(), BEGIN_VIEW_NAME, container);
-        else
-            return null;
+
+        return null;
     }
 
 }
