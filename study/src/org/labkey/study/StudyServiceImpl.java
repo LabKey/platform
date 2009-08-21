@@ -274,7 +274,7 @@ public class StudyServiceImpl implements StudyService.Service
             if (result.length > 0)
             {
                 // Log to the audit log
-                Map<String,Object> auditDataMap = new HashMap<String,Object>();
+                Map<String, Object> auditDataMap = new HashMap<String, Object>();
                 auditDataMap.putAll(data);
                 auditDataMap.put("lsid", result[0]);
                 addDatasetAuditEvent(u, c, def, null, auditDataMap);
@@ -301,7 +301,7 @@ public class StudyServiceImpl implements StudyService.Service
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
         // Need to fetch the old item in order to log the deletion
-        Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
+        Map<String, Object> oldData = getDatasetRow(u, c, datasetId, lsid);
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();

@@ -107,4 +107,10 @@ public class QCState
         result = 31 * result + (_publicData ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString()
+    {
+        return getLabel() + ": " + getDescription();
+    }
 }

@@ -16,25 +16,25 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.study.importer.StudyImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
-import org.labkey.study.importer.StudyImporter;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.util.*;
 
 /**
@@ -158,11 +158,8 @@ public class DatasetWriter implements Writer<StudyImpl>
         for (DataSetDefinition def : datasets)
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
-            List<ColumnInfo> allColumns = ti.getColumns();
-            List<ColumnInfo> columns = getColumnsToExport(allColumns, def, false);
-
-            // Write dataset data
-            ResultSet rs = Table.select(ti, columns, null, null);
+            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
+            ResultSet rs = QueryService.get().select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
             PrintWriter out = fs.getPrintWriter(def.getFileName());
@@ -170,17 +167,19 @@ public class DatasetWriter implements Writer<StudyImpl>
         }
     }
 
-    private static boolean shouldExport(ColumnInfo column)
+    private static boolean shouldExport(ColumnInfo column, boolean metaData)
     {
-        return column.isUserEditable();
+        return column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DataSetDefinition.getQCStateURI()));
     }
 
-    public static List<ColumnInfo> getColumnsToExport(List<ColumnInfo> inColumns, DataSetDefinition def, boolean includeAutoKey)
+    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData)
     {
+        List<ColumnInfo> inColumns = tinfo.getColumns();
         List<ColumnInfo> outColumns = new ArrayList<ColumnInfo>(inColumns.size());
 
         ColumnInfo ptidColumn = null; String ptidURI = DataSetDefinition.getParticipantIdURI();
         ColumnInfo sequenceColumn = null; String sequenceURI = DataSetDefinition.getSequenceNumURI();
+        ColumnInfo qcStateColumn = null; String qcStateURI = DataSetDefinition.getQCStateURI();
 
         for (ColumnInfo in : inColumns)
         {
@@ -199,11 +198,19 @@ public class DatasetWriter implements Writer<StudyImpl>
                 else
                     LOG.error("More than one sequence number column found: " + sequenceColumn.getName() + " and " + in.getName());
             }
+
+            if (in.getPropertyURI().equals(qcStateURI))
+            {
+                if (null == qcStateColumn)
+                    qcStateColumn = in;
+                else
+                    LOG.error("More than one qc state column found: " + qcStateColumn.getName() + " and " + in.getName());
+            }
         }
 
         for (ColumnInfo in : inColumns)
         {
-            if (shouldExport(in) || (includeAutoKey && in.getName().equals(def.getKeyPropertyName())))
+            if (shouldExport(in, metaData) || (metaData && in.getName().equals(def.getKeyPropertyName())))
             {
                 if ("visit".equalsIgnoreCase(in.getName()) && !in.equals(sequenceColumn))
                     continue;
@@ -215,6 +222,27 @@ public class DatasetWriter implements Writer<StudyImpl>
             }
         }
 
-        return outColumns;
+        // If we're not exporting QCState column then no special handling is needed; outColumns is fine
+        if (null == qcStateColumn || !outColumns.contains(qcStateColumn))
+            return outColumns;
+
+        // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label)
+        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+        FieldKey qcFieldKey = FieldKey.fromParts("QCState", "Label");
+
+        for (ColumnInfo c : outColumns)
+        {
+            if (c.equals(qcStateColumn))
+                fieldKeys.add(qcFieldKey);  // Replace QCState wtih QCStateLabel
+            else
+                fieldKeys.add(FieldKey.fromString(c.getName()));
+        }
+
+        Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, fieldKeys);
+
+        ColumnInfo qcAlias = new AliasedColumn(tinfo, "QCStateLabel", select.get(qcFieldKey));   // Change the caption to QCStateLabel
+        select.put(qcFieldKey, qcAlias);
+
+        return select.values();
     }
 }

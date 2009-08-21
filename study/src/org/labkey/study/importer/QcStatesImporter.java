@@ -15,9 +15,9 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.xml.StudyDocument;
 
 import java.sql.SQLException;
 

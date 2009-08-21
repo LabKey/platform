@@ -28,6 +28,7 @@ import org.labkey.study.model.DataSetDefinition;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -59,8 +60,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
         for (DataSetDefinition def : definitions)
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
-            List<ColumnInfo> allColumns = ti.getColumns();
-            List<ColumnInfo> columns = DatasetWriter.getColumnsToExport(allColumns, def, true);
+            Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(ti, def, true);
 
             // Write metadata
             TableType tableXml = tablesXml.addNewTable();
