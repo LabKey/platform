@@ -218,31 +218,21 @@ public class DatasetWriter implements Writer<StudyImpl>
                 if ("ptid".equalsIgnoreCase(in.getName()) && !in.equals(ptidColumn))
                     continue;
 
-                outColumns.add(in);
+                if (null != qcStateColumn && in.equals(qcStateColumn))
+                {
+                    // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label)
+                    FieldKey qcFieldKey = FieldKey.fromParts("QCState", "Label");
+                    Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(qcFieldKey));
+                    ColumnInfo qcAlias = new AliasedColumn(tinfo, "QCStateLabel", select.get(qcFieldKey));   // Change the caption to QCStateLabel
+                    outColumns.add(qcAlias);
+                }
+                else
+                {
+                    outColumns.add(in);
+                }
             }
         }
 
-        // If we're not exporting QCState column then no special handling is needed; outColumns is fine
-        if (null == qcStateColumn || !outColumns.contains(qcStateColumn))
-            return outColumns;
-
-        // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label)
-        List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
-        FieldKey qcFieldKey = FieldKey.fromParts("QCState", "Label");
-
-        for (ColumnInfo c : outColumns)
-        {
-            if (c.equals(qcStateColumn))
-                fieldKeys.add(qcFieldKey);  // Replace QCState wtih QCStateLabel
-            else
-                fieldKeys.add(FieldKey.fromString(c.getName()));
-        }
-
-        Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, fieldKeys);
-
-        ColumnInfo qcAlias = new AliasedColumn(tinfo, "QCStateLabel", select.get(qcFieldKey));   // Change the caption to QCStateLabel
-        select.put(qcFieldKey, qcAlias);
-
-        return select.values();
+        return outColumns;
     }
 }
