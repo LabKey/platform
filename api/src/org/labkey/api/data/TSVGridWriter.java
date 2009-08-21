@@ -67,20 +67,9 @@ public class TSVGridWriter extends TSVWriter
     }
 
 
-    public TSVGridWriter(List<DisplayColumn> displayColumns)
+    protected TSVGridWriter(List<DisplayColumn> displayColumns)
     {
         init(null, displayColumns);
-    }
-
-
-    public TSVGridWriter(ResultSet rs, ColumnInfo[] cols)
-    {
-        List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>(cols.length);
-
-        for (ColumnInfo col : cols)
-            dataColumns.add(new DataColumn(col));
-
-        init(rs, dataColumns);
     }
 
 
