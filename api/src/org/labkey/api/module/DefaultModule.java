@@ -498,7 +498,7 @@ public abstract class DefaultModule implements Module
         File dir;
 
         if (_loadFromSource)
-            dir = new File(_sourcePath, getSqlScriptsPath(dialect));
+            dir = new File(new File(_sourcePath, "resources"), getSqlScriptsPath(dialect));
         else
             dir = new File(_explodedPath, getSqlScriptsPath(dialect));
 

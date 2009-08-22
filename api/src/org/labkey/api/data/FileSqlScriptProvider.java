@@ -192,7 +192,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         if (!AppProps.getInstance().isDevMode())
             throw new IllegalStateException("Can't save scripts while in production mode");
 
-        File scriptsDir = new File(_module.getSourcePath(), _module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect()));
+        File scriptsDir = new File(new File(_module.getSourcePath(), "resources"), _module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect()));
         File file = new File(scriptsDir, description);
 
         if (file.exists() && !overwrite)
