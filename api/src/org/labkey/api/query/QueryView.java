@@ -648,6 +648,7 @@ public class QueryView extends WebPartView<Object>
         addReportViews(button, target);
 
         button.addSeparator();
+        StringBuilder baseFilterItems = new StringBuilder();
 
         if (_report == null)
         {
@@ -659,9 +660,12 @@ public class QueryView extends WebPartView<Object>
                 reportDesigners.addAll(provider.getDesignerInfo(getViewContext(), getSettings()));
             }
             NavTree submenu = null;
+            String sep = "";
+            ReportService.ItemFilter viewItemFilter = getItemFilter();
+
             for (ReportService.DesignerInfo designer : reportDesigners)
             {
-                if (getItemFilter().accept(designer.getReportType(), designer.getLabel()))
+                if (viewItemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
                     if (submenu == null)
                     {
@@ -675,12 +679,21 @@ public class QueryView extends WebPartView<Object>
 
                     submenu.addChild(item);
                 }
+                // we want to keep track of the available report types that the base (built-in) item filter accepts
+                if (_itemFilter.accept(designer.getReportType(), designer.getLabel()))
+                {
+                    baseFilterItems.append(sep);
+                    baseFilterItems.append(designer.getReportType());
+                    sep = "&";
+                }
             }
         }
         addCustomizeViewItems(button);
         //FIX: 8153 -- user must have admin perm to see manage views item
         if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
-            addManageViewItems(button);
+            addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
+                    "schemaName", getSchema().getSchemaName(),
+                    "queryName", getSettings().getQueryName()));
         addFilterItems(button);
 
         return button;
@@ -688,37 +701,43 @@ public class QueryView extends WebPartView<Object>
 
     protected ReportService.ItemFilter getItemFilter()
     {
-        try {
-            ViewOptions options = QueryService.get().getViewOptions(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName());
-            return new WrappedItemFilter(_itemFilter, options.getReportTypes());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        QueryDefinition def = QueryService.get().getQueryDef(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName());
+        if (def == null)
+            def = QueryService.get().createQueryDefForTable(getSchema(), getSettings().getQueryName());
+
+        return new WrappedItemFilter(_itemFilter, def);
     }
 
     private static class WrappedItemFilter implements ReportService.ItemFilter
     {
         private ReportService.ItemFilter _filter;
-        private List<String> _extraTypes;
+        private Map<String, ViewOptions.ViewFilterItem> _filterItemMap = new HashMap<String, ViewOptions.ViewFilterItem>();
 
-        public WrappedItemFilter(ReportService.ItemFilter filter, List<String> extraTypes)
+
+        public WrappedItemFilter(ReportService.ItemFilter filter, QueryDefinition def)
         {
             _filter = filter;
-            _extraTypes = extraTypes;
+
+            if (def != null)
+            {
+                for (ViewOptions.ViewFilterItem item : def.getViewOptions().getViewFilterItems())
+                    _filterItemMap.put(item.getViewType(), item);
+            }
         }
 
         public boolean accept(String type, String label)
         {
             if (_filter.accept(type, label))
-                return true;
-
-            for (String reportType : _extraTypes)
             {
-                if (StringUtils.equals(reportType, type))
+                if (_filterItemMap.containsKey(type))
+                    return _filterItemMap.get(type).isEnabled();
+                else
                     return true;
             }
+
+            if (_filterItemMap.containsKey(type))
+                return _filterItemMap.get(type).isEnabled();
+
             return false;
         }
     }
@@ -823,13 +842,14 @@ public class QueryView extends WebPartView<Object>
     {
         String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
+        ReportService.ItemFilter viewItemFilter = getItemFilter();
 
         for (Report report : ReportUtil.getReports(getContainer(), getUser(), reportKey, true))
         {
             // Filter out reports that don't match what this view is supposed to show. This can prevent
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
-            if (getItemFilter().accept(report.getType(), null))
+            if (viewItemFilter.accept(report.getType(), null))
             {
                 if (!views.containsKey(report.getType()))
                     views.put(report.getType(), new ArrayList<Report>());
@@ -902,11 +922,13 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    public void addManageViewItems(MenuButton button)
+    public void addManageViewItems(MenuButton button, Map<String, String> params)
     {
-        button.addMenuItem("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()).
-                addParameter("schemaName", getSchema().getSchemaName()).
-                addParameter("queryName", getSettings().getQueryName()));
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
+        for (Map.Entry<String, String> entry : params.entrySet())
+            url.addParameter(entry.getKey(), entry.getValue());
+
+        button.addMenuItem("Manage Views", url);
     }
 
     public String getDataRegionName()

@@ -91,7 +91,6 @@ abstract public class QueryService
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
 	abstract public ResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;
 	abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
-    abstract public ViewOptions getViewOptions(Container container, String schema, String query) throws SQLException;
 
     public interface QueryListener
     {

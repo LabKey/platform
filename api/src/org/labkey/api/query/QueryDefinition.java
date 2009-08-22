@@ -75,4 +75,5 @@ public interface QueryDefinition
     boolean isTableQueryDefinition();
 
     boolean isMetadataEditable();
+    ViewOptions getViewOptions();
 }

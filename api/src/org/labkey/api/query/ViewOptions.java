@@ -17,12 +17,9 @@
 package org.labkey.api.query;
 
 import org.labkey.api.security.User;
-import org.labkey.api.util.VirtualFile;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.util.List;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -31,12 +28,15 @@ import java.sql.SQLException;
  */
 public interface ViewOptions
 {
-    List<String> getReportTypes();
-    void setReportTypes(List<String> types);
+    List<ViewFilterItem> getViewFilterItems();
+    void setViewFilterItems(List<ViewFilterItem> items);
 
-/*
-    void save(User user, HttpServletRequest request) throws SQLException;
-    void delete(User user, HttpServletRequest request) throws SQLException;
-*/
-    void serialize(VirtualFile dir) throws IOException;
+    void save(User user) throws SQLException;
+    void delete(User user) throws SQLException;
+
+    public interface ViewFilterItem
+    {
+        String getViewType();
+        boolean isEnabled();
+    }
 }
