@@ -37,6 +37,7 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.*;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -45,6 +46,7 @@ import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
+import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1094,10 +1096,129 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    public static class ViewOptionsForm extends ViewsSummaryForm
+    {
+        private String[] _viewItemTypes = new String[0];
+
+        public String[] getViewItemTypes()
+        {
+            return _viewItemTypes;
+        }
+
+        public void setViewItemTypes(String[] viewItemTypes)
+        {
+            _viewItemTypes = viewItemTypes;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ViewOptionsAction extends ApiAction<ViewOptionsForm>
+    {
+        public ApiResponse execute(ViewOptionsForm form, BindException errors) throws Exception
+        {
+            List<Map<String, String>> response = new ArrayList<Map<String, String>>();
+            QueryDefinition def = QueryService.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName());
+            if (def == null)
+            {
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+                def = QueryService.get().createQueryDefForTable(schema, form.getQueryName());
+            }
+
+            if (def != null)
+            {
+                Map<String, ViewOptions.ViewFilterItem> filterItemMap = new HashMap<String, ViewOptions.ViewFilterItem>();
+                Map<String, String> baseItemMap = new HashMap<String, String>();
+
+                if (!StringUtils.isBlank(form.getBaseFilterItems()))
+                {
+                    String baseFilterItems = PageFlowUtil.decode(form.getBaseFilterItems());
+                    for (String item : baseFilterItems.split("&"))
+                        baseItemMap.put(item, item);
+                }
+
+                for (ViewOptions.ViewFilterItem item : def.getViewOptions().getViewFilterItems())
+                    filterItemMap.put(item.getViewType(), item);
+
+                for (ReportService.DesignerInfo info : getAvailableReportDesigners(form))
+                {
+                    Map<String, String> record = new HashMap<String, String>();
+
+                    record.put("reportType", info.getReportType());
+                    record.put("reportLabel", info.getLabel());
+                    record.put("reportDescription", info.getDescription());
+
+                    if (filterItemMap.containsKey(info.getReportType()))
+                        record.put("enabled", String.valueOf(filterItemMap.get(info.getReportType()).isEnabled()));
+                    else
+                        record.put("enabled", String.valueOf(baseItemMap.containsKey(info.getReportType())));
+
+                    response.add(record);
+                }
+            }
+            return new ApiSimpleResponse("viewOptions", response);
+        }
+    }
+
+    private Collection<ReportService.DesignerInfo> getAvailableReportDesigners(ViewOptionsForm form)
+    {
+        Map<String, ReportService.DesignerInfo> designerMap = new HashMap<String, ReportService.DesignerInfo>();
+        Map<String, String> baseItemMap = new HashMap<String, String>();
+
+        if (!StringUtils.isBlank(form.getBaseFilterItems()))
+        {
+            String baseFilterItems = PageFlowUtil.decode(form.getBaseFilterItems());
+            for (String item : baseFilterItems.split("&"))
+                baseItemMap.put(item, item);
+        }
+
+        QuerySettings settings = new QuerySettings(getViewContext(), null, form.getQueryName());
+        settings.setSchemaName(form.getSchemaName());
+
+        // build the list available view types by combining the available types and the built in item filter types
+        for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
+        {
+            for (ReportService.DesignerInfo info : provider.getDesignerInfo(getViewContext(), settings))
+            {
+                if (!designerMap.containsKey(info.getLabel()) || baseItemMap.containsKey(info.getReportType()))
+                    designerMap.put(info.getLabel(), info);
+            }
+        }
+        return designerMap.values();
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageViewsUpdateViewOptionsAction extends ExtFormAction<ViewOptionsForm>
+    {
+        public ApiResponse execute(ViewOptionsForm form, BindException errors) throws Exception
+        {
+            QueryDefinition def = QueryService.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName());
+            if (def == null)
+            {
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+                def = QueryService.get().createQueryDefForTable(schema, form.getQueryName());
+            }
+            ViewOptions options = def.getViewOptions();
+            List<ViewOptions.ViewFilterItem> filterItems = new ArrayList<ViewOptions.ViewFilterItem>();
+            Map<String, String> viewItemMap = new HashMap<String, String>();
+
+            for (String type : form.getViewItemTypes())
+                viewItemMap.put(type, type);
+
+            for (ReportService.DesignerInfo info : getAvailableReportDesigners(form))
+                filterItems.add(new ViewFilterItemImpl(info.getReportType(), viewItemMap.containsKey(info.getReportType())));
+
+            options.setViewFilterItems(filterItems);
+            options.save(getUser());
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
     public static class ViewsSummaryForm
     {
         private String _schemaName;
         private String _queryName;
+        private String _baseFilterItems;
 
         public String getSchemaName()
         {
@@ -1117,6 +1238,16 @@ public class ReportsController extends SpringActionController
         public void setQueryName(String queryName)
         {
             _queryName = queryName;
+        }
+
+        public String getBaseFilterItems()
+        {
+            return _baseFilterItems;
+        }
+
+        public void setBaseFilterItems(String baseFilterItems)
+        {
+            _baseFilterItems = baseFilterItems;
         }
     }
 

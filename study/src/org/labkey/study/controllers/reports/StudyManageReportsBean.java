@@ -16,45 +16,59 @@
 
 package org.labkey.study.controllers.reports;
 
-import org.labkey.api.reports.report.view.ManageReportsBean;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.Study;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.StudyManager;
-
 /**
  * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Mar 1, 2007
  */
-public class StudyManageReportsBean extends ManageReportsBean
+public class StudyManageReportsBean
 {
     private boolean _isAdminView;
     private boolean _isWideView;
-    private Study _study;
-
-    public StudyManageReportsBean(ViewContext context, boolean isAdminView, boolean isWide)
-    {
-        super(context);
-
-        _isAdminView = isAdminView;
-        _isWideView = isWide;
-        _study = StudyManager.getInstance().getStudy(context.getContainer());
-    }
+    private String _queryName;
+    private String _schemaName;
+    private String _baseFilterItems;
 
     public boolean getAdminView(){return _isAdminView;}
     public void setAdminView(boolean admin){_isAdminView = admin;}
-    public boolean getIsWideView(){return _isWideView;}
 
-    public ActionURL getCustomizeParticipantViewURL()
+    public boolean isWideView()
     {
-        ActionURL customizeParticipantURL = new ActionURL(StudyController.CustomizeParticipantViewAction.class, _study.getContainer());
-        // add a sample participant to our URL so that users can see the results of their customization.  This needs to be on the URL
-        // since the default custom script reads the participant ID parameter from the URL:
-        String[] participantIds = StudyManager.getInstance().getParticipantIds(_study, 1);
-        if (participantIds != null && participantIds.length > 0)
-            customizeParticipantURL.addParameter("participantId", participantIds[0]);
-        return customizeParticipantURL;
+        return _isWideView;
+    }
+
+    public void setWideView(boolean wideView)
+    {
+        _isWideView = wideView;
+    }
+
+    public String getQueryName()
+    {
+        return _queryName;
+    }
+
+    public void setQueryName(String queryName)
+    {
+        _queryName = queryName;
+    }
+
+    public String getSchemaName()
+    {
+        return _schemaName;
+    }
+
+    public void setSchemaName(String schemaName)
+    {
+        _schemaName = schemaName;
+    }
+
+    public String getBaseFilterItems()
+    {
+        return _baseFilterItems;
+    }
+
+    public void setBaseFilterItems(String baseFilterItems)
+    {
+        _baseFilterItems = baseFilterItems;
     }
 }

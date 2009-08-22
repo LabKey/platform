@@ -315,7 +315,27 @@ LABKEY.ViewsPanel.prototype = {
                     cls:'extContainer',
                     items: this.createMenu }
             });
+
+/*
+            item.menu.addMenuItem({
+                id: 'config_views',
+                listeners:{click:function(button, event) {this.configViewTypes();}, scope:this},
+                text:'Configure available View types...'});
+
+*/
             buttons.splice(0,0,item,'-');
+        }
+
+        // options button
+        if (this.baseQuery != undefined)
+        {
+            buttons.push('-');
+            buttons.push({
+                text:'Options...',
+                id: 'config_views',
+                tooltip: {text:'Configure View Options', title:'Options'},
+                listeners:{click:function(button, event) {this.configViewTypes();}, scope:this}
+            });
         }
 
         // selection button
@@ -438,6 +458,19 @@ LABKEY.ViewsPanel.prototype = {
                 ]
             });
         }
+    },
+
+    /**
+     * Display the view configurations dialog box
+     */
+    configViewTypes : function() {
+
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("reports", "viewOptions", null, this.baseQuery),
+            method: "GET",
+            scope: this,
+            success: function(response, options){doConfigViewOptions(Ext.util.JSON.decode(response.responseText), options, this.baseQuery);},
+            failure: function(){Ext.Msg.alert("Configure View types", "Unable to get view type information");}});
     }
 };
 
@@ -655,6 +688,89 @@ function setFormFieldTooltip(component)
         target: label,
         text: component.tooltip.text,
         title: ''
+    });
+}
+
+function doConfigViewOptions(response, options, baseQuery)
+{
+    // should be the parsed json object
+    var options = response.viewOptions;
+    var formItems = new Array();
+
+    for (var i=0; i < options.length; i++)
+    {
+        formItems.push({
+            xtype: 'checkbox',
+            boxLabel: options[i].reportLabel,
+            name: 'viewItemTypes',
+            inputValue: options[i].reportType,
+            checked: options[i].enabled == 'true'
+        });
+    }
+    // query and schema name
+    formItems.push({name: 'schemaName', xtype: 'hidden', value: baseQuery.schemaName});
+    formItems.push({name: 'queryName', xtype: 'hidden', value: baseQuery.queryName});
+    formItems.push({name: 'baseFilterItems', xtype: 'hidden', value: baseQuery.baseFilterItems});
+
+    var formPanel = new Ext.FormPanel({
+        bodyStyle:'padding:5px',
+        autoHeight: true,
+        items: [{
+            xtype: 'checkboxgroup',
+            fieldLabel: 'Available view types',
+            columns: 1,
+            items: formItems
+        }]
+    });
+
+    var win = new Ext.Window({
+        title: 'Configure View Options',
+        layout:'form',
+        border: false,
+        autoHeight: true,
+        width: 450,
+        closeAction:'close',
+        modal: false,
+        items: formPanel,
+        buttons: [{
+            text: 'Submit',
+            id: 'btn_submit',
+            handler: function(){updateViewOptions(win, formPanel);}
+        },{
+            text: 'Cancel',
+            id: 'btn_cancel',
+            handler: function(){win.close();}
+        },{
+            text: 'Reset to Default',
+            id: 'btn_reset',
+            disabled: true,
+            handler: function(){win.close();}
+        }]
+    });
+
+    win.show();
+}
+
+function updateViewOptions(win, panel)
+{
+    var items = panel.items;
+
+    // client side validation
+    var form = panel.getForm();
+    if (form && !form.isValid())
+    {
+        Ext.Msg.alert('Edit Views', 'Not all fields have been properly completed');
+        return;
+    }
+
+    form.submit({
+        url: LABKEY.ActionURL.buildURL("reports", "manageViewsUpdateViewOptions"),
+        waitMsg:'Submiting Form...',
+        method: 'POST',
+        success: function(){
+            win.close();
+        },
+        failure: function(form, action){Ext.Msg.alert("Save Error", "An error occurred while saving the view");}
     });
 }
 

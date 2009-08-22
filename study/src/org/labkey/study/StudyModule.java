@@ -234,6 +234,7 @@ public class StudyModule extends DefaultModule
         ReportService.get().registerReport(new ExportExcelReport());
         ReportService.get().registerReport(new ChartReportView());
         ReportService.get().registerReport(new StudyChartQueryReport());
+        ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
         ReportService.get().registerReport(new StudyRReport());
 

@@ -810,10 +810,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
     }
 
     @Override
-    public void addManageViewItems(MenuButton button)
+    public void addManageViewItems(MenuButton button, Map<String, String> params)
     {
-        button.addMenuItem("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).
-                addParameter("schemaName", getSchema().getSchemaName()).
-                addParameter("queryName", getSettings().getQueryName()));
+        ActionURL url = new ActionURL(ReportsController.ManageReportsAction.class, getContainer());
+        for (Map.Entry<String, String> entry : params.entrySet())
+            url.addParameter(entry.getKey(), entry.getValue());
+
+        button.addMenuItem("Manage Views", url);
     }
 }

@@ -54,7 +54,8 @@
             <% if (form.getSchemaName() != null && form.getQueryName() != null) { %>
                 baseQuery: {
                     schemaName: '<%=form.getSchemaName()%>',
-                    queryName: '<%=form.getQueryName()%>'
+                    queryName: '<%=form.getQueryName()%>',
+                    baseFilterItems: '<%=form.getBaseFilterItems()%>'
                 },
                 filterDiv: 'filterMsg',
             <% } %>

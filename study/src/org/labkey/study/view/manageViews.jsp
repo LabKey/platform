@@ -31,6 +31,8 @@
 <%@ page import="org.labkey.study.reports.EnrollmentReport" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -41,12 +43,12 @@
 
 <%
     JspView<StudyManageReportsBean> me = (JspView<StudyManageReportsBean>) HttpView.currentView();
-    StudyManageReportsBean bean = me.getModelBean();
+    StudyManageReportsBean form = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
 
-    String schemaName = context.getActionURL().getParameter(QueryParam.schemaName);
-    String queryName = context.getActionURL().getParameter(QueryParam.queryName);
+    String schemaName = form.getSchemaName();
+    String queryName = form.getQueryName();
 
     ActionURL permissionURL = new ActionURL(SecurityController.ReportPermissionsAction.class, context.getContainer());
 
@@ -57,6 +59,15 @@
     ActionURL newRView = ReportUtil.getRReportDesignerURL(context, reportBean);
 
     boolean hasEnrollmentReport = EnrollmentReport.getEnrollmentReport(context.getUser(), StudyManager.getInstance().getStudy(context.getContainer()), false) != null;
+
+    Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    ActionURL customizeParticipantURL = new ActionURL(StudyController.CustomizeParticipantViewAction.class, study.getContainer());
+
+    // add a sample participant to our URL so that users can see the results of their customization.  This needs to be on the URL
+    // since the default custom script reads the participant ID parameter from the URL:
+    String[] participantIds = StudyManager.getInstance().getParticipantIds(study, 1);
+    if (participantIds != null && participantIds.length > 0)
+        customizeParticipantURL.addParameter("participantId", participantIds[0]);
 %>
 
 <script type="text/javascript">
@@ -86,7 +97,7 @@
                 buttons.push('-', {
                     text:'Customize Participant View',
                     disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
-                    listeners:{click:function(button, event) {window.location = '<%=bean.getCustomizeParticipantViewURL()%>';}}
+                    listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
                 }, '-');
                 return buttons;
             },
@@ -166,7 +177,8 @@
             <% if (schemaName != null && queryName != null) { %>
                 baseQuery: {
                     schemaName: '<%=schemaName%>',
-                    queryName: '<%=queryName%>'
+                    queryName: '<%=queryName%>',
+                    baseFilterItems: '<%=form.getBaseFilterItems()%>'
                 },
                 filterDiv: 'filterMsg',
             <% } %>

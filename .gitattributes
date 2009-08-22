@@ -1519,7 +1519,7 @@ query/src/org/labkey/query/QueryUpgradeCode.java -text
 query/src/org/labkey/query/QueryWebdavProvider.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text
 query/src/org/labkey/query/TableXML.java -text
-query/src/org/labkey/query/ViewOptionsImpl.java -text
+query/src/org/labkey/query/ViewFilterItemImpl.java -text
 query/src/org/labkey/query/controllers/ChooseColumnsForm.java -text
 query/src/org/labkey/query/controllers/DbUserSchemaForm.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text

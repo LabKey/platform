@@ -22,29 +22,29 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.*;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.sql.Query;
-import org.labkey.query.sql.QueryTableInfo;
 import org.labkey.query.design.*;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.sql.Query;
+import org.labkey.query.sql.QueryTableInfo;
 import org.labkey.query.view.CustomViewSetKey;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.FilenameFilter;
-import java.io.File;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
@@ -577,5 +577,81 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public boolean isMetadataEditable()
     {
         return true;
+    }
+
+    public ViewOptions getViewOptions()
+    {
+        return new ViewOptionsImpl(getMetadataXml());
+    }
+
+    private class ViewOptionsImpl implements ViewOptions
+    {
+        private TablesDocument _document;
+
+        public ViewOptionsImpl(String metadataXml)
+        {
+            try {
+                if (!StringUtils.isBlank(metadataXml))
+                    _document = TablesDocument.Factory.parse(metadataXml);
+                else
+                {
+                    _document = TablesDocument.Factory.newInstance();
+                    TableType table = _document.addNewTables().addNewTable();
+
+                    table.setTableName(getName());
+                    table.setTableDbType("NOT_IN_DB");
+                }
+            }
+            catch (XmlException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public List<ViewFilterItem> getViewFilterItems()
+        {
+            List<ViewFilterItem> items = new ArrayList<ViewFilterItem>();
+
+            org.labkey.data.xml.ViewOptions options = _document.getTables().getTableArray()[0].getViewOptions();
+            if (options == null)
+                options = _document.getTables().getTableArray()[0].addNewViewOptions();
+
+            for (org.labkey.data.xml.ViewOptions.ViewFilterItem item : options.getViewFilterItemArray())
+            {
+                items.add(new ViewFilterItemImpl(item.getType(), item.getEnabled()));
+            }
+            return items;
+        }
+
+        public void setViewFilterItems(List<ViewFilterItem> items)
+        {
+            List<org.labkey.data.xml.ViewOptions.ViewFilterItem> filterItems = new ArrayList<org.labkey.data.xml.ViewOptions.ViewFilterItem>();
+
+            for (ViewFilterItem item : items)
+            {
+                org.labkey.data.xml.ViewOptions.ViewFilterItem vfi = org.labkey.data.xml.ViewOptions.ViewFilterItem.Factory.newInstance();
+                vfi.setType(item.getViewType());
+                vfi.setEnabled(item.isEnabled());
+
+                filterItems.add(vfi);
+            }
+            org.labkey.data.xml.ViewOptions options = _document.getTables().getTableArray()[0].getViewOptions();
+            if (options == null)
+                options = _document.getTables().getTableArray()[0].addNewViewOptions();
+
+            options.setViewFilterItemArray(filterItems.toArray(new org.labkey.data.xml.ViewOptions.ViewFilterItem[filterItems.size()]));
+        }
+
+        public void save(User user) throws SQLException
+        {
+            setMetadataXml(_document.toString());
+            QueryDefinitionImpl.this.save(user, getContainer());
+        }
+
+        public void delete(User user) throws SQLException
+        {
+            _document.getTables().getTableArray()[0].unsetViewOptions();
+            save(user);
+        }
     }
 }

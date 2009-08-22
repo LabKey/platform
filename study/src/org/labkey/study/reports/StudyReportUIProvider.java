@@ -66,12 +66,14 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         ActionURL crossTabURL = new ActionURL(ReportsController.ParticipantCrosstabAction.class, context.getContainer());
         crossTabURL.addParameter(QueryParam.schemaName, settings.getSchemaName());
         crossTabURL.addParameter(QueryParam.queryName, settings.getQueryName());
-        crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
-        crossTabURL.addParameter("returnURL", context.getActionURL().getLocalURIString());
-        designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", crossTabURL));
+        crossTabURL.addParameter("redirectUrl", context.getActionURL().getLocalURIString());
 
         if (StudyManager.getSchemaName().equals(settings.getSchemaName()))
         {
+            // crosstab report
+            crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
+            designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", crossTabURL));
+
             // chart designer
             ChartDesignerBean chartBean = new ChartDesignerBean(settings);
             chartBean.setReportType(StudyChartQueryReport.TYPE);
@@ -99,6 +101,11 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);
                 designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", "An External Command Report", buttonURL));
             }
+        }
+        else
+        {
+            crossTabURL.addParameter(ReportDescriptor.Prop.reportType, CrosstabReport.TYPE);
+            designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", crossTabURL));
         }
         return designers;
     }

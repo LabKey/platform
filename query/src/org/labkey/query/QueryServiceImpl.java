@@ -753,11 +753,6 @@ public class QueryServiceImpl extends QueryService
         QueryManager.get().addQueryListener(listener);
     }
 
-    public ViewOptions getViewOptions(Container container, String schema, String query) throws SQLException
-    {
-        return new ViewOptionsImpl();
-    }
-
     private String _prettyPrint(String s)
     {
         StringBuilder sb = new StringBuilder(s.length() + 200);

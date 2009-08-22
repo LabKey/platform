@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 LabKey Corporation
+ * Copyright (c) 2006-2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,33 +17,30 @@
 package org.labkey.query;
 
 import org.labkey.api.query.ViewOptions;
-import org.labkey.api.util.VirtualFile;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
  * User: klum
- * Date: Aug 3, 2009
+ * Date: Aug 21, 2009
  */
-public class ViewOptionsImpl implements ViewOptions
+public class ViewFilterItemImpl implements ViewOptions.ViewFilterItem
 {
-    public ViewOptionsImpl()
+    private String _type;
+    private boolean _enabled;
+
+    public ViewFilterItemImpl(String type, boolean enabled)
     {
+        _type = type;
+        _enabled = enabled;
     }
 
-    public List<String> getReportTypes()
+    public String getViewType()
     {
-        return Collections.emptyList();
+        return _type;
     }
 
-    public void setReportTypes(List<String> types)
+    public boolean isEnabled()
     {
-    }
-
-    public void serialize(VirtualFile dir) throws IOException
-    {
+        return _enabled;
     }
 }

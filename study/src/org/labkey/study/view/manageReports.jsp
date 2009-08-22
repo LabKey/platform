@@ -30,6 +30,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <%
     JspView<StudyManageReportsBean> me = (JspView<StudyManageReportsBean>) HttpView.currentView();
     StudyManageReportsBean bean = me.getModelBean();
@@ -64,20 +66,10 @@
 
 %>
 
-<table>
-<%
-    if (bean.getErrors() != null)
-    {
-        for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
-        {
-            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-        }
-    }
-%>
-</table>
+<labkey:errors/>
 
 <%
-    if (bean.getIsWideView())
+    if (bean.isWideView())
     {
         out.print("<table width=\"100%\"><tr><td valign=\"top\">");
         maxColumns--;
@@ -89,7 +81,7 @@
     {
         if (entry.getValue().isEmpty())
             continue;
-        if (bean.getIsWideView() && reportCount >= reportsPerColumn && maxColumns > 0)
+        if (bean.isWideView() && reportCount >= reportsPerColumn && maxColumns > 0)
         {
             out.print("</td><td valign=\"top\">");
             reportCount = 0;
@@ -108,7 +100,7 @@
         endReportSection(out, bean);
     }
 
-    if (bean.getIsWideView())
+    if (bean.isWideView())
         out.println("</td></tr></table>");
     else if (bean.getAdminView())
         out.println("</table>");

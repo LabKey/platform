@@ -181,16 +181,13 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
-    public class ManageReportsAction extends SimpleViewAction
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ManageReportsAction extends SimpleViewAction<StudyManageReportsBean>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(StudyManageReportsBean form, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("manageReportsAndViews", HelpTopic.Area.STUDY));
-            StudyManageReportsBean bean = new StudyManageReportsBean(getViewContext(), true, false);
-            bean.setErrors(errors);
-
-            return new StudyJspView<StudyManageReportsBean>(getStudy(), "manageViews.jsp", bean, errors);
+            return new StudyJspView<StudyManageReportsBean>(getStudy(), "manageViews.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -610,7 +607,7 @@ public class ReportsController extends BaseStudyController
         return HttpView.redirect(url);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SaveReportViewAction extends FormViewAction<SaveReportViewForm>
     {
         int _savedReportId = -1;
@@ -623,57 +620,31 @@ public class ReportsController extends BaseStudyController
 
         public void validateCommand(SaveReportViewForm form, Errors errors)
         {
-            try {
-                if (reportNameExists(getViewContext(), form.getLabel(), getReportKey(form)))
-                    errors.reject("saveReportView", "There is already a report with the name of: '" + form.getLabel() +
-                            "'. Please specify a different name.");
-            }
-            catch (ServletException e)
-            {
-                errors.reject("saveReportView", e.getMessage());
-            }
+            if (reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
+                errors.reject("saveReportView", "There is already a report with the name of: '" + form.getLabel() +
+                        "'. Please specify a different name.");
         }
 
         public boolean handlePost(SaveReportViewForm form, BindException errors) throws Exception
         {
             Report report = form.getReport();
-            _savedReportId = ReportService.get().saveReport(getViewContext(), getReportKey(form), report);
+            _savedReportId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName()), report);
 
             return true;
         }
 
-        private String getReportKey(SaveReportViewForm form) throws ServletException
-        {
-            int showWithDataset = form.getShowWithDataset();
-            if (showWithDataset != -1)
-            {
-                if (ReportManager.ALL_DATASETS == showWithDataset)
-                    return ReportManager.ALL_DATASETS_KEY;
-
-                String queryName = null;
-                DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), showWithDataset);
-                if (def != null)
-                {
-                    queryName = def.getLabel();
-                    return ReportUtil.getReportKey(StudyManager.getSchemaName(), queryName);
-                }
-            }
-            return ReportUtil.getReportQueryKey(form.getReport().getDescriptor());
-        }
-
         public ActionURL getSuccessURL(SaveReportViewForm form)
         {
-            int dataset = form.getShowWithDataset();
-            if (dataset != 0)
+            if (!StringUtils.isBlank(form.getRedirectUrl()))
+                return new ActionURL(form.getRedirectUrl());
+            else if (form.getRedirectToDataset() != null)
             {
-                ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.reportId", String.valueOf(_savedReportId));
-
-                if (dataset == ReportManager.ALL_DATASETS)
-                    url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(form.getDatasetId()));
-                else
-                    url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(form.getShowWithDataset()));
-                return url;
+                if (StudyManager.getInstance().getStudy(getContainer()) != null)
+                {
+                    return new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                            addParameter("Dataset.reportId", String.valueOf(_savedReportId)).
+                            addParameter(DataSetDefinition.DATASETKEY, form.getRedirectToDataset());
+                }
             }
             return getViewContext().cloneActionURL().deleteParameters().setAction("begin.view");
         }
@@ -727,23 +698,12 @@ public class ReportsController extends BaseStudyController
     public static class CrosstabDesignBean extends ReportDesignBean
     {
         private Map<String, ColumnInfo> columns;
-        private int _datasetId = -1;
         private int _visitRowId = -1;
         private String _rowField;
         private String _colField;
         private String _statField;
         private String[] _stats = new String[0];
 
-
-        public int getDatasetId()
-        {
-            return _datasetId;
-        }
-
-        public void setDatasetId(int datasetId)
-        {
-            _datasetId = datasetId;
-        }
 
         public int getVisitRowId()
         {
@@ -810,7 +770,6 @@ public class ReportsController extends BaseStudyController
             Report report = super.getReport();
             CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)report.getDescriptor();
 
-            if (_datasetId != -1) descriptor.setProperty(DataSetDefinition.DATASETKEY, Integer.toString(_datasetId));
             if (_visitRowId != -1) descriptor.setProperty(VisitImpl.VISITKEY, Integer.toString(_visitRowId));
             if (!StringUtils.isEmpty(_rowField)) descriptor.setProperty("rowField", _rowField);
             if (!StringUtils.isEmpty(_colField)) descriptor.setProperty("colField", _colField);
@@ -850,16 +809,6 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(CrosstabDesignBean form, boolean reshow, BindException errors) throws Exception
         {
-            if (form.getSchemaName() == null)
-            {
-                DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-
-                form.setSchemaName(StudyManager.getSchemaName());
-                form.setQueryName(def.getLabel());
-                String viewName = getViewContext().getActionURL().getParameter("Dataset.viewName");
-                if (!StringUtils.isEmpty(viewName))
-                    form.setViewName(viewName);
-            }
             form.setColumns(getColumns(form));
 
             JspView<CrosstabDesignBean> view = new JspView<CrosstabDesignBean>("/org/labkey/study/view/crosstabDesigner.jsp", form);
@@ -873,9 +822,12 @@ public class ReportsController extends BaseStudyController
                     v.addView(report.renderReport(getViewContext()));
 
                     SaveReportViewForm bean = new SaveReportViewForm(report);
-                    bean.setDatasetId(form.getDatasetId());
                     bean.setShareReport(true);
-                    bean.setShowWithDataset(form.getDatasetId());
+                    bean.setSchemaName(form.getSchemaName());
+                    bean.setQueryName(form.getQueryName());
+                    bean.setDataRegionName(form.getDataRegionName());
+                    bean.setViewName(form.getViewName());
+                    bean.setRedirectUrl(form.getRedirectUrl());
 
                     JspView<SaveReportViewForm> saveWidget = new JspView<SaveReportViewForm>("/org/labkey/study/view/saveReportView.jsp", bean);
                     v.addView(saveWidget);
@@ -1716,15 +1668,12 @@ public class ReportsController extends BaseStudyController
 
     public static class SaveReportViewForm extends SaveReportForm
     {
-        private boolean _isPlotView;
-        private int _datasetId;
         private boolean _shareReport;
-        private int _chartsPerRow;
-        private boolean _hasMultipleChartsPerView;
         private String _queryName;
         private String _schemaName;
         private String _viewName;
         private String _dataRegionName;
+        private String _redirectUrl;
 
         public SaveReportViewForm(){}
         public SaveReportViewForm(Report report)
@@ -1748,31 +1697,15 @@ public class ReportsController extends BaseStudyController
                 descriptor.setProperty(QueryParam.viewName.toString(), getViewName());
             if (!StringUtils.isEmpty(getDataRegionName()))
                 descriptor.setProperty(QueryParam.dataRegionName.toString(), getDataRegionName());
-
-            descriptor.setProperty("datasetId", String.valueOf(getDatasetId()));
-            if (!getShareReport())
+           if (!getShareReport())
                 descriptor.setOwner(getViewContext().getUser().getUserId());
-            descriptor.setProperty("chartsPerRow", String.valueOf(getChartsPerRow()));
-            if (getIsPlotView())
-                descriptor.setProperty("filterParam", "participantId");
 
             return report;
         }
 
-        public void setIsPlotView(boolean isPlotView){_isPlotView = isPlotView;}
-        public boolean getIsPlotView(){return _isPlotView;}
-
-        public void setDatasetId(int datasetId){_datasetId = datasetId;}
-        public int getDatasetId(){return _datasetId;}
-
         public void setShareReport(boolean shareReport){_shareReport = shareReport;}
         public boolean getShareReport(){return _shareReport;}
 
-        public void setChartsPerRow(int chartsPerRow){_chartsPerRow = chartsPerRow;}
-        public int getChartsPerRow(){return _chartsPerRow;}
-
-        public void setHasMultipleChartsPerView(boolean hasMultipleChartsPerView){_hasMultipleChartsPerView = hasMultipleChartsPerView;}
-        public boolean getHasMultipleChartsPerView(){return _hasMultipleChartsPerView;}
         public void setSchemaName(String schemaName){_schemaName = schemaName;}
         public String getSchemaName(){return _schemaName;}
         public void setQueryName(String queryName){_queryName = queryName;}
@@ -1781,6 +1714,16 @@ public class ReportsController extends BaseStudyController
         public String getViewName(){return _viewName;}
         public void setDataRegionName(String dataRegionName){_dataRegionName = dataRegionName;}
         public String getDataRegionName(){return _dataRegionName;}
+
+        public String getRedirectUrl()
+        {
+            return _redirectUrl;
+        }
+
+        public void setRedirectUrl(String redirectUrl)
+        {
+            _redirectUrl = redirectUrl;
+        }
     }
 
     public static class PlotForm
@@ -2217,7 +2160,10 @@ public class ReportsController extends BaseStudyController
             super("/org/labkey/study/view/manageReports.jsp");
             setTitle("Views");
 
-            StudyManageReportsBean bean = new StudyManageReportsBean(getViewContext(), false, isWide);
+            StudyManageReportsBean bean = new StudyManageReportsBean();
+            bean.setAdminView(false);
+            bean.setWideView(isWide);
+
             setModelBean(bean);
         }
 
