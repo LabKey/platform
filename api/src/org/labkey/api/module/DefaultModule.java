@@ -651,7 +651,13 @@ public abstract class DefaultModule implements Module
             return new Pair<InputStream, Long>(new FileInputStream(file), ts);
         }
         else
-            return new Pair<InputStream, Long>(this.getClass().getResourceAsStream(path), -1L);
+        {
+            File file = new File(_explodedPath, path);
+            if (file.exists())
+                return new Pair<InputStream, Long>(new FileInputStream(file), -1L);
+            else
+                return new Pair<InputStream, Long>(this.getClass().getResourceAsStream(path), -1L);
+        }
     }
 
     public InputStream getResourceStream(String path) throws FileNotFoundException
