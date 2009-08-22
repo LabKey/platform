@@ -77,7 +77,7 @@ public class SqlDialectSas extends SqlDialect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public String getSQLScriptPath(boolean source)
+    public String getSQLScriptPath()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

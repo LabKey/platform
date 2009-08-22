@@ -116,7 +116,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "PostgreSQL";
     }
 
-    public String getSQLScriptPath(boolean source)
+    public String getSQLScriptPath()
     {
         return "postgresql";
     }
