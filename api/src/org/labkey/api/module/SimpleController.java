@@ -49,7 +49,7 @@ public class SimpleController extends SpringActionController implements SpringAc
         if (null == module)
             return null;
 
-        File viewFile = new File(new File(module.getSourcePath(), "/src/" + VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+        File viewFile = new File(new File(module.getSourcePath(), "/resources/" + VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
         if (viewFile.isFile())
             return viewFile;
 

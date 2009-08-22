@@ -81,7 +81,7 @@ public class SimpleModule extends DefaultModule
 
     public boolean hasScripts()
     {
-        return new File(getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect())).exists();
+        return getSqlScripts(null, CoreSchema.getInstance().getSqlDialect()).size() > 0;
     }
 
     public void startup(ModuleContext moduleContext)

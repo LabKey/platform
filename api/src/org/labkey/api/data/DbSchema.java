@@ -144,7 +144,7 @@ public class DbSchema
             _log.info("no module for schema '" + schemaName + "'");
             return null;
         }
-        return module.getResourceStream("/META-INF/" + schemaName + ".xml");
+        return module.getResourceStream("/schemas/" + schemaName + ".xml");
     }
 
 
@@ -156,7 +156,7 @@ public class DbSchema
             _log.info("no module for schema '" + schemaName + "'");
             return null;
         }
-        return module.getResourceStreamIfChanged("/META-INF/" + schemaName + ".xml", tsPrevious);
+        return module.getResourceStreamIfChanged("/schemas/" + schemaName + ".xml", tsPrevious);
     }
 
 

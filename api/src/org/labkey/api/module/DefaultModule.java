@@ -517,10 +517,7 @@ public abstract class DefaultModule implements Module
 
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
-        if (_loadFromSource)
-            return "src/META-INF/" + getName().toLowerCase() + "/scripts/" + dialect.getSQLScriptPath(true) + "/";
-        else
-            return "schemas/dbscripts/" + dialect.getSQLScriptPath(false) + "/";
+        return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
     }
 
     protected File reportKeyToLegalFile(File rootDir, String key)
@@ -643,11 +640,15 @@ public abstract class DefaultModule implements Module
     {
         if (_loadFromSource)
         {
-            File f = new File(_sourcePath, "/src" + path);
-            long ts = f.lastModified();
+            File file = new File(_sourcePath, path);
+            if (!file.exists() && !path.startsWith("resources"))
+                file = new File(_sourcePath, "resources/" + path);
+            if (!file.exists() && !path.startsWith("src"))
+                file = new File(_sourcePath, "src/" + path);
+            long ts = file.lastModified();
             if (tsPrevious == ts)
                 return null;
-            return new Pair<InputStream, Long>(new FileInputStream(f), ts);
+            return new Pair<InputStream, Long>(new FileInputStream(file), ts);
         }
         else
             return new Pair<InputStream, Long>(this.getClass().getResourceAsStream(path), -1L);
@@ -661,10 +662,11 @@ public abstract class DefaultModule implements Module
         if (_loadFromSource)
         {
             //FIX: 8122 - if path does not start with src/, add that
-            if (!path.startsWith("src"))
+            file = new File(_sourcePath, path);
+            if (!file.exists() && !path.startsWith("resources"))
+                file = new File(_sourcePath, "resources/" + path);
+            if (!file.exists() && !path.startsWith("src"))
                 file = new File(_sourcePath, "src/" + path);
-            else
-                file = new File(_sourcePath, path);
         }
         else
             file = new File(_explodedPath, path);
