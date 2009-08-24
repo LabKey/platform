@@ -446,9 +446,7 @@ public class ViewContext extends BoundMap implements MessageSource
             throw new TermsOfUseException();
     }
 
-    /* return PropertyValues object used to bind the current commmand object
-       will be null for Struts controllers
-     */
+    /* return PropertyValues object used to bind the current commmand object */
     public PropertyValues getBindPropertyValues()
     {
         if (null != _pvsBind)

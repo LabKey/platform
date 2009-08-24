@@ -287,14 +287,7 @@
     <welcome-file-list>
         <welcome-file>/</welcome-file>
     </welcome-file-list>
-    <taglib>
-        <taglib-uri>/tags/struts-tiles</taglib-uri>
-        <taglib-location>/WEB-INF/struts-tiles.tld</taglib-location>
-    </taglib>
-    <taglib>
-        <taglib-uri>/tags/struts-html</taglib-uri>
-        <taglib-location>/WEB-INF/struts-html.tld</taglib-location>
-    </taglib>
+
     <resource-ref>
         <res-ref-name>mail/Session</res-ref-name>
         <res-type>javax.mail.Session</res-type>
