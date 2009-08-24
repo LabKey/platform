@@ -224,7 +224,7 @@ public class DemoController extends SpringActionController
 
 
     /*
-     * Another FormViewAction.  BulkUpdateForm does not extend any struts class
+     * Another FormViewAction.
      *
      * Note this returns a true ModelAndView.  bulkUpdate.jsp looks like a typical Spring jsp
      */

@@ -35,6 +35,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -317,14 +318,17 @@ public class SqlScriptController extends SpringActionController
                 if (1 == scripts.size() && scripts.get(0).getDescription().equals(filename))
                     continue;  // No consolidation to do on this schema
 
-                ActionURL url = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
                 html.append("<b>Schema ").append(consolidator.getSchemaName()).append("</b><br>\n");
 
                 for (SqlScriptRunner.SqlScript script : scripts)
                     html.append(script.getDescription()).append("<br>\n");
 
                 html.append("<br>\n");
-                html.append("[<a href=\"").append(url.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</a>]<br><br>\n");
+
+                ActionURL consolidateURL = getConsolidateSchemaURL(ConsolidateSchemaAction.class, consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
+                ActionURL consolidateAndReorderURL = getConsolidateSchemaURL(ConsolidateSchemaAndReorderAction.class, consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
+                html.append("[<a href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</a>] " +
+                            "[<a href=\"").append(consolidateAndReorderURL.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" and reorder to ").append(filename).append("</a>]<br><br>\n");
             }
 
             if (0 == html.length())
@@ -346,11 +350,13 @@ public class SqlScriptController extends SpringActionController
 
     private static class ScriptConsolidator
     {
-        private FileSqlScriptProvider _provider;
-        private String _schemaName;
-        private List<SqlScriptRunner.SqlScript> _scripts = new ArrayList<SqlScriptRunner.SqlScript>();
-        private double _fromVersion;
-        private double _toVersion;
+        private final FileSqlScriptProvider _provider;
+        private final String _schemaName;
+        private final List<SqlScriptRunner.SqlScript> _scripts;
+        private final double _fromVersion;
+        private final double _toVersion;
+
+        protected boolean _includeOriginatingScriptComments = true;
 
         private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion) throws SqlScriptRunner.SqlScriptException
         {
@@ -392,7 +398,7 @@ public class SqlScriptController extends SpringActionController
         }
 
         // Concatenate all the recommended scripts together, removing all but the first copyright notice
-        private String getConsolidatedScript()
+        protected String getConsolidatedScript()
         {
             Pattern copyrightPattern = Pattern.compile("^/\\*\\s*\\*\\s*Copyright.*under the License.\\s*\\*/\\s*", Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
             StringBuilder sb = new StringBuilder();
@@ -413,14 +419,19 @@ public class SqlScriptController extends SpringActionController
                         sb.append(contents.substring(0, contentStartIndex));
                     }
 
-                    sb.append("/* ").append(script.getDescription()).append(" */\n\n");
+                    if (_includeOriginatingScriptComments)
+                        sb.append("/* ").append(script.getDescription()).append(" */\n\n");
+
                     sb.append(contents.substring(contentStartIndex, contents.length()));
                     firstScript = false;
                 }
                 else
                 {
                     sb.append("\n\n");
-                    sb.append("/* ").append(script.getDescription()).append(" */\n\n");
+
+                    if (_includeOriginatingScriptComments)
+                        sb.append("/* ").append(script.getDescription()).append(" */\n\n");
+
                     sb.append(licenseMatcher.replaceFirst(""));    // Remove license
                 }
             }
@@ -484,9 +495,9 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private ActionURL getConsolidateSchemaURL(String moduleName, String schemaName, double fromVersion, double toVersion)
+    private ActionURL getConsolidateSchemaURL(Class<? extends Controller> actionClass, String moduleName, String schemaName, double fromVersion, double toVersion)
     {
-        ActionURL url = new ActionURL(ConsolidateSchemaAction.class, ContainerManager.getRoot());
+        ActionURL url = new ActionURL(actionClass, ContainerManager.getRoot());
         url.addParameter("module", moduleName);
         url.addParameter("schema", schemaName);
         url.addParameter("fromVersion", String.valueOf(fromVersion));
@@ -543,7 +554,156 @@ public class SqlScriptController extends SpringActionController
         {
             DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(form.getModule());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-            return new ScriptConsolidator(provider, form.getSchema(), form.getFromVersion(), form.getToVersion());
+            return getConsolidator(provider, form.getSchema(), form.getFromVersion(), form.getToVersion());
+        }
+
+        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion)  throws SqlScriptRunner.SqlScriptException
+        {
+            return new ScriptConsolidator(provider, schemaName, fromVersion, toVersion);
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ConsolidateSchemaAndReorderAction extends ConsolidateSchemaAction
+    {
+        @Override
+        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion) throws SqlScriptRunner.SqlScriptException
+        {
+            return new ReorderingScriptConsolidator(provider, schemaName, fromVersion, toVersion);
+        }
+    }
+
+
+    private static class ReorderingScriptConsolidator extends ScriptConsolidator
+    {
+        private static final String TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
+        private static final String STATEMENT_ENDING_REGEX = "GO$(\\s*)";
+        private static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
+
+        private Map<String, Collection<String>> _statements = new LinkedHashMap<String, Collection<String>>();
+
+        private ReorderingScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion)
+                throws SqlScriptRunner.SqlScriptException
+        {
+            super(provider, schemaName, fromVersion, toVersion);
+            _includeOriginatingScriptComments = false;
+        }
+
+        @Override
+        protected String getConsolidatedScript()
+        {
+            Pattern commentPattern = compile(COMMENT_REGEX);
+
+            List<Pattern> patterns = new ArrayList<Pattern>(10);
+            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\(.+?\\) VALUES \\(.+?\\)(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
+            patterns.add(compile("EXEC sp_rename '" + TABLE_NAME_REGEX + ".+?(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
+            patterns.add(compile("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX [a-zA-Z0-9_]+? ON " + TABLE_NAME_REGEX + ".+? " + STATEMENT_ENDING_REGEX));
+            patterns.add(compile(getRegExWithPrefix("CREATE TABLE ")));
+            patterns.add(compile(getRegExWithPrefix("ALTER TABLE ")));
+            patterns.add(compile(getRegExWithPrefix("INSERT INTO ")));
+            patterns.add(compile(getRegExWithPrefix("UPDATE ")));
+            patterns.add(compile(getRegExWithPrefix("DELETE FROM ")));
+
+            StringBuilder newScript = new StringBuilder();
+            StringBuilder unknown = new StringBuilder();
+            String script = super.getConsolidatedScript();
+
+            boolean firstMatch = true;
+
+            while (0 < script.length())
+            {
+                // Parse all the comments first.  If we match a table statement next, we'll include the comments.
+                StringBuilder comments = new StringBuilder();
+
+                Matcher m = commentPattern.matcher(script);
+
+                while (m.lookingAt())
+                {
+                    comments.append(m.group());
+                    script = script.substring(m.end());
+                    m = commentPattern.matcher(script);
+                }
+
+                boolean found = false;
+
+                for (Pattern p : patterns)
+                {
+                    m = p.matcher(script);
+
+                    if (m.lookingAt())
+                    {
+                        if (firstMatch)
+                        {
+                            newScript.append(unknown);
+                            unknown = new StringBuilder();
+                            firstMatch = false;
+                        }
+
+                        addStatement(m.group(1), comments + m.group());
+                        script = script.substring(m.end());
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    unknown.append(comments);
+
+                    if (script.length() > 0)
+                    {
+                        unknown.append(script.charAt(0));
+                        script = script.substring(1);
+                    }
+                }
+            }
+
+            appendAllStatements(newScript);
+
+            if (unknown.length() > 0)
+            {
+                newScript.append("\n=======================\n");
+                newScript.append(unknown);
+            }
+
+            return newScript.toString();
+        }
+
+        private String getRegExWithPrefix(String prefix)
+        {
+            return prefix + TABLE_NAME_REGEX + ".+? " + STATEMENT_ENDING_REGEX;
+        }
+
+        private Pattern compile(String regEx)
+        {
+            return Pattern.compile(regEx.replaceAll(" ", "\\\\s+"), Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
+        }
+
+        private void addStatement(String tableName, String statement)
+        {
+            String key = tableName.toLowerCase();
+
+            Collection<String> tableStatements = _statements.get(key);
+
+            if (null == tableStatements)
+            {
+                tableStatements = new LinkedList<String>();
+                _statements.put(key, tableStatements);
+            }
+
+            tableStatements.add(statement);
+        }
+
+        private void appendAllStatements(StringBuilder sb)
+        {
+            for (Map.Entry<String, Collection<String>> tableStatements : _statements.entrySet())
+            {
+                for (String statement : tableStatements.getValue())
+                {
+                    sb.append(statement);
+                }
+            }
         }
     }
 

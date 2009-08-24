@@ -43,7 +43,7 @@ public class DisplaySettings
 
     public DisplaySettings()
     {
-        // no-arg constructor for struts reflection
+        // no-arg constructor for BeanViewForm reflection
     }
 
     public DisplaySettings(Map<String, String> map)

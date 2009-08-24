@@ -33,7 +33,7 @@
     List<org.labkey.demo.model.Person> people = pageInfo.getList();
     */
 
-    // here is typical struts/spring way
+    // here is typical spring way
     BindException errors = (BindException)request.getAttribute("errors");
     List<Person> people = (List<Person>)request.getAttribute("people");
 
