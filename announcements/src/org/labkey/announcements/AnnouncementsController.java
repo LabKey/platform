@@ -1563,10 +1563,11 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)  // Special permission check below to support basic auth challenge
+    // Special permission check below to support basic auth challenge
     public class RssAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        @Override
+        public void checkPermissions() throws UnauthorizedException
         {
             Container c = getContainer();
 
@@ -1577,6 +1578,11 @@ public class AnnouncementsController extends SpringActionController
                 else
                     throw new UnauthorizedException();
             }
+        }
+
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            Container c = getContainer();
 
             // getFilter performs further permission checking on secure board (e.g., non-Editors only see threads where they're on the member list)
             SimpleFilter filter = getFilter(getSettings(), getPermissions(), true);
