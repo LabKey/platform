@@ -334,6 +334,7 @@ api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
 api/src/org/labkey/api/module/SimpleAction.java -text
 api/src/org/labkey/api/module/SimpleController.java -text
 api/src/org/labkey/api/module/SimpleModule.java -text
+api/src/org/labkey/api/module/SimpleModuleUserSchema.java -text
 api/src/org/labkey/api/module/SimpleWebPartFactory.java -text
 api/src/org/labkey/api/module/SpringModule.java -text
 api/src/org/labkey/api/ms1/MS1Service.java -text
@@ -443,7 +444,9 @@ api/src/org/labkey/api/query/CrosstabExcelWriter.java -text
 api/src/org/labkey/api/query/CrosstabView.java -text
 api/src/org/labkey/api/query/CustomView.java -text
 api/src/org/labkey/api/query/CustomViewInfo.java -text
+api/src/org/labkey/api/query/DefaultQueryUpdateService.java -text
 api/src/org/labkey/api/query/DefaultSchema.java -text
+api/src/org/labkey/api/query/DefaultSchemaUpdateService.java -text
 api/src/org/labkey/api/query/DetailsURL.java -text
 api/src/org/labkey/api/query/DomainForeignKey.java -text
 api/src/org/labkey/api/query/DuplicateKeyException.java -text

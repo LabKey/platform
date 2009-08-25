@@ -16,16 +16,21 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.DefaultSchemaUpdateService;
+import org.labkey.api.query.SchemaUpdateServiceRegistry;
+import org.labkey.data.xml.TablesDocument;
+import org.apache.xmlbeans.XmlException;
+import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.*;
 
 /*
 * User: Dave
@@ -38,7 +43,10 @@ import java.util.List;
  */
 public class SimpleModule extends DefaultModule
 {
+    private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
+
     int _factorySetHash = 0;
+    private Set<String> _schemaNames;
 
     public SimpleModule(@NotNull String name)
     {
@@ -48,7 +56,47 @@ public class SimpleModule extends DefaultModule
 
     protected void init()
     {
+        File schemasDir = new File(getExplodedPath(), "schemas");
+        if (schemasDir.exists())
+        {
+            Set<String> schemaNames = new LinkedHashSet<String>();
+            File[] schemaFiles = schemasDir.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name)
+                {
+                    boolean accept = false;
+                    if (name.endsWith(".xml"))
+                    {
+                        try
+                        {
+                            TablesDocument.Factory.parse(new File(dir, name));
+                            accept = true;
+                        }
+                        catch (XmlException e)
+                        {
+                            _log.info("Skipping '" + name + "' schema file: " + e.getMessage());
+                        }
+                        catch (IOException e)
+                        {
+                            _log.info("Skipping '" + name + "' schema file: " + e.getMessage());
+                        }
 
+                    }
+                    return accept;
+                }
+            });
+
+            for (File schemaFile : schemaFiles)
+            {
+                String schemaName = schemaFile.getName().substring(0, schemaFile.getName().length() - ".xml".length());
+                schemaNames.add(schemaName);
+            }
+
+            _schemaNames = Collections.unmodifiableSet(schemaNames);
+        }
+        else
+        {
+            _schemaNames = Collections.emptySet();
+        }
     }
 
     protected Collection<SimpleWebPartFactory> createWebPartFactories()
@@ -86,6 +134,27 @@ public class SimpleModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
+        assert _schemaNames != null : "schemaNames created in init";
+
+        for (final String schemaName : _schemaNames)
+        {
+            final DbSchema dbschema = DbSchema.get(schemaName);
+
+            DefaultSchema.registerProvider(schemaName, new DefaultSchema.SchemaProvider()
+            {
+                public QuerySchema getSchema(final DefaultSchema schema)
+                {
+                    return new SimpleModuleUserSchema(schemaName, schema.getUser(), schema.getContainer(), dbschema);
+                }
+            });
+
+            // UNDONE: add editable bit to schemas
+            //if (dbschema.isUserEditable())
+            {
+                DefaultSchemaUpdateService service = new DefaultSchemaUpdateService(schemaName);
+                SchemaUpdateServiceRegistry.get().register(service);
+            }
+        }
     }
 
     protected String getResourcePath()
