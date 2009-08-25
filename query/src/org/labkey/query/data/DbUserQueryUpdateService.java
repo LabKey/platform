@@ -18,6 +18,7 @@ package org.labkey.query.data;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.query.DefaultQueryUpdateService;
 
 import java.util.Map;
 

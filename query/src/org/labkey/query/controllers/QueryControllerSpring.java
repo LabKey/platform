@@ -1736,8 +1736,7 @@ public class QueryControllerSpring extends SpringActionController
             {
                 DbUserSchemaDef dbusd = QueryManager.get().getDbUserSchemaDef(getViewContext().getContainer(), schemaName);
                 if(null != dbusd && dbusd.isEditable())
-                    sus = new DbUserSchemaUpdateService(new DbUserSchema(getViewContext().getUser(),
-                            getViewContext().getContainer(), dbusd));
+                      sus = new DbUserSchemaUpdateService(schemaName);
             }
 
             return sus;
