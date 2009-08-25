@@ -18,7 +18,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;

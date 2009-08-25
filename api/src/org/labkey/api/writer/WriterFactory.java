@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.util;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+package org.labkey.api.writer;
 
-/**
- * User: adam
- * Date: Apr 16, 2009
- * Time: 3:28:31 PM
- */
-public interface VirtualFile
+/*
+* User: adam
+* Date: Aug 25, 2009
+* Time: 9:24:51 AM
+*/
+public interface WriterFactory<T, CONTEXT extends ExportContext>
 {
-    public PrintWriter getPrintWriter(String path) throws IOException;
-    @Deprecated
-    // No longer needed -- just use getDir()
-    public void makeDir(String path) throws IOException;
-    public Archive createZipArchive(String name) throws IOException;
-    public VirtualFile getDir(String path);
-    public String makeLegalName(String name);
-    public String getLocation();
+    Writer<T, CONTEXT> create();
 }

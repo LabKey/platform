@@ -28,7 +28,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.apache.commons.lang.StringUtils;

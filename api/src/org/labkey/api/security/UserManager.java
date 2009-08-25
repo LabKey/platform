@@ -453,7 +453,7 @@ public class UserManager
     }
 
 
-    private static void clearUserList(int userId)
+    static void clearUserList(int userId)
     {
         DbCache.remove(_core.getTableInfoActiveUsers(),_userListLookup);
         DbCache.remove(_core.getTableInfoActiveUsers(),_userObjectListLookup);
@@ -469,99 +469,6 @@ public class UserManager
         return (null != user);
     }
 
-
-    // Create new rows for this user in Principals and UsersData tables
-    // If rows already exist we'll simply return the existing user
-    public static User createUser(ValidEmail email) throws SQLException
-    {
-        Integer userId = null;
-
-        DbScope scope = _core.getSchema().getScope();
-
-        boolean startedTransaction = false;
-
-        try
-        {
-            if (!scope.isTransactionActive())
-            {
-                scope.beginTransaction();
-                startedTransaction = true;
-            }
-
-            // Add row to Principals
-            Map<String, Object> fieldsIn = new HashMap<String, Object>();
-            fieldsIn.put("Name", email.getEmailAddress());
-            fieldsIn.put("Type", GroupManager.PrincipalType.USER.typeChar);
-            try
-            {
-                Map returnMap = Table.insert(null, _core.getTableInfoPrincipals(), fieldsIn);
-                userId = (Integer) returnMap.get("UserId");
-            }
-            catch (SQLException e)
-            {
-                if (!"23000".equals(e.getSQLState()))
-                {
-                    _log.debug("createUser: Something failed user: " + email, e);
-                    throw e;
-                }
-            }
-
-            try
-            {
-                // If insert didn't return an id it must already exist... select it
-                if (null == userId)
-                    userId = Table.executeSingleton(_core.getSchema(),
-                            "SELECT UserId FROM " + _core.getTableInfoPrincipals() + " WHERE Name = ?",
-                            new Object[]{email.getEmailAddress()}, Integer.class);
-            }
-            catch (SQLException x)
-            {
-                _log.debug("createUser: Something failed user: " + email, x);
-                throw x;
-            }
-
-            if (null == userId)
-            {
-                assert false : "User should either exist or not; synchronization problem?";
-                _log.debug("createUser: Something failed user: " + email);
-                return null;
-            }
-
-            //
-            // Add row to UsersData table
-            //
-            try
-            {
-                Map<String, Object> m = new HashMap<String, Object>();
-                m.put("UserId", userId);
-                m.put("DisplayName", null == email.getPersonal() ? email.getEmailAddress() : email.getPersonal());
-                Table.insert(null, _core.getTableInfoUsersData(), m);
-            }
-            catch (SQLException x)
-            {
-                if (!"23000".equals(x.getSQLState()))
-                {
-                    _log.debug("createUser: Something failed user: " + email, x);
-                    throw x;
-                }
-            }
-
-            if (startedTransaction)
-                scope.commitTransaction();
-        }
-        finally
-        {
-            if (startedTransaction && scope.isTransactionActive())
-                scope.rollbackTransaction();
-        }
-
-        clearUserList(userId.intValue());
-
-        User user = getUser(userId.intValue());
-        fireAddUser(user);
-
-        return user;
-    }
 
     public static String sanitizeEmailAddress(String email)
     {
@@ -579,14 +486,16 @@ public class UserManager
     public static void addToUserHistory(User principal, String message) throws SQLException
     {
         User user = UserManager.getGuestUser();
-        try {
+
+        try
+        {
             ViewContext context = HttpView.currentContext();
+
             if (context != null)
-            {
                 user = context.getUser();
-            }
         }
         catch (RuntimeException e){}
+
         AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, principal.getUserId(), message);
         //Table.insert(user, _core.getTableInfoUserHistory(), PageFlowUtil.map("Date", new Date(), "UserId", user.getUserId(), "Message", message));
     }

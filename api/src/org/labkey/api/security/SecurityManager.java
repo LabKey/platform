@@ -344,10 +344,15 @@ public class SecurityManager
         {
             try
             {
-                u = UserManager.createUser(email);
+                NewUserBean bean = addUser(email, false);
+                u = bean.getUser();
                 UserManager.addToUserHistory(u, u.getEmail() + " authenticated successfully and was added to the system automatically.");
             }
             catch (SQLException e)
+            {
+                // do nothing; we'll fall through and return null.
+            }
+            catch (UserManagementException e)
             {
                 // do nothing; we'll fall through and return null.
             }
@@ -592,6 +597,7 @@ public class SecurityManager
         private String verification;
         private boolean ldap;
         private User user;
+        private boolean hasLogin;
 
         public NewUserBean(String email)
         {
@@ -636,6 +642,16 @@ public class SecurityManager
         public void setUser(User user)
         {
             this.user = user;
+        }
+
+        public boolean getHasLogin()
+        {
+            return hasLogin;
+        }
+
+        public void setHasLogin(boolean hasLogin)
+        {
+            this.hasLogin = hasLogin;
         }
     }
 
@@ -684,16 +700,29 @@ public class SecurityManager
     {
         public UserAlreadyExistsException(String email)
         {
-            super(email, "User already exists");
+            this(email, "User already exists");
+        }
+
+        public UserAlreadyExistsException(String email, String message)
+        {
+            super(email, message);
         }
     }
 
     public static NewUserBean addUser(ValidEmail email) throws UserManagementException
     {
+        return addUser(email, true);
+    }
+
+    public static NewUserBean addUser(ValidEmail email, boolean createLogin) throws UserManagementException
+    {
         NewUserBean newUserBean = new NewUserBean(email.getEmailAddress());
 
         if (UserManager.userExists(email))
             throw new UserAlreadyExistsException(email.getEmailAddress());
+
+        if (null != UserManager.getUserByDisplayName(email.getEmailAddress()))
+            throw new UserAlreadyExistsException(email.getEmailAddress(), "Display name is already in use");
 
         User newUser;
         DbScope scope = core.getSchema().getScope();
@@ -708,12 +737,10 @@ public class SecurityManager
                 startedTransaction = true;
             }
 
-            if (!SecurityManager.isLdapEmail(email))
+            if (createLogin)
             {
                 // Create a placeholder password that's hard to guess and a separate email verification
                 // key that gets emailed.
-                newUserBean.setLdap(false);
-
                 String tempPassword = SecurityManager.createTempPassword();
                 String verification = SecurityManager.createTempPassword();
 
@@ -721,14 +748,76 @@ public class SecurityManager
 
                 newUserBean.setVerification(verification);
             }
-            else
-            {
-                newUserBean.setLdap(true);
-            }
+
+            newUserBean.setHasLogin(createLogin);
+            newUserBean.setLdap(SecurityManager.isLdapEmail(email));
 
             try
             {
-                newUser = UserManager.createUser(email);
+                Integer userId = null;
+
+                // Add row to Principals
+                Map<String, Object> fieldsIn = new HashMap<String, Object>();
+                fieldsIn.put("Name", email.getEmailAddress());
+                fieldsIn.put("Type", GroupManager.PrincipalType.USER.typeChar);
+                try
+                {
+                    Map returnMap = Table.insert(null, core.getTableInfoPrincipals(), fieldsIn);
+                    userId = (Integer) returnMap.get("UserId");
+                }
+                catch (SQLException e)
+                {
+                    if (!"23000".equals(e.getSQLState()))
+                    {
+                        _log.debug("createUser: Something failed user: " + email, e);
+                        throw e;
+                    }
+                }
+
+                try
+                {
+                    // If insert didn't return an id it must already exist... select it
+                    if (null == userId)
+                        userId = Table.executeSingleton(core.getSchema(),
+                                "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Name = ?",
+                                new Object[]{email.getEmailAddress()}, Integer.class);
+                }
+                catch (SQLException x)
+                {
+                    _log.debug("createUser: Something failed user: " + email, x);
+                    throw x;
+                }
+
+                if (null == userId)
+                {
+                    assert false : "User should either exist or not; synchronization problem?";
+                    _log.debug("createUser: Something failed user: " + email);
+                    return null;
+                }
+
+                //
+                // Add row to UsersData table
+                //
+                try
+                {
+                    Map<String, Object> m = new HashMap<String, Object>();
+                    m.put("UserId", userId);
+                    m.put("DisplayName", null == email.getPersonal() ? email.getEmailAddress() : email.getPersonal());
+                    Table.insert(null, core.getTableInfoUsersData(), m);
+                }
+                catch (SQLException x)
+                {
+                    if (!"23000".equals(x.getSQLState()))
+                    {
+                        _log.debug("createUser: Something failed user: " + email, x);
+                        throw x;
+                    }
+                }
+
+                UserManager.clearUserList(userId.intValue());
+
+                newUser = UserManager.getUser(userId.intValue());
+                UserManager.fireAddUser(newUser);
             }
             catch (SQLException e)
             {
@@ -742,6 +831,7 @@ public class SecurityManager
                 scope.commitTransaction();
 
             newUserBean.setUser(newUser);
+
             return newUserBean;
         }
         catch (SQLException e)
@@ -2017,33 +2107,30 @@ public class SecurityManager
                 if (!SecurityManager.loginExists(email)) break;
             }
 
-            String password = createTempPassword();
-            String verification = createTempPassword();
-            int id = -1;
+            User user = null;
 
-            // Test create login, create user, verify, login, and delete
+            // Test create user, verify, login, and delete
             try
             {
-                SecurityManager.createLogin(email, password, verification);
+                NewUserBean bean = addUser(email);
+                user = bean.getUser();
+                assertTrue("addUser", user.getUserId() != 0);
 
-                id = UserManager.createUser(email).getUserId();
-                assertTrue("createUser", id != 0);
-
-                boolean success = SecurityManager.verify(email, verification);
+                boolean success = SecurityManager.verify(email, bean.getVerification());
                 assertTrue("verify", success);
 
                 SecurityManager.setVerification(email, null);
 
-                password = createTempPassword();
+                String password = createTempPassword();
                 SecurityManager.setPassword(email, password);
 
-                User user = AuthenticationManager.authenticate(rawEmail, password);
-                assertNotNull("login", user);
-                assertEquals("login", user.getUserId(), id);
+                User user2 = AuthenticationManager.authenticate(rawEmail, password);
+                assertNotNull("login", user2);
+                assertEquals("login", user, user2);
             }
             finally
             {
-                UserManager.deleteUser(id);
+                UserManager.deleteUser(user.getUserId());
             }
         }
 
@@ -2207,7 +2294,7 @@ public class SecurityManager
         {
             newUserBean = SecurityManager.addUser(email);
 
-            if (!newUserBean.isLdap() && sendMail)
+            if (newUserBean.getHasLogin() && sendMail)
             {
                 Container c = context.getContainer();
                 messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email.getEmailAddress(), mailPrefix);
@@ -2259,10 +2346,6 @@ public class SecurityManager
 
             if (null != newUser)
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Sending the verification email failed.");
-        }
-        catch (SecurityManager.UserAlreadyExistsException e)
-        {
-            return null;
         }
         catch (SecurityManager.UserManagementException e)
         {

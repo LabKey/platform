@@ -653,6 +653,7 @@ api/src/org/labkey/api/settings/TemplateResourceHandler.java -text
 api/src/org/labkey/api/settings/WriteableAppProps.java -text
 api/src/org/labkey/api/settings/WriteableLookAndFeelProperties.java -text
 api/src/org/labkey/api/study/Cohort.java -text
+api/src/org/labkey/api/study/ContainerWriterRegistry.java -text
 api/src/org/labkey/api/study/DataSet.java -text
 api/src/org/labkey/api/study/DilutionCurve.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
@@ -770,7 +771,6 @@ api/src/org/labkey/api/unused/PropertyBag.java -text
 api/src/org/labkey/api/unused/Scan.java -text
 api/src/org/labkey/api/unused/TextProvider.java -text
 api/src/org/labkey/api/unused/Tree2D.java -text
-api/src/org/labkey/api/util/Archive.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
@@ -824,10 +824,8 @@ api/src/org/labkey/api/util/URIUtil.java -text
 api/src/org/labkey/api/util/UnexpectedException.java -text
 api/src/org/labkey/api/util/UsageReportingLevel.java -text
 api/src/org/labkey/api/util/VersionNumber.java -text
-api/src/org/labkey/api/util/VirtualFile.java -text
 api/src/org/labkey/api/util/WebPartErrorRenderer.java -text
 api/src/org/labkey/api/util/XmlBeansUtil.java -text
-api/src/org/labkey/api/util/ZipUtil.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/mime.txt -text
@@ -899,6 +897,12 @@ api/src/org/labkey/api/wiki/FormattedHtml.java -text
 api/src/org/labkey/api/wiki/MacroProvider.java -text
 api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
+api/src/org/labkey/api/writer/Archive.java -text
+api/src/org/labkey/api/writer/ExportContext.java -text
+api/src/org/labkey/api/writer/VirtualFile.java -text
+api/src/org/labkey/api/writer/Writer.java -text
+api/src/org/labkey/api/writer/WriterFactory.java -text
+api/src/org/labkey/api/writer/ZipUtil.java -text
 api/src/org/systemsbiology/jrap/DataProcessingInfo.java -text
 api/src/org/systemsbiology/jrap/MSInstrumentInfo.java -text
 api/src/org/systemsbiology/jrap/MSOperator.java -text

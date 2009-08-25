@@ -24,8 +24,10 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.*;
+import java.io.Writer;
 
 /**
  * User: migra

@@ -17,7 +17,7 @@
 package org.labkey.api.reports;
 
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
