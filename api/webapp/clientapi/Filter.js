@@ -62,8 +62,7 @@ LABKEY.Filter = new function()
         };
     }
 
-    /** @scope LABKEY.Filter.prototype */
-    return {
+    return /** @scope LABKEY.Filter.prototype */{
 
 		Types : {
 
