@@ -19,8 +19,9 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.Writer;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.model.StudyImpl;
@@ -33,7 +34,7 @@ import java.util.List;
  * Date: Apr 16, 2009
  * Time: 4:49:55 PM
  */
-public class QueryWriter implements Writer<StudyImpl>
+public class QueryWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION =  ".query.xml";
@@ -45,7 +46,7 @@ public class QueryWriter implements Writer<StudyImpl>
         return "Queries";
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         Container c = study.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(c);

@@ -18,10 +18,12 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.api.writer.Writer"%>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.writer.*" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -39,7 +41,8 @@
             <td>Study objects to export:</td>
         </tr>
         <%
-            List<Writer<StudyImpl>> writers = StudyWriter.getWriters();
+            Collection<Writer> writers = new LinkedList<Writer>(StudyWriterRegistryImpl.get().getStudyWriters());
+            writers.addAll(StudyWriterRegistryImpl.get().getContainerWriters());
 
             for (Writer writer : writers)
             {

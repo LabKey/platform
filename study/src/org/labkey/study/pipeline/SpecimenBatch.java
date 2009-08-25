@@ -19,7 +19,7 @@ package org.labkey.study.pipeline;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ZipUtil;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.*;

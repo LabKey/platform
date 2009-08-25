@@ -23,6 +23,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.queryCustomView.*;
 import org.labkey.query.design.*;

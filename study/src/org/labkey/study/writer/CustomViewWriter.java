@@ -21,7 +21,8 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.importer.StudyImporter;
 
@@ -33,7 +34,7 @@ import java.util.Set;
  * Date: May 23, 2009
  * Time: 8:25:19 AM
  */
-public class CustomViewWriter implements Writer<StudyImpl>
+public class CustomViewWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final String DEFAULT_DIRECTORY = "views";  // TODO: qviews?
     private VirtualFile _viewDir = null;
@@ -43,7 +44,7 @@ public class CustomViewWriter implements Writer<StudyImpl>
         return "Custom Views";
     }
 
-    public void write(StudyImpl object, ExportContext ctx, VirtualFile root) throws Exception
+    public void write(StudyImpl object, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         User user = ctx.getUser();
@@ -75,7 +76,7 @@ public class CustomViewWriter implements Writer<StudyImpl>
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(ExportContext ctx, VirtualFile root) throws StudyImporter.StudyImportException
+    private VirtualFile ensureViewDirectory(StudyExportContext ctx, VirtualFile root) throws StudyImporter.StudyImportException
     {
         if (null == _viewDir)
         {

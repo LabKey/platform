@@ -16,11 +16,12 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
+import org.labkey.api.writer.ExportContext;
+import org.labkey.api.data.Container;
 import org.labkey.study.model.StudyImpl;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -28,7 +29,7 @@ import java.util.Set;
  * Date: Apr 14, 2009
  * Time: 7:29:32 PM
  */
-public class StudyWriter implements Writer<StudyImpl>
+public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
@@ -37,7 +38,7 @@ public class StudyWriter implements Writer<StudyImpl>
         return null;
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
     {
         LOG.info("Exporting study to " + fs.getLocation());
 
@@ -46,7 +47,7 @@ public class StudyWriter implements Writer<StudyImpl>
         // Hack for now to allow selection of CRF vs. Assay datasets.  TODO: More flexible export UI definition mechanism
         boolean exportDatasets = dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT) || dataTypes.contains(DatasetWriter.SELECTION_TEXT);
 
-        for (Writer<StudyImpl> writer : getWriters())
+        for (Writer<StudyImpl, StudyExportContext> writer : StudyWriterRegistryImpl.get().getStudyWriters())
         {
             String text = writer.getSelectionText();
 
@@ -54,23 +55,14 @@ public class StudyWriter implements Writer<StudyImpl>
                 writer.write(study, ctx, fs);
         }
 
-        LOG.info("Done exporting study to " + fs.getLocation());
-    }
+        for (Writer<Container, ExportContext> writer : StudyWriterRegistryImpl.get().getContainerWriters())
+        {
+            String text = writer.getSelectionText();
 
-    public static List<Writer<StudyImpl>> getWriters()
-    {
-        // New up the writers every time since these classes can be stateful
-        return Arrays.asList(
-            new VisitMapWriter(),
-            new CohortWriter(),
-            new QcStateWriter(),
-            new DatasetWriter(),
-            new AssayDatasetWriter(),
-            new SpecimenArchiveWriter(),
-            new QueryWriter(),
-            new CustomViewWriter(),
-            new ReportWriter(),
-            new StudyXmlWriter()  // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
-        );
+            if (null == text || dataTypes.contains(text))
+                writer.write(ctx.getContainer(), ctx, fs);
+        }
+
+        LOG.info("Done exporting study to " + fs.getLocation());
     }
 }

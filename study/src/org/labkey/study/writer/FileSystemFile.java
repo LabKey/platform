@@ -16,8 +16,8 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.VirtualFile;
-import org.labkey.api.util.Archive;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Archive;
 
 import java.io.*;
 

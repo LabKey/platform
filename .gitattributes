@@ -846,6 +846,7 @@ experiment/src/org/labkey/experiment/list/ListQueryUpdateService.java -text
 experiment/src/org/labkey/experiment/list/ListSchema.java -text
 experiment/src/org/labkey/experiment/list/ListServiceImpl.java -text
 experiment/src/org/labkey/experiment/list/ListTable.java -text
+experiment/src/org/labkey/experiment/list/ListWriter.java -text
 experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineJob.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineProvider.java -text
@@ -2383,7 +2384,6 @@ study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/CustomViewWriter.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
 study/src/org/labkey/study/writer/DatasetWriter.java -text
-study/src/org/labkey/study/writer/ExportContext.java -text
 study/src/org/labkey/study/writer/FileSystemFile.java -text
 study/src/org/labkey/study/writer/QcStateWriter.java -text
 study/src/org/labkey/study/writer/QueryWriter.java -text
@@ -2393,10 +2393,11 @@ study/src/org/labkey/study/writer/SchemaXmlWriter.java -text
 study/src/org/labkey/study/writer/SpecimenArchiveWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
+study/src/org/labkey/study/writer/StudyExportContext.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
+study/src/org/labkey/study/writer/StudyWriterRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
-study/src/org/labkey/study/writer/Writer.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/src/org/labkey/study/writer/ZipFile.java -text
 study/webapp/sampleRequest.js -text

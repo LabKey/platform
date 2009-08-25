@@ -22,7 +22,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;

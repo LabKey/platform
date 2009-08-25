@@ -20,16 +20,11 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.reports.report.view.RunChartReportView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.StudyController;
-
-import java.io.Writer;
-import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.

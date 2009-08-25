@@ -15,7 +15,8 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.importer.StudyImporter;
 
@@ -26,14 +27,14 @@ import java.io.IOException;
  * Date: Apr 15, 2009
  * Time: 10:52:38 AM
  */
-public class VisitMapWriter implements Writer<StudyImpl>
+public class VisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public String getSelectionText()
     {
         return "Visit Map";
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
     {
         if (ctx.useOldFormats())
         {

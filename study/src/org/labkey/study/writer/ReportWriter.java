@@ -19,14 +19,15 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 
 /**
  * User: adam
  * Date: Apr 16, 2009
  * Time: 4:39:43 PM
  */
-public class ReportWriter implements Writer<StudyImpl>
+public class ReportWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final String DEFAULT_DIRECTORY = "reports";
 
@@ -35,7 +36,7 @@ public class ReportWriter implements Writer<StudyImpl>
         return "Reports";
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
 

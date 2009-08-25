@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.writer.ExportContext;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
@@ -32,7 +33,7 @@ import java.util.Set;
  * Date: May 16, 2009
  * Time: 2:43:07 PM
  */
-public class ExportContext extends AbstractContext
+public class StudyExportContext extends AbstractContext implements ExportContext
 {
     private final boolean _oldFormats;
     private final Set<String> _dataTypes;
@@ -41,7 +42,7 @@ public class ExportContext extends AbstractContext
 
     private boolean _locked = false;
 
-    public ExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes)
     {
         super(user, c, StudyXmlWriter.getStudyDocument());
         _oldFormats = oldFormats;

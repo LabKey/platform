@@ -521,7 +521,7 @@ public class SqlScriptController extends SpringActionController
             ScriptConsolidator consolidator = getConsolidator(form);
 
             StringBuilder html = new StringBuilder("<pre>\n");
-            html.append(consolidator.getConsolidatedScript());
+            html.append(PageFlowUtil.filter(consolidator.getConsolidatedScript()));
             html.append("</pre>\n");
 
             html.append("<form method=\"post\">");

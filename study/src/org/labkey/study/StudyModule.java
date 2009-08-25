@@ -39,10 +39,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.PlateService;
-import org.labkey.api.study.SpecimenService;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.Study;
+import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
@@ -64,6 +61,7 @@ import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
@@ -72,11 +70,11 @@ import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
+import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
-import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.view.*;
-import org.labkey.study.importer.StudyReload;
+import org.labkey.study.writer.StudyWriterRegistryImpl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -146,6 +144,8 @@ public class StudyModule extends DefaultModule
 
         EnumConverter.registerEnum(SecurityType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
+
+        ServiceRegistry.get().registerService(ContainerWriterRegistry.class, StudyWriterRegistryImpl.get());
     }
 
     @Override

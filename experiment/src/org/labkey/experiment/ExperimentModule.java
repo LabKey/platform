@@ -22,26 +22,28 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ExperimentRunTypeSource;
-import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.ContainerWriterRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainType;
@@ -53,11 +55,11 @@ import org.labkey.experiment.controllers.list.ListController;
 import org.labkey.experiment.controllers.list.ListWebPart;
 import org.labkey.experiment.controllers.list.SingleListWebPartFactory;
 import org.labkey.experiment.controllers.property.PropertyController;
+import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.list.*;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.DefaultRunExpansionHandler;
-import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -267,6 +269,8 @@ public class ExperimentModule extends SpringModule
         PropertyService.get().registerValidatorKind(new RangeValidator());
 
         initWebApplicationContext();
+
+        ServiceRegistry.get().getService(ContainerWriterRegistry.class).addContainerWriterFactory(new ListWriter.Factory());
     }
 
     public Collection<String> getSummary(Container c)

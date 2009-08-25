@@ -68,6 +68,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
@@ -90,7 +91,7 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.writer.ExportContext;
+import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.FileSystemFile;
 import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.ZipFile;
@@ -107,6 +108,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -3776,7 +3778,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudy();
             StudyWriter writer = new StudyWriter();
-            ExportContext ctx = new ExportContext(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()));
+            StudyExportContext ctx = new StudyExportContext(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()));
 
             switch(form.getLocation())
             {

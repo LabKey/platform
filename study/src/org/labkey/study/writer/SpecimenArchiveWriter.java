@@ -15,8 +15,9 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.util.Archive;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.Archive;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
@@ -29,7 +30,7 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 23, 2009
  * Time: 11:28:37 AM
  */
-public class SpecimenArchiveWriter implements Writer<StudyImpl>
+public class SpecimenArchiveWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final String DEFAULT_DIRECTORY = "specimens";
 
@@ -38,7 +39,7 @@ public class SpecimenArchiveWriter implements Writer<StudyImpl>
         return "Specimens";
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
 

@@ -17,8 +17,9 @@ package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.Writer;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.AliasedColumn;
@@ -42,7 +43,7 @@ import java.util.*;
  * Date: Apr 16, 2009
  * Time: 3:10:37 PM
  */
-public class DatasetWriter implements Writer<StudyImpl>
+public class DatasetWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
@@ -55,7 +56,7 @@ public class DatasetWriter implements Writer<StudyImpl>
         return SELECTION_TEXT;
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImporter.StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImporter.StudyImportException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();

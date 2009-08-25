@@ -16,8 +16,9 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
@@ -33,18 +34,18 @@ import java.util.Map;
  */
 
 // This writer is largely responsible for study.xml.  It constructs the StudyDocument (xml bean used to read/write study.xml)
-//  that gets added to the ExportContext, writes the top-level study attributes, and writes out the bean when it's complete.
+//  that gets added to the StudyExportContext, writes the top-level study attributes, and writes out the bean when it's complete.
 //  However, each top-level writer is responsible for their respective elements in study.xml -- VisitMapWriter handles "visits"
 //  element, DatasetWriter is responsible for "datasets" element, etc.  As a result, StudyXmlWriter must be invoked after all
 //  writers are done modifying the StudyDocument.  Locking the StudyDocument after writing it out helps ensure this ordering.
-public class StudyXmlWriter implements Writer<StudyImpl>
+public class StudyXmlWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public String getSelectionText()
     {
         return null;
     }
 
-    public void write(StudyImpl study, ExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
 

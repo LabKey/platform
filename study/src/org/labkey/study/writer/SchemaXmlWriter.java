@@ -18,8 +18,9 @@ package org.labkey.study.writer;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.Writer;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -35,7 +36,7 @@ import java.util.Collection;
  * Date: May 27, 2009
  * Time: 11:12:33 AM
  */
-public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
+public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyExportContext>
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
@@ -51,7 +52,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>>
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, ExportContext ctx, VirtualFile fs) throws IOException
+    public void write(List<DataSetDefinition> definitions, StudyExportContext ctx, VirtualFile fs) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
