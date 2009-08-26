@@ -17,7 +17,6 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
 
 /*
@@ -27,7 +26,7 @@ import org.labkey.study.model.StudyImpl;
 */
 // DatasetWriter actually writes all datasets (crf & assay).  This is a do-nothing writer to gets the assay dataset checkbox
 // to show up in the UI.  TODO: More flexible data-driven UI mechanism.
-public class AssayDatasetWriter implements Writer<StudyImpl, StudyExportContextImpl>
+public class AssayDatasetWriter implements InternalStudyWriter
 {
     static final String SELECTION_TEXT = "Assay Datasets";
 
@@ -36,7 +35,7 @@ public class AssayDatasetWriter implements Writer<StudyImpl, StudyExportContextI
         return SELECTION_TEXT;
     }
 
-    public void write(StudyImpl object, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
     {
     }
 }

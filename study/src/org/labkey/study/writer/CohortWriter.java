@@ -19,7 +19,6 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.StudyImpl;
@@ -36,7 +35,7 @@ import java.util.Collection;
  * Date: Apr 23, 2009
  * Time: 11:29:36 AM
  */
-public class CohortWriter implements Writer<StudyImpl, StudyExportContextImpl>
+public class CohortWriter implements InternalStudyWriter
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
 

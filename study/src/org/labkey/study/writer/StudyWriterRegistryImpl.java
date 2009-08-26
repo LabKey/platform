@@ -1,11 +1,8 @@
 package org.labkey.study.writer;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.study.ExternalStudyWriter;
+import org.labkey.api.study.ExternalStudyWriterFactory;
 import org.labkey.api.study.StudyWriterRegistry;
-import org.labkey.api.writer.Writer;
-import org.labkey.api.writer.WriterFactory;
-import org.labkey.study.model.StudyImpl;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class StudyWriterRegistryImpl implements StudyWriterRegistry
 {
     private static final StudyWriterRegistryImpl INSTANCE = new StudyWriterRegistryImpl();
-    private static final Collection<WriterFactory<Container, StudyExportContext>> FACTORIES = new CopyOnWriteArrayList<WriterFactory<Container, StudyExportContext>>();
+    private static final Collection<ExternalStudyWriterFactory> FACTORIES = new CopyOnWriteArrayList<ExternalStudyWriterFactory>();
 
     private StudyWriterRegistryImpl()
     {
@@ -28,24 +25,24 @@ public class StudyWriterRegistryImpl implements StudyWriterRegistry
 
     // These writers are defined and registered by other modules.  They have no knowledge of study internals, other
     // than being able to write elements into study.xml.
-    public Collection<? extends Writer<Container, StudyExportContext>> getRegisteredStudyWriters()
+    public Collection<ExternalStudyWriter> getRegisteredStudyWriters()
     {
         // New up the writers every time since these classes can be stateful
-        Collection<Writer<Container, StudyExportContext>> writers = new LinkedList<Writer<Container, StudyExportContext>>();
+        Collection<ExternalStudyWriter> writers = new LinkedList<ExternalStudyWriter>();
 
-        for (WriterFactory<Container, StudyExportContext> factory : FACTORIES)
+        for (ExternalStudyWriterFactory factory : FACTORIES)
             writers.add(factory.create());
 
         return writers;
     }
 
-    public void addStudyWriterFactory(WriterFactory<Container, StudyExportContext> factory)
+    public void addStudyWriterFactory(ExternalStudyWriterFactory factory)
     {
         FACTORIES.add(factory);
     }
 
     // These writers are internal to study.  They have access to study internals.
-    public Collection<? extends Writer<StudyImpl, StudyExportContextImpl>> getStudyWriters()
+    public Collection<InternalStudyWriter> getInternalStudyWriters()
     {
         // New up the writers every time since these classes can be stateful
         return Arrays.asList(

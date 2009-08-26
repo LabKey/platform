@@ -13,28 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.study.writer;
 
-import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.xml.StudyDocument;
 
-/**
- * User: adam
- * Date: Apr 23, 2009
- * Time: 11:43:38 AM
- */
-public class QcStateWriter implements InternalStudyWriter
+/*
+* User: adam
+* Date: Aug 26, 2009
+* Time: 1:53:21 PM
+*/
+public interface InternalStudyWriter extends Writer<StudyImpl, StudyExportContextImpl>
 {
-    public String getSelectionText()
-    {
-        return "QC State Settings";
-    }
-
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
-    {
-        // TODO: Write out the action QC states
-        StudyDocument.Study.QcStates qcStatesXml = ctx.getStudyXml().addNewQcStates();
-        qcStatesXml.setShowPrivateDataByDefault(study.isShowPrivateDataByDefault());
-    }
 }

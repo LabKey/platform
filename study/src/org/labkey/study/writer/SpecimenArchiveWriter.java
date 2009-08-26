@@ -17,7 +17,6 @@ package org.labkey.study.writer;
 
 import org.labkey.api.writer.Archive;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
@@ -30,7 +29,7 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 23, 2009
  * Time: 11:28:37 AM
  */
-public class SpecimenArchiveWriter implements Writer<StudyImpl, StudyExportContextImpl>
+public class SpecimenArchiveWriter implements InternalStudyWriter
 {
     private static final String DEFAULT_DIRECTORY = "specimens";
 

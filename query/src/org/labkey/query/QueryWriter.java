@@ -19,11 +19,12 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.writer.Writer;
-import org.labkey.api.writer.WriterFactory;
+import org.labkey.api.study.ExternalStudyWriter;
+import org.labkey.api.study.ExternalStudyWriterFactory;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 
@@ -35,7 +36,7 @@ import java.util.List;
  * Date: Apr 16, 2009
  * Time: 4:49:55 PM
  */
-public class QueryWriter implements Writer<Container, StudyExportContext>
+public class QueryWriter implements ExternalStudyWriter
 {
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION =  ".query.xml";
@@ -47,8 +48,9 @@ public class QueryWriter implements Writer<Container, StudyExportContext>
         return "Queries";
     }
 
-    public void write(Container c, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
+        Container c = ctx.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(c);
 
         if (queries.size() > 0)
@@ -81,9 +83,9 @@ public class QueryWriter implements Writer<Container, StudyExportContext>
         }
     }
 
-    public static class Factory implements WriterFactory<Container, StudyExportContext>
+    public static class Factory implements ExternalStudyWriterFactory
     {
-        public Writer<Container, StudyExportContext> create()
+        public ExternalStudyWriter create()
         {
             return new QueryWriter();
         }

@@ -24,10 +24,11 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.study.ExternalStudyWriter;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.study.ExternalStudyWriterFactory;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
-import org.labkey.api.writer.WriterFactory;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -40,29 +41,37 @@ import java.util.Map;
 * Date: Aug 25, 2009
 * Time: 10:11:16 AM
 */
-public class ListWriter implements Writer<Container, StudyExportContext>
+public class ListWriter implements ExternalStudyWriter
 {
     private static final Logger LOG = Logger.getLogger(ListWriter.class);
+    private static final String DEFAULT_DIRECTORY = "lists";
 
     public String getSelectionText()
     {
         return "Lists";
     }
 
-    public void write(Container c, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(Study study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
+        Container c = ctx.getContainer();
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
 
-        for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
+        if (!lists.isEmpty())
         {
-            ListDefinition def = entry.getValue();
-            TableInfo tinfo = def.getTable(ctx.getUser());
-            Collection<ColumnInfo> columns = getColumnsToExport(tinfo);
-            ResultSet rs = QueryService.get().select(tinfo, columns, null, null);
-            TSVGridWriter tsvWriter = new TSVGridWriter(rs);
-            tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
-            PrintWriter out = vf.getPrintWriter(def.getName() + ".tsv");
-            tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+            ctx.getStudyXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+            VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
+
+            for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
+            {
+                ListDefinition def = entry.getValue();
+                TableInfo tinfo = def.getTable(ctx.getUser());
+                Collection<ColumnInfo> columns = getColumnsToExport(tinfo);
+                ResultSet rs = QueryService.get().select(tinfo, columns, null, null);
+                TSVGridWriter tsvWriter = new TSVGridWriter(rs);
+                tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
+                PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
+                tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+            }
         }
     }
 
@@ -77,9 +86,9 @@ public class ListWriter implements Writer<Container, StudyExportContext>
         return columns;
     }
 
-    public static class Factory implements WriterFactory<Container, StudyExportContext>
+    public static class Factory implements ExternalStudyWriterFactory
     {
-        public Writer<Container, StudyExportContext> create()
+        public ExternalStudyWriter create()
         {
             return new ListWriter();
         }

@@ -15,13 +15,13 @@
  */
 package org.labkey.query.reports;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.study.ExternalStudyWriter;
+import org.labkey.api.study.ExternalStudyWriterFactory;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyExportContext;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
-import org.labkey.api.writer.WriterFactory;
 import org.labkey.study.xml.StudyDocument;
 
 /**
@@ -29,7 +29,7 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 16, 2009
  * Time: 4:39:43 PM
  */
-public class ReportWriter implements Writer<Container, StudyExportContext>
+public class ReportWriter implements ExternalStudyWriter
 {
     private static final String DEFAULT_DIRECTORY = "reports";
 
@@ -38,7 +38,7 @@ public class ReportWriter implements Writer<Container, StudyExportContext>
         return "Reports";
     }
 
-    public void write(Container c, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(Study study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
 
@@ -55,9 +55,9 @@ public class ReportWriter implements Writer<Container, StudyExportContext>
         }
     }
     
-    public static class Factory implements WriterFactory<Container, StudyExportContext>
+    public static class Factory implements ExternalStudyWriterFactory
     {
-        public Writer<Container, StudyExportContext> create()
+        public ExternalStudyWriter create()
         {
             return new ReportWriter();
         }

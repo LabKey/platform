@@ -25,7 +25,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -45,7 +44,7 @@ import java.util.*;
  * Date: Apr 16, 2009
  * Time: 3:10:37 PM
  */
-public class DatasetWriter implements Writer<StudyImpl, StudyExportContextImpl>
+public class DatasetWriter implements InternalStudyWriter
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
