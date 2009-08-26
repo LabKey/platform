@@ -656,6 +656,8 @@ api/src/org/labkey/api/settings/WriteableLookAndFeelProperties.java -text
 api/src/org/labkey/api/study/Cohort.java -text
 api/src/org/labkey/api/study/DataSet.java -text
 api/src/org/labkey/api/study/DilutionCurve.java -text
+api/src/org/labkey/api/study/ExternalStudyWriter.java -text
+api/src/org/labkey/api/study/ExternalStudyWriterFactory.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
 api/src/org/labkey/api/study/Plate.java -text
 api/src/org/labkey/api/study/PlateQueryView.java -text
