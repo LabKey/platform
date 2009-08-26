@@ -432,11 +432,11 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
         {
             var ok = this.reloadFiles(path, callback, scope);
             if (!ok && typeof callback == "function")
-                callback.defer(1, scope||this, [this, false, path]);
+                callback.defer(1, scope||this, [this, false, path, null]);
         }
     },
 
-    // minor hack to force reload on next listFiles call
+    // force reload on next listFiles call
     uncacheListing : function(record)
     {
         var path = (typeof record == "string") ? record : record.data.path;
@@ -812,12 +812,24 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     },
 
 
+
+    pendingPropfind : {},
+
     reloadFiles : function(path, callback, scope)
     {
+        var cb = callback.createDelegate(scope||this);
         var url = this.concatPaths(this.prefixUrl, encodeURI(path));
         this.connection.url = url;
 
-        var args = {url: url, path: path, callback:callback.createDelegate(scope||this)};
+        var args = this.pendingPropfind[url];
+        if (args)
+        {
+            console.debug("pending " + url);
+            args.callbacks.push(cb);
+            return;
+        }
+        console.debug("requesting " + url);
+        this.pendingPropfind[url] = args = {url: url, path: path, callbacks:[cb]};
         this.proxy.load({method:"PROPFIND",depth:"1"}, this.transferReader, this.processFiles, this, args);
         return true;
     },
@@ -825,9 +837,9 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 
     processFiles : function(result, args, success)
     {
+        delete this.pendingPropfind[args.url];
+
         var path = args.path;
-        var callback = args.callback;
-        delete args.callback;
 
         var directory = null;
         var listing = [];
@@ -848,8 +860,14 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                 this._updateRecord(directory);
             this._addFiles(path, listing);
         }
-        if (typeof callback == "function")
-            callback(this, success, path, listing);
+
+        var callbacks = args.callbacks;
+        for (var i=0 ; i<callbacks.length ; i++)
+        {
+            var callback = callbacks[i];
+            if (typeof callback == "function")
+                callback(this, success, path, listing);
+        }
     }
 });
 
