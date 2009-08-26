@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
@@ -43,13 +44,13 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         SpecimenColumn[] columns = SpecimenImporter.SPECIMEN_COLUMNS;
         StudySchema schema = StudySchema.getInstance();
         Container c = ctx.getContainer();
 
-        PrintWriter pw = fs.getPrintWriter("specimens.tsv");
+        PrintWriter pw = vf.getPrintWriter("specimens.tsv");
 
         pw.println("# specimens");
 

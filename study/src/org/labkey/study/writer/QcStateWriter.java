@@ -19,20 +19,21 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.study.StudyExportContext;
 
 /**
  * User: adam
  * Date: Apr 23, 2009
  * Time: 11:43:38 AM
  */
-public class QcStateWriter implements Writer<StudyImpl, StudyExportContext>
+public class QcStateWriter implements Writer<StudyImpl, StudyExportContextImpl>
 {
     public String getSelectionText()
     {
         return "QC State Settings";
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
     {
         // TODO: Write out the action QC states
         StudyDocument.Study.QcStates qcStatesXml = ctx.getStudyXml().addNewQcStates();

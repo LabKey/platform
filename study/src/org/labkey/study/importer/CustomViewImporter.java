@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.query.QueryService;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -29,7 +30,7 @@ import java.sql.SQLException;
  */
 public class CustomViewImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImporter.StudyImportException
+    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImportException
     {
         StudyDocument.Study.Views viewsXml = ctx.getStudyXml().getViews();
 

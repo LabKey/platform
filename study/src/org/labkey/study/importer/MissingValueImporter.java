@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.Map;
  */
 public class MissingValueImporter
 {
-    void process(ImportContext ctx) throws IOException, SQLException, StudyImporter.StudyImportException
+    void process(ImportContext ctx) throws IOException, SQLException, StudyImportException
     {
         Container c = ctx.getContainer();
         StudyDocument.Study.MissingValueIndicators mvXml = ctx.getStudyXml().getMissingValueIndicators();

@@ -21,6 +21,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
@@ -75,7 +76,7 @@ public class VisitMapImporter
         }
     }
 
-    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors) throws SQLException, StudyImporter.StudyImportException
+    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors) throws SQLException, StudyImportException
     {
         if (content == null)
         {

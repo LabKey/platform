@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -38,7 +39,7 @@ public class VisitCohortAssigner
 {
     // Parses the whole visit map again to retrieve the cohort assigments; should cache info from the first parsing
     // somewhere in the ImportContext
-    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, StudyImporter.StudyImportException
+    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, StudyImportException
     {
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
 

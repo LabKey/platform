@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -30,7 +31,7 @@ import java.sql.SQLException;
  */
 public class ReportImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImporter.StudyImportException
+    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImportException
     {
         StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().getReports();
 
@@ -41,7 +42,7 @@ public class ReportImporter
             File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
-                    return name.endsWith(".report.xml");
+                    return name.endsWith(".report.xml");   // TODO: pull this from ReportWriter?
                 }
             });
 

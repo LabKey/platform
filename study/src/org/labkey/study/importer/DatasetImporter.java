@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -50,7 +51,7 @@ import java.util.Map;
  */
 public class DatasetImporter
 {
-    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException, StudyImporter.StudyImportException
+    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException, StudyImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 
@@ -146,7 +147,7 @@ public class DatasetImporter
     }
 
 
-    private static File getDatasetDirectory(ImportContext ctx, File root) throws StudyImporter.StudyImportException
+    private static File getDatasetDirectory(ImportContext ctx, File root) throws StudyImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 
@@ -163,7 +164,7 @@ public class DatasetImporter
 
 
     @Nullable
-    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root) throws XmlException, IOException, StudyImporter.StudyImportException
+    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root) throws XmlException, IOException, StudyImportException
     {
         File datasetDir = getDatasetDirectory(ctx, root);
 

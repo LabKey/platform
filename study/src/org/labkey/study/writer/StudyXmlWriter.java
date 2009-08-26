@@ -16,8 +16,8 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.SecurityType;
@@ -38,14 +38,14 @@ import java.util.Map;
 //  However, each top-level writer is responsible for their respective elements in study.xml -- VisitMapWriter handles "visits"
 //  element, DatasetWriter is responsible for "datasets" element, etc.  As a result, StudyXmlWriter must be invoked after all
 //  writers are done modifying the StudyDocument.  Locking the StudyDocument after writing it out helps ensure this ordering.
-public class StudyXmlWriter implements Writer<StudyImpl, StudyExportContext>
+public class StudyXmlWriter implements Writer<StudyImpl, StudyExportContextImpl>
 {
     public String getSelectionText()
     {
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
 
@@ -74,7 +74,7 @@ public class StudyXmlWriter implements Writer<StudyImpl, StudyExportContext>
         }
 
         // This gets called last, after all other writers have populated the other sections.  Save the study.xml
-        PrintWriter pw = fs.getPrintWriter("study.xml");
+        PrintWriter pw = vf.getPrintWriter("study.xml");
         XmlBeansUtil.saveDoc(pw, ctx.getStudyDocument());
         ctx.lockStudyDocument();
     }

@@ -32,13 +32,11 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.study.StudyWriterRegistry;
 import org.labkey.query.controllers.QueryControllerSpring;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.reports.ReportServiceImpl;
-import org.labkey.query.reports.ReportsController;
-import org.labkey.query.reports.ReportsPipelineProvider;
-import org.labkey.query.reports.ReportsWebPartFactory;
+import org.labkey.query.reports.*;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
@@ -122,6 +120,15 @@ public class QueryModule extends DefaultModule
         ReportsController.registerAdminConsoleLinks();
 
         ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabkeyScriptEngineManager());
+
+        StudyWriterRegistry registry = ServiceRegistry.get().getService(StudyWriterRegistry.class);
+
+        if (null != registry)
+        {
+            registry.addStudyWriterFactory(new QueryWriter.Factory());
+            registry.addStudyWriterFactory(new CustomViewWriter.Factory());
+            registry.addStudyWriterFactory(new ReportWriter.Factory());
+        }
     }
 
     public Set<String> getSchemaNames()

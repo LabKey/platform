@@ -56,10 +56,7 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.Visit;
+import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -91,8 +88,8 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.FileSystemFile;
+import org.labkey.study.writer.StudyExportContextImpl;
 import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.ZipFile;
 import org.springframework.validation.BindException;
@@ -108,7 +105,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -3729,7 +3725,7 @@ public class StudyController extends BaseStudyController
         {
             return importer.process();
         }
-        catch (StudyImporter.StudyImportException e)
+        catch (StudyImportException e)
         {
             errors.reject("studyImport", e.getMessage());
             return false;
@@ -3778,7 +3774,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudy();
             StudyWriter writer = new StudyWriter();
-            StudyExportContext ctx = new StudyExportContext(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()));
+            StudyExportContextImpl ctx = new StudyExportContextImpl(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()));
 
             switch(form.getLocation())
             {
@@ -5981,7 +5977,7 @@ public class StudyController extends BaseStudyController
 
                 message = status.getMessage();
             }
-            catch (StudyImporter.StudyImportException e)
+            catch (StudyImportException e)
             {
                 message = "Error: " + e.getMessage();
             }

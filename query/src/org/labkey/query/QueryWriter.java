@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.writer;
+package org.labkey.query;
 
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Container;
@@ -22,9 +22,10 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.writer.WriterFactory;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.study.model.StudyImpl;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -34,7 +35,7 @@ import java.util.List;
  * Date: Apr 16, 2009
  * Time: 4:49:55 PM
  */
-public class QueryWriter implements Writer<StudyImpl, StudyExportContext>
+public class QueryWriter implements Writer<Container, StudyExportContext>
 {
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION =  ".query.xml";
@@ -46,9 +47,8 @@ public class QueryWriter implements Writer<StudyImpl, StudyExportContext>
         return "Queries";
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Container c, StudyExportContext ctx, VirtualFile root) throws Exception
     {
-        Container c = study.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(c);
 
         if (queries.size() > 0)
@@ -78,6 +78,14 @@ public class QueryWriter implements Writer<StudyImpl, StudyExportContext>
 
                 XmlBeansUtil.saveDoc(queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION), qDoc);
             }
+        }
+    }
+
+    public static class Factory implements WriterFactory<Container, StudyExportContext>
+    {
+        public Writer<Container, StudyExportContext> create()
+        {
+            return new QueryWriter();
         }
     }
 }

@@ -16,10 +16,10 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.api.writer.ExportContext;
-import org.labkey.api.data.Container;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.Set;
@@ -29,7 +29,7 @@ import java.util.Set;
  * Date: Apr 14, 2009
  * Time: 7:29:32 PM
  */
-public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
+public class StudyWriter implements Writer<StudyImpl, StudyExportContextImpl>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
@@ -38,31 +38,34 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
     {
-        LOG.info("Exporting study to " + fs.getLocation());
+        LOG.info("Exporting study to " + vf.getLocation());
 
         Set<String> dataTypes = ctx.getDataTypes();
 
-        // Hack for now to allow selection of CRF vs. Assay datasets.  TODO: More flexible export UI definition mechanism
-        boolean exportDatasets = dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT) || dataTypes.contains(DatasetWriter.SELECTION_TEXT);
-
-        for (Writer<StudyImpl, StudyExportContext> writer : StudyWriterRegistryImpl.get().getStudyWriters())
-        {
-            String text = writer.getSelectionText();
-
-            if (null == text || dataTypes.contains(text) || exportDatasets && text.endsWith("Datasets"))
-                writer.write(study, ctx, fs);
-        }
-
-        for (Writer<Container, ExportContext> writer : StudyWriterRegistryImpl.get().getContainerWriters())
+        // Call all the external writers (those defined outside the study module) first -- this ensures that study.xml
+        // is the last writer called.
+        for (Writer<Container, StudyExportContext> writer : StudyWriterRegistryImpl.get().getRegisteredStudyWriters())
         {
             String text = writer.getSelectionText();
 
             if (null == text || dataTypes.contains(text))
-                writer.write(ctx.getContainer(), ctx, fs);
+                writer.write(ctx.getContainer(), ctx, vf);
         }
 
-        LOG.info("Done exporting study to " + fs.getLocation());
+        // Hack for now to allow selection of CRF vs. Assay datasets.  TODO: More flexible export UI definition mechanism
+        boolean exportDatasets = dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT) || dataTypes.contains(DatasetWriter.SELECTION_TEXT);
+
+        // Now call all the writers defined in the study module.
+        for (Writer<StudyImpl, StudyExportContextImpl> writer : StudyWriterRegistryImpl.get().getStudyWriters())
+        {
+            String text = writer.getSelectionText();
+
+            if (null == text || dataTypes.contains(text) || exportDatasets && text.endsWith("Datasets"))
+                writer.write(study, ctx, vf);
+        }
+
+        LOG.info("Done exporting study to " + vf.getLocation());
     }
 }

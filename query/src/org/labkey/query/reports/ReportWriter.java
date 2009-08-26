@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.writer;
+package org.labkey.query.reports;
 
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.writer.WriterFactory;
+import org.labkey.study.xml.StudyDocument;
 
 /**
  * User: adam
  * Date: Apr 16, 2009
  * Time: 4:39:43 PM
  */
-public class ReportWriter implements Writer<StudyImpl, StudyExportContext>
+public class ReportWriter implements Writer<Container, StudyExportContext>
 {
     private static final String DEFAULT_DIRECTORY = "reports";
 
@@ -36,7 +38,7 @@ public class ReportWriter implements Writer<StudyImpl, StudyExportContext>
         return "Reports";
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
+    public void write(Container c, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
 
@@ -44,12 +46,20 @@ public class ReportWriter implements Writer<StudyImpl, StudyExportContext>
         {
             StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().addNewReports();
             reportsXml.setDir(DEFAULT_DIRECTORY);
-            VirtualFile reportsDir = fs.getDir(DEFAULT_DIRECTORY);
+            VirtualFile reportsDir = vf.getDir(DEFAULT_DIRECTORY);
 
             for (Report report : reports)
             {
                 report.serializeToFolder(reportsDir);
             }
+        }
+    }
+    
+    public static class Factory implements WriterFactory<Container, StudyExportContext>
+    {
+        public Writer<Container, StudyExportContext> create()
+        {
+            return new ReportWriter();
         }
     }
 }

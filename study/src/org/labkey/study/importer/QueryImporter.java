@@ -18,10 +18,10 @@ package org.labkey.study.importer;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.study.writer.QueryWriter;
 import org.labkey.study.xml.StudyDocument;
 
 import javax.servlet.ServletException;
@@ -39,7 +39,11 @@ import java.util.Map;
  */
 public class QueryImporter
 {
-    void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException, SQLException, StudyImporter.StudyImportException
+    // TODO: Should pull these from QueryWriter... but that class is not accessible from here
+    public static final String FILE_EXTENSION = ".sql";
+    public static final String META_FILE_EXTENSION =  ".query.xml";
+
+    void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException, SQLException, StudyImportException
     {
         StudyDocument.Study.Queries queriesXml = ctx.getStudyXml().getQueries();
 
@@ -50,14 +54,14 @@ public class QueryImporter
             File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
-                    return name.endsWith(QueryWriter.FILE_EXTENSION);
+                    return name.endsWith(FILE_EXTENSION);
                 }
             });
 
             File[] metaFileArray = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
-                    return name.endsWith(QueryWriter.META_FILE_EXTENSION);
+                    return name.endsWith(META_FILE_EXTENSION);
                 }
             });
 
@@ -68,8 +72,8 @@ public class QueryImporter
 
             for (File sqlFile : sqlFiles)
             {
-                String baseFilename = sqlFile.getName().substring(0, sqlFile.getName().length() - QueryWriter.FILE_EXTENSION.length());
-                String metaFileName = baseFilename + QueryWriter.META_FILE_EXTENSION;
+                String baseFilename = sqlFile.getName().substring(0, sqlFile.getName().length() - FILE_EXTENSION.length());
+                String metaFileName = baseFilename + META_FILE_EXTENSION;
                 File metaFile = metaFiles.get(metaFileName);
 
                 if (null == metaFile)

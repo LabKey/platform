@@ -21,6 +21,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -52,7 +53,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyExp
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, StudyExportContext ctx, VirtualFile fs) throws IOException
+    public void write(List<DataSetDefinition> definitions, StudyExportContext ctx, VirtualFile vf) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
@@ -150,6 +151,6 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyExp
             }
         }
 
-        XmlBeansUtil.saveDoc(fs.getPrintWriter(SCHEMA_FILENAME), tablesDoc);
+        XmlBeansUtil.saveDoc(vf.getPrintWriter(SCHEMA_FILENAME), tablesDoc);
     }
 }

@@ -15,15 +15,15 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitDataSet;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.VisitMapDocument;
-import org.labkey.study.importer.StudyImporter;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,7 +33,7 @@ import java.util.List;
  * Date: Apr 15, 2009
  * Time: 10:57:56 AM
  */
-public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext>
+public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContextImpl>
 {
     public static final String FILENAME = "visit_map.xml";
 
@@ -42,7 +42,7 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext
         return null;
     }
 
-    public void write(VisitImpl[] visits, StudyExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
+    public void write(VisitImpl[] visits, StudyExportContextImpl ctx, VirtualFile vf) throws IOException, StudyImportException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
@@ -94,6 +94,6 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext
             }
         }
 
-        XmlBeansUtil.saveDoc(fs.getPrintWriter(FILENAME), visitMapDoc);
+        XmlBeansUtil.saveDoc(vf.getPrintWriter(FILENAME), visitMapDoc);
     }
 }

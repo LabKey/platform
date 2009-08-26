@@ -17,7 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.study.importer.StudyImporter.StudyImportException;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.xml.StudyDocument;
 
 /**

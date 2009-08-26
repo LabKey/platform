@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.writer;
+package org.labkey.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
@@ -23,8 +23,9 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.importer.StudyImporter;
+import org.labkey.api.writer.WriterFactory;
+import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.StudyExportContext;
 
 import java.util.List;
 import java.util.Set;
@@ -34,7 +35,7 @@ import java.util.Set;
  * Date: May 23, 2009
  * Time: 8:25:19 AM
  */
-public class CustomViewWriter implements Writer<StudyImpl, StudyExportContext>
+public class CustomViewWriter implements Writer<Container, StudyExportContext>
 {
     private static final String DEFAULT_DIRECTORY = "views";  // TODO: qviews?
     private VirtualFile _viewDir = null;
@@ -44,15 +45,13 @@ public class CustomViewWriter implements Writer<StudyImpl, StudyExportContext>
         return "Custom Views";
     }
 
-    public void write(StudyImpl object, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Container c, StudyExportContext ctx, VirtualFile root) throws Exception
     {
-        Container c = ctx.getContainer();
         User user = ctx.getUser();
 
         // TODO: Export views from external schemas as well?
         DefaultSchema folderSchema = DefaultSchema.get(user, c);
 
-        // TODO: Export views from external schemas as well?  folderSchema.getSchemaNames?
         Set<String> userSchemaNames = folderSchema.getUserSchemaNames();
 
         for (String schemaName : userSchemaNames)
@@ -76,7 +75,7 @@ public class CustomViewWriter implements Writer<StudyImpl, StudyExportContext>
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(StudyExportContext ctx, VirtualFile root) throws StudyImporter.StudyImportException
+    private VirtualFile ensureViewDirectory(StudyExportContext ctx, VirtualFile root) throws StudyImportException
     {
         if (null == _viewDir)
         {
@@ -85,5 +84,13 @@ public class CustomViewWriter implements Writer<StudyImpl, StudyExportContext>
         }
 
         return _viewDir;
+    }
+
+    public static class Factory implements WriterFactory<Container, StudyExportContext>
+    {
+        public Writer<Container, StudyExportContext> create()
+        {
+            return new CustomViewWriter();
+        }
     }
 }

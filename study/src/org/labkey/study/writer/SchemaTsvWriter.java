@@ -21,9 +21,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
-import org.labkey.study.importer.StudyImporter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -43,17 +44,17 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyExp
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, StudyExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
+    public void write(List<DataSetDefinition> definitions, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
     {
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();
-        String schemaFilename = fs.makeLegalName(FILENAME);
+        String schemaFilename = vf.makeLegalName(FILENAME);
         schemaXml.setFile(schemaFilename);
         schemaXml.setTypeNameColumn("platename");
         schemaXml.setLabelColumn("platelabel");
         schemaXml.setTypeIdColumn("plateno");
 
-        PrintWriter writer = fs.getPrintWriter(schemaFilename);
+        PrintWriter writer = vf.getPrintWriter(schemaFilename);
 
         writer.println("platename\tplatelabel\tplateno\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tkey\tautokey");
 

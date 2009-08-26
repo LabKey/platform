@@ -17,8 +17,9 @@ package org.labkey.study.writer;
 
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.importer.StudyImporter;
 
 import java.io.IOException;
 
@@ -27,24 +28,24 @@ import java.io.IOException;
  * Date: Apr 15, 2009
  * Time: 10:52:38 AM
  */
-public class VisitMapWriter implements Writer<StudyImpl, StudyExportContext>
+public class VisitMapWriter implements Writer<StudyImpl, StudyExportContextImpl>
 {
     public String getSelectionText()
     {
         return "Visit Map";
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws IOException, StudyImporter.StudyImportException
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws IOException, StudyImportException
     {
         if (ctx.useOldFormats())
         {
             DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
-            writer.write(study.getVisits(), ctx, fs);
+            writer.write(study.getVisits(), ctx, vf);
         }
         else
         {
             XmlVisitMapWriter writer = new XmlVisitMapWriter();
-            writer.write(study.getVisits(), ctx, fs);
+            writer.write(study.getVisits(), ctx, vf);
         }
     }
 }

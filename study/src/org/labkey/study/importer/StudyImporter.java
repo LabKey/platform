@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -144,19 +145,6 @@ public class StudyImporter
 
     public static class DatasetLockExistsException extends ServletException {}
 
-    public static class StudyImportException extends Exception
-    {
-        public StudyImportException(String message)
-        {
-            super(message);
-        }
-
-        public StudyImportException(String message, Throwable t)
-        {
-            super(message + ": " + t.getMessage());
-        }
-    }
-
     public static class InvalidFileException extends StudyImportException
     {
         public InvalidFileException(File root, File file, Throwable t)
@@ -187,10 +175,10 @@ public class StudyImporter
         File dir = null != dirName ? new File(root, dirName) : root;
 
         if (!dir.exists())
-            throw new StudyImporter.StudyImportException(source + " refers to a directory that does not exist: " + getRelativePath(root, dir));
+            throw new StudyImportException(source + " refers to a directory that does not exist: " + getRelativePath(root, dir));
 
         if (!dir.isDirectory())
-            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, dir) + ": expected a directory but found a file");
+            throw new StudyImportException(source + " refers to " + getRelativePath(root, dir) + ": expected a directory but found a file");
 
         return dir;
     }
@@ -200,10 +188,10 @@ public class StudyImporter
         File file = new File(dir, name);
 
         if (!file.exists())
-            throw new StudyImporter.StudyImportException(source + " refers to a file that does not exist: " + getRelativePath(root, file));
+            throw new StudyImportException(source + " refers to a file that does not exist: " + getRelativePath(root, file));
 
         if (!file.isFile())
-            throw new StudyImporter.StudyImportException(source + " refers to " + getRelativePath(root, file) + ": expected a file but found a directory");
+            throw new StudyImportException(source + " refers to " + getRelativePath(root, file) + ": expected a file but found a directory");
 
         return file;
     }

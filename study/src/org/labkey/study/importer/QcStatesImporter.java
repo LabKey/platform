@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.study.StudyImportException;
 
 import java.sql.SQLException;
 
@@ -28,7 +29,7 @@ import java.sql.SQLException;
  */
 public class QcStatesImporter
 {
-    void process(StudyImpl study, ImportContext ctx) throws SQLException, StudyImporter.StudyImportException
+    void process(StudyImpl study, ImportContext ctx) throws SQLException, StudyImportException
     {
         // TODO: Generalize to all qc state properties
         StudyDocument.Study.QcStates qcStates = ctx.getStudyXml().getQcStates();

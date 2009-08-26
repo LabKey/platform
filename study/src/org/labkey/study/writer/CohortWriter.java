@@ -17,8 +17,8 @@ package org.labkey.study.writer;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
@@ -36,7 +36,7 @@ import java.util.Collection;
  * Date: Apr 23, 2009
  * Time: 11:29:36 AM
  */
-public class CohortWriter implements Writer<StudyImpl, StudyExportContext>
+public class CohortWriter implements Writer<StudyImpl, StudyExportContextImpl>
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
 
@@ -45,7 +45,7 @@ public class CohortWriter implements Writer<StudyImpl, StudyExportContext>
         return "Cohort Settings";
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile fs) throws Exception
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Cohorts cohortsXml = studyXml.addNewCohorts();
@@ -66,7 +66,7 @@ public class CohortWriter implements Writer<StudyImpl, StudyExportContext>
                     participantsInEachCohort.put(id, participant.getParticipantId());
             }
 
-            PrintWriter pw = fs.getPrintWriter(COHORTS_FILENAME);
+            PrintWriter pw = vf.getPrintWriter(COHORTS_FILENAME);
 
             CohortsDocument cohortFileXml = CohortsDocument.Factory.newInstance();
             CohortsDocument.Cohorts cohortAssignmentXml = cohortFileXml.addNewCohorts();

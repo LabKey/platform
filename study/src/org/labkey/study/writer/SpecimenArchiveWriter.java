@@ -30,7 +30,7 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 23, 2009
  * Time: 11:28:37 AM
  */
-public class SpecimenArchiveWriter implements Writer<StudyImpl, StudyExportContext>
+public class SpecimenArchiveWriter implements Writer<StudyImpl, StudyExportContextImpl>
 {
     private static final String DEFAULT_DIRECTORY = "specimens";
 
@@ -39,11 +39,11 @@ public class SpecimenArchiveWriter implements Writer<StudyImpl, StudyExportConte
         return "Specimens";
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile root) throws Exception
     {
-        VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
+        VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
 
-        String archiveName = fs.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
+        String archiveName = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
 
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
@@ -51,7 +51,7 @@ public class SpecimenArchiveWriter implements Writer<StudyImpl, StudyExportConte
         specimens.setDir(DEFAULT_DIRECTORY);
         specimens.setFile(archiveName);
 
-        Archive zip = fs.createZipArchive(archiveName);
+        Archive zip = vf.createZipArchive(archiveName);
 
         StudySchema schema = StudySchema.getInstance();
 

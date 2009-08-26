@@ -1507,6 +1507,7 @@ query/resources/schemas/query.xml -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
 query/src/org/labkey/query/CustomViewInfoImpl.java -text
+query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
 query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
 query/src/org/labkey/query/ModuleCustomView.java -text
@@ -1518,6 +1519,7 @@ query/src/org/labkey/query/QueryServiceImpl.java -text
 query/src/org/labkey/query/QuerySnapshotDefImpl.java -text
 query/src/org/labkey/query/QueryUpgradeCode.java -text
 query/src/org/labkey/query/QueryWebdavProvider.java -text
+query/src/org/labkey/query/QueryWriter.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
@@ -1568,6 +1570,7 @@ query/src/org/labkey/query/persist/QueryManager.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
+query/src/org/labkey/query/reports/ReportWriter.java -text
 query/src/org/labkey/query/reports/ReportsController.java -text
 query/src/org/labkey/query/reports/ReportsPipelineProvider.java -text
 query/src/org/labkey/query/reports/ReportsWebPartFactory.java -text
@@ -2381,19 +2384,16 @@ study/src/org/labkey/study/visitmanager/VisitManager.java -text
 study/src/org/labkey/study/writer/AbstractContext.java -text
 study/src/org/labkey/study/writer/AssayDatasetWriter.java -text
 study/src/org/labkey/study/writer/CohortWriter.java -text
-study/src/org/labkey/study/writer/CustomViewWriter.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
 study/src/org/labkey/study/writer/DatasetWriter.java -text
 study/src/org/labkey/study/writer/FileSystemFile.java -text
 study/src/org/labkey/study/writer/QcStateWriter.java -text
-study/src/org/labkey/study/writer/QueryWriter.java -text
-study/src/org/labkey/study/writer/ReportWriter.java -text
 study/src/org/labkey/study/writer/SchemaTsvWriter.java -text
 study/src/org/labkey/study/writer/SchemaXmlWriter.java -text
 study/src/org/labkey/study/writer/SpecimenArchiveWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
-study/src/org/labkey/study/writer/StudyExportContext.java -text
+study/src/org/labkey/study/writer/StudyExportContextImpl.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyWriterRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text

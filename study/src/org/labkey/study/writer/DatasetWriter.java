@@ -16,14 +16,16 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
-import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.writer.Writer;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.study.importer.StudyImporter;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.study.StudyImportException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -34,8 +36,8 @@ import org.labkey.study.xml.StudyDocument.Study.Datasets;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -43,7 +45,7 @@ import java.util.*;
  * Date: Apr 16, 2009
  * Time: 3:10:37 PM
  */
-public class DatasetWriter implements Writer<StudyImpl, StudyExportContext>
+public class DatasetWriter implements Writer<StudyImpl, StudyExportContextImpl>
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
@@ -56,14 +58,14 @@ public class DatasetWriter implements Writer<StudyImpl, StudyExportContext>
         return SELECTION_TEXT;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImporter.StudyImportException
+    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImportException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();
         datasetsXml.setDir(DEFAULT_DIRECTORY);
         datasetsXml.setFile(MANIFEST_FILENAME);
 
-        VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
+        VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
         List<DataSetDefinition> datasets = ctx.getDatasets();
 
         DatasetsDocument manifestXml = DatasetsDocument.Factory.newInstance();
@@ -117,23 +119,23 @@ public class DatasetWriter implements Writer<StudyImpl, StudyExportContext>
         {
             // Write out the schema.tsv file and add reference & attributes to study.xml
             SchemaTsvWriter schemaTsvWriter = new SchemaTsvWriter();
-            schemaTsvWriter.write(datasets, ctx, fs);
+            schemaTsvWriter.write(datasets, ctx, vf);
         }
         else
         {
             SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter(defaultDateFormat);
-            schemaXmlWriter.write(datasets, ctx, fs);
+            schemaXmlWriter.write(datasets, ctx, vf);
             dsXml.setMetaDataFile(SchemaXmlWriter.SCHEMA_FILENAME);
         }
 
-        XmlBeansUtil.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
+        XmlBeansUtil.saveDoc(vf.getPrintWriter(MANIFEST_FILENAME), manifestXml);
 
         // Write out the .dataset file and add reference to study.xml
         Datasets.Definition definitionXml = datasetsXml.addNewDefinition();
-        String datasetFilename = fs.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".dataset");
+        String datasetFilename = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".dataset");
         definitionXml.setFile(datasetFilename);
 
-        PrintWriter writer = fs.getPrintWriter(datasetFilename);
+        PrintWriter writer = vf.getPrintWriter(datasetFilename);
         writer.println("# default group can be used to avoid repeating definitions for each dataset\n" +
                 "#\n" +
                 "# action=[REPLACE,APPEND,DELETE] (default:REPLACE)\n" +
@@ -163,7 +165,7 @@ public class DatasetWriter implements Writer<StudyImpl, StudyExportContext>
             ResultSet rs = QueryService.get().select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
-            PrintWriter out = fs.getPrintWriter(def.getFileName());
+            PrintWriter out = vf.getPrintWriter(def.getFileName());
             tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
         }
     }

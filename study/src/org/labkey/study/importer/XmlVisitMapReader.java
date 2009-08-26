@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.labkey.study.xml.VisitMapDocument;
 import org.labkey.study.xml.DatasetType;
+import org.labkey.api.study.StudyImportException;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlError;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
  */
 public class XmlVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String xml) throws StudyImporter.StudyImportException
+    public List<VisitMapRecord> getRecords(String xml) throws StudyImportException
     {
         VisitMapDocument doc;
 
@@ -43,7 +44,7 @@ public class XmlVisitMapReader implements VisitMapReader
         {
             // TODO: Use InvalidFileException... but need to pass in root and file instead of an xml string
             XmlError error = x.getError();
-            throw new StudyImporter.StudyImportException("visit_map.xml is not valid: " + error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
+            throw new StudyImportException("visit_map.xml is not valid: " + error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
         }
 
         VisitMapDocument.VisitMap.Visit[] visitsXml = doc.getVisitMap().getVisitArray();

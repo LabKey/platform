@@ -26,13 +26,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.importer.StudyImporter.StudyImportException;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
@@ -240,7 +240,7 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus attemptReload() throws SQLException, StudyImporter.StudyImportException
+        public ReloadStatus attemptReload() throws SQLException, StudyImportException
         {
             Container c = ContainerManager.getForId(_studyContainerId);
 

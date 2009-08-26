@@ -17,11 +17,11 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.writer.ExportContext;
+import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.importer.StudyImporter;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -33,7 +33,7 @@ import java.util.Set;
  * Date: May 16, 2009
  * Time: 2:43:07 PM
  */
-public class StudyExportContext extends AbstractContext implements ExportContext
+public class StudyExportContextImpl extends AbstractContext implements StudyExportContext
 {
     private final boolean _oldFormats;
     private final Set<String> _dataTypes;
@@ -42,7 +42,7 @@ public class StudyExportContext extends AbstractContext implements ExportContext
 
     private boolean _locked = false;
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes)
+    public StudyExportContextImpl(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes)
     {
         super(user, c, StudyXmlWriter.getStudyDocument());
         _oldFormats = oldFormats;
@@ -57,7 +57,7 @@ public class StudyExportContext extends AbstractContext implements ExportContext
 
     @Override
     // Full study doc -- only interesting to StudyXmlWriter
-    public StudyDocument getStudyDocument() throws StudyImporter.StudyImportException
+    public StudyDocument getStudyDocument() throws StudyImportException
     {
         if (_locked)
             throw new IllegalStateException("Can't access StudyDocument after study.xml has been written");

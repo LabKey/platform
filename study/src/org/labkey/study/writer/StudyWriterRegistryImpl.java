@@ -1,21 +1,21 @@
 package org.labkey.study.writer;
 
-import org.labkey.api.study.ContainerWriterRegistry;
+import org.labkey.api.data.Container;
+import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.study.StudyWriterRegistry;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.WriterFactory;
-import org.labkey.api.writer.ExportContext;
-import org.labkey.api.data.Container;
 import org.labkey.study.model.StudyImpl;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class StudyWriterRegistryImpl implements ContainerWriterRegistry
+public class StudyWriterRegistryImpl implements StudyWriterRegistry
 {
     private static final StudyWriterRegistryImpl INSTANCE = new StudyWriterRegistryImpl();
-    private static final Collection<WriterFactory<Container, ExportContext>> FACTORIES = new CopyOnWriteArrayList<WriterFactory<Container, ExportContext>>();
+    private static final Collection<WriterFactory<Container, StudyExportContext>> FACTORIES = new CopyOnWriteArrayList<WriterFactory<Container, StudyExportContext>>();
 
     private StudyWriterRegistryImpl()
     {
@@ -26,36 +26,36 @@ public class StudyWriterRegistryImpl implements ContainerWriterRegistry
         return INSTANCE;
     }
 
-    public Collection<? extends Writer<StudyImpl, StudyExportContext>> getStudyWriters()
+    // These writers are defined and registered by other modules.  They have no knowledge of study internals, other
+    // than being able to write elements into study.xml.
+    public Collection<? extends Writer<Container, StudyExportContext>> getRegisteredStudyWriters()
     {
         // New up the writers every time since these classes can be stateful
-        return Arrays.asList(
-                new VisitMapWriter(),
-                new CohortWriter(),
-                new QcStateWriter(),
-                new DatasetWriter(),
-                new AssayDatasetWriter(),
-                new SpecimenArchiveWriter(),
-                new QueryWriter(),
-                new CustomViewWriter(),
-                new ReportWriter(),
-                new StudyXmlWriter()  // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
-        );
-    }
+        Collection<Writer<Container, StudyExportContext>> writers = new LinkedList<Writer<Container, StudyExportContext>>();
 
-    public Collection<? extends Writer<Container, ExportContext>> getContainerWriters()
-    {
-        // New up the writers every time since these classes can be stateful
-        Collection<Writer<Container, ExportContext>> writers = new LinkedList<Writer<Container, ExportContext>>();
-
-        for (WriterFactory<Container, ExportContext> factory : FACTORIES)
+        for (WriterFactory<Container, StudyExportContext> factory : FACTORIES)
             writers.add(factory.create());
 
         return writers;
     }
 
-    public void addContainerWriterFactory(WriterFactory<Container, ExportContext> factory)
+    public void addStudyWriterFactory(WriterFactory<Container, StudyExportContext> factory)
     {
         FACTORIES.add(factory);
+    }
+
+    // These writers are internal to study.  They have access to study internals.
+    public Collection<? extends Writer<StudyImpl, StudyExportContextImpl>> getStudyWriters()
+    {
+        // New up the writers every time since these classes can be stateful
+        return Arrays.asList(
+            new VisitMapWriter(),
+            new CohortWriter(),
+            new QcStateWriter(),
+            new DatasetWriter(),
+            new AssayDatasetWriter(),
+            new SpecimenArchiveWriter(),
+            new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
+        );
     }
 }

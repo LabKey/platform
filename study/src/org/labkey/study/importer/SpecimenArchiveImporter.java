@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.xml.RepositoryType;
@@ -32,7 +33,7 @@ import java.sql.SQLException;
  */
 public class SpecimenArchiveImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImporter.StudyImportException
+    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImportException
     {
         StudyDocument.Study.Specimens specimens = ctx.getStudyXml().getSpecimens();
 

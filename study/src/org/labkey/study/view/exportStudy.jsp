@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.writer.Writer"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.writer.*" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
@@ -42,7 +41,7 @@
         </tr>
         <%
             Collection<Writer> writers = new LinkedList<Writer>(StudyWriterRegistryImpl.get().getStudyWriters());
-            writers.addAll(StudyWriterRegistryImpl.get().getContainerWriters());
+            writers.addAll(StudyWriterRegistryImpl.get().getRegisteredStudyWriters());
 
             for (Writer writer : writers)
             {

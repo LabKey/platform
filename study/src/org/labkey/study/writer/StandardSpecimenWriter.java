@@ -18,6 +18,7 @@ package org.labkey.study.writer;
 import org.labkey.api.data.*;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.study.StudyExportContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter.ImportableColumn;
 
@@ -38,12 +39,12 @@ public class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.Que
         return null;
     }
 
-    public void write(QueryInfo queryInfo, StudyExportContext ctx, VirtualFile fs) throws Exception
+    public void write(QueryInfo queryInfo, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         TableInfo tinfo = queryInfo.getTableInfo();
         ImportableColumn[] columns = queryInfo.getColumns();
 
-        PrintWriter pw = fs.getPrintWriter(queryInfo.getFilename() + ".tsv");
+        PrintWriter pw = vf.getPrintWriter(queryInfo.getFilename() + ".tsv");
 
         pw.print("# ");
         pw.println(queryInfo.getFilename());

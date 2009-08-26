@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.importer.StudyImporter.InvalidFileException;
-import org.labkey.study.importer.StudyImporter.StudyImportException;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
 

@@ -23,7 +23,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
 import org.labkey.study.importer.StudyImporter.InvalidFileException;
-import org.labkey.study.importer.StudyImporter.StudyImportException;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 

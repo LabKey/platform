@@ -22,6 +22,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.api.study.StudyImportException;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -37,7 +38,7 @@ import java.util.Map;
  */
 public class CohortImporter
 {
-    void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, ServletException, StudyImporter.StudyImportException
+    void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, ServletException, StudyImportException
     {
         StudyDocument.Study.Cohorts cohortsXml = ctx.getStudyXml().getCohorts();
 

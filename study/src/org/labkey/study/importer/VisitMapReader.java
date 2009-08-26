@@ -15,6 +15,8 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.study.StudyImportException;
+
 import java.util.List;
 
 /**
@@ -24,5 +26,5 @@ import java.util.List;
  */
 public interface VisitMapReader
 {
-    List<VisitMapRecord> getRecords(String content) throws StudyImporter.StudyImportException;
+    List<VisitMapRecord> getRecords(String content) throws StudyImportException;
 }

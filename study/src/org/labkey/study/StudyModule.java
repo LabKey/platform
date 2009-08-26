@@ -145,7 +145,7 @@ public class StudyModule extends DefaultModule
         EnumConverter.registerEnum(SecurityType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
 
-        ServiceRegistry.get().registerService(ContainerWriterRegistry.class, StudyWriterRegistryImpl.get());
+        ServiceRegistry.get().registerService(StudyWriterRegistry.class, StudyWriterRegistryImpl.get());
     }
 
     @Override
