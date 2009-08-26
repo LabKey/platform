@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package org.labkey.api.writer;
+package org.labkey.api.study;
 
-import org.jetbrains.annotations.Nullable;
-
-/**
- * User: adam
- * Date: Apr 16, 2009
- * Time: 4:17:59 PM
- */
-public interface Writer<T, CONTEXT extends ExportContext>
+public class StudyImportException extends Exception
 {
-    @Nullable
-    public String getSelectionText();
-    public void write(T object, CONTEXT ctx, VirtualFile vf) throws Exception;
+    public StudyImportException(String message)
+    {
+        super(message);
+    }
+
+    public StudyImportException(String message, Throwable t)
+    {
+        super(message + ": " + t.getMessage());
+    }
 }

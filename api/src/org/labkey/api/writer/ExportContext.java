@@ -16,6 +16,9 @@
 
 package org.labkey.api.writer;
 
+import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
+
 /*
 * User: adam
 * Date: Aug 25, 2009
@@ -23,4 +26,6 @@ package org.labkey.api.writer;
 */
 public interface ExportContext
 {
+    public User getUser();
+    public Container getContainer();
 }

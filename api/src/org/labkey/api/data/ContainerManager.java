@@ -467,6 +467,7 @@ public class ContainerManager
     public static void saveAliasesForContainer(Container container, List<String> aliases) throws SQLException
     {
         core.getSchema().getScope().beginTransaction();
+
         try
         {
             SQLFragment deleteSQL = new SQLFragment();
@@ -508,7 +509,6 @@ public class ContainerManager
         {
             core.getSchema().getScope().closeConnection();
         }
-
     }
 
 

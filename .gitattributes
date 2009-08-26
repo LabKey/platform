@@ -185,6 +185,7 @@ api/src/org/labkey/api/data/TableInfoGetter.java -text
 api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
+api/src/org/labkey/api/data/TransactedBlock.java -text
 api/src/org/labkey/api/data/UnionTableInfo.java -text
 api/src/org/labkey/api/data/UpgradeCode.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text
@@ -653,7 +654,6 @@ api/src/org/labkey/api/settings/TemplateResourceHandler.java -text
 api/src/org/labkey/api/settings/WriteableAppProps.java -text
 api/src/org/labkey/api/settings/WriteableLookAndFeelProperties.java -text
 api/src/org/labkey/api/study/Cohort.java -text
-api/src/org/labkey/api/study/ContainerWriterRegistry.java -text
 api/src/org/labkey/api/study/DataSet.java -text
 api/src/org/labkey/api/study/DilutionCurve.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
@@ -668,7 +668,10 @@ api/src/org/labkey/api/study/Site.java -text
 api/src/org/labkey/api/study/SpecimenService.java -text
 api/src/org/labkey/api/study/Study.java -text
 api/src/org/labkey/api/study/StudyEntity.java -text
+api/src/org/labkey/api/study/StudyExportContext.java -text
+api/src/org/labkey/api/study/StudyImportException.java -text
 api/src/org/labkey/api/study/StudyService.java -text
+api/src/org/labkey/api/study/StudyWriterRegistry.java -text
 api/src/org/labkey/api/study/TimepointType.java -text
 api/src/org/labkey/api/study/Visit.java -text
 api/src/org/labkey/api/study/Well.java -text

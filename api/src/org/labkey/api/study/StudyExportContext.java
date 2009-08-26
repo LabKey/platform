@@ -16,16 +16,15 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.writer.ExportContext;
-import org.labkey.api.writer.WriterFactory;
+import org.labkey.study.xml.StudyDocument;
 
 /*
 * User: adam
-* Date: Aug 25, 2009
-* Time: 10:16:39 AM
+* Date: Aug 26, 2009
+* Time: 9:43:06 AM
 */
-public interface ContainerWriterRegistry
+public interface StudyExportContext extends ExportContext
 {
-    public void addContainerWriterFactory(WriterFactory<Container, ExportContext> factory);
+    public StudyDocument.Study getStudyXml() throws StudyImportException;
 }

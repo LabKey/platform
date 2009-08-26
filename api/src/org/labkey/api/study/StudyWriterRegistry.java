@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package org.labkey.api.writer;
+package org.labkey.api.study;
 
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.writer.ExportContext;
+import org.labkey.api.writer.WriterFactory;
 
-/**
- * User: adam
- * Date: Apr 16, 2009
- * Time: 4:17:59 PM
- */
-public interface Writer<T, CONTEXT extends ExportContext>
+/*
+* User: adam
+* Date: Aug 25, 2009
+* Time: 10:16:39 AM
+*/
+public interface StudyWriterRegistry
 {
-    @Nullable
-    public String getSelectionText();
-    public void write(T object, CONTEXT ctx, VirtualFile vf) throws Exception;
+    public void addStudyWriterFactory(WriterFactory<Container, StudyExportContext> factory);
 }
