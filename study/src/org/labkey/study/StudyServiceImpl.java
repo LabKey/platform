@@ -108,10 +108,9 @@ public class StudyServiceImpl implements StudyService.Service
         }
 
         // Start a transaction, so that we can rollback if our insert fails
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
+        boolean transactionOwner = !isTransactionActive();
         if (transactionOwner)
-            scope.beginTransaction();
+            beginTransaction();
         try
         {
             Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
@@ -155,7 +154,7 @@ public class StudyServiceImpl implements StudyService.Service
             }
             // Successfully updated
             if(transactionOwner)
-                scope.commitTransaction();
+                commitTransaction();
 
             // lsid is not in the updated map by default since it is not editable,
             // however it can be changed by the update
@@ -168,7 +167,7 @@ public class StudyServiceImpl implements StudyService.Service
         finally
         {
             if(transactionOwner)
-                scope.rollbackTransaction();
+                rollbackTransaction();
         }
     }
 
@@ -259,12 +258,11 @@ public class StudyServiceImpl implements StudyService.Service
 
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(study);
 
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
+        boolean transactionOwner = !isTransactionActive();
         try
         {
             if (transactionOwner)
-                scope.beginTransaction();
+                beginTransaction();
 
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, data, def);
 
@@ -280,7 +278,7 @@ public class StudyServiceImpl implements StudyService.Service
                 addDatasetAuditEvent(u, c, def, null, auditDataMap);
 
                 if (transactionOwner)
-                    scope.commitTransaction();
+                    commitTransaction();
 
                 return result[0];
             }
@@ -291,7 +289,7 @@ public class StudyServiceImpl implements StudyService.Service
         finally
         {
             if (transactionOwner)
-                scope.rollbackTransaction();
+                rollbackTransaction();
         }
     }
 
@@ -303,24 +301,23 @@ public class StudyServiceImpl implements StudyService.Service
         // Need to fetch the old item in order to log the deletion
         Map<String, Object> oldData = getDatasetRow(u, c, datasetId, lsid);
 
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
+        boolean transactionOwner = !isTransactionActive();
         try
         {
             if (transactionOwner)
-                scope.beginTransaction();
+                beginTransaction();
 
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
 
             addDatasetAuditEvent(u, c, def, oldData, null);
 
             if (transactionOwner)
-                scope.commitTransaction();
+                commitTransaction();
         }
         finally
         {
             if (transactionOwner)
-                scope.rollbackTransaction();
+                rollbackTransaction();
         }
     }
 
@@ -464,6 +461,32 @@ public class StudyServiceImpl implements StudyService.Service
             stringMap.put(entry.getKey(), value == null ? null : value.toString());
         }
         return DatasetAuditViewFactory.encodeForDataMap(stringMap, true);
+    }
+
+    public void beginTransaction() throws SQLException
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        if(!scope.isTransactionActive())
+            scope.beginTransaction();
+    }
+
+    public void commitTransaction() throws SQLException
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        if(scope.isTransactionActive())
+            scope.commitTransaction();
+    }
+
+    public void rollbackTransaction()
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        if(scope.isTransactionActive())
+            scope.rollbackTransaction();
+    }
+
+    public boolean isTransactionActive()
+    {
+        return StudySchema.getInstance().getSchema().getScope().isTransactionActive();
     }
 
     public void applyDefaultQCStateFilter(DataView view)
