@@ -111,7 +111,7 @@ public class StudyServiceImpl implements StudyService.Service
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();
         if (transactionOwner)
-            beginTransaction();
+            scope.beginTransaction();
         try
         {
             Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
@@ -155,7 +155,7 @@ public class StudyServiceImpl implements StudyService.Service
             }
             // Successfully updated
             if(transactionOwner)
-                commitTransaction();
+                scope.commitTransaction();
 
             // lsid is not in the updated map by default since it is not editable,
             // however it can be changed by the update
@@ -168,7 +168,7 @@ public class StudyServiceImpl implements StudyService.Service
         finally
         {
             if(transactionOwner)
-                rollbackTransaction();
+                scope.rollbackTransaction();
         }
     }
 
@@ -264,7 +264,7 @@ public class StudyServiceImpl implements StudyService.Service
         try
         {
             if (transactionOwner)
-                beginTransaction();
+                scope.beginTransaction();
 
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, data, def);
 
@@ -280,7 +280,7 @@ public class StudyServiceImpl implements StudyService.Service
                 addDatasetAuditEvent(u, c, def, null, auditDataMap);
 
                 if (transactionOwner)
-                    commitTransaction();
+                    scope.commitTransaction();
 
                 return result[0];
             }
@@ -291,7 +291,7 @@ public class StudyServiceImpl implements StudyService.Service
         finally
         {
             if (transactionOwner)
-                rollbackTransaction();
+                scope.rollbackTransaction();
         }
     }
 
@@ -308,19 +308,19 @@ public class StudyServiceImpl implements StudyService.Service
         try
         {
             if (transactionOwner)
-                beginTransaction();
+                scope.beginTransaction();
 
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
 
             addDatasetAuditEvent(u, c, def, oldData, null);
 
             if (transactionOwner)
-                commitTransaction();
+                scope.commitTransaction();
         }
         finally
         {
             if (transactionOwner)
-                rollbackTransaction();
+                scope.rollbackTransaction();
         }
     }
 
@@ -466,32 +466,6 @@ public class StudyServiceImpl implements StudyService.Service
         return DatasetAuditViewFactory.encodeForDataMap(stringMap, true);
     }
 
-    public void beginTransaction() throws SQLException
-    {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        if(!scope.isTransactionActive())
-            scope.beginTransaction();
-    }
-
-    public void commitTransaction() throws SQLException
-    {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        if(scope.isTransactionActive())
-            scope.commitTransaction();
-    }
-
-    public void rollbackTransaction()
-    {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        if(scope.isTransactionActive())
-            scope.rollbackTransaction();
-    }
-
-    public boolean isTransactionActive()
-    {
-        return StudySchema.getInstance().getSchema().getScope().isTransactionActive();
-    }
-
     public void applyDefaultQCStateFilter(DataView view)
     {
         if (StudyManager.getInstance().showQCStates(view.getRenderContext().getContainer()))
@@ -512,68 +486,6 @@ public class StudyServiceImpl implements StudyService.Service
                     filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getName()));
             }
         }
-    }
-
-    public String getSchemaName()
-    {
-        return StudyQuerySchema.SCHEMA_NAME;
-    }
-
-    @Nullable
-    public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
-    {
-        if ("Cohort".equals(queryName))
-        {
-            if (container.getPolicy().hasPermission(user, AdminPermission.class))
-                return new CohortUpdateService();
-            else
-                throw new RuntimeException("User is not allowed to update cohorts");
-        }
-        else if ("StudyProperties".equals(queryName))
-        {
-            if (container.getPolicy().hasPermission(user, AdminPermission.class))
-                return new StudyPropertiesUpdateService();
-            else
-                throw new RuntimeException("User is not allowed to update study properties");
-        }
-
-        int datasetId = getDatasetId(container, queryName);
-        if (datasetId >= 0)
-        {
-            // Check permission
-            Study study = StudyManager.getInstance().getStudy(container);
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-            if (def == null)
-                throw new RuntimeException("Could not find dataset with id of " + datasetId);
-
-            if (def.canWrite(user))
-                return new DatasetUpdateService(datasetId);
-            else
-                throw new RuntimeException("User is not allowed to update dataset: " + queryName);
-        }
-
-        return null;
-    }
-
-    @Nullable
-    public String getDomainURI(String queryName, Container container, User user)
-    {
-        if (CohortImpl.DOMAIN_INFO.getDomainName().equals(queryName))
-            return CohortImpl.DOMAIN_INFO.getDomainURI(container);
-        if (StudyPropertiesQueryView.QUERY_NAME.equals(queryName))
-            return StudyImpl.DOMAIN_INFO.getDomainURI(container);
-
-        Study study = StudyManager.getInstance().getStudy(container);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);
-        if (def != null)
-        {
-            if (def.canRead(user))
-                return def.getTypeURI();
-            else
-                throw new RuntimeException("User does not have permission to read that dataset");
-        }
-
-        return null;
     }
 
     public ActionURL getDatasetURL(Container container, int datasetId)

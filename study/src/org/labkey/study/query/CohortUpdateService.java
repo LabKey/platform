@@ -99,7 +99,7 @@ public class CohortUpdateService implements QueryUpdateService
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();
         if (transactionOwner)
-            StudyService.get().beginTransaction();
+            scope.beginTransaction();
         try
         {
 
@@ -116,12 +116,12 @@ public class CohortUpdateService implements QueryUpdateService
 
             // Successfully updated
             if(transactionOwner)
-                StudyService.get().commitTransaction();
+                scope.commitTransaction();
         }
         finally
         {
             if(transactionOwner)
-                StudyService.get().rollbackTransaction();
+                scope.rollbackTransaction();
         }
 
 

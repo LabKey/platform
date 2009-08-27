@@ -23,12 +23,10 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.*;
 
 import java.util.*;
 
@@ -300,4 +298,26 @@ public class StudyQuerySchema extends UserSchema
     {
         return _mustCheckPermissions;
     }
+
+    @Nullable
+    public String getDomainURI(String queryName)
+    {
+        if (CohortImpl.DOMAIN_INFO.getDomainName().equals(queryName))
+            return CohortImpl.DOMAIN_INFO.getDomainURI(getContainer());
+        if (StudyPropertiesQueryView.QUERY_NAME.equals(queryName))
+            return StudyImpl.DOMAIN_INFO.getDomainURI(getContainer());
+
+        Study study = StudyManager.getInstance().getStudy(getContainer());
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);
+        if (def != null)
+        {
+            if (def.canRead(getUser()))
+                return def.getTypeURI();
+            else
+                throw new RuntimeException("User does not have permission to read that dataset");
+        }
+
+        return null;
+    }
+
 }

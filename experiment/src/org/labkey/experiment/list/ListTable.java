@@ -186,4 +186,10 @@ public class ListTable extends FilteredTable
     {
         return false;
     }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new ListQueryUpdateService(getList());
+    }
 }

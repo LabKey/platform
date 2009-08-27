@@ -1561,7 +1561,6 @@ query/src/org/labkey/query/controllers/validateQueries.jsp -text
 query/src/org/labkey/query/data/DbUserQueryUpdateService.java -text
 query/src/org/labkey/query/data/DbUserSchemaCache.java -text
 query/src/org/labkey/query/data/DbUserSchemaTable.java -text
-query/src/org/labkey/query/data/DbUserSchemaUpdateService.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/DbUserSchemaDef.java -text

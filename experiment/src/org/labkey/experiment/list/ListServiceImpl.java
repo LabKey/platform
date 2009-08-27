@@ -19,14 +19,10 @@ package org.labkey.experiment.list;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.User;
 import org.labkey.experiment.controllers.list.ListController;
 import org.apache.log4j.Logger;
 
@@ -107,57 +103,4 @@ public class ListServiceImpl implements ListService.Interface
         return new ActionURL(ListController.BeginAction.class, container);
     }
 
-    // These transaction methods were added to abstract the detail that
-    // Lists use the ExperimentService for their database storage.
-    public void beginTransaction()
-    {
-        ExperimentService.get().beginTransaction();
-    }
-
-    public void commitTransaction()
-    {
-        ExperimentService.get().commitTransaction();
-    }
-
-    public void rollbackTransaction()
-    {
-        ExperimentService.get().rollbackTransaction();
-    }
-
-    public boolean isTransactionActive()
-    {
-        return ExperimentService.get().isTransactionActive();
-    }
-
-    public String getSchemaName()
-    {
-        return ListSchema.NAME;
-    }
-
-    
-    public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
-    {
-        Map<String, ListDefinition> listDefs =  getLists(container);
-        if(null == listDefs)
-            throw new NotFoundException("No lists found in the container '" + container.getPath() + "'.");
-
-        ListDefinition listDef = listDefs.get(queryName);
-        if(null == listDef)
-            throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
-
-        return new ListQueryUpdateService(listDef);
-    }
-
-    public String getDomainURI(String queryName, Container container, User user)
-    {
-        Map<String, ListDefinition> listDefs =  getLists(container);
-        if(null == listDefs)
-            throw new NotFoundException("No lists found in the container '" + container.getPath() + "'.");
-
-        ListDefinition listDef = listDefs.get(queryName);
-        if(null == listDef)
-            throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
-
-        return listDef.getDomain().getTypeURI();
-    }
 }

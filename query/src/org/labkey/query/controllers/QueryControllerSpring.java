@@ -41,7 +41,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
-import org.labkey.query.data.DbUserSchemaUpdateService;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.design.QueryDocument;
@@ -1646,21 +1645,23 @@ public class QueryControllerSpring extends SpringActionController
             if(null == rows || rows.length() < 1)
                 throw new IllegalArgumentException("No 'rows' array supplied!");
 
-            //get the schema update service for this schema
-            SchemaUpdateService sus = getSchemaUpdateService(schemaName);
-            if(null == sus)
-                throw new IllegalArgumentException("The schema '" + schemaName + "' is not editable via the HTTP-based APIs!");
+            UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
+            if (null == schema)
+                throw new IllegalArgumentException("The schema '" + schemaName + "' does not exist.");
 
-            //get the query update service for the query
-            QueryUpdateService qus = sus.getQueryUpdateService(queryName, container, user);
-            if(null == qus)
-                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' is not updateable via the HTTP-based APIs!");
+            TableInfo table = schema.getTable(queryName);
+            if (table == null)
+                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
+
+            QueryUpdateService qus = table.getUpdateService();
+            if (null == qus)
+                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' is not updateable via the HTTP-based APIs.");
 
             //we will transact operations by default, but the user may
             //override this by sending a "transacted" property set to false
             boolean transacted = json.optBoolean("transacted", true);
-            if(transacted)
-                sus.beginTransaction();
+            if (transacted)
+                schema.beginTransaction();
 
             //setup the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
@@ -1688,13 +1689,13 @@ public class QueryControllerSpring extends SpringActionController
                     }
                 }
 
-                if(transacted)
-                    sus.commitTransaction();
+                if (transacted)
+                    schema.commitTransaction();
             }
             finally
             {
-                if(transacted && sus.isTransactionActive())
-                    sus.rollbackTransaction();
+                if (transacted && schema.isTransactionActive())
+                    schema.rollbackTransaction();
             }
 
             response.put("rowsAffected", rowsAffected);
@@ -1724,23 +1725,6 @@ public class QueryControllerSpring extends SpringActionController
          */
         protected abstract String getSaveCommandName(); //unfortunatley, getCommandName() is already defined in Spring action classes
 
-
-        protected SchemaUpdateService getSchemaUpdateService(String schemaName)
-        {
-            SchemaUpdateService sus = SchemaUpdateServiceRegistry.get().getService(schemaName);
-
-            //if we didn't find anything, try looking for a DbUserSchema in the current container
-            //that matches the schemaName. If there is one, and it's editable,
-            //return a DefaultSchemaUpdateService over it
-            if(null == sus)
-            {
-                DbUserSchemaDef dbusd = QueryManager.get().getDbUserSchemaDef(getViewContext().getContainer(), schemaName);
-                if(null != dbusd && dbusd.isEditable())
-                      sus = new DbUserSchemaUpdateService(schemaName);
-            }
-
-            return sus;
-        }
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)

@@ -26,6 +26,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.security.User;
 import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -242,5 +243,15 @@ public class DataSetTable extends FilteredTable
     public boolean isMetadataOverrideable()
     {
         return false;
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        User user = _schema.getUser();
+        DataSet def = getDatasetDefinition();
+        if (!def.canWrite(user))
+            throw new RuntimeException("User is not allowed to update dataset: " + getName());
+        return new DatasetUpdateService(def.getDataSetId());
     }
 }

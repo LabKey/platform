@@ -4,6 +4,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.User;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
@@ -67,5 +70,14 @@ public class CohortTable extends BaseStudyTable
         }
         
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        User user = _schema.getUser();
+        if (!getContainer().getPolicy().hasPermission(user, AdminPermission.class))
+            throw new RuntimeException("User is not allowed to update cohorts");
+        return new CohortUpdateService();
     }
 }

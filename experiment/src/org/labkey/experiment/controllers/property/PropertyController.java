@@ -30,8 +30,8 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.query.SchemaUpdateService;
-import org.labkey.api.query.SchemaUpdateServiceRegistry;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -360,15 +360,15 @@ public class PropertyController extends SpringActionController
     }
 
     @NotNull
-    private static GWTDomain getDomain(String schema, String query, Container container, User user)
+    private static GWTDomain getDomain(String schemaName, String queryName, Container container, User user)
     {
-        SchemaUpdateService service = SchemaUpdateServiceRegistry.get().getService(schema);
-        if (service == null)
-            throw new IllegalArgumentException("Schema '" + schema + "' is unsupported");
+        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
+        if (schema == null)
+            throw new IllegalArgumentException("Schema '" + schemaName + "' does not exist.");
 
-        String domainURI = service.getDomainURI(query, container, user);
+        String domainURI = schema.getDomainURI(queryName);
         if (domainURI == null)
-            throw new UnsupportedOperationException(query + " in " + schema + " does not support reading domain information");
+            throw new UnsupportedOperationException(queryName + " in " + schemaName + " does not support reading domain information");
 
         GWTDomain domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 

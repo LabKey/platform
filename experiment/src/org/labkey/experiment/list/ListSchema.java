@@ -25,8 +25,10 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.Set;
+import java.util.Map;
 
 public class ListSchema extends UserSchema
 {
@@ -59,5 +61,19 @@ public class ListSchema extends UserSchema
         if (def != null)
             return def.getTable(getUser());
         return null;
+    }
+
+    public String getDomainURI(String queryName)
+    {
+        Container container = getContainer();
+        Map<String, ListDefinition> listDefs = ListService.get().getLists(container);
+        if(null == listDefs)
+            throw new NotFoundException("No lists found in the container '" + container.getPath() + "'.");
+
+        ListDefinition listDef = listDefs.get(queryName);
+        if(null == listDef)
+            throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
+
+        return listDef.getDomain().getTypeURI();
     }
 }
