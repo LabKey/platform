@@ -19,7 +19,7 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.importer.StudyImporter.InvalidFileException;
+import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
@@ -74,6 +74,19 @@ public class ImportContext extends AbstractContext
         return studyDoc;
     }
 
+
+    public File getStudyDir(File root, String dirName, String source) throws StudyImportException
+    {
+        File dir = null != dirName ? new File(root, dirName) : root;
+
+        if (!dir.exists())
+            throw new StudyImportException(source + " refers to a directory that does not exist: " + StudyImportException.getRelativePath(root, dir));
+
+        if (!dir.isDirectory())
+            throw new StudyImportException(source + " refers to " + StudyImportException.getRelativePath(root, dir) + ": expected a directory but found a file");
+
+        return dir;
+    }
 
     private static StudyDocument readStudyDocument(File root) throws StudyImportException, IOException
     {

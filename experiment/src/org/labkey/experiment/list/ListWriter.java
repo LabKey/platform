@@ -24,10 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.ExternalStudyWriter;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyExportContext;
-import org.labkey.api.study.ExternalStudyWriterFactory;
+import org.labkey.api.study.*;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.PrintWriter;
@@ -51,7 +48,7 @@ public class ListWriter implements ExternalStudyWriter
         return "Lists";
     }
 
-    public void write(Study study, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         Map<String, ListDefinition> lists = ListService.get().getLists(c);

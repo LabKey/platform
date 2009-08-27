@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.importer;
+package org.labkey.query;
 
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.ExternalStudyImporter;
+import org.labkey.api.study.StudyContext;
+import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -28,17 +31,30 @@ import java.sql.SQLException;
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class CustomViewImporter
+public class CustomViewImporter implements ExternalStudyImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImportException
+    public String getDescription()
+    {
+        return "custom views";
+    }
+
+    public void process(StudyContext ctx, File root) throws IOException, SQLException, StudyImportException
     {
         StudyDocument.Study.Views viewsXml = ctx.getStudyXml().getViews();
 
         if (null != viewsXml)
         {
-            File viewDir = StudyImporter.getStudyDir(root, viewsXml.getDir(), "Study.xml"); 
+            File viewDir = ctx.getStudyDir(root, viewsXml.getDir(), "Study.xml");
 
             QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
+        }
+    }
+
+    public static class Factory implements ExternalStudyImporterFactory
+    {
+        public ExternalStudyImporter create()
+        {
+            return new CustomViewImporter();
         }
     }
 }

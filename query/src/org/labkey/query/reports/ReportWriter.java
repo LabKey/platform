@@ -17,10 +17,7 @@ package org.labkey.query.reports;
 
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.study.ExternalStudyWriter;
-import org.labkey.api.study.ExternalStudyWriterFactory;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.study.*;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
 
@@ -38,7 +35,7 @@ public class ReportWriter implements ExternalStudyWriter
         return "Reports";
     }
 
-    public void write(Study study, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(Study study, StudyContext ctx, VirtualFile vf) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
 

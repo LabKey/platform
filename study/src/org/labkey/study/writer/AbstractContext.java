@@ -18,6 +18,7 @@ package org.labkey.study.writer;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.StudyContext;
 import org.labkey.study.xml.StudyDocument;
 
 /**
@@ -25,7 +26,7 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 23, 2009
  * Time: 10:00:46 AM
  */
-public abstract class AbstractContext
+public abstract class AbstractContext implements StudyContext
 {
     private final User _user;
     private final Container _c;

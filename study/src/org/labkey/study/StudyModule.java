@@ -74,7 +74,7 @@ import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.view.*;
-import org.labkey.study.writer.StudyWriterRegistryImpl;
+import org.labkey.study.writer.StudySerializationRegistryImpl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -145,7 +145,7 @@ public class StudyModule extends DefaultModule
         EnumConverter.registerEnum(SecurityType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
 
-        ServiceRegistry.get().registerService(StudyWriterRegistry.class, StudyWriterRegistryImpl.get());
+        ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
     }
 
     @Override

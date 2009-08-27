@@ -19,10 +19,10 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Type;
+import org.labkey.api.study.StudyContext;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.api.study.StudyImportException;
-import org.labkey.api.study.StudyExportContext;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
@@ -35,7 +35,7 @@ import java.util.List;
  * Date: Apr 23, 2009
  * Time: 2:39:33 PM
  */
-public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyExportContext>
+public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyContext>
 {
     public static final String FILENAME = "schema.tsv";
 
@@ -44,7 +44,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyExp
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
+    public void write(List<DataSetDefinition> definitions, StudyContext ctx, VirtualFile vf) throws IOException, StudyImportException
     {
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();

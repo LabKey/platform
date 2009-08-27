@@ -32,7 +32,7 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.study.StudyWriterRegistry;
+import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.query.controllers.QueryControllerSpring;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
@@ -121,13 +121,13 @@ public class QueryModule extends DefaultModule
 
         ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabkeyScriptEngineManager());
 
-        StudyWriterRegistry registry = ServiceRegistry.get().getService(StudyWriterRegistry.class);
+        StudySerializationRegistry registry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
 
         if (null != registry)
         {
-            registry.addStudyWriterFactory(new QueryWriter.Factory());
-            registry.addStudyWriterFactory(new CustomViewWriter.Factory());
-            registry.addStudyWriterFactory(new ReportWriter.Factory());
+            registry.addFactories(new QueryWriter.Factory(), new QueryImporter.Factory());
+            registry.addFactories(new CustomViewWriter.Factory(), new CustomViewImporter.Factory());
+            registry.addFactories(new ReportWriter.Factory(), new ReportImporter.Factory());
         }
     }
 

@@ -40,8 +40,8 @@
             <td>Study objects to export:</td>
         </tr>
         <%
-            Collection<Writer> writers = new LinkedList<Writer>(StudyWriterRegistryImpl.get().getInternalStudyWriters());
-            writers.addAll(StudyWriterRegistryImpl.get().getRegisteredStudyWriters());
+            Collection<Writer> writers = new LinkedList<Writer>(StudySerializationRegistryImpl.get().getInternalStudyWriters());
+            writers.addAll(StudySerializationRegistryImpl.get().getRegisteredStudyWriters());
 
             for (Writer writer : writers)
             {

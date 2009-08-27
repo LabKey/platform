@@ -41,7 +41,7 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.StudyWriterRegistry;
+import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -270,10 +270,10 @@ public class ExperimentModule extends SpringModule
 
         initWebApplicationContext();
 
-        StudyWriterRegistry registry = ServiceRegistry.get().getService(StudyWriterRegistry.class);
+        StudySerializationRegistry registry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
 
         if (null != registry)
-            registry.addStudyWriterFactory(new ListWriter.Factory());
+            registry.addFactories(new ListWriter.Factory(), new ListImporter.Factory());
     }
 
     public Collection<String> getSummary(Container c)

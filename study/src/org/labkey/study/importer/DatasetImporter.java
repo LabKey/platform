@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -156,7 +157,7 @@ public class DatasetImporter
             if (null == datasetsXml.getDir())
                 return root;
 
-            return StudyImporter.getStudyDir(root, datasetsXml.getDir(), "Study.xml");
+            return ctx.getStudyDir(root, datasetsXml.getDir(), "Study.xml");
         }
 
         return null;
@@ -182,7 +183,7 @@ public class DatasetImporter
                 }
                 catch (XmlException e)
                 {
-                    throw new StudyImporter.InvalidFileException(root, datasetsXmlFile, e);
+                    throw new InvalidFileException(root, datasetsXmlFile, e);
                 }
             }
         }

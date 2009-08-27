@@ -42,7 +42,7 @@ public class CustomViewWriter implements ExternalStudyWriter
         return "Custom Views";
     }
 
-    public void write(Study study, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         User user = ctx.getUser();
@@ -73,7 +73,7 @@ public class CustomViewWriter implements ExternalStudyWriter
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(StudyExportContext ctx, VirtualFile root) throws StudyImportException
+    private VirtualFile ensureViewDirectory(StudyContext ctx, VirtualFile root) throws StudyImportException
     {
         if (null == _viewDir)
         {

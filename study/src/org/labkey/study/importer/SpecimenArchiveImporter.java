@@ -47,7 +47,7 @@ public class SpecimenArchiveImporter
 
             if (null != specimens.getDir())
             {
-                File specimenDir = StudyImporter.getStudyDir(root, specimens.getDir(), "Study.xml");
+                File specimenDir = ctx.getStudyDir(root, specimens.getDir(), "Study.xml");
 
                 if (null != specimens.getFile())
                 {

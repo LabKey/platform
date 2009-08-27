@@ -839,6 +839,7 @@ experiment/src/org/labkey/experiment/list/ListAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/list/ListDef.java -text
 experiment/src/org/labkey/experiment/list/ListDefinitionImpl.java -text
 experiment/src/org/labkey/experiment/list/ListDomainType.java -text
+experiment/src/org/labkey/experiment/list/ListImporter.java -text
 experiment/src/org/labkey/experiment/list/ListItemImpl.java -text
 experiment/src/org/labkey/experiment/list/ListItm.java -text
 experiment/src/org/labkey/experiment/list/ListManager.java -text
@@ -1506,6 +1507,7 @@ query/resources/schemas/dbscripts/sqlserver/query-8.31-8.32.sql -text
 query/resources/schemas/query.xml -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
+query/src/org/labkey/query/CustomViewImporter.java -text
 query/src/org/labkey/query/CustomViewInfoImpl.java -text
 query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
@@ -1514,6 +1516,7 @@ query/src/org/labkey/query/ModuleCustomView.java -text
 query/src/org/labkey/query/ModuleCustomViewDef.java -text
 query/src/org/labkey/query/ModuleQueryDef.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
+query/src/org/labkey/query/QueryImporter.java -text
 query/src/org/labkey/query/QueryModule.java -text
 query/src/org/labkey/query/QueryServiceImpl.java -text
 query/src/org/labkey/query/QuerySnapshotDefImpl.java -text
@@ -1567,6 +1570,7 @@ query/src/org/labkey/query/persist/DbUserSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryManager.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
+query/src/org/labkey/query/reports/ReportImporter.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
 query/src/org/labkey/query/reports/ReportWriter.java -text
@@ -2047,7 +2051,6 @@ study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
 study/src/org/labkey/study/designer/view/StudyDesignsWebPart.java -text
 study/src/org/labkey/study/designer/view/studyDesignSummary.jsp -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
-study/src/org/labkey/study/importer/CustomViewImporter.java -text
 study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
 study/src/org/labkey/study/importer/DatasetImporter.java -text
@@ -2056,8 +2059,6 @@ study/src/org/labkey/study/importer/LDMSRecord.java -text
 study/src/org/labkey/study/importer/MissingValueImporter.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/QcStatesImporter.java -text
-study/src/org/labkey/study/importer/QueryImporter.java -text
-study/src/org/labkey/study/importer/ReportImporter.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
 study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
@@ -2394,8 +2395,8 @@ study/src/org/labkey/study/writer/SpecimenArchiveWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
 study/src/org/labkey/study/writer/StudyExportContextImpl.java -text
+study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
-study/src/org/labkey/study/writer/StudyWriterRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text

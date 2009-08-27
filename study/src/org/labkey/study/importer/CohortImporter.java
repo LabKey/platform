@@ -23,6 +23,7 @@ import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.InvalidFileException;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -63,7 +64,7 @@ public class CohortImporter
                 }
                 catch (XmlException e)
                 {
-                    throw new StudyImporter.InvalidFileException(root, cohortFile, e);
+                    throw new InvalidFileException(root, cohortFile, e);
                 }
 
                 Map<String, Integer> p2c = new HashMap<String, Integer>();

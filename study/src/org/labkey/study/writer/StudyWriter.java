@@ -45,7 +45,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContextImpl>
 
         // Call all the external writers (those defined outside the study module) first -- this ensures that study.xml
         // is the last writer called.
-        for (ExternalStudyWriter writer : StudyWriterRegistryImpl.get().getRegisteredStudyWriters())
+        for (ExternalStudyWriter writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
         {
             String text = writer.getSelectionText();
 
@@ -57,7 +57,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContextImpl>
         boolean exportDatasets = dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT) || dataTypes.contains(DatasetWriter.SELECTION_TEXT);
 
         // Now call all the writers defined in the study module.
-        for (Writer<StudyImpl, StudyExportContextImpl> writer : StudyWriterRegistryImpl.get().getInternalStudyWriters())
+        for (Writer<StudyImpl, StudyExportContextImpl> writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())
         {
             String text = writer.getSelectionText();
 

@@ -16,11 +16,13 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.writer.StudySerializationRegistryImpl;
 
 import java.io.File;
 
@@ -70,20 +72,13 @@ public class StudyImportJob extends PipelineJob
             new DatasetCohortAssigner().process(_study, _ctx, _root);
             info("Done importing dataset cohort assignments");
 
-            info("Importing queries");
-            setStatus("IMPORT queries");
-            new QueryImporter().process(_ctx, _root);
-            info("Done importing queries");
-
-            info("Importing custom views");
-            setStatus("IMPORT custom views");
-            new CustomViewImporter().process(_ctx, _root);
-            info("Done importing custom views");
-
-            info("Importing reports");
-            setStatus("IMPORT reports");
-            new ReportImporter().process(_ctx, _root);
-            info("Done importing reports");
+            for (ExternalStudyImporter importer : StudySerializationRegistryImpl.get().getRegisteredStudyImporters())
+            {
+                info("Importing " + importer.getDescription());
+                setStatus("IMPORT " + importer.getDescription());
+                importer.process(_ctx, _root);
+                info("Done importing " + importer.getDescription());
+            }
 
             success = true;
         }

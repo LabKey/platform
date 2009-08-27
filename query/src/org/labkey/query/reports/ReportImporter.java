@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.importer;
+package org.labkey.query.reports;
 
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.ExternalStudyImporterFactory;
+import org.labkey.api.study.ExternalStudyImporter;
+import org.labkey.api.study.StudyContext;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -29,20 +32,25 @@ import java.sql.SQLException;
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class ReportImporter
+public class ReportImporter implements ExternalStudyImporter
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImportException
+    public String getDescription()
+    {
+        return "reports";
+    }
+
+    public void process(StudyContext ctx, File root) throws IOException, SQLException, StudyImportException
     {
         StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().getReports();
 
         if (null != reportsXml)
         {
-            File reportsDir = StudyImporter.getStudyDir(root, reportsXml.getDir(), "Study.xml");
+            File reportsDir = ctx.getStudyDir(root, reportsXml.getDir(), "Study.xml");
 
             File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
-                    return name.endsWith(".report.xml");   // TODO: pull this from ReportWriter?
+                    return name.endsWith(".report.xml");
                 }
             });
 
@@ -50,6 +58,14 @@ public class ReportImporter
             {
                 ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportFile);
             }
+        }
+    }
+
+    public static class Factory implements ExternalStudyImporterFactory
+    {
+        public ExternalStudyImporter create()
+        {
+            return new ReportImporter();
         }
     }
 }

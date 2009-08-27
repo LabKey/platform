@@ -17,9 +17,9 @@ package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.api.study.StudyExportContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
@@ -35,7 +35,7 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 3:49:32 PM
  */
-public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
+public class SpecimenWriter implements Writer<StudyImpl, StudyContext>
 {
     private static final Logger _log = Logger.getLogger(SpecimenWriter.class);
 
@@ -44,7 +44,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyContext ctx, VirtualFile vf) throws Exception
     {
         SpecimenColumn[] columns = SpecimenImporter.SPECIMEN_COLUMNS;
         StudySchema schema = StudySchema.getInstance();

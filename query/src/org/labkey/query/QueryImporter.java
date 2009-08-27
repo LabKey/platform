@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.importer;
+package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
@@ -37,31 +37,32 @@ import java.util.Map;
  * Date: May 16, 2009
  * Time: 2:21:56 PM
  */
-public class QueryImporter
+public class QueryImporter implements ExternalStudyImporter
 {
-    // TODO: Should pull these from QueryWriter... but that class is not accessible from here
-    public static final String FILE_EXTENSION = ".sql";
-    public static final String META_FILE_EXTENSION =  ".query.xml";
+    public String getDescription()
+    {
+        return "queries";
+    }
 
-    void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException, SQLException, StudyImportException
+    public void process(StudyContext ctx, File root) throws ServletException, XmlException, IOException, SQLException, StudyImportException
     {
         StudyDocument.Study.Queries queriesXml = ctx.getStudyXml().getQueries();
 
         if (null != queriesXml)
         {
-            File queriesDir = StudyImporter.getStudyDir(root, queriesXml.getDir(), "Study.xml");
+            File queriesDir = ctx.getStudyDir(root, queriesXml.getDir(), "Study.xml");
 
             File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
-                    return name.endsWith(FILE_EXTENSION);
+                    return name.endsWith(QueryWriter.FILE_EXTENSION);
                 }
             });
 
             File[] metaFileArray = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
-                    return name.endsWith(META_FILE_EXTENSION);
+                    return name.endsWith(QueryWriter.META_FILE_EXTENSION);
                 }
             });
 
@@ -72,8 +73,8 @@ public class QueryImporter
 
             for (File sqlFile : sqlFiles)
             {
-                String baseFilename = sqlFile.getName().substring(0, sqlFile.getName().length() - FILE_EXTENSION.length());
-                String metaFileName = baseFilename + META_FILE_EXTENSION;
+                String baseFilename = sqlFile.getName().substring(0, sqlFile.getName().length() - QueryWriter.FILE_EXTENSION.length());
+                String metaFileName = baseFilename + QueryWriter.META_FILE_EXTENSION;
                 File metaFile = metaFiles.get(metaFileName);
 
                 if (null == metaFile)
@@ -89,7 +90,7 @@ public class QueryImporter
                 }
                 catch (XmlException e)
                 {
-                    throw new StudyImporter.InvalidFileException(root, metaFile, e);
+                    throw new InvalidFileException(root, metaFile, e);
                 }
 
                 // For now, just delete if a query by this name already exists.
@@ -109,6 +110,14 @@ public class QueryImporter
             }
 
             // TODO: As a check, remove meta data files from map on each save and check for map.size == 0
+        }
+    }
+
+    public static class Factory implements ExternalStudyImporterFactory
+    {
+        public ExternalStudyImporter create()
+        {
+            return new QueryImporter();
         }
     }
 }

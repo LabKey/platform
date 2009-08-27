@@ -17,7 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -27,13 +27,14 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.io.File;
 
 /**
  * User: adam
  * Date: May 16, 2009
  * Time: 2:43:07 PM
  */
-public class StudyExportContextImpl extends AbstractContext implements StudyExportContext
+public class StudyExportContextImpl extends AbstractContext implements StudyContext
 {
     private final boolean _oldFormats;
     private final Set<String> _dataTypes;
@@ -48,6 +49,11 @@ public class StudyExportContextImpl extends AbstractContext implements StudyExpo
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
         initializeDatasets(study);
+    }
+
+    public File getStudyDir(File root, String dirName, String source) throws StudyImportException
+    {
+        throw new IllegalStateException("Not supported during export");
     }
 
     public void lockStudyDocument()

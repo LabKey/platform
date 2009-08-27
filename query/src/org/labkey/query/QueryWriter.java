@@ -19,10 +19,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.ExternalStudyWriter;
-import org.labkey.api.study.ExternalStudyWriterFactory;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyExportContext;
+import org.labkey.api.study.*;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
@@ -48,7 +45,7 @@ public class QueryWriter implements ExternalStudyWriter
         return "Queries";
     }
 
-    public void write(Study study, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(c);

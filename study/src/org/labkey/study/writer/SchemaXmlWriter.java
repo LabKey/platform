@@ -17,27 +17,27 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Type;
+import org.labkey.api.study.StudyContext;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.api.study.StudyExportContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.model.DataSetDefinition;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Collection;
 
 /**
  * User: adam
  * Date: May 27, 2009
  * Time: 11:12:33 AM
  */
-public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyExportContext>
+public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyContext>
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
@@ -53,7 +53,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyExp
         return "Dataset Schema Description";
     }
 
-    public void write(List<DataSetDefinition> definitions, StudyExportContext ctx, VirtualFile vf) throws IOException
+    public void write(List<DataSetDefinition> definitions, StudyContext ctx, VirtualFile vf) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
