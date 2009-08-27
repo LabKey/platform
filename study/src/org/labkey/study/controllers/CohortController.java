@@ -33,6 +33,7 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.query.CohortQueryView;
 import org.labkey.study.query.CohortTable;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -317,7 +318,8 @@ public class CohortController extends BaseStudyController
             CohortImpl cohort;
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
 
-            StudyService.get().beginTransaction();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+            scope.beginTransaction();
             try
             {
                 if (isInsert())
@@ -358,8 +360,8 @@ public class CohortController extends BaseStudyController
                 }
                 cohort.savePropertyBag(dataMap);
 
-                if (StudyService.get().isTransactionActive())
-                    StudyService.get().commitTransaction();
+                if (scope.isTransactionActive())
+                    scope.commitTransaction();
                 return true;
             }
             catch (ValidationException e)
@@ -375,8 +377,8 @@ public class CohortController extends BaseStudyController
             }
             finally
             {
-                if (StudyService.get().isTransactionActive())
-                    StudyService.get().rollbackTransaction();
+                if (scope.isTransactionActive())
+                    scope.rollbackTransaction();
             }
         }
 

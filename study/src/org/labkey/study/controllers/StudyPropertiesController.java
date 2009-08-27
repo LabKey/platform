@@ -20,6 +20,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
@@ -35,6 +36,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyPropertiesTable;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -116,7 +118,8 @@ public class StudyPropertiesController extends BaseStudyController
 
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
 
-            StudyService.get().beginTransaction();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+            scope.beginTransaction();
             try
             {
                 if (newLabel != null && !study.getLabel().equals(newLabel))
@@ -128,8 +131,8 @@ public class StudyPropertiesController extends BaseStudyController
 
                 study.savePropertyBag(dataMap);
 
-                if (StudyService.get().isTransactionActive())
-                    StudyService.get().commitTransaction();
+                if (scope.isTransactionActive())
+                    scope.commitTransaction();
                 return true;
             }
             catch (ValidationException e)
@@ -140,8 +143,8 @@ public class StudyPropertiesController extends BaseStudyController
             }
             finally
             {
-                if (StudyService.get().isTransactionActive())
-                    StudyService.get().rollbackTransaction();
+                if (scope.isTransactionActive())
+                    scope.rollbackTransaction();
             }
         }
 

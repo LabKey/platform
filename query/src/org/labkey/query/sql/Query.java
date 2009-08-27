@@ -866,18 +866,18 @@ public class Query
             Container c = JunitUtil.getTestContainer();
             ListService.Interface s = ListService.get();
 
-            lists = DefaultSchema.get(user, c).getSchema(s.getSchemaName());
+            lists = DefaultSchema.get(user, c).getSchema("lists");
             if (1==1 || null == lists)
             {
                 _tearDown();
                 _setUp();
-                lists = DefaultSchema.get(user, c).getSchema(s.getSchemaName());
+                lists = DefaultSchema.get(user, c).getSchema("lists");
             }
 
             assertNotNull(lists);
             TableInfo Rinfo = lists.getTable("R");
             assertNotNull(Rinfo);
-			TableInfo Sinfo = DefaultSchema.get(user, getSubfolder()).getSchema(s.getSchemaName()).getTable("S");
+			TableInfo Sinfo = DefaultSchema.get(user, getSubfolder()).getSchema("lists").getTable("S");
             assertNotNull(Sinfo);
 
             // custom tests
@@ -904,7 +904,7 @@ public class Query
             {
                 validate(test);
             }
-			if (DefaultSchema.get(user, JunitUtil.getTestContainer()).getSchema(s.getSchemaName()).getDbSchema().getSqlDialect().allowSortOnSubqueryWithoutLimit())
+			if (DefaultSchema.get(user, JunitUtil.getTestContainer()).getSchema("lists").getDbSchema().getSqlDialect().allowSortOnSubqueryWithoutLimit())
 			{
 				for (SqlTest test : postgres)
 					{
