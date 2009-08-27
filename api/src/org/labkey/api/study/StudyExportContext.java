@@ -16,7 +16,7 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.writer.ExportContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.xml.StudyDocument;
 
 /*
@@ -24,7 +24,7 @@ import org.labkey.study.xml.StudyDocument;
 * Date: Aug 26, 2009
 * Time: 9:43:06 AM
 */
-public interface StudyExportContext extends ExportContext
+public interface StudyExportContext extends ContainerUser
 {
     public StudyDocument.Study getStudyXml() throws StudyImportException;
 }

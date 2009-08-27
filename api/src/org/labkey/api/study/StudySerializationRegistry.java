@@ -16,14 +16,12 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.writer.WriterFactory;
-
 /*
 * User: adam
-* Date: Aug 26, 2009
-* Time: 1:33:20 PM
+* Date: Aug 25, 2009
+* Time: 10:16:39 AM
 */
-public interface ExternalStudyWriterFactory extends WriterFactory<Study, StudyContext>
+public interface StudySerializationRegistry
 {
-    ExternalStudyWriter create();
+    public void addFactories(ExternalStudyWriterFactory writerFactory, ExternalStudyImporterFactory importerFactory);
 }

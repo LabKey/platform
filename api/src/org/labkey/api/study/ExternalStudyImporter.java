@@ -16,14 +16,16 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.writer.WriterFactory;
+import java.io.File;
 
 /*
 * User: adam
-* Date: Aug 26, 2009
-* Time: 1:33:20 PM
+* Date: Aug 27, 2009
+* Time: 9:28:28 AM
 */
-public interface ExternalStudyWriterFactory extends WriterFactory<Study, StudyContext>
+public interface ExternalStudyImporter
 {
-    ExternalStudyWriter create();
+    // Brief description of the types of objects this class imports
+    String getDescription();
+    void process(StudyContext ctx, File root) throws Exception;
 }

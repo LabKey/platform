@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * Date: Apr 16, 2009
  * Time: 4:17:59 PM
  */
-public interface Writer<T, CONTEXT extends ExportContext>
+public interface Writer<T, CONTEXT extends ContainerUser>
 {
     @Nullable
     public String getSelectionText();

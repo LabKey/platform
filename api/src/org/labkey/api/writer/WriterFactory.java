@@ -21,7 +21,7 @@ package org.labkey.api.writer;
 * Date: Aug 25, 2009
 * Time: 9:24:51 AM
 */
-public interface WriterFactory<T, CONTEXT extends ExportContext>
+public interface WriterFactory<T, CONTEXT extends ContainerUser>
 {
     Writer<T, CONTEXT> create();
 }

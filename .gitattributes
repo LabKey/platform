@@ -653,8 +653,11 @@ api/src/org/labkey/api/settings/WriteableLookAndFeelProperties.java -text
 api/src/org/labkey/api/study/Cohort.java -text
 api/src/org/labkey/api/study/DataSet.java -text
 api/src/org/labkey/api/study/DilutionCurve.java -text
+api/src/org/labkey/api/study/ExternalStudyImporter.java -text
+api/src/org/labkey/api/study/ExternalStudyImporterFactory.java -text
 api/src/org/labkey/api/study/ExternalStudyWriter.java -text
 api/src/org/labkey/api/study/ExternalStudyWriterFactory.java -text
+api/src/org/labkey/api/study/InvalidFileException.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
 api/src/org/labkey/api/study/Plate.java -text
 api/src/org/labkey/api/study/PlateQueryView.java -text
@@ -666,11 +669,12 @@ api/src/org/labkey/api/study/PropertySet.java -text
 api/src/org/labkey/api/study/Site.java -text
 api/src/org/labkey/api/study/SpecimenService.java -text
 api/src/org/labkey/api/study/Study.java -text
+api/src/org/labkey/api/study/StudyContext.java -text
 api/src/org/labkey/api/study/StudyEntity.java -text
 api/src/org/labkey/api/study/StudyExportContext.java -text
 api/src/org/labkey/api/study/StudyImportException.java -text
+api/src/org/labkey/api/study/StudySerializationRegistry.java -text
 api/src/org/labkey/api/study/StudyService.java -text
-api/src/org/labkey/api/study/StudyWriterRegistry.java -text
 api/src/org/labkey/api/study/TimepointType.java -text
 api/src/org/labkey/api/study/Visit.java -text
 api/src/org/labkey/api/study/Well.java -text
@@ -900,7 +904,7 @@ api/src/org/labkey/api/wiki/MacroProvider.java -text
 api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
 api/src/org/labkey/api/writer/Archive.java -text
-api/src/org/labkey/api/writer/ExportContext.java -text
+api/src/org/labkey/api/writer/ContainerUser.java -text
 api/src/org/labkey/api/writer/VirtualFile.java -text
 api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text

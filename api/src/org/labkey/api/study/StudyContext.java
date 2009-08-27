@@ -16,14 +16,18 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.writer.WriterFactory;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.xml.StudyDocument;
+
+import java.io.File;
 
 /*
 * User: adam
-* Date: Aug 26, 2009
-* Time: 1:33:20 PM
+* Date: Aug 27, 2009
+* Time: 1:17:01 PM
 */
-public interface ExternalStudyWriterFactory extends WriterFactory<Study, StudyContext>
+public interface StudyContext extends ContainerUser
 {
-    ExternalStudyWriter create();
+    public StudyDocument.Study getStudyXml() throws StudyImportException;
+    public File getStudyDir(File root, String dirName, String source) throws StudyImportException;
 }

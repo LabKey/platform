@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package org.labkey.api.writer;
-
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
+package org.labkey.api.study;
 
 /*
 * User: adam
-* Date: Aug 25, 2009
-* Time: 9:21:07 AM
+* Date: Aug 27, 2009
+* Time: 1:31:33 PM
 */
-public interface ExportContext
+public interface ExternalStudyImporterFactory
 {
-    public User getUser();
-    public Container getContainer();
+    ExternalStudyImporter create();
 }

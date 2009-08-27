@@ -23,6 +23,6 @@ import org.labkey.api.writer.Writer;
 * Date: Aug 26, 2009
 * Time: 1:26:41 PM
 */
-public interface ExternalStudyWriter extends Writer<Study, StudyExportContext>
+public interface ExternalStudyWriter extends Writer<Study, StudyContext>
 {
 }

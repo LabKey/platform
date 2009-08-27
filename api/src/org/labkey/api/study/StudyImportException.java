@@ -16,6 +16,8 @@
 
 package org.labkey.api.study;
 
+import java.io.File;
+
 public class StudyImportException extends Exception
 {
     public StudyImportException(String message)
@@ -26,5 +28,18 @@ public class StudyImportException extends Exception
     public StudyImportException(String message, Throwable t)
     {
         super(message + ": " + t.getMessage());
+    }
+
+
+    // Returns a filepath relative to root... this provides path information but hides the pipeline root path.
+    public static String getRelativePath(File root, File file)
+    {
+        String rootPath = root.getAbsolutePath();
+        String filePath = file.getAbsolutePath();
+
+        if (filePath.startsWith(rootPath))
+            return filePath.substring(rootPath.length());
+        else
+            return file.getName();
     }
 }
