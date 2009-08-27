@@ -18,8 +18,6 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.query.SchemaUpdateService;
-import org.labkey.api.query.SchemaUpdateServiceRegistry;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.roles.Role;
@@ -42,7 +40,7 @@ public class StudyService
 {
     private static Service _serviceImpl;
 
-    public interface Service extends SchemaUpdateService
+    public interface Service
     {
         /**
          * Get the {@link Study} for the {@link Container} if it exists.
@@ -162,7 +160,6 @@ public class StudyService
         if (_serviceImpl != null)
             throw new IllegalStateException("Service has already been set.");
         _serviceImpl = serviceImpl;
-        SchemaUpdateServiceRegistry.get().register(serviceImpl);
     }
 
     public static Service get()

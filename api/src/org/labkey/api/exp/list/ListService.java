@@ -19,11 +19,8 @@ package org.labkey.api.exp.list;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.query.SchemaUpdateService;
-import org.labkey.api.query.SchemaUpdateServiceRegistry;
 
 import java.util.Map;
-import java.sql.SQLException;
 
 public class ListService
 {
@@ -37,9 +34,9 @@ public class ListService
     static public void setInstance(Interface i)
     {
         instance = i;
-        SchemaUpdateServiceRegistry.get().register(i);
     }
-    public interface Interface extends SchemaUpdateService
+
+    public interface Interface
     {
         Map<String, ListDefinition> getLists(Container container);
         boolean hasLists(Container container);
@@ -47,10 +44,5 @@ public class ListService
         ListDefinition getList(Container container, int id);
         ListDefinition getList(Domain domain);
         ActionURL getManageListsURL(Container container);
-
-        public void beginTransaction() throws SQLException;
-        public void commitTransaction() throws SQLException;
-        public void rollbackTransaction();
-        public boolean isTransactionActive();
     }
 }

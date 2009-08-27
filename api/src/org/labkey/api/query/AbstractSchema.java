@@ -64,6 +64,14 @@ abstract public class AbstractSchema implements QuerySchema
         return _container;
     }
 
+    /**
+     * Begins a transaction in this schema. Implementations may
+     * throw an exception if a transaction is already in progress
+     * and the underlying data store does not support nested transactions.
+     * Use {@link #isTransactionActive} to determine if a transaction has
+     * already been started in this schema.
+     * @throws SQLException Thrown if a transaction could not be started.
+     */
     public void beginTransaction() throws SQLException
     {
         DbScope scope = _dbSchema.getScope();
@@ -71,6 +79,13 @@ abstract public class AbstractSchema implements QuerySchema
             scope.beginTransaction();
     }
 
+    /**
+     * Commits a transaction in this schema. If no transaction has been
+     * started, the implementation may throw an exception.
+     * Use {@link #isTransactionActive} to determine if a transaction has
+     * already been started in this schema.
+     * @throws SQLException Thrown if the transaction could not be committed.
+     */
     public void commitTransaction() throws SQLException
     {
         DbScope scope = _dbSchema.getScope();
@@ -78,6 +93,12 @@ abstract public class AbstractSchema implements QuerySchema
             scope.commitTransaction();
     }
 
+    /**
+     * Rollsback a transaction in this schema. If no transaction has been
+     * started, the implementation may throw a runtime exception.
+     * Use {@link #isTransactionActive} to determine if a transaction has
+     * already been started in this schema.
+     */
     public void rollbackTransaction()
     {
         DbScope scope = _dbSchema.getScope();

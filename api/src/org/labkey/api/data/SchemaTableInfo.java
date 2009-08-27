@@ -22,12 +22,14 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -709,5 +711,11 @@ public class SchemaTableInfo implements TableInfo
     public String getDescription()
     {
         return _description;
+    }
+
+    @Nullable
+    public QueryUpdateService getUpdateService()
+    {
+        return null;
     }
 }

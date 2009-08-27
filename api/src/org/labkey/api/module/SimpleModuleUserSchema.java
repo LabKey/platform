@@ -100,10 +100,16 @@ public class SimpleModuleUserSchema extends UserSchema
         @Override
         public boolean hasPermission(User user, int perm)
         {
-            SchemaUpdateService service = SchemaUpdateServiceRegistry.get().getService(_schema.getName());
-            if (service == null)
-                return false;
             return _userSchema.getContainer().hasPermission(user, perm);
+        }
+
+        @Override
+        public QueryUpdateService getUpdateService()
+        {
+            // UNDONE: add an 'isUserEditable' bit to the schema and table?
+            if (getTableType() == TableInfo.TABLE_TYPE_TABLE)
+                return new DefaultQueryUpdateService(this);
+            return null;
         }
     }
 

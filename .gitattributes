@@ -447,7 +447,6 @@ api/src/org/labkey/api/query/CustomView.java -text
 api/src/org/labkey/api/query/CustomViewInfo.java -text
 api/src/org/labkey/api/query/DefaultQueryUpdateService.java -text
 api/src/org/labkey/api/query/DefaultSchema.java -text
-api/src/org/labkey/api/query/DefaultSchemaUpdateService.java -text
 api/src/org/labkey/api/query/DetailsURL.java -text
 api/src/org/labkey/api/query/DomainForeignKey.java -text
 api/src/org/labkey/api/query/DuplicateKeyException.java -text
@@ -490,8 +489,6 @@ api/src/org/labkey/api/query/QueryWrapperDynaClass.java -text
 api/src/org/labkey/api/query/RExportScriptFactory.java -text
 api/src/org/labkey/api/query/RowIdForeignKey.java -text
 api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
-api/src/org/labkey/api/query/SchemaUpdateService.java -text
-api/src/org/labkey/api/query/SchemaUpdateServiceRegistry.java -text
 api/src/org/labkey/api/query/SimpleValidationError.java -text
 api/src/org/labkey/api/query/TitleForeignKey.java -text
 api/src/org/labkey/api/query/UserIdForeignKey.java -text

@@ -21,8 +21,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.DefaultSchemaUpdateService;
-import org.labkey.api.query.SchemaUpdateServiceRegistry;
 import org.labkey.data.xml.TablesDocument;
 import org.apache.xmlbeans.XmlException;
 import org.apache.log4j.Logger;
@@ -147,13 +145,6 @@ public class SimpleModule extends DefaultModule
                     return new SimpleModuleUserSchema(schemaName, schema.getUser(), schema.getContainer(), dbschema);
                 }
             });
-
-            // UNDONE: add editable bit to schemas
-            //if (dbschema.isUserEditable())
-            {
-                DefaultSchemaUpdateService service = new DefaultSchemaUpdateService(schemaName);
-                SchemaUpdateServiceRegistry.get().register(service);
-            }
         }
     }
 

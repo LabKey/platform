@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -131,4 +132,12 @@ public interface TableInfo
     public int getCacheSize();
 
     public String getDescription();
+
+    /**
+     * Returns a QueryUpdateSerivce implementation for this TableInfo,
+     * or null if the table/query is not updatable.
+     * @return A QueryUpdateService implementation for this table/query or null.
+     */
+    @Nullable
+    QueryUpdateService getUpdateService();
 }

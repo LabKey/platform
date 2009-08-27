@@ -26,6 +26,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.collections.BoundMap;
 import org.springframework.beans.PropertyValues;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -218,5 +219,17 @@ abstract public class UserSchema extends AbstractSchema
         QuerySettings settings = createQuerySettings(dataRegionName);
         settings.init(pvs);
         return settings;
+    }
+
+    /**
+     * Returns a schema suitable for use with ontology manager for the given query.
+     * May return null if ontology manager is not supported for the query.
+     * @param queryName The name of the query
+     * @return A domain URI for ontology manager or null.
+     */
+    @Nullable
+    public String getDomainURI(String queryName)
+    {
+        return null;
     }
 }
