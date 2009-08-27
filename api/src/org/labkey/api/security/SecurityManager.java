@@ -1594,6 +1594,9 @@ public class SecurityManager
     // Takes string such as "/test/subfolder/Users" and returns groupId
     public static Integer getGroupId(String extraPath)
     {
+        if (null == extraPath)
+            return null;
+        
         if (extraPath.startsWith("/"))
             extraPath = extraPath.substring(1);
 
