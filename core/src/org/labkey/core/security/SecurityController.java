@@ -652,7 +652,8 @@ public class SecurityController extends SpringActionController
                 container = container.getProject();
 
             _group = form.getGroupFor(getContainer());
-            ensureGroupInContainer(_group,container);
+            if (null == _group)
+                throw new RedirectException(new ActionURL(ProjectAction.class, container));
 
             List<String> messages = new ArrayList<String>();
 
@@ -895,6 +896,8 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(GroupForm form, BindException errors) throws Exception
         {
             _group = form.getGroupFor(getContainer());
+            if (null == _group)
+                throw new RedirectException(new ActionURL(ProjectAction.class, getContainer()));
             return renderGroup(_group, errors, Collections.<String>emptyList());
         }
 
