@@ -21,7 +21,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
@@ -46,27 +45,6 @@ public class PipelineManager
 {
     private static final Logger _log = Logger.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-
-    // Invoked at version 8.22
-    public static void updateRoots()
-    {
-        // Perl pipeline use has been moved from an application-wide setting
-        // to a container setting.  If the application-wide setting was on, then
-        // turn on all existing pipeline roots.
-        if (AppProps.getInstance().isPerlPipelineEnabled())
-        {
-            try
-            {
-                Table.execute(pipeline.getSchema(),
-                    "UPDATE " + pipeline.getTableInfoPipelineRoots().getSelectName() + " SET PerlPipeline = ?",
-                        new Object[] { Boolean.TRUE } );
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException("Failed setting PerlPipeline on existing roots.", e);
-            }
-        }
-    }
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
@@ -151,7 +129,7 @@ public class PipelineManager
 
 
     static public void setPipelineRoot(User user, Container container, String path, String type,
-                                       GlobusKeyPair globusKeyPair, boolean perlPipeline) throws SQLException
+                                       GlobusKeyPair globusKeyPair) throws SQLException
     {
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;
@@ -179,7 +157,6 @@ public class PipelineManager
             newValue.setKeyBytes(globusKeyPair == null ? null : globusKeyPair.getKeyBytes());
             newValue.setCertBytes(globusKeyPair == null ? null : globusKeyPair.getCertBytes());
             newValue.setKeyPassword(globusKeyPair == null ? null : globusKeyPair.getPassword());
-            newValue.setPerlPipeline(perlPipeline);
             if (oldValue == null)
             {
                 Table.insert(user, pipeline.getTableInfoPipelineRoots(), newValue);

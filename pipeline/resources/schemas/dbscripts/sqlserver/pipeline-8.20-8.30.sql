@@ -28,9 +28,6 @@ ALTER TABLE pipeline.PipelineRoots ADD
     PerlPipeline bit NOT NULL DEFAULT 0
 GO
 
-EXEC core.executeJavaUpgradeCode 'updateRoots'
-GO
-
 /* pipeline-8.22-8.23.sql */
 
 ALTER TABLE pipeline.StatusFiles ADD

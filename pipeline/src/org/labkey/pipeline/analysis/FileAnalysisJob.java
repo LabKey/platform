@@ -33,16 +33,16 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     private TaskId _taskPipelineId;
 
     public FileAnalysisJob(FileAnalysisProtocol protocol,
-                           String providerName,                           
+                           String providerName,
                            ViewBackgroundInfo info,
                            TaskId taskPipelineId,
                            String protocolName,
                            File fileParameters,
-                           File filesInput[],
-                           boolean append)
+                           File filesInput[]
+    )
             throws SQLException, IOException
     {
-        super(protocol, providerName, info, protocolName, fileParameters, filesInput, append);
+        super(protocol, providerName, info, protocolName, fileParameters, filesInput);
 
         _taskPipelineId = taskPipelineId;
     }

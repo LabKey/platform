@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2006-2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-ALTER TABLE pipeline.PipelineRoots ADD
-    PerlPipeline bit NOT NULL DEFAULT 0
+ALTER TABLE pipeline.PipelineRoots DROP COLUMN PerlPipeline
 GO
+

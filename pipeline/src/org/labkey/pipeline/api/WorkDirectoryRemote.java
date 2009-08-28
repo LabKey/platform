@@ -40,7 +40,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 {
     private static Logger _systemLog = Logger.getLogger(WorkDirectoryRemote.class);
 
-    private static final int PERL_PIPELINE_LOCKS_DEFAULT = 5;
+    private static final int FILE_LOCKS_DEFAULT = 5;
     
     private final File _lockDirectory;
 
@@ -201,7 +201,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             bOut.write(b, 0, i);
         }
         String line = new String(bOut.toByteArray(), "UTF-8").trim();
-        int totalLocks = PERL_PIPELINE_LOCKS_DEFAULT;
+        int totalLocks = FILE_LOCKS_DEFAULT;
         int currentIndex = 0;
         if (line.length() > 0)
         {
@@ -228,7 +228,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             }
 
             if (totalLocks < 1)
-                totalLocks = PERL_PIPELINE_LOCKS_DEFAULT;
+                totalLocks = FILE_LOCKS_DEFAULT;
         }
 
         if (currentIndex >= totalLocks)
@@ -303,7 +303,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         masterFile.seek(0);
 
         String output = Integer.toString(lockInfo.getCurrentLock());
-        if (lockInfo.getTotalLocks() != PERL_PIPELINE_LOCKS_DEFAULT)
+        if (lockInfo.getTotalLocks() != FILE_LOCKS_DEFAULT)
             output += " " + Integer.toString(lockInfo.getTotalLocks());
         byte[] outputBytes = output.getBytes("UTF-8");
         masterFile.write(outputBytes);

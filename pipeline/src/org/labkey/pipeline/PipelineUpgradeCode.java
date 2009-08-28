@@ -15,15 +15,14 @@
  */
 package org.labkey.pipeline;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.pipeline.api.PipelineManager;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -56,11 +55,5 @@ public class PipelineUpgradeCode implements UpgradeCode
                 _log.error("Failed to set pipeline tools directory.", e);
             }
         }
-    }
-
-    // Invoked at version 8.22
-    public void updateRoots(ModuleContext moduleContext)
-    {
-        PipelineManager.updateRoots();
     }
 }

@@ -111,14 +111,6 @@ function toggleGlobusVisible()
                 <td><input type="file" size="70" name="certFile"></td>
             </tr><%
         }
-
-        if (AppProps.getInstance().isPerlPipelineEnabled())
-        { %>
-            <tr>
-                <td class="labkey-form-label">Use Perl pipeline<labkey:helpPopup title="Use Perl pipeline">Check this box to override the X! Tandem and Mascot pipelines with Perl file scanning versions.  This requires extra setup of the file scanning service for each new root.</labkey:helpPopup>:</td>
-                <td><input type="checkbox" name="perlPipeline" <%=bean.isPerlPipeline() ? " checked" : ""%>></td>
-            </tr><%
-        }
         %>
         <tr><td colspan="3" style="font-size: 4px">&nbsp;</td></tr>
         <tr>

@@ -223,7 +223,7 @@ public class PipelineController extends SpringActionController
             }
 
             PipelineService.get().setPipelineRoot(getUser(), getContainer(), root, PipelineRoot.PRIMARY_ROOT,
-                    keyPair, form.isPerlPipeline());
+                    keyPair);
             return true;
         }
 
@@ -241,16 +241,13 @@ public class PipelineController extends SpringActionController
         private String _strValue;
         private ActionURL _doneURL;
         private GlobusKeyPair _globusKeyPair;
-        private boolean _perlPipeline;
 
-        public SetupBean(String confirmMessage, String strValue, ActionURL doneURL,
-                         GlobusKeyPair globusKeyPair, boolean perlPipeline)
+        public SetupBean(String confirmMessage, String strValue, ActionURL doneURL, GlobusKeyPair globusKeyPair)
         {
             _confirmMessage = confirmMessage;
             _strValue = strValue;
             _doneURL = doneURL;
             _globusKeyPair = globusKeyPair;
-            _perlPipeline = perlPipeline;
         }
 
         public ActionURL getDoneURL()
@@ -271,11 +268,6 @@ public class PipelineController extends SpringActionController
         public GlobusKeyPair getGlobusKeyPair()
         {
             return _globusKeyPair;
-        }
-
-        public boolean isPerlPipeline()
-        {
-            return _perlPipeline;
         }
     }
 
@@ -368,25 +360,12 @@ public class PipelineController extends SpringActionController
                 }
 
                 GlobusKeyPair keyPair = null;
-                boolean usePerlPipeline;
-                if (pipeRoot == null)
-                {
-                    usePerlPipeline = AppProps.getInstance().isPerlPipelineEnabled();
-                    if (usePerlPipeline)
-                    {
-                        // If Globus properties are set, assume system is transitioning away
-                        // from Perl pipeline.
-                        usePerlPipeline = !PipelineService.get().isEnterprisePipeline() ||
-                            PipelineJobService.get().getGlobusClientProperties() == null;
-                    }
-                }
-                else
+                if (pipeRoot != null)
                 {
                     keyPair = pipeRoot.getGlobusKeyPair();
-                    usePerlPipeline = pipeRoot.isPerlPipeline();
                 }
 
-                SetupBean bean = new SetupBean(confirmMessage, strValue, doneURL, keyPair, usePerlPipeline);                
+                SetupBean bean = new SetupBean(confirmMessage, strValue, doneURL, keyPair);                
                 JspView<SetupBean> jspView = new JspView<SetupBean>("/org/labkey/pipeline/setup.jsp", bean, errors);
 
                 PipelineService service = PipelineService.get();
@@ -1436,7 +1415,6 @@ public class PipelineController extends SpringActionController
     {
         private String _keyPassword;
         private boolean _uploadNewGlobusKeys;
-        private boolean _perlPipeline;
 
         public boolean isUploadNewGlobusKeys()
         {
@@ -1456,16 +1434,6 @@ public class PipelineController extends SpringActionController
         public void setKeyPassword(String keyPassword)
         {
             _keyPassword = keyPassword;
-        }
-
-        public boolean isPerlPipeline()
-        {
-            return _perlPipeline;
-        }
-
-        public void setPerlPipeline(boolean perlPipeline)
-        {
-            _perlPipeline = perlPipeline;
         }
     }
 

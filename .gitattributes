@@ -859,7 +859,6 @@ experiment/src/org/labkey/experiment/pipeline/MoveRunsTaskFactory.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorSource.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorTask.java -text
 experiment/src/org/labkey/experiment/pipeline/XarImportTask.java -text
-experiment/src/org/labkey/experiment/pipeline/XarTemplateSubstitutionTask.java -text
 experiment/src/org/labkey/experiment/runTypeFilters.jsp -text
 experiment/src/org/labkey/experiment/samples/UploadMaterialSetForm.java -text
 experiment/src/org/labkey/experiment/samples/UploadSamplesHelper.java -text
@@ -1074,6 +1073,7 @@ pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.30-8.31.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.31-8.32.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.32-8.33.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.20-9.21.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.64.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.63-0.64.sql -text
@@ -1105,6 +1105,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.30-8.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.31-8.32.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.32-8.33.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.21.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text

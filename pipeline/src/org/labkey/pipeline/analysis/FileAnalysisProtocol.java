@@ -19,7 +19,6 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
-import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -55,11 +54,11 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
     }
 
     public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, File[] filesInput,
-                                                     File fileParameters, boolean append)
+                                                     File fileParameters)
             throws SQLException, IOException
     {
         TaskId id = _factory.getPipeline().getId();
         return new FileAnalysisJob(this, FileAnalysisPipelineProvider.name, info,
-                id, getName(), fileParameters, filesInput, append);
+                id, getName(), fileParameters, filesInput);
     }
 }

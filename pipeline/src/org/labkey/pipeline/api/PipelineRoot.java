@@ -27,7 +27,6 @@ public class PipelineRoot extends Entity
     String _path;
     String _type;
     
-    boolean _perlPipeline;
     byte[] _keyBytes;
     byte[] _certBytes;
     String _keyPassword;
@@ -45,7 +44,6 @@ public class PipelineRoot extends Entity
         this._pipelineRootId = root._pipelineRootId;
         this._path = root._path;
         this._type = root._type;
-        this._perlPipeline = root._perlPipeline;
         this._keyBytes = root._keyBytes;
         this._certBytes = root._certBytes;
         this._keyPassword = root._keyPassword;
@@ -84,16 +82,6 @@ public class PipelineRoot extends Entity
     public void setType(String type)
     {
         _type = type;
-    }
-
-    public boolean isPerlPipeline()
-    {
-        return _perlPipeline;
-    }
-
-    public void setPerlPipeline(boolean perlPipeline)
-    {
-        _perlPipeline = perlPipeline;
     }
 
     public byte[] getKeyBytes()

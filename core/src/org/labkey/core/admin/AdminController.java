@@ -1183,7 +1183,6 @@ public class AdminController extends SpringActionController
 
             props.setDefaultDomain(form.getDefaultDomain());
             props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
-            props.setPerlPipelineEnabled(form.isPerlPipelineEnabled());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setSequestServer(form.getSequestServer());
             props.setSSLRequired(form.isSslRequired());
@@ -1476,7 +1475,6 @@ public class AdminController extends SpringActionController
 
         private String _defaultDomain;
         private String _defaultLsidAuthority;
-        private boolean _perlPipelineEnabled;
         private String _pipelineToolsDirectory;
         private boolean _sequest;
         private String _sequestServer;
@@ -1594,16 +1592,6 @@ public class AdminController extends SpringActionController
         public void setDefaultLsidAuthority(String defaultLsidAuthority)
         {
             _defaultLsidAuthority = defaultLsidAuthority;
-        }
-
-        public boolean isPerlPipelineEnabled()
-        {
-            return _perlPipelineEnabled;
-        }
-
-        public void setPerlPipelineEnabled(boolean perlPipelineEnabled)
-        {
-            _perlPipelineEnabled = perlPipelineEnabled;
         }
 
         public String getPipelineToolsDirectory()

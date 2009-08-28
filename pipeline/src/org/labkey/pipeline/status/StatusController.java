@@ -21,20 +21,23 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.util.*;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
+import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
-import org.labkey.pipeline.api.PipelineServiceImpl;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -44,7 +47,6 @@ import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
@@ -1087,103 +1089,6 @@ public class StatusController extends SpringActionController
                 name.charAt(basename.length()) != '.')
             return false;
         return name.endsWith(".log") || name.endsWith(".out") || name.endsWith(".err");
-    }
-
-    /////////////////////////////////////////////////////////////////////////
-    // Perl Pipeline actions
-
-    @RequiresPermission(ACL.PERM_NONE)
-    public class SetStatusFileAction extends SimpleStreamAction<StatusFileForm>
-    {
-        public void setResponseProperties(HttpServletResponse response)
-        {
-            // No caching, since this really RPC
-            response.setHeader("Cache-Control", "no-cache");
-        }
-
-        public void render(StatusFileForm form, BindException errors, PrintWriter out) throws Exception
-        {
-            String status;
-            try
-            {
-                if (!PipelineService.get().usePerlPipeline(getContainer()))
-                    status = "ERROR->HTTP status updates disabled";
-                else if (!form.isStatusModAllowed())
-                    status = "ERROR->Access denied";
-                else
-                {
-                    setStatusFile(getViewBackgroundInfo(), form.getBean(), false);
-                    status = "SUCCESS";
-                }
-            }
-            catch (Container.ContainerException e)
-            {
-                status = "ERROR->message=Wrong status container";
-            }
-            catch (SQLException e)
-            {
-                status = "ERROR->message=" + e.getMessage();
-            }
-
-            if (status.startsWith("ERROR"))
-                getViewContext().getResponse().setStatus(400);    // Bad request.
-            out.println(status);
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_NONE)
-    public class RemoveStatusFileAction extends SimpleStreamAction<StatusFileForm>
-    {
-        public void setResponseProperties(HttpServletResponse response)
-        {
-            // No caching, since this really RPC
-            response.setHeader("Cache-Control", "no-cache");
-        }
-
-        public void render(StatusFileForm form, BindException errors, PrintWriter out) throws Exception
-        {
-            String status;
-            try
-            {
-                if (!PipelineService.get().usePerlPipeline(getContainer()))
-                    status = "ERROR->HTTP status updates disabled";
-                else if (!form.isStatusModAllowed())
-                    status = "ERROR->Access denied";
-                else
-                {
-                    removeStatusFile(getViewBackgroundInfo(), form.getBean());
-                    status = "SUCCESS";
-                }
-            }
-            catch (SQLException e)
-            {
-                status = "ERROR->message=" + e.getMessage();
-            }
-
-            if (status.startsWith("ERROR"))
-                getViewContext().getResponse().setStatus(400);    // Bad request.
-            out.println(status);
-        }
-    }
-
-    public static class StatusFileForm extends BeanViewForm<PipelineStatusFileImpl>
-    {
-        public StatusFileForm()
-        {
-            super(PipelineStatusFileImpl.class);
-        }
-
-        public boolean isStatusModAllowed() throws SQLException
-        {
-            String filePath = getBean().getFilePath();
-            if (getStatusFile(filePath) != null)
-                    return true;
-
-            // If the status entry does not already exist, then this must be an existing
-            // file with a .status extension.
-            return (PipelineJob.FT_PERL_STATUS.isType(filePath) &&
-                    NetworkDrive.exists(new File(filePath)));
-        }
     }
 
 /////////////////////////////////////////////////////////////////////////////

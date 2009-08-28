@@ -258,7 +258,7 @@ public class AnalysisController extends SpringActionController
                 }
 
                 AbstractFileAnalysisJob job =
-                        _protocol.createPipelineJob(getViewBackgroundInfo(), filesInput, fileParameters, false);
+                        _protocol.createPipelineJob(getViewBackgroundInfo(), filesInput, fileParameters);
 
                 PipelineService.get().queueJob(job);
             }
@@ -453,7 +453,7 @@ public class AnalysisController extends SpringActionController
                 File[] filesInput = filesInputList.toArray(new File[filesInputList.size()]);
 
                 AbstractFileAnalysisJob job =
-                        protocol.createPipelineJob(getViewBackgroundInfo(), filesInput, fileParameters, false);
+                        protocol.createPipelineJob(getViewBackgroundInfo(), filesInput, fileParameters);
 
                 job.setActiveTaskId(taskIdGenerator);
                 PipelineService.get().queueJob(job);

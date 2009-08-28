@@ -341,35 +341,4 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     {
         this._hadError = hadError;
     }
-
-    /**
-     * Synchronize a .status file on disk with the status stored in the database.
-     * This is only necessary for the Perl Pipeline, which runs its state machine
-     * by scanning the file system.
-     *
-     * @throws IOException error writing status
-     */
-    public void synchDiskStatus() throws IOException
-    {
-        // If the disk file is not a .status file, then do nothing.
-        if (!_filePath.endsWith(".status"))
-            return;
-
-        BufferedWriter writer = null;
-        try
-        {
-            writer = new BufferedWriter(new FileWriter(_filePath));
-            writer.write(_status);
-            if (_info != null && _info.length() > 0)
-            {
-                writer.write("->");
-                writer.write(_info);
-            }
-        }
-        finally
-        {
-            if (writer != null)
-                writer.close();
-        }
-    }
 }

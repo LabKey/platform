@@ -257,10 +257,6 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="pipelineToolsDirectory" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Enable Perl pipeline</td>
-    <td><input type="checkbox" name="perlPipelineEnabled" <%=appProps.isPerlPipelineEnabled() ? "checked" : ""%>></td>
-</tr>
-<tr>
     <td>&nbsp;</td>
 </tr>
 

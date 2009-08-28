@@ -16,16 +16,18 @@
 
 package org.labkey.pipeline.api;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
+import org.labkey.api.pipeline.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.pipeline.*;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
-import java.util.*;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * <code>PipelineStatusManager</code> provides access to the StatusFiles table
@@ -151,23 +153,6 @@ public class PipelineStatusManager
             throws Container.ContainerException
     {
         String status = sf.getStatus();
-        String info = sf.getInfo();
-
-        // Try to synchronize disk status first (for Perl Pipelin only)
-        // If this fails, then the Perl Pipeline will not register the change
-        // in status.
-        try
-        {
-            sf.synchDiskStatus();
-        }
-        catch (IOException eio)
-        {
-            // Make sure the status changes to ERROR, to allow the user to Retry.
-            status = PipelineJob.ERROR_STATUS;
-            sf.setStatus(status);
-            sf.setInfo("type=disk; attempting " + status + (info == null ? "" : " - " + info) + "; " +
-                    eio.getMessage());
-        }
 
         try
         {

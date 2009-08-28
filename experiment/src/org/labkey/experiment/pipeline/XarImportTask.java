@@ -15,22 +15,20 @@
  */
 package org.labkey.experiment.pipeline;
 
-import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
+import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.exp.pipeline.XarImportFactorySettings;
 import org.labkey.api.exp.pipeline.XarImportTaskId;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * <code>XarImportTask</code>

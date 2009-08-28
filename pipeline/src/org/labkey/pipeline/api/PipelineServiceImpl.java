@@ -28,11 +28,9 @@ import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.pipeline.browse.BrowseViewImpl;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
@@ -217,13 +215,13 @@ public class PipelineServiceImpl extends PipelineService
     }
 
     public void setPipelineRoot(User user, Container container, URI root, String type,
-                                GlobusKeyPair globusKeyPair, boolean perlPipeline) throws SQLException
+                                GlobusKeyPair globusKeyPair) throws SQLException
     {
         if (!canModifyPipelineRoot(user, container))
             throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");
         
         PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type,
-                globusKeyPair, perlPipeline);
+                globusKeyPair);
     }
 
     public boolean canModifyPipelineRoot(User user, Container container)
@@ -234,15 +232,6 @@ public class PipelineServiceImpl extends PipelineService
                 && container.getProject().hasPermission(user, AdminPermission.class);
     }
 
-    public boolean usePerlPipeline(Container container) throws SQLException
-    {
-        if (!AppProps.getInstance().isPerlPipelineEnabled())
-            return false;
-
-        PipeRoot pr = findPipelineRoot(container);
-        return pr != null && pr.isPerlPipeline();
-    }
-                                   
     @NotNull
     public File ensureSystemDirectory(URI root)
     {
@@ -435,11 +424,6 @@ public class PipelineServiceImpl extends PipelineService
     public PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException
     {
         return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
-    }
-
-    public void setStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf) throws Exception
-    {
-        PipelineStatusManager.setStatusFile(info, (PipelineStatusFileImpl) sf, false);
     }
 
     public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
