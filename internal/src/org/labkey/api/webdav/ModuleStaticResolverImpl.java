@@ -454,7 +454,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public Resource lookup(String relpath)
         {
-            return this._resolver.lookup(c(getPath(),relpath));
+            return _resolver.lookup(c(getPath(),relpath));
         }
 
         public Resource find(String name)
@@ -469,7 +469,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public List<String> listNames()
         {
-            return _inner.listNames();
+            return _resolver.lookup(getPath()).listNames();
         }
     }
 

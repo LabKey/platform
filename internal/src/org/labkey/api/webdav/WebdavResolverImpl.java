@@ -205,7 +205,7 @@ public class WebdavResolverImpl implements WebdavResolver
             remove(path);
             if (recursive)
                 removeUsingPrefix(c(path,""));
-            if (path.equals("/"))
+            if (containerPath.equals("/"))
             {
                 synchronized (WebdavResolverImpl.this)
                 {
