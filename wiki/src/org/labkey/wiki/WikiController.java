@@ -1125,10 +1125,27 @@ public class WikiController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_READ)
+    public class SourceAction extends PageAction
+    {
+        public SourceAction()
+        {
+            super();
+            _source = true;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
     public class PageAction extends SimpleViewAction<WikiNameForm>
     {
+        boolean _source=false;
         Wiki _wiki = null;
         WikiVersion _wikiversion = null;
+
+        boolean isSource()
+        {
+            return _source;
+        }
 
         public PageAction()
         {
@@ -1166,7 +1183,22 @@ public class WikiController extends SpringActionController
                     HttpView.throwNotFound();
             }
 
-            if (isPrint())
+            if (isSource())
+            {
+                if ("none".equals(getViewContext().getRequest().getParameter("_template")))
+                {
+                    getPageConfig().setTemplate(PageConfig.Template.None);
+                    HtmlView html = new HtmlView(_wikiversion.getBody());
+                    html.setFrame(WebPartView.FrameType.NONE);
+                    html.setContentType("text/plain");
+                    return html;
+                }
+                else
+                {
+                    return new HtmlView("<pre>\n"+PageFlowUtil.filter(_wikiversion.getBody())+"\n</pre>");
+                }
+            }
+            else if (isPrint())
             {
                 JspView<Wiki> view = new JspView<Wiki>("/org/labkey/wiki/view/wikiPrint.jsp", _wiki);
                 view.setFrame(WebPartView.FrameType.NONE);
@@ -1192,6 +1224,8 @@ public class WikiController extends SpringActionController
         {
             new BeginAction().appendNavTrail(root);
             appendWikiTrail(root, _wiki);
+            if (isSource())
+                root.addChild("source");
             return root;
         }
 
