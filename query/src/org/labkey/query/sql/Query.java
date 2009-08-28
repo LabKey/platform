@@ -150,6 +150,10 @@ public class Query
             if (_queryRoot._savedName == null && _name != null)
                 _queryRoot.setSavedName(_name);
 		}
+        catch (UnauthorizedException ex)
+        {
+            throw ex;
+        }
 		catch (RuntimeException ex)
 		{
 			throw wrapRuntimeException(ex, _querySource);

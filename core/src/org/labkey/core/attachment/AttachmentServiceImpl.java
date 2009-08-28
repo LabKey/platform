@@ -1468,7 +1468,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             if (_parent instanceof FileSystemAttachmentParent)
             {
-                if (null != ((FileSystemAttachmentParent)_parent).getName())
+                if (null == ((FileSystemAttachmentParent)_parent).getName())
                 {
                     try
                     {
