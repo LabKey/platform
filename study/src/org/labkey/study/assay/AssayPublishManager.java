@@ -416,6 +416,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             typeMap.put(pd.getName(), pd);
         // loop through all new columns, and verify that we have a property already defined:
         DomainDescriptor domainDescriptor = new DomainDescriptor(dataset.getTypeURI(), container);
+        int sortOrder = 0;
         for (String newPdName : newPdNames)
         {
             if (!propertyNamesToUris.containsKey(newPdName))
@@ -424,10 +425,11 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (!renameRunPropertyToBatch(pds, propertyNamesToUris, newPdNames, domainDescriptor, newPdName))
                 {
                     PropertyDescriptor pd = typeMap.get(newPdName);
-                    OntologyManager.insertOrUpdatePropertyDescriptor(pd, domainDescriptor);
+                    OntologyManager.insertOrUpdatePropertyDescriptor(pd, domainDescriptor, sortOrder);
                     propertyNamesToUris.put(newPdName, pd.getPropertyURI());
                 }
             }
+            sortOrder++;
         }
         return propertyNamesToUris;
     }

@@ -1659,8 +1659,13 @@ table.labkey-r-tsvout
   background-color: #89A1B4;
 }
 
+.gwt-PushButton {
+    cursor: pointer;
+}
+
 .gwt-PushButton-up-disabled
 {
+    cursor: default;
 	filter:alpha(opacity=50);
 	-moz-opacity:0.5;
 	-khtml-opacity: 0.5;

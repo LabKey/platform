@@ -282,6 +282,7 @@
       <ns:column columnName="PropertyId"/>
       <ns:column columnName="DomainId"/>
       <ns:column columnName="Required"/>
+      <ns:column columnName="SortOrder"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Object" tableDbType="TABLE">

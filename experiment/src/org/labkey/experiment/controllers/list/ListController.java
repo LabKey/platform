@@ -387,10 +387,7 @@ public class ListController extends SpringActionController
             TableInfo table = _list.getTable(getUser());
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list);
 
-            DataView view = getDataView(tableForm, form.getReturnActionURL(), errors);
-            setDisplayColumnsFromDefaultView(_list.getListId(), view.getDataRegion(), true);
-
-            return view;
+            return getDataView(tableForm, form.getReturnActionURL(), errors);
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
@@ -600,9 +597,9 @@ public class ListController extends SpringActionController
     }
 
 
-    // Unfortunate query hackery that orders details, insert, and update display columns based on default view
+    // Unfortunate query hackery that orders details columns based on default view
     // TODO: Fix this... build into InsertView (or QueryInsertView or something)
-    private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn, boolean editableOnly)
+    private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn)
     {
         ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()), (BindException)null);
         List<DisplayColumn> defaultGridColumns = lqv.getDisplayColumns();
@@ -620,19 +617,6 @@ public class ListController extends SpringActionController
             // Occasionally in production this comes back null -- not sure why.  See #8088
             if (null == dc)
                 continue;
-
-            if (editableOnly)
-            {
-                // In update/insert, skip non-editable columns
-                if (!dc.isEditable())
-                    continue;
-
-                ColumnInfo ci = dc.getColumnInfo();
-
-                // Skip joined columns that are not direct lookups -- see #8184
-                if (ci instanceof LookupColumn || !lqv.getTable().getName().equals(dc.getColumnInfo().getTableAlias()))
-                    continue;
-            }
 
             if (dc instanceof UrlColumn)
                 continue;
@@ -674,7 +658,7 @@ public class ListController extends SpringActionController
             ActionButton gridButton = new ActionButton("Show Grid", _list.urlShowData());
             bb.add(gridButton);
             details.getDataRegion().setButtonBar(bb);
-            setDisplayColumnsFromDefaultView(_list.getListId(), details.getDataRegion(), false);
+            setDisplayColumnsFromDefaultView(_list.getListId(), details.getDataRegion());
 
             VBox view = new VBox();
             ListItem item = _list.getListItem(tableForm.getPkVal());

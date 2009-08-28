@@ -105,6 +105,7 @@ public class UploadSamplesHelper
             dd.setDomainURI(materialSourceLsid);
             dd.setContainer(getContainer());
 
+            int sortOrder = pds.length;
             for (ColumnDescriptor cd : columns)
             {
                 PropertyDescriptor pd = descriptorsByName.get(cd.name);
@@ -119,7 +120,7 @@ public class UploadSamplesHelper
                     pd.setRangeURI(PropertyType.getFromClass(cd.clazz).getTypeUri());
                     pd.setContainer(_form.getContainer());
                     //Change name to be fully qualified string for property
-                    pd = OntologyManager.insertOrUpdatePropertyDescriptor(pd, dd);
+                    pd = OntologyManager.insertOrUpdatePropertyDescriptor(pd, dd, sortOrder++);
                     descriptors.add(pd);
                     descriptorsByName.put(pd.getName(), pd);
                 }

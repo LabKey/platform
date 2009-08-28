@@ -333,12 +333,14 @@ public class DomainPropertyImpl implements DomainProperty
         OntologyManager.deletePropertyDescriptor(_pd);
     }
 
-    public void save(User user, DomainDescriptor dd) throws SQLException, ChangePropertyDescriptorException
+    public void save(User user, DomainDescriptor dd, int sortOrder) throws SQLException, ChangePropertyDescriptorException
     {
         if (isNew())
-            _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd);
+            _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
         else if (_pdOld != null)
-            _pd = OntologyManager.updatePropertyDescriptor(user, _domain.getTypeURI(), _pdOld, _pd);
+            _pd = OntologyManager.updatePropertyDescriptor(user, _domain._dd, _pdOld, _pd, sortOrder);
+        else
+            OntologyManager.ensurePropertyDomain(_pd, _domain._dd, sortOrder);
 
         _pdOld = null;
 
@@ -412,6 +414,8 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public boolean equals(Object obj)
     {
+        if (obj == this)
+            return true;
         if (!(obj instanceof DomainPropertyImpl))
             return false;
         // once a domain property has been edited, it no longer equals any other domain property:

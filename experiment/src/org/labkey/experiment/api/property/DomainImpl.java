@@ -167,7 +167,20 @@ public class DomainImpl implements Domain
 
     public DomainPropertyImpl[] getProperties()
     {
-        return _properties.toArray(new DomainPropertyImpl[0]);
+        return _properties.toArray(new DomainPropertyImpl[_properties.size()]);
+    }
+
+    public void setPropertyIndex(DomainProperty prop, int index)
+    {
+        if (index < 0 || index >= _properties.size())
+        {
+            throw new IndexOutOfBoundsException();
+        }
+        if (!_properties.remove((DomainPropertyImpl)prop))
+        {
+            throw new IllegalArgumentException("The property is not part of this domain");
+        }
+        _properties.add(index, (DomainPropertyImpl)prop);
     }
 
     public ActionURL urlEditDefinition(boolean allowFileLinkProperties, boolean allowAttachmentProperties, boolean showDefaultValueSettings)
@@ -221,6 +234,7 @@ public class DomainImpl implements Domain
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
             boolean propChanged = false;
+            int sortOrder = 0;
             for (DomainPropertyImpl impl : _properties)
             {
                 if (impl._deleted)
@@ -232,15 +246,15 @@ public class DomainImpl implements Domain
                 {
                     if (impl._pd.isRequired())
                         keyColumnsChanged = true;
-                    impl.save(user, _dd);
+                    impl.save(user, _dd, sortOrder++);
                     propChanged = true;
                 }
-                else if (impl.isDirty())
+                else
                 {
+                    propChanged = impl.isDirty();
                     if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
                         keyColumnsChanged = true;
-                    impl.save(user, _dd);
-                    propChanged = true;
+                    impl.save(user, _dd, sortOrder++);
                 }
             }
             if (propChanged)
