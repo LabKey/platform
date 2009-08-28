@@ -96,7 +96,14 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             logParameters("Overrides", fileParameters, _parametersOverrides);
         }
 
-        _baseName = protocol.getBaseName(_filesInput.length > 1 ? _dirData : filesInput[0]);
+        if (_filesInput.length > 1)
+        {
+            _baseName = AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
+        }
+        else
+        {
+            _baseName = protocol.getBaseName(_filesInput[0]);
+        }
 
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName), append);
     }

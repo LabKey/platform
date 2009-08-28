@@ -357,6 +357,19 @@ public class DomainUtil
         {
             if (errors.size() == 0)
             {
+                // Reorder the properties based on what we got from GWT
+                Map<String, DomainProperty> dps = new HashMap<String, DomainProperty>();
+                for (DomainProperty dp : d.getProperties())
+                {
+                    dps.put(dp.getPropertyURI(), dp);
+                }
+                int index = 0;
+                for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>)update.getFields())
+                {
+                    DomainProperty dp = dps.get(pd.getPropertyURI());
+                    d.setPropertyIndex(dp, index++);
+                }
+
                 d.save(user);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<DomainProperty, Object>(defaultValues);

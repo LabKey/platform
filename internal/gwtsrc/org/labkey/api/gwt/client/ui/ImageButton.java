@@ -16,18 +16,33 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.ButtonBase;
+import com.google.gwt.user.client.ui.ClickListener;
+import com.google.gwt.user.client.ui.ClickListenerCollection;
+import com.google.gwt.user.client.ui.Widget;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ImageButton extends ButtonBase implements ClickListener
 {
     private ClickListenerCollection _clickListeners = new ClickListenerCollection();
+    private List<ClickHandler> _clickHandlers = new ArrayList<ClickHandler>();
     private String _text;
 
     public ImageButton(String text, ClickListener listener)
     {
         this(text);
         addClickListener(listener);
+    }
+
+    public ImageButton(String text, ClickHandler handler)
+    {
+        this(text);
+        addClickHandler(handler);
     }
 
     public ImageButton(String text)
@@ -45,6 +60,19 @@ public class ImageButton extends ButtonBase implements ClickListener
             {
                 if (isEnabled())
                     _clickListeners.fireClick(sender);
+            }
+        });
+        super.addClickHandler(new ClickHandler()
+        {
+            public void onClick(ClickEvent event)
+            {
+                if (isEnabled())
+                {
+                    for (ClickHandler clickHandler : _clickHandlers)
+                    {
+                        clickHandler.onClick(event);
+                    }
+                }
             }
         });
     }

@@ -21,6 +21,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -28,7 +30,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.*;
 
 import java.io.File;
@@ -158,7 +159,7 @@ public class OntologyManager
                     validatorMap.put(pd.getPropertyId(), validators);
             }
 
-			for (Map map : rows)
+			for (Map<String, Object> map : rows)
 			{
 				assert before.start();
 				String lsid = helper.beforeImportObject(map);
@@ -335,11 +336,6 @@ public class OntologyManager
     private static Map<String, ObjectProperty> getObjectPropertiesFromDb(Container container, String parentURI) throws SQLException
 	{
 		return getObjectPropertiesFromDb(container, new SimpleFilter("ObjectURI", parentURI));
-    }
-
-    private static Map<String, ObjectProperty> getObjectPropertiesFromDb(Container container, int objectId) throws SQLException
-    {
-        return getObjectPropertiesFromDb(container, new SimpleFilter("ObjectId", objectId));
     }
 
     private static Map<String, ObjectProperty> getObjectPropertiesFromDb(Container container, SimpleFilter filter) throws SQLException
@@ -883,7 +879,7 @@ public class OntologyManager
                         pd.setContainer(project);
                         pd.setProject(project);
                         pd.setPropertyId(0);
-                        ensurePropertyDescriptor(pd);
+                        pd = ensurePropertyDescriptor(pd);
                     }
                     if (null !=domUri)
                     {
@@ -893,8 +889,8 @@ public class OntologyManager
                             dd.setContainer(project);
                             dd.setProject(project);
                             dd.setDomainId(0);
-                            ensureDomainDescriptor(dd);
-                            ensurePropertyDomain(propUri, domUri, project);
+                            dd = ensureDomainDescriptor(dd);
+                            ensurePropertyDomain(pd, dd);
                         }
                     }
                 }
@@ -1035,7 +1031,7 @@ public class OntologyManager
                         pd.setContainer(c);
                         pd.setProject(newProject);
                         pd.setPropertyId(0);
-                        ensurePropertyDescriptor(pd);
+                        pd = ensurePropertyDescriptor(pd);
                     }
                     if (null != domUri)
                     {
@@ -1045,7 +1041,7 @@ public class OntologyManager
                         dd.setDomainId(0);
                         ensureDomainDescriptor(dd);
 
-                        ensurePropertyDomain(propUri, domUri, c);
+                        ensurePropertyDomain(pd, dd);
                     }
                 }
 
@@ -1221,6 +1217,7 @@ public class OntologyManager
         return ensureDomainDescriptor(ddIn);
     }
 
+    @NotNull
     private static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn) throws SQLException
      {
         DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
@@ -1240,7 +1237,7 @@ public class OntologyManager
                         ddIn.getContainer().getId().equals(ddIn.getProject().getId()))
                 {
                     ddIn.setDomainId(dd.getDomainId());
-                     dd = updateDomainDescriptor(ddIn);
+                    dd = updateDomainDescriptor(ddIn);
                 }
                 return dd;
             }
@@ -1295,49 +1292,45 @@ public class OntologyManager
         return colDiffs;
     }
 
-
-    private static void ensurePropertyDomain(String propertyURI, String domainURI, Container c) throws SQLException
+    private static void ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd) throws SQLException
     {
-        ensurePropertyDomain2(propertyURI, domainURI, c, null);
+        ensurePropertyDomain(pd, dd, 0);
     }
 
-    
-    private static void ensurePropertyDomain2(String propertyURI, String domainURI, Container c, Boolean required) throws SQLException
+    public static PropertyDescriptor ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder) throws SQLException
     {
-        PropertyDescriptor pd = getPropertyDescriptor(propertyURI, c);
-        DomainDescriptor dd = getDomainDescriptor(domainURI, c);
         if (null == pd)
-            throw new SQLException("ensurePropertyDomain:  property does not exist for " + propertyURI);
+            throw new IllegalArgumentException("Must supply a PropertyDescriptor");
         if (null == dd)
-            throw new SQLException("ensurePropertyDomain:  domain does not exist for " + domainURI);
+            throw new IllegalArgumentException("Must supply a DomainDescriptor");
         if (!pd.getContainer().equals(dd.getContainer())
                     &&  !pd.getProject().equals(_sharedContainer))
-            throw new SQLException("ensurePropertyDomain:  property " + propertyURI + " not in same container as domain " + domainURI);
+            throw new SQLException("ensurePropertyDomain:  property " + pd.getPropertyURI() + " not in same container as domain " + dd.getDomainURI());
 
-        boolean bRequired = null == required ? pd.isRequired() : required.booleanValue();
-
-        SQLFragment sqlInsert = new SQLFragment("INSERT INTO " + getTinfoPropertyDomain() + " ( PropertyId, DomainId, Required ) " +
-                    " SELECT ?, ?, ? WHERE NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() +
+        SQLFragment sqlInsert = new SQLFragment("INSERT INTO " + getTinfoPropertyDomain() + " ( PropertyId, DomainId, Required, SortOrder ) " +
+                    " SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() +
                     " WHERE PropertyId=? AND DomainId=?)");
         sqlInsert.add(pd.getPropertyId());
         sqlInsert.add(dd.getDomainId());
-        sqlInsert.add(bRequired);
+        sqlInsert.add(pd.isRequired());
+        sqlInsert.add(sortOrder);
         sqlInsert.add(pd.getPropertyId());
         sqlInsert.add(dd.getDomainId());
         int count = Table.execute(getExpSchema(), sqlInsert);
         // if 0 rows affected, we should do an update to make sure required is correct
         if (count == 0)
         {
-            SQLFragment sqlUpdate = new SQLFragment("UPDATE " + getTinfoPropertyDomain() + " SET Required = ? WHERE PropertyId=? AND DomainId= ?");
-            sqlUpdate.add(bRequired);
+            SQLFragment sqlUpdate = new SQLFragment("UPDATE " + getTinfoPropertyDomain() + " SET Required = ?, SortOrder = ? WHERE PropertyId=? AND DomainId= ?");
+            sqlUpdate.add(pd.isRequired());
+            sqlUpdate.add(sortOrder);
             sqlUpdate.add(pd.getPropertyId());
             sqlUpdate.add(dd.getDomainId());
             Table.execute(getExpSchema(), sqlUpdate);
         }
+        return pd;
     }
 
-
-
+    
 	private static void insertProperties(Container c, ObjectProperty[] props) throws SQLException, ValidationException
 	{
 		HashMap<String,PropertyDescriptor> descriptors = new HashMap<String, PropertyDescriptor>();
@@ -1595,10 +1588,8 @@ public class OntologyManager
 		}
 		catch (SQLException x)
 		{
-			_log.error("Error getting property descriptor: " + propertyURI + " container: " + c, x);
-			return null;
+			throw new RuntimeSQLException(x);
 		}
-//        finally { _log.debug("getPropertyDescriptor for "+ propertyURI + " container= "+ c.getPath() ); }
 	}
     
     public static DomainDescriptor getDomainDescriptor(int id)
@@ -1723,7 +1714,7 @@ public class OntologyManager
                      " FROM " + getTinfoPropertyDescriptor() + " PD " +
                      "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
                      "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                     "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PD.PropertyId ASC ";
+                     "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId";
 
             Object[] params = new Object[]
             {
@@ -1835,15 +1826,12 @@ public class OntologyManager
 	}
 
 
-	public static PropertyDescriptor insertOrUpdatePropertyDescriptor(PropertyDescriptor pd, DomainDescriptor dd)
+	public static PropertyDescriptor insertOrUpdatePropertyDescriptor(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder)
 			throws SQLException
 	{
-        DomainDescriptor dexist = null;
+        DomainDescriptor dexist = ensureDomainDescriptor(dd);
 
-        if (null != dd)
-            dexist = ensureDomainDescriptor(dd);
-
-        if (null != dexist && !dexist.getContainer().equals(pd.getContainer()))
+        if (!dexist.getContainer().equals(pd.getContainer()))
         {
             // domain is defined in a different container.
             //ToDO  define property in the domains container?  what security?
@@ -1853,20 +1841,11 @@ public class OntologyManager
         }
 
         PropertyDescriptor pexist = ensurePropertyDescriptor(pd);
+        pexist.setRequired(pd.isRequired());
 
-        if (null != dexist)
-            ensurePropertyDomain2(pexist.getPropertyURI(), dexist.getDomainURI(), pexist.getContainer(), pd.isRequired());
+        ensurePropertyDomain(pexist, dexist, sortOrder);
 
         return pexist;
-    }
-
-
-    /** call this method if you do not expect the propertyDescriptor to exist (and the DomainDescriptor has been created) */
-    public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd, DomainDescriptor dd) throws SQLException
-    {
-        insertPropertyDescriptor(pd);
-        ensurePropertyDomain2(pd.getPropertyURI(), dd.getDomainURI(), pd.getContainer(), pd.isRequired());
-        return pd;
     }
 
 
@@ -1966,7 +1945,7 @@ public class OntologyManager
 
         Map<String, DomainDescriptor> domainMap = new HashMap<String, DomainDescriptor>();
 
-        for (Map m : maps)
+        for (Map<String, Object> m : maps)
         {
             String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
             String domainURI = uriFactory.getDomainURI(domainName);
@@ -2113,6 +2092,7 @@ public class OntologyManager
         {
             pdNewMap = newPropsByDomain.get(dURI);
             PropertyDescriptor[] domainProps = OntologyManager.getPropertiesForType(dURI, container);
+            int sortOrder = domainProps.length;
 
             for (PropertyDescriptor pdToInsert : pdNewMap.values())
             {
@@ -2124,7 +2104,8 @@ public class OntologyManager
                     try
                     {
                         // this is much faster than insertOrUpdatePropertyDescriptor()
-                        pdInserted = OntologyManager.insertPropertyDescriptor(pdToInsert, dd);
+                        insertPropertyDescriptor(pdToInsert);
+                        pdInserted = ensurePropertyDomain(pdToInsert, dd, sortOrder++);
                     }
                     catch (SQLException x)
                     {
@@ -2133,7 +2114,7 @@ public class OntologyManager
                     }
                 }
                 if (null == pdInserted)
-                    pdInserted = OntologyManager.insertOrUpdatePropertyDescriptor(pdToInsert, dd);
+                    pdInserted = OntologyManager.insertOrUpdatePropertyDescriptor(pdToInsert, dd, sortOrder++);
 
                 list.add(pdInserted);
             }
@@ -2141,7 +2122,7 @@ public class OntologyManager
 
         for (PropertyDescriptor pdToInsert : propsWithoutDomains.values())
         {
-            PropertyDescriptor pdInserted = OntologyManager.insertOrUpdatePropertyDescriptor(pdToInsert, null);
+            PropertyDescriptor pdInserted = OntologyManager.ensurePropertyDescriptor(pdToInsert);
             list.add(pdInserted);
         }
 
@@ -2303,7 +2284,7 @@ public class OntologyManager
                 String objP1Fa = new Lsid("OntologyObject", "JUnit", fa.replace('/','.')).toString();
                 OntologyManager.ensureObject(fldr1a, objP1Fa);
                 String propP1Fa = fa + "PD1";
-                OntologyManager.ensurePropertyDescriptor(propP1Fa, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 1"+ fa, fldr1a);
+                PropertyDescriptor pd1Fa = OntologyManager.ensurePropertyDescriptor(propP1Fa, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 1"+ fa, fldr1a);
                 OntologyManager.insertProperties(fldr1a, null, new ObjectProperty(objP1Fa, fldr1a, propP1Fa, "same fldr"));
 
                 //object in folder not moving, prop desc in folder moving
@@ -2318,23 +2299,23 @@ public class OntologyManager
 
                 // third prop desc in folder that is moving;  shares domain with first prop desc
                 String propP1Fa3 = fa + "PD3";
-                OntologyManager.ensurePropertyDescriptor(propP1Fa3, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 3" + fa, fldr1a);
+                PropertyDescriptor pd1Fa3 = OntologyManager.ensurePropertyDescriptor(propP1Fa3, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 3" + fa, fldr1a);
                 String domP1Fa = fa + "DD1";
                 DomainDescriptor dd1 = new DomainDescriptor(domP1Fa, fldr1a);
                 dd1.setName("DomDesc 1" + fa);
                 OntologyManager.ensureDomainDescriptor(dd1);
-                OntologyManager.ensurePropertyDomain(propP1Fa, domP1Fa, fldr1a);
-                OntologyManager.ensurePropertyDomain(propP1Fa3, domP1Fa, fldr1a);
+                OntologyManager.ensurePropertyDomain(pd1Fa, dd1);
+                OntologyManager.ensurePropertyDomain(pd1Fa3, dd1);
 
                 //second domain desc in folder that is moving
                 // second prop desc in folder moving, belongs to 2nd domain
                 String propP1Fa2 = fa + "PD2";
-                OntologyManager.ensurePropertyDescriptor(propP1Fa2, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 2" + fa, fldr1a);
+                PropertyDescriptor pd1Fa2 = OntologyManager.ensurePropertyDescriptor(propP1Fa2, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 2" + fa, fldr1a);
                 String domP1Fa2 = fa +  "DD2";
                 DomainDescriptor dd2 = new DomainDescriptor(domP1Fa2, fldr1a);
                 dd2.setName("DomDesc 2" + fa);
                 OntologyManager.ensureDomainDescriptor(dd2);
-                OntologyManager.ensurePropertyDomain(propP1Fa2, domP1Fa2, fldr1a);
+                OntologyManager.ensurePropertyDomain(pd1Fa2, dd2);
             }
             catch (ValidationException ve)
             {
@@ -2650,19 +2631,19 @@ public class OntologyManager
             DomainDescriptor dd = ensureDomainDescriptor(domURIa, "Domain1", c);
             assertNotNull(dd);
 
-            PropertyDescriptor pd = new PropertyDescriptor();
-            pd.setPropertyURI(strPropURI);
-            pd.setRangeURI(PropertyType.STRING.getTypeUri());
-            pd.setContainer(c);
-            pd.setName("Domain1.stringProp");
+            PropertyDescriptor pdStr = new PropertyDescriptor();
+            pdStr.setPropertyURI(strPropURI);
+            pdStr.setRangeURI(PropertyType.STRING.getTypeUri());
+            pdStr.setContainer(c);
+            pdStr.setName("Domain1.stringProp");
 
-            pd = ensurePropertyDescriptor(pd);
-            assertNotNull(pd);
+            pdStr = ensurePropertyDescriptor(pdStr);
+            assertNotNull(pdStr);
 
-            pd = ensurePropertyDescriptor(intPropURI, PropertyType.INTEGER.getTypeUri(), "Domain1.intProp", c);
+            PropertyDescriptor pdInt = ensurePropertyDescriptor(intPropURI, PropertyType.INTEGER.getTypeUri(), "Domain1.intProp", c);
 
-            ensurePropertyDomain(strPropURI, domURIa, c);
-            ensurePropertyDomain(intPropURI, domURIa, c);
+            ensurePropertyDomain(pdStr, dd);
+            ensurePropertyDomain(pdInt, dd);
 
             PropertyDescriptor[] pds = getPropertiesForType(domURIa, c);
             assertEquals(2, pds.length);
@@ -3027,7 +3008,7 @@ public class OntologyManager
         }
     }
 
-    static public PropertyDescriptor updatePropertyDescriptor(User user, String domainURI, PropertyDescriptor pdOld, PropertyDescriptor pdNew) throws ChangePropertyDescriptorException
+    static public PropertyDescriptor updatePropertyDescriptor(User user, DomainDescriptor dd, PropertyDescriptor pdOld, PropertyDescriptor pdNew, int sortOrder) throws ChangePropertyDescriptorException
     {
         try
         {
@@ -3035,7 +3016,7 @@ public class OntologyManager
             PropertyType newType = pdNew.getPropertyType();
             if (oldType.getStorageType() != newType.getStorageType())
             {
-                Integer count = Table.executeSingleton(getExpSchema(), "SELECT COUNT(ObjectId) FROM exp.ObjectProperty WHERE PropertyId = ?", new Object[] { pdOld.getPropertyId() }, Integer.class);
+                int count = Table.executeSingleton(getExpSchema(), "SELECT COUNT(ObjectId) FROM exp.ObjectProperty WHERE PropertyId = ?", new Object[] { pdOld.getPropertyId() }, Integer.class).intValue();
                 if (count != 0)
                 {
                     throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
@@ -3043,12 +3024,11 @@ public class OntologyManager
             }
             PropertyDescriptor update = Table.update(user, getTinfoPropertyDescriptor(), pdNew, pdOld.getPropertyId());
 
-            if (pdOld.isRequired() != pdNew.isRequired())
-                ensurePropertyDomain2(pdNew.getPropertyURI(), domainURI, pdNew.getContainer(), pdNew.isRequired());
+            ensurePropertyDomain(pdNew, dd, sortOrder);
 
             return update;
         }
-        catch (Exception e)
+        catch (SQLException e)
         {
             throw new ChangePropertyDescriptorException(e);
         }

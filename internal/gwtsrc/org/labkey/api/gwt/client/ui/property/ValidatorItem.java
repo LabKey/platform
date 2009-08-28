@@ -15,19 +15,18 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
-import org.labkey.api.gwt.client.model.GWTPropertyValidator;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.ui.ImageButton;
-import org.labkey.api.gwt.client.ui.PropertyPane;
-import org.labkey.api.gwt.client.ui.TypePicker;
-import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -39,7 +38,7 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     private FlexTable _validatorTable;
     private HTML _noValidatorsLabel = new HTML("<i>This field has no validators</i>");
     private ImageButton _addRangeButton;
-    private RegexButton _addRegexButton;
+    private ImageButton _addRegexButton;
     private boolean _validatorChanged;
 
     public ValidatorItem(PropertyPane<DomainType, FieldType> propertyPane)
@@ -62,9 +61,9 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
         row++;
 
-        _addRegexButton = new RegexButton("Add New Regular Expression");
+        _addRegexButton = new ImageButton("Add New Regular Expression", new RegexClickHandler());
         flexTable.setWidget(row++, INPUT_COLUMN, _addRegexButton);
-        _addRangeButton = new RangeButton("Add New Range");
+        _addRangeButton = new ImageButton("Add New Range", new RangeClickHandler());
         flexTable.setWidget(row++, INPUT_COLUMN, _addRangeButton);
 
         _validatorTable = new FlexTable();
@@ -113,23 +112,21 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         refreshValidators();
     }
 
-    class RegexButton extends ImageButton
+    class RegexClickHandler implements ClickHandler
     {
-        String _label;
         GWTPropertyValidator _validator;
 
-        RegexButton(String label)
+        RegexClickHandler()
         {
-            this(label, null);
+            this(null);
         }
 
-        RegexButton(String label, GWTPropertyValidator validator)
+        RegexClickHandler(GWTPropertyValidator validator)
         {
-            super(label);
             _validator = validator;
         }
 
-        public void onClick(Widget sender)
+        public void onClick(ClickEvent event)
         {
             RegexValidatorDialog dlg = new RegexValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
 
@@ -139,23 +136,21 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         }
     }
 
-    class RangeButton extends ImageButton
+    class RangeClickHandler implements ClickHandler
     {
-        String _label;
         GWTPropertyValidator _validator;
 
-        RangeButton(String label)
+        RangeClickHandler()
         {
-            this(label, null);
+            this(null);
         }
 
-        RangeButton(String label, GWTPropertyValidator validator)
+        RangeClickHandler(GWTPropertyValidator validator)
         {
-            super(label);
             _validator = validator;
         }
 
-        public void onClick(Widget sender)
+        public void onClick(ClickEvent event)
         {
             RangeValidatorDialog dlg = new RangeValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
 
@@ -179,10 +174,10 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
             if (_addRangeButton.isEnabled())
             {
-                String src = PropertyUtil.getContextPath() + "/_images/partdelete.gif";
-                Image i = new Image(src);
-                i.addClickListener(new ClickListener(){
-                    public void onClick(Widget sender)
+                PushButton deleteButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partdelete.gif"));
+                deleteButton.addClickHandler(new ClickHandler()
+                {
+                    public void onClick(ClickEvent event)
                     {
                         _validators.remove(pv);
                         _validatorChanged = true;
@@ -190,13 +185,21 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
                         refreshValidators();
                     }
                 });
+                Tooltip.addTooltip(deleteButton, "Remove this validator");
 
-                panel.add(i);
+                panel.add(deleteButton);
                 panel.add(new HTML("&nbsp;"));
+                PushButton editButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partedit.gif"));
+                Tooltip.addTooltip(editButton, "Edit this validator");
                 if (pv.getType().equals(GWTPropertyValidator.TYPE_RANGE))
-                    panel.add(new RangeButton("...", pv));
+                {
+                    editButton.addClickHandler(new RangeClickHandler(pv));
+                }
                 else if (pv.getType().equals(GWTPropertyValidator.TYPE_REGEX))
-                    panel.add(new RegexButton("...", pv));
+                {
+                    editButton.addClickHandler(new RegexClickHandler(pv));
+                }
+                panel.add(editButton);
             }
 
             _validatorTable.setWidget(row, 0, panel);

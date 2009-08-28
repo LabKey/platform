@@ -17,13 +17,10 @@ package org.labkey.api.pipeline.file;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
-import org.labkey.api.pipeline.PipelineProtocol;
-import org.labkey.api.pipeline.ParamParser;
-import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -93,9 +90,6 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public String getBaseName(File file)
     {
-        if (file.isDirectory())
-            return getDataSetBaseName(file);
-
         FileType ft = findInputType(file);
         if (ft == null)
             return file.getName();

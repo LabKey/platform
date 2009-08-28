@@ -16,6 +16,8 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -25,7 +27,10 @@ import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -68,15 +73,16 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             _txtContainer.setWidth("200px");
             DOM.setElementProperty(_txtContainer.getElement(), "id", "folder");
             _table.setWidget(row, 1, _txtContainer);
-            Image image = PropertiesEditor.getPopupImage("folder", new ClickListener()
+            final PushButton folderButton = PropertiesEditor.getDownButton("folder");
+            folderButton.addClickHandler(new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent event)
                 {
-                    showContainers(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 20);
+                    showContainers(folderButton.getAbsoluteLeft() - 200, folderButton.getAbsoluteTop() + 20);
                 }
             });
-            image.addMouseListener(new Tooltip("Click to choose a target folder"));
-            _table.setWidget(row, 2, image);
+            Tooltip.addTooltip(folderButton, "Click to choose a target folder");
+            _table.setWidget(row, 2, folderButton);
             row++;
         }
 
@@ -86,15 +92,16 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         _txtSchemaName.setWidth("200px");
         DOM.setElementProperty(_txtSchemaName.getElement(), "id", "schema");
         _table.setWidget(row, 1, _txtSchemaName);
-        Image image = PropertiesEditor.getPopupImage("schema", new ClickListener()
+        final PushButton schemaButton = PropertiesEditor.getDownButton("schema");
+        schemaButton.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent event)
             {
-                showSchemas(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 20);
+                showSchemas(schemaButton.getAbsoluteLeft() - 200, schemaButton.getAbsoluteTop() + 20);
             }
         });
-        image.addMouseListener(new Tooltip("Click to choose a target schema"));
-        _table.setWidget(row, 2, image);
+        Tooltip.addTooltip(schemaButton, "Click to choose a target schema");
+        _table.setWidget(row, 2, schemaButton);
         row++;
 
         PropertiesEditor.setBoldText(_table, row, 0, "Table");
@@ -103,15 +110,16 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         _txtTableName.setWidth("200px");
         DOM.setElementProperty(_txtTableName.getElement(), "id", "table");
         _table.setWidget(row, 1, _txtTableName);
-        image = PropertiesEditor.getPopupImage("table", new ClickListener()
+        final PushButton tableButton = PropertiesEditor.getDownButton("table");
+        tableButton.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent event)
             {
-                showTables(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 20);
+                showTables(tableButton.getAbsoluteLeft() - 200, tableButton.getAbsoluteTop() + 20);
             }
         });
-        image.addMouseListener(new Tooltip("Click to choose a target table"));
-        _table.setWidget(row, 2, image);
+        Tooltip.addTooltip(tableButton, "Click to choose a target table");
+        _table.setWidget(row, 2, tableButton);
         row++;
 
         FlexTable buttonTable = new FlexTable();

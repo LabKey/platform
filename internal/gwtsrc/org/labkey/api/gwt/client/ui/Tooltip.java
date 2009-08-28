@@ -17,14 +17,16 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.event.dom.client.*;
 
 /**
  * User: jeckels
  * Date: Feb 6, 2008
  */
-public class Tooltip extends PopupPanel implements MouseListener
+public class Tooltip extends PopupPanel implements MouseListener, MouseOverHandler, MouseOutHandler
 {
     private Label _label;
+    private Widget _sourceWidget;
 
     public Tooltip(String text)
     {
@@ -32,6 +34,22 @@ public class Tooltip extends PopupPanel implements MouseListener
         _label = new Label(text);
         add(_label);
         setStyleName("gwt-ToolTip");
+    }
+
+    private Tooltip(String text, Widget sourceWidget)
+    {
+        this(text);
+        _sourceWidget = sourceWidget;
+    }
+
+    public void onMouseOver(MouseOverEvent event)
+    {
+        onMouseEnter(_sourceWidget);
+    }
+
+    public void onMouseOut(MouseOutEvent event)
+    {
+        hide();
     }
 
     public void onMouseEnter(Widget sender)
@@ -61,5 +79,16 @@ public class Tooltip extends PopupPanel implements MouseListener
     public void setText(String text)
     {
         _label.setText(text);
+    }
+
+    public static void addTooltip(HasAllMouseHandlers widget, String text)
+    {
+        if (!(widget instanceof Widget))
+        {
+            throw new IllegalArgumentException("Must use a widget that implements HasAllMouseHandlers");
+        }
+        Tooltip tooltip = new Tooltip(text, (Widget)widget);
+        widget.addMouseOverHandler(tooltip);
+        widget.addMouseOutHandler(tooltip);
     }
 }

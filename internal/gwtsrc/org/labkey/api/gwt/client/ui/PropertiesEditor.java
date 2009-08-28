@@ -20,6 +20,10 @@ import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.FocusHandler;
+import com.google.gwt.event.dom.client.FocusEvent;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -200,8 +204,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         int col=0;
         col++;  // status
-        col++;  // buttons
-        col++;  // radio button
+        col++;  // delete button
+        col++;  // up button
+        col++;  // down button
         _table.getFlexCellFormatter().setWidth(0, col, "120px");
         setBoldText(_table, 0, col++, "Name");
         _table.getFlexCellFormatter().setWidth(0, col, "120px");
@@ -347,15 +352,13 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             boolean locked = isLocked(index);
 
             int tableRow = index + 1;
-            RadioButton radioButton = (RadioButton) _table.getWidget(tableRow, 2);
 
-            _propertiesPane.showPropertyDescriptor(pd, !readOnly, radioButton.getAbsoluteTop());
+            _propertiesPane.showPropertyDescriptor(pd, !readOnly, _table.getWidget(tableRow, 4).getAbsoluteTop());
             if (_defaultValueSelector != null)
             {
                 _defaultValueSelector.setEnabled(_domain.getDefaultValueOptions().length > 0);
             }
 
-            radioButton.setChecked(true);
             Element e = _table.getRowFormatter().getElement(tableRow);
             DOM.setStyleAttribute(e, "backgroundColor", "#eeeeee");
         }
@@ -390,28 +393,60 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         if (status != FieldStatus.Existing)
         {
             fireChangeEvent();
-            statusImage.addMouseListener(new Tooltip(status.getDescription()));
+            Tooltip.addTooltip(statusImage, status.getDescription());
         }
         _table.setWidget(tableRow, col, statusImage);
         col++;
+
+        PushButton upButton = getUpButton(index);
+        upButton.addClickHandler(new ClickHandler()
+        {
+            public void onClick(ClickEvent event)
+            {
+                _rows.set(index, _rows.get(index - 1));
+                _rows.set(index - 1, rowObject);
+                fireChangeEvent();
+                refresh();
+            }
+        });
+        upButton.setEnabled(index > 0);
+        Tooltip.addTooltip(upButton, "Click to move up");
+        _table.setWidget(tableRow, col++, upButton);
+
+        PushButton downButton = getDownButton(index);
+        downButton.addClickHandler(new ClickHandler()
+        {
+            public void onClick(ClickEvent event)
+            {
+                _rows.set(index, _rows.get(index + 1));
+                _rows.set(index + 1, rowObject);
+                fireChangeEvent();
+                refresh();
+            }
+        });
+        downButton.setEnabled(index < _rows.size() - 1);
+        Tooltip.addTooltip(downButton, "Click to move down");
+        _table.setWidget(tableRow, col++, downButton);
 
         if (!locked && !_readOnly && !_domain.isMandatoryField(pd))
         {
             if (status == FieldStatus.Deleted)
             {
-                Image l = getCancelImage(index, new ClickListener() {
-                    public void onClick(Widget sender)
+                PushButton cancelButton = getCancelButton(index, new ClickHandler()
+                {
+                    public void onClick(ClickEvent event)
                     {
                         markUndeleted(index);
                     }
                 });
-                l.addMouseListener(new Tooltip("Click to cancel deletion"));
-                _table.setWidget(tableRow,col,l);
+                Tooltip.addTooltip(cancelButton, "Click to cancel deletion");
+                _table.setWidget(tableRow,col,cancelButton);
             }
             else
             {
-                Image l = getDeleteImage(index, new ClickListener() {
-                    public void onClick(Widget sender)
+                PushButton deleteButton = getDeleteButton(index, new ClickHandler()
+                {
+                    public void onClick(ClickEvent event)
                     {
                         if (rowObject.orig == null)
                         {
@@ -428,42 +463,24 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                         }
                     }
                 });
-                l.addMouseListener(new Tooltip("Click to delete"));
-                _table.setWidget(tableRow,col,l);
+                Tooltip.addTooltip(deleteButton, "Click to delete");
+                _table.setWidget(tableRow,col,deleteButton);
             }
         }
         else
             _table.setText(tableRow,col,"");
         col++;
 
-
-        final RadioButton selectionRadioButton = new RadioButton("selectionRadioButton");
-        selectionRadioButton.setChecked(_selectedPD == pd);
-        selectionRadioButton.addClickListener(new ClickListener()
+        FocusHandler focusHandler = new FocusHandler()
         {
-            public void onClick(Widget sender)
-            {
-                select(pd);
-            }
-        });
-
-        FocusListener focusListener = new FocusListener()
-        {
-            public void onFocus(Widget sender)
+            public void onFocus(FocusEvent event)
             {
                 if (pd != _selectedPD)
                 {
                     select(pd);
                 }
             }
-
-            public void onLostFocus(Widget sender)
-            {
-            }
         };
-
-        _table.setWidget(tableRow, col, selectionRadioButton);
-        col++;
 
         BoundTextBox nameTextBox = new BoundTextBox(pd, "name", "120", 200, "ff_name" + index)
         {
@@ -484,20 +501,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 return null;
             }
         };
-        nameTextBox.addFocusListener(focusListener);
+        nameTextBox.addFocusHandler(focusHandler);
         nameTextBox.setEnabled(!locked && !readOnly && !_domain.isMandatoryField(pd));
         _table.setWidget(tableRow, col, nameTextBox);
 
         col++;
 
         BoundTextBox labelTextBox = new BoundTextBox(pd, "label", "120", 200, "ff_label" + index);
-        labelTextBox.addFocusListener(focusListener);
+        labelTextBox.addFocusHandler(focusHandler);
         labelTextBox.setEnabled(!readOnly);
         _table.setWidget(tableRow, col, labelTextBox);
         col++;
 
         BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
-        typePicker.addFocusListener(focusListener);
+        typePicker.addFocusHandler(focusHandler);
         typePicker.setRangeURI(pd.getRangeURI());
         typePicker.setEnabled(isTypeEditable(pd, status) && !locked);
         _table.setWidget(tableRow, col, typePicker);
@@ -505,15 +522,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         if (!locked && !readOnly)
         {
-            Image l = getPopupImage(Integer.toString(index), new ClickListener()
+            PushButton l = getDownButton("lookup" + index, new ClickHandler()
             {
-                public void onClick(final Widget sender)
+                public void onClick(ClickEvent sender)
                 {
                     select(pd);
                     editLookup(index);
                }
             });
-            l.addMouseListener(new Tooltip("Click to edit the lookup"));
+            Tooltip.addTooltip(l, "Click to edit the lookup");
             _table.setWidget(tableRow,col,l);
         }
         else
@@ -529,41 +546,46 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return status == FieldStatus.Added;
     }
 
-    public static Image getPopupImage(String index, ClickListener l)
-    {
-        String src = PropertyUtil.getContextPath() + "/_images/partdown.gif";
-        Image i = new Image(src);
-        DOM.setElementProperty(i.getElement(), "id", "partdown_" + index);
-        if (null != l)
-            i.addClickListener(l);
-        return i;
-    }
-
-    Image getActionImage(String action, int index, ClickListener l)
+    static PushButton getImageButton(String action, Object idSuffix, ClickHandler h)
     {
         String src = PropertyUtil.getContextPath() + "/_images/" + action + ".gif";
-        Image i = new Image(src);
-        DOM.setElementProperty(i.getElement(), "id", action + "_" + index);
-        if (null != l)
-            i.addClickListener(l);
-        return i;
+        PushButton result = new PushButton(new Image(src));
+        DOM.setElementProperty(result.getElement(), "id", action + "_" + idSuffix);
+        if (null != h)
+            result.addClickHandler(h);
+        return result;
     }
 
-    Image getDeleteImage(int index, ClickListener l)
+    PushButton getUpButton(Object idSuffix)
     {
-        return getActionImage("partdelete", index, l);
+        return getImageButton("partup", idSuffix, null);
     }
 
-    Image getCancelImage(int index, ClickListener l)
+    public static PushButton getDownButton(Object idSuffix)
     {
-        return getActionImage("cancel", index, l);
+        return getDownButton(idSuffix, null);
     }
 
-    Image getStatusImage(String index, FieldStatus status)
+    public static PushButton getDownButton(Object idSuffix, ClickHandler handler)
+    {
+        return getImageButton("partdown", idSuffix, handler);
+    }
+
+    PushButton getDeleteButton(Object idSuffix, ClickHandler l)
+    {
+        return getImageButton("partdelete", idSuffix, l);
+    }
+
+    PushButton getCancelButton(Object idSuffix, ClickHandler l)
+    {
+        return getImageButton("cancel", idSuffix, l);
+    }
+
+    Image getStatusImage(Object idSuffix, FieldStatus status)
     {
         String src = PropertyUtil.getContextPath() + "/_images/part" + status.toString().toLowerCase() + ".gif";
         Image i = new Image(src);
-        DOM.setElementProperty(i.getElement(), "id", "part" + status.toString().toLowerCase() + "_" + index);
+        DOM.setElementProperty(i.getElement(), "id", "part" + status.toString().toLowerCase() + "_" + idSuffix);
         return i;
     }
 
