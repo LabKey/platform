@@ -33,7 +33,7 @@ public class VisitMapWriter implements InternalStudyWriter
         return "Visit Map";
     }
 
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws IOException, StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
     {
         if (ctx.useOldFormats())
         {

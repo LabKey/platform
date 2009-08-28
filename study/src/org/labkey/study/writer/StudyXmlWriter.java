@@ -44,7 +44,7 @@ public class StudyXmlWriter implements InternalStudyWriter
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
 

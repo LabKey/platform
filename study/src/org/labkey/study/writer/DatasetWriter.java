@@ -57,7 +57,7 @@ public class DatasetWriter implements InternalStudyWriter
         return SELECTION_TEXT;
     }
 
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, StudyImportException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();

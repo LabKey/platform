@@ -89,7 +89,7 @@ import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.FileSystemFile;
-import org.labkey.study.writer.StudyExportContextImpl;
+import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.ZipFile;
 import org.springframework.validation.BindException;
@@ -3774,7 +3774,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudy();
             StudyWriter writer = new StudyWriter();
-            StudyExportContextImpl ctx = new StudyExportContextImpl(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()));
+            StudyExportContext ctx = new StudyExportContext(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()), Logger.getLogger(StudyWriter.class));
 
             switch(form.getLocation())
             {

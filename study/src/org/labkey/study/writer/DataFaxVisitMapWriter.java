@@ -33,7 +33,7 @@ import java.util.List;
  * Date: Apr 15, 2009
  * Time: 10:57:56 AM
  */
-public class DataFaxVisitMapWriter implements Writer<VisitImpl[], StudyExportContextImpl>
+public class DataFaxVisitMapWriter implements Writer<VisitImpl[], StudyExportContext>
 {
     public static final String FILENAME = "visit_map.txt";
 
@@ -42,7 +42,7 @@ public class DataFaxVisitMapWriter implements Writer<VisitImpl[], StudyExportCon
         return null;
     }
 
-    public void write(VisitImpl[] visits, StudyExportContextImpl ctx, VirtualFile vf) throws IOException, StudyImportException
+    public void write(VisitImpl[] visits, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();

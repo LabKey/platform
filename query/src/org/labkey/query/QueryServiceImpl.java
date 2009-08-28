@@ -283,7 +283,7 @@ public class QueryServiceImpl extends QueryService
             views.put(cstmView.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, cstmView));
     }
 
-    public void importCustomViews(User user, Container container, File viewDir)
+    public int importCustomViews(User user, Container container, File viewDir)
     {
         File[] viewFiles = viewDir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name)
@@ -294,6 +294,8 @@ public class QueryServiceImpl extends QueryService
 
         QueryManager mgr = QueryManager.get();
         HttpServletRequest request = new MockHttpServletRequest();
+
+        int count = 0;
 
         for (File viewFile : viewFiles)
         {
@@ -325,7 +327,11 @@ public class QueryServiceImpl extends QueryService
             cv.setFilterAndSort(reader.getFilterAndSortString());
             cv.setIsHidden(reader.isHidden());
             cv.save(user, request);
+
+            count++;
         }
+
+        return count;
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)

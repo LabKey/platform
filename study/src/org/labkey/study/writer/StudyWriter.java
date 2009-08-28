@@ -28,7 +28,7 @@ import java.util.Set;
  * Date: Apr 14, 2009
  * Time: 7:29:32 PM
  */
-public class StudyWriter implements Writer<StudyImpl, StudyExportContextImpl>
+public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
@@ -37,7 +37,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContextImpl>
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         LOG.info("Exporting study to " + vf.getLocation());
 
@@ -57,7 +57,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContextImpl>
         boolean exportDatasets = dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT) || dataTypes.contains(DatasetWriter.SELECTION_TEXT);
 
         // Now call all the writers defined in the study module.
-        for (Writer<StudyImpl, StudyExportContextImpl> writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())
+        for (Writer<StudyImpl, StudyExportContext> writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())
         {
             String text = writer.getSelectionText();
 

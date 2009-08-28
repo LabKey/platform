@@ -2394,7 +2394,7 @@ study/src/org/labkey/study/writer/SchemaXmlWriter.java -text
 study/src/org/labkey/study/writer/SpecimenArchiveWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
-study/src/org/labkey/study/writer/StudyExportContextImpl.java -text
+study/src/org/labkey/study/writer/StudyExportContext.java -text
 study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text

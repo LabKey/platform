@@ -17,24 +17,24 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
+import org.apache.log4j.Logger;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.io.File;
 
 /**
  * User: adam
  * Date: May 16, 2009
  * Time: 2:43:07 PM
  */
-public class StudyExportContextImpl extends AbstractContext implements StudyContext
+public class StudyExportContext extends AbstractContext
 {
     private final boolean _oldFormats;
     private final Set<String> _dataTypes;
@@ -43,9 +43,9 @@ public class StudyExportContextImpl extends AbstractContext implements StudyCont
 
     private boolean _locked = false;
 
-    public StudyExportContextImpl(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
     {
-        super(user, c, StudyXmlWriter.getStudyDocument());
+        super(user, c, StudyXmlWriter.getStudyDocument(), logger);
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
         initializeDatasets(study);

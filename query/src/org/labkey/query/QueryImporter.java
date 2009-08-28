@@ -109,6 +109,8 @@ public class QueryImporter implements ExternalStudyImporter
                 newQuery.save(ctx.getUser(), ctx.getContainer());
             }
 
+            ctx.getLogger().info(sqlFiles.length + " quer" + (1 == sqlFiles.length ? "y" : "ies") + " imported");
+
             // TODO: As a check, remove meta data files from map on each save and check for map.size == 0
         }
     }

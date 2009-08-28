@@ -31,7 +31,7 @@ public class QcStateWriter implements InternalStudyWriter
         return "QC State Settings";
     }
 
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         // TODO: Write out the action QC states
         StudyDocument.Study.QcStates qcStatesXml = ctx.getStudyXml().addNewQcStates();

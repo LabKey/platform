@@ -20,6 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.StudyContext;
 import org.labkey.study.xml.StudyDocument;
+import org.apache.log4j.Logger;
 
 /**
  * User: adam
@@ -30,12 +31,14 @@ public abstract class AbstractContext implements StudyContext
 {
     private final User _user;
     private final Container _c;
+    private Logger _logger;        // TODO: Should be final
     private transient StudyDocument _studyDoc;   // XStream can't seem to serialize this XMLBean... so we load it on demand
 
-    public AbstractContext(User user, Container c, StudyDocument studyDoc)
+    protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger)
     {
         _user = user;
         _c = c;
+        _logger = logger;
         setStudyDocument(studyDoc);
     }
 
@@ -55,12 +58,23 @@ public abstract class AbstractContext implements StudyContext
         return getStudyDocument().getStudy();
     }
 
+    public Logger getLogger()
+    {
+        return _logger;
+    }
+
+    @Deprecated  // Temp hack until we use a single pipeline job for import
+    public void setLogger(Logger logger)
+    {
+        _logger = logger;
+    }
+
     protected synchronized StudyDocument getStudyDocument() throws StudyImportException
     {
         return _studyDoc;
     }
 
-    protected synchronized void setStudyDocument(StudyDocument studyDoc)
+    protected final synchronized void setStudyDocument(StudyDocument studyDoc)
     {
         _studyDoc = studyDoc;
     }

@@ -58,6 +58,8 @@ public class ReportImporter implements ExternalStudyImporter
             {
                 ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportFile);
             }
+
+            ctx.getLogger().info(reportsFiles.length + " report" + (1 == reportsFiles.length ? "" : "s") + " imported");
         }
     }
 

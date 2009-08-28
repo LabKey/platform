@@ -35,7 +35,7 @@ public class AssayDatasetWriter implements InternalStudyWriter
         return SELECTION_TEXT;
     }
 
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
     }
 }

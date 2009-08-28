@@ -45,6 +45,7 @@ public class StudyImportJob extends PipelineJob
         _ctx = ctx;
         _root = root;
         setLogFile(StudyPipeline.logForInputFile(new File(root, "study_load")));
+        ctx.setLogger(getLogger());
     }
 
     public void run()

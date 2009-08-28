@@ -39,7 +39,7 @@ public class ImportContext extends AbstractContext
 
     public ImportContext(User user, Container c, File root, ActionURL url)
     {
-        super(user, c, null);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
+        super(user, c, null, null);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _url = url;
         _root = root;
     }

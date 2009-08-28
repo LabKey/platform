@@ -24,6 +24,6 @@ import org.labkey.study.model.StudyImpl;
 * Date: Aug 26, 2009
 * Time: 1:53:21 PM
 */
-public interface InternalStudyWriter extends Writer<StudyImpl, StudyExportContextImpl>
+public interface InternalStudyWriter extends Writer<StudyImpl, StudyExportContext>
 {
 }

@@ -58,15 +58,23 @@ public class DatasetCohortAssigner
             {
                 DatasetImporter.DatasetImportProperties props = datasetProps.get(def.getName());
 
-                Cohort cohort = def.getCohort();
-                String oldCohortLabel = null != cohort ? cohort.getLabel() : null;
-
-                if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, props.getCohort()))
+                // Props will be null if a dataset is referenced in the visit map but not in the datasets_manifest
+                if (null == props)
                 {
-                    CohortImpl newCohort = studyManager.getCohortByLabel(c, user, props.getCohort());
-                    def = def.createMutable();
-                    def.setCohortId(newCohort.getRowId());
-                    StudyManager.getInstance().updateDataSetDefinition(user, def);
+                    ctx.getLogger().warn("WARNING: Dataset \"" + def.getName() + "\" should be defined in datasets_manfest.xml");
+                }
+                else
+                {
+                    Cohort cohort = def.getCohort();
+                    String oldCohortLabel = null != cohort ? cohort.getLabel() : null;
+
+                    if (!PageFlowUtil.nullSafeEquals(oldCohortLabel, props.getCohort()))
+                    {
+                        CohortImpl newCohort = studyManager.getCohortByLabel(c, user, props.getCohort());
+                        def = def.createMutable();
+                        def.setCohortId(newCohort.getRowId());
+                        StudyManager.getInstance().updateDataSetDefinition(user, def);
+                    }
                 }
             }
         }

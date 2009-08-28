@@ -17,10 +17,12 @@
 package org.labkey.experiment.list;
 
 import org.labkey.api.study.ExternalStudyImporter;
-import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.ExternalStudyImporterFactory;
+import org.labkey.api.study.StudyContext;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
+import java.io.FilenameFilter;
 
 /*
 * User: adam
@@ -36,7 +38,21 @@ public class ListImporter implements ExternalStudyImporter
 
     public void process(StudyContext ctx, File root) throws Exception
     {
-        // import the lists here
+        StudyDocument.Study.Lists listsXml = ctx.getStudyXml().getLists();
+
+        if (null != listsXml)
+        {
+            File listsDir = ctx.getStudyDir(root, listsXml.getDir(), "Study.xml");
+
+            File[] listFiles = listsDir.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name)
+                {
+                    return name.endsWith(".tsv");
+                }
+            });
+
+            ctx.getLogger().info(listFiles.length + " list" + (1 == listFiles.length ? "" : "s") + " imported (well, I'm thinking about it, anyway)");
+        }
     }
 
     public static class Factory implements ExternalStudyImporterFactory

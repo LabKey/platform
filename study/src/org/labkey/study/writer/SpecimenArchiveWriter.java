@@ -38,7 +38,7 @@ public class SpecimenArchiveWriter implements InternalStudyWriter
         return "Specimens";
     }
 
-    public void write(StudyImpl study, StudyExportContextImpl ctx, VirtualFile root) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
 
