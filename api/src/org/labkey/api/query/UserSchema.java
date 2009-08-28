@@ -21,9 +21,11 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.collections.BoundMap;
 import org.springframework.beans.PropertyValues;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +43,13 @@ abstract public class UserSchema extends AbstractSchema
         super(dbSchema, user, container);
         _name = name;
     }
+
+
+    protected boolean canReadSchema()
+    {
+        return getContainer().hasPermission(getUser(), ReadPermission.class);
+    }
+
 
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
@@ -65,6 +74,10 @@ abstract public class UserSchema extends AbstractSchema
     {
         if (name == null)
             return null;
+
+        if (!canReadSchema())
+            HttpView.throwUnauthorized("Cannot read schema: " + name);
+
         TableInfo table = createTable(name);
         if (table != null)
         {
