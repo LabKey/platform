@@ -212,7 +212,6 @@ public class MothershipReport implements Runnable
         }
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));
-        addParam("perlPipelineEnabled", AppProps.getInstance().isPerlPipelineEnabled());
         addParam("enterprisePipelineEnabled", PipelineService.get().isEnterprisePipeline());
 
         boolean ldapEnabled = AuthenticationManager.isActive("LDAP");  // TODO: Send back all active auth providers (OpenSSO, LDAP, etc.)

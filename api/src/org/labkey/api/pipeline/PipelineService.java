@@ -15,14 +15,13 @@
  */
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,11 +71,9 @@ abstract public class PipelineService
     abstract public PipeRoot[] getOverlappingRoots(Container c) throws SQLException;
 
     abstract public void setPipelineRoot(User user, Container container, URI root, String type,
-                                         GlobusKeyPair globusKeyPair, boolean perlPipeline) throws SQLException;
+                                         GlobusKeyPair globusKeyPair) throws SQLException;
 
     abstract public boolean canModifyPipelineRoot(User user, Container container);
-
-    abstract public boolean usePerlPipeline(Container container) throws SQLException;
 
     @NotNull    
     abstract public File ensureSystemDirectory(URI root);
@@ -99,16 +96,6 @@ abstract public class PipelineService
     abstract public void setPipelineProperty(Container container, String name, String value) throws SQLException;
 
     abstract public String getPipelineProperty(Container container, String name) throws SQLException;
-
-    /**
-     * For Perl Pipeline use only.  Use PipelineJobService.get().getStatusWriter().setStatusFile() instead.
-     *
-     * @param info Background info necessary for database access
-     * @param sf The StatusFiles record
-     * @throws Exception file i/o or database error
-     */
-    @Deprecated
-    abstract public void setStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf) throws Exception;
 
     abstract public BrowseView getBrowseView(BrowseForm form);
 

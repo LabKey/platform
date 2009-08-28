@@ -58,7 +58,6 @@ import java.util.concurrent.TimeoutException;
 abstract public class PipelineJob extends Job implements Serializable
 {
     public static final FileType FT_LOG = new FileType(".log");
-    public static final FileType FT_PERL_STATUS = new FileType(".status");
 
     private static Logger _log = Logger.getLogger(PipelineJob.class);
 
@@ -326,32 +325,24 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setLogFile(File fileLog)
     {
-        setLogFile(fileLog, false);
-    }
-
-    public void setLogFile(File fileLog, boolean append)
-    {
         _logFile = fileLog;
         _logger = null;
 
-        // Truncate the log.
-        if (!append)
+        // Truncate the any existing log.
+        FileOutputStream fos = null;
+        try
         {
-            FileOutputStream fos = null;
-            try
+            fos = new FileOutputStream(_logFile);
+        }
+        catch (FileNotFoundException e)
+        {
+        }
+        finally
+        {
+            if (fos != null)
             {
-                fos = new FileOutputStream(_logFile);
-            }
-            catch (FileNotFoundException e)
-            {
-            }
-            finally
-            {
-                if (fos != null)
-                {
-                    try { fos.close(); }
-                    catch (IOException e) {}
-                }
+                try { fos.close(); }
+                catch (IOException e) {}
             }
         }
     }

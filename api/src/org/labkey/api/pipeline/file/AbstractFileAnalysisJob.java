@@ -59,12 +59,12 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private static final String ANALYSIS_PARAMETERS_ROLE_NAME = "AnalysisParameters";
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
-                           String providerName,
-                           ViewBackgroundInfo info,
-                           String protocolName,
-                           File fileParameters,
-                           File filesInput[],
-                           boolean append) throws SQLException, IOException
+                                   String providerName,
+                                   ViewBackgroundInfo info,
+                                   String protocolName,
+                                   File fileParameters,
+                                   File filesInput[]
+    ) throws SQLException, IOException
     {
         super(providerName, info);
 
@@ -105,7 +105,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput[0]);
         }
 
-        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName), append);
+        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
     }
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
@@ -126,7 +126,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _filesInput = new File[] { fileInput };
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.length == 0 ? fileInput.getName() : _inputTypes[0].getDefaultFileType().getBaseName(fileInput));
-        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName), false);
+        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
     }
 
     public void clearActionSet(ExpRun run)

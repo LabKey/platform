@@ -106,8 +106,5 @@ public interface PipelineStatusFile
     String getJobStore();
 
     PipelineJob createJobInstance();
-
-    @Deprecated
-    void synchDiskStatus() throws IOException;
 }
 

@@ -41,7 +41,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public static String getDataSetBaseName(File dirData)
     {
-        return "all";   // TODO: Changing requires update to Perl scripts.
+        return "all";
 //        return dirData.getName();
     }
 
@@ -204,8 +204,8 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public abstract AbstractFileAnalysisProtocolFactory getFactory();
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
-                                           File[] filesInput,
-                                           File fileParameters,
-                                           boolean append)
+                                          File[] filesInput,
+                                          File fileParameters
+    )
             throws SQLException, IOException;
 }

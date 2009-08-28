@@ -263,7 +263,6 @@ api/src/org/labkey/api/exp/pipeline/XarGeneratorFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorId.java -text
 api/src/org/labkey/api/exp/pipeline/XarImportFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarImportTaskId.java -text
-api/src/org/labkey/api/exp/pipeline/XarTemplateSubstitutionFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarTemplateSubstitutionId.java -text
 api/src/org/labkey/api/exp/property/DefaultPropertyValidator.java -text
 api/src/org/labkey/api/exp/property/Domain.java -text
@@ -1812,7 +1811,6 @@ internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
 internal/src/org/labkey/api/module/DefaultFolderType.java -text
-internal/src/org/labkey/api/pipeline/PipelinePerlClusterSupport.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
 internal/src/org/labkey/api/query/TempQuerySettings.java -text
 internal/src/org/labkey/api/query/UserIdQueryForeignKey.java -text

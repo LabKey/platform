@@ -116,11 +116,6 @@ public class WriteableAppProps extends AppProps
         storeStringValue(BASE_SERVER_URL_PROP, baseServerUrl);
     }
 
-    public void setPerlPipelineEnabled(boolean cluster)
-    {
-        storeBooleanValue(PIPELINE_PERL_CLUSTER_PROP, cluster);
-    }
-
     public void setPipelineToolsDir(String toolsDir)
     {
         storeStringValue(PIPELINE_TOOLS_DIR_PROP, toolsDir);

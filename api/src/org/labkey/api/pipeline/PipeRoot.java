@@ -17,9 +17,8 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -59,11 +58,6 @@ public interface PipeRoot extends SecurableResource
     File ensureSystemDirectory();
 
     String getEntityId();
-
-    /**
-     * @return true if Perl Pipeline is enabled for this pipeline root
-     */
-    boolean isPerlPipeline();
 
     /**
      * @return null if no key pair has been configured for this pipeline root
