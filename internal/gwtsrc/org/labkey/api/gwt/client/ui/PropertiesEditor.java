@@ -281,7 +281,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         refresh();
 
         select(newRow.edit);
-        ((TextBox)_table.getWidget(index + 1, 3)).setFocus(true);
+        ((TextBox)_table.getWidget(index + 1, 4)).setFocus(true);
         return newRow.edit;
     }
 
