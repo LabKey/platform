@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.xml.StudyDocument;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 
@@ -30,4 +31,5 @@ public interface StudyContext extends ContainerUser
 {
     public StudyDocument.Study getStudyXml() throws StudyImportException;
     public File getStudyDir(File root, String dirName, String source) throws StudyImportException;
+    public Logger getLogger();
 }
