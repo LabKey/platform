@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.QueryDocument;
 import org.labkey.query.QueryDefinitionImpl;
@@ -376,11 +377,19 @@ public class Query
 			}
 		}
 
-        Object t;
-        if (schema instanceof UserSchema)
-    		t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true);
-        else
-            t = schema.getTable(key.getName());
+        Object t = null;
+        try
+        {
+            if (schema instanceof UserSchema)
+                t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true);
+            else
+                t = schema.getTable(key.getName());
+        }
+        catch (UnauthorizedException ex)
+        {
+            parseError(_parseErrors, "No permission to read table: " + key.getName(), node);
+            return null;
+        }
 
 		if (t == null)
 		{

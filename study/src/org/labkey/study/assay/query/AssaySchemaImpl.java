@@ -60,6 +60,14 @@ public class AssaySchemaImpl extends AssaySchema
         super(NAME, user, container, ExperimentService.get().getSchema());
     }
 
+
+    // UNDONE: need to check permissions here 8449
+    @Override
+    protected boolean canReadSchema()
+    {
+        return true;
+    }
+
     public Set<String> getTableNames()
     {
         Set<String> names = new TreeSet<String>(new Comparator<String>()

@@ -59,10 +59,19 @@ public class StudyQuerySchema extends UserSchema
         _mustCheckPermissions = true;
     }
 
+
     static StudyQuerySchema createSchemaWithoutStudy(Container c, User u)
     {
         return new StudyQuerySchema(c, u);
     }
+
+
+    @Override
+    protected boolean canReadSchema()
+    {
+        return !getMustCheckPermissions() || super.canReadSchema();
+    }
+
 
     public Set<String> getTableNames()
     {
