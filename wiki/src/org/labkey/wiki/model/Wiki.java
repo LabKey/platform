@@ -20,15 +20,14 @@ import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.HString;
+import org.labkey.api.view.ActionURL;
 import org.labkey.wiki.WikiManager;
 
 import javax.ejb.*;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -46,12 +45,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     // entityId for attachments
     // rowId for update form (it's the PK)
     // name because that's what's on the URL
-
-    // TODO: change the SQL view to a dedicated table
-    // We really need proper constraints
-
-    // TODO: @Version @Column(name=_ts)
-
 
     private int rowId;
     private HString name;

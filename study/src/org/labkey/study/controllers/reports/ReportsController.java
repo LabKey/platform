@@ -76,8 +76,7 @@ import java.util.Map;
 
 public class ReportsController extends BaseStudyController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
-    transient Study _study = null;
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
 
     public ReportsController() throws Exception
     {

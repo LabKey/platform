@@ -45,18 +45,20 @@ public class StudyImporter
 {
     private static final Logger _log = Logger.getLogger(StudyImporter.class);
 
-    private Container _c;
-    private User _user;
-    private ActionURL _url;
-    private File _root;
-    private BindException _errors;
+    private final Container _c;
+    private final User _user;
+    private final ActionURL _url;
+    private final File _root;
+    private final File _studyXml;
+    private final BindException _errors;
 
-    public StudyImporter(Container c, User user, ActionURL url, File root, BindException errors)
+    public StudyImporter(Container c, User user, ActionURL url, File studyXml, BindException errors)
     {
         _c = c;
         _user = user;
         _url = url;
-        _root = root;
+        _studyXml = studyXml;
+        _root = studyXml.getParentFile();
         _errors = errors;
     }
 
@@ -77,11 +79,13 @@ public class StudyImporter
 
     public boolean process() throws SQLException, ServletException, IOException, SAXException, ParserConfigurationException, XmlException, StudyImportException
     {
-        _log.info("Loading study to folder " + _c.getPath());
-
-        ImportContext ctx = new ImportContext(_user, _c, _root, _url);
-        StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyImpl study = getStudy(true);
+        boolean reload = (null != study);
+
+        _log.info((reload ? "Reloading" : "Importing") + " study to folder " + _c.getPath());
+
+        ImportContext ctx = new ImportContext(_user, _c, _studyXml, _url);
+        StudyDocument.Study studyXml = ctx.getStudyXml();
 
         // Create the study if it doesn't exist... otherwise, modify the existing properties
         if (null == study)

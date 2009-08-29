@@ -854,7 +854,7 @@ public class StatusController extends SpringActionController
         col = new DescriptionDisplayColumn(uriRoot);
         rgn.addDisplayColumn(col);
 
-        String referer = PipelineController.RefererValues.protal.toString();
+        String referer = PipelineController.RefererValues.portal.toString();
         ButtonBar bb = new ButtonBar();
 
         if (c.hasPermission(user, ACL.PERM_INSERT) && uriRoot != null)

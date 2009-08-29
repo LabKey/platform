@@ -1508,7 +1508,7 @@ public class IssuesController extends SpringActionController
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance(c)), searchTerm, new ActionURL("issues", "search", c), getUser(), false, false);
+            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance(c)), searchTerm, new ActionURL(SearchAction.class, c), getUser(), false, false);
             return results;
         }
 

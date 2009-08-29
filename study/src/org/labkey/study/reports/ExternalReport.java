@@ -23,6 +23,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
@@ -34,13 +36,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.study.Study;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletException;
@@ -556,7 +555,6 @@ public class ExternalReport extends AbstractReport
             out.write(getViewContext().getActionURL().relativeUrl("streamFile", PageFlowUtil.map("sessionKey", key), "Study-Reports", true));
             out.write("\">");
         }
-
     }
 }
 

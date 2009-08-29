@@ -16,15 +16,14 @@
 package org.labkey.study.view;
 
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.io.PrintWriter;
 

@@ -111,8 +111,8 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
                 if (null != formatString && (!Date.class.isAssignableFrom(column.getJavaClass()) || !formatString.equals(_defaultDateFormat)))
                     columnXml.setFormatString(formatString);
 
-                if (null != column.getMvColumnName())
-                    columnXml.setMvColumnName(column.getMvColumnName());
+                if (column.isMvEnabled())
+                    columnXml.setIsMvEnabled(true);
 
                 ForeignKey fk = column.getFk();
 

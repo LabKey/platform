@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
+<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -137,13 +138,13 @@
     <tr>
         <th align="left">Repository Type</th>
         <td>This study uses the <%=study.getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
-        <td><%=textLink("Change Repository Type", new ActionURL("Study-Samples", "showManageRepositorySettings.view", c))%></td>
+        <td><%=textLink("Change Repository Type", new ActionURL(SpringSpecimenController.ShowManageRepositorySettingsAction.class, c))%></td>
     </tr>
     <tr>
         <th align="left">Display and Behavior</th>
         <td>Manage warnings, comments, and workflow</td>
         <td><%= textLink("Manage Display and Behavior",
-                new ActionURL("Study-Samples", "manageDisplaySettings.view", c)) %></td>
+                new ActionURL(SpringSpecimenController.ManageDisplaySettingsAction.class, c)) %></td>
     </tr>
 <%
     } // admin permission
@@ -164,32 +165,32 @@
         <td>This study defines <%= study.getSampleRequestStatuses(HttpView.currentContext().getUser()).length %> specimen request
             statuses</td>
         <td><%= textLink("Manage Request Statuses",
-                new ActionURL("Study-Samples", "manageStatuses.view", c)) %></td>
+                new ActionURL(SpringSpecimenController.ManageStatusesAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Actors</th>
         <td>This study defines <%= study.getSampleRequestActors().length %> specimen request
             actors</td>
         <td><%= textLink("Manage Actors and Groups",
-                new ActionURL("Study-Samples", "manageActors.view", c)) %></td>
+                new ActionURL(SpringSpecimenController.ManageActorsAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Request Requirements</th>
         <td>Manage default requirements for new requests</td>
         <td><%= textLink("Manage Default Requirements",
-                new ActionURL("Study-Samples", "manageDefaultReqs.view", c)) %></td>
+                new ActionURL(SpringSpecimenController.ManageDefaultReqsAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Request Form</th>
         <td>Manage inputs required for a new specimen request </td>
         <td><%= textLink("Manage New Request Form",
-                new ActionURL("Study-Samples", "manageRequestInputs.view", c)) %></td>
+                new ActionURL(SpringSpecimenController.ManageRequestInputsAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Notifications</th>
         <td>Manage specimen request notifications</td>
         <td><%= textLink("Manage Notifications",
-                new ActionURL("Study-Samples", "manageNotifications.view", c)) %></td>
+                new ActionURL(SpringSpecimenController.ManageNotificationsAction.class, c)) %></td>
     </tr>
     <%
         }

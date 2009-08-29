@@ -56,6 +56,7 @@ public class StudyPipeline extends PipelineProvider
             return;
 
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
+
         if (study == null)
             return;
 
@@ -63,6 +64,7 @@ public class StudyPipeline extends PipelineProvider
         {
             PipeRoot root = PipelineService.get().findPipelineRoot(context.getContainer());
             File rootDir = root.getRootPath();
+
             for (FileEntry entry : entries)
             {
                 File[] files = entry.listFiles(new FileEntryFilter() {
@@ -71,8 +73,10 @@ public class StudyPipeline extends PipelineProvider
                         return f.getName().endsWith(".dataset");
                     }
                 });
+
                 if (files != null)
                     handleDatasetFiles(context, study, entry, rootDir, files);
+
                 files = entry.listFiles(new FileEntryFilter()
                 {
                     public boolean accept(File f)
@@ -80,9 +84,9 @@ public class StudyPipeline extends PipelineProvider
                         return f.getName().endsWith(".specimens");
                     }
                 });
+
                 if (files != null)
                     handleSpecimenFiles(entry, rootDir, files);
-
             }
         }
         catch (Exception e)
@@ -177,5 +181,4 @@ public class StudyPipeline extends PipelineProvider
             entry.addAction(new FileAction("Import specimen data", urlImport, new File[]{f}));
         }
     }
-
 }

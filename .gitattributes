@@ -2069,6 +2069,7 @@ study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenArchiveImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
 study/src/org/labkey/study/importer/StudyImportJob.java -text
+study/src/org/labkey/study/importer/StudyImportProvider.java -text
 study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text

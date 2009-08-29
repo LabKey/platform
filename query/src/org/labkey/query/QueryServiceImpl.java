@@ -295,8 +295,6 @@ public class QueryServiceImpl extends QueryService
         QueryManager mgr = QueryManager.get();
         HttpServletRequest request = new MockHttpServletRequest();
 
-        int count = 0;
-
         for (File viewFile : viewFiles)
         {
             CustomViewXmlReader reader = new CustomViewXmlReader(viewFile);
@@ -327,11 +325,9 @@ public class QueryServiceImpl extends QueryService
             cv.setFilterAndSort(reader.getFilterAndSortString());
             cv.setIsHidden(reader.isHidden());
             cv.save(user, request);
-
-            count++;
         }
 
-        return count;
+        return viewFiles.length;
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)

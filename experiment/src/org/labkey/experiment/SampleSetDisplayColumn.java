@@ -22,6 +22,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class SampleSetDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            ActionURL url = new ActionURL("Experiment", "showMaterialSource", ss.getContainer());
+            ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, ss.getContainer());
             url.addParameter("rowId", Integer.toString(ss.getRowId()));
             out.write("<a href=\"" + url.toString() + "\">" + PageFlowUtil.filter(ss.getName()) + "</a>");
         }

@@ -211,7 +211,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         public String getURL(RenderContext ctx)
         {
             Integer id = (Integer)ctx.get("RowId");
-            return new ActionURL("list", "historyDetail", ctx.getContainer()).addParameter("eventId", id).getLocalURIString();
+            return new ActionURL(ListController.HistoryDetailAction.class, ctx.getContainer()).addParameter("eventId", id).getLocalURIString();
         }
 
         @Override

@@ -25,6 +25,7 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.Specimen;
+import org.labkey.study.controllers.samples.AutoCompleteAction;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -159,7 +160,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 
     public String getCompletionURLBase(Container studyContainer, SpecimenService.CompletionType type)
     {
-        ActionURL url = new ActionURL("Study-Samples", "autoComplete", studyContainer);
+        ActionURL url = new ActionURL(AutoCompleteAction.class, studyContainer);
         url.addParameter("type", type.name());
         return url.getLocalURIString() + "&prefix=";
     }

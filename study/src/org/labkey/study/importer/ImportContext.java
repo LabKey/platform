@@ -35,13 +35,13 @@ import java.io.IOException;
 public class ImportContext extends AbstractContext
 {
     private final ActionURL _url;
-    private final File _root;
+    private final File _studyXml;
 
-    public ImportContext(User user, Container c, File root, ActionURL url)
+    public ImportContext(User user, Container c, File studyXml, ActionURL url)
     {
         super(user, c, null, null);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _url = url;
-        _root = root;
+        _studyXml = studyXml;
     }
 
     @Deprecated
@@ -61,7 +61,7 @@ public class ImportContext extends AbstractContext
         {
             try
             {
-                studyDoc = readStudyDocument(_root);
+                studyDoc = readStudyDocument(_studyXml);
             }
             catch (IOException e)
             {
@@ -88,22 +88,20 @@ public class ImportContext extends AbstractContext
         return dir;
     }
 
-    private static StudyDocument readStudyDocument(File root) throws StudyImportException, IOException
+    private static StudyDocument readStudyDocument(File studyXml) throws StudyImportException, IOException
     {
-        File file = new File(root, "study.xml");
-
-        if (!file.exists())
-            throw new StudyImportException("Study.xml file does not exist.");
+        if (!studyXml.exists())
+            throw new StudyImportException(studyXml.getName() + " file does not exist.");
 
         StudyDocument studyDoc;
 
         try
         {
-            studyDoc = StudyDocument.Factory.parse(file);
+            studyDoc = StudyDocument.Factory.parse(studyXml);
         }
         catch (XmlException e)
         {
-            throw new InvalidFileException(root, file, e);
+            throw new InvalidFileException(studyXml.getParentFile(), studyXml, e);
         }
 
         return studyDoc;

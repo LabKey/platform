@@ -19,6 +19,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -50,7 +51,7 @@ public class ExperimentRunDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            ActionURL url = new ActionURL("Experiment", "showRunGraph", ctx.getContainer());
+            ActionURL url = new ActionURL(ExperimentController.ShowRunGraphAction.class, ctx.getContainer());
             url.addParameter("rowId", Integer.toString(_run.getRowId()));
             out.write("<a href=\"" + url.toString() + "\">" + _run.getName() + "</a>");
         }

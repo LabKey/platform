@@ -59,7 +59,7 @@ public class PipelineController extends SpringActionController
     private static Logger _log = Logger.getLogger(PipelineController.class);
     private static DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
 
-    public enum RefererValues { protal, pipeline }
+    public enum RefererValues { portal, pipeline }
 
     public enum Params { referer, path, rootset, overrideRoot }
 

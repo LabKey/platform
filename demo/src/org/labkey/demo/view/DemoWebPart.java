@@ -18,9 +18,10 @@ package org.labkey.demo.view;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.ActionURL;
+import org.labkey.demo.DemoController;
 import org.labkey.demo.model.DemoManager;
 
 import javax.servlet.ServletException;
@@ -45,7 +46,7 @@ public class DemoWebPart extends JspView<BulkUpdatePage>
     {
         super("/org/labkey/demo/view/demoWebPart.jsp", new BulkUpdatePage());
         setTitle("Demo Summary");
-        setTitleHref(new ActionURL("demo", "begin", c));
+        setTitleHref(new ActionURL(DemoController.BeginAction.class, c));
     }
 
 

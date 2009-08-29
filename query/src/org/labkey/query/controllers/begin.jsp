@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -152,8 +153,8 @@
 
 <% if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
 {%>
-    <labkey:link href='<%=new ActionURL("query", "admin", context.getContainer())%>' text="Schema Administration" />
+    <labkey:link href='<%=new ActionURL(QueryControllerSpring.AdminAction.class, context.getContainer())%>' text="Schema Administration" />
 <% } %>
 <p>
-<labkey:link href='<%=new ActionURL("query", "validateQueries", context.getContainer())%>' text="Validate Queries" />
+<labkey:link href='<%=new ActionURL(QueryControllerSpring.ValidateQueriesAction.class, context.getContainer())%>' text="Validate Queries" />
 </p>

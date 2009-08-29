@@ -38,6 +38,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
+import org.labkey.query.reports.ReportsController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -159,7 +160,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
             throw UnexpectedException.wrap(e);
         }
 
-        ActionURL url = new ActionURL("reports", "plotChart", _context.getContainer());
+        ActionURL url = new ActionURL(ReportsController.PlotChartAction.class, _context.getContainer());
 
         for (Pair<String, String> param : bean.getParameters())
         {

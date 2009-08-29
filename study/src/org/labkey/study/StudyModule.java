@@ -62,6 +62,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.StudyReload;
+import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
@@ -193,6 +194,7 @@ public class StudyModule extends DefaultModule
         RoleManager.registerRole(new AssayDesignerRole());
 
         PipelineService.get().registerPipelineProvider(new StudyPipeline());
+        PipelineService.get().registerPipelineProvider(new StudyImportProvider());
         ContainerManager.addContainerListener(new StudyContainerListener());
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());

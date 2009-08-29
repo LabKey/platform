@@ -49,7 +49,7 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
         container = c;
         setFileSet(null);
         setTitle("Files");
-        setTitleHref(new ActionURL("FileContent", "begin", c));
+        setTitleHref(new ActionURL(FileContentController.BeginAction.class, c));
     }
 
     public FilesWebPart(Container c, String fileSet)
@@ -63,7 +63,7 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
         container = c;
         this.fileSet = fileSet;
         setTitle(fileSet);
-        setTitleHref(new ActionURL("FileContent", "begin", c).addParameter("fileSetName",fileSet));
+        setTitleHref(new ActionURL(FileContentController.BeginAction.class, c).addParameter("fileSetName",fileSet));
     }
 
     public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)

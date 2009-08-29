@@ -108,6 +108,8 @@ public class SchemaXmlReader implements SchemaReader
                 // Assume nullable if not specified
                 boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
 
+                boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
+
                 ColumnType.Fk fk = columnXml.getFk();
 
                 Map<String, Object> map = mapFactory.getRowMap(new Object[]{
@@ -120,7 +122,7 @@ public class SchemaXmlReader implements SchemaReader
                     null,  // TODO: conceptURI
                     columnXml.getFormatString(),
                     columnXml.getIsHidden(),
-                    null != columnXml.getMvColumnName(),
+                    mvEnabled,
                     null != fk ? fk.getFkFolderPath() : null,
                     null != fk ? fk.getFkDbSchema() : null,
                     null != fk ? fk.getFkTable() : null

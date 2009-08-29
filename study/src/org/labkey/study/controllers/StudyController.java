@@ -94,6 +94,7 @@ import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.ZipFile;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -3572,42 +3573,35 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ImportStudyAction extends FormViewAction<ImportForm>
+    public class ImportStudyAction extends FormViewAction<Object>
     {
-        private ActionURL redirect;
+        private ActionURL _redirect;
+        private boolean _reload;
 
-        public void validateCommand(ImportForm form, Errors errors)
+        public void validateCommand(Object o, Errors errors)
         {
         }
 
-        public ModelAndView getView(ImportForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
             Container c = getContainer();
             Study study = StudyManager.getInstance().getStudy(c);
+            _reload = null != study;
 
-            if (!reshow && null != study)
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
-                return new HtmlView("Existing study: " + study.getLabel() + "<br>" + PageFlowUtil.generateButton("Delete Study", new ActionURL(DeleteStudyAction.class, c)));
-            }
-            else if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
-            {
-                return new PipelineSetupView("importing a study");
+                return new PipelineSetupView((_reload ? "reloading" : "importing") + " a study");
             }
             else
             {
-                return new JspView<ImportForm>("/org/labkey/study/view/importStudy.jsp", form, errors);
+                return new JspView<Boolean>("/org/labkey/study/view/importStudy.jsp", _reload, errors);
             }
         }
 
-        public boolean handlePost(ImportForm form, BindException errors) throws Exception
+        // This handles this case of posting a .zip archive directly (not using the pipeline)
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
-
-            if (null != StudyManager.getInstance().getStudy(c))
-            {
-                errors.reject("studyImport", "A study already exists in this folder.");
-                return false;
-            }
 
             File pipelineRoot = StudyReload.getPipelineRoot(c);
 
@@ -3617,109 +3611,159 @@ public class StudyController extends BaseStudyController
             }
 
             // Assuming success starting the import process, redirect to pipeline status
-            redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+            _redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
 
-            if ("pipeline".equals(form.getSource()))
+            Map<String, MultipartFile> map = getFileMap();
+
+            if (map.isEmpty())
             {
-                return importStudy(errors, pipelineRoot);
+                errors.reject("studyImport", "You must select a .zip file to import.");
+            }
+            else if (map.size() > 1)
+            {
+                errors.reject("studyImport", "Only one file is allowed.");
             }
             else
             {
-                Map<String, MultipartFile> map = getFileMap();
+                MultipartFile file = map.values().iterator().next();
 
-                if (map.isEmpty())
+                if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
                 {
                     errors.reject("studyImport", "You must select a .zip file to import.");
                 }
-                else if (map.size() > 1)
-                {
-                    errors.reject("studyImport", "Only one file is allowed.");
-                }
                 else
                 {
-                    MultipartFile file = map.values().iterator().next();
+                    InputStream is = file.getInputStream();
 
-                    if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
+                    File zipFile = File.createTempFile("study", ".zip");
+                    FileOutputStream fos = new FileOutputStream(zipFile);
+
+                    try
                     {
-                        errors.reject("studyImport", "You must select a .zip file to import.");
+                        FileUtil.copyData(is, fos);
                     }
-                    else
+                    finally
                     {
-                        InputStream is = file.getInputStream();
-
-                        File zipFile = File.createTempFile("study", ".zip");
-                        FileOutputStream fos = new FileOutputStream(zipFile);
-
-                        try
-                        {
-                            FileUtil.copyData(is, fos);
-                        }
-                        finally
-                        {
-                            if (is != null) try { is.close(); } catch (IOException e) {  }
-                            try { fos.close(); } catch (IOException e) {  }
-                        }
-
-                        String dirName = "unzip";
-                        File importDir = new File(pipelineRoot, dirName);
-
-                        if (importDir.exists() && !FileUtil.deleteDir(importDir))
-                        {
-                            errors.reject("studyImport", "Import failed: Could not delete the directory \"" + dirName + "\"");
-                            return false;
-                        }
-
-                        try
-                        {
-                            ZipUtil.unzipToDirectory(zipFile, importDir);
-                            importStudy(errors, importDir);
-                        }
-                        catch (ZipException e)
-                        {
-                            errors.reject("studyImport", "This file does not appear to be a valid .zip file.");
-                        }
+                        if (is != null) try { is.close(); } catch (IOException e) {  }
+                        try { fos.close(); } catch (IOException e) {  }
                     }
+
+                    importStudy(errors, zipFile);
                 }
-
-                return !errors.hasErrors();
             }
+
+            return !errors.hasErrors();
         }
 
-        public ActionURL getSuccessURL(ImportForm form)
+        public ActionURL getSuccessURL(Object o)
         {
-            return redirect;
+            return _redirect;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Import Study");
+            return root.addChild((_reload ? "Reload" : "Import") + " Study");
         }
     }
 
 
-    public static class ImportForm
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ImportStudyFromPipelineAction extends SimpleRedirectAction<ImportStudyForm>
     {
-        private String _source;
-
-        public String getSource()
+        public ActionURL getRedirectURL(ImportStudyForm form) throws Exception
         {
-            return _source;
-        }
+            Container c = getContainer();
+            File pipelineRoot = StudyReload.getPipelineRoot(c);
 
-        public void setSource(String source)
-        {
-            _source = source;
+            if (null == pipelineRoot)
+                throw new NotFoundException("Pipeline root is not set");
+
+            File dir = new File(pipelineRoot, form.getPath());
+            File studyFile = new File(dir, form.getFileInputNames()[0]);
+
+            @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+            BindException errors = new BindException(c, "import");
+
+            boolean success = importStudy(errors, studyFile);
+
+            if (success && !errors.hasErrors())
+            {
+                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+            }
+            else
+            {
+                ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
+                throw new ServletException(firstError.getDefaultMessage());
+            }
         }
     }
 
 
-    public boolean importStudy(BindException errors, File root) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
+    public static class ImportStudyForm
+    {
+        private String _path;
+        private String[] _fileInputNames;
+
+        public String getPath()
+        {
+            return _path;
+        }
+
+        public void setPath(String path)
+        {
+            _path = path;
+        }
+
+        public String[] getFileInputNames()
+        {
+            return _fileInputNames;
+        }
+
+        public void setFileInputNames(String[] fileInputNames)
+        {
+            _fileInputNames = fileInputNames;
+        }
+    }
+
+
+    public boolean importStudy(BindException errors, File studyFile) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
     {
         Container c = getContainer();
+        File pipelineRoot = StudyReload.getPipelineRoot(c);
+
+        File studyXml;
+
+        if (studyFile.getName().endsWith(".zip"))
+        {
+            String dirName = "unzip";
+            File importDir = new File(pipelineRoot, dirName);
+
+            if (importDir.exists() && !FileUtil.deleteDir(importDir))
+            {
+                errors.reject("studyImport", "Import failed: Could not delete the directory \"" + dirName + "\"");
+                return false;
+            }
+
+            try
+            {
+                ZipUtil.unzipToDirectory(studyFile, importDir);
+                studyXml = new File(importDir, "study.xml");
+            }
+            catch (ZipException e)
+            {
+                errors.reject("studyImport", "This file does not appear to be a valid .zip file.");
+                return false;
+            }
+        }
+        else
+        {
+            studyXml = studyFile;
+        }
+
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
 
-        StudyImporter importer = new StudyImporter(c, user, url, root, errors);
+        StudyImporter importer = new StudyImporter(c, user, url, studyXml, errors);
 
         try
         {
@@ -3791,7 +3835,7 @@ public class StudyController extends BaseStudyController
                     File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
                     File exportDir = new File(rootDir, "export");
                     exportDir.mkdir();
-                    ZipFile zip = new ZipFile(exportDir, study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".zip");
+                    ZipFile zip = new ZipFile(exportDir, study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".study.zip");
                     writer.write(study, ctx, zip);
                     zip.close();
                     _successURL = new ActionURL(ManageStudyAction.class, getContainer());
@@ -3799,7 +3843,7 @@ public class StudyController extends BaseStudyController
                 }
                 case 2:
                 {
-                    ZipFile zip = new ZipFile(getViewContext().getResponse(), study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".zip");
+                    ZipFile zip = new ZipFile(getViewContext().getResponse(), study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".study.zip");
                     writer.write(study, ctx, zip);
                     zip.close();
                     break;

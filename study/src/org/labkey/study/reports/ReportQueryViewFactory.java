@@ -16,32 +16,31 @@
 
 package org.labkey.study.reports;
 
-import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.data.SimpleFilter;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.study.Study;
-import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.view.ReportQueryView;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletException;
 import java.util.Map;
@@ -60,7 +59,7 @@ public class ReportQueryViewFactory
         return _instance;
     }
 
-    private ReportQueryViewFactory(){};
+    private ReportQueryViewFactory(){}
 
     public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor,
                                                     String queryName, String viewName) throws Exception

@@ -393,7 +393,7 @@ public class StudyReload
                         throw new StudyImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
 
                     LOG.info("Handling " + c.getPath());
-                    StudyImporter importer = new StudyImporter(c, reloadUser, manageStudyURL, root, errors);
+                    StudyImporter importer = new StudyImporter(c, reloadUser, manageStudyURL, new File(root, "study.xml"), errors);
                     importer.process();
                 }
                 catch (InterruptedException e)
