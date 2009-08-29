@@ -595,7 +595,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          * that weren't on the html form at all and ones that were set to false
          * by the user.
          * To fix this each checkbox posts its name in a hidden field
-         * We set them all to false and struts will overwrite with true
+         * We set them all to false and spring will overwrite with true
          * if they are set.
          */
         HttpServletRequest request = getRequest();

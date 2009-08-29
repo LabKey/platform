@@ -35,6 +35,8 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.action.UrlProvider;
+import org.labkey.api.portal.ProjectUrls;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -493,8 +495,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 return helper;
         }
 
-        //noinspection deprecation
-        return new ActionURL("Project", "begin", this);
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(this);
     }
 
     public Module getDefaultModule()

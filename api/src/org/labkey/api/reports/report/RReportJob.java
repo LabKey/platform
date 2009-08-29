@@ -20,11 +20,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -46,7 +46,6 @@ public class RReportJob extends PipelineJob implements Serializable
     public static final String PROCESSING_STATUS = "Processing";
     public static final String LOG_FILE_NAME = "report.log";
     private ReportIdentifier _reportId;
-    private ActionURL _status = null;
     private RReportBean _form;
 
     public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId) throws SQLException
@@ -78,14 +77,8 @@ public class RReportJob extends PipelineJob implements Serializable
         File statusFile = getStatusFile();
         if (statusFile != null && null != _reportId)
         {
-            return new ActionURL("reports", "runReport", getContainer()).
+            return PageFlowUtil.urlProvider(ReportUrls.class).urlRunReport(getContainer()).
                     addParameter(ReportDescriptor.Prop.reportId.name(), _reportId.toString());
-/*
-            ActionURL url = new ActionURL("reports", "renderBackgroundRReport", getContainer());
-            url.addParameter("path", statusFile.getAbsolutePath().replace("\\", "/"));
-            url.addParameter("reportId", _reportId);
-            return url;
-*/
         }
         return null;
     }
@@ -123,15 +116,15 @@ public class RReportJob extends PipelineJob implements Serializable
     {
         setStatus(PROCESSING_STATUS, "Job started at: " + DateUtil.nowISO());
         RReport report = getReport();
-        try {
+        try
+        {
             // get the input file which should have been previously created
             File inputFile = new File(report.getReportDir(), RReport.DATA_INPUT);
             ViewContext context = new ViewContext(getInfo());
 
-            if (inputFile != null && inputFile.exists())
+            if (inputFile.exists())
             {
-                List<ParamReplacement> outputSubst = new ArrayList();
-                List<String> errors = new ArrayList();
+                List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
 
                 String output = report.runScript(context, outputSubst, inputFile);
                 if (!StringUtils.isEmpty(output))

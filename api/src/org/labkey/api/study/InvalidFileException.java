@@ -33,7 +33,7 @@ public class InvalidFileException extends StudyImportException
         super(getErrorString(root, file, e));
     }
 
-    // Special handling for XmlException: e.getMessage() includes absolute path to file, which don't want to display
+    // Special handling for XmlException: e.getMessage() includes absolute path to file, which we don't want to display
     private static String getErrorString(File root, File file, XmlException e)
     {
         XmlError error = e.getError();

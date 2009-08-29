@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Apr 27, 2006
  * Time: 11:29:43 AM

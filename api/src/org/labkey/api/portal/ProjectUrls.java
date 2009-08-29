@@ -26,6 +26,7 @@ import org.labkey.api.view.Portal;
 public interface ProjectUrls extends UrlProvider 
 {
     ActionURL getStartURL(Container container);
+    ActionURL getBeginURL(Container container);
     ActionURL getHomeURL();
     ActionURL getCustomizeWebPartURL(Container c);
     ActionURL getAddWebPartURL(Container c);

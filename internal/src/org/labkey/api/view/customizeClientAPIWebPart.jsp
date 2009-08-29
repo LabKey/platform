@@ -17,12 +17,13 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
+    ActionURL postUrl = urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
 
     String defaultContent = bean.getPropertyMap().get(ClientAPIWebPartFactory.DEFAULT_CONTENT_KEY);
 
