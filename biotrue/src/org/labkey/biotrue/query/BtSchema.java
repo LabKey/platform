@@ -32,6 +32,7 @@ import java.util.Collections;
 public class BtSchema extends UserSchema
 {
     static public final String name = "biotrue";
+    public static final String DESCRIPTION = "Contains data about connections to BioTrue servers.";
     static public final DefaultSchema.SchemaProvider PROVIDER = new DefaultSchema.SchemaProvider()
     {
         public QuerySchema getSchema(DefaultSchema schema)
@@ -41,7 +42,7 @@ public class BtSchema extends UserSchema
     };
     public BtSchema(User user, Container container)
     {
-        super(name, null, user, container, BtManager.get().getSchema());
+        super(name, DESCRIPTION, user, container, BtManager.get().getSchema());
     }
 
     public enum TableType
