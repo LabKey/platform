@@ -117,6 +117,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     {
         User user = getViewContext().getUser();
         Container container = getViewContext().getContainer();
+        if (null == container)
+            throw new NotFoundException("The folder path '" + getViewContext().getActionURL().getExtraPath() + "' does not match an existing folder on the server!");
 
         if (null != _view && _view.isRequiresLogin() && user.isGuest())
             throw new UnauthorizedException("You must sign in to see this content.");

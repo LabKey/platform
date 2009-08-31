@@ -49,9 +49,15 @@ public class ModuleHtmlView extends HtmlView
 
     public String replaceTokens(String html)
     {
+        if (null == html)
+            return null;
+        
         ViewContext context = getViewContext();
-        String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", context.getContextPath());
-        ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", context.getContainer().getPath());
+        String contextPath = null != context.getContextPath() ? context.getContextPath() : "invalid context path";
+        String containerPath = null != context.getContainer() ? context.getContainer().getPath() : "invalid container";
+
+        String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", contextPath);
+        ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", containerPath);
         return ret;
     }
 
