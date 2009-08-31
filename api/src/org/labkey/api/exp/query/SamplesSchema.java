@@ -31,6 +31,7 @@ import java.util.TreeMap;
 public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "Samples";
+    public static final String SCHEMA_DESCR = "Contains data about the samples used in experiement runs.";
 
     static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
     {
@@ -64,7 +65,7 @@ public class SamplesSchema extends AbstractExpSchema
 
     private SamplesSchema(User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
     {
-        super("Samples", user, container, ExperimentService.get().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
         _sampleSetMap = sampleSetMap;
     }
 

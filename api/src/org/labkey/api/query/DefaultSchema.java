@@ -117,4 +117,14 @@ final public class DefaultSchema extends AbstractSchema
         }
         return ret;
     }
+
+    public String getName()
+    {
+        return "default";
+    }
+
+    public String getDescription()
+    {
+        return null;
+    }
 }

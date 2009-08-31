@@ -34,7 +34,7 @@ public class SimpleModuleUserSchema extends UserSchema
 
     public SimpleModuleUserSchema(String name, User user, Container container, DbSchema dbschema)
     {
-        super(name, user, container, dbschema);
+        super(name, null, user, container, dbschema);
 
         _tableNames = new LinkedHashSet<String>();
         for (SchemaTableInfo table : dbschema.getTables())

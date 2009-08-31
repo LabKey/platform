@@ -30,10 +30,11 @@ public abstract class AssaySchema extends UserSchema
 
     public static final String ASSAY_LIST_TABLE_NAME = "AssayList";
     public static String NAME = "assay";
+    public static final String DESCR = "Contains data about the set of defined assays and their associated batches and runs.";
 
     public AssaySchema(String name, User user, Container container, DbSchema dbSchema)
     {
-        super(name, user, container, dbSchema);
+        super(name, DESCR, user, container, dbSchema);
     }
 
     public void setTargetStudy(Container studyContainer)

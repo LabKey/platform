@@ -126,6 +126,7 @@ public class ExpSchema extends AbstractExpSchema
 
 
     public static final String SCHEMA_NAME = "exp";
+    public static final String SCHEMA_DESCR = "Contains data about experiement runs, data files, materials, sample sets, etc.";
 
     static public void register()
     {
@@ -147,7 +148,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ExpSchema(User user, Container container)
     {
-        super(SCHEMA_NAME, user, container, ExperimentService.get().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
     public Set<String> getTableNames()

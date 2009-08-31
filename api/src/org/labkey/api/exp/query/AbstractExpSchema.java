@@ -29,9 +29,9 @@ public abstract class AbstractExpSchema extends UserSchema
 {
     protected ContainerFilter _containerFilter = null;
 
-    public AbstractExpSchema(String name, User user, Container container, DbSchema dbSchema)
+    public AbstractExpSchema(String name, String description, User user, Container container, DbSchema dbSchema)
     {
-        super(name, user, container, dbSchema);
+        super(name, description, user, container, dbSchema);
     }
 
     protected <T extends ExpTable> T setupTable(T table)

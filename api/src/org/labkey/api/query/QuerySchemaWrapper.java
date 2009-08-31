@@ -69,4 +69,14 @@ public class QuerySchemaWrapper implements QuerySchema
     {
         return Collections.emptySet();
     }
+
+    public String getName()
+    {
+        return _schema.getName();
+    }
+
+    public String getDescription()
+    {
+        return "Contains data tables from the '" + _schema.getName() + "' database schema.";
+    }
 }

@@ -37,13 +37,25 @@ import java.util.*;
 abstract public class UserSchema extends AbstractSchema
 {
     protected String _name;
+    protected String _description;
 
-    public UserSchema(String name, User user, Container container, DbSchema dbSchema)
+    public UserSchema(String name, String description, User user, Container container, DbSchema dbSchema)
     {
         super(dbSchema, user, container);
         _name = name;
+        _description = description;
     }
 
+    public String getName()
+    {
+        return _name;
+    }
+
+    @Nullable
+    public String getDescription()
+    {
+        return _description;
+    }
 
     protected boolean canReadSchema()
     {

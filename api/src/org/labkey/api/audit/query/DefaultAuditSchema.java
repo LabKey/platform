@@ -34,7 +34,7 @@ public class DefaultAuditSchema extends UserSchema
 {
     public DefaultAuditSchema(User user, Container container)
     {
-        super("default", user, container, CoreSchema.getInstance().getSchema());
+        super("default", null, user, container, CoreSchema.getInstance().getSchema());
     }
 
     public Set<String> getTableNames()

@@ -36,4 +36,8 @@ public interface QuerySchema
     public QuerySchema getSchema(String name);
 
     public Set<String> getSchemaNames();
+
+    public String getName();
+
+    public String getDescription();
 }
