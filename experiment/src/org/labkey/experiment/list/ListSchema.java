@@ -33,6 +33,8 @@ import java.util.Map;
 public class ListSchema extends UserSchema
 {
     static public final String NAME = "lists";
+    public static final String DESCR = "Contains a data table for each defined list";
+
     static public void register()
     {
         DefaultSchema.registerProvider(NAME, new DefaultSchema.SchemaProvider() {
@@ -47,7 +49,7 @@ public class ListSchema extends UserSchema
 
     public ListSchema(User user, Container container)
     {
-        super(NAME, user, container, ExperimentService.get().getSchema());
+        super(NAME, DESCR, user, container, ExperimentService.get().getSchema());
     }
 
     public Set<String> getTableNames()

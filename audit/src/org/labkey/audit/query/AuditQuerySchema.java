@@ -37,6 +37,7 @@ import java.util.Set;
 public class AuditQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "auditLog";
+    public static final String SCHEMA_DESCR = "Contains data about audit log events.";
     public static final String AUDIT_TABLE_NAME = "audit";
 
     static public void register()
@@ -51,7 +52,7 @@ public class AuditQuerySchema extends UserSchema
 
     public AuditQuerySchema(User user, Container container)
     {
-        super(SCHEMA_NAME, user, container, AuditSchema.getInstance().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AuditSchema.getInstance().getSchema());
     }
 
     public Set<String> getTableNames()

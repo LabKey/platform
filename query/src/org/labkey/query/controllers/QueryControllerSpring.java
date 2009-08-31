@@ -2473,13 +2473,37 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    @ApiVersion(9.1)
+    @ApiVersion(9.3)
     public class GetSchemasAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse("schemas", DefaultSchema.get(getViewContext().getUser(),
-                    getViewContext().getContainer()).getUserSchemaNames());
+            if (getApiVersion() >= 9.3)
+            {
+                ApiSimpleResponse resp = new ApiSimpleResponse();
+
+                Container container = getViewContext().getContainer();
+                User user = getViewContext().getUser();
+                DefaultSchema defSchema = DefaultSchema.get(user, container);
+
+                for (String name : defSchema.getUserSchemaNames())
+                {
+                    QuerySchema schema = DefaultSchema.get(user, container).getSchema(name);
+                    if (null == schema)
+                        continue;
+
+                    Map<String,Object> schemaProps = new HashMap<String,Object>();
+                    schemaProps.put("description", schema.getDescription());
+                    
+                    resp.put(schema.getName(), schemaProps);
+                }
+
+                return resp;
+
+            }
+            else
+                return new ApiSimpleResponse("schemas", DefaultSchema.get(getViewContext().getUser(),
+                        getViewContext().getContainer()).getUserSchemaNames());
         }
     }
 

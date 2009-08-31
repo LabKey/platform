@@ -35,6 +35,7 @@ import java.util.*;
 public class MothershipSchema extends UserSchema
 {
     private static final String SCHEMA_NAME = "mothership";
+    private static final String SCHEMA_DESCR = "Contains data about exceptions that have occurred on this server.";
 
     public static final String SERVER_INSTALLATIONS_TABLE_NAME = "ServerInstallations";
     public static final String SERVER_SESSIONS_TABLE_NAME = "ServerSessions";
@@ -54,7 +55,7 @@ public class MothershipSchema extends UserSchema
 
     public MothershipSchema(User user, Container container)
     {
-        super(SCHEMA_NAME, user, container, MothershipManager.get().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, MothershipManager.get().getSchema());
     }
 
     static public void register()

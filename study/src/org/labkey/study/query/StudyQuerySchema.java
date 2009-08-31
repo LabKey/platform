@@ -33,6 +33,7 @@ import java.util.*;
 public class StudyQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "study";
+    public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including participants, cohorts, visits, datasets, specimens, etc.";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -44,7 +45,7 @@ public class StudyQuerySchema extends UserSchema
 
     public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
-        super(SCHEMA_NAME, user, study.getContainer(), StudySchema.getInstance().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, study.getContainer(), StudySchema.getInstance().getSchema());
         _study = study;
         _mustCheckPermissions = mustCheckPermissions;
     }
@@ -54,7 +55,7 @@ public class StudyQuerySchema extends UserSchema
      */
     private StudyQuerySchema(Container c, User user)
     {
-        super(SCHEMA_NAME, user, c, StudySchema.getInstance().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, c, StudySchema.getInstance().getSchema());
         _study = null;
         _mustCheckPermissions = true;
     }

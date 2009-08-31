@@ -41,7 +41,7 @@ public class BtSchema extends UserSchema
     };
     public BtSchema(User user, Container container)
     {
-        super(name, user, container, BtManager.get().getSchema());
+        super(name, null, user, container, BtManager.get().getSchema());
     }
 
     public enum TableType

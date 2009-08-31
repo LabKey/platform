@@ -31,6 +31,7 @@ import java.util.Collections;
 public class IssuesQuerySchema extends UserSchema 
 {
     public static final String SCHEMA_NAME = "issues";
+    public static final String SCHEMA_DESCR = "Contains one data table containing all the issues.";
 
     public enum TableType
     {
@@ -58,7 +59,7 @@ public class IssuesQuerySchema extends UserSchema
 
     public IssuesQuerySchema(User user, Container container)
     {
-        super(SCHEMA_NAME, user, container, IssuesSchema.getInstance().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, IssuesSchema.getInstance().getSchema());
     }
 
     public Set<String> getTableNames()

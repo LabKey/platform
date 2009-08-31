@@ -44,7 +44,7 @@ public class DbUserSchema extends UserSchema
 
     public DbUserSchema(User user, Container container, DbUserSchemaDef def)
     {
-        super(def.getUserSchemaName(), user, container, null);
+        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, null);
         _def = def;
         synchronized (s_schemaMap)
         {

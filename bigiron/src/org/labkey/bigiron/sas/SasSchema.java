@@ -41,7 +41,7 @@ public class SasSchema extends UserSchema
 
     public SasSchema(String name, String path, User user, Container c)
     {
-        super(name, user, c, null);
+        super(name, null, user, c, null);
 
         synchronized (_schemaMap)
         {

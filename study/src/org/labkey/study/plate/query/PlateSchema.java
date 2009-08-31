@@ -41,6 +41,7 @@ import java.sql.SQLException;
 public class PlateSchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "plate";
+    public static final String SCHEMA_DESCR = "Contains data about defined plates";
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
@@ -63,7 +64,7 @@ public class PlateSchema extends UserSchema
 
     public PlateSchema(User user, Container container)
     {
-        super(SCHEMA_NAME, user, container, StudySchema.getInstance().getSchema());
+        super(SCHEMA_NAME, null, user, container, StudySchema.getInstance().getSchema());
     }
 
     public Set<String> getTableNames()
