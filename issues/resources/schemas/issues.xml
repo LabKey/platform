@@ -66,6 +66,7 @@
 		</ns:columns>
 	</ns:table>
 	<ns:table tableName="Issues" tableDbType="TABLE">
+        <ns:description>Contains a row for each issue created in this folder.</ns:description>
 		<ns:columns>
 			<ns:column columnName="_ts">
 				<ns:columnTitle>_ts</ns:columnTitle>

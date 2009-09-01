@@ -53,6 +53,7 @@ public class ListTable extends FilteredTable
     {
         super(getIndexTable(listDef.getKeyType()));
         setName(listDef.getName());
+        setDescription(listDef.getDescription());
         _list = listDef;
         addCondition(getRealTable().getColumn("ListId"), listDef.getListId());
 
