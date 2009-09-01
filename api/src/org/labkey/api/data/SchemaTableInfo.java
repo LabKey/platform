@@ -480,6 +480,7 @@ public class SchemaTableInfo implements TableInfo
 
         //Override with the table name from the schema so casing is nice...
         name = xmlTable.getTableName();
+        _description = xmlTable.getDescription();
         title = xmlTable.getTableTitle();
         titleColumn = xmlTable.getTitleColumn();
         if (xmlTable.isSetCacheSize())

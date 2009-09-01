@@ -44,6 +44,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _filter = new SimpleFilter();
         _rootTable = table;
         _name = _rootTable.getName();
+        _description = _rootTable.getDescription();
         setTitleColumn(table.getTitleColumn());
     }
 
