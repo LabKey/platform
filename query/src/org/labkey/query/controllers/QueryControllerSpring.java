@@ -2573,7 +2573,7 @@ public class QueryControllerSpring extends SpringActionController
                     continue;
 
                 Map<String,Object> qinfo = new HashMap<String,Object>();
-                qinfo.put("name", table.getName());
+                qinfo.put("name", qname);
                 if (null != table.getDescription())
                     qinfo.put("description", table.getDescription());
 
