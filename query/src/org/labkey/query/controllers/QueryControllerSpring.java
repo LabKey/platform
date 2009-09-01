@@ -2478,7 +2478,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            if (getApiVersion() >= 9.3)
+            if (getRequestedApiVersion() >= 9.3)
             {
                 ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -2568,13 +2568,18 @@ public class QueryControllerSpring extends SpringActionController
 
             for(String qname : qnames)
             {
+                TableInfo table = uschema.getTable(qname);
+                if (null == table)
+                    continue;
+
                 Map<String,Object> qinfo = new HashMap<String,Object>();
-                qinfo.put("name", qname);
+                qinfo.put("name", table.getName());
+                if (null != table.getDescription())
+                    qinfo.put("description", table.getDescription());
 
                 if(form.isIncludeColumns())
                 {
-                    //get the table and enumerate the columns
-                    TableInfo table = uschema.getTable(qname);
+                    //enumerate the columns
                     List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();
                     for(ColumnInfo col : table.getColumns())
                     {
