@@ -1343,28 +1343,23 @@ public class QueryControllerSpring extends SpringActionController
                 throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
             }
 
+            boolean isEditable = isQueryEditable(view.getTable());
+
             //if requested version is >= 9.1, use the extended api query response
             if(getRequestedApiVersion() >= 9.1)
-                return new ExtendedApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
+                return new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
                         form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys, metaDataOnly);
             else
-                return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
+                return new ApiQueryResponse(view, getViewContext(), isEditable, true,
                         form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys, metaDataOnly);
         }
     }
 
-    protected boolean isSchemaEditable(UserSchema schema)
+    protected boolean isQueryEditable(TableInfo table)
     {
         if (!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_UPDATE | ACL.PERM_INSERT | ACL.PERM_DELETE))
             return false;
-        if (schema.getSchemaName().equalsIgnoreCase("lists"))
-            return true;
-        else if (schema.getSchemaName().equalsIgnoreCase("study"))
-            return true;
-        else if (schema instanceof DbUserSchema)
-            return ((DbUserSchema)schema).areTablesEditable();
-        else
-            return false;
+        return table != null && table.getUpdateService() != null;
     }
 
     public static class ExecuteSqlForm
@@ -1480,11 +1475,13 @@ public class QueryControllerSpring extends SpringActionController
             view.setShowExportButtons(false);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
+            boolean isEditable = isQueryEditable(view.getTable());
+
             if(getRequestedApiVersion() >= 9.1)
-                return new ExtendedApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
+                return new ExtendedApiQueryResponse(view, getViewContext(), isEditable,
                         false, schemaName, "sql", 0, null, metaDataOnly);
             else
-                return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
+                return new ApiQueryResponse(view, getViewContext(), isEditable,
                         false, schemaName, "sql", 0, null, metaDataOnly);
         }
     }
