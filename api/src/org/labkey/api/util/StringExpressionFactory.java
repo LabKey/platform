@@ -156,21 +156,30 @@ public class StringExpressionFactory
             {
                 if (portion.isSubstitution())
                 {
-                    Object o = null;
+                    String s = null;
+
                     if (viewContext != null)
                     {
                         if (portion.getValue().equalsIgnoreCase("contextPath"))
-                            o = viewContext.getContextPath();
+                        {
+                            s = viewContext.getContextPath();
+                            if (_urlEncodeSubstitutions)
+                                s = PageFlowUtil.encodePath(s);
+                        }
                         else if (portion.getValue().equalsIgnoreCase("containerPath"))
-                            o = viewContext.getContainer().getPath();
+                        {
+                            s = viewContext.getContainer().getPath();
+                            if (_urlEncodeSubstitutions)
+                                s = PageFlowUtil.encodePath(s);
+                        }
                     }
 
-                    if (o == null)
-                        o = context.get(portion.getValue());
-                    String s = o == null ? "null" : o.toString();
-                    if (_urlEncodeSubstitutions)
+                    if (s == null)
                     {
-                        s = PageFlowUtil.encode(s);
+                        Object o = context.get(portion.getValue());
+                        s = o == null ? "null" : o.toString();
+                        if (_urlEncodeSubstitutions)
+                            s = PageFlowUtil.encode(s);
                     }
                     builder.append(s);
                 }

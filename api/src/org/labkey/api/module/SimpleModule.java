@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
+import java.beans.PropertyChangeEvent;
 
 /*
 * User: Dave
@@ -39,7 +40,7 @@ import java.util.*;
 /**
  * Used for simple, entirely file-based modules
  */
-public class SimpleModule extends DefaultModule
+public class SimpleModule extends DefaultModule implements ContainerManager.ContainerListener
 {
     private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
 
@@ -54,47 +55,7 @@ public class SimpleModule extends DefaultModule
 
     protected void init()
     {
-        File schemasDir = new File(getExplodedPath(), "schemas");
-        if (schemasDir.exists())
-        {
-            Set<String> schemaNames = new LinkedHashSet<String>();
-            File[] schemaFiles = schemasDir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name)
-                {
-                    boolean accept = false;
-                    if (name.endsWith(".xml"))
-                    {
-                        try
-                        {
-                            TablesDocument.Factory.parse(new File(dir, name));
-                            accept = true;
-                        }
-                        catch (XmlException e)
-                        {
-                            _log.info("Skipping '" + name + "' schema file: " + e.getMessage());
-                        }
-                        catch (IOException e)
-                        {
-                            _log.info("Skipping '" + name + "' schema file: " + e.getMessage());
-                        }
-
-                    }
-                    return accept;
-                }
-            });
-
-            for (File schemaFile : schemaFiles)
-            {
-                String schemaName = schemaFile.getName().substring(0, schemaFile.getName().length() - ".xml".length());
-                schemaNames.add(schemaName);
-            }
-
-            _schemaNames = Collections.unmodifiableSet(schemaNames);
-        }
-        else
-        {
-            _schemaNames = Collections.emptySet();
-        }
+        getSchemaNames();
     }
 
     protected Collection<SimpleWebPartFactory> createWebPartFactories()
@@ -130,11 +91,59 @@ public class SimpleModule extends DefaultModule
         return getSqlScripts(null, CoreSchema.getInstance().getSqlDialect()).size() > 0;
     }
 
+    @Override
+    public Set<String> getSchemaNames()
+    {
+        if (_schemaNames == null)
+        {
+            File schemasDir = new File(getExplodedPath(), "schemas");
+            if (schemasDir.exists())
+            {
+                Set<String> schemaNames = new LinkedHashSet<String>();
+                File[] schemaFiles = schemasDir.listFiles(new FilenameFilter() {
+                    public boolean accept(File dir, String name)
+                    {
+                        boolean accept = false;
+                        if (name.endsWith(".xml"))
+                        {
+                            try
+                            {
+                                TablesDocument.Factory.parse(new File(dir, name));
+                                accept = true;
+                            }
+                            catch (XmlException e)
+                            {
+                                _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
+                            }
+                            catch (IOException e)
+                            {
+                                _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
+                            }
+
+                        }
+                        return accept;
+                    }
+                });
+
+                for (File schemaFile : schemaFiles)
+                {
+                    String schemaName = schemaFile.getName().substring(0, schemaFile.getName().length() - ".xml".length());
+                    schemaNames.add(schemaName);
+                }
+
+                _schemaNames = Collections.unmodifiableSet(schemaNames);
+            }
+            else
+            {
+                _schemaNames = Collections.emptySet();
+            }
+        }
+        return _schemaNames;
+    }
+
     public void startup(ModuleContext moduleContext)
     {
-        assert _schemaNames != null : "schemaNames created in init";
-
-        for (final String schemaName : _schemaNames)
+        for (final String schemaName : getSchemaNames())
         {
             final DbSchema dbschema = DbSchema.get(schemaName);
 
@@ -146,6 +155,7 @@ public class SimpleModule extends DefaultModule
                 }
             });
         }
+        ContainerManager.addContainerListener(this);
     }
 
     protected String getResourcePath()
@@ -156,5 +166,18 @@ public class SimpleModule extends DefaultModule
     public ActionURL getTabURL(Container c, User user)
     {
         return SimpleController.getBeginViewUrl(this, c);
+    }
+
+    public void containerCreated(Container c)
+    {
+    }
+
+    public void containerDeleted(Container c, User user)
+    {
+        // UNDONE: delete data from schemas
+    }
+
+    public void propertyChange(PropertyChangeEvent evt)
+    {
     }
 }

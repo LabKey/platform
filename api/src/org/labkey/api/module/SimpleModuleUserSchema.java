@@ -19,10 +19,9 @@ package org.labkey.api.module;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
-import java.util.Set;
-import java.util.LinkedHashSet;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * User: kevink
@@ -44,6 +43,8 @@ public class SimpleModuleUserSchema extends UserSchema
     protected TableInfo createTable(String name)
     {
         SchemaTableInfo schematable = getDbSchema().getTable(name);
+        if (schematable == null)
+            return null;
         SimpleModuleTable usertable = new SimpleModuleTable(this, schematable);
         return usertable;
     }
@@ -70,7 +71,7 @@ public class SimpleModuleUserSchema extends UserSchema
             {
                 ColumnInfo wrap = addWrapColumn(col);
 
-                // XXX: these attributes aren't copied?
+                // ColumnInfo doesn't copy these attributes by default
                 wrap.setHidden(col.isHidden());
                 wrap.setURL(col.getURL());
 
@@ -104,11 +105,19 @@ public class SimpleModuleUserSchema extends UserSchema
         }
 
         @Override
+        public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
+        {
+            // UNDONE
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        @Override
         public QueryUpdateService getUpdateService()
         {
             // UNDONE: add an 'isUserEditable' bit to the schema and table?
-            if (getTableType() == TableInfo.TABLE_TYPE_TABLE)
-                return new DefaultQueryUpdateService(this);
+            TableInfo table = getRealTable();
+            if (table != null && table.getTableType() == TableInfo.TABLE_TYPE_TABLE)
+                return new DefaultQueryUpdateService(table);
             return null;
         }
     }
