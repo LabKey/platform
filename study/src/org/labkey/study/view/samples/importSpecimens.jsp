@@ -15,28 +15,28 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.pipeline.PipelineStatusUrls"%>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
 <%@ page import="org.labkey.study.pipeline.SpecimenBatch"%>
-<%@ page import="java.util.List"%>
-<%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.pipeline.SpecimenArchive" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ImportSpecimensBean> me =
             (JspView<SpringSpecimenController.ImportSpecimensBean>) HttpView.currentView();
     SpringSpecimenController.ImportSpecimensBean bean = me.getModelBean();
     boolean hasError = !bean.getErrors().isEmpty();
-    List<SpecimenBatch.EntryDescription> entries = bean.getBatch().getEntryDescriptions();
+    List<SpecimenArchive.EntryDescription> entries = bean.getArchive().getEntryDescriptions();
 %>
-Specimen archive <b><%= bean.getBatch().getDefinitionFile().getName() %></b> contains the following files:<br><br>
+Specimen archive <b><%= bean.getArchive().getDefinitionFile().getName() %></b> contains the following files:<br><br>
 <table class="labkey-data-region labkey-show-borders">
     <colgroup><col><col></colgroup>
     <%
         int row = 0;
-        for (SpecimenBatch.EntryDescription entry : entries)
+        for (SpecimenArchive.EntryDescription entry : entries)
         {
     %>
         <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">

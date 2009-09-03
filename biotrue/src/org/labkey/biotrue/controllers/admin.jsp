@@ -50,19 +50,19 @@
             <td><input type="checkbox" name="deleteServer" value="<%=server.getRowId()%>"></td>
             <td>Server:&nbsp;<%=server.getName()%></td>
             <td>Status:&nbsp;<%=status%></td>
-            <td>[<a href="<%=btServer.urlFor(BtController.Action.scheduledSync)%>">configure synchronization</a>]
+            <td>[<a href="<%=btServer.urlFor(BtController.ScheduledSyncAction.class)%>">configure synchronization</a>]
 <%
         if (anyTasks) {
 %>
-            <td>[<a href="<%=btServer.urlFor(BtController.Action.cancelSynchronization)%>">cancel synchronization</a>]
+            <td>[<a href="<%=btServer.urlFor(BtController.CancelSynchronizationAction.class)%>">cancel synchronization</a>]
 <%
         } else {
 %>
-            <td>[<a href="<%=btServer.urlFor(BtController.Action.synchronizeServer)%>">synchronize now</a>]
+            <td>[<a href="<%=btServer.urlFor(BtController.SynchronizeServerAction.class)%>">synchronize now</a>]
 <%
         }
 %>
-            <td>[<a href="<%=btServer.urlFor(BtController.Action.configurePassword)%>">configure password</a>]</td>
+            <td>[<a href="<%=btServer.urlFor(BtController.ConfigurePasswordAction.class)%>">configure password</a>]</td>
         </tr>
 <%
     }

@@ -35,11 +35,16 @@ import java.util.List;
  * Date: May 21, 2009
  * Time: 3:22:31 PM
  */
-public class VisitCohortAssigner
+public class VisitCohortAssigner implements InternalStudyImporter
 {
+    public String getDescription()
+    {
+        return "visit map cohort assignments";
+    }
+
     // Parses the whole visit map again to retrieve the cohort assigments; should cache info from the first parsing
     // somewhere in the ImportContext
-    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, StudyImportException
+    public void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, StudyImportException
     {
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();
 

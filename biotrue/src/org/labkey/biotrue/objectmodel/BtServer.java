@@ -28,6 +28,7 @@ import org.apache.axis.client.Service;
 import org.apache.axis.client.Call;
 import org.apache.axis.encoding.ser.BeanSerializerFactory;
 import org.apache.axis.encoding.ser.BeanDeserializerFactory;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -254,12 +255,12 @@ public class BtServer extends BtObject
 
     public ActionURL detailsURL()
     {
-        return urlFor(BtController.Action.showServer);
+        return urlFor(BtController.ShowServerAction.class);
     }
 
-    public ActionURL urlFor(BtController.Action action)
+    public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
-        ActionURL ret = action.url(getContainer());
+        ActionURL ret = new ActionURL(actionClass, getContainer());
         ret.addParameter("serverId", Integer.toString(getRowId()));
         return ret;
     }

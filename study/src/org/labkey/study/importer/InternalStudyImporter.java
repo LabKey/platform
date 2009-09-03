@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package org.labkey.biotrue.objectmodel;
+package org.labkey.study.importer;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.view.ActionURL;
-import org.labkey.biotrue.controllers.BtController;
-import org.springframework.web.servlet.mvc.Controller;
+import org.labkey.study.model.StudyImpl;
 
-abstract public class BtObject
+import java.io.File;
+
+/*
+* User: adam
+* Date: Aug 31, 2009
+* Time: 2:06:34 PM
+*/
+public interface InternalStudyImporter
 {
-    abstract public Container getContainer();
-    abstract public ActionURL detailsURL();
-    abstract public ActionURL urlFor(Class<? extends Controller> actionClass);
-    abstract public String getLabel();
+    public String getDescription();
+    public void process(StudyImpl study, ImportContext ctx, File root) throws Exception;
 }

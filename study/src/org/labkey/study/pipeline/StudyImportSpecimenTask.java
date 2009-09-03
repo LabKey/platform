@@ -13,28 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.importer;
+
+package org.labkey.study.pipeline;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.importer.ImportContext;
+import org.labkey.study.importer.StudyImporter;
+import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
 
-/**
- * User: adam
- * Date: May 16, 2009
- * Time: 9:52:59 PM
- */
-public class SpecimenArchiveImporter
+/*
+* User: adam
+* Date: Sep 1, 2009
+* Time: 3:17:44 PM
+*/
+
+// This task is used to import specimen archives as part of study import/reload.  StudyImportJob is the associcated pipeline job.
+public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpecimenTask.Factory>
 {
-    void process(ImportContext ctx, File root) throws IOException, SQLException, StudyImportException
+    public StudyImportSpecimenTask(Factory factory, PipelineJob job)
     {
+        super(factory, job);
+    }
+
+    public File getSpecimenArchive() throws StudyImportException, SQLException
+    {
+        StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
+        ImportContext ctx = support.getImportContext();
+        File root = support.getRoot();
         StudyDocument.Study.Specimens specimens = ctx.getStudyXml().getSpecimens();
 
         if (null != specimens)
@@ -50,11 +63,24 @@ public class SpecimenArchiveImporter
                 File specimenDir = ctx.getStudyDir(root, specimens.getDir(), "Study.xml");
 
                 if (null != specimens.getFile())
-                {
-                    File specimenFile = StudyImporter.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
-                    SpringSpecimenController.submitSpecimenBatch(c, ctx.getUser(), ctx.getUrl(), specimenFile);
-                }
+                    return StudyImporter.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
             }
+        }
+
+        return null;
+    }
+
+
+    public static class Factory extends AbstractSpecimenTaskFactory<Factory>
+    {
+        public Factory()
+        {
+            super(StudyImportSpecimenTask.class);
+        }
+
+        public PipelineJob.Task createTask(PipelineJob job)
+        {
+            return new StudyImportSpecimenTask(this, job);
         }
     }
 }

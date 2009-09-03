@@ -99,6 +99,15 @@ public class ProjectController extends SpringActionController
             url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
             return url;
         }
+
+        public ActionURL getExpandCollapseURL(Container c, String path, String treeId)
+        {
+            ActionURL url = new ActionURL(ExpandCollapseAction.class, c);
+            url.addParameter("path", "");
+            url.addParameter("treeId", treeId);
+
+            return url;
+        }
     }
 
 

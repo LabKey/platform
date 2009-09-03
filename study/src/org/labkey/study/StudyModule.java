@@ -26,10 +26,7 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceLoader;
+import org.labkey.api.module.*;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -81,7 +78,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
-public class StudyModule extends DefaultModule
+public class StudyModule extends SpringModule
 {
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
 
@@ -147,6 +144,12 @@ public class StudyModule extends DefaultModule
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
 
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
+    }
+
+    @Override
+    protected ContextType getContextType()
+    {
+        return ContextType.context;
     }
 
     @Override
@@ -245,6 +248,8 @@ public class StudyModule extends DefaultModule
 
         ReportService.get().addViewFactory(new ReportsController.StudyRReportViewFactory());
         ReportService.get().addUIProvider(new StudyReportUIProvider());
+
+        initWebApplicationContext();
 
         StudyReload.initializeAllTimers();
     }

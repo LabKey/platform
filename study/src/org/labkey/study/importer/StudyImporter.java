@@ -20,13 +20,10 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.StudyImportException;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.SecurityType;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
@@ -85,63 +82,11 @@ public class StudyImporter
         _log.info((reload ? "Reloading" : "Importing") + " study to folder " + _c.getPath());
 
         ImportContext ctx = new ImportContext(_user, _c, _studyXml, _url);
-        StudyDocument.Study studyXml = ctx.getStudyXml();
 
-        // Create the study if it doesn't exist... otherwise, modify the existing properties
-        if (null == study)
-        {
-            // Create study
-            StudyController.StudyPropertiesForm studyForm = new StudyController.StudyPropertiesForm();
+        // Queue up a pipeline job to handle all the import tasks, as defined in studyContext.xml
+        PipelineService.get().queueJob(new StudyImportJob(ctx, _root, _errors));
 
-            if (studyXml.isSetLabel())
-                studyForm.setLabel(studyXml.getLabel());
-
-            if (studyXml.isSetDateBased())
-                studyForm.setDateBased(studyXml.getDateBased());
-
-            if (studyXml.isSetStartDate())
-                studyForm.setStartDate(studyXml.getStartDate().getTime());
-
-            if (studyXml.isSetSecurityType())
-                studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
-
-            StudyController.createStudy(getStudy(true), _c, _user, studyForm);
-        }
-        else
-        {
-            // TODO: Change these props and save only if values have changed
-            study = study.createMutable();
-
-            if (studyXml.isSetLabel())
-                study.setLabel(studyXml.getLabel());
-
-            if (studyXml.isSetDateBased())
-                study.setDateBased(studyXml.getDateBased());
-
-            if (studyXml.isSetStartDate())
-                study.setStartDate(studyXml.getStartDate().getTime());
-
-            if (studyXml.isSetSecurityType())
-                study.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
-
-            StudyManager.getInstance().updateStudy(_user, study);            
-        }
-
-        new MissingValueImporter().process(ctx);
-        new QcStatesImporter().process(getStudy(), ctx);
-
-        if (!new VisitImporter().process(getStudy(), ctx, _root, _errors))
-            return false;
-
-        if (!new DatasetImporter().process(getStudy(), ctx, _root, _errors))
-            return false;
-
-        new SpecimenArchiveImporter().process(ctx, _root);
-
-        // Queue up a pipeline job to handle all the tasks that must happen after dataset and specimen upload
-        PipelineService.get().queueJob(new StudyImportJob(getStudy(), ctx, _root));
-
-        _log.info("Pipeline jobs initialized for study " + getStudy().getLabel() + " in folder " + _c.getPath());
+        _log.info("Pipeline jobs initialized for " + (reload ? "importing" : "reloading") + " study " + (reload ? getStudy().getLabel() + " " : "") + "in folder " + _c.getPath());
 
         return true;
     }

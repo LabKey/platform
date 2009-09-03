@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.Container;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
@@ -51,32 +50,13 @@ import java.io.File;
 
 public class BtController extends SpringActionController
 {
-    static SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(BtController.class);
-    static final private Logger _log = Logger.getLogger(BtController.class);
+    private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(BtController.class);
+    private static final Logger _log = Logger.getLogger(BtController.class);
 
     public enum Param
     {
         serverId,
         dataId,
-    }
-    public enum Action
-    {
-        begin,
-        newServer,
-        showServer,
-        showServers,
-        editServer,
-        deleteServer,
-        synchronizeServer,
-        admin,
-        scheduledSync,
-        configurePassword,
-        cancelSynchronization;
-
-        public ActionURL url(Container container)
-        {
-            return new ActionURL("biotrue", toString(), container);
-        }
     }
 
     public BtController()

@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.biotrue.datamodel.BtManager;
 import org.labkey.biotrue.controllers.BtController;
 
@@ -112,7 +113,7 @@ public class BtSchema extends UserSchema
         ret.addWrapColumn(ret.getRealTable().getColumn("UserName"));
         ret.addWrapColumn(ret.getRealTable().getColumn("WsdlURL"));
         ret.addWrapColumn(ret.getRealTable().getColumn("PhysicalRoot"));
-        ret.setDetailsURL(new DetailsURL(BtController.Action.showServer.url(getContainer()), Collections.singletonMap("serverId", "RowId")));
+        ret.setDetailsURL(new DetailsURL(new ActionURL(BtController.ShowServerAction.class, getContainer()), Collections.singletonMap("serverId", "RowId")));
         return ret;
     }
 

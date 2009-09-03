@@ -18,18 +18,14 @@ package org.labkey.study.pipeline;
 
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.study.controllers.StudyController;
 
-import java.io.Serializable;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.List;
-
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.controllers.StudyController;
 
 /**
  * User: brittp
@@ -39,27 +35,11 @@ import org.labkey.study.controllers.StudyController;
 public abstract class StudyBatch extends PipelineJob implements Serializable
 {
     protected File _definitionFile;
-    transient StudyImpl _study = null;
-    transient StudyManager _studyManager = null;
 
     public StudyBatch(ViewBackgroundInfo info, File definitionFile) throws SQLException
     {
         super("Study", info);
         _definitionFile = definitionFile;
-    }
-
-    protected StudyImpl getStudy()
-    {
-        if (null == _study)
-            _study = getStudyManager().getStudy(getInfo().getContainer());
-        return _study;
-    }
-
-    protected StudyManager getStudyManager()
-    {
-        if (null == _studyManager)
-            _studyManager = StudyManager.getInstance();
-        return _studyManager;
     }
 
     public ActionURL getStatusHref()
@@ -70,7 +50,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
 
     public String getDescription()
     {
-        return "Import files"; // .getPath();
+        return "Import files";
     }
 
     public void submit() throws IOException
@@ -84,6 +64,4 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
     {
         return _definitionFile;
     }
-
-    public abstract void prepareImport(List<String> errors) throws IOException, SQLException;
 }

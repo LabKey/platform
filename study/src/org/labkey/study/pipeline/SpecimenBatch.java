@@ -16,62 +16,28 @@
 
 package org.labkey.study.pipeline;
 
-import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.writer.ZipUtil;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.*;
+import java.io.File;
+import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * User: brittp
  * Date: Mar 14, 2006
  * Time: 5:04:38 PM
  */
-public class SpecimenBatch extends StudyBatch implements Serializable
+
+// Pipeline job used for importing individual specimen archives (not as part of a study).
+public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJobSupport
 {
-    public class EntryDescription
-    {
-        private final String _name;
-        private final long _size;
-        private final Date _date;
-
-        public EntryDescription(String name, long size, Date date)
-        {
-            _name = name;
-            _size = size;
-            _date = date;
-        }
-
-        public Date getDate()
-        {
-            return _date;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public long getSize()
-        {
-            return _size;
-        }
-    }
-
     public SpecimenBatch(ViewBackgroundInfo info, File definitionFile) throws SQLException
     {
         super(info, definitionFile);
     }
-
 
     public String getDescription()
     {
@@ -81,79 +47,14 @@ public class SpecimenBatch extends StudyBatch implements Serializable
         return description;
     }
 
-
-    public void prepareImport(List<String> errors) throws IOException, SQLException
+    public File getSpecimenArchive()
     {
-      //  errors.add("Not Yet Implemented.");
+        return _definitionFile;
     }
 
-    public void run()
+    @Override
+    public TaskPipeline getTaskPipeline()
     {
-        String status = PipelineJob.ERROR_STATUS;
-        File unzipDir = null;
-        try
-        {
-            info("Unzipping specimen archive " +  _definitionFile.getPath());
-            String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
-            unzipDir = new File(_definitionFile.getParentFile(), tempDirName);
-            try
-            {
-                setStatus("Unzipping");
-                List<File> files = ZipUtil.unzipToDirectory(_definitionFile, unzipDir, getLogger());
-                info("Archive unzipped to " + unzipDir.getPath());
-                info("Starting import...");
-                setStatus("Processing");
-
-                SpecimenImporter importer = new SpecimenImporter();
-                importer.process(getUser(), getContainer(), files, getLogger());
-                status = PipelineJob.COMPLETE_STATUS;
-            }
-            catch (Exception e)
-            {
-                status = PipelineJob.ERROR_STATUS;
-                error("Unexpected error processing specimen archive", e);
-            }
-        }
-        finally
-        {
-            delete(unzipDir);
-            setStatus(status);
-            _study = null;
-        }
-    }
-
-    // Move to ZipUtil?
-    public List<EntryDescription> getEntryDescriptions() throws IOException
-    {
-        List<EntryDescription> entryList = new ArrayList<EntryDescription>();
-        ZipFile zip = null;
-        try
-        {
-            zip = new ZipFile(_definitionFile);
-            Enumeration<? extends ZipEntry> entries = zip.entries();
-            while (entries.hasMoreElements())
-            {
-                ZipEntry entry = entries.nextElement();
-                if (entry.isDirectory())
-                    continue;
-                entryList.add(new EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
-            }
-        }
-        finally
-        {
-            if (zip != null) try { zip.close(); } catch (IOException e) {}
-        }
-        return entryList;
-    }
-
-    private void delete(File file)
-    {
-        if (file.isDirectory())
-        {
-            for (File child : file.listFiles())
-                delete(child);
-        }
-        info("Deleting " + file.getPath());
-        file.delete();
+        return PipelineJobService.get().getTaskPipeline(new TaskId(SpecimenBatch.class));
     }
 }

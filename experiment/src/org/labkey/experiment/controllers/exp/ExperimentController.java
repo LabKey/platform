@@ -4177,7 +4177,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getShowFileURL(Container c, ExpData data, boolean inline)
         {
-            ActionURL result = new ActionURL(ShowFileAction.class, c).addParameter("rowId", data.getRowId());
+            ActionURL result = getShowFileURL(c).addParameter("rowId", data.getRowId());
             if (inline)
             {
                 result.addParameter("inline", inline);
@@ -4185,11 +4185,21 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
+        public ActionURL getShowFileURL(Container c)
+        {
+            return new ActionURL(ShowFileAction.class, c);
+        }
+
         public ActionURL getSetFlagURL(HttpServletRequest request)
         {
             ActionURL url = new ActionURL(SetFlagAction.class, ContainerManager.getRoot());
             url.addParameter("flagSessionId", request.getSession().getId());
             return url;
+        }
+
+        public ActionURL getShowRunGraph(Container container)
+        {
+            return new ActionURL(ShowRunGraphAction.class, container);
         }
     }
 

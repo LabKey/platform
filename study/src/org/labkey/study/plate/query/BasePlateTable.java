@@ -19,9 +19,11 @@ package org.labkey.study.plate.query;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupURLExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.assay.PlateUrls;
 
 import java.util.Map;
 import java.util.Collections;
@@ -49,8 +51,7 @@ public abstract class BasePlateTable extends FilteredTable
         ColumnInfo rowid = columns.get(getPlateIdColumnName());
         if (rowid == null)
             return null;
-        ActionURL url = new ActionURL("Plate",
-            "plateDetails", _schema.getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(PlateUrls.class).getPlateDetailsURL(_schema.getContainer());
         return new LookupURLExpression(url, Collections.singletonMap("rowId", rowid));
     }
 }

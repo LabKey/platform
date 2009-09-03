@@ -18,13 +18,14 @@
 <%@ page import="org.labkey.biotrue.controllers.NewServerForm" %>
 <%@ page import="org.labkey.biotrue.controllers.BtController" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     NewServerForm form = (NewServerForm)HttpView.currentModel();
 %>
 <labkey:errors />
-<form action="<%=BtController.Action.newServer.url(getContainer())%>" method="POST">
+<form action="<%=new ActionURL(BtController.NewServerAction.class, getContainer())%>" method="POST">
     <p>
         What do you want to name this BioTrue server?<br>
         <input type="text" name="ff_name" value="<%=h(form.ff_name)%>">

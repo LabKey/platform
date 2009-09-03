@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+    <bean id="studyPipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
+        <property name="factoryImpls">
+            <list>
+                <bean class="org.labkey.study.importer.StudyImportInitialTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.StudyImportDatasetTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.StudyImportSpecimenTask$Factory"/>
+                <bean class="org.labkey.study.importer.StudyImportFinalizerTask$Factory"/>
+
+                <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.StandaloneSpecimenTask$Factory"/>
+            </list>
+        </property>
+
+        <property name="pipelines">
+            <list>
+                <!-- Study import job pipeline -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.study.importer.StudyImportJob"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="initialTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportInitialTask</value></constructor-arg>
+                            </bean>
+                            <bean id="datasetTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportDatasetTask</value></constructor-arg>
+                            </bean>
+                            <bean id="specimenTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportSpecimenTask</value></constructor-arg>
+                            </bean>
+                            <bean id="finalTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportFinalizerTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!-- Standalone specimen import pipeline -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.SpecimenBatch"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="standaloneSpecimenTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneSpecimenTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!-- Standalone dataset import pipeline -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.DatasetBatch"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="standaloneDatasetTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneDatasetTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>
+</beans>

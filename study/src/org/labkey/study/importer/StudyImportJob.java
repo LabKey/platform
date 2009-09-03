@@ -16,13 +16,16 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.study.ExternalStudyImporter;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.writer.StudySerializationRegistryImpl;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 
@@ -31,66 +34,58 @@ import java.io.File;
  * Date: May 14, 2009
  * Time: 9:39:39 AM
  */
-public class StudyImportJob extends PipelineJob
+public class StudyImportJob extends PipelineJob implements StudyJobSupport
 {
-    private final StudyImpl _study;
     private final ImportContext _ctx;
     private final File _root;
+    private final BindException _errors;
 
     // Job that handles all tasks that depend on the completion of previous pipeline import jobs (e.g., datasets & specimens).
-    public StudyImportJob(StudyImpl study, ImportContext ctx, File root)
+    public StudyImportJob(ImportContext ctx, File root, BindException errors)
     {
         super(null, new ViewBackgroundInfo(ctx.getContainer(), ctx.getUser(), ctx.getUrl()));
-        _study = study;
         _ctx = ctx;
         _root = root;
+        _errors = errors;
         setLogFile(StudyPipeline.logForInputFile(new File(root, "study_load")));
         ctx.setLogger(getLogger());
     }
 
-    public void run()
+    public StudyImpl getStudy()
     {
-        boolean success = false;
+        return getStudy(false);
+    }
 
-        try
+    public StudyImpl getStudy(boolean allowNullStudy)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(_ctx.getContainer());
+        if (!allowNullStudy && study == null)
         {
-            // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant
-            // cohorts until the end of upload.
-            setStatus("IMPORT cohort settings");
-            info("Importing cohort settings");
-            new CohortImporter().process(_study, _ctx, _root);
-            info("Done importing cohort settings");
-
-            // Can't assign visits to cohorts until the cohorts are created
-            setStatus("IMPORT visit map cohort assignments");
-            info("Importing visit map cohort assignments");
-            new VisitCohortAssigner().process(_study, _ctx, _root);
-            info("Done importing visit map cohort assignments");
-
-            // Can't assign datasets to cohorts until the cohorts are created
-            setStatus("IMPORT dataset cohort assignments");
-            info("Importing dataset cohort assignments");
-            new DatasetCohortAssigner().process(_study, _ctx, _root);
-            info("Done importing dataset cohort assignments");
-
-            for (ExternalStudyImporter importer : StudySerializationRegistryImpl.get().getRegisteredStudyImporters())
-            {
-                info("Importing " + importer.getDescription());
-                setStatus("IMPORT " + importer.getDescription());
-                importer.process(_ctx, _root);
-                info("Done importing " + importer.getDescription());
-            }
-
-            success = true;
+            throw new IllegalStateException("Study does not exist.");
         }
-        catch (Exception e)
-        {
-            error("Exception during study import", e);
-        }
-        finally
-        {
-            setStatus(success ? PipelineJob.COMPLETE_STATUS : PipelineJob.ERROR_STATUS);
-        }
+        return study;
+    }
+
+    public ImportContext getImportContext()
+    {
+        return _ctx;
+    }
+
+    public File getRoot()
+    {
+        return _root;
+    }
+
+    @Deprecated
+    public BindException getSpringErrors()
+    {
+        return _errors;
+    }
+
+    @Override
+    public TaskPipeline getTaskPipeline()
+    {
+        return PipelineJobService.get().getTaskPipeline(new TaskId(StudyImportJob.class));
     }
 
     public ActionURL getStatusHref()
@@ -100,6 +95,6 @@ public class StudyImportJob extends PipelineJob
 
     public String getDescription()
     {
-        return "Finalize study import";
+        return "Study import";   // TODO: Reload?
     }
 }

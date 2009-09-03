@@ -38,7 +38,7 @@
     ButtonBar bb = new ButtonBar();
     if (getContainer().hasPermission(getUser(), ACL.PERM_UPDATE))
     {
-        bb.add(new ActionButton("Synchronize", server.urlFor(BtController.Action.synchronizeServer)));
+        bb.add(new ActionButton("Synchronize", server.urlFor(BtController.SynchronizeServerAction.class)));
     }
     region.setButtonBar(bb);
     DetailsView view = new DetailsView(region, server.getRowId());

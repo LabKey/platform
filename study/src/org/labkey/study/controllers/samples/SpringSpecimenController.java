@@ -42,6 +42,7 @@ import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.SpecimenBatch;
+import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.query.SpecimenEventQueryView;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
@@ -3225,17 +3226,10 @@ public class SpringSpecimenController extends BaseStudyController
                     previouslyRun = true;
             }
 
-            SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL()), dataFile);
-            if (errors.size() == 0)
-            {
-                List<String> parseErrors = new ArrayList<String>();
-                batch.prepareImport(parseErrors);
-                for (String error : parseErrors)
-                    errors.add(error);
-            }
+            SpecimenArchive archive = new SpecimenArchive(dataFile);
 
             return new JspView<ImportSpecimensBean>("/org/labkey/study/view/samples/importSpecimens.jsp",
-                    new ImportSpecimensBean(getContainer(), batch, _path, errors, previouslyRun));
+                    new ImportSpecimensBean(getContainer(), archive, _path, errors, previouslyRun));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3297,24 +3291,24 @@ public class SpringSpecimenController extends BaseStudyController
     public static class ImportSpecimensBean
     {
         private String _path;
-        private SpecimenBatch _batch;
+        private SpecimenArchive _archive;
         private List<String> _errors;
         private boolean _previouslyRun;
         private Container _container;
 
-        public ImportSpecimensBean(Container container, SpecimenBatch batch,
+        public ImportSpecimensBean(Container container, SpecimenArchive archive,
                                    String path, List<String> errors, boolean previouslyRun)
         {
             _path = path;
-            _batch = batch;
+            _archive = archive;
             _errors = errors;
             _previouslyRun = previouslyRun;
             _container = container;
         }
 
-        public SpecimenBatch getBatch()
+        public SpecimenArchive getArchive()
         {
-            return _batch;
+            return _archive;
         }
 
         public String getPath()

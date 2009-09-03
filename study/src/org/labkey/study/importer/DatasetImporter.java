@@ -20,19 +20,12 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.pipeline.DatasetBatch;
-import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
@@ -116,39 +109,13 @@ public class DatasetImporter
                 DatasetReorderer reorderer = new DatasetReorderer(study, ctx.getUser());
                 reorderer.reorderDatasets(orderedIds);
             }
-
-            String datasetFilename = datasetsXml.getDefinition().getFile();
-
-            if (null != datasetFilename)
-            {
-                File datasetFile = StudyImporter.getStudyFile(root, datasetDir, datasetFilename, "Study.xml");
-                submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());
-            }
         }
 
         return true;
     }
 
-    public static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url) throws IOException, StudyImporter.DatasetLockExistsException, SQLException
-    {
-        if (null == datasetFile || !datasetFile.exists() || !datasetFile.isFile())
-        {
-            HttpView.throwNotFound();
-            return;
-        }
 
-        File lockFile = StudyPipeline.lockForDataset(study, datasetFile);
-        if (!datasetFile.canRead() || lockFile.exists())
-        {
-            throw new StudyImporter.DatasetLockExistsException();
-        }
-
-        DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile);
-        batch.submit();
-    }
-
-
-    private static File getDatasetDirectory(ImportContext ctx, File root) throws StudyImportException
+    public static File getDatasetDirectory(ImportContext ctx, File root) throws StudyImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 

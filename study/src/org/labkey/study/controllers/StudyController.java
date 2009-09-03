@@ -77,7 +77,7 @@ import org.labkey.study.importer.*;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.model.*;
-import org.labkey.study.pipeline.DatasetBatch;
+import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
@@ -3510,18 +3510,18 @@ public class StudyController extends BaseStudyController
             if (lockFile.exists())
                 errors.reject("importStudyBatch", "Lock file exists.  Delete file before running import. " + lockFile.getName());
 
-            DatasetBatch batch = new DatasetBatch(
-                    new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL()), definitionFile);
+            DatasetFileReader reader = new DatasetFileReader(definitionFile, getStudy());
+
             if (!errors.hasErrors())
             {
                 List<String> parseErrors = new ArrayList<String>();
-                batch.prepareImport(parseErrors);
+                reader.prepareImport(parseErrors);
                 for (String error : parseErrors)
                     errors.reject("importStudyBatch", error);
             }
 
             return new StudyJspView<ImportStudyBatchBean>(
-                    getStudy(), "importStudyBatch.jsp", new ImportStudyBatchBean(batch, form), errors);
+                    getStudy(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, form), errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3558,7 +3558,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                DatasetImporter.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
+                DatasetTask.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
             }
             catch (StudyImporter.DatasetLockExistsException e)
             {
@@ -5273,18 +5273,18 @@ public class StudyController extends BaseStudyController
 
     public static class ImportStudyBatchBean
     {
-        private final DatasetBatch batch;
+        private final DatasetFileReader reader;
         private final PipelineForm form;
 
-        public ImportStudyBatchBean(DatasetBatch batch, PipelineForm form)
+        public ImportStudyBatchBean(DatasetFileReader reader, PipelineForm form)
         {
-            this.batch = batch;
+            this.reader = reader;
             this.form = form;
         }
 
-        public DatasetBatch getBatch()
+        public DatasetFileReader getReader()
         {
-            return batch;
+            return reader;
         }
 
         public PipelineForm getForm()

@@ -25,6 +25,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -58,7 +59,7 @@ else
             Container runContainer = runEntry.getValue();
             %>
             <li>
-                <% ActionURL url = new ActionURL("Experiment", "showRunGraph.view", runContainer); %>
+                <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraph(runContainer); %>
                 <a href="<%= url %>rowId=<%= Integer.toString(run.getRowId()) %>"><%= run.getName() %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
@@ -79,7 +80,7 @@ else
             Container runContainer = runEntry.getValue();
             %>
             <li>
-                <% ActionURL url = new ActionURL("Experiment", "showRunGraph.view", runContainer); %>
+                <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraph(runContainer); %>
                 <a href="<%= url %>rowId=<%= Integer.toString(run.getRowId()) %>"><%= run.getName() %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>

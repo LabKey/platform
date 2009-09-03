@@ -18,8 +18,8 @@ package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.security.ACL;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 
@@ -42,19 +42,19 @@ public class StudyImportProvider extends PipelineProvider
     @Override
     public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
     {
+        // Only admins can import/reload studies
+        if (!context.hasPermission(ACL.PERM_ADMIN))
+            return;
+
         String label = (null == StudyManager.getInstance().getStudy(context.getContainer()) ? "Import Study" : "Reload Study");
-        ActionURL url = new ActionURL(StudyController.ImportStudyFromPipelineAction.class, context.getContainer());
 
         for (FileEntry entry : entries)
         {
             if (!entry.isDirectory())
                 continue;
 
-            String path = entry.cloneHref().getParameter("path");
-            url.replaceParameter("path", path);
-
             for (File file : entry.listFiles(new StudyImportFilter()))
-                entry.addAction(new FileAction(label, url, new File[]{file}));
+                addAction(StudyController.ImportStudyFromPipelineAction.class, label, entry, new File[]{file});
         }
     }
 

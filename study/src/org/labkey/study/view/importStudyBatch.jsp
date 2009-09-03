@@ -16,28 +16,28 @@
  */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="java.util.List"%>
+<%@ page import="org.labkey.api.study.DataSet"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.pipeline.DatasetBatch" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.pipeline.DatasetFileReader" %>
+<%@ page import="org.labkey.study.pipeline.DatasetImportJob" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <div>
 <labkey:errors/>
 <%
     BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean> me = (BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean>)HttpView.currentView();
     StudyController.ImportStudyBatchBean bean = me.getModelBean();
-    DatasetBatch studyBatch = bean.getBatch();
-    List<DatasetBatch.DatasetImportJob> jobs = studyBatch.getJobs();
+    DatasetFileReader reader = bean.getReader();
+    List<DatasetImportJob> jobs = reader.getJobs();
 
     boolean hasError = me.getErrors().hasErrors();
 
 %><table><tr><th>&nbsp;</th><th align=left>action</th><th align=left>dataset</th><th align=left>file</th></tr><%
-for (DatasetBatch.DatasetImportJob job : jobs)
+for (DatasetImportJob job : jobs)
 {
     DataSet dataset = job.getDatasetDefinition();
     String message = job.validate();

@@ -37,9 +37,14 @@ import java.util.Map;
  * Date: May 16, 2009
  * Time: 9:26:29 PM
  */
-public class CohortImporter
+public class CohortImporter implements InternalStudyImporter
 {
-    void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, ServletException, StudyImportException
+    public String getDescription()
+    {
+        return "cohort settings";
+    }
+
+    public void process(StudyImpl study, ImportContext ctx, File root) throws IOException, SQLException, ServletException, StudyImportException
     {
         StudyDocument.Study.Cohorts cohortsXml = ctx.getStudyXml().getCohorts();
 

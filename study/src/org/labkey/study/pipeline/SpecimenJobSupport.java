@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package org.labkey.biotrue.objectmodel;
+package org.labkey.study.pipeline;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.view.ActionURL;
-import org.labkey.biotrue.controllers.BtController;
-import org.springframework.web.servlet.mvc.Controller;
+import java.io.File;
 
-abstract public class BtObject
+/*
+* User: adam
+* Date: Sep 1, 2009
+* Time: 3:02:30 PM
+*/
+public interface SpecimenJobSupport
 {
-    abstract public Container getContainer();
-    abstract public ActionURL detailsURL();
-    abstract public ActionURL urlFor(Class<? extends Controller> actionClass);
-    abstract public String getLabel();
+    File getSpecimenArchive();
 }

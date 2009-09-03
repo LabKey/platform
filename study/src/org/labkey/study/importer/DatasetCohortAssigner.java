@@ -37,11 +37,16 @@ import java.util.Map;
  * Date: May 21, 2009
  * Time: 3:22:31 PM
  */
-public class DatasetCohortAssigner
+public class DatasetCohortAssigner implements InternalStudyImporter
 {
+    public String getDescription()
+    {
+        return "dataset cohort assignments";
+    }
+
     // Parses the dataset manifest again to retrieve the cohort assigments; should cache info from the first parsing
     // somewhere in the ImportContext
-    void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, XmlException, IOException, StudyImportException
+    public void process(StudyImpl study, ImportContext ctx, File root) throws SQLException, XmlException, IOException, StudyImportException
     {
         DatasetsDocument.Datasets datasets = DatasetImporter.getDatasetsManifest(ctx, root);
 

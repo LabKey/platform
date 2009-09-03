@@ -201,9 +201,10 @@
     if(c.hasPermission(user, AdminPermission.class))
     {
 %>
-<%=generateButton("Export Study", "exportStudy.view")%>
-<%=generateButton("Snapshot Study Data", "snapshot.view")%>
-<%=generateButton("Delete Study", "deleteStudy.view")%>
+<%=generateButton("Export Study", StudyController.ExportStudyAction.class)%>
+<%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
+<%=generateButton("Snapshot Study Data", StudyController.SnapshotAction.class)%>
+<%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
 <%
     }
 %>

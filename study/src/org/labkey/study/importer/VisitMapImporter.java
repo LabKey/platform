@@ -122,7 +122,6 @@ public class VisitMapImporter
 
     private void saveVisits(User user, StudyImpl study, List<VisitMapRecord> records) throws SQLException
     {
-        Container c = study.getContainer();
         StudyManager studyManager = StudyManager.getInstance();
         VisitManager visitManager = studyManager.getVisitManager(study);
 

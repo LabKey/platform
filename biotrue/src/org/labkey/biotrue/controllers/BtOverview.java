@@ -16,10 +16,12 @@
 
 package org.labkey.biotrue.controllers;
 
-import org.labkey.api.view.Overview;
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.Overview;
 import org.labkey.biotrue.objectmodel.BtServer;
+import org.labkey.biotrue.controllers.BtController.*;
 
 public class BtOverview extends Overview
 {
@@ -42,11 +44,11 @@ public class BtOverview extends Overview
             }
             else
             {
-                step.setStatusHTML("There are <a href=\"" + h(BtController.Action.showServers.url(getContainer())) + "\">" +
+                step.setStatusHTML("There are <a href=\"" + h(new ActionURL(ShowServersAction.class, getContainer())) + "\">" +
                         servers.length + " servers</a> defined in this folder.");
             }
         }
-        step.addAction(new Action("Define new server", BtController.Action.newServer.url(getContainer())));
+        step.addAction(new Action("Define new server", new ActionURL(NewServerAction.class, getContainer())));
         addStep(step);
     }
 

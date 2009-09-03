@@ -22,6 +22,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.view.*;
 import org.labkey.api.study.*;
+import org.labkey.api.study.assay.PlateUrls;
 import org.labkey.api.gwt.client.util.ColorGenerator;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -47,13 +48,26 @@ import java.sql.SQLException;
  */
 public class PlateController extends SpringActionController
 {
-    static SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
-    private static Logger _log = Logger.getLogger(PlateController.class);
+    private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
+    private static final Logger _log = Logger.getLogger(PlateController.class);
 
     public PlateController()
     {
         super();
         setActionResolver(_actionResolver);
+    }
+
+    public class PlateUrlsImpl implements PlateUrls
+    {
+        public ActionURL getPlateTemplateListURL(Container c)
+        {
+            return new ActionURL(PlateTemplateListAction.class, c);
+        }
+
+        public ActionURL getPlateDetailsURL(Container c)
+        {
+            return new ActionURL(PlateDetailsAction.class, c);
+        }
     }
 
     @RequiresPermission(ACL.PERM_READ)
