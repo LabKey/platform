@@ -57,7 +57,7 @@ public class PlateController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    public class PlateUrlsImpl implements PlateUrls
+    public static class PlateUrlsImpl implements PlateUrls
     {
         public ActionURL getPlateTemplateListURL(Container c)
         {
