@@ -32,12 +32,12 @@ import java.io.File;
 */
 public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenTaskFactory<FactoryType>> extends PipelineJob.Task<TaskFactory>
 {
-    public AbstractSpecimenTask(FactoryType factory, PipelineJob job)
+    protected AbstractSpecimenTask(FactoryType factory, PipelineJob job)
     {
         super(factory, job);
     }
 
-    public abstract File getSpecimenArchive() throws Exception;
+    protected abstract File getSpecimenArchive() throws Exception;
 
     public RecordedActionSet run() throws PipelineJobException
     {
@@ -59,8 +59,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         }
         else
         {
-            String status = PipelineJob.ERROR_STATUS;
             File unzipDir = null;
+
             try
             {
                 job.info("Unzipping specimen archive " +  specimenArchive.getPath());
@@ -79,8 +79,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                 }
                 catch (Exception e)
                 {
-                    status = PipelineJob.ERROR_STATUS;
-                    job.error("Unexpected error processing specimen archive", e);
+                    throw new PipelineJobException(e);
                 }
             }
             finally

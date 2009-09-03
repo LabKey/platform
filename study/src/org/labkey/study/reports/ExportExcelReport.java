@@ -18,17 +18,16 @@ package org.labkey.study.reports;
 
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
+import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.Study;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
-import org.apache.commons.lang.math.NumberUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -36,10 +35,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: Matthew
@@ -157,7 +156,7 @@ public class ExportExcelReport extends RedirectReport
         if (siteId != 0)
         {
             siteFilter = new SimpleFilter();
-            siteFilter.addWhereClause("ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + siteId + ")", new Object[0], new String[0]);
+            siteFilter.addWhereClause("ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + siteId + ")", new Object[0]);
         }
 
         ServletOutputStream outputStream = ExcelWriter.getOutputStream(response, study.getLabel());

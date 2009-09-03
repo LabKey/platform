@@ -21,8 +21,8 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.ImportContext;
-import org.labkey.study.importer.StudyImporter;
 import org.labkey.study.importer.StudyJobSupport;
+import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
 
@@ -38,12 +38,12 @@ import java.sql.SQLException;
 // This task is used to import specimen archives as part of study import/reload.  StudyImportJob is the associcated pipeline job.
 public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpecimenTask.Factory>
 {
-    public StudyImportSpecimenTask(Factory factory, PipelineJob job)
+    private StudyImportSpecimenTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }
 
-    public File getSpecimenArchive() throws StudyImportException, SQLException
+    protected File getSpecimenArchive() throws StudyImportException, SQLException
     {
         StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
         ImportContext ctx = support.getImportContext();
@@ -63,7 +63,7 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
                 File specimenDir = ctx.getStudyDir(root, specimens.getDir(), "Study.xml");
 
                 if (null != specimens.getFile())
-                    return StudyImporter.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
+                    return StudyImportJob.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
             }
         }
 

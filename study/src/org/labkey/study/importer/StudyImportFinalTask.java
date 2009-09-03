@@ -28,16 +28,15 @@ import java.util.*;
 * Date: Aug 31, 2009
 * Time: 9:12:22 AM
 */
-public class StudyImportFinalizerTask extends PipelineJob.Task<StudyImportFinalizerTask.Factory>
+public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.Factory>
 {
-    public StudyImportFinalizerTask(Factory factory, PipelineJob job)
+    public StudyImportFinalTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }
 
     public RecordedActionSet run() throws PipelineJobException
     {
-        boolean success = false;
         PipelineJob job = getJob();
         StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
 
@@ -71,16 +70,10 @@ public class StudyImportFinalizerTask extends PipelineJob.Task<StudyImportFinali
                 importer.process(support.getImportContext(), support.getRoot());
                 job.info("Done importing " + importer.getDescription());
             }
-
-            success = true;
         }
         catch (Exception e)
         {
-            job.error("Exception during study import", e);
-        }
-        finally
-        {
-            job.setStatus(success ? PipelineJob.COMPLETE_STATUS : PipelineJob.ERROR_STATUS);
+            throw new PipelineJobException(e);
         }
 
         return new RecordedActionSet();
@@ -90,12 +83,12 @@ public class StudyImportFinalizerTask extends PipelineJob.Task<StudyImportFinali
     {
         public Factory()
         {
-            super(StudyImportFinalizerTask.class);
+            super(StudyImportFinalTask.class);
         }
 
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            return new StudyImportFinalizerTask(this, job);
+            return new StudyImportFinalTask(this, job);
         }
 
         public FileType[] getInputTypes()
@@ -110,7 +103,7 @@ public class StudyImportFinalizerTask extends PipelineJob.Task<StudyImportFinali
 
         public String getStatusName()
         {
-            return "THIS IS A TEST";
+            return "STUDY IMPORT";    // TODO: RELOAD?
         }
 
         public boolean isJobComplete(PipelineJob job)

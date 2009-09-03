@@ -1709,7 +1709,7 @@ public class StudyManager
         private String schemaName;
         private Date lastSnapshotDate;
         private Container container;
-        private Map<String, Map<String,TableSnapshotInfo>> tableSnapshotInfo = new HashMap<String, Map<String, TableSnapshotInfo>>();
+        private Map<String, Map<String, TableSnapshotInfo>> tableSnapshotInfo = new HashMap<String, Map<String, TableSnapshotInfo>>();
 
         private SnapshotBean()
         {
@@ -2785,7 +2785,7 @@ public class StudyManager
             double visit;
             if (_study.isDateBased())
             {
-                Date date = (Date)(ConvertUtils.lookup(Date.class).convert(Date.class, map.get(visitDateURI)));;
+                Date date = (Date)(ConvertUtils.lookup(Date.class).convert(Date.class, map.get(visitDateURI)));
                 if (null != date)
                     visit = sequenceNumFromDate(date);
                 else

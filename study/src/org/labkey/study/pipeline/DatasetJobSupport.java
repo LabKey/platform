@@ -25,5 +25,5 @@ import java.io.File;
 */
 public interface DatasetJobSupport
 {
-    File getDatasetFile();
+    File getDatasetsFile();
 }

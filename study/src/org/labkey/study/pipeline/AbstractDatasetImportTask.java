@@ -20,11 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         super(factory, job);
     }
 
-    @Nullable public abstract File getDefinitionFile() throws Exception;
+    @Nullable public abstract File getDatasetsFile() throws Exception;
     public abstract StudyImpl getStudy();
 
     protected StudyManager getStudyManager()
@@ -54,118 +54,103 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         return _studyManager;
     }
 
-    public void prepareImport(List<String> errors) throws IOException, SQLException
+    public RecordedActionSet run() throws PipelineJobException
     {
-        File definitionFile = null;
+        File datasetsFile;
 
         try
         {
-            definitionFile = getDefinitionFile();
+            datasetsFile = getDatasetsFile();
         }
         catch (Exception e)
         {
-            e.printStackTrace();  // TODO: Do something better here
+            throw new PipelineJobException("Exception retrieving datasets file", e);
         }
 
-        DatasetFileReader reader = new DatasetFileReader(definitionFile, getStudy(), this);
-        reader.prepareImport(errors);
-    }
-
-    public RecordedActionSet run()
-    {
-        PipelineJob pj = getJob();
-        File definitionFile = null;
-
-        try
+        if (null != datasetsFile)
         {
-            definitionFile = getDefinitionFile();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();  // TODO: Do something better here
-        }
-
-        // TODO: if (null != definitionFile ...)
-        try
-        {
-            DatasetFileReader reader = new DatasetFileReader(definitionFile, getStudy(), this);
-            List<String> errors = new ArrayList<String>();
-
             try
             {
-                reader.prepareImport(errors);
-
-                for (String error : errors)
-                    logError(error);
-            }
-            catch (Exception x)
-            {
-                logError("Parse failed: " + definitionFile.getPath(), x);
-                return new RecordedActionSet();
-            }
-
-            List<DatasetImportJob> jobs = reader.getJobs();
-            pj.info("Start batch " + (null == definitionFile ? "" : definitionFile.getName()));
-
-            for (DatasetImportJob job : jobs)
-            {
-                String validate = job.validate();
-                if (validate != null)
-                {
-                    pj.setStatus(validate);
-                    logError(validate);
-                    continue;
-                }
-                String statusMsg = "" + job.action + " " + job.datasetDefinition.getLabel();
-                if (job.tsv != null)
-                    statusMsg += " using file " + job.tsv.getName();
-                pj.setStatus(statusMsg);
+                DatasetFileReader reader = new DatasetFileReader(datasetsFile, getStudy(), this);
+                List<String> errors = new ArrayList<String>();
 
                 try
                 {
-                    job.run();
+                    reader.validate(errors);
+
+                    for (String error : errors)
+                        logError(error);
                 }
                 catch (Exception x)
                 {
-                    logError("Unexpected error loading " + job.tsv.getName(), x);
-                    assert hasErrors;
+                    logError("Parse failed: " + datasetsFile.getPath(), x);
+                    return new RecordedActionSet();
+                }
+
+                PipelineJob pj = getJob();
+                List<DatasetImportRunnable> runnables = reader.getRunnables();
+                pj.info("Start batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
+
+                for (DatasetImportRunnable runnable : runnables)
+                {
+                    String validate = runnable.validate();
+                    if (validate != null)
+                    {
+                        pj.setStatus(validate);
+                        logError(validate);
+                        continue;
+                    }
+                    String statusMsg = "" + runnable._action + " " + runnable._datasetDefinition.getLabel();
+                    if (runnable._tsv != null)
+                        statusMsg += " using file " + runnable._tsv.getName();
+                    pj.setStatus(statusMsg);
+
+                    try
+                    {
+                        runnable.run();
+                    }
+                    catch (Exception x)
+                    {
+                        logError("Unexpected error loading " + runnable._tsv.getName(), x);
+                        assert hasErrors;
+                    }
+                }
+
+                pj.info("Finish batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
+
+                getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser());
+
+                try
+                {
+                    getStudyManager().updateParticipantCohorts(pj.getUser(), getStudy());
+                }
+                catch (SQLException e)
+                {
+                    // rethrow and catch below for central logging
+                    throw new RuntimeException(e);
+                }
+
+                // materialize datasets only AFTER all other work has been completed; otherwise the background thread
+                // materializing datasets will fight with other operations that may try to clear the materialized cache.
+                // (updateParticipantVisits does this, for example)
+                for (DatasetImportRunnable runnable : runnables)
+                {
+                    if (!(runnable instanceof ParticipantImportRunnable))
+                        runnable.getDatasetDefinition().materializeInBackground(pj.getUser());
                 }
             }
-
-            pj.info("Finish batch " + (null == definitionFile ? "" : definitionFile.getName()));
-
-            getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser());
-
-            try
+            catch (RuntimeException x)
             {
-                getStudyManager().updateParticipantCohorts(pj.getUser(), getStudy());
+                logError("Unexpected error", x);
+                assert hasErrors;
+                throw x;
             }
-            catch (SQLException e)
+            finally
             {
-                // rethrow and catch below for central logging
-                throw new RuntimeException(e);
+                File lock = StudyPipeline.lockForDataset(getStudy(), datasetsFile);
+                if (lock.exists() && lock.canRead() && lock.canWrite())
+                    lock.delete();
             }
-
-            // materialize datasets only AFTER all other work has been completed; otherwise the background thread
-            // materializing datasets will fight with other operations that may try to clear the materialized cache.
-            // (updateParticipantVisits does this, for example)
-            for (DatasetImportJob job : jobs)
-            {
-                if (!(job instanceof ParticipantImportJob))
-                    job.getDatasetDefinition().materializeInBackground(pj.getUser());
-            }
-        }
-        catch (RuntimeException x)
-        {
-            logError("Unexpected error", x);
-            assert hasErrors;
-            throw x;
-        }
-        finally
-        {
-            File lock = StudyPipeline.lockForDataset(getStudy(), definitionFile);
-            if (lock.exists() && lock.canRead() && lock.canWrite())
-                lock.delete();
         }
 
         return new RecordedActionSet();

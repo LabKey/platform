@@ -16,23 +16,22 @@
 
 package org.labkey.study.pipeline;
 
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.pipeline.AbstractDatasetImportTask.Action;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyManager;
-import org.labkey.api.util.Pair;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.api.util.Pair;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.AbstractDatasetImportTask.Action;
 
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.io.IOException;
 import java.io.File;
-import java.io.InputStream;
 import java.io.FileInputStream;
-import java.sql.SQLException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
 * User: adam
@@ -48,7 +47,7 @@ public class DatasetFileReader
     private final StudyManager _studyManager = StudyManager.getInstance();
     private final AbstractDatasetImportTask _task;
 
-    private ArrayList<DatasetImportJob> jobs = null;
+    private ArrayList<DatasetImportRunnable> _runnables = null;
 
     public DatasetFileReader(File datasetFile, StudyImpl study)
     {
@@ -62,15 +61,14 @@ public class DatasetFileReader
         _task = task;
     }
 
-    // TODO: combine getJobs() with prepareImport()
-    public List<DatasetImportJob> getJobs()
+    public List<DatasetImportRunnable> getRunnables()
     {
-        if (null == jobs)
+        if (null == _runnables)
             return Collections.emptyList();
-        return Collections.unmodifiableList(jobs);
+        return Collections.unmodifiableList(_runnables);
     }
 
-    public void prepareImport(List<String> errors) throws IOException, SQLException
+    public void validate(List<String> errors) throws IOException
     {
         File dir = _definitionFile.getParentFile();
         InputStream is = null;
@@ -109,7 +107,7 @@ public class DatasetFileReader
         DataSetDefinition dsParticipant = new DataSetDefinition(_study, -1, "Participant", "Participant", null, "StudyParticipant");
         dsMap.put("participant", dsParticipant);
 
-        IdentityHashMap<DataSetDefinition, DatasetImportJob> jobMap = new IdentityHashMap<DataSetDefinition, DatasetImportJob>();
+        IdentityHashMap<DataSetDefinition, DatasetImportRunnable> jobMap = new IdentityHashMap<DataSetDefinition, DatasetImportRunnable>();
 
         //
         // load defaults
@@ -177,39 +175,39 @@ public class DatasetFileReader
                 errors.add("Could not find dataset for '" + datasetKey + "'");
                 continue;
             }
-            DatasetImportJob job = jobMap.get(ds);
-            if (null == job)
+            DatasetImportRunnable runnable = jobMap.get(ds);
+            if (null == runnable)
             {
-                job = newImportJob(ds, null, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
-                jobMap.put(ds, job);
+                runnable = newImportJob(ds, null, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+                jobMap.put(ds, runnable);
             }
             if (propertyKey.equals("file"))
             {
-                job.tsv = new File(dir, value);
+                runnable._tsv = new File(dir, value);
             }
             else if (propertyKey.equals("action"))
             {
-                job.action = actionForName(value);
+                runnable._action = actionForName(value);
             }
             else if (propertyKey.equals("deleteAfterImport"))
             {
-                job.deleteAfterImport = "true".equals(value.trim().toLowerCase());
+                runnable._deleteAfterImport = "true".equals(value.trim().toLowerCase());
             }
             else if (propertyKey.equals("visitDatePropertyName"))
             {
-                job.setVisitDatePropertyName(StringUtils.trimToNull(value));
+                runnable.setVisitDatePropertyName(StringUtils.trimToNull(value));
             }
             else if (propertyKey.startsWith("property."))
             {
                 String property = propertyKey.substring("property.".length()).trim();
                 String column = value.trim();
                 property = toStudyPropertyURI(property);
-                job.columnMap.put(column, property);
+                runnable._columnMap.put(column, property);
             }
             else if (propertyKey.equals("sitelookup"))
             {
-                if (job instanceof ParticipantImportJob)
-                    ((ParticipantImportJob)job).setSiteLookup(value.trim());
+                if (runnable instanceof ParticipantImportRunnable)
+                    ((ParticipantImportRunnable) runnable).setSiteLookup(value.trim());
             }
         }
 
@@ -227,22 +225,22 @@ public class DatasetFileReader
             DataSetDefinition ds = dsMap.get(dsKey);
             if (null == ds)
                 continue;
-            DatasetImportJob job = jobMap.get(ds);
-            if (null == job)
+            DatasetImportRunnable runnable = jobMap.get(ds);
+            if (null == runnable)
             {
                 if (!importAllMatches)
                     continue;
-                job = newImportJob(ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
-                jobMap.put(ds, job);
+                runnable = newImportJob(ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+                jobMap.put(ds, runnable);
             }
-            else if (job.tsv == null)
-                job.tsv = tsv;
+            else if (runnable._tsv == null)
+                runnable._tsv = tsv;
         }
 
-        jobs = new ArrayList<DatasetImportJob>(jobMap.values());
-        Collections.sort(jobs, new Comparator<DatasetImportJob>()
+        _runnables = new ArrayList<DatasetImportRunnable>(jobMap.values());
+        Collections.sort(_runnables, new Comparator<DatasetImportRunnable>()
         {
-            public int compare(DatasetImportJob j1, DatasetImportJob j2)
+            public int compare(DatasetImportRunnable j1, DatasetImportRunnable j2)
             {
                 String name1 = j1.getFileName();
                 String name2 = j2.getFileName();
@@ -250,20 +248,20 @@ public class DatasetFileReader
                     return name1.compareTo(name2);
                 if (name1 != null || name2 != null)
                     return name1 == null ? -1 : 1;
-                return j1.datasetDefinition.getDataSetId() - j2.datasetDefinition.getDataSetId();
+                return j1._datasetDefinition.getDataSetId() - j2._datasetDefinition.getDataSetId();
             }
         });
     }
 
 
-    private DatasetImportJob newImportJob(DataSetDefinition ds, File tsv, Action defaultAction, boolean defaultDeleteAfterImport, OneToOneStringMap defaultColumnMap)
+    private DatasetImportRunnable newImportJob(DataSetDefinition ds, File tsv, Action defaultAction, boolean defaultDeleteAfterImport, OneToOneStringMap defaultColumnMap)
     {
-        DatasetImportJob job;
+        DatasetImportRunnable runnable;
         if (ds.getDataSetId() == -1 && "Participant".equals(ds.getLabel()))
-            job = new ParticipantImportJob(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+            runnable = new ParticipantImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
         else
-            job = new DatasetImportJob(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
-        return job;
+            runnable = new DatasetImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+        return runnable;
     }
 
 
@@ -310,8 +308,8 @@ public class DatasetFileReader
      */
     public static class OneToOneStringMap extends AbstractMap<String,String>
     {
-        CaseInsensitiveHashMap<Pair<String,String>> keyMap = new CaseInsensitiveHashMap<Pair<String,String>>();
-        CaseInsensitiveHashMap<Pair<String,String>> valMap = new CaseInsensitiveHashMap<Pair<String,String>>();
+        private final CaseInsensitiveHashMap<Pair<String,String>> keyMap = new CaseInsensitiveHashMap<Pair<String,String>>();
+        private final CaseInsensitiveHashMap<Pair<String,String>> valMap = new CaseInsensitiveHashMap<Pair<String,String>>();
 
         @Override
         public String get(Object key)

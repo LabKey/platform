@@ -34,7 +34,7 @@
             "<img src=\"" + contextPath + "/_images/downarrow.gif\" alt=\"[Move Down]\"></a>\n" +
             "<a href=\"#\" onClick=\"return deleteRow(this);\">" +
             "<img src=\"" + contextPath + "/_images/delete.gif\" alt=\"[Delete]\"></a>\n";
-    ;
+
     String tdTitle = "<input type=\"text\" name=\"title\" size=\"20\">";
     String tdHelpText = "<input type=\"text\" name=\"helpText\" size=\"50\">";
     String tdMultiline = "<input type=\"checkbox\" name=\"multiline\">";

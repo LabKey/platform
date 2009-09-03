@@ -275,8 +275,7 @@ public class SampleManager
         SpecimenEvent[] events = getSpecimenEvents(specimen);
         if (events == null || events.length == 0)
             return eventList;
-        for (SpecimenEvent event : events)
-            eventList.add(event);
+        eventList.addAll(Arrays.asList(events));
         Collections.sort(eventList, new SpecimenEventDateComparator());
         return eventList;
     }

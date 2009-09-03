@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.pipeline.DatasetFileReader" %>
-<%@ page import="org.labkey.study.pipeline.DatasetImportJob" %>
+<%@ page import="org.labkey.study.pipeline.DatasetImportRunnable" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <div>
@@ -32,17 +32,17 @@
     BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean> me = (BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean>)HttpView.currentView();
     StudyController.ImportStudyBatchBean bean = me.getModelBean();
     DatasetFileReader reader = bean.getReader();
-    List<DatasetImportJob> jobs = reader.getJobs();
+    List<DatasetImportRunnable> runnables = reader.getRunnables();
 
     boolean hasError = me.getErrors().hasErrors();
 
 %><table><tr><th>&nbsp;</th><th align=left>action</th><th align=left>dataset</th><th align=left>file</th></tr><%
-for (DatasetImportJob job : jobs)
+for (DatasetImportRunnable runnable : runnables)
 {
-    DataSet dataset = job.getDatasetDefinition();
-    String message = job.validate();
+    DataSet dataset = runnable.getDatasetDefinition();
+    String message = runnable.validate();
     if (message == null)
-        message = PageFlowUtil.filter(job.getFileName());
+        message = PageFlowUtil.filter(runnable.getFileName());
     else
     {
         hasError = true;
@@ -50,7 +50,7 @@ for (DatasetImportJob job : jobs)
     }
     %><tr>
     <td align=right><%= dataset != null ? dataset.getDataSetId() : ""%></td>
-    <td><%=job.getAction()%></td>
+    <td><%=runnable.getAction()%></td>
     <td><%=dataset != null ? dataset.getLabel() : "Unknown"%></td>
     <td><%=message%></td>
     </tr><%

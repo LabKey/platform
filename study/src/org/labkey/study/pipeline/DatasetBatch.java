@@ -51,7 +51,7 @@ public class DatasetBatch extends StudyBatch implements Serializable, DatasetJob
         return description;
     }
 
-    public File getDatasetFile()
+    public File getDatasetsFile()
     {
         return getDefinitionFile();
     }

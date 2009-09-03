@@ -45,7 +45,7 @@ import java.util.Map;
  */
 public class DatasetImporter
 {
-    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException, StudyImportException
+    boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, StudyImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 
@@ -80,7 +80,7 @@ public class DatasetImporter
                 String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
 
                 if (null != metaDataFilename)
-                    reader = new SchemaXmlReader(study, root, StudyImporter.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile()), extraProps);
+                    reader = new SchemaXmlReader(study, root, StudyImportJob.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile()), extraProps);
             }
 
             if (null == reader)
@@ -94,15 +94,18 @@ public class DatasetImporter
                     String typeNameColumn = schema.getTypeNameColumn();
                     String typeIdColumn = schema.getTypeIdColumn();
 
-                    File schemaTsvFile = StudyImporter.getStudyFile(root, datasetDir, schemaTsvSource, "Study.xml");
+                    File schemaTsvFile = StudyImportJob.getStudyFile(root, datasetDir, schemaTsvSource, "Study.xml");
 
                     reader = new SchemaTsvReader(study, schemaTsvFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
                 }
             }
 
             if (null != reader)
+            {
+                ctx.getLogger().info("Loading dataset schema");
                 if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors))
                     return false;
+            }
 
             if (null != orderedIds)
             {
@@ -142,7 +145,7 @@ public class DatasetImporter
 
             if (null != datasetsXmlFilename)
             {
-                File datasetsXmlFile = StudyImporter.getStudyFile(root, datasetDir, datasetsXmlFilename, "Study.xml");
+                File datasetsXmlFile = StudyImportJob.getStudyFile(root, datasetDir, datasetsXmlFilename, "Study.xml");
 
                 try
                 {

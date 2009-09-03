@@ -33,27 +33,28 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
-public class DatasetImportJob implements Runnable
+public class DatasetImportRunnable implements Runnable
 {
-    private static final Logger LOG = PipelineJob.getJobLogger(DatasetImportJob.class);
+    private static final Logger LOG = PipelineJob.getJobLogger(DatasetImportRunnable.class);
 
-    protected AbstractDatasetImportTask.Action action = null;
-    protected DataSetDefinition datasetDefinition;
-    protected File tsv;
-    protected boolean deleteAfterImport = false;
-    protected Map<String, String> columnMap = new DatasetFileReader.OneToOneStringMap();
+    protected AbstractDatasetImportTask.Action _action = null;
+    protected File _tsv;
+    protected boolean _deleteAfterImport = false;
     protected String visitDatePropertyName = null;
-    protected AbstractDatasetImportTask _task;
+
+    protected final DataSetDefinition _datasetDefinition;
+    protected final AbstractDatasetImportTask _task;
+    protected final Map<String, String> _columnMap = new DatasetFileReader.OneToOneStringMap();
 
 
-    DatasetImportJob(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Map<String, String> columnMap)
+    DatasetImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Map<String, String> columnMap)
     {
         _task = task;
-        datasetDefinition = ds;
-        this.action = action;
-        this.deleteAfterImport = deleteAfterImport;
-        this.columnMap.putAll(columnMap);
-        this.tsv = tsv;
+        _datasetDefinition = ds;
+        _action = action;
+        _deleteAfterImport = deleteAfterImport;
+        _columnMap.putAll(columnMap);
+        _tsv = tsv;
     }
 
     public String validate()
@@ -65,23 +66,23 @@ public class DatasetImportJob implements Runnable
 
     public void validate(List<String> errors)
     {
-        if (action == null)
+        if (_action == null)
             errors.add("No action specified");
 
-        if (datasetDefinition == null)
+        if (_datasetDefinition == null)
             errors.add("Dataset not defined");
-        else if (datasetDefinition.getTypeURI() == null)
-            errors.add("Dataset " + (null != datasetDefinition.getName() ? datasetDefinition.getName() + ": " : "") + "type is not defined");
+        else if (_datasetDefinition.getTypeURI() == null)
+            errors.add("Dataset " + (null != _datasetDefinition.getName() ? _datasetDefinition.getName() + ": " : "") + "type is not defined");
 
-        if (action == AbstractDatasetImportTask.Action.DELETE)
+        if (_action == AbstractDatasetImportTask.Action.DELETE)
             return;
 
-        if (null == tsv)
+        if (null == _tsv)
             errors.add("No file specified");
-        else if (!tsv.exists())
-            errors.add("File does not exist: " + tsv.getName());
-        else if (!tsv.canRead())
-            errors.add("Cannot read tsv: " + tsv.getName());
+        else if (!_tsv.exists())
+            errors.add("File does not exist: " + _tsv.getName());
+        else if (!_tsv.canRead())
+            errors.add("Cannot read tsv: " + _tsv.getName());
     }
 
 
@@ -106,7 +107,7 @@ public class DatasetImportJob implements Runnable
         if (!errors.isEmpty())
         {
             for (String e : errors)
-                _task.logError(tsv.getName() + " -- " + e);
+                _task.logError(_tsv.getName() + " -- " + e);
             return;
         }
 
@@ -114,12 +115,12 @@ public class DatasetImportJob implements Runnable
         {
             StringBuilder text = null;
 
-            if (action == AbstractDatasetImportTask.Action.APPEND || action == AbstractDatasetImportTask.Action.REPLACE)
+            if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
                 assert cpuReadFile.start();
                 // UNDONE: there's a helper for this somewhere
-                text = new StringBuilder((int)tsv.length());
-                FileReader fr = new FileReader(tsv);
+                text = new StringBuilder((int) _tsv.length());
+                FileReader fr = new FileReader(_tsv);
                 BufferedReader reader = new BufferedReader(fr);
                 String s;
                 try
@@ -137,16 +138,16 @@ public class DatasetImportJob implements Runnable
 
             scope.beginTransaction();
 
-            if (action == AbstractDatasetImportTask.Action.REPLACE || action == AbstractDatasetImportTask.Action.DELETE)
+            if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
             {
                 assert cpuDelete.start();
-                int rows = _task.getStudyManager().purgeDataset(study, datasetDefinition);
-                if (action == AbstractDatasetImportTask.Action.DELETE)
-                    pj.info(datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
+                int rows = _task.getStudyManager().purgeDataset(study, _datasetDefinition);
+                if (_action == AbstractDatasetImportTask.Action.DELETE)
+                    pj.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
                 assert cpuDelete.stop();
             }
 
-            if (action == AbstractDatasetImportTask.Action.APPEND || action == AbstractDatasetImportTask.Action.REPLACE)
+            if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
                 assert text != null;
                 assert cpuImport.start();
@@ -154,10 +155,10 @@ public class DatasetImportJob implements Runnable
                 String[] imported = _task.getStudyManager().importDatasetTSV(
                         study,
                         pj.getUser(),
-                        datasetDefinition,
+                        _datasetDefinition,
                         text.toString(),
-                        tsv.lastModified(),
-                        columnMap,
+                        _tsv.lastModified(),
+                        _columnMap,
                         errors,
                         false, //Set to TRUE if/when MERGE is implemented
                         defaultQCState);
@@ -165,21 +166,21 @@ public class DatasetImportJob implements Runnable
                 {
                     assert cpuCommit.start();
                     scope.commitTransaction();
-                    pj.info(datasetDefinition.getLabel() + ": Successfully imported " + imported.length + " rows from " + tsv);
+                    pj.info(_datasetDefinition.getLabel() + ": Successfully imported " + imported.length + " rows from " + _tsv);
                     assert cpuCommit.stop();
                     getDatasetDefinition().unmaterialize();
                 }
 
                 for (String err : errors)
-                    _task.logError(tsv.getName() + " -- " + err);
+                    _task.logError(_tsv.getName() + " -- " + err);
 
-                if (deleteAfterImport)
+                if (_deleteAfterImport)
                 {
-                    boolean success = tsv.delete();
+                    boolean success = _tsv.delete();
                     if (success)
-                        pj.info("Deleted file " + tsv.getPath());
+                        pj.info("Deleted file " + _tsv.getPath());
                     else
-                        _task.logError("Could not delete file " + tsv.getPath());
+                        _task.logError("Could not delete file " + _tsv.getPath());
                 }
                 assert cpuImport.stop();
             }
@@ -191,7 +192,7 @@ public class DatasetImportJob implements Runnable
             if (scope.isTransactionActive())
                 scope.rollbackTransaction();
 
-            _task.logError("Exception while importing file: " + tsv, x);
+            _task.logError("Exception while importing file: " + _tsv, x);
         }
         finally
         {
@@ -211,22 +212,22 @@ public class DatasetImportJob implements Runnable
 
     public AbstractDatasetImportTask.Action getAction()
     {
-        return action;
+        return _action;
     }
 
     public File getFile()
     {
-        return tsv;
+        return _tsv;
     }
 
     public String getFileName()
     {
-        return null == tsv ? null : tsv.getName();
+        return null == _tsv ? null : _tsv.getName();
     }
 
     public DataSetDefinition getDatasetDefinition()
     {
-        return datasetDefinition;
+        return _datasetDefinition;
     }
 
     public String getVisitDatePropertyName()

@@ -15,17 +15,18 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.TaskId;
-import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.pipeline.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.springframework.validation.BindException;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 
@@ -36,19 +37,27 @@ import java.io.File;
  */
 public class StudyImportJob extends PipelineJob implements StudyJobSupport
 {
+    private static final Logger LOG = Logger.getLogger(StudyImportJob.class);
+
     private final ImportContext _ctx;
     private final File _root;
     private final BindException _errors;
+    private final boolean _reload;
 
-    // Job that handles all tasks that depend on the completion of previous pipeline import jobs (e.g., datasets & specimens).
-    public StudyImportJob(ImportContext ctx, File root, BindException errors)
+    // Handles all four study import tasks: initial task, dataset import, specimen import, and final task
+    public StudyImportJob(Container c, User user, ActionURL url, File studyXml, BindException errors)
     {
-        super(null, new ViewBackgroundInfo(ctx.getContainer(), ctx.getUser(), ctx.getUrl()));
-        _ctx = ctx;
-        _root = root;
+        super(null, new ViewBackgroundInfo(c, user, url));
+
+        _root = studyXml.getParentFile();
+        setLogFile(StudyPipeline.logForInputFile(new File(_root, "study_load")));
         _errors = errors;
-        setLogFile(StudyPipeline.logForInputFile(new File(root, "study_load")));
-        ctx.setLogger(getLogger());
+        _ctx = new ImportContext(user, c, studyXml, url, getLogger());
+
+        StudyImpl study = getStudy(true);
+        _reload = (null != study);
+
+        LOG.info("Pipeline job initialized for " + (_reload ? "reloading" : "importing") + " study " + (_reload ? "\"" + getStudy().getLabel() + "\" " : "") + "to folder " + c.getPath());
     }
 
     public StudyImpl getStudy()
@@ -95,6 +104,19 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
 
     public String getDescription()
     {
-        return "Study import";   // TODO: Reload?
+        return "Study " + (_reload ? "reload" : "import");
+    }
+
+    public static File getStudyFile(File root, File dir, String name, String source) throws StudyImportException
+    {
+        File file = new File(dir, name);
+
+        if (!file.exists())
+            throw new StudyImportException(source + " refers to a file that does not exist: " + StudyImportException.getRelativePath(root, file));
+
+        if (!file.isFile())
+            throw new StudyImportException(source + " refers to " + StudyImportException.getRelativePath(root, file) + ": expected a file but found a directory");
+
+        return file;
     }
 }

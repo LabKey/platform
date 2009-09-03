@@ -39,6 +39,7 @@ public class MissingValueImporter
 
         if (null != mvXml)
         {
+            ctx.getLogger().info("Loading missing value indicators");
             StudyDocument.Study.MissingValueIndicators.MissingValueIndicator[] mvs = mvXml.getMissingValueIndicatorArray();
 
             // Create a map that looks just like the map returned by MvUtil.getIndicatorsAndLabels()

@@ -96,8 +96,9 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    static long lastTime = 0;
-    static final Object timeLock = new Object();
+    private static long lastTime = 0;
+    private static final Object timeLock = new Object();
+
     private static long currentSeconds()
     {
         synchronized(timeLock)

@@ -60,7 +60,7 @@ public class CohortImporter implements InternalStudyImporter
             }
             else
             {
-                File cohortFile = StudyImporter.getStudyFile(root, root, cohortsXml.getFile(), "Study.xml");
+                File cohortFile = StudyImportJob.getStudyFile(root, root, cohortsXml.getFile(), "Study.xml");
                 CohortsDocument cohortAssignmentXml;
 
                 try

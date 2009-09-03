@@ -32,14 +32,14 @@ public class StandaloneDatasetTask extends AbstractDatasetImportTask<StandaloneD
 {
     private transient StudyImpl _study = null;
 
-    public StandaloneDatasetTask(Factory factory, PipelineJob job)
+    private StandaloneDatasetTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }
 
-    public File getDefinitionFile()
+    public File getDatasetsFile()
     {
-        return getJob().getJobSupport(DatasetJobSupport.class).getDatasetFile();
+        return getJob().getJobSupport(DatasetJobSupport.class).getDatasetsFile();
     }
 
     public StudyImpl getStudy()

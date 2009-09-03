@@ -29,12 +29,12 @@ import java.io.File;
 // This task is used to import specimen archives directly via the pipeline ui.  SpecimenBatch is the associcated pipeline job.
 public class StandaloneSpecimenTask extends AbstractSpecimenTask<StandaloneSpecimenTask.Factory>
 {
-    public StandaloneSpecimenTask(Factory factory, PipelineJob job)
+    private StandaloneSpecimenTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }
 
-    public File getSpecimenArchive() throws Exception
+    protected File getSpecimenArchive() throws Exception
     {
         return getJob().getJobSupport(SpecimenJobSupport.class).getSpecimenArchive();
     }

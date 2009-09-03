@@ -41,7 +41,8 @@ public class VisitImporter
 
         if (null != visitsXml)
         {
-            File visitMap = StudyImporter.getStudyFile(root, root, visitsXml.getFile(), "Study.xml");
+            ctx.getLogger().info("Loading visit map");
+            File visitMap = StudyImportJob.getStudyFile(root, root, visitsXml.getFile(), "Study.xml");
             String content = PageFlowUtil.getFileContentsAsString(visitMap);
 
             VisitMapImporter importer = new VisitMapImporter();

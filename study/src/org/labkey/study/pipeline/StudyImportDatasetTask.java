@@ -33,12 +33,12 @@ import java.io.File;
 // This task is used to import datasets as part of study import/reload.  StudyImportJob is the associcated pipeline job.
 public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImportDatasetTask.Factory>
 {
-    public StudyImportDatasetTask(Factory factory, PipelineJob job)
+    private StudyImportDatasetTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }
 
-    public File getDefinitionFile() throws StudyImportException
+    public File getDatasetsFile() throws StudyImportException
     {
         StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
         ImportContext ctx = support.getImportContext();
@@ -52,7 +52,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         String datasetFilename = datasetsXml.getDefinition().getFile();
 
         if (null != datasetFilename)
-            return StudyImporter.getStudyFile(root, datasetDir, datasetFilename, "Study.xml");
+            return StudyImportJob.getStudyFile(root, datasetDir, datasetFilename, "Study.xml");
         }
 
         return null;

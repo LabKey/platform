@@ -36,6 +36,7 @@ public class QcStatesImporter
 
         if (null != qcStates)
         {
+            ctx.getLogger().info("Loading QC states");
             StudyController.ManageQCStatesForm qcForm = new StudyController.ManageQCStatesForm();
             qcForm.setShowPrivateDataByDefault(qcStates.getShowPrivateDataByDefault());
             StudyController.updateQcState(study, ctx.getUser(), qcForm);

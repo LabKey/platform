@@ -25,6 +25,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.pipeline.DatasetBatch;
 
+import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -34,9 +35,9 @@ import java.sql.SQLException;
 * Date: Sep 1, 2009
 * Time: 12:31:11 PM
 */
-public class DatasetTask
+public class DatasetImportUtils
 {
-    public static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url) throws IOException, StudyImporter.DatasetLockExistsException, SQLException
+    public static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url) throws IOException, DatasetLockExistsException, SQLException
     {
         if (null == datasetFile || !datasetFile.exists() || !datasetFile.isFile())
         {
@@ -47,10 +48,14 @@ public class DatasetTask
         File lockFile = StudyPipeline.lockForDataset(study, datasetFile);
         if (!datasetFile.canRead() || lockFile.exists())
         {
-            throw new StudyImporter.DatasetLockExistsException();
+            throw new DatasetLockExistsException();
         }
 
         DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile);
         batch.submit();
+    }
+
+    public static class DatasetLockExistsException extends ServletException
+    {
     }
 }

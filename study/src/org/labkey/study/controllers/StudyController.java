@@ -3515,7 +3515,7 @@ public class StudyController extends BaseStudyController
             if (!errors.hasErrors())
             {
                 List<String> parseErrors = new ArrayList<String>();
-                reader.prepareImport(parseErrors);
+                reader.validate(parseErrors);
                 for (String error : parseErrors)
                     errors.reject("importStudyBatch", error);
             }
@@ -3558,9 +3558,9 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                DatasetTask.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
+                DatasetImportUtils.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
             }
-            catch (StudyImporter.DatasetLockExistsException e)
+            catch (DatasetImportUtils.DatasetLockExistsException e)
             {
                 ActionURL importURL = new ActionURL(ImportStudyBatchAction.class, getContainer());
                 importURL.addParameter("path", form.getPath());
@@ -3763,17 +3763,9 @@ public class StudyController extends BaseStudyController
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
 
-        StudyImporter importer = new StudyImporter(c, user, url, studyXml, errors);
+        PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, errors));
 
-        try
-        {
-            return importer.process();
-        }
-        catch (StudyImportException e)
-        {
-            errors.reject("studyImport", e.getMessage());
-            return false;
-        }
+        return !errors.hasErrors();
     }
 
 

@@ -31,7 +31,7 @@ public abstract class AbstractContext implements StudyContext
 {
     private final User _user;
     private final Container _c;
-    private Logger _logger;        // TODO: Should be final
+    private transient final Logger _logger;
     private transient StudyDocument _studyDoc;   // XStream can't seem to serialize this XMLBean... so we load it on demand
 
     protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger)
@@ -61,12 +61,6 @@ public abstract class AbstractContext implements StudyContext
     public Logger getLogger()
     {
         return _logger;
-    }
-
-    @Deprecated  // Temp hack until we use a single pipeline job for import
-    public void setLogger(Logger logger)
-    {
-        _logger = logger;
     }
 
     protected synchronized StudyDocument getStudyDocument() throws StudyImportException

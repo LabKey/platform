@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlException;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -37,9 +38,9 @@ public class ImportContext extends AbstractContext
     private final ActionURL _url;
     private final File _studyXml;
 
-    public ImportContext(User user, Container c, File studyXml, ActionURL url)
+    public ImportContext(User user, Container c, File studyXml, ActionURL url, Logger logger)
     {
-        super(user, c, null, null);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
+        super(user, c, null, logger);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _url = url;
         _studyXml = studyXml;
     }

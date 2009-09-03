@@ -43,7 +43,7 @@ public abstract class AbstractSpecimenTaskFactory<FactoryType extends AbstractSp
 
     public String getStatusName()
     {
-        return "THIS IS A TEST";
+        return "LOAD SPECIMENS";
     }
 
     public boolean isJobComplete(PipelineJob job)

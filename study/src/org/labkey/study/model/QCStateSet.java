@@ -86,9 +86,9 @@ public class QCStateSet
     private static QCState[] getStatesForIds(Container container, int[] stateRowIds)
     {
         List<QCState> stateSet = new ArrayList<QCState>();
-        for (int i = 0; i < stateRowIds.length; i++)
+        for (int stateRowId : stateRowIds)
         {
-            QCState state = StudyManager.getInstance().getQCStateForRowId(container, stateRowIds[i]);
+            QCState state = StudyManager.getInstance().getQCStateForRowId(container, stateRowId);
             if (state != null)
                 stateSet.add(state);
         }

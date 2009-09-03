@@ -30,11 +30,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.sql.SQLException;
 
-public class ParticipantImportJob extends DatasetImportJob
+public class ParticipantImportRunnable extends DatasetImportRunnable
 {
-    String _siteLookup = "RowId";
+    private String _siteLookup = "RowId";
 
-    ParticipantImportJob(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Map<String, String> columnMap)
+    ParticipantImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Map<String, String> columnMap)
     {
         super(task, ds, tsv, action, deleteAfterImport, columnMap);
     }
@@ -57,7 +57,7 @@ public class ParticipantImportJob extends DatasetImportJob
         }
         catch (Exception x)
         {
-            _task.logError("Unexpected error importing file: " + tsv.getName(), x);
+            _task.logError("Unexpected error importing file: " + _tsv.getName(), x);
         }
     }
 
@@ -80,7 +80,7 @@ public class ParticipantImportJob extends DatasetImportJob
 
     public void _run() throws IOException, SQLException
     {
-        TempTableLoader loader = new TempTableLoader(tsv, true);
+        TempTableLoader loader = new TempTableLoader(_tsv, true);
         CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
         for (ColumnDescriptor c : loader.getColumns())
             columnMap.put(c.name, c);

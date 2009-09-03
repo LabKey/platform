@@ -2056,8 +2056,8 @@ study/src/org/labkey/study/designer/view/studyDesignSummary.jsp -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
 study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
+study/src/org/labkey/study/importer/DatasetImportUtils.java -text
 study/src/org/labkey/study/importer/DatasetImporter.java -text
-study/src/org/labkey/study/importer/DatasetTask.java -text
 study/src/org/labkey/study/importer/ImportContext.java -text
 study/src/org/labkey/study/importer/InternalStudyImporter.java -text
 study/src/org/labkey/study/importer/LDMSRecord.java -text
@@ -2069,11 +2069,10 @@ study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
-study/src/org/labkey/study/importer/StudyImportFinalizerTask.java -text
+study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text
 study/src/org/labkey/study/importer/StudyImportJob.java -text
 study/src/org/labkey/study/importer/StudyImportProvider.java -text
-study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
@@ -2131,9 +2130,9 @@ study/src/org/labkey/study/pipeline/AbstractSpecimenTask.java -text
 study/src/org/labkey/study/pipeline/AbstractSpecimenTaskFactory.java -text
 study/src/org/labkey/study/pipeline/DatasetBatch.java -text
 study/src/org/labkey/study/pipeline/DatasetFileReader.java -text
-study/src/org/labkey/study/pipeline/DatasetImportJob.java -text
+study/src/org/labkey/study/pipeline/DatasetImportRunnable.java -text
 study/src/org/labkey/study/pipeline/DatasetJobSupport.java -text
-study/src/org/labkey/study/pipeline/ParticipantImportJob.java -text
+study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
 study/src/org/labkey/study/pipeline/SpecimenArchive.java -text
 study/src/org/labkey/study/pipeline/SpecimenBatch.java -text
 study/src/org/labkey/study/pipeline/SpecimenJobSupport.java -text

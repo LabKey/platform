@@ -55,10 +55,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     {
         Set<R> defaultRequirements = new HashSet<R>();
         for (RequirementType type : getRequirementTypes())
-        {
-            for (R requirement : getDefaultRequirements(container, type))
-                defaultRequirements.add(requirement);
-        }
+            defaultRequirements.addAll(Arrays.asList(getDefaultRequirements(container, type)));
         return defaultRequirements.toArray((R[]) Array.newInstance(_requirementClass, defaultRequirements.size()));
     }
 

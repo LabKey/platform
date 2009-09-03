@@ -79,10 +79,10 @@ public class StudyReload
         Minutes5(5 * 60, "5 Minutes", "every five minutes"),
         Seconds10(10, true, "10 Seconds", "every 10 seconds");   // for dev mode purposes only
 
-        private String _dropDownLabel;
-        private String _description;
-        private Integer _seconds;
-        private boolean _devOnly;
+        private final String _dropDownLabel;
+        private final String _description;
+        private final Integer _seconds;
+        private final boolean _devOnly;
 
         private ReloadInterval(Integer seconds, String dropDownLabel, String description)
         {
@@ -393,8 +393,8 @@ public class StudyReload
                         throw new StudyImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
 
                     LOG.info("Handling " + c.getPath());
-                    StudyImporter importer = new StudyImporter(c, reloadUser, manageStudyURL, new File(root, "study.xml"), errors);
-                    importer.process();
+
+                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, new File(root, "study.xml"), errors));
                 }
                 catch (InterruptedException e)
                 {

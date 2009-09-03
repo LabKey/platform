@@ -84,9 +84,9 @@ public class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.Que
 
     public static class QueryInfo
     {
-        private TableInfo _tinfo;
-        private String _filename;
-        private ImportableColumn[] _columns;
+        private final TableInfo _tinfo;
+        private final String _filename;
+        private final ImportableColumn[] _columns;
 
         public QueryInfo(TableInfo tinfo, String filename, ImportableColumn[] columns)
         {

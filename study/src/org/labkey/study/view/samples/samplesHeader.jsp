@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.security.ACL"%>
+<%@ page import="org.labkey.api.util.Pair"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<script>LABKEY.requiresScript('util.js')</script>
+<script>LABKEY.requiresScript('util.js');</script>
 <script>LABKEY.requiresClientAPI();</script>
 <%
     JspView<SpringSpecimenController.SpecimenHeaderBean> me = (JspView<SpringSpecimenController.SpecimenHeaderBean>) HttpView.currentView();

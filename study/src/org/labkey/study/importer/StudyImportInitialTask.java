@@ -54,6 +54,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             // Create the study if it doesn't exist... otherwise, modify the existing properties
             if (null == study)
             {
+                job.info("Creating study");
+
                 // Create study
                 StudyController.StudyPropertiesForm studyForm = new StudyController.StudyPropertiesForm();
 
@@ -73,6 +75,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             }
             else
             {
+                job.info("Loading top-level study properties");
+
                 // TODO: Change these props and save only if values have changed
                 study = study.createMutable();
 
@@ -102,7 +106,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         }
         catch (Throwable t)
         {
-            throw new PipelineJobException("Study import failed", t); // TODO: Reload?
+            throw new PipelineJobException(t);
         }
 
         return new RecordedActionSet();
@@ -111,8 +115,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     private static void throwFirstErrorAsPiplineJobException(BindException errors) throws PipelineJobException
     {
         ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
-        throw new PipelineJobException("Study import failed: " + firstError.getDefaultMessage());
+        throw new PipelineJobException("ERROR: " + firstError.getDefaultMessage());
     }
+
 
     public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, Factory>
     {
@@ -138,7 +143,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
         public String getStatusName()
         {
-            return "THIS IS A TEST";
+            return "LOAD STUDY";
         }
 
         public boolean isJobComplete(PipelineJob job)

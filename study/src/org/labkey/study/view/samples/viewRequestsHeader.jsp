@@ -39,7 +39,7 @@
 <%= textLink("All User Requests", userLink.deleteParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
 <%= textLink("My Requests", userLink.replaceParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
         context.getUser().getDisplayName(context))) %>
-Filter by status: <select onChange="document.location=options[selectedIndex].value">
+Filter by status: <select onChange="document.location=options[selectedIndex].value;">
 <%
     ActionURL current = context.cloneActionURL();
     current.deleteParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL);

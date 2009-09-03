@@ -43,7 +43,7 @@ public abstract class AbstractDatasetImportTaskFactory<FactoryType extends Abstr
 
     public String getStatusName()
     {
-        return "THIS IS A TEST";
+        return "LOAD DATASETS";
     }
 
     public boolean isJobComplete(PipelineJob job)

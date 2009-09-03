@@ -50,7 +50,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
         if (null != visitsXml)
         {
-            File visitMap = StudyImporter.getStudyFile(root, root, visitsXml.getFile(), "Study.xml");
+            File visitMap = StudyImportJob.getStudyFile(root, root, visitsXml.getFile(), "Study.xml");
 
             StudyManager studyManager = StudyManager.getInstance();
             VisitManager visitManager = studyManager.getVisitManager(study);
