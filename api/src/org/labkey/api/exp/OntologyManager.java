@@ -443,7 +443,7 @@ public class OntologyManager
         else
         {
             SQLFragment sqlDeleteProperties = new SQLFragment();
-            sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN\n" +
+            sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE ObjectId IN\n" +
                     "(SELECT ObjectId FROM " + getTinfoObject() + "\n" +
                     " WHERE Container = ? AND ObjectURI IN (");
             sqlDeleteProperties.add(c.getId());
