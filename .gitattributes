@@ -740,6 +740,7 @@ api/src/org/labkey/api/study/assay/PipelineDataCollector.java -text
 api/src/org/labkey/api/study/assay/PipelineDataCollectorRedirectAction.java -text
 api/src/org/labkey/api/study/assay/PlateBasedAssayProvider.java -text
 api/src/org/labkey/api/study/assay/PlateSamplePropertyHelper.java -text
+api/src/org/labkey/api/study/assay/PlateUrls.java -text
 api/src/org/labkey/api/study/assay/PreviouslyUploadedDataCollector.java -text
 api/src/org/labkey/api/study/assay/RunDataSetContextualRoles.java -text
 api/src/org/labkey/api/study/assay/RunDataTable.java -text

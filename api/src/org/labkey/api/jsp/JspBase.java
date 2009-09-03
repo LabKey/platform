@@ -229,9 +229,15 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
      * Consider: is there any way to name this method in such a way as to
      * make the order of parameters unambiguous?
      */
+    @Deprecated // use actionClass or ActionURL variants
     public String generateButton(String text, String href)
     {
         return PageFlowUtil.generateButton(text, href);
+    }
+
+    public String generateButton(String text, Class<? extends Controller> actionClass)
+    {
+        return PageFlowUtil.generateButton(text, new ActionURL(actionClass, getViewContext().getContainer()));
     }
 
     /**

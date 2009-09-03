@@ -160,13 +160,11 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
             if (hasChildren)
             {
-                ActionURL expandCollapseUrl = new ActionURL("Project", "expandCollapse", getViewContext().getContainer());
-                expandCollapseUrl.replaceParameter("path", pathToHere);
-                expandCollapseUrl.replaceParameter("treeId", rootId);
+                ActionURL expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), pathToHere, rootId);
 
                 String image = collapsed ? "plus.gif" : "minus.gif";
                 out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\">",
-                        filter(expandCollapseUrl.getLocalURIString()),
+                        filter(expandCollapseUrl),
                         "true");
 
                 out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);

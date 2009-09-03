@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.ErrorRenderer;
 import static org.labkey.api.util.PageFlowUtil.filter;
+import org.labkey.api.portal.ProjectUrls;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -344,9 +345,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 {
                     if (rootId == null)
                         throw new IllegalArgumentException("pathToHere or rootId not provided");
-                    expandCollapseUrl = new ActionURL("Project", "expandCollapse", getViewContext().getContainer());
-                    expandCollapseUrl.replaceParameter("path", "");
-                    expandCollapseUrl.replaceParameter("treeId", rootId);
+                    expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
                 }
 
                 out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
@@ -424,9 +423,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                     {
                         if (rootId == null)
                             throw new IllegalArgumentException("pathToHere or rootId not provided");
-                        expandCollapseUrl = new ActionURL("Project", "expandCollapse", getViewContext().getContainer());
-                        expandCollapseUrl.replaceParameter("path", "");
-                        expandCollapseUrl.replaceParameter("treeId", rootId);
+                        expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
                     }
 
                     if (null != href)
