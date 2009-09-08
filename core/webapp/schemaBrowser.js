@@ -269,12 +269,32 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             autoResize: true
         });
 
+        if (this.autoResize)
+        {
+            Ext.EventManager.onWindowResize(function(w,h){this.resizeToViewport(w,h);}, this);
+            this.on("render", function(){Ext.EventManager.fireWindowResize();}, this);
+        }
+
         this.addEvents("schemasloaded");
 
         this._qdcache = new LABKEY.ext.QueryDetailsCache();
         this._qdcache.on("newdetails", this.onQueryDetails, this);
 
         LABKEY.ext.SchemaBrowser.superclass.initComponent.apply(this, arguments);
+    },
+
+    resizeToViewport : function(w,h) {
+        if (!this.rendered)
+            return;
+
+        var padding = [20,20];
+        var xy = this.el.getXY();
+        var size = {
+            width : Math.max(100,w-xy[0]-padding[0]),
+            height : Math.max(100,h-xy[1]-padding[1])};
+        this.setSize(size);
+        if (this.layout.layout) //HACK: during the render event, the layout method isn't setup yet.
+            this.doLayout();
     },
 
     onTreeClick : function(node, evt) {
