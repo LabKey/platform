@@ -1188,6 +1188,7 @@ abstract public class PipelineJob extends Job implements Serializable
             sb.append(getLogFile().getPath());
             if (message != null)
             {
+                sb.append(": ");
                 sb.append(message);
             }
             sb.append(")");
