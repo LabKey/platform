@@ -54,6 +54,7 @@ public class CohortImporter implements InternalStudyImporter
 
             if (cohortType == CohortType.AUTOMATIC)
             {
+                ctx.getLogger().info("Loading automatic cohort settings");
                 Integer dataSetId = cohortsXml.getDatasetId();
                 String dataSetProperty = cohortsXml.getDatasetProperty();
                 CohortManager.updateAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty);
@@ -61,6 +62,7 @@ public class CohortImporter implements InternalStudyImporter
             else
             {
                 File cohortFile = StudyImportJob.getStudyFile(root, root, cohortsXml.getFile(), "Study.xml");
+                ctx.getLogger().info("Loading manual cohort assignments from " + StudyImportException.getRelativePath(root, cohortFile));
                 CohortsDocument cohortAssignmentXml;
 
                 try

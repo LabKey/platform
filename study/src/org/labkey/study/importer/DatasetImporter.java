@@ -56,7 +56,7 @@ public class DatasetImporter
             List<Integer> orderedIds = null;
             Map<String, DatasetImportProperties> extraProps = null;
             SchemaReader reader = null;
-            DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root);
+            DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root, true);  // Log the first manifest load
 
             if (null != manifestDatasetsXml)
             {
@@ -80,7 +80,11 @@ public class DatasetImporter
                 String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
 
                 if (null != metaDataFilename)
-                    reader = new SchemaXmlReader(study, root, StudyImportJob.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile()), extraProps);
+                {
+                    File schemaXmlFile = StudyImportJob.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile());
+                    ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaXmlFile));
+                    reader = new SchemaXmlReader(study, root, schemaXmlFile, extraProps);
+                }
             }
 
             if (null == reader)
@@ -96,13 +100,13 @@ public class DatasetImporter
 
                     File schemaTsvFile = StudyImportJob.getStudyFile(root, datasetDir, schemaTsvSource, "Study.xml");
 
+                    ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaTsvFile));
                     reader = new SchemaTsvReader(study, schemaTsvFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
                 }
             }
 
             if (null != reader)
             {
-                ctx.getLogger().info("Loading dataset schema");
                 if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors))
                     return false;
             }
@@ -135,7 +139,7 @@ public class DatasetImporter
 
 
     @Nullable
-    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root) throws XmlException, IOException, StudyImportException
+    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root, boolean log) throws XmlException, IOException, StudyImportException
     {
         File datasetDir = getDatasetDirectory(ctx, root);
 
@@ -149,6 +153,8 @@ public class DatasetImporter
 
                 try
                 {
+                    if (log)
+                        ctx.getLogger().info("Loading datasets manifest from " + StudyImportException.getRelativePath(root, datasetsXmlFile));
                     return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
                 }
                 catch (XmlException e)
