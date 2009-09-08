@@ -487,6 +487,8 @@ core/webapp/SecurityAdmin.js -text
 core/webapp/dropApplet.js -text
 core/webapp/fileBrowser.js -text
 core/webapp/printStyle.css -text
+core/webapp/schemaBrowser.css -text
+core/webapp/schemaBrowser.js -text
 core/webapp/stylesheet.css -text
 demo/module.properties -text
 demo/resources/schemas/dbscripts/postgresql/demo-0.00-1.00.sql -text
@@ -1534,6 +1536,8 @@ query/src/org/labkey/query/controllers/DbUserSchemaForm.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
 query/src/org/labkey/query/controllers/DesignForm.java -text
 query/src/org/labkey/query/controllers/DesignServiceForm.java -text
+query/src/org/labkey/query/controllers/GetQueryDetailsAction.java -text
+query/src/org/labkey/query/controllers/GetSchemaQueryTreeAction.java -text
 query/src/org/labkey/query/controllers/InternalNewViewForm.java -text
 query/src/org/labkey/query/controllers/InternalSourceViewForm.java -text
 query/src/org/labkey/query/controllers/InternalViewForm.java -text
@@ -1548,6 +1552,7 @@ query/src/org/labkey/query/controllers/ValidateQueryAction.java -text
 query/src/org/labkey/query/controllers/admin.jsp -text
 query/src/org/labkey/query/controllers/apitest.jsp -text
 query/src/org/labkey/query/controllers/begin.jsp -text
+query/src/org/labkey/query/controllers/browse.jsp -text
 query/src/org/labkey/query/controllers/builtInTablesList.jsp -text
 query/src/org/labkey/query/controllers/chooseColumns.jsp -text
 query/src/org/labkey/query/controllers/createSnapshot.jsp -text

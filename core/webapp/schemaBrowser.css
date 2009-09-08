@@ -1,0 +1,45 @@
+.lk-qd-body
+{
+    padding: 5px!important;
+}
+
+.lk-qd-links
+{
+    text-align: right;
+}
+
+.lk-qd-name
+{
+    font-size: x-large;
+    font-weight: bold;
+}
+
+.lk-qd-description
+{
+}
+
+.lk-qd-coltable
+{
+    border-collapse: collapse;
+}
+
+.lk-qd-collist-title
+{
+    font-weight: bold;
+    background-color: #CCCCCC;
+    color: #000000;
+}
+
+.lk-qd-coltable th
+{
+    font-weight: bold;
+    padding: 2px;
+    border-bottom: 1px solid #000000;
+}
+
+.lk-qd-coltable td
+{
+    border-bottom: 1px solid #C0C0C0;
+    padding: 2px;
+    vertical-align: top;
+}

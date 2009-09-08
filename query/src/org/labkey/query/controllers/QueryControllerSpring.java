@@ -68,7 +68,9 @@ import java.util.*;
 public class QueryControllerSpring extends SpringActionController
 {
     private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
-            ValidateQueryAction.class);
+            ValidateQueryAction.class,
+            GetSchemaQueryTreeAction.class,
+            GetQueryDetailsAction.class);
 
     public QueryControllerSpring() throws Exception
     {
@@ -122,6 +124,20 @@ public class QueryControllerSpring extends SpringActionController
         {
             // it exists, but it has an error
             return;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BrowseAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView(QueryControllerSpring.class, "browse.jsp", null);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Schema Browser");
         }
     }
 
