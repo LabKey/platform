@@ -90,7 +90,7 @@ public interface Report
     /**
      * Generic method to allow serialization of a report.
      */
-    void serialize(Writer writer) throws IOException;
+    void serialize(VirtualFile dir, String filename) throws IOException;
 
     /**
      * Serializes a report to a file(s) in the specified directory. Reports will auto-generate

@@ -15,8 +15,12 @@
  */
 package org.labkey.api.writer;
 
+import org.apache.xmlbeans.XmlToken;
+import org.apache.xmlbeans.XmlTokenSource;
+
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.OutputStream;
 
 /**
  * User: adam
@@ -26,9 +30,8 @@ import java.io.PrintWriter;
 public interface VirtualFile
 {
     public PrintWriter getPrintWriter(String path) throws IOException;
-    @Deprecated
-    // No longer needed -- just use getDir()
-    public void makeDir(String path) throws IOException;
+    public OutputStream getOutputStream(String filename) throws IOException;
+    public void saveXmlBean(String filename, XmlTokenSource doc) throws IOException;
     public Archive createZipArchive(String name) throws IOException;
     public VirtualFile getDir(String path);
     public String makeLegalName(String name);

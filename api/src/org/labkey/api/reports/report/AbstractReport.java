@@ -112,35 +112,24 @@ public abstract class AbstractReport implements Report
     {
     }
 
-    public void serialize(Writer writer) throws IOException
+    public void serialize(VirtualFile dir, String filename) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
+
         if (descriptor.getReportId() != null)
-        {
-            descriptor.serialize(writer);
-        }
+            descriptor.serialize(dir, filename);
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
     }
 
-    public void serializeToFolder(VirtualFile fs) throws IOException
+    public void serializeToFolder(VirtualFile dir) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 
         if (descriptor.getReportId() != null)
         {
-            String fileName = String.format("%s.%s.report.xml", descriptor.getReportName() != null ? descriptor.getReportName() : descriptor.getReportType(), descriptor.getReportId());
-            PrintWriter writer = null;
-            try
-            {
-                writer = fs.getPrintWriter(fileName);
-                serialize(writer);
-            }
-            finally
-            {
-                if (writer != null)
-                    writer.close();
-            }
+            String filename = String.format("%s.%s.report.xml", descriptor.getReportName() != null ? descriptor.getReportName() : descriptor.getReportType(), descriptor.getReportId());
+            serialize(dir, filename);
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");

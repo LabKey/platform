@@ -18,8 +18,7 @@ package org.labkey.api.util;
 import org.apache.xmlbeans.XmlTokenSource;
 import org.apache.xmlbeans.XmlOptions;
 
-import java.io.PrintWriter;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * User: adam
@@ -28,12 +27,20 @@ import java.io.IOException;
  */
 public class XmlBeansUtil
 {
-    public static void saveDoc(PrintWriter pw, XmlTokenSource doc) throws IOException
+    private XmlBeansUtil()
+    {
+    }
+
+    // Standard options used by study export.
+    public static XmlOptions getDefaultOptions()
     {
         XmlOptions options = new XmlOptions();
         options.setSavePrettyPrint();
         options.setUseDefaultNamespace();
-        doc.save(pw, options);
-        pw.close();
+        options.setCharacterEncoding("UTF-8");
+        options.setSaveCDataEntityCountThreshold(0);
+        options.setSaveCDataLengthThreshold(0);
+
+        return options;
     }
 }

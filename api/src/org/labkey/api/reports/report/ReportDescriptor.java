@@ -34,13 +34,13 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportPropertyList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Writer;
 import java.util.*;
 
 /**
@@ -346,22 +346,10 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return doc;
     }
 
-    public void serialize(Writer writer) throws IOException
+    public void serialize(VirtualFile dir, String filename) throws IOException
     {
-        XmlOptions opts = new XmlOptions();
-        opts.setSaveCDataEntityCountThreshold(0);
-        opts.setSaveCDataLengthThreshold(0);
-        opts.setSavePrettyPrint();
-        opts.setUseDefaultNamespace();
         ReportDescriptorDocument doc = getDescriptorDocument();
-
-        try {
-            doc.save(writer, opts);
-        }
-        finally
-        {
-            writer.close();
-        }
+        dir.saveXmlBean(filename, doc);
     }
 
     public String serialize() throws IOException
@@ -374,7 +362,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
         ReportDescriptorDocument doc = getDescriptorDocument();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-        try {
+        try
+        {
             doc.save(output, opts);
             return output.toString();
         }
