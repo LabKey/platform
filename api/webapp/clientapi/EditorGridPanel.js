@@ -86,7 +86,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         });
         this.setupDefaultPanelConfig();
 
-        LABKEY.ext.EditorGridPanel.superclass.initComponent.call(this, arguments);
+        LABKEY.ext.EditorGridPanel.superclass.initComponent.apply(this, arguments);
 
         /**
          * @memberOf LABKEY.ext.EditorGridPanel

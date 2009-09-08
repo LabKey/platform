@@ -543,11 +543,16 @@ LABKEY.Query = new function()
          */
         getSchemas : function(config)
         {
+            var params = {};
+            if (config.apiVersion)
+                params.apiVersion = config.apiVersion;
+
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                params: params
             });
         },
 

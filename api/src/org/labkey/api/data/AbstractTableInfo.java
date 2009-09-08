@@ -209,7 +209,7 @@ abstract public class AbstractTableInfo implements TableInfo
                     break;
                 }
             }
-            if (null == _titleColumn)
+            if (null == _titleColumn && getColumns().size() > 0)
                 _titleColumn = getColumns().get(0).getName();
         }
 
