@@ -311,7 +311,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
         String filename = (null != getName() ? getName() : "default") + ".db_" + getCstmView().getCustomViewId() + CustomViewXmlReader.XML_FILE_EXTENSION;
 
-        XmlBeansUtil.saveDoc(dir.getPrintWriter(filename), customViewDoc);
+        dir.saveXmlBean(filename, customViewDoc);
     }
 
     static public boolean isUnselectable(ColumnInfo column)

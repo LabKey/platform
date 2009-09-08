@@ -16,7 +16,6 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.study.StudyImportException;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.model.VisitDataSet;
@@ -94,6 +93,6 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext
             }
         }
 
-        XmlBeansUtil.saveDoc(vf.getPrintWriter(FILENAME), visitMapDoc);
+        vf.saveXmlBean(FILENAME, visitMapDoc);
     }
 }

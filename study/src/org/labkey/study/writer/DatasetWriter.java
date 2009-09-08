@@ -127,7 +127,7 @@ public class DatasetWriter implements InternalStudyWriter
             dsXml.setMetaDataFile(SchemaXmlWriter.SCHEMA_FILENAME);
         }
 
-        XmlBeansUtil.saveDoc(vf.getPrintWriter(MANIFEST_FILENAME), manifestXml);
+        vf.saveXmlBean(MANIFEST_FILENAME, manifestXml);
 
         // Write out the .dataset file and add reference to study.xml
         Datasets.Definition definitionXml = datasetsXml.addNewDefinition();

@@ -16,8 +16,11 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Archive;
+import org.apache.xmlbeans.XmlTokenSource;
+import org.apache.xmlbeans.XmlOptions;
 
 import java.io.*;
 
@@ -42,24 +45,30 @@ public class FileSystemFile implements VirtualFile
         return _root.getAbsolutePath();
     }
 
-    public PrintWriter getPrintWriter(String fileName) throws IOException
+    public PrintWriter getPrintWriter(String filename) throws IOException
     {
-        File file = new File(_root, makeLegalName(fileName));
+        File file = new File(_root, makeLegalName(filename));
 
         return new PrintWriter(file);
     }
 
-    public void makeDir(String path) throws FileNotFoundException, UnsupportedEncodingException
+    public OutputStream getOutputStream(String filename) throws IOException
     {
-        String[] parts = path.split("/");
+        File file = new File(_root, makeLegalName(filename));
 
-        File parent = _root;
+        return new FileOutputStream(file);
+    }
 
-        for (String part : parts)
-        {
-            parent = new File(parent, makeLegalName(part));
-            ensureWriteableDirectory(parent);
-        }
+    public void saveXmlBean(String filename, XmlTokenSource doc) throws IOException
+    {
+        saveXmlBean(filename, doc, XmlBeansUtil.getDefaultOptions());
+    }
+
+    // Expose this if/when some caller needs to customize the options
+    private void saveXmlBean(String filename, XmlTokenSource doc, XmlOptions options) throws IOException
+    {
+        File file = new File(_root, makeLegalName(filename));
+        doc.save(file, options);
     }
 
     public VirtualFile getDir(String name)

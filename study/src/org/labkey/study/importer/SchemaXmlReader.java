@@ -18,12 +18,12 @@ package org.labkey.study.importer;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.exp.property.Type;
+import org.labkey.api.study.InvalidFileException;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
-import org.labkey.api.study.InvalidFileException;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 
@@ -55,7 +55,7 @@ public class SchemaXmlReader implements SchemaReader
         {
             tablesDoc = TablesDocument.Factory.parse(metaDataFile);
         }
-        catch (XmlException e)
+        catch (Exception e)
         {
             throw new InvalidFileException(root, metaDataFile, e);
         }

@@ -19,8 +19,10 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.*;
-import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.study.ExternalStudyWriter;
+import org.labkey.api.study.ExternalStudyWriterFactory;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
@@ -75,7 +77,7 @@ public class QueryWriter implements ExternalStudyWriter
                     queryXml.setMetadata(xObj);
                 }
 
-                XmlBeansUtil.saveDoc(queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION), qDoc);
+                queriesDir.saveXmlBean(query.getName() + META_FILE_EXTENSION, qDoc);
             }
         }
     }

@@ -1447,7 +1447,7 @@ public class StudyManager
             //If deleteDatasetData is false, OntologyManager will clean up on folder delete
             if (deleteDatasetData)
                 for (DataSetDefinition dsd : getDataSetDefinitions(getStudy(c)))
-                        deleteDataset(getStudy(c), user, dsd);
+                    deleteDataset(getStudy(c), user, dsd);
             //
             // samples
             //

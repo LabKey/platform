@@ -17,6 +17,9 @@ package org.labkey.study.writer;
 
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Archive;
+import org.labkey.api.util.XmlBeansUtil;
+import org.apache.xmlbeans.XmlTokenSource;
+import org.apache.xmlbeans.XmlOptions;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -89,10 +92,26 @@ public class ZipFile implements Archive
         return _pw;
     }
 
-    public void makeDir(String path) throws IOException
+    public OutputStream getOutputStream(String path) throws IOException
     {
-        ZipEntry entry = new ZipEntry(_path + makeLegalName(path) + "/");
+        ZipEntry entry = new ZipEntry(_path + makeLegalName(path));
         _out.putNextEntry(entry);
+
+        return new NonCloseableZipOutputStream(_out);
+    }
+
+    public void saveXmlBean(String filename, XmlTokenSource doc) throws IOException
+    {
+        saveXmlBean(filename, doc, XmlBeansUtil.getDefaultOptions());
+    }
+
+    // Expose this if/when some caller needs to customize the options
+    private void saveXmlBean(String filename, XmlTokenSource doc, XmlOptions options) throws IOException
+    {
+        ZipEntry entry = new ZipEntry(_path + makeLegalName(filename));
+        _out.putNextEntry(entry);
+        doc.save(_out, options);
+        _out.closeEntry();
     }
 
     public VirtualFile getDir(String path)
@@ -139,6 +158,30 @@ public class ZipFile implements Archive
         }
 
         @Override
+        public void close()
+        {
+            try
+            {
+                flush();
+                _out.closeEntry();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static class NonCloseableZipOutputStream extends OutputStreamWrapper
+    {
+        private final ZipOutputStream _out;
+
+        private NonCloseableZipOutputStream(ZipOutputStream out)
+        {
+           super(out);
+            _out = out;
+        }
+
         public void close()
         {
             try

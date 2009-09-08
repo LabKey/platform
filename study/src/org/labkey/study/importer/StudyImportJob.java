@@ -57,7 +57,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         StudyImpl study = getStudy(true);
         _reload = (null != study);
 
-        LOG.info("Pipeline job initialized for " + (_reload ? "reloading" : "importing") + " study " + (_reload ? "\"" + getStudy().getLabel() + "\" " : "") + "to folder " + c.getPath());
+        LOG.info("Pipeline job initialized for " + (_reload ? "reloading" : "importing") + " study " + (_reload ? "\"" + study.getLabel() + "\" " : "") + "to folder " + c.getPath());
     }
 
     public StudyImpl getStudy()

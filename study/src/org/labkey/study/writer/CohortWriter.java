@@ -17,7 +17,6 @@ package org.labkey.study.writer;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
@@ -27,7 +26,6 @@ import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
 
-import java.io.PrintWriter;
 import java.util.Collection;
 
 /**
@@ -65,8 +63,6 @@ public class CohortWriter implements InternalStudyWriter
                     participantsInEachCohort.put(id, participant.getParticipantId());
             }
 
-            PrintWriter pw = vf.getPrintWriter(COHORTS_FILENAME);
-
             CohortsDocument cohortFileXml = CohortsDocument.Factory.newInstance();
             CohortsDocument.Cohorts cohortAssignmentXml = cohortFileXml.addNewCohorts();
 
@@ -80,7 +76,7 @@ public class CohortWriter implements InternalStudyWriter
                     cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
             }
 
-            XmlBeansUtil.saveDoc(pw, cohortFileXml);
+            vf.saveXmlBean(COHORTS_FILENAME, cohortFileXml);
         }
         else
         {

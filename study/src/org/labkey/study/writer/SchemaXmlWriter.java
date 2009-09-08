@@ -19,7 +19,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.study.StudyContext;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.data.xml.ColumnType;
@@ -151,6 +150,6 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
             }
         }
 
-        XmlBeansUtil.saveDoc(vf.getPrintWriter(SCHEMA_FILENAME), tablesDoc);
+        vf.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
     }
 }

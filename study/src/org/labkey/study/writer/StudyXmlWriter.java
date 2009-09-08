@@ -16,13 +16,11 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
 
-import java.io.PrintWriter;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -72,9 +70,9 @@ public class StudyXmlWriter implements InternalStudyWriter
             indXml.setLabel(mv.getValue());
         }
 
-        // This gets called last, after all other writers have populated the other sections.  Save the study.xml
-        PrintWriter pw = vf.getPrintWriter("study.xml");
-        XmlBeansUtil.saveDoc(pw, ctx.getStudyDocument());
+        // Save the study.xml file.  This gets called last, after all other writers have populated the other sections.
+        vf.saveXmlBean("study.xml", ctx.getStudyDocument());
+
         ctx.lockStudyDocument();
     }
 
