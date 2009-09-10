@@ -17,11 +17,25 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
         return this.queryDetailsMap[this.getCacheKey(schemaName, queryName)];
     },
 
-    loadQueryDetails : function(schemaName, queryName) {
+    loadQueryDetails : function(schemaName, queryName, callback, scope) {
+        if (this.queryDetailsMap[this.getCacheKey(schemaName, queryName)])
+        {
+            if (callback)
+                callback.call(scope || this, this.queryDetailsMap[this.getCacheKey(schemaName, queryName)]);
+            return;
+        }
+
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL('query', 'getQueryDetails.api'),
             method : 'GET',
-            success: LABKEY.Utils.getCallbackWrapper(this.onQueryDetails, this),
+            success: function(response){
+                var qdetails = Ext.util.JSON.decode(response.responseText);
+                this.queryDetailsMap[this.getCacheKey(qdetails.schemaName, qdetails.name)] = qdetails;
+                this.fireEvent("newdetails", qdetails);
+                if (callback)
+                    callback.call(scope || this, qdetails);
+            },
+            scope: this,
             params: {
                 schemaName: schemaName,
                 queryName: queryName
@@ -30,16 +44,11 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
     },
 
     clear : function(schemaName, queryName) {
-        this.queryDetailsMap[getCacheKey(schemaName, queryName)] = undefined;
+        this.queryDetailsMap[this.getCacheKey(schemaName, queryName)] = undefined;
     },
 
     clearAll : function() {
         this.queryDetailsMap = {};
-    },
-
-    onQueryDetails : function(qdetails) {
-        this.queryDetailsMap[this.getCacheKey(qdetails.schemaName, qdetails.name)] = qdetails;
-        this.fireEvent("newdetails", qdetails);
     },
 
     getCacheKey : function(schemaName, queryName) {
@@ -76,13 +85,19 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     initComponent : function() {
         this.addEvents("lookupclick");
         this.bodyStyle = "padding: 5px";
+        this.html = "<p class='lk-qd-loading'>Loading...</p>";
         LABKEY.ext.QueryDetailsPanel.superclass.initComponent.apply(this, arguments);
+        this.cache.loadQueryDetails(this.schemaName, this.queryName, this.setQueryDetails, this);
     },
     
     setQueryDetails : function(queryDetails) {
         this.queryDetails = queryDetails;
-
-        this.body.update(this.buildHtml(this.queryDetails));
+        //if the details are already cached, we might not be rendered yet
+        //in that case, set a delayed task so we have a chance to render first
+        if (this.rendered)
+            this.body.update(this.buildHtml(this.queryDetails));
+        else
+            new Ext.util.DelayedTask(function(){this.setQueryDetails(queryDetails)}, this).delay(10);
     },
 
     buildHtml : function(queryDetails) {
@@ -90,7 +105,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
         html += this.buildLinks(queryDetails);
 
-        html += "<div class='lk-qd-name'>" + queryDetails.schemaName + "." + queryDetails.name + "</div>";
+        var viewDataHref = LABKEY.ActionURL.buildURL("query", "executeQuery", undefined, {schemaName:queryDetails.schemaName,"query.queryName":queryDetails.name});
+        html += "<div class='lk-qd-name'><a href='" + viewDataHref + "'>" + queryDetails.schemaName + "." + queryDetails.name + "</a></div>";
         if (queryDetails.description)
             html += "<div class='lk-qd-description'>" + queryDetails.description + "</div>";
 
@@ -117,6 +133,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (queryDetails.defaultView && queryDetails.defaultView.columns)
         {
             qtip = "When using the LABKEY.Query.selectRows() API, these columns will be returned by default.";
+            html += "<tr><td colspan='6'>&nbsp;</td></tr>";
             html += "<tr><td colspan='6' class='lk-qd-collist-title' ext:qtip='" + qtip + "'>Columns in Your Default View of this Query</td></tr>";
             html += this.buildColumnTableRows(queryDetails.defaultView.columns);
         }
@@ -134,7 +151,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         var html = "<div class='lk-qd-links'>";
         html += this.buildLink("query", "executeQuery", params, "view data", "_blank") + "&nbsp;";
 
-        if (queryDetails.isUserDefined)
+        if (queryDetails.isUserDefined && LABKEY.Security.currentUser.isAdmin)
         {
             html += this.buildLink("query", "designQuery", params, "edit design") + "&nbsp;";
             html += this.buildLink("query", "sourceQuery", params, "edit source") + "&nbsp;";
@@ -173,8 +190,23 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (!col.lookup)
             return "";
 
+        var tipText = "This column is a lookup to " + col.lookup.schemaName + "." + col.lookup.queryName;
+        var caption = col.lookup.schemaName + "." + col.lookup.queryName;
+        if (col.lookup.keyColumn)
+        {
+            caption += "." + col.lookup.keyColumn;
+            tipText += " joining to the column " + col.lookup.keyColumn;
+        }
+        if (col.lookup.displayColumn)
+        {
+            caption += " (" + col.lookup.displayColumn + ")";
+            tipText += " (the value from column " + col.lookup.displayColumn + " is usually displayed in grids)";
+        }
+        tipText += ". To reference columns in the lookup table, use the syntax '" + col.name + "/col-in-lookup-table'.";
+
+
         var onclickScript = "Ext.ComponentMgr.get(\"" + this.id + "\").fireEvent(\"lookupclick\", \"" + col.lookup.schemaName + "\", \"" + col.lookup.queryName + "\");";
-        return "<span class='labkey-link' onclick='" + onclickScript + "'>" + col.lookup.schemaName + "." + col.lookup.queryName + "</span>";
+        return "<span ext:qtip=\"" + tipText + "\"class='labkey-link' onclick='" + onclickScript + "'>" + caption + "</span>";
     },
 
     getColAttrs : function(col) {
@@ -212,10 +244,38 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
 Ext.reg('labkey-query-details-panel', LABKEY.ext.QueryDetailsPanel);
 
+LABKEY.requiresCss("_images/icons.css");
+
 LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     initComponent : function(){
+        var tbar = [
+            {
+                text: 'Refresh',
+                handler: this.onRefresh,
+                scope: this,
+                iconCls:'iconReload'
+            },
+        ];
+
+        if (LABKEY.Security.currentUser.isAdmin)
+        {
+            tbar.push({
+                text: 'Define External Schemas',
+                handler: this.onSchemaAdminClick,
+                scope: this,
+                iconCls: 'iconFolderNew'
+            });
+            tbar.push({
+                text: 'Create New Query',
+                handler: this.onCreateQueryClick,
+                scope: this,
+                iconCls: 'iconFileNew'
+            });
+        }
+
         Ext.apply(this,{
+            _qdcache: new LABKEY.ext.QueryDetailsCache(),
             layout: 'border',
             items : [
                 {
@@ -239,30 +299,26 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 },
                 {
                     id: 'details',
-                    xtype: 'labkey-query-details-panel',
+                    xtype: 'tabpanel',
                     region: 'center',
-                    header: true,
-                    autoScroll: true,
+                    activeTab: 0,
+                    items: [
+                        {
+                            title: 'Home',
+                            html: '<p style="padding: 10px">Choose a query on the left to see information about it.</p>'
+                        }
+                    ],
+                    enableTabScroll:true,
+                    defaults: {autoScroll:true},
                     listeners: {
-                        lookupclick: {
-                            fn: this.onLookupClick,
+                        tabchange: {
+                            fn: this.onTabChange,
                             scope: this
                         }
                     }
                 }
             ],
-           tbar: [
-               {
-                   text: 'Refresh',
-                   handler: this.onRefresh,
-                   scope: this
-               },
-               {
-                   text: 'Schema Administration', //TODO: check for admin perms before adding this!
-                   handler: this.onSchemaAdminClick,
-                   scope: this
-               }
-           ]
+           tbar: tbar
         });
 
         Ext.applyIf(this, {
@@ -277,9 +333,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
         this.addEvents("schemasloaded");
 
-        this._qdcache = new LABKEY.ext.QueryDetailsCache();
-        this._qdcache.on("newdetails", this.onQueryDetails, this);
-
         LABKEY.ext.SchemaBrowser.superclass.initComponent.apply(this, arguments);
     },
 
@@ -293,8 +346,22 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             width : Math.max(100,w-xy[0]-padding[0]),
             height : Math.max(100,h-xy[1]-padding[1])};
         this.setSize(size);
-        if (this.layout.layout) //HACK: during the render event, the layout method isn't setup yet.
-            this.doLayout();
+    },
+
+    onCreateQueryClick : function() {
+        //determine which schema is selected in the tree
+        var tree = this.getComponent("tree");
+        var node = tree.getSelectionModel().getSelectedNode();
+        if (node && node.attributes.schemaName)
+            window.location = LABKEY.ActionURL.buildURL("query", "newQuery", undefined, {schemaName: node.attributes.schemaName});
+        else
+            Ext.Msg.alert("Which Schema?", "Please select the schema in which you want to create the new query.");
+
+    },
+
+    onTabChange : function(tabpanel, tab) {
+        if (tab.queryDetails)
+            this.selectQuery(tab.queryDetails.schemaName, tab.queryDetails.name);
     },
 
     onTreeClick : function(node, evt) {
@@ -305,17 +372,29 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     showQueryDetails : function(schemaName, queryName) {
-        //get the query details and refresh the details view...
-        var qdetails = this._qdcache.getQueryDetails(schemaName, queryName);
-        if (qdetails)
-            this.onQueryDetails(qdetails);
+        var id = schemaName + "." + queryName;
+        var tabs = this.getComponent('details');
+        if (tabs.getComponent(id))
+            tabs.activate(id);
         else
-            this._qdcache.loadQueryDetails(schemaName, queryName);
-
-    },
-
-    onQueryDetails : function(qdetails) {
-        this.getComponent('details').setQueryDetails(qdetails);
+        {
+            var qdetailsPanel = new LABKEY.ext.QueryDetailsPanel({
+                cache: this._qdcache,
+                schemaName: schemaName,
+                queryName: queryName,
+                id: id,
+                title: id,
+                autoScroll: true,
+                listeners: {
+                    lookupclick: {
+                        fn: this.onLookupClick,
+                        scope: this
+                    }
+                },
+                closable: true
+            });
+            tabs.add(qdetailsPanel).show();
+        }
     },
 
     onSchemaAdminClick : function() {
@@ -324,7 +403,13 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     onRefresh : function() {
         this._qdcache.clearAll();
-        this.getComponent('tree').getRootNode().reload();
+        var tabs = this.getComponent("details");
+        //remove all tabs except for the first one (home)
+        while (tabs.items.length > 1)
+        {
+            tabs.remove(tabs.items.length - 1, true);
+        }
+        this.getComponent("tree").getRootNode().reload();
     },
 
     onLookupClick : function(schemaName, queryName) {
@@ -367,7 +452,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
             if (!queryNode)
             {
-                Ext.Msg.alert("Missing Query", "The query " + schemaName + "." + queryName + " was not found in the browser!");
+                Ext.Msg.alert("Missing Query", "The query " + schemaName + "." + queryName + " was not found! It may not be publicly accessible.");
                 return;
             }
 

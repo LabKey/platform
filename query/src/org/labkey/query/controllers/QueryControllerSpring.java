@@ -132,7 +132,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView(QueryControllerSpring.class, "browse.jsp", null);
+            return new JspView<Object>(QueryControllerSpring.class, "browse.jsp", null);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -146,8 +146,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            _form = form;
-            return new JspView<QueryForm>(QueryControllerSpring.class, "begin.jsp", form, errors);
+            return new JspView<QueryForm>(QueryControllerSpring.class, "browse.jsp", form);
 
         }
 
@@ -171,24 +170,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            if (form.getSchemaName().isEmpty())
-                return HttpView.redirect(actionURL(QueryAction.begin));
-
-            if (form.getSchema() == null)
-            {
-                return new HtmlView("<span class='labkey-error'>Schema '" + form.getSchemaName() + "' does not exist.</span>");
-            }
-            else
-            {
-                JspView<QueryForm> customQueriesView = new JspView<QueryForm>(QueryControllerSpring.class, "customQueriesList.jsp", form, errors);
-                customQueriesView.setTitle("User-Defined Queries");
-                customQueriesView.setFrame(WebPartView.FrameType.PORTAL);
-                JspView<QueryForm> builtInTablesView = new JspView<QueryForm>(QueryControllerSpring.class, "builtInTablesList.jsp", form, errors);
-                builtInTablesView.setTitle("Built-In Tables");
-                builtInTablesView.setFrame(WebPartView.FrameType.PORTAL);
-                setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
-                return new VBox(customQueriesView, builtInTablesView);
-            }
+            return new JspView<QueryForm>(QueryControllerSpring.class, "browse.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -16,18 +16,13 @@
 
 .lk-qd-description
 {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
 }
 
 .lk-qd-coltable
 {
     border-collapse: collapse;
-}
-
-.lk-qd-collist-title
-{
-    font-weight: bold;
-    background-color: #CCCCCC;
-    color: #000000;
 }
 
 .lk-qd-coltable th
@@ -39,7 +34,14 @@
 
 .lk-qd-coltable td
 {
-    border-bottom: 1px solid #C0C0C0;
+    border-bottom: 1px solid #CCCCCC;
     padding: 2px;
     vertical-align: top;
+}
+
+.lk-qd-collist-title
+{
+    font-weight: bold;
+    background-color: #F0F0F0;
+    color: #000000;
 }

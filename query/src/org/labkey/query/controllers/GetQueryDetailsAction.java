@@ -139,8 +139,10 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         }
 
         //lookup info
-        if (null != cinfo.getFk() && null != cinfo.getFkTableInfo()
-            && cinfo.getFkTableInfo().isPublic())
+        if (null != cinfo.getFk()
+                && null != cinfo.getFkTableInfo()
+                && cinfo.getFkTableInfo().isPublic()
+                && null != cinfo.getFkTableInfo().getPublicName())
         {
             TableInfo lookupTable = cinfo.getFkTableInfo();
 

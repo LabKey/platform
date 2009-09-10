@@ -289,6 +289,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (!includeMetadata)
             query.setTablesDocument(null);
         TableInfo ret = query.getTableInfo();
+        if (null != ret)
+            ((QueryTableInfo)ret).setDescription(getDescription());
+        
         if (null != ret && null != query.getTablesDocument())
             ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
         errors.addAll(query.getParseErrors());

@@ -64,6 +64,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 schemaProps.put("text", name);
                 schemaProps.put("description", schema.getDescription());
                 schemaProps.put("qtip", schema.getDescription());
+                schemaProps.put("schemaName", name);
 
                 respArray.put(schemaProps);
             }
@@ -107,6 +108,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         fldr.put("qtip", "Custom queries created by you and those shared by others.");
                         fldr.put("expanded", true);
                         fldr.put("children", userDefined);
+                        fldr.put("schemaName", schemaName);
                         respArray.put(fldr);
                     }
 
@@ -118,6 +120,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         fldr.put("qtip", "Queries that are part of the schema by default.");
                         fldr.put("expanded", true);
                         fldr.put("children", builtIn);
+                        fldr.put("schemaName", schemaName);
                         respArray.put(fldr);
                     }
                 }
