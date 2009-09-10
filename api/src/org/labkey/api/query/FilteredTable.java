@@ -38,6 +38,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     @Nullable // if null, means default
     private ContainerFilter _containerFilter;
 
+    private boolean _public = true;
+
     public FilteredTable(TableInfo table)
     {
         super(table.getSchema());
@@ -292,5 +294,15 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public String toString()
     {
         return "FilteredTable over " + _rootTable;
+    }
+
+    public boolean isPublic()
+    {
+        return _public;
+    }
+
+    public void setPublic(boolean aPublic)
+    {
+        _public = aPublic;
     }
 }
