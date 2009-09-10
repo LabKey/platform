@@ -767,7 +767,6 @@ public abstract class SqlDialect
 
         private String getProperty(String methodName) throws ServletException
         {
-
             try
             {
                 Method getUrl = _ds.getClass().getMethod(methodName);
