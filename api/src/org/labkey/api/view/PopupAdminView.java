@@ -22,12 +22,15 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.Group;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
+import org.labkey.api.query.QueryUrls;
 
 import java.io.PrintWriter;
 import java.util.Comparator;
@@ -129,6 +132,13 @@ public class PopupAdminView extends PopupMenuView
 
             if (goToModuleMenu.hasChildren())
                 navTree.addChild(goToModuleMenu);
+        }
+
+        if (user.isDeveloper())
+        {
+            NavTree devMenu = new NavTree("Developer Links");
+            devMenu.addChildren(PopupDeveloperView.getNavTree(context));
+            navTree.addChild(devMenu);
         }
 
         navTree.setId("adminMenu");

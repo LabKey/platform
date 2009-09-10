@@ -112,7 +112,9 @@
     <td class="<%=menuBarClass%>" align="right"><%
         if (currentContext.hasPermission(ACL.PERM_ADMIN))
                 include(new PopupAdminView(currentContext), out);
-            else
+        else if (currentContext.getUser().isDeveloper())
+            include(new PopupDeveloperView(currentContext), out);
+        else
             out.print("<img src='" + currentContext.getContextPath() + "/_.gif'>");
   %></td>
 </tr>

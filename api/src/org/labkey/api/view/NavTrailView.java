@@ -251,6 +251,8 @@ public class NavTrailView extends HttpView
         _out.print("<td align=right>");
         if (context.hasPermission(ACL.PERM_ADMIN))
             include(new PopupAdminView(context));
+        else if (context.getUser().isDeveloper())
+            include(new PopupDeveloperView(context));
         else
             _out.print("&nbsp;");
         _out.print("</td>");

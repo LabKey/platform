@@ -29,4 +29,5 @@ public interface QueryUrls extends UrlProvider
     ActionURL urlCreateSnapshot(Container c);
     ActionURL urlCustomizeSnapshot(Container c);
     ActionURL urlUpdateSnapshot(Container c);
+    ActionURL urlSchemaBrowser(Container c);
 }
