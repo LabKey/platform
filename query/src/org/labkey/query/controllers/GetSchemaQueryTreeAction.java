@@ -29,6 +29,9 @@ import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
@@ -84,7 +87,9 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     JSONArray builtIn = new JSONArray();
 
                     //get built-in queries
-                    for (String qname : uschema.getVisibleTableNames())
+                    List<String> queryNames = new ArrayList<String>(uschema.getVisibleTableNames());
+                    Collections.sort(queryNames);
+                    for (String qname : queryNames)
                     {
                         TableInfo tinfo = uschema.getTable(qname);
                         if (null == tinfo)
@@ -93,10 +98,14 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     }
 
                     //get user-defined queries
-                    for (Map.Entry<String, QueryDefinition> entry : QueryService.get().getQueryDefs(container, uschema.getSchemaName()).entrySet())
+                    Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(container, uschema.getSchemaName());
+                    queryNames = new ArrayList<String>(queryDefMap.keySet());
+                    Collections.sort(queryNames);
+                    for (String qname : queryNames)
                     {
-                        if (!entry.getValue().isHidden())
-                            addQueryToList(schemaName, entry.getKey(), entry.getValue().getDescription(), userDefined);
+                        QueryDefinition qdef = queryDefMap.get(qname);
+                        if (!qdef.isHidden())
+                            addQueryToList(schemaName, qname, qdef.getDescription(), userDefined);
                     }
 
                     //group the user-defined and built-in queries into folders

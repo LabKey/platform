@@ -93,6 +93,11 @@ public class QueryControllerSpring extends SpringActionController
         {
             return new ActionURL(UpdateSnapshotAction.class, c);
         }
+
+        public ActionURL urlSchemaBrowser(Container c)
+        {
+            return new ActionURL(BeginAction.class, c);
+        }
     }
 
     private ActionURL actionURL(QueryAction action)
