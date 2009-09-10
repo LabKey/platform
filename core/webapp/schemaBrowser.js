@@ -149,7 +149,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         params["query.queryName"] = queryDetails.name;
 
         var html = "<div class='lk-qd-links'>";
-        html += this.buildLink("query", "executeQuery", params, "view data", "_blank") + "&nbsp;";
+        html += this.buildLink("query", "executeQuery", params, "view data") + "&nbsp;";
 
         if (queryDetails.isUserDefined && LABKEY.Security.currentUser.isAdmin)
         {
@@ -157,6 +157,10 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             html += this.buildLink("query", "sourceQuery", params, "edit source") + "&nbsp;";
             html += this.buildLink("query", "deleteQuery", params, "delete query") + "&nbsp;";
             html += this.buildLink("query", "propertiesQuery", params, "edit properties");
+        }
+        else
+        {
+            html += this.buildLink("query", "metadataQuery", params, "customize display");
         }
 
         html += "</div>";
