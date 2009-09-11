@@ -16,7 +16,6 @@
 
 package org.labkey.study;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -25,24 +24,24 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
-import org.labkey.study.query.*;
+import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 
@@ -337,7 +336,7 @@ public class StudyServiceImpl implements StudyService.Service
         {
             String name = col.getName();
             if (mvColumnNames.contains(name))
-                continue; // We've have already processed this field
+                continue; // We've already processed this field
             Object value = origData.get(name);
 
             if (col.isMvEnabled())
@@ -347,8 +346,7 @@ public class StudyServiceImpl implements StudyService.Service
                 String mvIndicator = (String)origData.get(mvColumnName);
                 if (mvIndicator != null)
                 {
-                    MvFieldWrapper mvWrapper = new MvFieldWrapper(value, mvIndicator);
-                    value = mvWrapper;
+                    value = new MvFieldWrapper(value, mvIndicator);
                 }
             }
 

@@ -52,7 +52,7 @@ public class DatasetDomainKind extends DomainKind
         try
         {
             Lsid lsid = new Lsid(domainURI);
-            if (lsid.getNamespacePrefix().equalsIgnoreCase("StudyDataset"))
+            if ("StudyDataset".equalsIgnoreCase(lsid.getNamespacePrefix()))
                 return true;
         }
         catch (Exception x)

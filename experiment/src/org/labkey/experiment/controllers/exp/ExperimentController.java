@@ -39,6 +39,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
@@ -2342,7 +2343,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ACL.PERM_UPDATE)
     public class ShowUploadMaterialsAction extends SimpleViewAction<UploadMaterialSetForm>
     {
-        public ModelAndView getView(UploadMaterialSetForm form, BindException errors) throws Exception
+        public ModelAndView getView(UploadMaterialSetForm form, BindException errors) throws ServletException
         {
             if (isPost())
             {
@@ -2383,6 +2384,10 @@ public class ExperimentController extends SpringActionController
                         HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetURL(newSampleSet));
                     }
                     catch (ExperimentException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+                    catch (ValidationException e)
                     {
                         errors.reject(ERROR_MSG, e.getMessage());
                     }

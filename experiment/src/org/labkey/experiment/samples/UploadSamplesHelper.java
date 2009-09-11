@@ -16,29 +16,32 @@
 
 package org.labkey.experiment.samples;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
-import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.IOException;
 
 public class UploadSamplesHelper
 {
@@ -97,34 +100,43 @@ public class UploadSamplesHelper
 
             ColumnDescriptor[] columns = tl.getColumns();
 
-            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(materialSourceLsid, getContainer());
-            Map<String, PropertyDescriptor> descriptorsByName = OntologyManager.createImportPropertyMap(pds);
-            ArrayList<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>(Arrays.asList(pds));
-            
-            DomainDescriptor dd = new DomainDescriptor();
-            dd.setDomainURI(materialSourceLsid);
-            dd.setContainer(getContainer());
+            Domain domain = PropertyService.get().getDomain(getContainer(), materialSourceLsid);
+            if (domain == null)
+            {
+                domain = PropertyService.get().createDomain(getContainer(), materialSourceLsid, _form.getName());
+            }
+            Map<String, DomainProperty> descriptorsByName = domain.createImportMap(true);
 
-            int sortOrder = pds.length;
+            boolean addedProperty = false;
             for (ColumnDescriptor cd : columns)
             {
-                PropertyDescriptor pd = descriptorsByName.get(cd.name);
+                DomainProperty pd = descriptorsByName.get(cd.name);
                 if (pd == null || source == null)
                 {
-                    pd = new PropertyDescriptor();
+                    pd = domain.addProperty();
                     //todo :  name for domain?
                     pd.setName(cd.name);
                     String legalName = ColumnInfo.legalNameFromName(cd.name);
                     String propertyURI = materialSourceLsid + "#" + legalName;
                     pd.setPropertyURI(propertyURI);
                     pd.setRangeURI(PropertyType.getFromClass(cd.clazz).getTypeUri());
-                    pd.setContainer(_form.getContainer());
                     //Change name to be fully qualified string for property
-                    pd = OntologyManager.insertOrUpdatePropertyDescriptor(pd, dd, sortOrder++);
-                    descriptors.add(pd);
                     descriptorsByName.put(pd.getName(), pd);
+                    addedProperty = true;
                 }
                 cd.name = pd.getPropertyURI();
+            }
+
+            if (addedProperty)
+            {
+                // Need to save the domain - it has at least one new property
+                domain.save(_form.getUser());
+            }
+
+            List<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>();
+            for (DomainProperty property : domain.getProperties())
+            {
+                descriptors.add(property.getPropertyDescriptor());
             }
 
             List<String> idColPropertyURIs;

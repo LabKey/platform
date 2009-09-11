@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -24,10 +25,10 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
@@ -41,18 +42,18 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-import org.json.JSONArray;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PipelineController extends SpringActionController
 {
@@ -404,165 +405,6 @@ public class PipelineController extends SpringActionController
             return root.addChild("Data Pipeline Setup");
         }        
     }
-
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class OldAction extends SimpleViewAction<PathForm>
-    {
-        private boolean _fileView;
-
-        // Necessary for nav tree
-        private String _path;
-        private PipelineProvider.FileEntry[] _entries = new PipelineProvider.FileEntry[0];
-
-        public boolean isFileView()
-        {
-            return _fileView;
-        }
-
-        public void setFileView(boolean fileView)
-        {
-            _fileView = fileView;
-        }
-
-        public void validate(PathForm form, BindException errors)
-        {
-        }
-
-        // CONSIDER: PipelineProvider.FileEntry should proabably extend NavTree
-        public ModelAndView getView(PathForm form, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-
-            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-
-            if (pr == null || !URIUtil.exists(pr.getUri()))
-                return HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
-
-            URI uriRoot = pr.getUri(c);
-
-            _path = form.getPath();
-            if ("./".equals(_path))
-                _path = "";
-            if (_path == null)
-                _path = pr.getStartingPath(getContainer(), getUser());
-            else
-                pr.rememberStartingPath(getContainer(), getUser(), _path);
-
-            URI current = URIUtil.resolve(uriRoot, _path);
-            if (current == null)
-                return HttpView.throwNotFound();
-
-            File fileCurrent = new File(current);
-            if (!fileCurrent.exists())
-                HttpView.throwNotFound("File not found: " + current.getPath());
-            setHelpTopic(getHelpTopic("pipeline/browse"));
-
-            saveReferer();
-
-            URI uriCurrent = URIUtil.resolve(uriRoot, this._path);
-
-            ActionURL browseURL = new ActionURL(OldAction.class, c);
-
-            List<PipelineProvider.FileEntry> parents = new ArrayList<PipelineProvider.FileEntry>();
-            List<PipelineProvider.FileEntry> dirEntries = new ArrayList<PipelineProvider.FileEntry>();
-            for (URI parent = uriCurrent; parent != null; parent = URIUtil.getParentURI(uriRoot, parent))
-            {
-                browseURL.replaceParameter("path", toRelativePath(uriRoot, parent));
-                PipelineProvider.FileEntry entry = new PipelineProvider.FileEntry(parent, browseURL, true);
-                entry.setLabel(new File(parent).getName());
-                parents.add(0, entry);
-
-                if (parents.size() == 1)
-                {
-                    File[] directories = entry.listFiles(new PipelineProvider.FileEntryFilter() {
-                        public boolean accept(File f)
-                        {
-                            return f.isDirectory() && !f.getName().startsWith(".");
-                        }
-                    });
-                    Arrays.sort(directories, new Comparator<File>()
-                    {
-                        public int compare(File f1, File f2)
-                        {
-                            return f1.getPath().compareToIgnoreCase(f2.getPath());
-                        }
-                    });
-
-                    for (File dir : directories)
-                    {
-                        URI uri = dir.toURI();
-                        browseURL.replaceParameter("path", toRelativePath(uriRoot, uri));
-                        dirEntries.add(new PipelineProvider.FileEntry(uri, browseURL, false));
-                    }
-
-                    List<PipelineProvider> providers;
-                    if (isFileView())
-                    {
-                        providers = new ArrayList<PipelineProvider>();
-                        providers.add(new FileContentPipelineProvider());
-                    }
-                    else
-                    {
-                        providers = PipelineService.get().getPipelineProviders();
-                    }
-
-                    for (PipelineProvider provider : providers)
-                        provider.updateFileProperties(getViewContext(), pr, parents);
-
-                    // keep actions in consistent order for display
-                    entry.orderActions();
-                }
-            }
-
-            if (c == pr.getContainer())
-                parents.get(0).setLabel("root");
-
-            _entries = parents.toArray(new PipelineProvider.FileEntry[parents.size()]);
-
-            JspView<PathForm> directoryView = new JspView<PathForm>("/org/labkey/pipeline/directory.jsp",form);
-            directoryView.setFrame(WebPartView.FrameType.DIV);
-            //directoryView.setTitle("Process and Import Data");
-            directoryView.addObject("pipeRoot", pr);
-            directoryView.addObject("parents", parents);
-            directoryView.addObject("entries", dirEntries);
-            directoryView.addObject("showCheckboxes", false);
-
-            return directoryView;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            String caption = isFileView() ?
-                    "Manage files" :
-                    "Process and Import Data";
-
-            if (_entries.length == 0)
-                return root.addChild(caption);
-
-            NavTree added = root.addChild(caption + " (root)", _entries[0].getHref());
-            for (int i = 1 ; i < _entries.length; i++)
-                added = root.addChild(_entries[i].getLabel(), _entries[i].getHref());
-
-            if (_path.length() > 0 && !_path.equals("./"))
-            {
-                String title = caption;
-                try
-                {
-                    title += " - /" + URLDecoder.decode(_path, "UTF-8");
-                    if (title.endsWith("/"))
-                        title = title.substring(0,title.length()-1);
-                }
-                catch (UnsupportedEncodingException e)
-                {
-                }
-                added = root.addChild(title);
-            }
-
-            return added;
-        }
-    }
-
 
     @RequiresPermission(ACL.PERM_READ)
     public class BrowseAction extends SimpleViewAction<PathForm>

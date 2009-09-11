@@ -15,12 +15,14 @@
  */
 package org.labkey.query.metadata.client;
 
-import org.labkey.api.gwt.client.ui.*;
-import org.labkey.api.gwt.client.ui.property.FormatItem;
-import org.labkey.api.gwt.client.ui.property.DescriptionItem;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import com.google.gwt.user.client.ui.*;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.ui.property.DescriptionItem;
+import org.labkey.api.gwt.client.ui.property.FormatItem;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -116,13 +118,20 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         buttonPanel.add(getWrapFieldButton());
     }
 
-    protected PropertyPane<GWTTableInfo, GWTColumnInfo> createPropertyPane(DockPanel propertyDock)
+    protected int getExtraPropertiesHeight()
     {
-        PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(propertyDock.getElement(), this);
-        propertyPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        return 130;
+    }
+
+    protected List<PropertyPane<GWTTableInfo, GWTColumnInfo>> createPropertyPanes(DockPanel propertyDock)
+    {
+        PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Additional Properties");
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        propertyPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
-        return propertyPane;
+        List<PropertyPane<GWTTableInfo, GWTColumnInfo>> result = new ArrayList<PropertyPane<GWTTableInfo, GWTColumnInfo>>();
+        result.add(propertyPane);
+        return result;
     }
 
     @Override

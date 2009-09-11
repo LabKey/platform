@@ -33,14 +33,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.list.DomainAuditViewFactory;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DomainImpl implements Domain
 {
@@ -251,12 +249,13 @@ public class DomainImpl implements Domain
                 }
                 else
                 {
-                    propChanged = impl.isDirty();
+                    propChanged |= impl.isDirty();
                     if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
                         keyColumnsChanged = true;
                     impl.save(user, _dd, sortOrder++);
                 }
             }
+            _new = false;
             if (propChanged)
                 addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
 
@@ -315,6 +314,56 @@ public class DomainImpl implements Domain
 
             AuditLogService.get().addEvent(event);
         }
+    }
+
+    public Map<String, DomainProperty> createImportMap(boolean includeMVIndicators)
+    {
+        DomainPropertyImpl[] properties = getProperties();
+        HashMap<String, DomainProperty> m = new CaseInsensitiveHashMap<DomainProperty>(properties.length * 3);
+        DomainPropertyImpl[] reversedProperties = new DomainPropertyImpl[properties.length];
+        int index = 0;
+        // Reverse the order of the descriptors so that we can preserve the right priority for resolving by names, aliases, etc
+        for (DomainPropertyImpl prop : properties)
+        {
+            reversedProperties[reversedProperties.length - (index++) - 1] = prop;
+        }
+
+        // PropertyURI is lowest priority, so put it in the map first so it will be overwritten by higher priority usages
+        for (DomainPropertyImpl property : reversedProperties)
+        {
+            m.put(property.getPropertyURI(), property);
+        }
+        // Then aliases
+        for (DomainPropertyImpl property : reversedProperties)
+        {
+            for (String alias : property.getImportAliasSet())
+            {
+                m.put(alias, property);
+            }
+        }
+        // Then labels
+        for (DomainPropertyImpl property : reversedProperties)
+        {
+            if (null != property.getLabel())
+                m.put(property.getLabel(), property);
+            else
+                m.put(ColumnInfo.labelFromName(property.getName()), property); // If no label, columns will create one for captions
+        }
+        if (includeMVIndicators)
+        {
+            // Then missing value-specific columns
+            for (DomainPropertyImpl property : reversedProperties)
+            {
+                if (property.isMvEnabled())
+                    m.put(property.getName() + MvColumn.MV_INDICATOR_SUFFIX, property);
+            }
+        }
+        // Finally, names have the highest priority
+        for (DomainPropertyImpl property : reversedProperties)
+        {
+            m.put(property.getName(), property);
+        }
+        return m;
     }
 
     public DomainProperty addProperty()

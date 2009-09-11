@@ -401,21 +401,19 @@ td.labkey-main-menu
 }
 
 .gwt-TabPanelBottom {
-  border: 1px solid #<%=navBorder%>;
+  border-color: #<%=navBorder%>;
 }
 
 .gwt-TabBar .gwt-TabBarRest {
-  border-left: 1px solid #<%=navBorder%>;
+  border-color: #<%=navBorder%>;
 }
 
 .gwt-TabBar .gwt-TabBarItem {
-  border-top: 1px solid #<%=navBorder%>;
-  border-left: 1px solid #<%=navBorder%>;
+  border-color: #<%=navBorder%>;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected {
-  border-top: 1px solid #<%=navBorder%>;
-  border-left: 1px solid #<%=navBorder%>;
+  border-color: #<%=navBorder%>;
 }
 
 .gwt-StackPanel .gwt-StackPanelItem {

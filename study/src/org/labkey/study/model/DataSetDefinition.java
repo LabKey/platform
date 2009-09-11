@@ -29,11 +29,13 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
@@ -813,6 +815,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
             return standardPropertySet;
         }
+    }
+
+    public Domain getDomain()
+    {
+        return PropertyService.get().getDomain(getContainer(), getTypeURI());
     }
 
     public static Map<String,PropertyDescriptor> getStandardPropertiesMap()

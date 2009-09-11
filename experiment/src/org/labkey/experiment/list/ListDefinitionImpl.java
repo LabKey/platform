@@ -318,8 +318,8 @@ public class ListDefinitionImpl implements ListDefinition
             if (property.isMvEnabled())
                 mvIndicatorColumnNames.add(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
         }
-        Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
-        Map<String, PropertyDescriptor> foundProperties = new CaseInsensitiveHashMap<PropertyDescriptor>();
+        Map<String, DomainProperty> propertiesByName = getDomain().createImportMap(true);
+        Map<String, DomainProperty> foundProperties = new CaseInsensitiveHashMap<DomainProperty>();
         ColumnDescriptor cdKey = null;
 
         Object errorValue = new Object();
@@ -336,7 +336,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
         for (ColumnDescriptor cd : columns)
         {
-            PropertyDescriptor property = propertiesByName.get(cd.name);
+            DomainProperty property = propertiesByName.get(cd.name);
             cd.errorValues = errorValue;
 
             if (property != null)
@@ -350,7 +350,7 @@ public class ListDefinitionImpl implements ListDefinition
                 }
                 else
                 {
-                    cd.clazz = property.getPropertyType().getJavaType();
+                    cd.clazz = property.getPropertyDescriptor().getPropertyType().getJavaType();
 
                     if (foundProperties.containsKey(cd.name))
                     {
@@ -358,7 +358,7 @@ public class ListDefinitionImpl implements ListDefinition
                     }
                     if (foundProperties.containsValue(property) && !property.isMvEnabled())
                     {
-                        errors.add("The fields '" + property.getName() + "' and '" + property.getNonBlankCaption() + "' refer to the same property.");
+                        errors.add("The fields '" + property.getName() + "' and '" + property.getPropertyDescriptor().getNonBlankCaption() + "' refer to the same property.");
                     }
                     foundProperties.put(cd.name, property);
                     cd.name = property.getPropertyURI();
@@ -501,7 +501,7 @@ public class ListDefinitionImpl implements ListDefinition
         return errors;
     }
 
-    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, List<Map<String, Object>> rows, List<String> errors)
+    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, List<String> errors)
     {
         boolean transaction = false;
 
@@ -521,7 +521,11 @@ public class ListDefinitionImpl implements ListDefinition
             ListImportHelper helper = new ListImportHelper(user, this, used.toArray(new DomainProperty[used.size()]), cdKey);
 
             // our map of properties can have duplicates due to MV indicator columns (different columns, same URI)
-            Set<PropertyDescriptor> propSet = new HashSet<PropertyDescriptor>(properties.values());
+            Set<PropertyDescriptor> propSet = new HashSet<PropertyDescriptor>();
+            for (DomainProperty domainProperty : properties.values())
+            {
+                propSet.add(domainProperty.getPropertyDescriptor());
+            }
 
             PropertyDescriptor[] pds = propSet.toArray(new PropertyDescriptor[propSet.size()]);
             OntologyManager.insertTabDelimited(getContainer(), null, helper, pds, rows, true);

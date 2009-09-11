@@ -518,8 +518,8 @@ experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleInfo.java -te
 experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetService.java -text
 experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetServiceAsync.java -text
 experiment/module.properties -text
-experiment/queries/exp/RunGroups/NameOnly.qview.xml -text
-experiment/queries/exp/SampleSets/NameOnly.qview.xml -text
+experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
+experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
 experiment/resources/schemas/dbscripts/postgresql/exp-0.00-1.40.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-1.50-1.60.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-1.60-1.70.sql -text
@@ -546,6 +546,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-9.10-9.11.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.10-9.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.11-9.12.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.21-9.22.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-9.22-9.23.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -631,6 +632,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-9.10-9.11.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.10-9.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.11-9.12.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.21-9.22.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-9.22-9.23.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -1153,7 +1155,6 @@ pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
-pipeline/src/org/labkey/pipeline/directory.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text

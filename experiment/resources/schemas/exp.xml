@@ -265,6 +265,7 @@
       <ns:column columnName="MvEnabled"/>
       <ns:column columnName="Hidden"/>
       <ns:column columnName="DefaultValueType"/>
+      <ns:column columnName="ImportAliases"/>
   </ns:columns>
   </ns:table>
   <ns:table tableName="DomainDescriptor" tableDbType="TABLE">

@@ -1685,24 +1685,27 @@ table.labkey-r-tsvout
 }
 
 .gwt-TabBar .gwt-TabBarRest {
-  border-left: 1px solid #89A1B4;
   padding-right: 3px;
 }
 
 .gwt-TabBar .gwt-TabBarItem {
   border-top: 1px solid #89A1B4;
   border-left: 1px solid #89A1B4;
+  border-right: 1px solid #89A1B4;
+  margin-right: 6px;
   padding: 2px;
   cursor: pointer;
   cursor: hand;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected {
-  font-weight: bold;
-  border-top: 1px solid #89A1B4;
-  border-left: 1px solid #89A1B4;
   padding: 2px;
+  margin-right: 6px;
   cursor: default;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected div {
+  font-weight: bold;
 }
 
 .gwt-Tree {

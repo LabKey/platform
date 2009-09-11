@@ -490,6 +490,7 @@ public class PropertyController extends SpringActionController
         prop.setLookupContainer((String)obj.get("lookupContainer"));
         prop.setLookupSchema((String)obj.get("lookupSchema"));
         prop.setLookupQuery((String)obj.get("lookupQuery"));
+        prop.setImportAliases((String)obj.get("importAliases"));
 
         return prop;
     }
