@@ -38,8 +38,8 @@ public class DescriptionItem<DomainType extends GWTDomain<FieldType>, FieldType 
 
     public int addToTable(FlexTable flexTable, int row)
     {
-        _descriptionTextArea.addChangeListener(createChangeListener());
-        _descriptionTextArea.addKeyboardListener(createKeyboardListener());
+        _descriptionTextArea.addChangeHandler(createChangeHandler());
+        _descriptionTextArea.addKeyUpHandler(createKeyUpHandler());
 
         flexTable.setWidget(row, LABEL_COLUMN, new Label("Description"));
         DOM.setElementProperty(_descriptionTextArea.getElement(), "id", "propertyDescription");

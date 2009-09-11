@@ -69,8 +69,8 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
 
     public int addToTable(FlexTable flexTable, int row)
     {
-        _formatTextBox.addChangeListener(createChangeListener());
-        _formatTextBox.addKeyboardListener(createKeyboardListener());
+        _formatTextBox.addChangeHandler(createChangeHandler());
+        _formatTextBox.addKeyUpHandler(createKeyUpHandler());
 
         FlowPanel labelPanel = new FlowPanel();
         _label = new InlineLabel("Format");

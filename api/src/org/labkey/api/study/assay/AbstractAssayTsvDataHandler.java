@@ -135,7 +135,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDPs.length];
             for (int i = 0; i < dataDPs.length; i++)
                 dataProperties[i] = dataDPs[i].getPropertyDescriptor();
-            Map<String, PropertyDescriptor> propertyNameToDescriptor = OntologyManager.createImportPropertyMap(dataProperties);
+            Map<String, DomainProperty> propertyNameToDescriptor = dataDomain.createImportMap(true);
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
             if (!ExperimentService.get().isTransactionActive())
@@ -205,7 +205,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         if (!strict)
         {
             if (unexpected.size() > 0)
-                filterColumns(expected, actual, rawData);
+                filterColumns(dataDomain, actual, rawData);
             unexpected.clear();
         }
 
@@ -219,20 +219,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    private void filterColumns(DomainProperty[] expected, Set<String> actual, List<Map<String, Object>> rawData)
+    private void filterColumns(Domain domain, Set<String> actual, List<Map<String, Object>> rawData)
     {
         Map<String,String> expectedKey2ActualKey = new HashMap<String,String>();
-        for (DomainProperty expectedCol : expected)
+        for (Map.Entry<String,DomainProperty> aliased : domain.createImportMap(true).entrySet())
         {
             for (String actualKey : actual)
             {
-                if (actualKey.equalsIgnoreCase(expectedCol.getName()))
+                if (actualKey.equalsIgnoreCase(aliased.getKey()))
                 {
-                    expectedKey2ActualKey.put(actualKey, actualKey);
-                }
-                else if (actualKey.equalsIgnoreCase(expectedCol.getLabel()))
-                {
-                    expectedKey2ActualKey.put(expectedCol.getName(), actualKey);
+                    expectedKey2ActualKey.put(aliased.getValue().getName(), actualKey);
                 }
             }
         }
@@ -325,16 +321,29 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Set<ExpMaterial> materialInputs = new LinkedHashSet<ExpMaterial>();
 
+        Map<String, DomainProperty> aliasMap = dataDomain.createImportMap(true);
+
         for (int i = 0; i < rawData.size(); i++)
         {
-            Map<String, Object> map = new CaseInsensitiveHashMap<Object>(rawData.get(i));
+            Map<String, Object> map = new CaseInsensitiveHashMap<Object>();
+            // Rekey the map, resolving aliases to the actual property names
+            for (Map.Entry<String, Object> entry : rawData.get(i).entrySet())
+            {
+                DomainProperty prop = aliasMap.get(entry.getKey());
+                if (prop != null)
+                {
+                    map.put(prop.getName(), entry.getValue());
+                }
+            }
+
             String participantID = null;
             String specimenID = null;
             Double visitID = null;
             Date date = null;
+
             for (DomainProperty pd : columns)
             {
-                Object o = map.get(pd.getName());
+                Object o = map.get(pd.getPropertyURI());
                 if (participantPD == pd)
                 {
                     participantID = o instanceof String ? (String)o : null;
@@ -417,7 +426,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return materialInputs;
     }
 
-    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, PropertyDescriptor> propertyNamesToUris)
+    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, DomainProperty> propertyNamesToUris)
     {
         List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.size());
         for (Map<String, Object> dataMap : dataMaps)
@@ -425,7 +434,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             CaseInsensitiveHashMap<Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size());
             for (Map.Entry<String, Object> entry : dataMap.entrySet())
             {
-                PropertyDescriptor pd = propertyNamesToUris.get(entry.getKey().toLowerCase());
+                DomainProperty pd = propertyNamesToUris.get(entry.getKey().toLowerCase());
                 if (pd == null)
                     throw new RuntimeException("Expected uri for datamap property '" + entry.getKey() + "'.");
                 newMap.put(pd.getPropertyURI(), entry.getValue());

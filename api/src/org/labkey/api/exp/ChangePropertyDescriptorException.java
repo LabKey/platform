@@ -20,7 +20,7 @@ package org.labkey.api.exp;
 * User: jeckels
 * Date: Feb 19, 2008
 */
-public class ChangePropertyDescriptorException extends Exception
+public class ChangePropertyDescriptorException extends ExperimentException
 {
     public ChangePropertyDescriptorException(String message)
     {
@@ -28,6 +28,6 @@ public class ChangePropertyDescriptorException extends Exception
     }
     public ChangePropertyDescriptorException(Throwable cause)
     {
-        super("An exception occurred: " + cause, cause);
+        super(cause);
     }
 }

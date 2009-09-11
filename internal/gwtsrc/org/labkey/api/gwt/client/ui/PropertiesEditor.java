@@ -16,23 +16,28 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.FocusEvent;
+import com.google.gwt.event.dom.client.FocusHandler;
+import com.google.gwt.event.logical.shared.SelectionHandler;
+import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.FocusHandler;
-import com.google.gwt.event.dom.client.FocusEvent;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.util.StringUtils;
-import org.labkey.api.gwt.client.util.IPropertyWrapper;
-import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.ui.property.*;
+import org.labkey.api.gwt.client.util.IPropertyWrapper;
+import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringProperty;
+import org.labkey.api.gwt.client.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,6 +49,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 {
     public static final String currentFolder = "[current folder]";
     private VerticalPanel _contentPanel;
+    private TabPanel _extraPropertiesTabPanel = new TabPanel();
+    private Image _spacerImage;
 
     public enum FieldStatus
     {
@@ -67,7 +74,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     private Saveable<GWTDomain> _owner;
     private DockPanel _panel;
-    private PropertyPane<DomainType, FieldType> _propertiesPane;
+    private List<PropertyPane<DomainType, FieldType>> _propertiesPanes;
     private VerticalPanel _noColumnsPanel;
     private FlexTable _table;
     private HorizontalPanel _buttonPanel;
@@ -117,9 +124,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _noColumnsPanel = new VerticalPanel();
         _noColumnsPanel.add(new HTML("<br/>No fields have been defined.<br/>&nbsp;"));
 
-        ClickListener addListener = new ClickListener()
+        ClickHandler addListener = new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
                 prop.setDefaultValueType(_domain.getDefaultDefaultValueType());
@@ -131,9 +138,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         _addFieldButton = new ImageButton("Add Field", addListener);
 
-        ClickListener importSchemaListener = new ClickListener()
+        ClickHandler importSchemaListener = new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
                 popup.setText("Import Schema");
@@ -141,9 +148,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         };
 
-        ClickListener exportSchemaListener = new ClickListener()
+        ClickHandler exportSchemaListener = new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
                 popup.setText("Export Schema");
@@ -151,9 +158,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         };
 
-        ClickListener inferSchemaListener = new ClickListener()
+        ClickHandler inferSchemaListener = new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
                 popup.setText("Infer Schema");
@@ -174,8 +181,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         DockPanel propertyDock = new DockPanel();
 
-        _propertiesPane = createPropertyPane(propertyDock);
-        _propertiesPane.addChangeListener(new ChangeListener()
+        _propertiesPanes = createPropertyPanes(propertyDock);
+
+        ChangeListener listener = new ChangeListener()
         {
             public void onChange(Widget sender)
             {
@@ -185,22 +193,46 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 }
                 fireChangeEvent();
             }
+        };
+        for (PropertyPane<DomainType, FieldType> propertiesPane : _propertiesPanes)
+        {
+            propertiesPane.addChangeListener(listener);
+            DockPanel wrapper = new DockPanel();
+            // Stick the properties panel in a DockPanel so that it doesn't get stretched to fill the full
+            // TabPanel size
+            wrapper.add(propertiesPane, DockPanel.NORTH);
+
+            _extraPropertiesTabPanel.add(wrapper, propertiesPane.getName());
+        }
+        _extraPropertiesTabPanel.getDeckPanel().setHeight("100%");
+        DOM.setStyleAttribute(_extraPropertiesTabPanel.getDeckPanel().getElement(), "backgroundColor", "#eeeeee");
+
+        _extraPropertiesTabPanel.setPixelSize(350, getExtraPropertiesHeight());
+        DOM.setStyleAttribute(_extraPropertiesTabPanel.getDeckPanel().getElement(), "borderWidth", "1 0 0 0");
+        _extraPropertiesTabPanel.selectTab(0);
+        _extraPropertiesTabPanel.addSelectionHandler(new SelectionHandler<Integer>()
+        {
+            public void onSelection(SelectionEvent<Integer> integerSelectionEvent)
+            {
+                repositionExtraProperties();
+            }
         });
+
+        _spacerImage = new Image(PropertyUtil.getContextPath() + "/_.gif");
+        _spacerImage.setPixelSize(1, 1);
+
         _panel.add(_contentPanel, DockPanel.CENTER);
         _panel.setCellHorizontalAlignment(_contentPanel, HasHorizontalAlignment.ALIGN_LEFT);
         _panel.setCellVerticalAlignment(_contentPanel, HasVerticalAlignment.ALIGN_TOP);
         _panel.setCellWidth(_contentPanel, "100%");
 
-        HorizontalPanel fillerPanel = new HorizontalPanel();
-        propertyDock.add(_propertiesPane, DockPanel.NORTH);
-        propertyDock.add(fillerPanel, DockPanel.CENTER);
+        propertyDock.add(_spacerImage, DockPanel.NORTH);
+        propertyDock.add(_extraPropertiesTabPanel, DockPanel.CENTER);
+        propertyDock.setVerticalAlignment(HasVerticalAlignment.ALIGN_TOP);
 
         _panel.add(propertyDock, DockPanel.EAST);
         _panel.setCellHorizontalAlignment(propertyDock, HasHorizontalAlignment.ALIGN_RIGHT);
         _panel.setCellVerticalAlignment(propertyDock, HasVerticalAlignment.ALIGN_TOP);
-        _panel.setCellHeight(propertyDock, "100%");
-        fillerPanel.setHeight("100%");
-        propertyDock.setHeight("100%");
 
         int col=0;
         col++;  // status
@@ -221,20 +253,32 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _readOnly = false;
     }
 
-    protected PropertyPane<DomainType, FieldType> createPropertyPane(DockPanel propertyDock)
+    protected int getExtraPropertiesHeight()
     {
-        PropertyPane<DomainType, FieldType> propertyPane = new PropertyPane<DomainType, FieldType>(propertyDock.getElement(), this);
-        propertyPane.addItem(new FormatItem<DomainType, FieldType>(propertyPane));
-        RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(propertyPane);
-        propertyPane.addItem(requiredItem);
+        return 270;
+    }
+
+    protected List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)
+    {
+        PropertyPane<DomainType, FieldType> basicPropertyPane = new PropertyPane<DomainType, FieldType>(this, "Additional Properties");
+        basicPropertyPane.addItem(new DescriptionItem<DomainType, FieldType>(basicPropertyPane));
+        basicPropertyPane.addItem(new FormatItem<DomainType, FieldType>(basicPropertyPane));
+        RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(basicPropertyPane);
+        basicPropertyPane.addItem(requiredItem);
         // 7441 : de-clutter PropertyDescriptor editor, remove Hidden checkbox
         //propertyPane.addItem(new HiddenItem<DomainType, FieldType>(propertyPane));
-        propertyPane.addItem(new MvEnabledItem<DomainType, FieldType>(propertyPane));
-        _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, propertyPane);
-        propertyPane.addItem(_defaultValueSelector);
-        propertyPane.addItem(new DescriptionItem<DomainType, FieldType>(propertyPane));
-        propertyPane.addItem(new ValidatorItem<DomainType, FieldType>(propertyPane));
-        return propertyPane;
+        basicPropertyPane.addItem(new MvEnabledItem<DomainType, FieldType>(basicPropertyPane));
+        _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, basicPropertyPane);
+        basicPropertyPane.addItem(_defaultValueSelector);
+        basicPropertyPane.addItem(new ImportAliasesItem<DomainType, FieldType>(basicPropertyPane));
+
+        PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
+        validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(basicPropertyPane));
+
+        List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
+        result.add(basicPropertyPane);
+        result.add(validatorPane);
+        return result;
     }
 
     public Saveable getOwner()
@@ -349,11 +393,13 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             FieldStatus status = getStatus(pd);
             boolean readOnly = _readOnly || status == FieldStatus.Deleted;
-            boolean locked = isLocked(index);
 
             int tableRow = index + 1;
 
-            _propertiesPane.showPropertyDescriptor(pd, !readOnly, _table.getWidget(tableRow, 4).getAbsoluteTop());
+            for (PropertyPane<DomainType, FieldType> propertiesPane : _propertiesPanes)
+            {
+                propertiesPane.showPropertyDescriptor(pd, !readOnly);
+            }
             if (_defaultValueSelector != null)
             {
                 _defaultValueSelector.setEnabled(_domain.getDefaultValueOptions().length > 0);
@@ -361,15 +407,40 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
             Element e = _table.getRowFormatter().getElement(tableRow);
             DOM.setStyleAttribute(e, "backgroundColor", "#eeeeee");
+            _extraPropertiesTabPanel.setVisible(true);
+
+            repositionExtraProperties();
         }
         else
         {
-            _propertiesPane.showPropertyDescriptor(null, false);
+            _extraPropertiesTabPanel.setVisible(false);
+            for (PropertyPane<DomainType, FieldType> propertiesPane : _propertiesPanes)
+            {
+                propertiesPane.showPropertyDescriptor(null, false);
+            }
         }
 
         if (oldPD != null)
         {
             refreshRow(oldPD);
+        }
+    }
+
+    private void repositionExtraProperties()
+    {
+        if (_extraPropertiesTabPanel.isVisible() && _selectedPD != null)
+        {
+            int tableRow = getRow(_selectedPD) + 1;
+            Element rowElement = _table.getRowFormatter().getElement(tableRow);
+            int desiredBottom = rowElement.getAbsoluteTop() + rowElement.getOffsetHeight();
+
+            int newSpacerHeight = desiredBottom - _table.getAbsoluteTop() - _extraPropertiesTabPanel.getOffsetHeight();
+            if (newSpacerHeight < 0)
+            {
+                newSpacerHeight = 0;
+            }
+
+            _spacerImage.setHeight(newSpacerHeight + "px");
         }
     }
 
@@ -538,7 +609,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         col++;
 
         _table.setText(tableRow,col,pd.getLookupDescription());
-        _table.getFlexCellFormatter().setWidth(tableRow,col,"900px");
+        _table.getFlexCellFormatter().setWidth(tableRow, col, "900px");
     }
 
     protected boolean isTypeEditable(GWTPropertyDescriptor pd, FieldStatus status)
@@ -675,7 +746,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public DomainType getUpdates()
     {
-        _propertiesPane.copyValuesToPropertyDescriptor();
+        for (PropertyPane<DomainType, FieldType> propertiesPane : _propertiesPanes)
+        {
+            propertiesPane.copyValuesToPropertyDescriptor();
+        }
         DomainType d = _domain; // UNDONE COPY
         ArrayList<FieldType> l = new ArrayList<FieldType>();
         for (int i=0 ; i<_rows.size() ; i++)

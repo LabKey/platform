@@ -179,5 +179,4 @@ public class DomainEditorServiceBase extends BaseRemoteService
     {
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, domainContainer);
     }
-
 }

@@ -15,18 +15,20 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.http.client.URL;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.*;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.ui.WindowUtil;
-import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
-import org.labkey.api.gwt.client.DefaultValueType;
-import com.google.gwt.user.client.ui.*;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.http.client.URL;
 
 /**
  * User: jeckels
@@ -106,9 +108,9 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
 
         _setDefaultValueLink = new HTML(SET_DEFAULT_ENABLED);
-        _setDefaultValueLink.addClickListener(new ClickListener()
+        _setDefaultValueLink.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 if (!_defaultValueTypes.isEnabled())
                     return;
@@ -143,8 +145,8 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         _defaultTypeTable.setWidget(0, 0, _defaultValueTypes);
         flexTable.setWidget(row, INPUT_COLUMN, _defaultTypeTable);
 
-        _defaultValueTypes.addClickListener(createClickListener());
-        _defaultValueTypes.addKeyboardListener(createKeyboardListener());
+        _defaultValueTypes.addClickHandler(createClickHandler());
+        _defaultValueTypes.addKeyUpHandler(createKeyUpHandler());
         _defaultTypeTable.setWidget(0, 1, _setDefaultValueLink);
 
         _defaultValueTable = new FlexTable();

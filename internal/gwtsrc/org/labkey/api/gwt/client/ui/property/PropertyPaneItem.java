@@ -15,11 +15,11 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.ui.PropertyPane;
+import com.google.gwt.event.dom.client.*;
 import com.google.gwt.user.client.ui.*;
-import com.google.gwt.user.client.Element;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.PropertyPane;
 
 /**
  * User: jeckels
@@ -78,39 +78,35 @@ public abstract class PropertyPaneItem<DomainType extends GWTDomain<FieldType>, 
 
     public abstract void showPropertyDescriptor(DomainType domainType, FieldType pd);
 
-    protected ClickListener createClickListener()
+    protected ClickHandler createClickHandler()
     {
-        return new ClickListener()
+        return new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 _propertyPane.copyValuesToPropertyDescriptor();
             }
         };
     }
 
-    protected ChangeListener createChangeListener()
+    protected ChangeHandler createChangeHandler()
     {
-        return new ChangeListener()
+        return new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent e)
             {
                 _propertyPane.copyValuesToPropertyDescriptor();
             }
         };
     }
 
-    protected KeyboardListener createKeyboardListener()
+    protected KeyUpHandler createKeyUpHandler()
     {
-        return new KeyboardListenerAdapter()
+        return new KeyUpHandler()
         {
-            public void onKeyUp(Widget sender, char keyCode, int modifiers)
+            public void onKeyUp(KeyUpEvent event)
             {
                 _propertyPane.copyValuesToPropertyDescriptor();
-            }
-
-            public void onKeyPress(Widget sender, char keyCode, int modifiers)
-            {
             }
         };
     }

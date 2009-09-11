@@ -51,6 +51,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private String lookupSchema;
     private String lookupQuery;
     private boolean mvEnabled;
+    private String importAliases;
     private DefaultValueType _defaultValueType;
 
     public String getLookupContainer()
@@ -299,6 +300,16 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     public void setMvEnabled(boolean mvEnabled)
     {
         this.mvEnabled = mvEnabled;
+    }
+
+    public String getImportAliases()
+    {
+        return importAliases;
+    }
+
+    public void setImportAliases(String importAliases)
+    {
+        this.importAliases = importAliases;
     }
 
     @Override

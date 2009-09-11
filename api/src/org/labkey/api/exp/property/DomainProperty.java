@@ -20,9 +20,11 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.gwt.client.DefaultValueType;
+
+import java.util.Set;
 
 public interface DomainProperty
 {
@@ -54,6 +56,8 @@ public interface DomainProperty
     void setRequired(boolean b);
     void setHidden(boolean hidden);
     void setMvEnabled(boolean mv);
+    void setImportAliasSet(Set<String> aliases);
+    Set<String> getImportAliasSet();
 
     DefaultValueType getDefaultValueTypeEnum();
 

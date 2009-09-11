@@ -49,17 +49,17 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     @Override
     public int addToTable(FlexTable flexTable, int row)
     {
-        flexTable.getFlexCellFormatter().setHorizontalAlignment(row, 0, HasHorizontalAlignment.ALIGN_CENTER);
-        flexTable.getFlexCellFormatter().setColSpan(row, 0, 2);
+//        flexTable.getFlexCellFormatter().setHorizontalAlignment(row, 0, HasHorizontalAlignment.ALIGN_CENTER);
+//        flexTable.getFlexCellFormatter().setColSpan(row, 0, 2);
 
-        FlowPanel label = new FlowPanel();
-        label.add(new InlineHTML("<b>Field Validators</b>"));
-        label.add(new HelpPopup("Field Validators",
-                        "Field validators ensure that all values entered for a field " +
-                        "obey a regular expression and/or fall within a specified range."));
-        flexTable.setWidget(row, LABEL_COLUMN, label);
-
-        row++;
+//        FlowPanel label = new FlowPanel();
+//        label.add(new InlineHTML("<b>Field Validators</b>"));
+//        label.add(new HelpPopup("Field Validators",
+//                        "Field validators ensure that all values entered for a field " +
+//                        "obey a regular expression and/or fall within a specified range."));
+//        flexTable.setWidget(row, LABEL_COLUMN, label);
+//
+//        row++;
 
         _addRegexButton = new ImageButton("Add New Regular Expression", new RegexClickHandler());
         flexTable.setWidget(row++, INPUT_COLUMN, _addRegexButton);

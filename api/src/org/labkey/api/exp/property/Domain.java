@@ -24,6 +24,8 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Map;
+
 public interface Domain extends IPropertyType
 {
     Container getContainer();
@@ -50,4 +52,12 @@ public interface Domain extends IPropertyType
 
     void delete(User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;
+
+    /**
+     * This returns a map of names -> PropertyDescriptor that is useful for import that includes all of the
+     * different names that a column may be referred to, dealing with naming collisions between aliases and property names
+     * in the right way.
+     * @param includeMVIndicators whether or not to include the missing value indicator "column" names in the map
+     */
+    Map<String, DomainProperty> createImportMap(boolean includeMVIndicators);
 }

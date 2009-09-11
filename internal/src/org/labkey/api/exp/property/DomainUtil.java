@@ -179,6 +179,7 @@ public class DomainUtil
         gwtProp.setHidden(prop.isHidden());
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
+        gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
 
         List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
         for (IPropertyValidator pv : prop.getValidators())
@@ -435,7 +436,7 @@ public class DomainUtil
     private static void updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
         Map<Integer, GWTPropertyValidator> newProps = new HashMap<Integer, GWTPropertyValidator>();
-        for (GWTPropertyValidator v : (List<GWTPropertyValidator>)newPd.getPropertyValidators())
+        for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
             if (v.getRowId() != 0)
                 newProps.put(v.getRowId(), v);
@@ -452,7 +453,7 @@ public class DomainUtil
         if (oldPd != null)
         {
             List<GWTPropertyValidator> deleted = new ArrayList<GWTPropertyValidator>();
-            for (GWTPropertyValidator v : (List<GWTPropertyValidator>)oldPd.getPropertyValidators())
+            for (GWTPropertyValidator v : oldPd.getPropertyValidators())
             {
                 GWTPropertyValidator prop = newProps.get(v.getRowId());
                 if (v.equals(prop))

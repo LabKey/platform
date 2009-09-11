@@ -18,11 +18,11 @@ package org.labkey.api.exp;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -91,35 +91,6 @@ public class OntologyManager
 
 		return m;
 	}
-
-
-    /** This helper returns a map of names -> PropertyDescriptor that is useful for import */
-    public static Map<String,PropertyDescriptor> createImportPropertyMap(PropertyDescriptor[] descriptors)
-    {
-        HashMap<String,PropertyDescriptor> m = new CaseInsensitiveHashMap<PropertyDescriptor>(descriptors.length * 3);
-        for (PropertyDescriptor pd : descriptors)
-        {
-            if (pd.isMvEnabled())
-                m.put(pd.getName() + MvColumn.MV_INDICATOR_SUFFIX, pd);
-        }
-        for (PropertyDescriptor pd : descriptors)
-        {
-            if (null != pd.getLabel())
-                m.put(pd.getLabel(), pd);
-            else
-                m.put(ColumnInfo.labelFromName(pd.getName()), pd); // If no label, columns will create one for captions
-        }
-        for (PropertyDescriptor pd : descriptors)
-        {
-            m.put(pd.getName(), pd);
-        }
-        for (PropertyDescriptor pd : descriptors)
-        {
-            m.put(pd.getPropertyURI(), pd);
-        }
-        return m;
-    }
-    
 
     public static final int MAX_PROPS_IN_BATCH = 10000;
 
@@ -197,8 +168,15 @@ public class OntologyManager
                         if (validatorMap.containsKey(pd.getPropertyId()))
                             validateProperty(validatorMap.get(pd.getPropertyId()), pd, value, errors);
                     }
-                    PropertyRow row = new PropertyRow(objectId, pd, value, propertyTypes[i]);
-					propsToInsert.add(row);
+                    try
+                    {
+                        PropertyRow row = new PropertyRow(objectId, pd, value, propertyTypes[i]);
+                        propsToInsert.add(row);
+                    }
+                    catch (ConversionException e)
+                    {
+                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + propertyTypes[i].getJavaType().getSimpleName());
+                    }
 				}
 
                 if (propsToInsert.size() > MAX_PROPS_IN_BATCH)

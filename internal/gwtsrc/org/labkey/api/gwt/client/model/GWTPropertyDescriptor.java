@@ -55,6 +55,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty defaultValue = new StringProperty();
     private StringProperty defaultDisplayValue = new StringProperty("[none]");
     private BooleanProperty mvEnabled = new BooleanProperty(false);
+    private StringProperty importAliases = new StringProperty();
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
 
@@ -84,6 +85,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDefaultValueType(s.getDefaultValueType());
         setDefaultValue(s.getDefaultValue());
         setDefaultDisplayValue(s.getDefaultDisplayValue());
+        setImportAliases(s.getImportAliases());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -332,6 +334,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getDefaultValueType() != null ? !getDefaultValueType().equals(that.getDefaultValueType()) : that.getDefaultValueType() != null) return false;
         if (getDefaultValue() != null ? !getDefaultValue().equals(that.getDefaultValue()) : that.getDefaultValue() != null) return false;
         if (getDefaultDisplayValue() != null ? !getDefaultDisplayValue().equals(that.getDefaultDisplayValue()) : that.getDefaultDisplayValue() != null) return false;
+        if (getImportAliases() != null ? !getImportAliases().equals(that.getImportAliases()) : that.getImportAliases() != null) return false;
 
         if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
         GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
@@ -408,6 +411,16 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setPropertyValidators(List<GWTPropertyValidator> validators)
     {
         this.validators = validators;
+    }
+
+    public String getImportAliases()
+    {
+        return importAliases.toString();
+    }
+
+    public void setImportAliases(String importAliases)
+    {
+        this.importAliases.set(importAliases);
     }
 
     public String getLookupDescription()

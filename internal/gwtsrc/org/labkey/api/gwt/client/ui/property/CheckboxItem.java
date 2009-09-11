@@ -49,8 +49,8 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
         flexTable.setWidget(row, INPUT_COLUMN, checkbox);
 
-        checkbox.addClickListener(createClickListener());
-        checkbox.addKeyboardListener(createKeyboardListener());
+        checkbox.addClickHandler(createClickHandler());
+        checkbox.addKeyUpHandler(createKeyUpHandler());
 
         return ++row;
     }

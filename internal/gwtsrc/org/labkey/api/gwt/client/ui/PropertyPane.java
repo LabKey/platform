@@ -17,13 +17,16 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.Element;
-import com.google.gwt.user.client.ui.*;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import com.google.gwt.user.client.ui.ChangeListener;
+import com.google.gwt.user.client.ui.ChangeListenerCollection;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.Widget;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.property.PropertyPaneItem;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -33,33 +36,18 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 {
     private FieldType _currentPD;
 
-    private final Element _backgroundElement;
     private PropertiesEditor<DomainType, FieldType> _propertiesEditor;
+    private final String _name;
     private ChangeListenerCollection _changeListeners = new ChangeListenerCollection();
 
-    private Image _spacerImage;
-    private int _spacerHeight;
     private int _currentRow;
 
     private List<PropertyPaneItem<DomainType, FieldType>> _items = new ArrayList<PropertyPaneItem<DomainType, FieldType>>();
 
-    public PropertyPane(Element backgroundElement, PropertiesEditor<DomainType, FieldType> propertiesEditor)
+    public PropertyPane(PropertiesEditor<DomainType, FieldType> propertiesEditor, String name)
     {
-        _backgroundElement = backgroundElement;
         _propertiesEditor = propertiesEditor;
-
-        _spacerImage = new Image();
-        _spacerImage.setWidth("1px");
-        _spacerImage.setHeight("1px");
-        _spacerHeight = 1;
-
-        setWidget(_currentRow++, 0, _spacerImage);
-
-        getFlexCellFormatter().setHorizontalAlignment(_currentRow, 0, HasHorizontalAlignment.ALIGN_CENTER);
-        getFlexCellFormatter().setColSpan(_currentRow, 0, 2);
-        setWidget(_currentRow, 0, new HTML("<b>Additional Properties</b>"));
-
-        _currentRow++;
+        _name = name;
 
         propertiesEditor.addChangeListener(new ChangeListener()
         {
@@ -74,6 +62,11 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
                 }
             }
         });
+    }
+
+    public String getName()
+    {
+        return _name;
     }
 
     public void addItem(PropertyPaneItem<DomainType, FieldType> item)
@@ -121,11 +114,6 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
     public void showPropertyDescriptor(FieldType newPD, boolean editable)
     {
-        showPropertyDescriptor(newPD, editable, 0);
-    }
-
-    public void showPropertyDescriptor(FieldType newPD, boolean editable, int rowAbsoluteY)
-    {
         copyValuesToPropertyDescriptor();
 
         _currentPD = newPD;
@@ -135,7 +123,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         if (_currentPD != null)
         {
             DOM.setStyleAttribute(getElement(), "display", "block");
-            DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#eeeeee");
+            DOM.setStyleAttribute(getElement(), "backgroundColor", "#eeeeee");
             
             for (PropertyPaneItem<DomainType, FieldType> item : _items)
             {
@@ -145,17 +133,8 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         else
         {
             DOM.setStyleAttribute(getElement(), "display", "none");
-            DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#ffffff");
+            DOM.setStyleAttribute(getElement(), "backgroundColor", "#ffffff");
         }
-
-        int newSpacerHeight = Math.max(0, rowAbsoluteY - getAbsoluteTop() - 25);
-        int bottomOfEditor = _propertiesEditor.getContentPanel().getOffsetHeight() - 5;
-        if (newSpacerHeight + (getOffsetHeight() - _spacerHeight) > bottomOfEditor)
-        {
-            newSpacerHeight = Math.max(0, bottomOfEditor - (getOffsetHeight() - _spacerHeight));
-        }
-        _spacerImage.setHeight(newSpacerHeight + "px");
-        _spacerHeight = newSpacerHeight;
     }
 
     public FieldType getField()
