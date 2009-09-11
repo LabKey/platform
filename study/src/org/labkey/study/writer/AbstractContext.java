@@ -31,7 +31,7 @@ public abstract class AbstractContext implements StudyContext
 {
     private final User _user;
     private final Container _c;
-    private transient final Logger _logger;
+    private final Logger _logger;
     private transient StudyDocument _studyDoc;   // XStream can't seem to serialize this XMLBean... so we load it on demand
 
     protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger)

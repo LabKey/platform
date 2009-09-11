@@ -507,7 +507,6 @@ public class SpecimenImporter
 
         try
         {
-
             DbScope scope = schema.getScope();
             if (!DEBUG)
                 scope.beginTransaction();
