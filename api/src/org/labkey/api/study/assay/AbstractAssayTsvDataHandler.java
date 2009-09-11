@@ -343,7 +343,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             for (DomainProperty pd : columns)
             {
-                Object o = map.get(pd.getPropertyURI());
+                Object o = map.get(pd.getName());
                 if (participantPD == pd)
                 {
                     participantID = o instanceof String ? (String)o : null;
