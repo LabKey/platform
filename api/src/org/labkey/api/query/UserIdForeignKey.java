@@ -46,6 +46,7 @@ public class UserIdForeignKey extends LookupForeignKey
         ret.addWrapColumn(tinfoUsersData.getColumn("UserId"));
         ret.addColumn(ret.wrapColumn("DisplayName", tinfoUsersData.getColumn("DisplayName")));
         ret.setTitleColumn("DisplayName");
+        ret.setPublic(false);
         return ret;
     }
 }
