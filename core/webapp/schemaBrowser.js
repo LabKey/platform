@@ -208,9 +208,18 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         }
         tipText += ". To reference columns in the lookup table, use the syntax '" + col.name + "/col-in-lookup-table'.";
 
+        if (!col.lookup.isPublic)
+            tipText += " Note that the lookup table is not publicly-available via the APIs.";
+
 
         var onclickScript = "Ext.ComponentMgr.get(\"" + this.id + "\").fireEvent(\"lookupclick\", \"" + col.lookup.schemaName + "\", \"" + col.lookup.queryName + "\");";
-        return "<span ext:qtip=\"" + tipText + "\"class='labkey-link' onclick='" + onclickScript + "'>" + caption + "</span>";
+
+        var html = "<span ext:qtip=\"" + tipText + "\"";
+        if (col.lookup.isPublic)
+            html += " class='labkey-link' onclick='" + onclickScript + "'";
+        
+        html += ">" + caption + "</span>";
+        return html;
     },
 
     getColAttrs : function(col) {

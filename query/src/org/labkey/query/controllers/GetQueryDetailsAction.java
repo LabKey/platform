@@ -140,16 +140,24 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
         //lookup info
         if (null != cinfo.getFk()
-                && null != cinfo.getFkTableInfo()
-                && cinfo.getFkTableInfo().isPublic()
-                && null != cinfo.getFkTableInfo().getPublicName())
+                && null != cinfo.getFkTableInfo())
         {
             TableInfo lookupTable = cinfo.getFkTableInfo();
 
             Map<String,Object> lookupInfo = new HashMap<String,Object>();
 
-            lookupInfo.put("queryName", lookupTable.getPublicName());
-            lookupInfo.put("schemaName", lookupTable.getPublicSchemaName());
+            lookupInfo.put("isPublic", lookupTable.isPublic());
+            if (lookupTable.isPublic())
+            {
+                lookupInfo.put("queryName", lookupTable.getPublicName());
+                lookupInfo.put("schemaName", lookupTable.getPublicSchemaName());
+            }
+            else
+            {
+                lookupInfo.put("queryName", lookupTable.getName());
+                lookupInfo.put("schemaName", lookupTable.getSchema().getName());
+
+            }
             lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
             if (lookupTable.getPkColumns().size() > 0)
                 lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
