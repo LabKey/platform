@@ -2883,6 +2883,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+    public ExpProtocol[] getAllExpProtocols()
+    {
+        try
+        {
+            return ExpProtocolImpl.fromProtocols(Table.select(getTinfoProtocol(), Table.ALL_COLUMNS, null, null, Protocol.class));
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
     public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description) throws IOException
     {
         ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false);

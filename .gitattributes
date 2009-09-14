@@ -2165,10 +2165,13 @@ study/src/org/labkey/study/pipeline/StudyBatch.java -text
 study/src/org/labkey/study/pipeline/StudyImportDatasetTask.java -text
 study/src/org/labkey/study/pipeline/StudyImportSpecimenTask.java -text
 study/src/org/labkey/study/pipeline/StudyPipeline.java -text
+study/src/org/labkey/study/plate/CurveFitFactory.java -text
+study/src/org/labkey/study/plate/ParameterCurveImpl.java -text
 study/src/org/labkey/study/plate/PlateDataServiceImpl.java -text
 study/src/org/labkey/study/plate/PlateImpl.java -text
 study/src/org/labkey/study/plate/PlateManager.java -text
 study/src/org/labkey/study/plate/PlateTemplateImpl.java -text
+study/src/org/labkey/study/plate/PolynomialCurveImpl.java -text
 study/src/org/labkey/study/plate/PositionImpl.java -text
 study/src/org/labkey/study/plate/PropertySetImpl.java -text
 study/src/org/labkey/study/plate/WellGroupCurveImpl.java -text

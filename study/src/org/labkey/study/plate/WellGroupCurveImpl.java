@@ -16,88 +16,33 @@
 
 package org.labkey.study.plate;
 
+import org.labkey.api.study.DilutionCurve;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
-import org.labkey.api.study.DilutionCurve;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * User: brittp
  * Date: Oct 25, 2006
  * Time: 4:45:19 PM
  */
-public class WellGroupCurveImpl implements DilutionCurve
+public abstract class WellGroupCurveImpl implements DilutionCurve
 {
     protected static final int CURVE_SEGMENT_COUNT = 100;
 
     protected WellGroup _wellGroup;
-    private DoublePoint[] _curve = null;
-    private boolean assumeDecreasing;
-    private FitType _fitType;
-    private Double _fitError;
-    private WellSummary[] _wellSummaries = null;
-    private FitParameters _fitParameters;
+    protected DoublePoint[] _curve = null;
+    protected boolean assumeDecreasing;
+    protected Double _fitError;
+    protected WellSummary[] _wellSummaries = null;
+    protected Double _auc;
 
-    private static class FitParameters implements Cloneable, DilutionCurve.Parameters
-    {
-        public Double fitError;
-        public double asymmetry;
-        public double EC50;
-        public double slope;
-        public double max;
-        public double min;
-
-        public FitParameters copy()
-        {
-            try
-            {
-                return (FitParameters) super.clone();
-            }
-            catch (CloneNotSupportedException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public Double getFitError()
-        {
-            return fitError;
-        }
-
-        public double getAsymmetry()
-        {
-            return asymmetry;
-        }
-
-        public double getInflection()
-        {
-            return EC50;
-        }
-
-        public double getSlope()
-        {
-            return slope;
-        }
-
-        public double getMax()
-        {
-            return max;
-        }
-
-        public double getMin()
-        {
-            return min;
-        }
-    }
-
-    public WellGroupCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator, DilutionCurve.FitType fitType) throws FitFailedException
+    public WellGroupCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
         _wellGroup = wellGroup;
         this.assumeDecreasing = assumeDecreasing;
-        _fitType = fitType;
 
         List<WellData> data = getWellData();
         _wellSummaries = new WellSummary[data.size()];
@@ -158,12 +103,12 @@ public class WellGroupCurveImpl implements DilutionCurve
         return min;
     }
 
-    private List<WellData> getWellData()
+    protected List<WellData> getWellData()
     {
         return _wellGroup.getWellData(true);
     }
 
-    private class WellSummary
+    protected class WellSummary
     {
         private double _neutralization;
         private double _dilution;
@@ -283,7 +228,7 @@ public class WellGroupCurveImpl implements DilutionCurve
         }
     }
 
-    private void ensureCurve() throws FitFailedException
+    protected void ensureCurve() throws FitFailedException
     {
         getCurve();
     }
@@ -295,100 +240,75 @@ public class WellGroupCurveImpl implements DilutionCurve
         return _curve;
     }
 
-    private DoublePoint[] renderCurve() throws FitFailedException
+    protected abstract DoublePoint[] renderCurve() throws FitFailedException;
+
+    public abstract Parameters getParameters() throws FitFailedException;
+
+    public double getFitError() throws FitFailedException
     {
-        List<WellData> wellDatas = getWellData();
-        List<Double> percentages = new ArrayList<Double>(wellDatas.size());
-        for (WellSummary well : _wellSummaries)
-        {
-            double percentage = 100 * well.getNeutralization();
-            percentages.add(percentage);
-        }
-        Collections.sort(percentages);
-
-        // use relative percentage rather than fixed 50% value.  Divide by 2*100 to average
-        // and convert back to 0.0-1.0 percentage form:
-        double minPercentage = percentages.get(0);
-        double maxPercentage = percentages.get(percentages.size() - 1);
-
-        _fitParameters = calculateFitParameters(minPercentage, maxPercentage);
-        _fitError = _fitParameters.fitError;
-        DoublePoint[] curveData = new DoublePoint[CURVE_SEGMENT_COUNT];
-        double logX = Math.log10(_wellGroup.getMinDilution());
-        double logInterval = (Math.log10(_wellGroup.getMaxDilution()) - logX) / (CURVE_SEGMENT_COUNT - 1);
-        for (int i = 0; i < CURVE_SEGMENT_COUNT; i++)
-        {
-            double x = Math.pow(10, logX);
-            double y = fitCurve(x, _fitParameters);
-            curveData[i] = new DoublePoint(x, y);
-            logX += logInterval;
-        }
-        return curveData;
+        ensureCurve();
+        return _fitError;
     }
 
-    private double fitCurve(double x, FitParameters parameters)
+    /**
+     * Calculate the area under the curve
+     */
+    public double calculateAUC() throws FitFailedException
     {
-        return parameters.min + ((parameters.max - parameters.min) /
-                Math.pow(1 + Math.pow(10, (Math.log10(parameters.EC50) - Math.log10(x)) * parameters.slope), parameters.asymmetry));
+        if (_auc == null)
+        {
+            double min = _wellSummaries[0].getDilution();
+            double max = _wellSummaries[_wellSummaries.length-1].getDilution();
+
+            _auc = (1/(Math.log10(max) - Math.log10(min))) * integrate(min, max, 0.00001, 10) / 100.0;
+        }
+        return _auc;
     }
 
-    private FitParameters calculateFitParameters(double minPercentage, double maxPercentage) throws FitFailedException
+    /**
+     * Approximate the integral of the curve using an adaptive simpsons rule.
+     *
+     * @param a lower bounds to integrate over
+     * @param b upper bounds to integrate over
+     * @param epsilon the error tolerance
+     * @param maxRecursionDepth the maximum depth the algorithm will recurse to
+     *
+     * @throws FitFailedException
+     */
+    private double integrate(double a, double b, double epsilon, int maxRecursionDepth) throws FitFailedException
     {
-        FitParameters bestFit = null;
-        FitParameters parameters = new FitParameters();
-        double step = 10;
-        if (_fitType == FitType.FOUR_PARAMETER)
-            parameters.asymmetry = 1;
-        // try reasonable variants of max and min, in case there's a better fit.  We'll keep going past "reasonable" if
-        // we haven't found a single bestFit option, but we need to bail out at some point.  We currently quit once max
-        // reaches 200 or min reaches -100, since these values don't seem biologically reasonable.
-        for (double min = minPercentage; (bestFit == null || min > 0 - step) && min > (minPercentage - 100); min -= step )
-        {
-            parameters.min = min;
-            for (double max = maxPercentage; (bestFit == null || max <= 100 + step) && max < (maxPercentage + 100); max += step )
-            {
-                double absoluteCutoff = min + (0.5 * (max - min));
-                double relativeEC50 = getInterpolatedCutoffDilution(absoluteCutoff/100);
-                if (relativeEC50 != Double.POSITIVE_INFINITY && relativeEC50 != Double.NEGATIVE_INFINITY)
-                {
-                    parameters.max = max;
-                    parameters.EC50 = relativeEC50;
-                    for (double slopeRadians = 0; slopeRadians < Math.PI; slopeRadians += Math.PI / 30)
-                    {
-                        parameters.slope = Math.tan(slopeRadians);
-                        switch (_fitType)
-                        {
-                            case FIVE_PARAMETER:
-                                for (double asymmetryFactor = 0; asymmetryFactor < Math.PI; asymmetryFactor += Math.PI / 30)
-                                {
-                                    parameters.asymmetry = asymmetryFactor;
-                                    parameters.fitError = calculateFitError(parameters);
-                                    if (bestFit == null || parameters.fitError < bestFit.fitError)
-                                        bestFit = parameters.copy();
-                                }
-                                break;
-                            case FOUR_PARAMETER:
-                                parameters.asymmetry = 1;
-                                parameters.fitError = calculateFitError(parameters);
-                                if (bestFit == null || parameters.fitError < bestFit.fitError)
-                                    bestFit = parameters.copy();
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-        if (bestFit == null)
-        {
-            throw new FitFailedException("Unable to find any parameters to fit a curve to wellgroup " + _wellGroup.getName() +
-                    ".  Your plate template may be invalid.  Please contact an administrator to report this problem.  " +
-                    "Debug info: minPercentage = " + minPercentage + ", maxPercentage = " + maxPercentage + ", fitType = " +
-                    _fitType.getLabel() + ", num data points = " + _wellSummaries.length);
-        }
-        return bestFit;
+        Parameters parameters = getParameters();
+
+        double c = (a + b)/2;
+        double h = Math.log10(b) - Math.log10(a);
+        double fa = fitCurve(a, parameters);
+        double fb = fitCurve(b, parameters);
+        double fc = fitCurve(c, parameters);
+        double s = (h/6)*(fa + 4*fc + fb);
+
+        return _integrate(a, b, epsilon, s, fa, fb, fc, maxRecursionDepth, parameters);
     }
 
-    private double calculateFitError(FitParameters parameters)
+    private double _integrate(double a, double b, double epsilon, double s,
+                              double fa, double fb, double fc, int bottom, Parameters parameters) throws FitFailedException
+    {
+        double c = (a + b)/2;
+        double h = Math.log10(b) - Math.log10(a);
+        double d = (a + c)/2;
+        double e = (c + b)/2;
+        double fd = fitCurve(d, parameters);
+        double fe = fitCurve(e, parameters);
+        double sLeft = (h/12)*(fa + 4*fd + fc);
+        double sRight = (h/12)*(fc + 4*fe + fb);
+        double s2 = sLeft + sRight;
+
+        if (bottom <= 0 || Math.abs(s2 - s) <= 15*epsilon)
+            return s2 + (s2 - s)/15;
+        return _integrate(a, c, epsilon/2, sLeft,  fa, fc, fd, bottom-1, parameters) +
+                _integrate(c, b, epsilon/2, sRight, fc, fb, fe, bottom-1, parameters);
+    }
+
+    protected double calculateFitError(Parameters parameters)
     {
         double deviationValue = 0;
         for (WellSummary well : _wellSummaries)
@@ -399,16 +319,5 @@ public class WellGroupCurveImpl implements DilutionCurve
             deviationValue += Math.pow(foundPercentage - expectedPercentage, 2);
         }
         return Math.sqrt(deviationValue / _wellSummaries.length);
-    }
-
-    public Parameters getParameters() throws FitFailedException
-    {
-        ensureCurve();
-        return _fitParameters;
-    }
-    public double getFitError() throws FitFailedException
-    {
-        ensureCurve();
-        return _fitError;
     }
 }

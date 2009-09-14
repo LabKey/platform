@@ -182,7 +182,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public DilutionCurve getDilutionCurve(DilutionCurve.PercentCalculator calculator, boolean expectedDecreasing, DilutionCurve.FitType fitType) throws DilutionCurve.FitFailedException
     {
-        return new WellGroupCurveImpl(this, expectedDecreasing, calculator, fitType);
+        return CurveFitFactory.getCurveImpl(this, expectedDecreasing, calculator, fitType);
     }
 
     public Double getMaxDilution()
