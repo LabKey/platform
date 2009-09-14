@@ -667,10 +667,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         boolean transactionOwner = !scope.isTransactionActive();
         try
         {
+            boolean saveBatchProps = false;
             if (transactionOwner)
                 scope.beginTransaction();
-
-            savePropertyObject(run.getLSID(), runProperties, context.getContainer());
 
             // Save the batch first
             if (batch == null)
@@ -678,7 +677,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 // Make sure that we have a batch to associate with this run
                 batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
                 batch.save(context.getUser());
-                savePropertyObject(batch.getLSID(), batchProperties, context.getContainer());
+                saveBatchProps = true;
             }
             run.save(context.getUser());
             // Add the run to the batch so that we can find it when we're loading the data files
@@ -703,7 +702,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (context instanceof AssayRunUploadForm)
                 ((AssayRunUploadForm)context).setTransformResult(transformResult);
 
-            if (!transformResult.isEmpty())
+            if (!transformResult.getTransformedData().isEmpty())
             {
                 for (Map.Entry<DataType, File> entry : transformResult.getTransformedData().entrySet())
                 {
@@ -723,6 +722,19 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 insertedDatas.addAll(inputDatas.keySet());
                 insertedDatas.addAll(outputDatas.keySet());
             }
+
+            if (saveBatchProps)
+            {
+                if (!transformResult.getBatchProperties().isEmpty())
+                    savePropertyObject(batch.getLSID(), transformResult.getBatchProperties(), context.getContainer());
+                else
+                    savePropertyObject(batch.getLSID(), batchProperties, context.getContainer());
+            }
+
+            if (!transformResult.getRunProperties().isEmpty())
+                savePropertyObject(run.getLSID(), transformResult.getRunProperties(), context.getContainer());
+            else
+                savePropertyObject(run.getLSID(), runProperties, context.getContainer());
 
             for (ExpData insertedData : insertedDatas)
             {

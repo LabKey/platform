@@ -62,6 +62,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public static final String TYPE = "ReportService.externalScriptEngineReport";
     public static final String CACHE_DIR = "cached";
     private static final Map<ReportIdentifier, ActionURL> _cachedReportURLMap = new HashMap<ReportIdentifier, ActionURL>();
+    private static String DEFAULT_PERL_PATH;
 
     public String getType()
     {
@@ -326,5 +327,49 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public ActionURL getRunReportURL(ViewContext context)
     {
         return ReportUtil.getRunReportURL(context, this);
+    }
+
+    public static synchronized String getDefaultPerlPath()
+    {
+        if (DEFAULT_PERL_PATH == null)
+        {
+            DEFAULT_PERL_PATH = getDefaultAppPath(new FilenameFilter()
+            {
+                public boolean accept(File dir, String name)
+                {
+                    if ("perl.exe".equalsIgnoreCase(name) || "perl".equalsIgnoreCase(name))
+                        return true;
+                    return false;
+                }
+            });
+        }
+        return DEFAULT_PERL_PATH;
+    }
+
+    protected static synchronized String getDefaultAppPath(FilenameFilter filter)
+    {
+        String appPath = "";
+        String path = System.getenv("PATH");
+
+        for (String dir : path.split(File.pathSeparator))
+        {
+            File part = new File(dir);
+            if (part.isDirectory())
+            {
+                File[] files = part.listFiles(filter);
+
+                if (files != null && files.length > 0)
+                {
+                    appPath = files[0].getAbsolutePath().replaceAll("\\\\", "/");
+                    break;
+                }
+            }
+            else if (filter.accept(part.getParentFile(), part.getName()))
+            {
+                appPath = part.getAbsolutePath().replaceAll("\\\\", "/");
+                break;
+            }
+        }
+        return appPath;
     }
 }

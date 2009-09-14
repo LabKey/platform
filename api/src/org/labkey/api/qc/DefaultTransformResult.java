@@ -17,6 +17,7 @@
 package org.labkey.api.qc;
 
 import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.property.DomainProperty;
 
 import java.io.File;
 import java.util.Collections;
@@ -30,16 +31,15 @@ import java.util.Map;
  */
 public class DefaultTransformResult implements TransformResult
 {
-    private Map<DataType, File> _dataMap = new HashMap<DataType, File>();
+    private Map<DataType, File> _dataMap = Collections.emptyMap();
+    private Map<DomainProperty, String> _batchProperties = Collections.emptyMap();
+    private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
+
+    public DefaultTransformResult(){}
 
     public DefaultTransformResult(Map<DataType, File> dataMap)
     {
         _dataMap = dataMap;
-    }
-
-    public boolean isEmpty()
-    {
-        return _dataMap.isEmpty();
     }
 
     public Map<DataType, File> getTransformedData()
@@ -47,8 +47,30 @@ public class DefaultTransformResult implements TransformResult
         return _dataMap;
     }
 
+    public Map<DomainProperty, String> getBatchProperties()
+    {
+        return _batchProperties;
+    }
+
+    public void setBatchProperties(Map<DomainProperty, String> batchProperties)
+    {
+        _batchProperties = batchProperties;
+    }
+
+    public Map<DomainProperty, String> getRunProperties()
+    {
+        return _runProperties;
+    }
+
+    public void setRunProperties(Map<DomainProperty, String> runProperties)
+    {
+        _runProperties = runProperties;
+    }
+
     public static TransformResult createEmptyResult()
     {
+        return new DefaultTransformResult();
+/*
         return new TransformResult()
         {
             public Map<DataType, File> getTransformedData()
@@ -57,5 +79,6 @@ public class DefaultTransformResult implements TransformResult
             }
             public boolean isEmpty() {return true;}
         };
+*/
     }
 }

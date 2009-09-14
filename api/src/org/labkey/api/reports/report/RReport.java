@@ -75,40 +75,19 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         return mgr.getEngineByExtension("r");
     }
 
-    public static synchronized String getDefaultAppPath()
+    public static synchronized String getDefaultRPath()
     {
         if (DEFAULT_APP_PATH == null)
         {
-            DEFAULT_APP_PATH = "";
-            String path = System.getenv("PATH");
-
-            for (String dir : path.split(File.pathSeparator))
+            DEFAULT_APP_PATH = getDefaultAppPath(new FilenameFilter()
             {
-                File part = new File(dir);
-                if (part.isDirectory())
+                public boolean accept(File dir, String name)
                 {
-                    File[] files = part.listFiles(new FilenameFilter()
-                    {
-                        public boolean accept(File dir, String name)
-                        {
-                            if ("r.exe".equalsIgnoreCase(name) || "r".equalsIgnoreCase(name))
-                                return true;
-                            return false;
-                        }
-                    });
-
-                    if (files != null && files.length > 0)
-                    {
-                        DEFAULT_APP_PATH = files[0].getAbsolutePath().replaceAll("\\\\", "/");
-                        break;
-                    }
+                    if ("r.exe".equalsIgnoreCase(name) || "r".equalsIgnoreCase(name))
+                        return true;
+                    return false;
                 }
-                else if ("r.exe".equalsIgnoreCase(part.getName()) || "r".equalsIgnoreCase(part.getName()))
-                {
-                    DEFAULT_APP_PATH = part.getAbsolutePath().replaceAll("\\\\", "/");
-                    break;
-                }
-            }
+            });
         }
         return DEFAULT_APP_PATH;
     }

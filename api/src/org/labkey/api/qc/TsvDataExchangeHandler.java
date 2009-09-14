@@ -71,11 +71,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         runDataFile,
         runDataUploadedFile,
         errorsFile,
+        transformedRunPropertiesFile,
     }
     public static final String SAMPLE_DATA_PROP_NAME = "sampleData";
     public static final String VALIDATION_RUN_INFO_FILE = "runProperties.tsv";
     public static final String ERRORS_FILE = "validationErrors.tsv";
     public static final String RUN_DATA_FILE = "runData.tsv";
+    public static final String TRANSFORMED_RUN_INFO_FILE = "transformedRunProperties.tsv";
 
     private Map<String, String> _formFields = new HashMap<String, String>();
     private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<String, List<Map<String, Object>>>();
@@ -111,6 +113,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append('\t');
             pw.println(errorFile.getAbsolutePath());
 
+            // transformed run properties file location
+            File transformedRunPropsFile = new File(scriptDir, TRANSFORMED_RUN_INFO_FILE);
+            pw.append(Props.transformedRunPropertiesFile.name());
+            pw.append('\t');
+            pw.println(transformedRunPropsFile.getAbsolutePath());
+
             return runProps;
         }
         finally
@@ -143,7 +151,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         TransformResult transform = context.getTransformResult();
         List<File> dataFiles = new ArrayList<File>();
 
-        if (!transform.isEmpty())
+        if (!transform.getTransformedData().isEmpty())
             dataFiles.addAll(transform.getTransformedData().values());
         else
             dataFiles.addAll(context.getUploadedData().values());
@@ -485,7 +493,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo) throws ValidationException
     {
-        TransformResult result = DefaultTransformResult.createEmptyResult();
+        DefaultTransformResult result = new DefaultTransformResult();
 
         // check to see if any errors were generated
         processValidationOutput(runInfo);
@@ -493,9 +501,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // if input data was transformed,
         if (runInfo.exists())
         {
+            Reader runPropsReader = null;
             try {
                 List<Map<String, Object>> maps = parseRunInfo(runInfo);
                 Map<String, File> transformedData = new HashMap<String, File>();
+                File transformedRunProps = null;
+
                 for (Map<String, Object> row : maps)
                 {
                     Object data = row.get("transformedData");
@@ -504,6 +515,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         File transformed = new File(data.toString());
                         if (transformed.exists())
                             transformedData.put(String.valueOf(row.get("type")), new File(data.toString()));
+                    }
+                    else if (row.get("name").equals(Props.transformedRunPropertiesFile.name()))
+                    {
+                        transformedRunProps = new File(row.get("value").toString());
                     }
                 }
 
@@ -517,10 +532,55 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
                     result = new DefaultTransformResult(dataMap);
                 }
+
+                if (transformedRunProps != null && transformedRunProps.exists())
+                {
+                    Map<String, String> transformedProps = new HashMap<String, String>();
+                    for (Map<String, Object> row : parseRunInfo(transformedRunProps))
+                        transformedProps.put(row.get("name").toString(), row.get("value").toString());
+
+                    // merge the transformed props with the props in the upload form
+                    Map<DomainProperty, String> runProps = new HashMap<DomainProperty, String>();
+                    Map<DomainProperty, String> batchProps = new HashMap<DomainProperty, String>();
+                    boolean runPropTransformed = false;
+                    boolean batchPropTransformed = false;
+                    for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
+                    {
+                        String propName = entry.getKey().getName();
+                        if (transformedProps.containsKey(propName))
+                        {
+                            runProps.put(entry.getKey(), transformedProps.get(propName));
+                            runPropTransformed = true;
+                        }
+                        else
+                            runProps.put(entry.getKey(), entry.getValue());
+                    }
+
+                    for (Map.Entry<DomainProperty, String> entry : context.getBatchProperties().entrySet())
+                    {
+                        String propName = entry.getKey().getName();
+                        if (transformedProps.containsKey(propName))
+                        {
+                            batchProps.put(entry.getKey(), transformedProps.get(propName));
+                            batchPropTransformed = true;
+                        }
+                        else
+                            batchProps.put(entry.getKey(), entry.getValue());
+                    }
+
+                    if (runPropTransformed)
+                        result.setRunProperties(runProps);
+                    if (batchPropTransformed)
+                        result.setBatchProperties(batchProps);
+                }
             }
             catch (Exception e)
             {
                 throw new ValidationException(e.getMessage());
+            }
+            finally
+            {
+                IOUtils.closeQuietly(runPropsReader);
             }
         }
         return result;
