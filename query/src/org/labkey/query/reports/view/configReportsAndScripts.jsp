@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -85,8 +86,8 @@
                 exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
                 outputFileName: 'script.Rout',
                 external: true,
-                <% if (!StringUtils.isEmpty(RReport.getDefaultAppPath())) { %>
-                    exePath: '<%=RReport.getDefaultAppPath()%>',
+                <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
+                    exePath: '<%=RReport.getDefaultRPath()%>',
                 <% } %>
                 enabled: true,
                 languageName:'R'});}}}
@@ -100,6 +101,9 @@
                 name:'Perl Scripting Engine',
                 extensions: PERL_EXTENSIONS,
                 external: true,
+                <% if (!StringUtils.isEmpty(ExternalScriptEngineReport.getDefaultPerlPath())) { %>
+                    exePath: '<%=ExternalScriptEngineReport.getDefaultPerlPath()%>',
+                <% } %>
                 enabled: true,
                 languageName:'Perl'});}}}
             );
