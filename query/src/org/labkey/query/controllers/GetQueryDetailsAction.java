@@ -146,15 +146,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
             Map<String,Object> lookupInfo = new HashMap<String,Object>();
 
-            lookupInfo.put("isPublic", lookupTable.isPublic());
-            if (lookupTable.isPublic())
+            boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
+            lookupInfo.put("isPublic", isPublic);
+            if (isPublic)
             {
                 lookupInfo.put("queryName", lookupTable.getPublicName());
                 lookupInfo.put("schemaName", lookupTable.getPublicSchemaName());
             }
             else
             {
-                lookupInfo.put("queryName", lookupTable.getName());
+                lookupInfo.put("queryName", (null != lookupTable.getName() ? lookupTable.getName() : "(unknown)"));
                 lookupInfo.put("schemaName", lookupTable.getSchema().getName());
 
             }
