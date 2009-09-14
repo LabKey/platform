@@ -18,6 +18,8 @@ package org.labkey.api.study;
 
 import org.labkey.api.util.Pair;
 
+import java.util.Map;
+
 /**
  * User: brittp
  * Date: Oct 25, 2006
@@ -27,15 +29,11 @@ public interface DilutionCurve
 {
     public interface Parameters
     {
-        double getAsymmetry();
-
-        double getInflection();
-
-        double getSlope();
-
-        double getMax();
-
-        double getMin();
+        /**
+         * Returns a map representation of the parameters, used for
+         * serialization of parameter information in the Client API
+         */
+        public Map<String, Object> toMap();
     }
 
     public class FitFailedException extends Exception
@@ -48,13 +46,22 @@ public interface DilutionCurve
 
     public enum FitType
     {
-        FOUR_PARAMETER("Four Parameter"),
-        FIVE_PARAMETER("Five Parameter");
+        FOUR_PARAMETER("Four Parameter", "4pl"),
+        FIVE_PARAMETER("Five Parameter", "5pl"),
+        POLYNOMIAL("Polynomial", "poly");
 
         private String _label;
-        private FitType(String label)
+        private String _colSuffix;
+
+        private FitType(String label, String colSuffix)
         {
             _label = label;
+            _colSuffix = colSuffix;
+        }
+
+        public String getColSuffix()
+        {
+            return _colSuffix;
         }
 
         public String getLabel()
@@ -86,6 +93,10 @@ public interface DilutionCurve
     double getMinDilution() throws FitFailedException;
 
     double getMaxDilution() throws FitFailedException;
+
+    double fitCurve(double x, Parameters curveParameters);
+
+    double calculateAUC() throws FitFailedException;
 
     public static class DoublePoint extends Pair<Double, Double>
     {

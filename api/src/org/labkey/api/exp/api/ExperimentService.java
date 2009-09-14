@@ -243,6 +243,7 @@ public class ExperimentService
         ExpSampleSet createSampleSet();
 
         ExpProtocol[] getExpProtocols(Container container);
+        ExpProtocol[] getAllExpProtocols();
 
         /**
          * Kicks off a pipeline job to asynchronously load the XAR from disk
