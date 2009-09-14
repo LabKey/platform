@@ -35,7 +35,8 @@ CREATE TABLE query.QueryDef (
     Flags INT NOT NULL,
     CONSTRAINT PK_QueryDef PRIMARY KEY (QueryDefId),
     CONSTRAINT UQ_QueryDef UNIQUE (Container, "Schema", Name)
-    );
+    )
+GO
 
 CREATE TABLE query.CustomView (
     CustomViewId INT IDENTITY(1,1) NOT NULL,
@@ -55,7 +56,8 @@ CREATE TABLE query.CustomView (
     Flags INT NOT NULL,
     CONSTRAINT PK_CustomView PRIMARY KEY (CustomViewId),
     CONSTRAINT UQ_CustomView UNIQUE (Container, "Schema", QueryName, CustomViewOwner, Name)
-    );
+    )
+GO
 
 /* query-1.60-1.70.sql */
 
@@ -74,8 +76,10 @@ CREATE TABLE query.DbUserSchema (
 
     CONSTRAINT PK_DbUserSchema PRIMARY KEY(DbUserSchemaId),
     CONSTRAINT UQ_DbUserSchema UNIQUE(Container,UserSchemaName)
-);
+)
+GO
 
 /* query-1.70-2.00.sql */
 
-UPDATE query.querydef SET metadata = REPLACE(CAST(metadata AS VARCHAR(8000)), 'http://cpas.fhcrc.org/data/xml', 'http://labkey.org/data/xml');
+UPDATE query.querydef SET metadata = REPLACE(CAST(metadata AS VARCHAR(8000)), 'http://cpas.fhcrc.org/data/xml', 'http://labkey.org/data/xml')
+GO

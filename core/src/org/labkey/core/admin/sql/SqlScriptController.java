@@ -17,7 +17,6 @@
 package org.labkey.core.admin.sql;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -25,9 +24,9 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.*;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.module.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -156,27 +155,29 @@ public class SqlScriptController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            TableInfo tinfo = CoreSchema.getInstance().getTableInfoSqlScripts();
-            List<String> allRun = Arrays.asList(Table.executeArray(tinfo, tinfo.getColumn("FileName"), null, new Sort("FileName"), String.class));
-            List<String> incrementalRun = new ArrayList<String>();
-
-            for (String filename : allRun)
-                if (isIncrementalScript(filename))
-                    incrementalRun.add(filename);
-
+            Container c = getContainer();
             StringBuilder html = new StringBuilder();
             if (AppProps.getInstance().isDevMode())
                 html.append("[<a href='consolidateScripts.view'>consolidate scripts</a>]<p/>");
             html.append("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
-
             html.append("<tr valign=top>");
 
-            appendFilenames(html, allRun);
-            appendFilenames(html, incrementalRun);
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoSqlScripts();
 
-            List<String> allNotRun = new ArrayList<String>();
-            List<String> incrementalNotRun = new ArrayList<String>();
+            // Need both filename and moduleName to create links for each script
+            List<Script> allRun = Arrays.asList(Table.select(tinfo, tinfo.getColumns("FileName, ModuleName"), null, new Sort("FileName"), Script.class));
+            List<Script> incrementalRun = new ArrayList<Script>();
+
+            for (Script script : allRun)
+                if (isIncrementalScript(script))
+                    incrementalRun.add(script);
+
+            appendScripts(c, html, allRun);
+            appendScripts(c, html, incrementalRun);
+
+            List<Script> allNotRun = new ArrayList<Script>();
+            List<Script> incrementalNotRun = new ArrayList<Script>();
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
             for (Module module : modules)
@@ -191,18 +192,22 @@ public class SqlScriptController extends SpringActionController
                         List<SqlScriptRunner.SqlScript> scripts = provider.getScripts(null);
 
                         for (SqlScriptRunner.SqlScript script : scripts)
-                            if (!allRun.contains(script.getDescription()))
-                                allNotRun.add(script.getDescription());
+                        {
+                            Script scriptBean = new Script(defModule.getName(), script.getDescription());
+
+                            if (!allRun.contains(scriptBean))
+                                allNotRun.add(scriptBean);
+                        }
                     }
                 }
             }
 
-            for (String filename : allNotRun)
-                if (isIncrementalScript(filename))
-                    incrementalNotRun.add(filename);
+            for (Script script : allNotRun)
+                if (isIncrementalScript(script))
+                    incrementalNotRun.add(script);
 
-            appendFilenames(html, allNotRun);
-            appendFilenames(html, incrementalNotRun);
+            appendScripts(c, html, allNotRun);
+            appendScripts(c, html, incrementalNotRun);
 
             html.append("</tr></table>");
 
@@ -221,8 +226,9 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private boolean isIncrementalScript(String filename)
+    private boolean isIncrementalScript(Script script)
     {
+        String filename = script.getFilename();
         String[] parts = filename.split("-|\\.sql");
 
         double startVersion = Double.parseDouble(parts[1]) * 10;
@@ -232,15 +238,26 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private void appendFilenames(StringBuilder html, List<String> filenames)
+    private void appendScripts(Container c, StringBuilder html, List<Script> scripts)
     {
         html.append("<td>\n");
 
-        if (filenames.size() > 0)
+        if (scripts.size() > 0)
         {
-            Object[] filenameArray = filenames.toArray();
-            Arrays.sort(filenameArray);
-            html.append(StringUtils.join(filenameArray, "<br>\n"));
+            Collections.sort(scripts);
+
+            for (Script script : scripts)
+            {
+                ActionURL url = new ActionURL(ScriptAction.class, c);
+                url.addParameter("moduleName", script.getModuleName());
+                url.addParameter("filename", script.getFilename());
+
+                html.append("<a href=\"");
+                html.append(url);
+                html.append("\">");
+                html.append(script.getFilename());
+                html.append("</a><br>\n");
+            }
         }
         else
             html.append("None");
@@ -326,9 +343,7 @@ public class SqlScriptController extends SpringActionController
                 html.append("<br>\n");
 
                 ActionURL consolidateURL = getConsolidateSchemaURL(ConsolidateSchemaAction.class, consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
-                ActionURL consolidateAndReorderURL = getConsolidateSchemaURL(ConsolidateSchemaAndReorderAction.class, consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
-                html.append("[<a href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</a>] " +
-                            "[<a href=\"").append(consolidateAndReorderURL.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" and reorder to ").append(filename).append("</a>]<br><br>\n");
+                html.append("[<a href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</a>]<br><br>\n");
             }
 
             if (0 == html.length())
@@ -564,107 +579,326 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
-    public class ConsolidateSchemaAndReorderAction extends ConsolidateSchemaAction
+    public static class Script implements Comparable<Script>
     {
-        @Override
-        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion) throws SqlScriptRunner.SqlScriptException
+        private String _moduleName;
+        private String _filename;
+
+        public Script()
         {
-            return new ReorderingScriptConsolidator(provider, schemaName, fromVersion, toVersion);
+        }
+
+        public Script(String moduleName, String filename)
+        {
+            _moduleName = moduleName;
+            _filename = filename;
+        }
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            _moduleName = moduleName;
+        }
+
+        public String getFilename()
+        {
+            return _filename;
+        }
+
+        public void setFilename(String filename)
+        {
+            _filename = filename;
+        }
+
+        public int compareTo(Script s2)
+        {
+            return getFilename().compareTo(s2.getFilename());
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Script script = (Script) o;
+
+            return !(_filename != null ? !_filename.equals(script._filename) : script._filename != null);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _filename != null ? _filename.hashCode() : 0;
         }
     }
 
 
-    private static class ReorderingScriptConsolidator extends ScriptConsolidator
+    @RequiresSiteAdmin
+    public class ScriptAction extends SimpleViewAction<Script>
+    {
+        private String _filename;
+
+        public ModelAndView getView(Script script, BindException errors) throws Exception
+        {
+            DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(script.getModuleName());
+            FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+            _filename = script.getFilename();
+
+            return getScriptView(provider.getScript(_filename));
+        }
+
+        protected ModelAndView getScriptView(SqlScriptRunner.SqlScript script)
+        {
+            return new ScriptView(script);
+        }
+
+        protected String getActionDescription()
+        {
+            return _filename;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new ScriptsAction().appendNavTrail(root);
+            root.addChild(getActionDescription());
+            return root;
+        }
+    }
+
+
+    private static class ScriptView extends HttpView<SqlScriptRunner.SqlScript>
+    {
+        private ScriptView(SqlScriptRunner.SqlScript script)
+        {
+            super(script);
+        }
+
+        @Override
+        protected void renderInternal(SqlScriptRunner.SqlScript script, PrintWriter out) throws Exception
+        {
+            String contents = script.getContents();
+            String errorMessage = script.getErrorMessage();
+
+            if (null == errorMessage)
+            {
+                renderScript(contents, out);
+
+                if (AppProps.getInstance().isDevMode())
+                    renderButtons(script, out);
+            }
+            else
+            {
+                out.print("Error: " + PageFlowUtil.filter(errorMessage));
+            }
+        }
+
+        protected void renderScript(String contents, PrintWriter out)
+        {
+            out.println("<pre>");
+            out.println(PageFlowUtil.filter(contents));
+            out.println("</pre>");
+        }
+
+        protected void renderButtons(SqlScriptRunner.SqlScript script, PrintWriter out)
+        {
+            ActionURL url = new ActionURL(ReorderScriptAction.class, getViewContext().getContainer());
+            url.addParameter("moduleName", script.getProvider().getProviderName());
+            url.addParameter("filename", script.getDescription());
+            out.println(PageFlowUtil.generateButton("Reorder Script", url));
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ReorderScriptAction extends ScriptAction
+    {
+        @Override
+        protected ModelAndView getScriptView(SqlScriptRunner.SqlScript script)
+        {
+            return new ReorderingScriptView(script);
+        }
+
+        @Override
+        protected String getActionDescription()
+        {
+            return "Reorder " + super.getActionDescription();
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class SaveReorderedScriptAction extends ReorderScriptAction
+    {
+
+    }
+
+
+    private static class ReorderingScriptView extends ScriptView
+    {
+        private ReorderingScriptView(SqlScriptRunner.SqlScript script)
+        {
+            super(script);
+        }
+
+        @Override
+        protected void renderScript(String contents, PrintWriter out)
+        {
+            out.println("<table>");
+            ScriptReorderer reorderer = new ScriptReorderer(contents);
+            out.println(reorderer.getReorderedScript(true));
+            out.println("</table>");
+        }
+
+        protected void renderButtons(SqlScriptRunner.SqlScript script, PrintWriter out)
+        {
+            ActionURL url = new ActionURL(SaveReorderedScriptAction.class, getViewContext().getContainer());
+            url.addParameter("moduleName", script.getProvider().getProviderName());
+            url.addParameter("filename", script.getDescription());
+            out.println(PageFlowUtil.generateButton("Save Reordered Script to " + script.getDescription(), url));
+        }
+    }
+
+
+    private static class ScriptReorderer
     {
         private static final String TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:[a-zA-Z0-9]+))";
         private static final String STATEMENT_ENDING_REGEX = "GO$(\\s*)";
         private static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
 
-        private Map<String, Collection<String>> _statements = new LinkedHashMap<String, Collection<String>>();
+        private String _contents;
+        private int _row = 0;
+        private final Map<String, Collection<String>> _statements = new LinkedHashMap<String, Collection<String>>();
+        private final List<String> _unknownStatements = new LinkedList<String>();
 
-        private ReorderingScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion)
-                throws SqlScriptRunner.SqlScriptException
+        private ScriptReorderer(String contents)
         {
-            super(provider, schemaName, fromVersion, toVersion);
-            _includeOriginatingScriptComments = false;
+            _contents = contents;
         }
 
-        @Override
-        protected String getConsolidatedScript()
+        public String getReorderedScript(boolean isHtml)
         {
             Pattern commentPattern = compile(COMMENT_REGEX);
 
-            List<Pattern> patterns = new ArrayList<Pattern>(10);
-            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\(.+?\\) VALUES \\(.+?\\)(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
-            patterns.add(compile("EXEC sp_rename '" + TABLE_NAME_REGEX + ".+?(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
+            List<Pattern> patterns = new LinkedList<Pattern>();
+            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))"));
+            patterns.add(compile("INSERT INTO " + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+? "+ STATEMENT_ENDING_REGEX));
+            patterns.add(compile("EXEC sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'.+?" + STATEMENT_ENDING_REGEX ));
+            patterns.add(compile("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX));
             patterns.add(compile("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX [a-zA-Z0-9_]+? ON " + TABLE_NAME_REGEX + ".+? " + STATEMENT_ENDING_REGEX));
             patterns.add(compile(getRegExWithPrefix("CREATE TABLE ")));
             patterns.add(compile(getRegExWithPrefix("ALTER TABLE ")));
             patterns.add(compile(getRegExWithPrefix("INSERT INTO ")));
             patterns.add(compile(getRegExWithPrefix("UPDATE ")));
             patterns.add(compile(getRegExWithPrefix("DELETE FROM ")));
+            patterns.add(compile(getRegExWithPrefix("DROP TABLE ")));
+
+            List<Pattern> nonTablePatterns = new LinkedList<Pattern>();
+            nonTablePatterns.add(compile(getRegExWithPrefix("CREATE PROCEDURE ")));
 
             StringBuilder newScript = new StringBuilder();
             StringBuilder unknown = new StringBuilder();
-            String script = super.getConsolidatedScript();
 
             boolean firstMatch = true;
 
-            while (0 < script.length())
+            while (0 < _contents.length())
             {
                 // Parse all the comments first.  If we match a table statement next, we'll include the comments.
                 StringBuilder comments = new StringBuilder();
 
-                Matcher m = commentPattern.matcher(script);
+                Matcher m = commentPattern.matcher(_contents);
 
                 while (m.lookingAt())
                 {
                     comments.append(m.group());
-                    script = script.substring(m.end());
-                    m = commentPattern.matcher(script);
+                    _contents = _contents.substring(m.end());
+                    m = commentPattern.matcher(_contents);
                 }
 
                 boolean found = false;
 
                 for (Pattern p : patterns)
                 {
-                    m = p.matcher(script);
+                    m = p.matcher(_contents);
 
                     if (m.lookingAt())
                     {
                         if (firstMatch)
                         {
-                            newScript.append(unknown);
+                            // Section before first match (copyright, license, type creation, etc.) always goes first
+                            addStatement("initial section", unknown.toString());
                             unknown = new StringBuilder();
                             firstMatch = false;
                         }
 
-                        addStatement(m.group(1), comments + m.group());
-                        script = script.substring(m.end());
+                        String tableName = m.group(1);
+
+                        if (-1 == tableName.indexOf('.'))
+                            tableName = m.group(2) + "." + m.group(1);
+
+                        addStatement(tableName, comments + m.group());
+                        _contents = _contents.substring(m.end());
                         found = true;
                         break;
                     }
                 }
 
+                String nonTableStatement = null;
+
                 if (!found)
+                {
+                    for (Pattern p : nonTablePatterns)
+                    {
+                        m = p.matcher(_contents);
+
+                        if (m.lookingAt())
+                        {
+                            nonTableStatement = comments + m.group();
+                            _contents = _contents.substring(m.end());
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (found)
+                {
+                    if (unknown.length() > 0)
+                    {
+                        _unknownStatements.add(unknown.toString());
+                        unknown = new StringBuilder();
+                    }
+                }
+                else
                 {
                     unknown.append(comments);
 
-                    if (script.length() > 0)
+                    if (_contents.length() > 0)
                     {
-                        unknown.append(script.charAt(0));
-                        script = script.substring(1);
+                        unknown.append(_contents.charAt(0));
+                        _contents = _contents.substring(1);
                     }
                 }
+
+                if (null != nonTableStatement)
+                    _unknownStatements.add(nonTableStatement);
             }
 
-            appendAllStatements(newScript);
+            appendAllStatements(newScript, isHtml);
 
             if (unknown.length() > 0)
+                _unknownStatements.add(unknown.toString());
+
+            if (!_unknownStatements.isEmpty())
             {
-                newScript.append("\n=======================\n");
-                newScript.append(unknown);
+                appendStatement(newScript, "\n=======================\n", isHtml);
+
+                for (String unknownStatement : _unknownStatements)
+                    appendStatement(newScript, unknownStatement, isHtml);
             }
 
             return newScript.toString();
@@ -695,20 +929,33 @@ public class SqlScriptController extends SpringActionController
             tableStatements.add(statement);
         }
 
-        private void appendAllStatements(StringBuilder sb)
+        private void appendAllStatements(StringBuilder sb, boolean html)
         {
             for (Map.Entry<String, Collection<String>> tableStatements : _statements.entrySet())
-            {
                 for (String statement : tableStatements.getValue())
-                {
-                    sb.append(statement);
-                }
+                    appendStatement(sb, statement, html);
+        }
+
+        private void appendStatement(StringBuilder sb, String statement, boolean html)
+        {
+            if (html)
+            {
+                sb.append("<tr class=\"");
+                sb.append(0 == (_row % 2) ? "labkey-row" : "labkey-alternate-row");
+                sb.append("\"><td>");
+                sb.append(PageFlowUtil.filter(statement, true));
+                sb.append("</td></tr>\n");
+                _row++;
+            }
+            else
+            {
+                sb.append(statement);
             }
         }
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ExtractViewsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

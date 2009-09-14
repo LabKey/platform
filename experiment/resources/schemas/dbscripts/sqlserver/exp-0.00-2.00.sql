@@ -838,8 +838,9 @@ GO
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT UQ_PropertyDescriptor
 GO
 
-EXEC sp_rename @objname = 'exp.PropertyDescriptor',       @newname = 'PropertyDescriptorOld'
+EXEC sp_rename @objname = 'exp.PropertyDescriptor', @newname = 'PropertyDescriptorOld'
 GO
+
 CREATE TABLE exp.PropertyDescriptor (
 	PropertyId int IDENTITY (1, 1) NOT NULL ,
 	PropertyURI nvarchar (200) NOT NULL ,

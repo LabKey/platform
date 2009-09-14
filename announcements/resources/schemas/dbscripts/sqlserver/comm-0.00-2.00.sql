@@ -162,12 +162,14 @@ CREATE TABLE comm.PageTypes
 	PageType NVARCHAR(20),
 	CONSTRAINT PK_PageTypes PRIMARY KEY (PageTypeId)
 	)
+GO
 
 INSERT INTO comm.PageTypes (PageTypeId, PageType)
 VALUES (0, 'Message')
 
 INSERT INTO comm.PageTypes (PageTypeId, PageType)
 VALUES (1, 'Wiki')
+GO
 
 CREATE TABLE comm.EmailPrefs
 	(
@@ -192,10 +194,12 @@ INSERT INTO comm.EmailPrefs (Container, UserId, EmailOptionId, EmailFormatId, Pa
         core.Containers ON prop.PropertySets.ObjectId = core.Containers.EntityId INNER JOIN
         core.Users ON prop.PropertySets.UserId = core.Users.UserId
     WHERE (prop.PropertySets.Category = 'Announcements' AND prop.Properties.Name = 'email')
+GO
 
 DELETE FROM prop.Properties
 WHERE prop.Properties.[Set] IN
     (SELECT [Set] FROM prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements')
+GO
 
 DELETE FROM prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements'
 GO
@@ -203,20 +207,26 @@ GO
 /* comm-1.40-1.50.sql */
 
 ALTER TABLE comm.EmailPrefs ADD LastModifiedBy USERID
+GO
 
 /* comm-1.50-1.60.sql */
 
 ALTER TABLE comm.PageVersions ADD RendererType NVARCHAR(50) NOT NULL DEFAULT 'RADEOX'
+GO
 ALTER TABLE comm.Announcements ADD RendererType NVARCHAR(50) NOT NULL DEFAULT 'RADEOX'
 GO
 
 UPDATE comm.PageVersions SET RendererType = 'HTML' WHERE Body LIKE '<div%'
+GO
 UPDATE comm.Announcements SET RendererType = 'HTML' WHERE Body LIKE '<div%'
 GO
 
 ALTER TABLE comm.PageVersions DROP CONSTRAINT FK_PageVersions_Renderer
 ALTER TABLE comm.PageVersions DROP COLUMN RendererId
+GO
+
 DROP TABLE comm.Renderers
+GO
 
 /* comm-1.60-1.70.sql */
 
