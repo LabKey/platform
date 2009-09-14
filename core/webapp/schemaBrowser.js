@@ -452,7 +452,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     selectQuery : function(schemaName, queryName) {
         var tree = this.getComponent("tree");
         var root = tree.getRootNode();
-        var schemaNode = root.findChild("text", schemaName);
+        var schemaNode = root.findChildBy(function(node){return node.attributes.schemaName.toLowerCase() == schemaName.toLowerCase();});
         if (!schemaNode)
         {
             Ext.Msg.alert("Missing Schema", "The schema name " + schemaName + " was not found in the browser!");
@@ -465,9 +465,9 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             //look for the query node under both built-in and user-defined
             var queryNode;
             if (schemaNode.childNodes.length > 0)
-                queryNode = schemaNode.childNodes[0].findChild("text", queryName);
+                queryNode = schemaNode.childNodes[0].findChildBy(function(node){return node.text.toLowerCase() == queryName.toLowerCase();});
             if (!queryNode && schemaNode.childNodes.length > 1)
-                queryNode = schemaNode.childNodes[1].findChild("text", queryName);
+                queryNode = schemaNode.childNodes[1].findChildBy(function(node){return node.text.toLowerCase() == queryName.toLowerCase();});
 
             if (!queryNode)
             {
