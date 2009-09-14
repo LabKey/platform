@@ -276,6 +276,12 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 scope: this,
                 iconCls: 'iconFileNew'
             });
+            tbar.push({
+                text: 'Validate Queries',
+                handler: function(){window.location = LABKEY.ActionURL.buildURL("query", "validateQueries");},
+                scope: this,
+                iconCls: 'iconCheck'
+            });
         }
 
         Ext.apply(this,{
