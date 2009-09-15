@@ -17,10 +17,11 @@
 package org.labkey.query;
 
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Table;
+import org.labkey.api.query.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.query.sql.Query;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
@@ -50,6 +51,64 @@ public class TableQueryDefinition extends QueryDefinitionImpl
             result.setSchema(schema.getSchemaName());
         }
         return result;
+    }
+
+    public ActionURL urlFor(QueryAction action, Container container)
+    {
+        ActionURL url = null;
+        List<QueryException> errors = new ArrayList<QueryException>();
+        TableInfo table = getTable(getSchema(), errors, true);
+        if (table != null)
+        {
+            switch (action)
+            {
+                case insertQueryRow:
+                    url = table.getInsertURL(container);
+                    break;
+                case executeQuery:
+                    url = table.getGridURL(container);
+                    break;
+            }
+        }
+
+        return url != null ? url : super.urlFor(action, container);
+    }
+
+    public StringExpressionFactory.StringExpression urlExpr(QueryAction action, Container container)
+    {
+        StringExpressionFactory.StringExpression expr = null;
+        List<QueryException> errors = new ArrayList<QueryException>();
+        TableInfo table = getTable(getSchema(), errors, true);
+        if (table != null)
+        {
+            switch (action)
+            {
+                case updateQueryRow:
+                    expr = table.getUpdateURL(Table.createColumnMap(table, null), container);
+                    break;
+            }
+        }
+
+        if (expr == null)
+        {
+            // XXX: is this the best place to create a generic query action expression url?
+            ActionURL url = super.urlFor(action, container);
+            if (url != null)
+            {
+                List<String> pkColumnNames = table.getPkColumnNames();
+                if (pkColumnNames.size() > 0)
+                {
+                    StringBuilder sb = new StringBuilder(url.getLocalURIString());
+                    for (String columnName : pkColumnNames)
+                    {
+                        sb.append("&").append(columnName).append("=${").append(columnName).append("}");
+                    }
+                    expr = StringExpressionFactory.create(sb.toString());
+                }
+            }
+        }
+
+        return expr;
     }
 
     @Override
@@ -96,4 +155,5 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         return getTable(getSchema(), new ArrayList<QueryException>(), true).isMetadataOverrideable();
     }
+
 }

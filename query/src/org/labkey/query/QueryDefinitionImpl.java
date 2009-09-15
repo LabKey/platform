@@ -28,6 +28,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -384,6 +385,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, getName());
         url.addParameter(QueryParam.schemaName.toString(), getSchemaName());
         return url;
+    }
+
+    public StringExpressionFactory.StringExpression urlExpr(QueryAction action, Container container)
+    {
+        // UNDONE: use getMainTable().urlExpr(action, container) instead
+        ActionURL url = urlFor(action, container);
+        if (url != null)
+            return StringExpressionFactory.create(url.getLocalURIString());
+        return null;
     }
 
     public String getDescription()

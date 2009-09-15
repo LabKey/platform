@@ -168,7 +168,7 @@ public class BtController extends SpringActionController
             }
             BtThreadPool.get();
 
-            ActionURL forward = QueryService.get().urlFor(getContainer(), QueryAction.executeQuery, BtSchema.name, BtSchema.TableType.Tasks.toString());
+            ActionURL forward = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, BtSchema.name, BtSchema.TableType.Tasks.toString());
             return HttpView.redirect(forward);
         }
 

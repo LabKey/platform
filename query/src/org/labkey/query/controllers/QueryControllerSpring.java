@@ -31,7 +31,9 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -56,6 +58,7 @@ import org.labkey.query.sql.SqlParser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.beans.PropertyValues;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -1209,7 +1212,207 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    
+    protected static abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
+    {
+        QueryForm _form;
+        UserSchema _schema;
+        TableInfo _table;
+
+        public BindException bindParameters(PropertyValues m) throws Exception
+        {
+            QueryForm form = new QueryForm();
+            form.setViewContext(getViewContext());
+            form.bindParameters(getViewContext().getBindPropertyValues());
+
+            _form = form;
+            _schema = form.getSchema();
+            if (null == _schema)
+            {
+                HttpView.throwNotFound("Schema not found");
+                return null;
+            }
+            _table = _schema.getTable(form.getQueryName());
+            if (null == _table)
+            {
+                HttpView.throwNotFound("Query not found");
+                return null;
+            }
+            QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext());
+            BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
+            command.validateBind(errors);
+            return errors;
+        }
+
+        public void validateCommand(QueryUpdateForm target, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(QueryUpdateForm form)
+        {
+            return _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            if (_table != null)
+                root.addChild(_table.getName(), getSuccessURL(null));
+            return root;
+        }
+
+        protected Map<String, Object> getFormValues(QueryUpdateForm form, TableInfo table)
+        {
+            Map<String, Object> values = new HashMap<String, Object>();
+            for (ColumnInfo column : form.getTable().getColumns())
+            {
+                if (form.hasTypedValue(column))
+                {
+                    values.put(column.getName(), form.getTypedValue(column));
+                }
+            }
+            return values;
+        }
+
+        protected void doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
+        {
+            TableInfo table = form.getTable();
+            if (!table.hasPermission(form.getUser(), insert ? ACL.PERM_INSERT : ACL.PERM_UPDATE))
+                HttpView.throwUnauthorized();
+
+            Map<String, Object> values = getFormValues(form, table);
+
+            QueryUpdateService qus = table.getUpdateService();
+            if (qus == null)
+                throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
+
+            try
+            {
+                if (insert)
+                {
+                    qus.insertRow(form.getUser(), form.getContainer(), values);
+                }
+                else
+                {
+                    Map<String, Object> oldValues = null;
+                    if (form.getOldValues() instanceof Map)
+                    {
+                        oldValues = (Map<String, Object>)form.getOldValues();
+                    }
+                    qus.updateRow(form.getUser(), form.getContainer(), values, oldValues);
+                }
+            }
+            catch (SQLException x)
+            {
+                if (!SqlDialect.isConstraintException(x))
+                    throw x;
+                errors.reject(ERROR_MSG, x.getMessage());
+            }
+            catch (Exception x)
+            {
+                errors.reject(ERROR_MSG, x.getMessage());
+            }
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public static class DetailsQueryRowAction extends UserSchemaAction
+    {
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            ButtonBar bb = new ButtonBar();
+
+            if (_schema != null && _table != null)
+            {
+                if (getViewContext().hasPermission(ACL.PERM_UPDATE))
+                {
+                    StringExpressionFactory.StringExpression updateExpr = _schema.urlExpr(QueryAction.updateQueryRow, _form.getQueryDef());
+                    if (updateExpr != null)
+                    {
+                        ActionURL updateUrl = new ActionURL(updateExpr.eval(tableForm.getTypedValues()));
+                        ActionButton editButton = new ActionButton("Edit", updateUrl);
+                        bb.add(editButton);
+                    }
+                }
+
+                ActionURL gridUrl = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+                if (gridUrl != null)
+                {
+                    ActionButton gridButton = new ActionButton("Show Grid", gridUrl);
+                    bb.add(gridButton);
+                }
+            }
+
+            DetailsView view = new DetailsView(tableForm);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            return false;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            super.appendNavTrail(root);
+            root.addChild("Details");
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public static class InsertQueryRowAction extends UserSchemaAction
+    {
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            ButtonBar bb = new ButtonBar();
+            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
+            bb.add(btnSubmit);
+            InsertView view = new InsertView(tableForm, errors);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            doInsertUpdate(tableForm, errors, true);
+            return 0 == errors.getErrorCount();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            super.appendNavTrail(root);
+            root.addChild("Insert");
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public static class UpdateQueryRowAction extends UserSchemaAction
+    {
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            ButtonBar bb = new ButtonBar();
+            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
+            bb.add(btnSubmit);
+            UpdateView view = new UpdateView(tableForm, errors);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            doInsertUpdate(tableForm, errors, false);
+            return 0 == errors.getErrorCount();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            super.appendNavTrail(root);
+            root.addChild("Edit");
+            return root;
+        }
+    }
+
     // alias
     public class DeleteAction extends DeleteQueryRowsAction
     {

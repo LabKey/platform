@@ -1670,7 +1670,6 @@ query/src/org/labkey/query/sql/UnionTableInfoImpl.java -text
 query/src/org/labkey/query/sql/sql.g -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
 query/src/org/labkey/query/view/DbUserSchema.java -text
-query/src/org/labkey/query/view/DbUserSchemaView.java -text
 query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/EditQueryView.java -text
 query/src/org/labkey/query/view/QueryWebPartFactory.java -text

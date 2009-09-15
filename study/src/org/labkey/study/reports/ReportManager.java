@@ -356,7 +356,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         }
 
         @Override
-        public ActionURL getViewRunURL(Container c, CustomViewInfo view)
+        public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
         {
             Map<String, DataSetDefinition> datasets = getDatasets(c);
 
@@ -380,7 +380,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
                         addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
 
-            return super.getViewRunURL(c, view);
+            return super.getViewRunURL(user, c, view);
         }
     }
 

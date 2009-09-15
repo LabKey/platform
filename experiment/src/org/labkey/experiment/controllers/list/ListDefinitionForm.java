@@ -52,6 +52,12 @@ public class ListDefinitionForm extends ViewForm
         return _returnUrl;
     }
 
+    // alias to support both returnUrl and srcURL parameters
+    public void setSrcURL(String srcUrl)
+    {
+        _returnUrl = srcUrl;
+    }
+    
     public void setReturnUrl(String returnUrl)
     {
         _returnUrl = returnUrl;

@@ -81,22 +81,37 @@ public class QueryServiceImpl extends QueryService
         return new CustomQueryDefinitionImpl(container, schema, name);
     }
 
-    public ActionURL urlQueryDesigner(Container container, String schema)
+    public ActionURL urlQueryDesigner(User user, Container container, String schema)
     {
-        return urlFor(container, QueryAction.begin, schema, null);
+        return urlFor(user, container, QueryAction.begin, schema, null);
     }
 
-    public ActionURL urlFor(Container container, QueryAction action, String schema, String query)
+    public ActionURL urlFor(User user, Container container, QueryAction action, String schema, String query)
     {
-        ActionURL ret = new ActionURL("query", action.toString(), container);
-        if (schema != null)
+        ActionURL ret = null;
+        if (schema != null && query != null)
         {
-            ret.addParameter(QueryParam.schemaName.toString(), schema);
+            UserSchema userschema = QueryService.get().getUserSchema(user, container, schema);
+            if (userschema != null)
+            {
+                QueryDefinition queryDef = QueryService.get().getQueryDef(container, schema, query);
+                if (queryDef == null)
+                    queryDef = userschema.getQueryDefForTable(query);
+                if (queryDef != null)
+                    ret = userschema.urlFor(action, queryDef);
+            }
         }
-        if (query != null)
+
+        if (ret == null)
         {
-            ret.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, query);
+            // old behavior for backwards compatibility
+            ret = new ActionURL("query", action.toString(), container);
+            if (schema != null)
+                ret.addParameter(QueryParam.schemaName.toString(), schema);
+            if (query != null)
+                ret.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, query);
         }
+
         return ret;
     }
 

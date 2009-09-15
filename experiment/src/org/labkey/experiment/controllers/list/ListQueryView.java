@@ -34,12 +34,14 @@ public class ListQueryView extends QueryView
 {
     ListDefinition _list;
     boolean _exportAsWebPage = false;
+
     public ListQueryView(ListQueryForm form, BindException errors)
     {
         super(form, errors);
         _list = form.getList();
         _exportAsWebPage = form.isExportAsWebPage();
         setShowExportButtons(_list.getAllowExport());
+        setShowUpdateColumn(true);
         QuerySettings settings = getSettings();
         settings.setAllowChooseQuery(false);
         disableContainerFilterSelection();
@@ -61,12 +63,6 @@ public class ListQueryView extends QueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        if (getViewContext().hasPermission(ACL.PERM_INSERT))
-        {
-            ActionURL returnUrl = getViewContext().getActionURL();
-            ActionButton btnInsert = new ActionButton("Insert New", getList().urlFor(ListController.Action.insert).addParameter("returnUrl", returnUrl.getLocalURIString()));
-            bar.add(btnInsert);
-        }
         super.populateButtonBar(view, bar, _exportAsWebPage);
         if (getViewContext().hasPermission(ACL.PERM_UPDATE) && _list.getAllowUpload())
         {
@@ -78,23 +74,6 @@ public class ListQueryView extends QueryView
             ActionButton btnUpload = new ActionButton("View Design", getList().urlFor(ListController.Action.showListDefinition));
             bar.add(btnUpload);
         }
-    }
-
-    public List<DisplayColumn> getDisplayColumns()
-    {
-        List<DisplayColumn> ret = new ArrayList<DisplayColumn>(super.getDisplayColumns());
-
-        if (getViewContext().hasPermission(ACL.PERM_UPDATE))
-        {
-            ActionURL url = _list.urlUpdate(null, getViewContext().getActionURL());
-            DetailsURL updateURL = new DetailsURL(url, Collections.singletonMap("pk", _list.getKeyName()));
-            ret.add(0, new UrlColumn(updateURL.getURL(Table.createColumnMap(getTable(), null)), "edit"));
-        }
-
-        DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
-        ret.add(0, new UrlColumn(detailsURL.getURL(Table.createColumnMap(getTable(), null)), "details"));
-
-        return ret;
     }
 
     public ListDefinition getList()

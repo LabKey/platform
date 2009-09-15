@@ -17,25 +17,16 @@
 package org.labkey.query.controllers.dbuserschema;
 
 import org.labkey.api.data.*;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.*;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.BaseViewAction;
-import org.labkey.query.controllers.QueryControllerSpring;
-import org.labkey.query.data.DbUserSchemaTable;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.util.StringExpressionFactory;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.beans.PropertyValues;
-import org.apache.commons.beanutils.ConvertUtils;
-
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class DbUserSchemaController extends SpringActionController
@@ -55,17 +46,13 @@ public class DbUserSchemaController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-
-    abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
+    abstract class DbUserRedirectAction extends SimpleRedirectAction
     {
-        String _schemaName;
-        String _queryName;
-        
-        public BindException bindParameters(PropertyValues m) throws Exception
+        public ActionURL getRedirectURL(Object o) throws Exception
         {
             QueryForm form = new QueryForm(null);
             form.setViewContext(getViewContext());
-            BaseViewAction.springBindParameters(form, getViewContext().getRequest());
+            form.bindParameters(getViewContext().getBindPropertyValues());
 
             UserSchema schema = form.getSchema();
             if (null == schema)
@@ -79,144 +66,34 @@ public class DbUserSchemaController extends SpringActionController
                 HttpView.throwNotFound("Query not found");
                 return null;
             }
-            _schemaName = form.getSchemaName().toString();
-            _queryName = form.getQueryName();
+
+            return getRedirectURL(form, schema, table);
+        }
+
+        abstract ActionURL getRedirectURL(QueryForm form, UserSchema schema, TableInfo table);
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class InsertAction extends DbUserRedirectAction
+    {
+        ActionURL getRedirectURL(QueryForm form, UserSchema schema, TableInfo table)
+        {
+            return schema.urlFor(QueryAction.insertQueryRow, form.getQueryDef());
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class UpdateAction extends DbUserRedirectAction
+    {
+        ActionURL getRedirectURL(QueryForm form, UserSchema schema, TableInfo table)
+        {
             QueryUpdateForm command = new QueryUpdateForm(table, getViewContext());
             BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
             command.validateBind(errors);
-            return errors;
+
+            StringExpressionFactory.StringExpression expr = schema.urlExpr(QueryAction.updateQueryRow, form.getQueryDef());
+            assert expr != null;
+            return new ActionURL(expr.eval(command.getTypedValues()));
         }
-
-        public void validateCommand(QueryUpdateForm target, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(QueryUpdateForm form)
-        {
-            return QueryService.get().urlFor(getContainer(), QueryAction.executeQuery, _schemaName, _queryName);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild(_queryName, getSuccessURL(null));
-            return root;
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_INSERT)
-    public class InsertAction extends UserSchemaAction
-    {
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
-        {
-            ButtonBar bb = new ButtonBar();
-            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
-            bb.add(btnSubmit);
-            InsertView view = new InsertView(tableForm, errors);
-            view.getDataRegion().setButtonBar(bb);
-            return view;
-        }
-
-        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
-        {
-            doInsertUpdate(tableForm, errors, true);
-            return 0 == errors.getErrorCount();
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            super.appendNavTrail(root);
-            root.addChild("Insert");
-            return root;
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_UPDATE)
-    public class UpdateAction extends UserSchemaAction
-    {
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
-        {
-            ButtonBar bb = new ButtonBar();
-            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
-            bb.add(btnSubmit);
-            UpdateView view = new UpdateView(tableForm, errors);
-            view.getDataRegion().setButtonBar(bb);
-            return view;
-        }
-
-        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
-        {
-            doInsertUpdate(tableForm, errors, false);
-            return 0 == errors.getErrorCount();
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            super.appendNavTrail(root);
-            root.addChild("Edit");
-            return root;
-        }
-    }
-
-
-    protected void doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
-    {
-        DbUserSchemaTable table = (DbUserSchemaTable)form.getTable();
-        
-        if (!table.hasPermission(getUser(), insert ? ACL.PERM_INSERT : ACL.PERM_UPDATE))
-            HttpView.throwUnauthorized();
-
-        Map<String, Object> values = new HashMap<String, Object>();
-        for (ColumnInfo column : form.getTable().getColumns())
-        {
-            if (form.hasTypedValue(column))
-            {
-                values.put(column.getName(), form.getTypedValue(column));
-            }
-        }
-        if (table.getContainerId() != null)
-        {
-            values.put("container", table.getContainerId());
-        }
-
-        try
-        {
-            if (insert)
-            {
-                Table.insert(getUser(), table.getRealTable(), values);
-            }
-            else
-            {
-                Object pkVal = form.getPkVal();
-                if (pkVal instanceof String)
-                {
-                    ColumnInfo col = table.getRealTable().getPkColumns().get(0);
-                    pkVal = ConvertUtils.convert((String)pkVal, col.getJavaClass());
-                }
-                if (table.getContainerId() != null)
-                {
-                    Map<String, Object> oldValues = Table.selectObject(table.getRealTable(), pkVal, Map.class);
-                    if (oldValues == null)
-                    {
-                        errors.reject(ERROR_MSG, "The existing row was not found.");
-                        return;
-                    }
-                    Object oldContainer = new CaseInsensitiveMapWrapper(oldValues).get("container");
-                    if (!table.getContainerId().equals(oldContainer))
-                    {
-                        errors.reject(ERROR_MSG, "The row is from the wrong container");
-                        return;
-                    }
-                }
-                Table.update(getUser(), table.getRealTable(), values, pkVal);
-            }
-        }
-        catch (SQLException x)
-        {
-            if (!SqlDialect.isConstraintException(x))
-                throw x;
-            errors.reject(ERROR_MSG, QueryControllerSpring.getMessage(table.getSchema().getSqlDialect() , x));
-        }        
     }
 }

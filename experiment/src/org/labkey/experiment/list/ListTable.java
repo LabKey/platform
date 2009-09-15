@@ -26,10 +26,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.list.AttachmentDisplayColumn;
+import org.labkey.experiment.controllers.list.ListController;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Collections;
 
 public class ListTable extends FilteredTable
 {
@@ -121,6 +123,18 @@ public class ListTable extends FilteredTable
         // Do this last so the column doesn't get selected as title column, etc.
         ColumnInfo colEntityId = wrapColumn(getRealTable().getColumn("EntityId"));
         addColumn(colEntityId);
+
+        DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
+        setGridURL(gridURL);
+
+        DetailsURL insertURL = new DetailsURL(_list.urlFor(ListController.Action.insert), Collections.<String, String>emptyMap());
+        setInsertURL(insertURL);
+
+        DetailsURL updateURL = new DetailsURL(_list.urlUpdate(null, null), Collections.singletonMap("pk", _list.getKeyName()));
+        setUpdateURL(updateURL);
+
+        DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
+        setDetailsURL(detailsURL);
     }
 
     private String findTitleColumn(ListDefinition listDef, ColumnInfo colKey)
@@ -149,13 +163,7 @@ public class ListTable extends FilteredTable
 
     public boolean hasPermission(User user, int perm)
     {
-        if ((perm & ~ACL.PERM_DELETE) != 0)
-            return false;
-        if ((perm & ACL.PERM_DELETE) != 0 && !_list.getContainer().hasPermission(user, ACL.PERM_DELETE))
-        {
-            return false;
-        }
-        return true;
+        return _list.getContainer().hasPermission(user, perm);
     }
 
     public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form)

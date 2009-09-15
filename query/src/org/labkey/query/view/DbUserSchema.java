@@ -23,61 +23,59 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.data.DbUserSchemaTable;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TableType;
 import org.apache.xmlbeans.XmlException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 
-public class DbUserSchema extends UserSchema
+public class DbUserSchema extends SimpleModuleUserSchema
 {
     private Logger _log = Logger.getLogger(DbUserSchema.class);
-    private Map<String, SchemaTableInfo> _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
     private DbUserSchemaDef _def;
     static final Map<String, DbSchema> s_schemaMap = new HashMap<String, DbSchema>();
 
     public DbUserSchema(User user, Container container, DbUserSchemaDef def)
     {
-        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, null);
+        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, initDbSchema(def));
         _def = def;
+        if (_dbSchema == null)
+        {
+            _dbSchema = CoreSchema.getInstance().getSchema();
+        }
+    }
+
+    private static DbSchema initDbSchema(DbUserSchemaDef def)
+    {
+        DbSchema dbSchema = null;
         synchronized (s_schemaMap)
         {
             if (s_schemaMap.containsKey(def.getDbSchemaName()))
             {
-                _dbSchema = s_schemaMap.get(def.getDbSchemaName());
+                dbSchema = s_schemaMap.get(def.getDbSchemaName());
             }
             else
             {
                 try
                 {
-                    _dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName());
+                    dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName());
                 }
                 catch (Exception e)
                 {
                     throw new RuntimeException(e);
                 }
-                s_schemaMap.put(def.getDbSchemaName(), _dbSchema);
+                s_schemaMap.put(def.getDbSchemaName(), dbSchema);
             }
         }
-
-        if (_dbSchema != null)
-        {
-            for (SchemaTableInfo table : _dbSchema.getTables())
-            {
-                _tables.put(table.getName(), table);
-            }
-        }
-        
-        if (_dbSchema == null)
-        {
-            _dbSchema = CoreSchema.getInstance().getSchema();
-        }
+        return dbSchema;
     }
 
     public static void uncache(DbUserSchemaDef def)
@@ -86,19 +84,9 @@ public class DbUserSchema extends UserSchema
         DbSchema.invalidateSchema(def.getDbSchemaName());
     }
 
-    public Set<String> getTableNames()
+    protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)
     {
-        return _tables.keySet();
-    }
-
-    public TableInfo createTable(String name)
-    {
-        SchemaTableInfo baseTable = _tables.get(name);
-        if (baseTable == null)
-        {
-            return null;
-        }
-        DbUserSchemaTable ret = new DbUserSchemaTable(this, baseTable, getXbTable(name));
+        DbUserSchemaTable ret = new DbUserSchemaTable(this, schematable, getXbTable(name));
         ret.setContainer(_def.getDbContainer());
         return ret;
     }
@@ -123,11 +111,6 @@ public class DbUserSchema extends UserSchema
         {
             return null;
         }
-    }
-
-    public QueryView createView(ViewContext context, QuerySettings settings) throws ServletException
-    {
-        return new DbUserSchemaView(this, settings);
     }
 
     public boolean areTablesEditable()

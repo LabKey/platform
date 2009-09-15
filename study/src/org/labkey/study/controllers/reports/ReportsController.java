@@ -1237,6 +1237,7 @@ public class ReportsController extends BaseStudyController
     {
         private List<String> _tableAndQueryNames;
         private Container _container;
+        private User _user;
         private String _queryName;
         private ActionURL _srcURL;
         private Map<String, DataSetDefinition> _datasetMap;
@@ -1245,6 +1246,7 @@ public class ReportsController extends BaseStudyController
         {
             _tableAndQueryNames = getTableAndQueryNames(context);
             _container = context.getContainer();
+            _user = context.getUser();
             _queryName = queryName;
             _srcURL = context.getActionURL();
         }
@@ -1278,7 +1280,7 @@ public class ReportsController extends BaseStudyController
 
         public ActionURL getQueryCustomizeURL()
         {
-            return QueryService.get().urlQueryDesigner(_container,
+            return QueryService.get().urlQueryDesigner(_user, _container,
                     StudySchema.getInstance().getSchema().getName());
         }
 
