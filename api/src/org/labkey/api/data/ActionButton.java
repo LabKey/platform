@@ -70,6 +70,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     {
         BUTTON_DELETE = new ActionButton("delete.post", "Delete");
         BUTTON_DELETE.setDisplayPermission(ACL.PERM_DELETE);
+        BUTTON_DELETE.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
         BUTTON_DELETE.lock();
         assert MemTracker.remove(BUTTON_DELETE);
 

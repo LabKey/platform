@@ -18,8 +18,10 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.apache.commons.lang.StringUtils;
 
@@ -29,6 +31,18 @@ import java.util.LinkedHashMap;
 
 public class DetailsURL
 {
+    /**
+     * Create a new DetailsURL from a string of the form "pageflow/action.view?paramKey=${paramVal}".
+     * A Controller will be required when creating the url using {@link DetailsURL#getURL(Map, Container)}.
+     */
+    static public DetailsURL fromString(String str) throws MetadataException
+    {
+        return fromString(null, str);
+    }
+
+    /**
+     * Create a new DetailsURL from a string of the form "pageflow/action.view?paramKey=${paramVal}".
+     */
     static public DetailsURL fromString(Container container, String str) throws MetadataException
     {
         int ichQuery = str.indexOf("?");
@@ -44,7 +58,8 @@ public class DetailsURL
         String strAction = pathParts[1];
         if (!strAction.endsWith(".view"))
             throw new MetadataException("Action name should end with '.view'");
-        ActionURL baseURL = new ActionURL(strPageFlow, strAction.substring(0, strAction.length() - 5), container);
+        strAction = strAction.substring(0, strAction.length() - 5);
+        Map<String, String> fixedParams = new HashMap<String, String>();
         Map<String, String> params = new HashMap<String, String>();
         for (String param : queryParams)
         {
@@ -61,10 +76,10 @@ public class DetailsURL
             }
             else
             {
-                baseURL.addParameter(key, decode(value));
+                fixedParams.put(key, decode(value));
             }
         }
-        return new DetailsURL(baseURL, params);
+        return new DetailsURL(strPageFlow, strAction, container, fixedParams, params);
     }
     static private String decode(String str) throws MetadataException
     {
@@ -79,20 +94,46 @@ public class DetailsURL
     }
 
     ActionURL _baseURL;
+    String _controller;
+    String _action;
+    Container _container;
+    Map<String, String> _fixedParams;
     Map<String, String> _columnParams;
 
     /**
      *
-     * @param baseURL
      * @param columnParams map from URL parameter to column name
      */
+
     public DetailsURL(ActionURL baseURL, Map<String, String> columnParams)
     {
-        _baseURL = baseURL;
+        _controller = baseURL.getPageFlow();
+        _action = baseURL.getAction();
+        _container = ContainerManager.getForPath(baseURL.getExtraPath());
+        _fixedParams = new HashMap<String, String>();
+        for (Pair<String, String> param : baseURL.getParameters())
+            _fixedParams.put(param.getKey(), param.getValue());
         _columnParams = columnParams;
+        _baseURL = baseURL;
+    }
+
+    public DetailsURL(String controller, String action, Container container, Map<String, String> fixedParams, Map<String, String> columnParams)
+    {
+        _controller = controller;
+        _action = action;
+        _container = container;
+        _fixedParams = fixedParams;
+        _columnParams = columnParams;
+        if (_container != null)
+            _baseURL = buildURL(_container);
     }
 
     public StringExpressionFactory.StringExpression getURL(Map<String, ColumnInfo> columns)
+    {
+        return getURL(columns, null);
+    }
+
+    public StringExpressionFactory.StringExpression getURL(Map<String, ColumnInfo> columns, Container c)
     {
         Map<String, ColumnInfo> params = new LinkedHashMap();
         for (Map.Entry<String, String> entry : _columnParams.entrySet())
@@ -102,12 +143,22 @@ public class DetailsURL
                 return null;
             params.put(entry.getKey(), column);
         }
-        return new LookupURLExpression(_baseURL, params);
+        return new LookupURLExpression(getBaseURL(c), params);
     }
 
-    public ActionURL getBaseURL()
+    public ActionURL getBaseURL(Container c)
     {
-        return _baseURL;
+        if (c == null && _container == null)
+            throw new IllegalArgumentException("container required");
+        return c == null ? _baseURL : buildURL(c);
+    }
+
+    private ActionURL buildURL(Container c)
+    {
+        ActionURL url = new ActionURL(_controller, _action, c);
+        for (Map.Entry<String, String> entry : _fixedParams.entrySet())
+            url.addParameter(entry.getKey(), entry.getValue());
+        return url;
     }
 
     public Map<String, String> getColumnParams()

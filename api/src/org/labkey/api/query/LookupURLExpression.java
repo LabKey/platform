@@ -55,6 +55,11 @@ public class LookupURLExpression implements StringExpressionFactory.StringExpres
         throw new UnsupportedOperationException();
     }
 
+    public void addParameter(String key, String value)
+    {
+        _base.addParameter(key, value);
+    }
+
     public void render(Writer out, Map ctx) throws IOException
     {
         out.write(eval(ctx));

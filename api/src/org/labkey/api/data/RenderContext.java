@@ -560,7 +560,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         for (Object m : list)
         {
             sb.append(br);
-            sb.append(getViewContext().getMessage((MessageSourceResolvable)m));
+            sb.append(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable)m)));
             br = "<br>";
         }
         if (sb.length() > 0)

@@ -58,4 +58,9 @@ public class URLExpression implements StringExpressionFactory.StringExpression
     {
         return null;
     }
+
+    public void addParameter(String key, String value)
+    {
+        _baseURL.addParameter(key, value);
+    }
 }

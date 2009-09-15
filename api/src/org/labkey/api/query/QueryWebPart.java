@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.User;
@@ -24,8 +23,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class QueryWebPart extends WebPartView
@@ -47,7 +44,7 @@ public class QueryWebPart extends WebPartView
         if(null != buttonBarPositionProp)
             _buttonBarPosition = DataRegion.ButtonBarPosition.valueOf(buttonBarPositionProp.toUpperCase());
 
-        ActionURL url = QueryService.get().urlQueryDesigner(getContainer(), null);
+        ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
         _schemaName = properties.get(QueryParam.schemaName.toString());
         _schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), _schemaName);
 
@@ -81,7 +78,7 @@ public class QueryWebPart extends WebPartView
         else
         {
             title = "Query";
-            setTitleHref(QueryService.get().urlQueryDesigner(getContainer(), null));
+            setTitleHref(QueryService.get().urlQueryDesigner(getUser(), getContainer(), null));
         }
         if (url != null)
         {

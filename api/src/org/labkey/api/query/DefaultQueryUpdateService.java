@@ -87,6 +87,19 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
         convertTypes(rowStripped);
         setSpecialColumns(user, container, getTable(), row);
+
+        Object rowContainer = row.get("container");
+        if (rowContainer != null)
+        {
+            Map<String, Object> oldValues = getRow(user, container, null == oldKeys ? row : oldKeys);
+            if (oldValues == null)
+                throw new QueryUpdateServiceException("The existing row was not found.");
+
+            Object oldContainer = new CaseInsensitiveHashMap(oldValues).get("container");
+            if (!rowContainer.equals(oldContainer))
+                throw new QueryUpdateServiceException("The row is from the wrong container.");
+        }
+
         Map<String,Object> updatedRow = Table.update(user, getTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys));
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes

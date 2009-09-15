@@ -20,6 +20,9 @@ import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -29,15 +32,17 @@ import java.util.*;
  */
 public class SimpleModuleUserSchema extends UserSchema
 {
-    private LinkedHashSet<String> _tableNames;
+    private Map<String, SchemaTableInfo> _tables;
 
-    public SimpleModuleUserSchema(String name, User user, Container container, DbSchema dbschema)
+    public SimpleModuleUserSchema(String name, String description, User user, Container container, DbSchema dbschema)
     {
-        super(name, null, user, container, dbschema);
-
-        _tableNames = new LinkedHashSet<String>();
-        for (SchemaTableInfo table : dbschema.getTables())
-            _tableNames.add(table.getName());
+        super(name, description, user, container, dbschema);
+        _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
+        if (_dbSchema != null)
+        {
+            for (SchemaTableInfo table : _dbSchema.getTables())
+                _tables.put(table.getName(), table);
+        }
     }
 
     protected TableInfo createTable(String name)
@@ -45,24 +50,34 @@ public class SimpleModuleUserSchema extends UserSchema
         SchemaTableInfo schematable = getDbSchema().getTable(name);
         if (schematable == null)
             return null;
+        return createTable(name, schematable);
+    }
+
+    protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)
+    {
         SimpleModuleTable usertable = new SimpleModuleTable(this, schematable);
         return usertable;
     }
 
     public Set<String> getTableNames()
     {
-        return Collections.unmodifiableSet(_tableNames);
+        return Collections.unmodifiableSet(_tables.keySet());
     }
 
-    class SimpleModuleTable extends FilteredTable
+    public static class SimpleModuleTable extends FilteredTable
     {
         SimpleModuleUserSchema _userSchema;
 
-        public SimpleModuleTable(SimpleModuleUserSchema schema, TableInfo table)
+        public SimpleModuleTable(SimpleModuleUserSchema schema, SchemaTableInfo table)
         {
             super(table);
             _userSchema = schema;
             wrapAllColumns();
+        }
+
+        protected SimpleModuleUserSchema getUserSchema()
+        {
+            return _userSchema;
         }
 
         public void wrapAllColumns()
@@ -80,7 +95,6 @@ public class SimpleModuleUserSchema extends UserSchema
                         colName.equalsIgnoreCase("createdby") ||
                         colName.equalsIgnoreCase("modifiedby"))
                 {
-                    //UserIdForeignKey.initColumn(wrap);
                     wrap.setDisplayColumnFactory(new DisplayColumnFactory() {
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
@@ -91,9 +105,20 @@ public class SimpleModuleUserSchema extends UserSchema
 
                 if (col.getFk() != null)
                 {
+                    //FIX: 5661
+                    //get the column name in the target FK table that it would have joined against
+                    //the existing fks should be of type SchemaForeignKey, so try to downcast to that
+                    //so that we can get the declared lookup column
                     ColumnInfo.SchemaForeignKey fk = (ColumnInfo.SchemaForeignKey)col.getFk();
-                    ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, fk.getLookupSchemaName(), null, fk.getLookupTableName(), fk.getLookupColumnName(), fk.isJoinWithContainer());
-                    wrap.setFk(wrapFk);
+                    String pkColName = fk.getLookupColumnName();
+                    if (null == pkColName && col.getFkTableInfo().getPkColumnNames().size() == 1)
+                        pkColName = col.getFkTableInfo().getPkColumnNames().get(0);
+
+                    if(null != pkColName)
+                    {
+                        ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, fk.getLookupSchemaName(), null, fk.getLookupTableName(), pkColName, fk.isJoinWithContainer());
+                        wrap.setFk(wrapFk);
+                    }
                 }
             }
         }
@@ -107,8 +132,32 @@ public class SimpleModuleUserSchema extends UserSchema
         @Override
         public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
         {
-            // UNDONE
-            throw new UnsupportedOperationException("Not yet implemented");
+            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
+            List<ColumnInfo> pk = getPkColumns();
+            if (pk.size() != 1)
+                throw new IllegalStateException("Primary key must have 1 column in it, found: " + pk.size());
+            ColumnInfo pkColumn = pk.get(0);
+            Collection pkValues = ids;
+            if (pkColumn.getJavaClass() != String.class)
+            {
+                pkValues = new LinkedList();
+                for (String id : ids)
+                {
+                    Object value = ConvertUtils.convert(id, pkColumn.getJavaClass());
+                    pkValues.add(value);
+                }
+            }
+
+            SimpleFilter filter = new SimpleFilter();
+            filter.addInClause(pk.get(0).getName(), pkValues);
+
+            addQueryFilters(filter);
+            Table.delete(getRealTable(), filter);
+            return srcURL;
+        }
+
+        protected void addQueryFilters(SimpleFilter filter)
+        {
         }
 
         @Override
@@ -122,7 +171,7 @@ public class SimpleModuleUserSchema extends UserSchema
         }
     }
 
-    class SimpleModuleForeignKey extends ColumnInfo.SchemaForeignKey
+    public static class SimpleModuleForeignKey extends ColumnInfo.SchemaForeignKey
     {
         UserSchema _userSchema;
 

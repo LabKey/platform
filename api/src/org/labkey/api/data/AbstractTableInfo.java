@@ -48,6 +48,10 @@ abstract public class AbstractTableInfo implements TableInfo
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
     protected String _description;
+
+    protected DetailsURL _gridURL;
+    protected DetailsURL _insertURL;
+    protected DetailsURL _updateURL;
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(0);
 
     public List<ColumnInfo> getPkColumns()
@@ -301,11 +305,37 @@ abstract public class AbstractTableInfo implements TableInfo
         _name = name;
     }
 
+    public ActionURL getGridURL(Container container)
+    {
+        if (_gridURL != null)
+            return _gridURL.getBaseURL(container);
+        return null;
+    }
+
+    public ActionURL getInsertURL(Container container)
+    {
+        if (_insertURL != null)
+            return _insertURL.getBaseURL(container);
+        return null;
+    }
+
+    public StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    {
+        if (_updateURL != null)
+            return _updateURL.getURL(columns, container);
+        return null;
+    }
+
     public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
+    {
+        return getDetailsURL(columns, null);
+    }
+
+    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
     {
         for (DetailsURL dUrl : _detailsURLs)
         {
-            StringExpressionFactory.StringExpression ret = dUrl.getURL(columns);
+            StringExpressionFactory.StringExpression ret = dUrl.getURL(columns, container);
             if (ret != null)
                 return ret;
         }
@@ -331,6 +361,21 @@ abstract public class AbstractTableInfo implements TableInfo
     public void addDetailsURL(DetailsURL detailsURL)
     {
         _detailsURLs.add(detailsURL);
+    }
+
+    public void setGridURL(DetailsURL gridURL)
+    {
+        _gridURL = gridURL;
+    }
+
+    public void setInsertURL(DetailsURL insertURL)
+    {
+        _insertURL = insertURL;
+    }
+    
+    public void setUpdateURL(DetailsURL updateURL)
+    {
+        _updateURL = updateURL;
     }
 
     public void setDefaultVisibleColumns(Iterable<FieldKey> list)
@@ -431,6 +476,18 @@ abstract public class AbstractTableInfo implements TableInfo
         {
             setTitleColumn(xbTable.getTitleColumn());
         }
+        if (xbTable.getGridUrl() != null)
+        {
+            _gridURL = DetailsURL.fromString(schema.getContainer(), xbTable.getGridUrl());
+        }
+        if (xbTable.getInsertUrl() != null)
+        {
+            _gridURL = DetailsURL.fromString(schema.getContainer(), xbTable.getInsertUrl());
+        }
+        if (xbTable.getUpdateUrl() != null)
+        {
+            _updateURL = DetailsURL.fromString(schema.getContainer(), xbTable.getUpdateUrl());
+        }
         if (xbTable.getTableUrl() != null)
         {
             try
@@ -439,7 +496,8 @@ abstract public class AbstractTableInfo implements TableInfo
             }
             catch (MetadataException me)
             {
-                qpe.add(me);
+                if (qpe != null)
+                    qpe.add(me);
             }
         }
         if (xbTable.isSetCacheSize())

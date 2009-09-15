@@ -22,6 +22,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryAction;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -96,12 +97,46 @@ public interface TableInfo
     String getSequence();
 
     /**
-     * Return the details URL expression for a particular record.
+     * Return the default query grid view URL for the table or null.
+     * Instead of calling this method directly, callers should pass
+     * {@link QueryAction#executeQuery} to
+     * {@link QueryView#urlFor(QueryAction)} or
+     * {@link UserSchema#urlFor(QueryAction, Container)}.
+     */
+    ActionURL getGridURL(Container container);
+
+    /**
+     * Return the insert URL expression for the table or null.
+     * If the table provides an update service via {@link #getUpdateService()},
+     * a default insert view will be provided.
+     * Instead of calling this method directly, callers should pass
+     * {@link QueryAction#insertQueryRow} to
+     * {@link QueryView#urlFor(QueryAction)} or
+     * {@link UserSchema#urlFor(QueryAction, Container)}.
+     */
+    ActionURL getInsertURL(Container container);
+
+    /**
+     * Return the update URL expression for a particular record or null.
+     * If the table provides an update service via {@link #getUpdateService()},
+     * a default update view will be provided.
+     * Instead of calling this method directly, callers should pass
+     * {@link QueryAction#updateQueryRow} to
+     * {@link QueryView#urlExpr(QueryAction)} or
+     * {@link UserSchema#urlExpr(QueryAction, Container)}.
+     */
+    StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container);
+
+    /**
+     * Return the details URL expression for a particular record or null.
      * The column map passed in maps from a name of a column in this table
      * to the actual ColumnInfo used to generate the SQL for the SELECT
      * statement.  (e.g. if this is the Protocol table, the column "LSID" might
      * actually be represented by the "ProtocolLSID" column from the ProtocolApplication table).
      */
+    StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container);
+
+    @Deprecated
     StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns);
 
     boolean hasPermission(User user, int perm);

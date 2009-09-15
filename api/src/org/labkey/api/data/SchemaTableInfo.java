@@ -19,14 +19,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.jetbrains.annotations.Nullable;
@@ -61,6 +59,10 @@ public class SchemaTableInfo implements TableInfo
     private String _sequence = null;
     private int _cacheSize = DbCache.CACHE_SIZE;
 
+    private DetailsURL _gridURL;
+    private DetailsURL _insertURL;
+    private DetailsURL _updateURL;
+    private DetailsURL _detailsURL;
 
     protected SchemaTableInfo(DbSchema parentSchema)
     {
@@ -486,6 +488,22 @@ public class SchemaTableInfo implements TableInfo
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
+        if (xmlTable.getGridUrl() != null)
+        {
+            _gridURL = DetailsURL.fromString(xmlTable.getGridUrl());
+        }
+        if (xmlTable.getInsertUrl() != null)
+        {
+            _gridURL = DetailsURL.fromString(xmlTable.getInsertUrl());
+        }
+        if (xmlTable.getUpdateUrl() != null)
+        {
+            _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl());
+        }
+        if (xmlTable.getTableUrl() != null)
+        {
+            _detailsURL = DetailsURL.fromString(xmlTable.getTableUrl());
+        }
 
         ColumnType[] xmlColumnArray = xmlTable.getColumns().getColumnArray();
 
@@ -636,8 +654,36 @@ public class SchemaTableInfo implements TableInfo
         return name;
     }
 
+    public ActionURL getGridURL(Container container)
+    {
+        if (_gridURL != null)
+            return _gridURL.getBaseURL(container);
+        return null;
+    }
+
+    public ActionURL getInsertURL(Container container)
+    {
+        if (_insertURL != null)
+            return _insertURL.getBaseURL(container);
+        return null;
+    }
+
+    public StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    {
+        if (_updateURL != null)
+            return _updateURL.getURL(columns, container);
+        return null;
+    }
+
     public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
     {
+        return getDetailsURL(columns, null);
+    }
+    
+    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
+    {
+        if (_detailsURL != null)
+            return _detailsURL.getURL(columns, container);
         return null;
     }
 

@@ -43,6 +43,8 @@ public class StringExpressionFactory
 
         public String getSource();
 
+        public void addParameter(String key, String value);
+
         public void render(Writer out, Map ctx) throws IOException;
     }
 
@@ -94,6 +96,11 @@ public class StringExpressionFactory
             return str;
         }
 
+        public void addParameter(String key, String value)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public void render(Writer out, Map map) throws IOException
         {
             out.write(str);
@@ -143,10 +150,28 @@ public class StringExpressionFactory
                 _parsedExpression.add(new StringPortion(source.substring(start), false));
         }
 
+        public void addParameter(String key, String value)
+        {
+            _parsedExpression.add(new StringPortion("&" + key + "=", false));
+            if (value.startsWith("${") && value.endsWith("}"))
+            {
+                _parsedExpression.add(new StringPortion(value.substring(2, value.length() - 3), true));
+            }
+            else
+            {
+                _parsedExpression.add(new StringPortion(value, false));
+            }
+        }
+
+
         public String eval(Map context)
         {
             ViewContext viewContext = null;
-            if (context instanceof RenderContext)
+            if (context instanceof ViewContext)
+            {
+                viewContext = (ViewContext)context;
+            }
+            else if (context instanceof RenderContext)
             {
                 viewContext = ((RenderContext)context).getViewContext();
             }

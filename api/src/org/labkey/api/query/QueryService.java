@@ -53,8 +53,8 @@ abstract public class QueryService
     abstract public boolean isQuerySnapshot(Container container, String schema, String name);
     abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema);
 
-    abstract public ActionURL urlQueryDesigner(Container container, String schema);
-    abstract public ActionURL urlFor(Container container, QueryAction action, String schema, String queryName);
+    abstract public ActionURL urlQueryDesigner(User user, Container container, String schema);
+    abstract public ActionURL urlFor(User user, Container container, QueryAction action, String schema, String queryName);
     abstract public UserSchema getUserSchema(User user, Container container, String schema);
     abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
     abstract public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query);

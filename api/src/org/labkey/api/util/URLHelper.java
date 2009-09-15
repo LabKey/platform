@@ -423,6 +423,8 @@
 
         public Pair<String,String>[] getParameters()
         {
+            if (null == _parameters)
+                return new Pair[0];
             return _parameters.<Pair<String, String>>toArray(new Pair[_parameters.size()]);
         }
 

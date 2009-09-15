@@ -277,27 +277,6 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    public String getDetailsLink()
-    {
-        List<String> pkColNames = getPkColumnNames();
-        if (null == getTable() || null == pkColNames)
-            return null;
-
-        StringBuffer urlbuf = new StringBuffer("details.view?");
-        String sep = "";
-        for (String pkColName : pkColNames)
-        {
-            urlbuf.append(sep);
-            urlbuf.append(pkColName);
-            urlbuf.append("=${");
-            urlbuf.append(pkColName);
-            urlbuf.append("}");
-            sep = "&";
-        }
-        return urlbuf.toString();
-    }
-
-
     public List<ColumnInfo> getSelectColumns()
     {
         List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(getDisplayColumns(), getTable());
@@ -308,11 +287,6 @@ public class DataRegion extends DisplayElement
         return new ArrayList<ColumnInfo>(columns);
     }
 
-
-    private List<String> getPkColumnNames()
-    {
-        return null == getTable() ? null : getTable().getPkColumnNames();
-    }
 
     public void setShowRecordSelectors(boolean show)
     {

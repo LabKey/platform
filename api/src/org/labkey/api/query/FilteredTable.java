@@ -19,6 +19,9 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -86,7 +89,35 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return _rootTable;
     }
 
-	private String filterName(ColumnInfo c)
+    @Override
+    public ActionURL getGridURL(Container container)
+    {
+        ActionURL url = super.getGridURL(container);
+        return url != null ? url : getRealTable().getGridURL(container);
+    }
+
+    @Override
+    public ActionURL getInsertURL(Container container)
+    {
+        ActionURL url = super.getInsertURL(container);
+        return url != null ? url : getRealTable().getInsertURL(container);
+    }
+
+    @Override
+    public StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    {
+        StringExpressionFactory.StringExpression expr = super.getUpdateURL(columns, container);
+        return expr != null ? expr : getRealTable().getUpdateURL(columns, container);
+    }
+
+    @Override
+    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
+    {
+        StringExpressionFactory.StringExpression expr = super.getDetailsURL(columns, container);
+        return expr != null ? expr : getRealTable().getDetailsURL(columns, container);
+    }
+
+    private String filterName(ColumnInfo c)
 	{
 		return c.getAlias();
 	}

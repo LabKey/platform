@@ -53,6 +53,7 @@ public class QueryView extends WebPartView<Object>
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
     private boolean _showDetailsColumn = true;
+    private boolean _showUpdateColumn = false;
 
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<String, ExportScriptFactory>();
 
@@ -290,6 +291,22 @@ public class QueryView extends WebPartView<Object>
         return _schema.getContainer();
     }
 
+    protected StringExpressionFactory.StringExpression urlExpr(QueryAction action)
+    {
+        StringExpressionFactory.StringExpression expr = _schema.urlExpr(action, _queryDef);
+
+        switch (action)
+        {
+            case insertQueryRow:
+            case updateQueryRow:
+            case deleteQueryRows:
+                expr.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
+                break;
+        }
+
+        return expr;
+    }
+
     protected ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = _schema.urlFor(action, _queryDef);
@@ -307,6 +324,8 @@ public class QueryView extends WebPartView<Object>
                 if (getSettings().getViewName() != null)
                     ret.addParameter(QueryParam.viewName.toString(), getSettings().getViewName());
                 break;
+            case insertQueryRow:
+            case updateQueryRow:
             case deleteQueryRows:
                 ret.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
                 break;
@@ -451,9 +470,21 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasPermission(getUser(), ACL.PERM_DELETE);
     }
 
+    protected boolean canInsert()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasPermission(getUser(), ACL.PERM_INSERT) && table.getUpdateService() != null;
+    }
+
+    protected boolean canUpdate()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasPermission(getUser(), ACL.PERM_UPDATE) && table.getUpdateService() != null;
+    }
+
     protected boolean showRecordSelectors()
     {
-        return _showRecordSelectors || canDelete();
+        return _showRecordSelectors || canDelete() ;
     }
 
     public void setShowRecordSelectors(boolean showRecordSelectors)
@@ -494,6 +525,18 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(_itemFilter));
+        }
+
+        if (canInsert())
+        {
+            ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
+            if (urlInsert != null)
+            {
+                ActionButton btnInsert = new ActionButton("", "Insert New");
+                btnInsert.setURL(urlInsert);
+                btnInsert.setActionType(ActionButton.Action.LINK);
+                bar.add(btnInsert);
+            }
         }
 
         if (showRecordSelectors())
@@ -1374,14 +1417,22 @@ public class QueryView extends WebPartView<Object>
         List<DisplayColumn> ret = new ArrayList<DisplayColumn>();
         TableInfo table = getTable();
         if (table == null)
-            //noinspection unchecked
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         if (_showDetailsColumn && !isPrintView() && !isExportView())
         {
-            StringExpressionFactory.StringExpression urlDetails = table.getDetailsURL(Table.createColumnMap(table, null));
+            StringExpressionFactory.StringExpression urlDetails = table.getDetailsURL(Table.createColumnMap(table, null), getContainer());
             if (urlDetails != null)
             {
                 ret.add(new DetailsColumn(urlDetails));
+            }
+        }
+
+        if (_showUpdateColumn && table.hasPermission(getUser(), ACL.PERM_UPDATE) && !isPrintView() && !isExportView())
+        {
+            StringExpressionFactory.StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
+            if (urlUpdate != null)
+            {
+                ret.add(0, new UrlColumn(urlUpdate, "edit"));
             }
         }
 
@@ -1415,6 +1466,11 @@ public class QueryView extends WebPartView<Object>
     public void setShowDetailsColumn(boolean showDetailsColumn)
     {
         _showDetailsColumn = showDetailsColumn;
+    }
+
+    public void setShowUpdateColumn(boolean showUpdateColumn)
+    {
+        _showUpdateColumn = showUpdateColumn;
     }
 
     public void setPrintView(boolean b)

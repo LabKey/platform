@@ -151,7 +151,7 @@ public class SimpleModule extends DefaultModule implements ContainerManager.Cont
             {
                 public QuerySchema getSchema(final DefaultSchema schema)
                 {
-                    return new SimpleModuleUserSchema(schemaName, schema.getUser(), schema.getContainer(), dbschema);
+                    return new SimpleModuleUserSchema(schemaName, null, schema.getUser(), schema.getContainer(), dbschema);
                 }
             });
         }

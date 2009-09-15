@@ -309,8 +309,8 @@ public class ReportUtil
         /**
          * Returns the run and edit urls for query views
          */
-        public ActionURL getViewRunURL(Container c, CustomViewInfo view);
-        public ActionURL getViewEditURL(Container c, CustomViewInfo view);
+        public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view);
+        public ActionURL getViewEditURL(Container c, CustomViewInfo view, User user);
     }
 
     public static class DefaultReportFilter implements ReportFilter
@@ -320,14 +320,14 @@ public class ReportUtil
             return true;
         }
 
-        public ActionURL getViewRunURL(Container c, CustomViewInfo view)
+        public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
         {
-            return QueryService.get().urlFor(c, QueryAction.executeQuery, view.getSchemaName(), view.getQueryName());
+            return QueryService.get().urlFor(user, c, QueryAction.executeQuery, view.getSchemaName(), view.getQueryName());
         }
 
-        public ActionURL getViewEditURL(Container c, CustomViewInfo view)
+        public ActionURL getViewEditURL(Container c, CustomViewInfo view, User user)
         {
-            return QueryService.get().urlFor(c, QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName()).
+            return QueryService.get().urlFor(user, c, QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName()).
                     addParameter(QueryParam.queryName.name(), view.getQueryName()).
                     addParameter(QueryParam.viewName.name(), view.getName());
         }
@@ -452,10 +452,10 @@ public class ReportUtil
 
                 if (!inherited)
                 {
-                    record.put("editUrl", filter.getViewEditURL(c, view).getLocalURIString());
+                    record.put("editUrl", filter.getViewEditURL(c, view, user).getLocalURIString());
                 }
 
-                record.put("runUrl", filter.getViewRunURL(c, view).getLocalURIString());
+                record.put("runUrl", filter.getViewRunURL(user, c, view).getLocalURIString());
                 record.put("container", view.getContainer().getPath());
                 record.put("inherited", String.valueOf(inherited));
 
