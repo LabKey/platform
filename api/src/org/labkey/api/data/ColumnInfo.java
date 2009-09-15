@@ -1390,9 +1390,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public Object getValue(RenderContext context)
     {
-        return getValue((Map<String, ?>)context);
+        //noinspection unchecked
+        return getValue(context.getRow());
     }
-    
+
     public Object getValue(Map<String, ?> map)
     {
         if (map == null)

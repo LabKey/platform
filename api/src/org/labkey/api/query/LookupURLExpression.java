@@ -38,11 +38,12 @@ public class LookupURLExpression implements StringExpressionFactory.StringExpres
 
     public String eval(Map ctx)
     {
+        Map row = ctx instanceof RenderContext ? ((RenderContext)ctx).getRow() : ctx;
         URLHelper ret = _base.clone();
         for (Map.Entry<? extends Object, ? extends ColumnInfo> entry : _joinParams.entrySet())
         {
             ColumnInfo column = entry.getValue();
-            Object value = column.getValue(ctx);
+            Object value = column.getValue(row);
             if (value == null)
                 continue;
             ret.addParameter(String.valueOf(entry.getKey()), String.valueOf(value));
