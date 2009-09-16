@@ -17,9 +17,7 @@
 package org.labkey.study.controllers.assay;
 
 import org.labkey.api.action.*;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpData;
@@ -28,9 +26,12 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -54,6 +55,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -63,6 +65,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.sql.ResultSet;
 
 /**
  * User: brittp
@@ -195,19 +198,19 @@ public class AssayController extends SpringActionController
                 }
             }
 
-            return serializeAssayDefinitions(assayProtocols, c);
+            return serializeAssayDefinitions(assayProtocols, c, getViewContext().getUser());
         }
 
     }
 
-    public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c)
+    public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
     {
         List<Map<String, Object>> assayList = new ArrayList<Map<String, Object>>();
         for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
         {
             ExpProtocol protocol = entry.getKey();
             AssayProvider provider = entry.getValue();
-            Map<String, Object> assayProperties = serializeAssayDefinition(protocol, provider, c);
+            Map<String, Object> assayProperties = serializeAssayDefinition(protocol, provider, c, user);
             assayList.add(assayProperties);
         }
         ApiSimpleResponse response = new ApiSimpleResponse();
@@ -215,7 +218,7 @@ public class AssayController extends SpringActionController
         return response;
     }
 
-    public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c)
+    public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user)
     {
         Map<String, Object> assayProperties = new HashMap<String, Object>();
         assayProperties.put("type", provider.getName());
@@ -229,13 +232,13 @@ public class AssayController extends SpringActionController
         Map<String, List<Map<String, Object>>> domains = new HashMap<String, List<Map<String, Object>>>();
         for (Pair<Domain, Map<DomainProperty, Object>> domain : provider.getDomains(protocol))
         {
-            domains.put(domain.getKey().getName(), serializeDomain(domain.getKey()));
+            domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), user));
         }
         assayProperties.put("domains", domains);
         return assayProperties;
     }
 
-    private static List<Map<String, Object>> serializeDomain(Domain domain)
+    private static List<Map<String, Object>> serializeDomain(Domain domain, User user)
     {
         List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();
         for (DomainProperty property : domain.getProperties())
@@ -250,10 +253,42 @@ public class AssayController extends SpringActionController
             properties.put("required", property.isRequired());
             if (property.getLookup() != null)
             {
-                String containerPath = property.getLookup().getContainer() != null ? property.getLookup().getContainer().getPath() : null;
+                Lookup l = property.getLookup();
+                // @deprecated (remove in future API version), use lookup.{} instead
+                String containerPath = l.getContainer() != null ? l.getContainer().getPath() : null;
                 properties.put("lookupContainer", containerPath);
-                properties.put("lookupSchema", property.getLookup().getSchemaName());
-                properties.put("lookupQuery", property.getLookup().getQueryName());
+                properties.put("lookupSchema", l.getSchemaName());
+                properties.put("lookupQuery", l.getQueryName());
+
+                // let's be consistent with Query metadata
+                HashMap<String,String> lookup = new HashMap<String,String>();
+                lookup.put("schema", l.getSchemaName());
+                lookup.put("table", l.getQueryName());
+                lookup.put("container", null!=l.getContainer() ? l.getContainer().getPath() : null);
+
+                // Let's not make the client guess keyColumn/displayColumn
+                // CONSIDER: move into a QueryService helper method?
+                Container lookupContainer = l.getContainer();
+                if (lookupContainer == null)
+                    lookupContainer = property.getContainer();
+                UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, l.getSchemaName());
+                if (schema != null)
+                {
+                    TableInfo table = schema.getTable(property.getLookup().getQueryName());
+                    if (table != null)
+                    {
+                        String key = null;
+                        List<String> pks = table.getPkColumnNames();
+                        if (null != pks && pks.size() > 0)
+                            key = pks.get(0);
+                        if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
+                            key = pks.get(1);
+                        String title = table.getTitleColumn();
+                        lookup.put("keyColumn", key);
+                        lookup.put("displayColumn", title);
+                        }
+                }
+                properties.put("lookup", lookup);
             }
             propertyList.add(properties);
         }

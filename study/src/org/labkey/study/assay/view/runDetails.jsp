@@ -32,7 +32,7 @@
     ExpProtocol protocol = bean.expProtocol;
     ExpRun run = bean.expRun;
 
-    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser());
     JSONObject runJson = AbstractAssayAPIAction.serializeRun(run, provider, protocol);
 %>
 <script type="text/javascript">
