@@ -131,7 +131,7 @@ public class HtmlWriter
             openResults();
             writeHeaders();
 
-            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
             while(rs.next())
             {

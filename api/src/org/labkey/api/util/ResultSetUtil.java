@@ -211,7 +211,9 @@ public class ResultSetUtil
     // Convenience method to convert the current row in a ResultSet to a map.  Do not call this in a loop -- new up a ResultSetRowMap instead
     public static Map<String, Object> mapRow(ResultSet rs) throws SQLException
     {
-        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+        if (rs instanceof CachedRowSetImpl)
+            return ((CachedRowSetImpl)rs).getRowMap();
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
         return factory.getRowMap(rs);
     }
 

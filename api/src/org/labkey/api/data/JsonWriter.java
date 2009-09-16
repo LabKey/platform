@@ -133,7 +133,7 @@ public class JsonWriter
     {
         _out.write(",\n\"rowset\":[\n");
 
-        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(_rs);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(_rs);
         String rowSep = "";
 
         while(_rs.next())

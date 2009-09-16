@@ -178,7 +178,7 @@ public class TSVGridWriter extends TSVWriter
     {
         // Output all the data cells
         boolean first = true;
-        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
         while (rs.next())
         {

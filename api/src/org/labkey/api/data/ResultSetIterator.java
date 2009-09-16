@@ -41,7 +41,7 @@ public class ResultSetIterator implements Iterator<Map>
         {
             try
             {
-                _factory = new ResultSetRowMapFactory(_rs);
+                _factory = ResultSetRowMapFactory.create(_rs);
             }
             catch (SQLException e)
             {

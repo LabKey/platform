@@ -91,7 +91,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         if (maxRows == 0)
             maxRows = Integer.MAX_VALUE;
 
-        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
         while (rs.next() && list.size() < maxRows)
         {

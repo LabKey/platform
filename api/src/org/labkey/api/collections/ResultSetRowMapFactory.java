@@ -16,6 +16,7 @@
 package org.labkey.api.collections;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.CachedRowSetImpl;
 
 import java.beans.Introspector;
 import java.io.Serializable;
@@ -36,7 +37,28 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
 {
     private static final Logger _log = Logger.getLogger(ResultSetRowMapFactory.class);
 
-    public ResultSetRowMapFactory(ResultSet rs) throws SQLException
+
+    public static ResultSetRowMapFactory create(ResultSet rs) throws SQLException
+    {
+        if (rs instanceof CachedRowSetImpl)
+        {
+            return new ResultSetRowMapFactory(rs)
+            {
+                @Override
+                public RowMap<Object> getRowMap(ResultSet rs) throws SQLException
+                {
+                    return (RowMap<Object>)((CachedRowSetImpl)rs).getRowMap();
+                }
+            };
+        }
+        else
+        {
+            return new ResultSetRowMapFactory(rs);
+        }
+    }
+
+
+    protected ResultSetRowMapFactory(ResultSet rs) throws SQLException
     {
         super(rs.getMetaData().getColumnCount() + 1);
 

@@ -1139,7 +1139,7 @@ public class DataRegion extends DisplayElement
     protected int renderTableContents(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         ResultSet rs = ctx.getResultSet();
-        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
         int rowIndex = 0;
 
         while (rs.next())
@@ -1341,7 +1341,7 @@ public class DataRegion extends DisplayElement
 
             renderFormHeader(out, MODE_DETAILS);
 
-            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             RowMap rowMap = null;
 
             while (rs.next())

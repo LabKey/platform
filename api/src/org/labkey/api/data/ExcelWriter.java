@@ -668,7 +668,7 @@ public class ExcelWriter
 
         try
         {
-            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             RenderContext ctx = new RenderContext(HttpView.currentContext());
             ctx.setResultSet(rs);
 

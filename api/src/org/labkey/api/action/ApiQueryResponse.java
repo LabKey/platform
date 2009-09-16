@@ -288,7 +288,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         writer.startList("rows");
         if (!_metaDataOnly)
         {
-            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(_rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(_rs);
 
             while(_rs.next())
             {
