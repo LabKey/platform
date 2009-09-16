@@ -315,23 +315,27 @@ LABKEY.Assay = new function()
 LABKEY.Assay.AssayDesign = new function() {};
 
 /**
-* @namespace
-* @description DomainFieldObject static class to describe a domain field for an assay.  See also {@link LABKEY.Assay} and
-            {@link LABKEY.Assay.AssayDesign}.
-* @property {String} name String name of the domain field.
-* @property {String} typeName String name of the type of the domain field. (Human readable.)
-* @property {String} typeURI String URI uniquely identifying the domain field type.
+ * @namespace
+ * @description DomainFieldObject static class to describe a domain field for an assay.  See also {@link LABKEY.Assay} and
+             {@link LABKEY.Assay.AssayDesign}.
+ * @property {String} name String name of the domain field.
+ * @property {String} typeName String name of the type of the domain field. (Human readable.)
+ * @property {String} typeURI String URI uniquely identifying the domain field type.
            (Not human readable.)
-* @property {String} label String domain field label.
-* @property {String} description String domain field description.
-* @property {String} formatString String format string applied to the domain field.
-* @property {Bool} required Boolean indicating whether a value is required for this domain field.
-* @property {String} lookupContainer If this domain field is a lookup, lookupContainer holds the
+ * @property {String} label String domain field label.
+ * @property {String} description String domain field description.
+ * @property {String} formatString String format string applied to the domain field.
+ * @property {Bool} required Boolean indicating whether a value is required for this domain field.
+ *
+ * @property {String} lookup.container If this domain field is a lookup, lookupContainer holds the
             String path to the lookup container or null if the lookup in the
             same container.  Undefined otherwise.
-* @property {String} lookupSchema If this domain field object is a lookup, lookupSchema holds the
+ * @property {String} lookup.schema If this domain field object is a lookup, lookupSchema holds the
            String name of the lookup schema.  Undefined otherwise.
-* @property {String} lookupQuery If this domain field object is a lookup, lookupQuery holds the String
+ * @property {String} lookup.table If this domain field object is a lookup, lookupQuery holds the String
            name of the lookup query.  Undefined otherwise.
-*/ LABKEY.Assay.DomainFieldObject = new function() {};
+ * @property {String} lookup.keyColumn primary key field in target table
+ * @property {String} lookup.displayColumn display column in target table
+ */
+LABKEY.Assay.DomainFieldObject = new function() {};
 

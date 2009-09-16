@@ -24,7 +24,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * @param {object} [config.values] initial values to populate the form
  * selectRowsResults includes both a columnModel and the metaData so you don't need to specify all three.
  *
- * @example 
+ * @example
 &lt;script type="text/javascript"&gt;
     function onSuccess(data) // e.g. callback from Query.selectRows
     {
@@ -61,7 +61,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         // add all fields that we're not added explicitly
         if (this.addAllFields && this.allFields.length)
         {
-            // get a list of fields that were already constructed            
+            // get a list of fields that were already constructed
             var existing = {};
             if (this.items)
                 this.items.each(function(c)
@@ -78,7 +78,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         }
     },
 
-    
+
     onRender : function(ct, position)
     {
         LABKEY.ext.FormPanel.superclass.onRender.call(this, ct, position);
@@ -111,24 +111,35 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     {
         var columnModel = config.columnModel;
         var metaData = config.metaData;
+        var properties = config.properties;
 
-        if (!columnModel && config.selectRowsResults)
-            columnModel = config.selectRowsResults.columnModel;
-        if (!metaData && config.selectRowsResults)
-            metaData = config.selectRowsResults.metaData;
-        var fields = metaData.fields;
+        if (config.selectRowsResults)
+        {
+            if (!columnModel)
+                columnModel = config.selectRowsResults.columnModel;
+            if (!metaData)
+                metaData = config.selectRowsResults.metaData;
+            if (config.selectRowsResults.rowCount)
+                this.values = config.selectRowsResults.rows[0];
+        }
+        var fields = metaData ? metaData.fields : null;
 
         var defaults = config.fieldDefaults = config.fieldDefaults || {};
         var items = [], i;
-        
-        if (fields)
+
+        if (fields || properties)
         {
-            var count = fields.length;
+            var count = fields ? fields.length : properties.length;
             for (i=0 ; i<count ; i++)
             {
-                var c = {field:fields[i], column:columnModel ? columnModel[i] : null};
-                defaults[fields[i].name] = LABKEY.ext.FormHelper.getFieldEditorConfig(c);
-                items.push({name:fields[i].name});
+                var field = LABKEY.ext.FormHelper.getFieldEditorConfig(
+                        fields?fields[i]:{},
+                        properties?properties[i]:{},
+                        columnModel?columnModel[i]:{}
+                        );
+                var name = field.originalConfig.name;
+                defaults[name] = field;
+                items.push({name:name});
             }
         }
 
@@ -162,39 +173,39 @@ LABKEY.ext.FormHelper =
      *
      * This function accepts a mish-mash of config parameters to be easily adapted to
      * various different metadata formats.
-     * 
+     *
      * @param {string} [config.type] e.g. 'string','int','boolean','float', or 'date'
      * @param {object} [config.editable]
      * @param {object} [config.required]
-     * @param {string} [config.header] used to generate fieldLabel
+     * @param {string} [config.label] used to generate fieldLabel
      * @param {string} [config.name] used to generate fieldLabel (if header is null)
      * @param {string} [config.lookup.schema]
      * @param {string} [config.lookup.table]
      * @param {string} [config.lookup.keyColumn]
      * @param {string} [config.lookup.displayColumn]
-     * @param {string} [config.field] as in Query.selectRowsResults.metaData.fields[x]
-     * @param {string} [config.column] as in Query.selectRowsResults.columnModel[x]
+     *
+     * Will accept multiple config parameters which will be combined.
      */
     getFieldEditorConfig: function(c)
     {
         // Combine the metadata provided into one config object
-        var defaults = {type:'string', editable:true, required:false};
-        var config = {};
-        if (c.column)
-            Ext.apply(config, c.column);
-        if (c.field)
-            Ext.apply(config, c.field);
-        Ext.apply(config, c);
-        Ext.applyIf(config, defaults);
-        config.editable = true;
+        var config = {editable:true, required:false};
+        for (var i=arguments.length-1 ; i>= 0 ; --i)
+            Ext.apply(config, arguments[i]);
+
+        var h = Ext.util.Format.htmlEncode;
+        var lc = function(s){return !s?s:Ext.util.Format.lowercase(s);};
+
+        config.type = lc(config.type) || lc(config.typeName) || 'string';
 
         var field = {
-            fieldLabel:config.header || Ext.util.Format.htmlEncode(config.name)
+            fieldLabel: h(config.label) || config.header || h(config.name),
+            originalConfig: config
         };
 
         if (config.lookup)
         {
-            // UNDONE: avoid self-join
+            // UNDONE: avoid self-joins
             // UNDONE: core.UsersData
             // UNDONE: container column
             var l = config.lookup;
@@ -216,7 +227,7 @@ LABKEY.ext.FormHelper =
             return field;
         }
 
-        
+
         if (config.editable)
         {
             switch (config.type)
@@ -255,7 +266,7 @@ LABKEY.ext.FormHelper =
         }
         else
         {
-            field.disabled = true;
+            field.xtype = 'label';
         }
         return field;
     },
@@ -281,7 +292,7 @@ LABKEY.ext.FormHelper =
             c = uniqueName;
             uniqueName = c.name;
         }
-        
+
         var store = this.lookupStores[uniqueName];
         if (!store)
         {
@@ -289,13 +300,23 @@ LABKEY.ext.FormHelper =
             var config = {
                 schemaName: c.lookup.schema,
                 queryName: c.lookup.table,
-                containerPath: this.containerPath || LABKEY.container.path
+                containerPath: c.lookup.container || LABKEY.container.path
             };
-            if (c.includeNullRecord)
+            var columns = [];
+            if (c.lookup.keyColumn)
+                columns.push(c.lookup.keyColumn);
+            if (c.lookup.displayColumn)
+                columns.push(c.lookup.displayColumn);
+            if (columns.length < 2)
+                columns = ['*'];
+            config.columns = columns.join(',');
+            if (!c.required)
+            {
                 config.nullRecord = {
                     displayColumn: c.lookup.displayColumn,
                     nullCaption: c.lookupNullCaption || "[none]"
                 };
+            }
             store = new LABKEY.ext.Store(config);
             this.lookupStores[uniqueName] = store;
         }
