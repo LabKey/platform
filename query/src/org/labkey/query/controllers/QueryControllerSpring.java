@@ -159,7 +159,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Query start page", actionURL(QueryAction.begin));
+            root.addChild("Query Schema Browser", actionURL(QueryAction.begin));
             return root;
         }
     }
