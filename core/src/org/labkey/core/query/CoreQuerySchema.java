@@ -114,6 +114,9 @@ public class CoreQuerySchema extends UserSchema
         if(getUser().isGuest())
             addNullSetFilter(groups);
 
+        groups.setDescription("Contains all groups defined in the current project." +
+        " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows.");
+        
         return groups;
     }
 
@@ -127,6 +130,8 @@ public class CoreQuerySchema extends UserSchema
         if(!getUser().isAdministrator())
             addNullSetFilter(users);
         users.setName("SiteUsers");
+        users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
+        " The data in this table are available only to site administrators. All other users will see no rows.");
 
         return users;
     }
@@ -171,6 +176,9 @@ public class CoreQuerySchema extends UserSchema
         if(!getContainer().hasPermission(getUser(), AdminPermission.class))
             addNullSetFilter(principals);
 
+        principals.setDescription("Contains all principals (users and groups) who are members of the current project." +
+        " The data in this table are available only to users with administrator permission in the current folder. All other users will see no rows.");
+
         return principals;
     }
 
@@ -185,7 +193,7 @@ public class CoreQuerySchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return getPrincipals();
+                return getUsers();
             }
         });
         members.addColumn(col);
@@ -218,6 +226,9 @@ public class CoreQuerySchema extends UserSchema
         defCols.add(FieldKey.fromParts("UserId"));
         defCols.add(FieldKey.fromParts("GroupId"));
         members.setDefaultVisibleColumns(defCols);
+
+        members.setDescription("Contains rows indicating which users are in which groups in the current project." +
+        " The data in this talbe are available only to users who are signed in (not guests). Guests will see no rows.");
 
         return members;
     }
@@ -258,6 +269,11 @@ public class CoreQuerySchema extends UserSchema
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);
         }
+
+        users.setDescription("Contains all users who are members of the current project." +
+        " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
+        " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified." +
+        " Users with administrator permissions will also see the columns Phone, Mobile, Pager, IM, Active and LastLogin.");
 
         return users;
     }
