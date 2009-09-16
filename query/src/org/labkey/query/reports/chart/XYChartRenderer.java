@@ -82,7 +82,7 @@ public class XYChartRenderer extends AbstractChartRenderer implements ChartRende
                 }
 
                 String columnX = descriptor.getProperty(ChartReportDescriptor.Prop.columnXName);
-                ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
                 // create a jfreechart dataset
                 while (rs.next())

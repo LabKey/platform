@@ -787,7 +787,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             builder.append("  </tr>\n");
             int row = 0;
 
-            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
             while (rs.next())
             {
