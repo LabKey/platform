@@ -16,10 +16,7 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.AbstractForeignKey;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -91,7 +88,7 @@ public class ParticipantTable extends FilteredTable
         return new ActionURL("Study", "participant", _schema.getContainer());
     }
 
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
+    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
     {
         ColumnInfo colRowId = columns.get("ParticipantId");
         if (colRowId == null)

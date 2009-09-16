@@ -78,7 +78,7 @@ public class AssayListTable extends FilteredTable
         addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = exp.protocol.lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
     }
 
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
+    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
     {
         ColumnInfo rowid = columns.get("RowId");
         if (rowid == null)
