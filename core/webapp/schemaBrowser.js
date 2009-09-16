@@ -106,7 +106,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         html += this.buildLinks(queryDetails);
 
         var viewDataHref = LABKEY.ActionURL.buildURL("query", "executeQuery", undefined, {schemaName:queryDetails.schemaName,"query.queryName":queryDetails.name});
-        html += "<div class='lk-qd-name'><a href='" + viewDataHref + "'>" + queryDetails.schemaName + "." + queryDetails.name + "</a></div>";
+        html += "<div class='lk-qd-name'><a href='" + viewDataHref + "' target='viewData'>" + queryDetails.schemaName + "." + queryDetails.name + "</a></div>";
         if (queryDetails.description)
             html += "<div class='lk-qd-description'>" + queryDetails.description + "</div>";
 
@@ -149,7 +149,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         params["query.queryName"] = queryDetails.name;
 
         var html = "<div class='lk-qd-links'>";
-        html += this.buildLink("query", "executeQuery", params, "view data") + "&nbsp;";
+        html += this.buildLink("query", "executeQuery", params, "view data", "viewData") + "&nbsp;";
 
         if (queryDetails.isUserDefined && LABKEY.Security.currentUser.isAdmin)
         {
@@ -267,7 +267,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 text: 'Refresh',
                 handler: this.onRefresh,
                 scope: this,
-                iconCls:'iconReload'
+                iconCls:'iconReload',
+                tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.'
             },
         ];
 
@@ -277,19 +278,22 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 text: 'Define External Schemas',
                 handler: this.onSchemaAdminClick,
                 scope: this,
-                iconCls: 'iconFolderNew'
+                iconCls: 'iconFolderNew',
+                tooltip: 'Create or modify external schemas.'
             });
             tbar.push({
                 text: 'Create New Query',
                 handler: this.onCreateQueryClick,
                 scope: this,
-                iconCls: 'iconFileNew'
+                iconCls: 'iconFileNew',
+                tooltip: 'Create a new query in the selected schema (requires that you select a particular schema or query within that schema).'
             });
             tbar.push({
                 text: 'Validate Queries',
-                handler: function(){window.location = LABKEY.ActionURL.buildURL("query", "validateQueries");},
+                handler: function(){window.open(this.getValidateQueriesUrl(), "validateQueries");},
                 scope: this,
-                iconCls: 'iconCheck'
+                iconCls: 'iconCheck',
+                tooltip: 'Takes you to the validate queries page where you can validate all the queries defined in this folder.'
             });
         }
 
@@ -372,10 +376,18 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         var tree = this.getComponent("tree");
         var node = tree.getSelectionModel().getSelectedNode();
         if (node && node.attributes.schemaName)
-            window.location = LABKEY.ActionURL.buildURL("query", "newQuery", undefined, {schemaName: node.attributes.schemaName});
+            window.open(this.getCreateQueryUrl(node.attributes.schemaName), "createQuery");
         else
             Ext.Msg.alert("Which Schema?", "Please select the schema in which you want to create the new query.");
 
+    },
+
+    getCreateQueryUrl : function(schemaName) {
+        return LABKEY.ActionURL.buildURL("query", "newQuery", undefined, {schemaName: schemaName});
+    },
+
+    getValidateQueriesUrl : function() {
+        return LABKEY.ActionURL.buildURL("query", "validateQueries");
     },
 
     onTabChange : function(tabpanel, tab) {
@@ -421,14 +433,32 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     onRefresh : function() {
+        //clear the query details cache
         this._qdcache.clearAll();
-        var tabs = this.getComponent("details");
+
         //remove all tabs except for the first one (home)
+        var tabs = this.getComponent("details");
         while (tabs.items.length > 1)
         {
             tabs.remove(tabs.items.length - 1, true);
         }
-        this.getComponent("tree").getRootNode().reload();
+
+        //if tree selection is below a schema, refresh only that schema
+        var tree = this.getComponent("tree");
+        var nodeToReload = tree.getRootNode();
+        var nodeSelected = tree.getSelectionModel().getSelectedNode();
+
+        if (nodeSelected && nodeSelected.attributes.schemaName)
+        {
+            var schemaToFind = nodeSelected.attributes.schemaName.toLowerCase();
+            var foundNode = tree.getRootNode().findChildBy(function(node){
+                return node.attributes.schemaName && node.attributes.schemaName.toLowerCase() == schemaToFind;
+            });
+            if (foundNode)
+                nodeToReload = foundNode;
+        }
+
+        nodeToReload.reload();
     },
 
     onLookupClick : function(schemaName, queryName) {
@@ -438,7 +468,10 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     selectSchema : function(schemaName) {
         var tree = this.getComponent("tree");
         var root = tree.getRootNode();
-        var schemaNode = root.findChild("text", schemaName);
+        var schemaToFind = schemaName.toLowerCase();
+        var schemaNode = root.findChildBy(function(node){
+            return node.attributes.schemaName && node.attributes.schemaName.toLowerCase() == schemaToFind;
+        });
         if (schemaNode)
         {
             tree.selectPath(schemaNode.getPath());
