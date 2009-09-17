@@ -22,7 +22,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +42,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         _schema = schema;
     }
 
+
     /**
      * Creates a virtual table with columns for each of the property descriptors.
      */
@@ -54,6 +55,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         }
         _schema = schema;
     }
+
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
@@ -70,11 +72,13 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return constructColumnInfo(parent, decideColumnName(parent, displayField, pd), pd);
     }
 
-    protected String decideColumnName(ColumnInfo parent, String displayField, PropertyDescriptor pd)
+
+    protected FieldKey decideColumnName(ColumnInfo parent, String displayField, PropertyDescriptor pd)
     {
-        return parent.getName() + "$P" + pd.getPropertyId();
+        return new FieldKey(parent.getFieldKey(), "$P" + pd.getPropertyId());
     }
 
+    
     static public SQLFragment getValueSql(PropertyType type)
     {
         switch (type)
@@ -98,15 +102,18 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return new SQLFragment("exp.ObjectProperty.StringValue");
     }
 
+
     static public SQLFragment getMvIndicatorSQL()
     {
         return new SQLFragment("exp.ObjectProperty.MvIndicator");
     }
 
+
     static public SQLFragment getValueSql(ColumnInfo parent, SQLFragment value, int propertyId, boolean parentIsLSID)
     {
         return getValueSql(parent.getValueSql(ExprColumn.STR_TABLE_ALIAS), value, propertyId, parentIsLSID);
     }
+
 
     static public SQLFragment getValueSql(SQLFragment sqlParentColumn, SQLFragment value, int propertyId, boolean parentIsLSID)
     {
@@ -132,12 +139,14 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
     }
 
+
     protected SQLFragment getValueSql(ColumnInfo parent, PropertyDescriptor pd)
     {
         return getValueSql(parent, getValueSql(pd.getPropertyType()), pd.getPropertyId(), false);
     }
 
-    protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, PropertyDescriptor pd)
+
+    protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
     {
         ColumnInfo ret;
         if (parent == null)
@@ -153,6 +162,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return ret;
     }
 
+
     public void decorateColumn(ColumnInfo columnInfo, PropertyDescriptor pd)
     {
         for (PropertyColumnDecorator decorator : _decorators)
@@ -161,12 +171,13 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         }
     }
 
+    
     public TableInfo getLookupTableInfo()
     {
         VirtualTable ret = new VirtualTable(ExperimentService.get().getSchema());
         for (Map.Entry<String, PropertyDescriptor> entry : _pdMap.entrySet())
         {
-            ColumnInfo column = constructColumnInfo(null, entry.getKey(), entry.getValue());
+            ColumnInfo column = constructColumnInfo(null, new FieldKey(null,entry.getKey()), entry.getValue());
             if (column != null)
             {
                 column.setParentTable(ret);
@@ -176,15 +187,18 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return ret;
     }
 
+
     public void addDecorator(PropertyColumnDecorator decorator)
     {
         _decorators.add(decorator);
     }
 
-    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+
+    public StringExpression getURL(ColumnInfo parent)
     {
         return null;
     }
+
 
     /**
      * Override this method to allow properties which might not have been
@@ -194,6 +208,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     {
         return null;
     }
+
 
     static public void initColumn(User user, ColumnInfo column, PropertyDescriptor pd)
     {

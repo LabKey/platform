@@ -22,9 +22,8 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.SimpleNamedObject;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.jetbrains.annotations.Nullable;
@@ -668,19 +667,19 @@ public class SchemaTableInfo implements TableInfo
         return null;
     }
 
-    public StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
     {
         if (_updateURL != null)
             return _updateURL.getURL(columns, container);
         return null;
     }
 
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
     {
         return getDetailsURL(columns, null);
     }
     
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
     {
         if (_detailsURL != null)
             return _detailsURL.getURL(columns, container);

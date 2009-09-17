@@ -16,8 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.query.LookupURLExpression;
 
 import java.io.Writer;
@@ -26,7 +26,7 @@ import java.util.Set;
 
 public class UrlColumn extends SimpleDisplayColumn
 {
-    public UrlColumn(StringExpressionFactory.StringExpression urlExpression, String text)
+    public UrlColumn(StringExpression urlExpression, String text)
     {
         setDisplayHtml(text);
         setURL(urlExpression);

@@ -22,6 +22,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.StringExpression;
 import org.springframework.web.servlet.View;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,7 @@ public abstract class DisplayElement implements View, Cloneable
     private Class<? extends Permission> _displayPermission = ReadPermission.class;
     private boolean _visible = true;
     private int _displayModes = DataRegion.MODE_ALL;
-    protected StringExpressionFactory.StringExpression _caption = null;
+    protected StringExpression _caption = null;
     protected boolean _locked = false;
 
     public DisplayElement()

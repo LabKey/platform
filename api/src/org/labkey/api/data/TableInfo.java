@@ -24,7 +24,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
@@ -125,7 +125,7 @@ public interface TableInfo
      * {@link QueryView#urlExpr(QueryAction)} or
      * {@link UserSchema#urlExpr(QueryAction, Container)}.
      */
-    StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container);
+    StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container);
 
     /**
      * Return the details URL expression for a particular record or null.
@@ -134,10 +134,10 @@ public interface TableInfo
      * statement.  (e.g. if this is the Protocol table, the column "LSID" might
      * actually be represented by the "ProtocolLSID" column from the ProtocolApplication table).
      */
-    StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container);
+    StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container);
 
     @Deprecated
-    StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns);
+    StringExpression getDetailsURL(Map<String, ColumnInfo> columns);
 
     boolean hasPermission(User user, int perm);
 

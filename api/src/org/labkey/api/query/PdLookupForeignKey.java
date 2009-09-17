@@ -20,7 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 import java.util.Collections;
 
@@ -97,7 +97,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return LookupColumn.create(parent, table.getPkColumns().get(0), table.getColumn(displayField), true);
     }
 
-    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+    public StringExpression getURL(ColumnInfo parent)
     {
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)

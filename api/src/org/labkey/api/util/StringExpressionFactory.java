@@ -18,13 +18,13 @@ package org.labkey.api.util;
 import org.labkey.api.collections.CacheMap;
 import org.labkey.api.collections.LimitedCacheMap;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: migra
@@ -37,23 +37,49 @@ public class StringExpressionFactory
     public static final StringExpression NULL_STRING = new ConstantStringExpression(null);
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
-    public interface StringExpression
-    {
-        public String eval(Map ctx);
-
-        public String getSource();
-
-        public void addParameter(String key, String value);
-
-        public void render(Writer out, Map ctx) throws IOException;
-    }
 
     public static StringExpression create(String str)
     {
-        return create(str, false);
+        return create(str, Collections.EMPTY_MAP, false);
     }
 
+
     public static StringExpression create(String str, boolean urlEncodeSubstitutions)
+    {
+        return create(str, Collections.EMPTY_MAP, urlEncodeSubstitutions);
+    }
+
+
+    /** map from column.getName() to column.getAlias() */
+    public static StringExpression createMapColumns(String str, Collection<ColumnInfo> cols, boolean urlEncodeSubstitutions)
+    {
+        Map<FieldKey,String> map = new HashMap<FieldKey, String>(cols.size()*2);
+        for (ColumnInfo col : cols)
+            map.put(FieldKey.fromString(col.getName()), col.getAlias());
+        return create(str, map, urlEncodeSubstitutions);
+    }
+
+
+    /** map from FieldKey to column.getAlias() */
+    public static StringExpression createMapFields(String str, Map<FieldKey,ColumnInfo> cols, boolean urlEncodeSubstitutions)
+    {
+        Map<FieldKey,String> map = new HashMap<FieldKey, String>(cols.size()*2);
+        for (Map.Entry<FieldKey,ColumnInfo> entry : cols.entrySet())
+            map.put(entry.getKey(), entry.getValue().getAlias());
+        return create(str, map, urlEncodeSubstitutions);
+    }
+
+
+    public static StringExpression createMapStrings(String str, Map<String,String> strings, boolean urlEncodeSubstitutions)
+    {
+        Map<FieldKey,String> map = new HashMap<FieldKey, String>(strings.size()*2);
+        for (Map.Entry<String,String> entry : strings.entrySet())
+            map.put(new FieldKey(null, entry.getKey()), entry.getValue());
+        return create(str, map, urlEncodeSubstitutions);
+    }
+
+
+    public static StringExpression create(String str, Map<FieldKey,String> fkMap, boolean urlEncodeSubstitutions)
     {
         if (null == str)
             return NULL_STRING;
@@ -61,16 +87,17 @@ public class StringExpressionFactory
         if (str.indexOf("<%") < 0 && str.indexOf("${") < 0)
             return new ConstantStringExpression(str);
 
-        Pair<String, Boolean> key = new Pair<String, Boolean>(str, urlEncodeSubstitutions);
+        Pair<String, Boolean> key = new Pair<String, Boolean>(str + "?" + PageFlowUtil.toQueryString(fkMap.entrySet()), urlEncodeSubstitutions);
 
         StringExpression expr = templates.get(key);
         if (null != expr)
             return expr;
 
-        expr = new GStringExpression(str, urlEncodeSubstitutions);
+        expr = new GStringExpression(str, fkMap, urlEncodeSubstitutions);
         templates.put(key, expr);
         return expr;
     }
+
 
     private static class ConstantStringExpression implements StringExpression
     {
@@ -107,6 +134,7 @@ public class StringExpressionFactory
         }
     }
 
+
     private static class GStringExpression implements StringExpression
     {
         private static class StringPortion
@@ -132,7 +160,9 @@ public class StringExpressionFactory
         private String _source;
         private boolean _urlEncodeSubstitutions;
 
-        GStringExpression(String source, boolean urlEncodeSubstitutions)
+
+
+        GStringExpression(String source, Map<FieldKey,String> map, boolean urlEncodeSubstitutions)
         {
             _source = source;
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
@@ -143,12 +173,15 @@ public class StringExpressionFactory
                 if (index > 0)
                     _parsedExpression.add(new StringPortion(source.substring(start, index), false));
                 int closeIndex = source.indexOf('}', index + 2);
-                _parsedExpression.add(new StringPortion(source.substring(index + 2, closeIndex), true));
+                String sub = source.substring(index+2,closeIndex);
+                String rep = map.get(FieldKey.decode(sub));
+                _parsedExpression.add(new StringPortion(null!=rep?rep:sub, true));
                 start = closeIndex + 1;
             }
             if (start < source.length())
                 _parsedExpression.add(new StringPortion(source.substring(start), false));
         }
+
 
         public void addParameter(String key, String value)
         {
@@ -175,37 +208,31 @@ public class StringExpressionFactory
             {
                 viewContext = ((RenderContext)context).getViewContext();
             }
-            
+            return eval(viewContext, context);
+        }
+
+
+        public String eval(ViewContext viewContext, Map context)
+        {
             StringBuilder builder = new StringBuilder();
             for (StringPortion portion : _parsedExpression)
             {
                 if (portion.isSubstitution())
                 {
+                    String key = portion.getValue();
                     String s = null;
 
                     if (viewContext != null)
                     {
-                        if (portion.getValue().equalsIgnoreCase("contextPath"))
-                        {
+                        if (key.equalsIgnoreCase("contextPath"))
                             s = viewContext.getContextPath();
-                            if (_urlEncodeSubstitutions)
-                                s = PageFlowUtil.encodePath(s);
-                        }
-                        else if (portion.getValue().equalsIgnoreCase("containerPath"))
-                        {
+                        else if (key.equalsIgnoreCase("containerPath"))
                             s = viewContext.getContainer().getPath();
-                            if (_urlEncodeSubstitutions)
-                                s = PageFlowUtil.encodePath(s);
-                        }
                     }
-
                     if (s == null)
-                    {
-                        Object o = context.get(portion.getValue());
-                        s = o == null ? "null" : o.toString();
-                        if (_urlEncodeSubstitutions)
-                            s = PageFlowUtil.encode(s);
-                    }
+                        s = String.valueOf(context.get(key));
+                    if (_urlEncodeSubstitutions)
+                        s = PageFlowUtil.encode(s);
                     builder.append(s);
                 }
                 else
@@ -213,6 +240,7 @@ public class StringExpressionFactory
             }
             return builder.toString();
         }
+
 
         public String getSource()
         {

@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 /**
  * Interface describing a ColumnInfo's foreign key relationship.
@@ -44,7 +44,7 @@ public interface ForeignKey
      * Return an URL expression for what the hyperlink for this column should be.  The hyperlink must be able to be
      * constructed knowing only the foreign key value, as other columns may not be available in the ResultSet.
      */
-    StringExpressionFactory.StringExpression getURL(ColumnInfo parent);
+    StringExpression getURL(ColumnInfo parent);
 
     /**
      * @return The container id of the foreign user schema table.  Null means current container.

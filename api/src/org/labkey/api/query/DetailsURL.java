@@ -20,8 +20,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.apache.commons.lang.StringUtils;
 
@@ -128,12 +128,12 @@ public class DetailsURL
             _baseURL = buildURL(_container);
     }
 
-    public StringExpressionFactory.StringExpression getURL(Map<String, ColumnInfo> columns)
+    public StringExpression getURL(Map<String, ColumnInfo> columns)
     {
         return getURL(columns, null);
     }
 
-    public StringExpressionFactory.StringExpression getURL(Map<String, ColumnInfo> columns, Container c)
+    public StringExpression getURL(Map<String, ColumnInfo> columns, Container c)
     {
         Map<String, ColumnInfo> params = new LinkedHashMap();
         for (Map.Entry<String, String> entry : _columnParams.entrySet())

@@ -31,10 +31,7 @@ import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 
@@ -291,9 +288,9 @@ public class QueryView extends WebPartView<Object>
         return _schema.getContainer();
     }
 
-    protected StringExpressionFactory.StringExpression urlExpr(QueryAction action)
+    protected StringExpression urlExpr(QueryAction action)
     {
-        StringExpressionFactory.StringExpression expr = _schema.urlExpr(action, _queryDef);
+        StringExpression expr = _schema.urlExpr(action, _queryDef);
 
         switch (action)
         {
@@ -1420,7 +1417,7 @@ public class QueryView extends WebPartView<Object>
             return Collections.emptyList();
         if (_showDetailsColumn && !isPrintView() && !isExportView())
         {
-            StringExpressionFactory.StringExpression urlDetails = table.getDetailsURL(Table.createColumnMap(table, null), getContainer());
+            StringExpression urlDetails = table.getDetailsURL(Table.createColumnMap(table, null), getContainer());
             if (urlDetails != null)
             {
                 ret.add(new DetailsColumn(urlDetails));
@@ -1429,7 +1426,7 @@ public class QueryView extends WebPartView<Object>
 
         if (_showUpdateColumn && table.hasPermission(getUser(), ACL.PERM_UPDATE) && !isPrintView() && !isExportView())
         {
-            StringExpressionFactory.StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
+            StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
             if (urlUpdate != null)
             {
                 ret.add(0, new UrlColumn(urlUpdate, "edit"));

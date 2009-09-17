@@ -57,13 +57,12 @@ public class LookupColumn extends ColumnInfo
     {
         // Bug 1166: always report that our parent table is the leftmost table, so the dataregion knows which
         // table to select from
-        super(lookupColumn.getName(), foreignKey.getParentTable());
+        super(new FieldKey(foreignKey.getFieldKey(), lookupColumn.getName()), foreignKey.getParentTable());
         this.foreignKey = foreignKey;
         this.lookupKey = lookupKey;
         assert lookupKey.getValueSql("test") != null;
         this.lookupColumn = lookupColumn;
         setSqlTypeName(lookupColumn.getSqlTypeName());
-        setName(new FieldKey(FieldKey.fromString(foreignKey.getName()), lookupColumn.getName()).toString());
         setAlias(foreignKey.getAlias() + "$" + lookupColumn.getAlias());
         this.joinOnContainer = joinOnContainer;
     }

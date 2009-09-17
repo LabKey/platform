@@ -23,7 +23,7 @@ import java.util.Map;
 import java.io.Writer;
 import java.io.IOException;
 
-public class URLExpression implements StringExpressionFactory.StringExpression
+public class URLExpression implements StringExpression
 {
     protected URLHelper _baseURL;
     protected Map<? extends Object, ColumnInfo> _params;

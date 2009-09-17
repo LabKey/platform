@@ -22,6 +22,7 @@ import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.PropertyService;
@@ -41,7 +42,7 @@ public class DataColumn extends DisplayColumn
     private Sort.SortDirection _defaultSort = Sort.SortDirection.ASC;
     private ColumnInfo _filterColumn;
 
-    private StringExpressionFactory.StringExpression _url;
+    private StringExpression _url;
     private String _inputType;
     private int _inputRows;
     private int _inputLength;
@@ -108,7 +109,7 @@ public class DataColumn extends DisplayColumn
         _url = url == null ? null : StringExpressionFactory.create(url, true);
     }
 
-    public void setURLExpression(StringExpressionFactory.StringExpression se)
+    public void setURLExpression(StringExpression se)
     {
         _url = se;
     }

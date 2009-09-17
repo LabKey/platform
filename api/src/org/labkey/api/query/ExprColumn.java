@@ -29,22 +29,31 @@ public class ExprColumn extends ColumnInfo
     SQLFragment _sql;
     private ColumnInfo[] _dependentColumns;
 
-    public ExprColumn(TableInfo parent, String name, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
+    
+    public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
     {
-        super(name, parent);
-        setAlias(AliasManager.makeLegalName(name, parent.getSqlDialect()));
+        super(key, parent);
+        setAlias(AliasManager.makeLegalName(key.toString(), parent.getSqlDialect()));
         setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(sqltype));
         _sql = sql;
         for (ColumnInfo dependentColumn : dependentColumns)
         {
             if (dependentColumn == null)
             {
-                // Enable after https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=8439 is fixed 
+                // Enable after https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=8439 is fixed
 //                throw new NullPointerException("Dependent columns may not be null");
             }
         }
         _dependentColumns = dependentColumns;
     }
+
+    
+    public ExprColumn(TableInfo parent, String name, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
+    {
+        this(parent, FieldKey.fromString(name), sql, sqltype, dependentColumns);
+//        assert -1 == name.indexOf('/');
+    }
+
 
     public SQLFragment getValueSql(String tableAlias)
     {
@@ -56,11 +65,13 @@ public class ExprColumn extends ColumnInfo
         return ret;
     }
 
+
     public void setValueSQL(SQLFragment sql)
     {
         _sql = sql;
     }
 
+    
     @Override
     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
     {

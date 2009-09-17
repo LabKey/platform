@@ -27,7 +27,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.collections.BoundMap;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.springframework.beans.PropertyValues;
 import org.jetbrains.annotations.Nullable;
 
@@ -166,7 +166,7 @@ abstract public class UserSchema extends AbstractSchema
         return queryDef.urlFor(action, getContainer());
     }
 
-    public StringExpressionFactory.StringExpression urlExpr(QueryAction action, QueryDefinition queryDef)
+    public StringExpression urlExpr(QueryAction action, QueryDefinition queryDef)
     {
         return queryDef.urlExpr(action, getContainer());
     }

@@ -19,7 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -68,7 +68,7 @@ public interface QueryDefinition
 
     ActionURL urlFor(QueryAction action);
     ActionURL urlFor(QueryAction action, Container container);
-    StringExpressionFactory.StringExpression urlExpr(QueryAction action, Container container);
+    StringExpression urlExpr(QueryAction action, Container container);
     UserSchema getSchema();
 
     /**

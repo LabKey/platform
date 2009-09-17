@@ -18,7 +18,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Collections;
@@ -129,7 +129,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         return table.getColumn(_columnName);
     }
 
-    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+    public StringExpression getURL(ColumnInfo parent)
     {
         if (_baseURL == null)
         {

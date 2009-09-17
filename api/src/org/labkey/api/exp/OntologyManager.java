@@ -235,7 +235,7 @@ public class OntologyManager
 
 	public static class SubstImportHelper implements OntologyManager.ImportHelper
 	{
-		StringExpressionFactory.StringExpression expr;
+		StringExpression expr;
 
 		public SubstImportHelper(String expr)
 		{

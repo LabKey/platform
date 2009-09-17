@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
 import java.util.Collections;
@@ -42,6 +43,27 @@ import java.util.Arrays;
  */
 public class FieldKey implements Comparable
 {
+
+
+    /**
+     * same as fromString() but URL encoded
+     * @param str
+     * @return
+     */
+    static public FieldKey decode(String str)
+    {
+        if (str == null)
+            return null;
+        String[] encodedParts = StringUtils.splitPreserveAllTokens(str, "/");
+        FieldKey ret = null;
+        for (String encodedPart : encodedParts)
+            ret = new FieldKey(ret, PageFlowUtil.decode(encodedPart));
+        return ret;
+    }
+
+
+
+
     /**
      * Construct a FieldKey from a string that may have been returned by ColumnInfo.getName()
      * or by FieldKey.toString(), or from an URL filter.
@@ -193,6 +215,23 @@ public class FieldKey implements Comparable
         List<String> ret = new ArrayList(_parent.getParts());
         ret.add(_name);
         return ret;
+    }
+
+
+    /**
+     * generate a URL encoded string representing this field key
+     * may be parsed by FieldKey.parse()
+     * @return
+     */
+    public String encode()
+    {
+        List<String> encodedParts = new ArrayList();
+        for (String part : getParts())
+        {
+            String encodedPart = PageFlowUtil.encode(part);
+            encodedParts.add(encodedPart);
+        }
+        return StringUtils.join(encodedParts.iterator(), "/");
     }
 
     public String toString()

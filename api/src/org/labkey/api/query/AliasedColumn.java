@@ -25,21 +25,30 @@ import java.util.Map;
 public class AliasedColumn extends ColumnInfo
 {
     ColumnInfo _column;
+
+    public AliasedColumn(TableInfo parent, FieldKey key, ColumnInfo column, boolean forceKeepLabel)
+    {
+        super(key, parent);
+        copyAttributesFrom(column);
+        if (!forceKeepLabel && !getFieldKey().getName().equalsIgnoreCase(column.getFieldKey().getName()))
+            setLabel(null);
+        _column = column;
+    }
+
     public AliasedColumn(TableInfo parent, String name, ColumnInfo column)
     {
-        super(name, parent);
-        setName(name);
-        copyAttributesFrom(column);
-        if (!name.equalsIgnoreCase(column.getName()))
-        {
-            setLabel(null);
-        }
-        _column = column;
+        this(parent, new FieldKey(null,name), column, false);
     }
 
     public AliasedColumn(String name, ColumnInfo column)
     {
         this(column.getParentTable(), name, column);
+    }
+
+    public AliasedColumn(FieldKey key, String alias, ColumnInfo column, boolean forceKeepLabel)
+    {
+        this(column.getParentTable(), key, column, forceKeepLabel);
+        setAlias(alias);
     }
 
     public AliasedColumn(String name, String alias, ColumnInfo column)

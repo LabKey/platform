@@ -24,7 +24,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.StringExpressionFactory.StringExpression;
+import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -46,6 +46,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
     };
 
+    private FieldKey fieldKey;
     private String alias;
     private String sqlTypeName;
     private String textAlign = null;
@@ -79,14 +80,24 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     private static Logger _log = Logger.getLogger(ColumnInfo.class);
 
+
+    public ColumnInfo(FieldKey key)
+    {
+        this.fieldKey = key;
+        this.name = null;
+    }
+
     public ColumnInfo(String name)
     {
-        this.name = name;
+        if (null == name)
+            return;
+//        assert -1 == name.indexOf('/');
+        this.fieldKey = new FieldKey(null,name);
     }
 
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
-        this.name = rsmd.getColumnName(col);
+        this.fieldKey = new FieldKey(null, rsmd.getColumnName(col));
         this.setColIndex(col);
         this.setSqlTypeName(rsmd.getColumnTypeName(col));
         this.sqlTypeInt = rsmd.getColumnType(col);
@@ -94,25 +105,66 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public ColumnInfo(String name, TableInfo parentTable)
     {
-        this.name = name;
+//        assert -1 == name.indexOf('/');
+        this.fieldKey = new FieldKey(null, name);
         this.parentTable = parentTable;
     }
 
+    public ColumnInfo(FieldKey key, TableInfo parentTable)
+    {
+        this.fieldKey = key;
+        this.parentTable = parentTable;
+    }
+    
+
     public ColumnInfo(ColumnInfo from)
     {
-        this(from.getName(), from.getParentTable());
+        this(from.getFieldKey(), from.getParentTable());
     }
+
 
     public ColumnInfo(ColumnInfo from, TableInfo parent)
     {
-        this(from.getName(), parent);
+        this(from.getFieldKey(), parent);
         copyAttributesFrom(from);
     }
 
+
+    /** use setFieldKey() avoid ambiguity when columns have "/" */
+    @Override
+    public void setName(String name)
+    {
+//        assert -1 == name.indexOf('/');
+        this.fieldKey = new FieldKey(null, name);
+        this.name = null;
+    }
+
+
+    public String getName()
+    {
+        if (this.name == null && this.fieldKey != null)
+        {
+            if (this.fieldKey.getParent() == null)
+                this.name = this.fieldKey.getName();
+            else
+                this.name = this.fieldKey.toString();
+        }
+        return this.name;
+    }
+
+
+    public void setFieldKey(FieldKey key)
+    {
+        this.fieldKey = key;
+        this.name = null;
+    }
+    
+
     public FieldKey getFieldKey()
     {
-        return FieldKey.fromString(name);
+        return fieldKey;
     }
+
 
     public String getAlias()
     {
@@ -225,7 +277,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getLabel()
     {
         if (null == label)
-            label = labelFromName(name);
+            label = labelFromName(getFieldKey().getName());
         return label;
     }
 
@@ -394,12 +446,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public String getLegalName()
     {
-        return legalNameFromName(name);
+        return legalNameFromName(getName());
     }
     
     public String getPropertyName()
     {
-        return propNameFromName(name);
+        return propNameFromName(getName());
     }
 
     /**
@@ -409,7 +461,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
      */
     public boolean isVersionColumn()
     {
-        return "_ts".equals(name) || "Modified".equals(name);
+        return "_ts".equals(getName()) || "Modified".equals(getName());
     }
 
 
@@ -517,7 +569,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         isReadOnly = readOnly;
     }
 
-    public StringExpressionFactory.StringExpression getURL()
+    public StringExpression getURL()
     {
         if (this.url != null)
             return this.url;
@@ -540,7 +592,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void copyToXml(ColumnType xmlCol, boolean full)
     {
-        xmlCol.setColumnName(name);
+        xmlCol.setColumnName(getName());
         if (full)
         {
             if (fk instanceof SchemaForeignKey)
@@ -621,7 +673,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), null, xfk.getFkTable(), xfk.getFkColumnName(), false);
         }
 
-        name = xmlCol.getColumnName();
+        setFieldKey(new FieldKey(null,xmlCol.getColumnName()));
         if (xmlCol.isSetColumnTitle())
             setLabel(xmlCol.getColumnTitle());
         if (xmlCol.isSetInputLength())
@@ -815,7 +867,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         StringBuffer sb = new StringBuffer(64);
 
         sb.append("  ");
-        sb.append(StringUtils.rightPad(name, 25));
+        sb.append(StringUtils.rightPad(getName(), 25));
         sb.append(" ");
         sb.append(sqlTypeName);
         //UNDONE: Not supporting fixed decimal
@@ -874,7 +926,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return schema.getTable(this._tableName);
         }
 
-        public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+        public StringExpression getURL(ColumnInfo parent)
         {
             return null;
         }
@@ -957,7 +1009,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         {
             String metaDataName = reader.getName();
             ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
-            colList.put(col.name, col);
+            colList.put(col.getName(), col);
 
             col.metaDataName = metaDataName;
             col.sqlTypeName = reader.getSqlTypeName();

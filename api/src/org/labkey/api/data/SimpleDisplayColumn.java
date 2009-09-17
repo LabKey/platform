@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -25,8 +26,8 @@ import java.util.Set;
 
 public class SimpleDisplayColumn extends DisplayColumn
 {
-    private StringExpressionFactory.StringExpression _displayHTML = null;
-    private StringExpressionFactory.StringExpression _url = null;
+    private StringExpression _displayHTML = null;
+    private StringExpression _url = null;
 
     public SimpleDisplayColumn()
     {
@@ -59,7 +60,7 @@ public class SimpleDisplayColumn extends DisplayColumn
         _url = StringExpressionFactory.create(url, true);
     }
 
-    protected void setURL(StringExpressionFactory.StringExpression url)
+    protected void setURL(StringExpression url)
     {
         _url = url;
     }
@@ -74,7 +75,7 @@ public class SimpleDisplayColumn extends DisplayColumn
         return _url == null ? null : _url.eval(ctx);
     }
 
-    protected StringExpressionFactory.StringExpression getURLExpression()
+    protected StringExpression getURLExpression()
     {
         return _url;
     }

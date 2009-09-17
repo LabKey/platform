@@ -20,7 +20,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.LookupColumn;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 import java.util.Collections;
 
@@ -55,7 +55,7 @@ public class RowIdForeignKey extends AbstractForeignKey
         return _rowidColumn.getParentTable();
     }
 
-    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+    public StringExpression getURL(ColumnInfo parent)
     {
         return getLookupTableInfo().getDetailsURL(Collections.singletonMap(_rowidColumn.getName(), parent));
     }

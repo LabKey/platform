@@ -17,7 +17,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 import java.util.Collections;
 
@@ -89,7 +89,7 @@ public class QueryForeignKey implements ForeignKey
         return _schemaName;
     }
 
-    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+    public StringExpression getURL(ColumnInfo parent)
     {
         TableInfo table = getLookupTableInfo();
         if (table == null)

@@ -20,7 +20,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
@@ -56,7 +56,7 @@ public class TitleForeignKey extends AbstractForeignKey
         return null;
     }
 
-    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+    public StringExpression getURL(ColumnInfo parent)
     {
         if (_baseURL == null)
             return null;

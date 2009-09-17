@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.FieldKey;
@@ -41,7 +42,7 @@ import java.io.File;
 */
 public class FileLinkDisplayColumn extends DataColumn
 {
-    private StringExpressionFactory.StringExpression _url;
+    private StringExpression _url;
     private PropertyDescriptor _pd;
     private ActionURL _baseURL;
     private ColumnInfo _objectIdColumn;

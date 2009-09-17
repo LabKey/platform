@@ -84,7 +84,8 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
             propertyLookupColumn.setIsUnselectable(true);
             QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(pds, this, schema)
             {
-                protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, PropertyDescriptor pd)
+                @Override
+                protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
                 {
                     ColumnInfo result = super.constructColumnInfo(parent, name, pd);
                     if (getInputMaterialPropertyName().equals(pd.getName()))

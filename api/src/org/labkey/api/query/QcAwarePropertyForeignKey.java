@@ -84,7 +84,8 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         return metadata;
     }
 
-    protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, PropertyDescriptor pd)
+    @Override
+    protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
     {
         OORColumnGroup group = _metadata.getOORGroupByDisplayColumn(pd);
         if (group != null)
@@ -182,9 +183,9 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     {
         private final String _baseName;
 
-        public InRangeExprColumn(TableInfo parent, String columnName, String baseName)
+        public InRangeExprColumn(TableInfo parent, FieldKey name, String baseName)
         {
-            super(parent, columnName, null, Types.INTEGER);
+            super(parent, name, null, Types.INTEGER);
             _baseName = baseName;
         }
 

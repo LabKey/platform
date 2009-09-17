@@ -19,9 +19,8 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -104,16 +103,16 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     }
 
     @Override
-    public StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
     {
-        StringExpressionFactory.StringExpression expr = super.getUpdateURL(columns, container);
+        StringExpression expr = super.getUpdateURL(columns, container);
         return expr != null ? expr : getRealTable().getUpdateURL(columns, container);
     }
 
     @Override
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
     {
-        StringExpressionFactory.StringExpression expr = super.getDetailsURL(columns, container);
+        StringExpression expr = super.getDetailsURL(columns, container);
         return expr != null ? expr : getRealTable().getDetailsURL(columns, container);
     }
 

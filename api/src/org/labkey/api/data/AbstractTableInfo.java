@@ -22,7 +22,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SimpleNamedObject;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -319,23 +319,23 @@ abstract public class AbstractTableInfo implements TableInfo
         return null;
     }
 
-    public StringExpressionFactory.StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
     {
         if (_updateURL != null)
             return _updateURL.getURL(columns, container);
         return null;
     }
 
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
     {
         return getDetailsURL(columns, null);
     }
 
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
     {
         for (DetailsURL dUrl : _detailsURLs)
         {
-            StringExpressionFactory.StringExpression ret = dUrl.getURL(columns, container);
+            StringExpression ret = dUrl.getURL(columns, container);
             if (ret != null)
                 return ret;
         }

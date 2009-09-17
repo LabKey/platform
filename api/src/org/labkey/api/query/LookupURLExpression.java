@@ -17,7 +17,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 
@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.io.Writer;
 import java.io.IOException;
 
-public class LookupURLExpression implements StringExpressionFactory.StringExpression
+public class LookupURLExpression implements StringExpression
 {
     URLHelper _base;
     Map<? extends Object, ? extends ColumnInfo> _joinParams;

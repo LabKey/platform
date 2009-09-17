@@ -22,6 +22,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.springframework.web.servlet.mvc.Controller;
@@ -114,13 +115,13 @@ public class ActionButton extends DisplayElement implements Cloneable
 
 
     private Action _actionType = Action.POST;
-    private StringExpressionFactory.StringExpression _caption;
-    private StringExpressionFactory.StringExpression _actionName;
-    private StringExpressionFactory.StringExpression _imgPath;
-    private StringExpressionFactory.StringExpression _url;
-    private StringExpressionFactory.StringExpression _script;
+    private StringExpression _caption;
+    private StringExpression _actionName;
+    private StringExpression _imgPath;
+    private StringExpression _url;
+    private StringExpression _script;
     private int _displayType;
-    private StringExpressionFactory.StringExpression _title;
+    private StringExpression _title;
     private String _target;
     private boolean _appendScript;
     protected boolean _requiresSelection;
@@ -418,7 +419,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
     }
 
-    private static String _eval(StringExpressionFactory.StringExpression expr, RenderContext ctx)
+    private static String _eval(StringExpression expr, RenderContext ctx)
     {
         return expr == null ? null : expr.eval(ctx);
     }
