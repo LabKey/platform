@@ -42,8 +42,13 @@
     });
 
     function onSchemasLoaded(browser) {
-        var schemaName = LABKEY.ActionURL.getParameter("schemaName");
-        if (schemaName)
-            browser.selectSchema(schemaName);
+        var params = LABKEY.ActionURL.getParameters();
+
+        var schemaName = params.schemaName;
+        var queryName = params.queryName;
+        if (queryName && schemaName)
+            browser.selectQuery(schemaName, queryName);
+        else if (schemaName)
+            browser.selectQuery(schemaName, queryName);
     }
 </script>

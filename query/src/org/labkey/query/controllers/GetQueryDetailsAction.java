@@ -18,10 +18,7 @@ package org.labkey.query.controllers;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -131,6 +128,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         props.put("isReadOnly", cinfo.isReadOnly());
         props.put("isUserEditable", cinfo.isUserEditable());
         props.put("isVersionField", cinfo.isVersionColumn());
+        props.put("isSelectable", !cinfo.isUnselectable()); //avoid double-negative boolean name
 
         DisplayColumn dc = cinfo.getRenderer();
         if (null != dc)
@@ -142,9 +140,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null != cinfo.getFk()
                 && null != cinfo.getFkTableInfo())
         {
+            ForeignKey fk = cinfo.getFk();
             TableInfo lookupTable = cinfo.getFkTableInfo();
 
             Map<String,Object> lookupInfo = new HashMap<String,Object>();
+            if (null != fk.getLookupContainerId())
+            {
+                Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
+                if (null != fkContainer)
+                    lookupInfo.put("containerPath", fkContainer.getPath());
+            }
 
             boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
             lookupInfo.put("isPublic", isPublic);

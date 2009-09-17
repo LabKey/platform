@@ -181,7 +181,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             html += "<tr class='lk-qd-coltablerow'>";
             html += "<td>" + col.name + "</td>";
             html += "<td>" + col.caption + "</td>";
-            html += "<td>" + col.type + "</td>";
+            html += "<td>" + (col.isSelectable ? col.type : "") + "</td>";
             html += "<td>" + this.getLookupLink(col) + "</td>";
             html += "<td>" + this.getColAttrs(col) + "</td>";
             html += "<td>" + (col.description ? col.description : "") + "</td>";
@@ -211,8 +211,14 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (!col.lookup.isPublic)
             tipText += " Note that the lookup table is not publicly-available via the APIs.";
 
+        if (col.lookup.containerPath)
+            tipText += " Note that the lookup table is defined in the folder '" + col.lookup.containerPath + "'.";
 
-        var onclickScript = "Ext.ComponentMgr.get(\"" + this.id + "\").fireEvent(\"lookupclick\", \"" + col.lookup.schemaName + "\", \"" + col.lookup.queryName + "\");";
+
+        var argList = "\"" + col.lookup.schemaName + "\", \"" + col.lookup.queryName + "\"";
+        if (col.lookup.containerPath)
+            argList += ", \"" + col.lookup.containerPath + "\"";
+        var onclickScript = "Ext.ComponentMgr.get(\"" + this.id + "\").fireEvent(\"lookupclick\", " + argList + ");";
 
         var html = "<span ext:qtip=\"" + tipText + "\"";
         if (col.lookup.isPublic)
@@ -223,6 +229,10 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     },
 
     getColAttrs : function(col) {
+        //if unselectable, note that and nothing else
+        if (!col.isSelectable)
+            return "Unselectable";
+
         var html = "";
 
         if (col.isAutoIncrement)
@@ -461,8 +471,11 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         nodeToReload.reload();
     },
 
-    onLookupClick : function(schemaName, queryName) {
-        this.selectQuery(schemaName, queryName);
+    onLookupClick : function(schemaName, queryName, containerPath) {
+        if (containerPath && containerPath != LABKEY.ActionURL.getContainer())
+            window.open(LABKEY.ActionURL.buildURL("query", "begin", containerPath, {schemaName: schemaName, queryName: queryName}));
+        else
+            this.selectQuery(schemaName, queryName);
     },
 
     selectSchema : function(schemaName) {
