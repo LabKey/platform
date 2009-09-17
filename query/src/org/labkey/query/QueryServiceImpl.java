@@ -31,7 +31,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
@@ -412,7 +412,7 @@ public class QueryServiceImpl extends QueryService
                 {
                     pkColumnMap.put(column.getName(), column);
                 }
-                StringExpressionFactory.StringExpression url = table.getDetailsURL(pkColumnMap);
+                StringExpression url = table.getDetailsURL(pkColumnMap);
                 if (url != null)
                 {
                     ret.setURL(url);
@@ -434,10 +434,7 @@ public class QueryServiceImpl extends QueryService
         if (lookup == null)
             return null;
 
-        // slight hack here, if lookup name doesn't match, then AliasedColumn will set caption=null
-        String name = key.toString();
-        lookup.setName(name);
-        AliasedColumn ret = new AliasedColumn(key.toString(), manager.decideAlias(key.toString()), lookup);
+        AliasedColumn ret = new AliasedColumn(key, manager.decideAlias(key.toString()), lookup, true);
         columnMap.put(key, ret);
         return ret;
     }
