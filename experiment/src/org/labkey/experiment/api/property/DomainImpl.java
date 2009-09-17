@@ -30,8 +30,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.experiment.controllers.property.PropertyController;
@@ -451,7 +451,7 @@ public class DomainImpl implements Domain
                 return type.getTableInfo(user, domain, getInstanceContainers(user, ACL.PERM_READ));
             }
 
-            public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+            public StringExpression getURL(ColumnInfo parent)
             {
                 Map.Entry<TableInfo, ColumnInfo> entry = getTableInfo();
                 if (entry == null)

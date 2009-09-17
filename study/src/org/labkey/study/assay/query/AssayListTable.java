@@ -19,7 +19,7 @@ package org.labkey.study.assay.query;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
 import java.util.*;
@@ -78,7 +78,7 @@ public class AssayListTable extends FilteredTable
         addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = exp.protocol.lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
     }
 
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
     {
         ColumnInfo rowid = columns.get("RowId");
         if (rowid == null)

@@ -18,7 +18,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -55,7 +55,7 @@ public class ParticipantTable extends FilteredTable
                 return new ParticipantDataSetTable(_schema, null);
             }
 
-            public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+            public StringExpression getURL(ColumnInfo parent)
             {
                 return null;
             }
@@ -88,7 +88,7 @@ public class ParticipantTable extends FilteredTable
         return new ActionURL("Study", "participant", _schema.getContainer());
     }
 
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
     {
         ColumnInfo colRowId = columns.get("ParticipantId");
         if (colRowId == null)

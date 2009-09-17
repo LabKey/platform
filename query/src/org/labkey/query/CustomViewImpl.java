@@ -482,7 +482,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                 {
                     continue;
                 }
-                ColumnInfo column = new ColumnInfo(field.toString());
+                ColumnInfo column = new ColumnInfo(field);
                 column.setLabel(field.getDisplayString() + " (not found)");
                 ret.put(field, column);
             }

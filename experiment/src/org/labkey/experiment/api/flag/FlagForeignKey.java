@@ -20,7 +20,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.exp.api.ExperimentService;
 
 public class FlagForeignKey extends AbstractForeignKey
@@ -55,7 +55,7 @@ public class FlagForeignKey extends AbstractForeignKey
         return ret;
     }
 
-    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+    public StringExpression getURL(ColumnInfo parent)
     {
         return null;
     }

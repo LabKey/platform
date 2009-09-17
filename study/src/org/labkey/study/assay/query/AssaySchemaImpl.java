@@ -268,7 +268,8 @@ public class AssaySchemaImpl extends AssaySchema
             super(pds, AssaySchemaImpl.this);
         }
 
-        protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, final PropertyDescriptor pd)
+        @Override
+        protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, final PropertyDescriptor pd)
         {
             ColumnInfo result = super.constructColumnInfo(parent, name, pd);
             if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))

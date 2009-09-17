@@ -29,6 +29,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -387,7 +388,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return url;
     }
 
-    public StringExpressionFactory.StringExpression urlExpr(QueryAction action, Container container)
+    public StringExpression urlExpr(QueryAction action, Container container)
     {
         // UNDONE: use getMainTable().urlExpr(action, container) instead
         ActionURL url = urlFor(action, container);

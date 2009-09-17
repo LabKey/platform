@@ -18,8 +18,8 @@ package org.labkey.study.plate.query;
 
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupURLExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
@@ -47,7 +47,7 @@ public abstract class BasePlateTable extends FilteredTable
     protected abstract String getPlateIdColumnName();
 
     @Override
-    public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
+    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
     {
         ColumnInfo rowid = columns.get(getPlateIdColumnName());
         if (rowid == null)

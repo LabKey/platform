@@ -24,9 +24,8 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.*;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.springframework.validation.BindException;
-import org.springframework.beans.PropertyValues;
 
 
 public class DbUserSchemaController extends SpringActionController
@@ -91,7 +90,7 @@ public class DbUserSchemaController extends SpringActionController
             BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
             command.validateBind(errors);
 
-            StringExpressionFactory.StringExpression expr = schema.urlExpr(QueryAction.updateQueryRow, form.getQueryDef());
+            StringExpression expr = schema.urlExpr(QueryAction.updateQueryRow, form.getQueryDef());
             assert expr != null;
             return new ActionURL(expr.eval(command.getTypedValues()));
         }

@@ -22,8 +22,8 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.*;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.security.User;
@@ -76,7 +76,7 @@ public class DataSetTable extends FilteredTable
 
                 column.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", "ParticipantId")
                 {
-                    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent) {
+                    public StringExpression getURL(ColumnInfo parent) {
                         ActionURL base = new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
                         base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(_dsd.getDataSetId()));
 

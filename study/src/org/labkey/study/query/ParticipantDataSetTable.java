@@ -18,7 +18,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
@@ -92,7 +92,7 @@ public class ParticipantDataSetTable extends VirtualTable
                     }
                 }
 
-                public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+                public StringExpression getURL(ColumnInfo parent)
                 {
                     return null;
                 }
@@ -118,7 +118,7 @@ public class ParticipantDataSetTable extends VirtualTable
                     return new ParticipantVisitDataSetTable(_schema, def, null);
                 }
 
-                public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+                public StringExpression getURL(ColumnInfo parent)
                 {
                     return null;
                 }

@@ -21,6 +21,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
@@ -88,7 +89,7 @@ public class LdapAuthenticationManager
         String emailAddress = email.getEmailAddress();
         int index = emailAddress.indexOf('@');
         String uid = emailAddress.substring(0, index);     // Note: ValidEmail guarantees an @ will be present
-        StringExpressionFactory.StringExpression se = StringExpressionFactory.create(getPrincipalTemplate());
+        StringExpression se = StringExpressionFactory.create(getPrincipalTemplate());
         return se.eval(PageFlowUtil.map("email", email, "uid", uid));
     }
 

@@ -23,7 +23,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
@@ -539,7 +539,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return null;
         }
 
-        public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+        public StringExpression getURL(ColumnInfo parent)
         {
             return null;
         }

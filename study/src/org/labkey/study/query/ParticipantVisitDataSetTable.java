@@ -21,7 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
@@ -216,7 +216,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 }
             }
 
-            public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+            public StringExpression getURL(ColumnInfo parent)
             {
                 return null;
             }

@@ -22,6 +22,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.query.sql.Query;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
@@ -74,9 +75,9 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return url != null ? url : super.urlFor(action, container);
     }
 
-    public StringExpressionFactory.StringExpression urlExpr(QueryAction action, Container container)
+    public StringExpression urlExpr(QueryAction action, Container container)
     {
-        StringExpressionFactory.StringExpression expr = null;
+        StringExpression expr = null;
         List<QueryException> errors = new ArrayList<QueryException>();
         TableInfo table = getTable(getSchema(), errors, true);
         if (table != null)

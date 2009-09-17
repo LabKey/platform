@@ -21,7 +21,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.StudySchema;
@@ -158,7 +158,7 @@ public class ParticipantVisitTable extends FilteredTable
             }
         }
 
-        public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+        public StringExpression getURL(ColumnInfo parent)
         {
             return null;
         }

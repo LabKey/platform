@@ -2272,7 +2272,7 @@ public class StudyController extends BaseStudyController
             {
                 col.getColumnInfo().setFk(new QueryForeignKey(querySchema, "Participant", "ParticipantId", "ParticipantId")
                 {
-                    public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+                    public StringExpression getURL(ColumnInfo parent)
                     {
                         ActionURL base = new ActionURL(ParticipantAction.class, querySchema.getContainer());
                         base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(def.getDataSetId()));

@@ -18,6 +18,7 @@ package org.labkey.experiment.api.flag;
 
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -32,7 +33,7 @@ public class FlagColumn extends ExprColumn
 
     public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged)
     {
-        super(parent.getParentTable(), parent.getName() + "$", null, Types.VARCHAR, parent);
+        super(parent.getParentTable(), new FieldKey(parent.getFieldKey(),"$"), null, Types.VARCHAR, parent);
         setAlias(parent.getAlias() + "$");
         PropertyDescriptor pd = ExperimentProperty.COMMENT.getPropertyDescriptor();
         SQLFragment sql = PropertyForeignKey.getValueSql(parent,
