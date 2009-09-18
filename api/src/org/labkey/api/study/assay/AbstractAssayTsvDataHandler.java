@@ -68,53 +68,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             Container container = data.getContainer();
-            Integer id = OntologyManager.ensureObject(container, data.getLSID());
-
-            List<DomainProperty> allProps = new ArrayList<DomainProperty>();
-            allProps.addAll(Arrays.asList(provider.getBatchDomain(protocol).getProperties()));
-            allProps.addAll(Arrays.asList(provider.getRunDomain(protocol).getProperties()));
-
-            Map<String, Object> props = OntologyManager.getProperties(container, run.getLSID());
-            ExpExperiment batch = AssayService.get().findBatch(run);
-            if (batch != null)
-            {
-                Map<String, Object> batchProps = OntologyManager.getProperties(container, batch.getLSID());
-                props.putAll(batchProps);
-            }
-            ParticipantVisitResolver resolver = null;
-
-            Container targetContainer = null;
-            for (DomainProperty runProp : allProps)
-            {
-                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
-                {
-                    Object targetObject = props.get(runProp.getPropertyURI());
-                    if (targetObject instanceof String)
-                    {
-                        targetContainer = ContainerManager.getForId((String)targetObject);
-                        break;
-                    }
-                }
-            }
-
-            for (DomainProperty runProp : allProps)
-            {
-                if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
-                {
-                    Object targetObject = props.get(runProp.getPropertyURI());
-                    if (targetObject instanceof String)
-                    {
-                        ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType((String)targetObject, provider.getParticipantVisitResolverTypes());
-                        resolver = resolverType.createResolver(ExperimentService.get().getExpRun(run.getRowId()), targetContainer, user);
-                        break;
-                    }
-                }
-            }
-
-            if (resolver == null)
-            {
-                resolver = new StudyParticipantVisitResolver(container, targetContainer);
-            }
+            ParticipantVisitResolver resolver = createResolver(user, run, protocol, provider, container);
 
             if (rawData.size() == 0)
             {
@@ -131,10 +85,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             Domain dataDomain = provider.getResultsDomain(protocol);
 
             Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
+            if (inputMaterials.isEmpty())
+            {
+                throw new ExperimentException("Could not find any input samples in the data");
+            }
+
             DomainProperty[] dataDPs = dataDomain.getProperties();
             PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDPs.length];
             for (int i = 0; i < dataDPs.length; i++)
                 dataProperties[i] = dataDPs[i].getPropertyDescriptor();
+
             Map<String, DomainProperty> propertyNameToDescriptor = dataDomain.createImportMap(true);
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
@@ -144,13 +104,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 transaction = true;
             }
 
-            OntologyManager.insertTabDelimited(container, id,
-                    new SimpleAssayDataImportHelper(data.getLSID()), dataProperties, fileData, false);
-
-            if (inputMaterials.isEmpty())
-            {
-                throw new ExperimentException("Could not find any input samples in the data");
-            }
+            insertRowData(data, user, container, dataProperties, fileData);
 
             if (shouldAddInputMaterials())
             {
@@ -182,6 +136,67 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ExperimentService.get().rollbackTransaction();
             }
         }
+    }
+
+    protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
+            throws SQLException, IOException, ExperimentException
+    {
+        List<DomainProperty> allProps = new ArrayList<DomainProperty>();
+        allProps.addAll(Arrays.asList(provider.getBatchDomain(protocol).getProperties()));
+        allProps.addAll(Arrays.asList(provider.getRunDomain(protocol).getProperties()));
+
+        Map<String, Object> props = OntologyManager.getProperties(container, run.getLSID());
+        ExpExperiment batch = AssayService.get().findBatch(run);
+        if (batch != null)
+        {
+            Map<String, Object> batchProps = OntologyManager.getProperties(container, batch.getLSID());
+            props.putAll(batchProps);
+        }
+        ParticipantVisitResolver resolver = null;
+
+        Container targetContainer = null;
+        for (DomainProperty runProp : allProps)
+        {
+            if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
+            {
+                Object targetObject = props.get(runProp.getPropertyURI());
+                if (targetObject instanceof String)
+                {
+                    targetContainer = ContainerManager.getForId((String)targetObject);
+                    break;
+                }
+            }
+        }
+
+        for (DomainProperty runProp : allProps)
+        {
+            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
+            {
+                Object targetObject = props.get(runProp.getPropertyURI());
+                if (targetObject instanceof String)
+                {
+                    ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType((String)targetObject, provider.getParticipantVisitResolverTypes());
+                    resolver = resolverType.createResolver(ExperimentService.get().getExpRun(run.getRowId()), targetContainer, user);
+                    break;
+                }
+            }
+        }
+
+        if (resolver == null)
+        {
+            resolver = new StudyParticipantVisitResolver(container, targetContainer);
+        }
+
+        return resolver;
+    }
+
+    /** Insert the data into the database.  Transaction is active. */
+    protected void insertRowData(ExpData data, User user, Container container, PropertyDescriptor[] dataProperties, List<Map<String, Object>> fileData)
+            throws SQLException, ValidationException
+    {
+        Integer id = OntologyManager.ensureObject(container, data.getLSID());
+        OntologyManager.insertTabDelimited(container, id,
+                new SimpleAssayDataImportHelper(data.getLSID()), dataProperties, fileData, false);
     }
 
     protected abstract boolean shouldAddInputMaterials();
@@ -426,7 +441,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return materialInputs;
     }
 
-    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, DomainProperty> propertyNamesToUris)
+    protected List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, DomainProperty> propertyNamesToUris)
     {
         List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.size());
         for (Map<String, Object> dataMap : dataMaps)

@@ -33,6 +33,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
@@ -432,7 +433,36 @@ public class Table
     }
 
 
+    /**
+     * return a result from a one row one column resultset or null.
+     * K should be a string or number type.
+     */
+    public static <K> K executeSingleton(TableInfo table, String column, Filter filter, Sort sort, Class<K> c)
+    {
+        ColumnInfo col = table.getColumn(column);
+        return executeSingleton(table, col, filter, sort, c);
+    }
 
+    /**
+     * return a result from a one row one column resultset or null.
+     * K should be a string or number type.
+     */
+    public static <K> K executeSingleton(TableInfo table, ColumnInfo column, Filter filter, Sort sort, Class<K> c)
+    {
+        try
+        {
+            K[] values = executeArray(table, column, filter, sort, c);
+            assert (values.length == 0 || values.length == 1);
+            if (values.length == 0)
+                return null;
+
+            return values[0];
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     /**
      * return a result from a one row one column resultset
@@ -547,6 +577,14 @@ public class Table
         }
     }
 
+
+    /** return a result from a one column resultset. K should be a string or number type */
+    public static <K> K[] executeArray(TableInfo table, String column, Filter filter, Sort sort, Class<K> c)
+            throws SQLException
+    {
+        ColumnInfo col = table.getColumn(column);
+        return executeArray(table, col, filter, sort, c);
+    }
 
     /** return a result from a one column resultset. K should be a string or number type */
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, Filter filter, Sort sort, Class<K> c)

@@ -347,6 +347,10 @@ public class SimpleFilter implements Filter
         addCondition(colName, value);
     }
 
+    public SimpleFilter(String colName, Object value, CompareType compare)
+    {
+        addCondition(colName, value, compare);
+    }
 
     public SimpleFilter(URLHelper urlHelp, String regionName)
     {
