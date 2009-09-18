@@ -42,8 +42,9 @@ public class DbScope
 {
     private static final Logger _log = Logger.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
-    private static final Map<String, DbScope> _scopes = new HashMap<String, DbScope>();
+    private static final Map<String, DbScope> _scopes = new LinkedHashMap<String, DbScope>();
 
+    private String _jndiName;
     private DataSource _dataSource;
     private SqlDialect _dialect;
     private String _databaseName;          // Possibly null, e.g., for SAS datasources
@@ -70,14 +71,15 @@ public class DbScope
     }
 
 
-    DbScope(String dsName) throws NamingException, ServletException, SQLException
+    DbScope(String jndiName) throws NamingException, ServletException, SQLException
     {
-        this(getDataSourceFromJNDI(dsName));
+        this(jndiName, getDataSourceFromJNDI(jndiName));
     }
 
 
-    public DbScope(DataSource dataSource) throws ServletException, SQLException
+    public DbScope(String jndiName, DataSource dataSource) throws ServletException, SQLException
     {
+        _jndiName = jndiName;
         _dataSource = dataSource;
         _dialect = SqlDialect.get(_dataSource);
         _databaseName = _dialect.getDatabaseName(_dataSource);
@@ -125,6 +127,11 @@ public class DbScope
         Context envCtx = (Context) ctx.lookup("java:comp/env");
 
         return (DataSource) envCtx.lookup(dsName);
+    }
+
+    public String getJndiName()
+    {
+        return _jndiName;
     }
 
     public DataSource getDataSource()
@@ -433,7 +440,8 @@ public class DbScope
         });
     }
 
-    static DbScope getDbScope(String dsName) throws NamingException, ServletException, SQLException
+    // TODO: Make this package and pass datasource name into DbSchema.createFromMetaData()?
+    public static DbScope getDbScope(String dsName) throws NamingException, ServletException, SQLException
     {
         DbScope scope;
 

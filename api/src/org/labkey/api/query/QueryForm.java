@@ -165,6 +165,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
     {
         UserSchema ret = null;
         HString schemaName = getSchemaName();
+
         if (null != schemaName && !schemaName.isEmpty())
         {
             UserSchema baseSchema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName.toString());
@@ -181,8 +182,8 @@ public class QueryForm implements HasViewContext, HasBindParameters
             {
                 throw UnexpectedException.wrap(e);
             }
-
         }
+
         return ret;
     }
 

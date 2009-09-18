@@ -77,6 +77,7 @@ public class AsyncQueryRequest<T>
 
         Thread thread = new Thread(runnable, "AsyncQueryRequest: " + Thread.currentThread().getName());
         thread.start();
+
         while(true)
         {
             if (_result == null && _exception == null)
@@ -90,10 +91,12 @@ public class AsyncQueryRequest<T>
                     throw UnexpectedException.wrap(ie);
                 }
             }
+
             if (_result != null)
             {
                 return _result;
             }
+
             if (_exception != null)
             {
                 if (_exception instanceof SQLException)
@@ -103,8 +106,10 @@ public class AsyncQueryRequest<T>
                     sqlE2.setNextException(sqlE);
                     throw sqlE2;
                 }
+
                 throw new UnexpectedException(_exception);
             }
+
             checkCancelled();
         }
     }

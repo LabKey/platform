@@ -22,7 +22,6 @@ import org.labkey.api.util.DateUtil;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Apr 19, 2006
  * Time: 4:56:01 PM
@@ -31,7 +30,7 @@ public class SQLFragment
 {
     String sql;
     StringBuilder sb = null;
-    List<Object> params;
+    List<Object> params;          // TODO: Should be List<?>
 
     public SQLFragment()
     {
@@ -44,7 +43,7 @@ public class SQLFragment
      * @param sql
      * @param params list may be modified so clone() before passing in if necessary
      */
-    public SQLFragment(CharSequence sql, List<Object> params)
+    public SQLFragment(CharSequence sql, List<Object> params)      // TODO: Should be List<?>
     {
         guard(sql);
         this.sql = sql.toString();
@@ -184,7 +183,7 @@ public class SQLFragment
     }
 
 
-    public void addAll(Collection<? extends Object> l)
+    public void addAll(Collection<?> l)
     {
         getModfiableParams().addAll(l);
     }
@@ -210,12 +209,13 @@ public class SQLFragment
     // return boolean so this can be used in an assert
     public boolean appendComment(String comment)
     {
-        StringBuilder sb = getStringBuilder();
+// TODO: Comments disabled temporarily to get SAS connectivity working
+/*        StringBuilder sb = getStringBuilder();
 //        int len = sb.length();
 //        if (len > 0 && sb.charAt(len-1) != '\n')
 //            sb.append('\n');
         sb.append("\n-- ").append(comment).append('\n');
-        return true;
+*/        return true;
     }
 
 

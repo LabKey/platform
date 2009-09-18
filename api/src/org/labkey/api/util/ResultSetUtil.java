@@ -23,24 +23,21 @@ import static org.apache.commons.collections.IteratorUtils.toList;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.collections.CaseInsensitiveArrayListMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.PermissionsMap;
 import org.labkey.api.security.User;
 
-import java.beans.Introspector;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Date;
 
 
 public class ResultSetUtil

@@ -34,10 +34,12 @@ import java.util.Set;
 abstract public class QueryService
 {
     static private QueryService instance;
+
     static public QueryService get()
     {
         return instance;
     }
+
     static public void set(QueryService impl)
     {
         instance = impl;

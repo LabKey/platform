@@ -39,9 +39,9 @@ public class QueryWebPart extends WebPartView
         setFrame(FrameType.PORTAL);
         Map<String, String> properties = part.getPropertyMap();
         String title = properties.get("title");
-
         String buttonBarPositionProp = properties.get("buttonBarPosition");
-        if(null != buttonBarPositionProp)
+
+        if (null != buttonBarPositionProp)
             _buttonBarPosition = DataRegion.ButtonBarPosition.valueOf(buttonBarPositionProp.toUpperCase());
 
         ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
@@ -51,6 +51,7 @@ public class QueryWebPart extends WebPartView
         if (_schema != null)
         {
             _settings = _schema.getSettings(part, context);
+
             if (_settings.getQueryName() == null)
             {
                 url = _schema.urlSchemaDesigner();
@@ -62,6 +63,7 @@ public class QueryWebPart extends WebPartView
             }
 
             setTitleHref(url);
+
             if (title == null)
             {
                 if (_settings.getQueryName() != null)
@@ -80,10 +82,10 @@ public class QueryWebPart extends WebPartView
             title = "Query";
             setTitleHref(QueryService.get().urlQueryDesigner(getUser(), getContainer(), null));
         }
+
         if (url != null)
-        {
             setTitleHref(url);
-        }
+
         setTitle(title);
     }
 
@@ -101,6 +103,7 @@ public class QueryWebPart extends WebPartView
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         HttpView view = null;
+
         if (_schema == null)
         {
             if (_schemaName == null)
@@ -112,30 +115,34 @@ public class QueryWebPart extends WebPartView
                 out.write("Schema '" + PageFlowUtil.filter(_schemaName) + "' does not exist.");
             }
         }
+
         if (_schema != null && _settings != null)
         {
             QueryDefinition queryDef = _settings.getQueryDef(_schema);
+
             if (queryDef != null)
             {
                 QueryView queryView = _schema.createView(getViewContext(), _settings);
                 queryView.setShadeAlternatingRows(true);
                 queryView.setShowBorders(true);
-                if(null != _buttonBarPosition)
+
+                if (null != _buttonBarPosition)
                 {
                     queryView.setButtonBarPosition(_buttonBarPosition);
                     if (_buttonBarPosition == DataRegion.ButtonBarPosition.NONE)
                         queryView.setShowRecordSelectors(false);
                 }
+
                 view = queryView;
             }
         }
-
 
         if (view != null)
         {
             include(view);
             return;
         }
+
         if (_schema != null && _settings != null)
         {
             if (_settings.getAllowChooseQuery())
@@ -146,6 +153,7 @@ public class QueryWebPart extends WebPartView
             {
                 view = new ChooseQueryView(_schema, null, null);
             }
+
             include(view, out);
         }
     }

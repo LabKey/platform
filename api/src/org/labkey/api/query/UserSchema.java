@@ -95,19 +95,19 @@ abstract public class UserSchema extends AbstractSchema
         if (table != null)
         {
             if (!includeExtraMetadata)
-            {
                 return table;
-            }
-            return QueryService.get().overlayMetadata(table, name, this);
+            else
+                return QueryService.get().overlayMetadata(table, name, this);
         }
 
         QueryDefinition def = QueryService.get().getQueryDef(getContainer(), getSchemaName(), name);
+
         if (def == null)
             return null;
+
         if (!includeExtraMetadata)
-        {
             def.setMetadataXml(null);
-        }
+
         return def;
     }
 
@@ -192,6 +192,7 @@ abstract public class UserSchema extends AbstractSchema
     {
         Set<String> set = new HashSet<String>();
         set.addAll(visibleOnly ? getVisibleTableNames() : getTableNames());
+
         for (Map.Entry<String, QueryDefinition> entry : QueryService.get().getQueryDefs(getContainer(), getSchemaName()).entrySet())
         {
             if (!visibleOnly || !entry.getValue().isHidden())
@@ -199,16 +200,17 @@ abstract public class UserSchema extends AbstractSchema
                 set.add(entry.getKey());
             }
         }
+
         List<String> ret = new ArrayList<String>(set);
 
         Collections.sort(ret, new Comparator<String>()
         {
-
             public int compare(String o1, String o2)
             {
                 return o1.compareToIgnoreCase(o2);
             }
         });
+
         return ret;
     }
 
@@ -221,12 +223,14 @@ abstract public class UserSchema extends AbstractSchema
     public final QuerySettings getSettings(Portal.WebPart webPart, ViewContext context)
     {
         String dataRegionName = webPart.getPropertyMap().get("dataRegionName");
-        if(null == dataRegionName)
+
+        if (null == dataRegionName)
             dataRegionName = "qwp" + webPart.getIndex();
 
         QuerySettings settings = createQuerySettings(dataRegionName);
         (new BoundMap(settings)).putAll(webPart.getPropertyMap());
         settings.init(context);
+
         return settings;
     }
 
@@ -235,6 +239,7 @@ abstract public class UserSchema extends AbstractSchema
         QuerySettings settings = createQuerySettings(dataRegionName);
         settings.init(context);
         settings.setSchemaName(getSchemaName());
+
         return settings;
     }
 
@@ -242,6 +247,7 @@ abstract public class UserSchema extends AbstractSchema
     {
         QuerySettings settings = getSettings(context, dataRegionName);
         settings.setQueryName(queryName);
+
         return settings;
     }
 
@@ -249,6 +255,7 @@ abstract public class UserSchema extends AbstractSchema
     {
         QuerySettings settings = createQuerySettings(dataRegionName);
         settings.init(pvs);
+
         return settings;
     }
 

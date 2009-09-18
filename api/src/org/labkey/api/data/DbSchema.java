@@ -100,12 +100,14 @@ public class DbSchema
                 }
 
                 schema = createFromMetaData(schemaName, jndiName);
+
                 if (null != schema)
                 {
                     if (pair != null)
                     {
                         xmlStream = pair.first;
                         schema.setSchemaXmlTimestamp(pair.second);
+
                         if (null != xmlStream)
                         {
                             TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
@@ -162,8 +164,7 @@ public class DbSchema
 
     private static Module getModuleForSchemaName(String schemaName)
     {
-        Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
-        return module;
+        return ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
     }
 
 
@@ -190,6 +191,7 @@ public class DbSchema
         {
             _log.error("Problem getting dbschemas out of JNDI", e);
         }
+
         return result;
     }
 
@@ -201,11 +203,13 @@ public class DbSchema
         String catalogName = null;
         String ownerName = "dbo";
         String key;
+
         for (Object o : props.keySet())
         {
             key = (String) o;
             schemaInfo = (String) props.get(key);
             schemaStrings = schemaInfo.split(",");
+
             if (schemaStrings.length > 1 && schemaStrings[1].trim().length() > 0)
                 catalogName = schemaStrings[1].trim();
 
@@ -215,23 +219,11 @@ public class DbSchema
             if (catalog.equals(catalogName) && owner.equals(ownerName))
                 return get(key);
         }
+
         return null;
     }
 
-    /*
-        public static DbSchema createFromXml(String name, File xmlFile) throws Exception
-            {
-            return createFromXml(name, TablesDocument.Factory.parse(xmlFile));
-            }
 
-
-        public static DbSchema createFromXml(String name, TablesDocument tablesDoc) throws Exception
-            {
-            DbSchema schema = new DbSchema(name);
-            schema.loadXml(tablesDoc, false);
-            return schema;
-            }
-    */
     public static DbSchema createFromMetaData(String dbSchemaName) throws SQLException, NamingException, ServletException
     {
         return createFromMetaData(dbSchemaName, "dbschema");
@@ -261,7 +253,6 @@ public class DbSchema
         String[] schemaStrings = schemaInfo.split(",");
         String dsName = schemaStrings[0];
         String ownerName = "dbo";
-
         DbScope scope;
 
         try
@@ -323,7 +314,7 @@ public class DbSchema
             {
                 while (rs.next())
                 {
-                    String metaDataName = rs.getString("TABLE_NAME");
+                    String metaDataName = rs.getString("TABLE_NAME").trim();
 
                     // Ignore system tables
                     if (schema.getSqlDialect().isSystemTable(metaDataName))
@@ -444,16 +435,10 @@ public class DbSchema
         _schemaXmlTimestamp = schemaXmlTimestamp;
     }
 
-    /* unused
-      public void loadXml (File xmlFile, boolean merge) throws Exception
-          {
-          TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlFile);
-          loadXml (tablesDoc, merge);
-          }
-    */
     public void loadXml(TablesDocument tablesDoc, boolean merge) throws Exception
     {
         TableType[] xmlTables = tablesDoc.getTables().getTableArray();
+
         for (TableType xmlTable : xmlTables)
         {
             SchemaTableInfo tableInfo;
@@ -461,6 +446,7 @@ public class DbSchema
             if (merge)
             {
                 tableInfo = getTable(xmlTable.getTableName());
+
                 if (null == tableInfo)
                 {
                     tableInfo = new SchemaTableInfo(xmlTable.getTableName(), this);

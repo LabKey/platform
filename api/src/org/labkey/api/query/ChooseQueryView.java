@@ -28,6 +28,7 @@ public class ChooseQueryView extends WebPartView
     UserSchema _schema;
     ActionURL _urlExecuteQuery;
     String _dataRegionName;
+
     public ChooseQueryView(UserSchema schema, ActionURL urlExecuteQuery, String dataRegionName)
     {
         _schema = schema;
@@ -40,18 +41,18 @@ public class ChooseQueryView extends WebPartView
     {
         out.write("<table>");
         Map<String, QueryDefinition> queryDefs = QueryService.get().getQueryDefs(_schema.getContainer(), _schema.getSchemaName());
+
         for (String queryName : _schema.getTableAndQueryNames(true))
         {
             ActionURL url;
             QueryDefinition queryDef = queryDefs.get(queryName);
+
             if (queryDef == null)
-            {
                 queryDef = _schema.getQueryDefForTable(queryName);
-            }
+
             if (queryDef == null)
-            {
                 continue;
-            }
+
             if (_urlExecuteQuery != null)
             {
                 url = _urlExecuteQuery.clone();
@@ -61,6 +62,7 @@ public class ChooseQueryView extends WebPartView
             {
                 url = _schema.urlFor(QueryAction.executeQuery, queryDef);
             }
+
             out.write("<tr><td>");
             out.write("<a href=\"");
             out.write(PageFlowUtil.filter(url));
@@ -69,14 +71,14 @@ public class ChooseQueryView extends WebPartView
             out.write("</a>");
             out.write("</td>");
             out.write("<td>");
+
             if (queryDef.getDescription() != null)
-            {
                 out.write(PageFlowUtil.filter(queryDef.getDescription()));
-            }
+
             out.write("</td>");
             out.write("</tr>");
         }
-        out.write("</table>");
 
+        out.write("</table>");
     }
 }

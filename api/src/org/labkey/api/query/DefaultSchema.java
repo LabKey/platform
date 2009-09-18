@@ -64,6 +64,7 @@ final public class DefaultSchema extends AbstractSchema
             }
         });
     }
+
     static public DefaultSchema get(User user, Container container)
     {
         return new DefaultSchema(user, container);
