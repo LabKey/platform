@@ -496,11 +496,7 @@ public class OntologyManager
                 Table.execute(getExpSchema(), sqlDeleteOwnedObjects.toString(), null);
             }
 
-            StringBuilder sqlDeleteProperties = new StringBuilder();
-            sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
-            sqlDeleteProperties.append(in);
-            sqlDeleteProperties.append("))");
-            Table.execute(getExpSchema(), sqlDeleteProperties.toString(), null);
+            deleteProperties(objectIds, c);
 
             StringBuilder sqlDeleteObjects = new StringBuilder();
             sqlDeleteObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
@@ -1440,6 +1436,37 @@ public class OntologyManager
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
+        }
+    }
+
+    /** Delete properties owned by the objects. */
+    public static void deleteProperties(Integer objectIDs, Container objContainer) throws SQLException
+    {
+        deleteProperties(new Integer[] { objectIDs }, objContainer);
+    }
+
+    private static void deleteProperties(Integer[] objectIDs, Container objContainer) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("ObjectID", Arrays.asList(objectIDs)));
+        String[] objectURIs = Table.executeArray(getTinfoObject(), "ObjectURI", filter, null, String.class);
+
+        StringBuilder in = new StringBuilder();
+        for (Integer objectID: objectIDs)
+        {
+            in.append(objectID);
+            in.append(",");
+        }
+        in.setLength(in.length()-1);
+
+        StringBuilder sqlDeleteProperties = new StringBuilder();
+        sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(objContainer.getId()).append("' AND ObjectId IN (");
+        sqlDeleteProperties.append(in);
+        sqlDeleteProperties.append("))");
+        Table.execute(getExpSchema(), sqlDeleteProperties.toString(), null);
+
+        for (String uri : objectURIs)
+        {
+            clearPropertyCache(uri);
         }
     }
 

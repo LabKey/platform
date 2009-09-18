@@ -33,7 +33,7 @@ public class DetailsURL
 {
     /**
      * Create a new DetailsURL from a string of the form "pageflow/action.view?paramKey=${paramVal}".
-     * A Controller will be required when creating the url using {@link DetailsURL#getURL(Map, Container)}.
+     * A Container will be required when creating the url using {@link DetailsURL#getURL(Map, Container)}.
      */
     static public DetailsURL fromString(String str) throws MetadataException
     {
