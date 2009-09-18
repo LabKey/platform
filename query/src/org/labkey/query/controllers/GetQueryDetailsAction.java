@@ -25,10 +25,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.springframework.validation.BindException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,25 +46,52 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null == schema)
             throw new IllegalArgumentException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + container.getPath() + "'!");
 
-        TableInfo tinfo = schema.getTable(form.getQueryName());
-        if (null == tinfo)
-            throw new IllegalArgumentException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
-
-        //a few props about the query
+        //a few basic props about the query
+        //this needs to be populated before attempting to get the table info
+        //so that the client knows if this query is user defined or not
+        //so it can display edit source, edit design links
         resp.put("name", form.getQueryName());
         resp.put("schemaName", form.getSchemaName());
         Map<String,QueryDefinition> queryDefs = QueryService.get().getQueryDefs(container, form.getSchemaName());
         if (null != queryDefs && queryDefs.containsKey(form.getQueryName()))
             resp.put("isUserDefined", true);
 
+        TableInfo tinfo = null;
+        try
+        {
+            tinfo = schema.getTable(form.getQueryName());
+        }
+        catch(Exception e)
+        {
+            resp.put("exception", e.getMessage());
+            return resp;
+        }
+
+        if (null == tinfo)
+            throw new IllegalArgumentException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
+
+        //if the caller asked us to chase a foreign key, do that
+        FieldKey fk = null;
+        if (null != form.getFk())
+        {
+            fk = FieldKey.fromString(form.getFk());
+            Map<FieldKey,ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singletonList(fk));
+            ColumnInfo cinfo = colMap.get(fk);
+            if (null == cinfo)
+                throw new IllegalArgumentException("Could not find the column '" + form.getFk() + "' starting from the query " + form.getSchemaName() + "." + form.getQueryName() + "!");
+            if (null == cinfo.getFk() || null == cinfo.getFkTableInfo())
+                throw new IllegalArgumentException("The column '" + form.getFk() + "' is not a foreign key!");
+            tinfo = cinfo.getFkTableInfo();
+        }
+        
         if (null != tinfo.getDescription())
             resp.put("description", tinfo.getDescription());
 
         //now the native columns
-        resp.put("columns", getNativeColProps(tinfo));
+        resp.put("columns", getNativeColProps(tinfo, fk));
 
         //now the columns in the user's default view for this query
-        if (schema instanceof UserSchema)
+        if (schema instanceof UserSchema && null == form.getFk())
         {
             resp.put("defaultView", getDefaultViewProps((UserSchema)schema, form.getQueryName()));
         }
@@ -75,12 +99,12 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         return resp;
     }
 
-    protected List<Map<String,Object>> getNativeColProps(TableInfo tinfo)
+    protected List<Map<String,Object>> getNativeColProps(TableInfo tinfo, FieldKey fieldKeyPrefix)
     {
         List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
         for (ColumnInfo cinfo : tinfo.getColumns())
         {
-            colProps.add(getColProps(cinfo));
+            colProps.add(getColProps(cinfo, fieldKeyPrefix));
         }
 
         return colProps;
@@ -103,15 +127,15 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         for (DisplayColumn dc : view.getDisplayColumns())
         {
             if (dc.isQueryColumn() && null != dc.getColumnInfo())
-                colProps.add(getColProps(dc.getColumnInfo()));
+                colProps.add(getColProps(dc.getColumnInfo(), null));
         }
         return colProps;
     }
 
-    protected Map<String,Object> getColProps(ColumnInfo cinfo)
+    protected Map<String,Object> getColProps(ColumnInfo cinfo, FieldKey fieldKeyPrefix)
     {
         Map<String,Object> props = new HashMap<String,Object>();
-        props.put("name", cinfo.getName());
+        props.put("name", (null != fieldKeyPrefix ? FieldKey.fromString(fieldKeyPrefix, cinfo.getName()) : cinfo.getName()));
         if (null != cinfo.getDescription())
             props.put("description", cinfo.getDescription());
 
@@ -177,6 +201,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
     {
         private String _queryName;
         private String _schemaName;
+        private String _fk;
 
         public String getSchemaName()
         {
@@ -196,6 +221,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         public void setQueryName(String queryName)
         {
             _queryName = queryName;
+        }
+
+        public String getFk()
+        {
+            return _fk;
+        }
+
+        public void setFk(String fk)
+        {
+            _fk = fk;
         }
     }
 }

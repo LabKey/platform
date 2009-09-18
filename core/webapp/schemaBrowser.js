@@ -13,15 +13,15 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
         this.queryDetailsMap = {};
     },
 
-    getQueryDetails : function(schemaName, queryName) {
-        return this.queryDetailsMap[this.getCacheKey(schemaName, queryName)];
+    getQueryDetails : function(schemaName, queryName, fk) {
+        return this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)];
     },
 
-    loadQueryDetails : function(schemaName, queryName, callback, scope) {
-        if (this.queryDetailsMap[this.getCacheKey(schemaName, queryName)])
+    loadQueryDetails : function(schemaName, queryName, fk, callback, errorCallback, scope) {
+        if (this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)])
         {
             if (callback)
-                callback.call(scope || this, this.queryDetailsMap[this.getCacheKey(schemaName, queryName)]);
+                callback.call(scope || this, this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)]);
             return;
         }
 
@@ -30,29 +30,31 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
             method : 'GET',
             success: function(response){
                 var qdetails = Ext.util.JSON.decode(response.responseText);
-                this.queryDetailsMap[this.getCacheKey(qdetails.schemaName, qdetails.name)] = qdetails;
+                this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)] = qdetails;
                 this.fireEvent("newdetails", qdetails);
                 if (callback)
                     callback.call(scope || this, qdetails);
             },
+            failure: LABKEY.Utils.getCallbackWrapper(errorCallback, (scope || this), true),
             scope: this,
             params: {
                 schemaName: schemaName,
-                queryName: queryName
+                queryName: queryName,
+                fk: fk
             }
         });
     },
 
-    clear : function(schemaName, queryName) {
-        this.queryDetailsMap[this.getCacheKey(schemaName, queryName)] = undefined;
+    clear : function(schemaName, queryName, fk) {
+        this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)] = undefined;
     },
 
     clearAll : function() {
         this.queryDetailsMap = {};
     },
 
-    getCacheKey : function(schemaName, queryName) {
-        return schemaName + "." + queryName;
+    getCacheKey : function(schemaName, queryName, fk) {
+        return schemaName + "." + queryName + (fk ? "." + fk : "");
     }
 
 });
@@ -82,12 +84,19 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
 Ext.reg('labkey-query-tree-panel', LABKEY.ext.QueryTreePanel);
 
 LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
+    colspan : 7,
+
     initComponent : function() {
         this.addEvents("lookupclick");
         this.bodyStyle = "padding: 5px";
         this.html = "<p class='lk-qd-loading'>Loading...</p>";
+
         LABKEY.ext.QueryDetailsPanel.superclass.initComponent.apply(this, arguments);
-        this.cache.loadQueryDetails(this.schemaName, this.queryName, this.setQueryDetails, this);
+
+        this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk, this.setQueryDetails, function(errorInfo){
+            var html = "<p class='lk-qd-error'>Error in query: " + errorInfo.exception + "</p>";
+            this.getEl().update(html);
+        }, this);
     },
     
     setQueryDetails : function(queryDetails) {
@@ -97,7 +106,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (this.rendered)
             this.body.update(this.buildHtml(this.queryDetails));
         else
-            new Ext.util.DelayedTask(function(){this.setQueryDetails(queryDetails)}, this).delay(10);
+            new Ext.util.DelayedTask(function(){this.setQueryDetails(queryDetails);}, this).delay(10);
     },
 
     buildHtml : function(queryDetails) {
@@ -110,10 +119,24 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (queryDetails.description)
             html += "<div class='lk-qd-description'>" + queryDetails.description + "</div>";
 
+        if (queryDetails.exception)
+        {
+            html += "<div class='lk-qd-error'>There was an error while parsing this query: " + queryDetails.exception + "</div>";
+            return html;
+        }
+        
         //columns table
-        html += "<table class='lk-qd-coltable'>";
+        html += this.buildColumnsTable(queryDetails);
+
+        return html;
+    },
+
+    buildColumnsTable : function(queryDetails) {
+        //columns table
+        var html = "<table class='lk-qd-coltable'>";
         //header row
         html += "<tr>";
+        html += "<th></th>";
         html += "<th ext:qtip='This is the programmatic name used in the API and LabKey SQL.'>Name</th>";
         html += "<th ext:qtip='This is the caption the user sees in views.'>Caption</th>";
         html += "<th ext:qtip='The data type of the column.'>Type</th>";
@@ -125,22 +148,28 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         var qtip;
         if (queryDetails.columns)
         {
-            qtip = "When writing LabKey SQL, these columns are available from this query.";
-            html += "<tr><td colspan='6' class='lk-qd-collist-title' ext:qtip='" + qtip + "'>All Columns in this Query</td></tr>";
+            //don't show group heading if there is only one column group
+            if (queryDetails.defaultView)
+            {
+                qtip = "When writing LabKey SQL, these columns are available from this query.";
+                html += "<tr><td colspan='" + this.colspan + "' class='lk-qd-collist-title' ext:qtip='" + qtip + "'>All Columns in this Query</td></tr>";
+            }
             html += this.buildColumnTableRows(queryDetails.columns);
         }
 
         if (queryDetails.defaultView && queryDetails.defaultView.columns)
         {
-            qtip = "When using the LABKEY.Query.selectRows() API, these columns will be returned by default.";
-            html += "<tr><td colspan='6'>&nbsp;</td></tr>";
-            html += "<tr><td colspan='6' class='lk-qd-collist-title' ext:qtip='" + qtip + "'>Columns in Your Default View of this Query</td></tr>";
+            if (queryDetails.columns)
+            {
+                qtip = "When using the LABKEY.Query.selectRows() API, these columns will be returned by default.";
+                html += "<tr><td colspan='" + this.colspan + "'>&nbsp;</td></tr>";
+                html += "<tr><td colspan='" + this.colspan + "' class='lk-qd-collist-title' ext:qtip='" + qtip + "'>Columns in Your Default View of this Query</td></tr>";
+            }
             html += this.buildColumnTableRows(queryDetails.defaultView.columns);
         }
 
         //close the columns table
         html += "</table>";
-
         return html;
     },
 
@@ -179,6 +208,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             var col = columns[idx];
 
             html += "<tr class='lk-qd-coltablerow'>";
+            html += "<td>" + this.getColExpander(col) + "</td>";
             html += "<td>" + col.name + "</td>";
             html += "<td>" + col.caption + "</td>";
             html += "<td>" + (col.isSelectable ? col.type : "") + "</td>";
@@ -188,6 +218,14 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             html += "</tr>";
         }
         return html;
+    },
+
+    getColExpander : function(col) {
+        if (!col.lookup)
+            return "";
+
+        var expandScript = "Ext.ComponentMgr.get(\"" + this.id + "\").onLookupExpand(\"" + col.name + "\", this);";
+        return "<img src='" + LABKEY.ActionURL.getContextPath() + "/_images/plus.gif' onclick='" + expandScript + "'/>&nbsp;";
     },
 
     getLookupLink : function(col) {
@@ -214,13 +252,15 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (col.lookup.containerPath)
             tipText += " Note that the lookup table is defined in the folder '" + col.lookup.containerPath + "'.";
 
+        var html = "";
 
+        //script for click on lookup link
         var argList = "\"" + col.lookup.schemaName + "\", \"" + col.lookup.queryName + "\"";
         if (col.lookup.containerPath)
             argList += ", \"" + col.lookup.containerPath + "\"";
         var onclickScript = "Ext.ComponentMgr.get(\"" + this.id + "\").fireEvent(\"lookupclick\", " + argList + ");";
 
-        var html = "<span ext:qtip=\"" + tipText + "\"";
+        html += "<span ext:qtip=\"" + tipText + "\"";
         if (col.lookup.isPublic)
             html += " class='labkey-link' onclick='" + onclickScript + "'";
         
@@ -228,41 +268,118 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         return html;
     },
 
+    onLookupExpand : function(colName, expandImage) {
+        var img = Ext.get(expandImage);
+        var tr = img.findParentNode("tr", undefined, true);
+        if (!tr)
+            throw "Couldn't find table row containing expander image!";
+
+        tr.addClass("lk-qd-colrow-expanded");
+
+        var trNew = tr.insertHtml("afterEnd", "<tr></tr>", true);
+        var tdNew = trNew.insertHtml("beforeEnd", "<td colspan='" + this.colspan + "' class='lk-qd-nested-container'><span class='lk-qd-loading'>loading...</span></td>", true);
+        img.set({
+            src: LABKEY.ActionURL.getContextPath() + "/_images/minus.gif",
+            onclick: "Ext.ComponentMgr.get(\"" + this.id + "\").toggleLookupRow('" + trNew.id + "', this);"
+        });
+
+        //load query details for this schema + query + colName (fk)
+        this.cache.loadQueryDetails(this.schemaName, this.queryName, colName, function(queryDetails){
+            //build html
+            var html = this.buildColumnsTable(queryDetails);
+            tdNew.update(html);
+        }, function(errorInfo){
+            tdNew.update("<p class='lk-qd-error'>" + errorInfo.exception + "</p>");
+        },this);
+    },
+
+    toggleLookupRow : function(trId, expandImage) {
+        var tr = Ext.get(trId);
+
+        tr.setDisplayed(!tr.isDisplayed());
+        if (tr.isDisplayed())
+        {
+            tr.prev("tr").addClass("lk-qd-colrow-expanded");
+            Ext.get(expandImage).set({
+                src: LABKEY.ActionURL.getContextPath() + "/_images/minus.gif"
+            });
+        }
+        else
+        {
+            tr.prev("tr").removeClass("lk-qd-colrow-expanded");
+            Ext.get(expandImage).set({
+                src: LABKEY.ActionURL.getContextPath() + "/_images/plus.gif"
+            });
+        }
+    },
+
+    attrMap : {
+        isSelectable: {
+            abbreviation: 'U',
+            label: 'Unselectable',
+            description: 'This column is not selectable directly, but it may be used to access other columns in the lookup table it points to.',
+            negate: true,
+            trump: true
+        },
+        isAutoIncrement: {
+            abbreviation: 'AI',
+            label: 'Auto-Increment',
+            description: 'This value for this column is automatically assigned to an incrememnting integer value by the server.'
+        },
+        isKeyField: {
+            abbreviation: 'PK',
+            label: 'Primary Key',
+            description: 'This column is the primary key for the table (or part of a compound primary key).'
+        },
+        isMvEnabled: {
+            abbreviation: 'MV',
+            label: 'MV-Enabled',
+            description: 'This column has a related column that stores missing-value information.'
+        },
+        isNullable: {
+            abbreviation: 'Req',
+            label: 'Required',
+            description: 'This column is required.',
+            negate: true
+        },
+        isReadOnly: {
+            abbreviation: 'RO',
+            label: 'Read-Only',
+            description: 'This column is read-only.'
+        },
+        isVersionField: {
+            abbreviation: 'V',
+            label: 'Version',
+            description: 'This column contains a version number for the row.'
+        }
+    },
+
     getColAttrs : function(col) {
-        //if unselectable, note that and nothing else
-        if (!col.isSelectable)
-            return "Unselectable";
+        var attrs = {};
+        for (var attrName in this.attrMap)
+        {
+            var attr = this.attrMap[attrName];
+            if (attr.negate ? !col[attrName] : col[attrName])
+            {
+                if (attr.trump)
+                    return this.formatAttr(attr);
+                attrs[attrName] = attr;
+            }
+        }
 
         var html = "";
-
-        if (col.isAutoIncrement)
-            html = this.appendColAttr("Auto-Increment", html);
-
-        if (col.isKeyField)
-            html = this.appendColAttr("Primary Key", html);
-
-        if (col.isMvEnabled)
-            html = this.appendColAttr("MV-Enabled", html);
-
-        if (false === col.isNullable)
-            html = this.appendColAttr("Required", html);
-
-        if (col.isReadOnly || col.isUserEditable)
-            html = this.appendColAttr("Read-Only", html);
-
-        if (col.isVersionField)
-            html = this.appendColAttr("Version", html);
+        for (attrName in attrs)
+        {
+            html += this.formatAttr(attrs[attrName], html);
+        }
 
         return html;
     },
 
-    appendColAttr : function(attr, html) {
-        if (html.length > 0)
-            return html + ", " + attr;
-        else
-            return attr;
+    formatAttr : function(attr, html) {
+        var fmtAttr = "<span ext:qtip='" + attr.label + ": " + attr.description + "'>" + attr.abbreviation + "</span>";
+        return (html && html.length > 0) ? ", " + fmtAttr : fmtAttr;
     }
-
 });
 
 Ext.reg('labkey-query-details-panel', LABKEY.ext.QueryDetailsPanel);
@@ -319,6 +436,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     width: 200,
                     autoScroll: true,
                     enableDrag: false,
+                    useArrows: true,
                     listeners: {
                         click: {
                             fn: this.onTreeClick,
@@ -517,7 +635,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
             if (!queryNode)
             {
-                Ext.Msg.alert("Missing Query", "The query " + schemaName + "." + queryName + " was not found! It may not be publicly accessible.");
+                Ext.Msg.alert("Missing Query", "The query " + schemaName + "." + queryName + " was not found! It may not be publicly accessible." +
+                        " You can expand the field to see the columns in the related table.");
                 return;
             }
 

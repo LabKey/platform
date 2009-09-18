@@ -39,9 +39,26 @@
     vertical-align: top;
 }
 
+.lk-qd-colrow-expanded td
+{
+    border-bottom: 0;
+}
+
 .lk-qd-collist-title
 {
     font-weight: bold;
     background-color: #F0F0F0;
     color: #000000;
+}
+
+.lk-qd-nested-container
+{
+    padding-left: 30px !important;
+    padding-bottom: 30px !important;
+}
+
+.lk-qd-error
+{
+    color: red;
+    padding: 5px !important;
 }

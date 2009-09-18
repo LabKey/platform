@@ -2830,16 +2830,22 @@ public class QueryControllerSpring extends SpringActionController
 
             for(String qname : qnames)
             {
-                TableInfo table = uschema.getTable(qname);
-                if (null == table)
-                    continue;
+                TableInfo table = null;
+                try
+                {
+                    table = uschema.getTable(qname);
+                }
+                catch(Exception e)
+                {
+                    //may happen due to query failing parse
+                }
 
                 Map<String,Object> qinfo = new HashMap<String,Object>();
                 qinfo.put("name", qname);
-                if (null != table.getDescription())
+                if (null != table && null != table.getDescription())
                     qinfo.put("description", table.getDescription());
 
-                if(form.isIncludeColumns())
+                if(null != table && form.isIncludeColumns())
                 {
                     //enumerate the columns
                     List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();

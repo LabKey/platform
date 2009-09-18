@@ -49,6 +49,6 @@
         if (queryName && schemaName)
             browser.selectQuery(schemaName, queryName);
         else if (schemaName)
-            browser.selectQuery(schemaName, queryName);
+            browser.selectSchema(schemaName, queryName);
     }
 </script>
