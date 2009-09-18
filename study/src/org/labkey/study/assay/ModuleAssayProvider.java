@@ -88,7 +88,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public ModuleAssayProvider(String name, File baseDir, ProviderType providerConfig)
     {
         super(name + "Protocol", name + "Run");
-        _tableMetadata = new AssayTableMetadata(_tableMetadata.getSpecimenDetailParentFieldKey(), _tableMetadata.getRunFieldKeyFromResults(), _tableMetadata.getResultRowIdFieldKey())        {
+        _tableMetadata = new AssayTableMetadata(_tableMetadata.getSpecimenDetailParentFieldKey(), _tableMetadata.getRunFieldKeyFromResults(), _tableMetadata.getResultRowIdFieldKey())
+        {
             @Override
             public FieldKey getParticipantIDFieldKey()
             {
