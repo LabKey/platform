@@ -15,12 +15,18 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.security.UserManager;
+import org.labkey.query.persist.QueryManager;
 
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 
 /*
@@ -41,6 +47,7 @@ public class QueryUpgradeCode implements UpgradeCode
         if (!moduleContext.isNewInstall())
         {
             Map<String, String> map = UserManager.getUserPreferences(false);
+
             if (map != null && map.containsKey(R_EXE))
             {
                 ExternalScriptEngineDefinition def = LabkeyScriptEngineManager.createDefinition();
@@ -56,6 +63,20 @@ public class QueryUpgradeCode implements UpgradeCode
                 
                 LabkeyScriptEngineManager.saveDefinition(def);
             }
+        }
+    }
+
+    // Invoked from script query-9.20-9.21.sql
+    public void populateDataSourceColumn(ModuleContext ctx) throws SQLException
+    {
+        if (!ctx.isNewInstall())
+        {
+            // Get the DataSource name associated with the core schema (in most cases, "labkeyDataSource")
+            String dataSourceName = CoreSchema.getInstance().getSchema().getScope().getJndiName();
+
+            // Update all existing DbUserSchema rows with labkey DataSource name
+            SQLFragment sql = new SQLFragment("UPDATE " + QueryManager.get().getTableInfoDbUserSchema() + " SET DataSource = ?", Collections.<Object>singletonList(dataSourceName));
+            Table.execute(QueryManager.get().getDbSchema(), sql);
         }
     }
 }

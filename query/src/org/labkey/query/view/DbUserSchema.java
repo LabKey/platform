@@ -16,26 +16,20 @@
 
 package org.labkey.query.view;
 
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.module.SimpleModuleUserSchema;
-import org.labkey.query.persist.DbUserSchemaDef;
-import org.labkey.query.data.DbUserSchemaTable;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TableType;
-import org.apache.xmlbeans.XmlException;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.*;
+import org.labkey.api.module.SimpleModuleUserSchema;
+import org.labkey.api.security.User;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.query.data.DbUserSchemaTable;
+import org.labkey.query.persist.DbUserSchemaDef;
 
-import javax.servlet.ServletException;
-import java.util.Set;
-import java.util.Map;
+import javax.naming.NamingException;
 import java.util.HashMap;
+import java.util.Map;
 
 public class DbUserSchema extends SimpleModuleUserSchema
 {
@@ -55,7 +49,8 @@ public class DbUserSchema extends SimpleModuleUserSchema
 
     private static DbSchema initDbSchema(DbUserSchemaDef def)
     {
-        DbSchema dbSchema = null;
+        DbSchema dbSchema;
+
         synchronized (s_schemaMap)
         {
             if (s_schemaMap.containsKey(def.getDbSchemaName()))
@@ -66,15 +61,22 @@ public class DbUserSchema extends SimpleModuleUserSchema
             {
                 try
                 {
-                    dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName());
+                    DbScope scope = DbScope.getDbScope(def.getDataSource());
+                    dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName(), scope, def.getDbSchemaName());
+                }
+                catch (NamingException e)
+                {
+                    throw new RuntimeException(e);  // TODO: Previously used DataSource can't be found -- just log an error?
                 }
                 catch (Exception e)
                 {
                     throw new RuntimeException(e);
                 }
+
                 s_schemaMap.put(def.getDbSchemaName(), dbSchema);
             }
         }
+
         return dbSchema;
     }
 

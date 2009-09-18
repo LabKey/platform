@@ -266,6 +266,7 @@ public class QueryManager
     {
         if (userSchemaName == null)
             return null;
+
         try
         {
             DbUserSchemaDef.Key key = new DbUserSchemaDef.Key(container);

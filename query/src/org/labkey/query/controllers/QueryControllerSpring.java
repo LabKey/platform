@@ -65,11 +65,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.Connection;
 import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
 {
-    private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
+    private static final Logger LOG = Logger.getLogger(QueryControllerSpring.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
             ValidateQueryAction.class,
             GetSchemaQueryTreeAction.class,
             GetQueryDetailsAction.class);
@@ -2102,13 +2106,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
-            InsertView view = new InsertView(form, errors);
-            ButtonBar bb = new ButtonBar();
-            bb.add(new ActionButton("adminNewDbUserSchema.post", "Create"));
-            bb.add(new ActionButton("Cancel", getSuccessURL(form)));
-            view.getDataRegion().setButtonBar(bb);
-            view.getDataRegion().removeColumns("DbContainer", "DbUserSchemaId");
-            return view;
+            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean());
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
@@ -2126,8 +2124,70 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction().appendNavTrail(root);
-            root.addChild("Define Schema", actionURL(QueryAction.adminNewDbUserSchema));
+            root.addChild("Define External Schema", actionURL(QueryAction.adminNewDbUserSchema));
             return root;
+        }
+    }
+
+
+    public static class ExternalSchemaBean
+    {
+        private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
+
+        public ExternalSchemaBean()
+        {
+            Collection<DbScope> scopes = DbScope.getDbScopes();
+
+            for (DbScope scope : scopes)
+            {
+                Connection con = null;
+                ResultSet rs = null;
+
+                try
+                {
+                    con = scope.getConnection();
+                    DatabaseMetaData dbmd = con.getMetaData();
+
+                    rs = dbmd.getSchemas();
+
+                    Collection<String> schemaNames = new LinkedList<String>();
+
+                    while(rs.next())
+                        schemaNames.add(rs.getString(1).trim());
+
+                    _scopesAndSchemas.put(scope, schemaNames);
+                }
+                catch (SQLException e)
+                {
+                    LOG.error("Exception retrieving schemas from DbScope '" + scope.getJndiName() + "'");
+                }
+                finally
+                {
+                    ResultSetUtil.close(rs);
+
+                    if (null != con)
+                    {
+                        try
+                        {
+                            con.close();
+                        }
+                        catch (SQLException e)
+                        {
+                            // ignore
+                        }
+                    }
+                }
+            }
+        }
+
+        public Collection<DbScope> getScopes()
+        {
+            return _scopesAndSchemas.keySet();
+        }
+
+        public Collection<String> getSchemaNames(DbScope scope)
+        {
+            return _scopesAndSchemas.get(scope);
         }
     }
 

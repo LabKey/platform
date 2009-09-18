@@ -15,14 +15,12 @@
  */
 package org.labkey.query.sql;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryForeignKey;
-import org.labkey.data.xml.ColumnType;
 import org.apache.commons.lang.StringUtils;
-import static org.apache.commons.lang.StringUtils.defaultString;
+import org.labkey.api.data.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.data.xml.ColumnType;
 
 import java.util.*;
 
@@ -143,10 +141,12 @@ public class QueryTable extends QueryRelation
         Map<String, SQLFragment> joins = new LinkedHashMap<String,SQLFragment>();
         SQLFragment sql = new SQLFragment();
 
-        _innerAlias = _tableInfo.getSelectName();
-        boolean simpleTable = null != _innerAlias;
+        String selectName = _tableInfo.getSelectName();
+        boolean simpleTable = null != selectName;
         
-        if (null == _innerAlias)
+        if (simpleTable)
+            _innerAlias = selectName.replace('.', '_');
+        else
             _innerAlias = "table" + _query.incrementAliasCounter();
 
         String comment = "<QueryTable@" + System.identityHashCode(this);
@@ -177,7 +177,11 @@ public class QueryTable extends QueryRelation
         sql.append("\nFROM ");
 
         if (simpleTable)
-            sql.append(_innerAlias);
+        {
+            sql.append(selectName);
+            if (!selectName.equals(_innerAlias))
+                sql.append(" AS ").append(_innerAlias);
+        }
         else
         {
             sql.append("(\n");

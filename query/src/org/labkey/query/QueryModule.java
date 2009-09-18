@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
@@ -45,10 +46,7 @@ import org.labkey.query.sql.SqlParser;
 import org.labkey.query.sql.Query;
 
 import javax.script.ScriptEngineManager;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 import junit.framework.TestCase;
 
@@ -62,7 +60,7 @@ public class QueryModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.20;
+        return 9.21;
     }
 
     protected void init()
@@ -134,6 +132,12 @@ public class QueryModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(QueryManager.get().getDbSchemaName());
+    }
+
+    @Override
+    public Set<DbSchema> getSchemasToTest()
+    {
+        return Collections.singleton(QueryManager.get().getDbSchema());
     }
 
     public Set<Class<? extends TestCase>> getJUnitTests()

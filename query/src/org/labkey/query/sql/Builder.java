@@ -32,7 +32,7 @@ public class Builder extends SQLFragment
     {
         _cIndent = 0;
         _fNewLine = true;
-        _prefix = new ArrayList();
+        _prefix = new ArrayList<String>();
     }
 
     /**
@@ -109,6 +109,7 @@ public class Builder extends SQLFragment
         super.append(cs);
         return this;
     }
+
     public void newLine()
     {
         super.append("\n");

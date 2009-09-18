@@ -1506,6 +1506,7 @@ query/resources/schemas/dbscripts/postgresql/query-2.10-2.20.sql -text
 query/resources/schemas/dbscripts/postgresql/query-8.10-8.20.sql -text
 query/resources/schemas/dbscripts/postgresql/query-8.20-8.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-8.30-9.10.sql -text
+query/resources/schemas/dbscripts/postgresql/query-9.20-9.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-1.50-1.60.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-1.51-1.52.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-1.60-1.61.sql -text
@@ -1525,6 +1526,7 @@ query/resources/schemas/dbscripts/sqlserver/query-2.10-2.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-8.10-8.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-8.20-8.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-8.30-9.10.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-9.20-9.21.sql -text
 query/resources/schemas/query.xml -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text

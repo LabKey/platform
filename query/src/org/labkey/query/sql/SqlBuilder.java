@@ -42,7 +42,7 @@ public class SqlBuilder extends Builder
         add(value);
     }
 
-    public void addAll(Collection<? extends Object> params)
+    public void addAll(Collection<?> params)
     {
         super.addAll(Arrays.asList(params.toArray()));
     }
@@ -70,6 +70,7 @@ public class SqlBuilder extends Builder
     {
         return _schema.getSqlDialect();
     }
+
     public DbSchema getDbSchema()
     {
         return _schema;

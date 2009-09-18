@@ -27,6 +27,7 @@ public class DbUserSchemaDef extends Entity
         container,
         userschemaname
     }
+
     static public class Key extends CacheKey<DbUserSchemaDef, Column>
     {
         public Key(Container container)
@@ -38,12 +39,14 @@ public class DbUserSchemaDef extends Entity
             addCondition(Column.userschemaname, name);
         }
     }
+
     private int _dbUserSchemaId;
     private String _userSchemaName;
     private String _dbSchemaName;
     private String _dbContainer;
     private boolean _editable;
     private String _metadata;
+    private String _dataSource;
 
     public int getDbUserSchemaId()
     {
@@ -59,6 +62,7 @@ public class DbUserSchemaDef extends Entity
     {
         return _userSchemaName;
     }
+
     public void setUserSchemaName(String name)
     {
         _userSchemaName = name;
@@ -78,6 +82,7 @@ public class DbUserSchemaDef extends Entity
     {
         return _dbContainer;
     }
+
     public void setDbContainer(String id)
     {
         _dbContainer = id;
@@ -91,6 +96,16 @@ public class DbUserSchemaDef extends Entity
     public void setMetaData(String metadata)
     {
         _metadata = metadata;
+    }
+
+    public String getDataSource()
+    {
+        return _dataSource;
+    }
+
+    public void setDataSource(String dataSource)
+    {
+        _dataSource = dataSource;
     }
 
     public boolean equals(Object o)

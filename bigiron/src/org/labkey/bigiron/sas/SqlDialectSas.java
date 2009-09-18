@@ -97,9 +97,21 @@ public class SqlDialectSas extends SqlDialect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    // TODO: Implement
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (select == null)
+            throw new IllegalArgumentException("select");
+        if (from == null)
+            throw new IllegalArgumentException("from");
+
+        SQLFragment sql = new SQLFragment();
+        sql.append(select);
+        sql.append("\n").append(from);
+        if (filter != null) sql.append("\n").append(filter);
+        if (order != null) sql.append("\n").append(order);
+
+        return sql;
     }
 
     public boolean supportOffset()
@@ -194,7 +206,7 @@ public class SqlDialectSas extends SqlDialect
 
     public boolean isSortableDataType(String sqlDataTypeName)
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return true;
     }
 
     public String getDropIndexCommand(String tableName, String indexName)
@@ -229,7 +241,7 @@ public class SqlDialectSas extends SqlDialect
 
     public boolean supportsRoundDouble()
     {
-        return false;
+        return false;  // TODO
     }
 
     public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
@@ -288,7 +300,7 @@ public class SqlDialectSas extends SqlDialect
         return null;
     }
 
-    // SAS has no database name, so need to parse the URL.  Overrides above ensure this is never called.
+    // SAS has no database name, so no need to parse the URL.  Overrides above ensure this is never called.
 
     public JdbcHelper getJdbcHelper(String url) throws ServletException
     {

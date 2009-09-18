@@ -32,6 +32,7 @@
       <ns:column columnName="MetaData"/>
       <ns:column columnName="SchemaVersion"/>
       <ns:column columnName="Flags"/>
+      <ns:column columnName="Description"/>
     </ns:columns>
   </ns:table>
     <ns:table tableName="CustomView" tableDbType="TABLE">
@@ -61,6 +62,10 @@
             <ns:column columnName="Modified" />
             <ns:column columnName="ModifiedBy" />
             <ns:column columnName="Container" />
+            <ns:column columnName="DataSource">
+                <ns:columnTitle>Data Source</ns:columnTitle>
+                <ns:description>JNDI name of the DataSource associated with this schema.</ns:description>
+            </ns:column>
             <ns:column columnName="UserSchemaName">
                 <ns:columnTitle>Schema Name</ns:columnTitle>
                 <ns:description>Name of the schema as referred to from within LabKey Server.</ns:description>
@@ -98,6 +103,7 @@
             <ns:column columnName="LastUpdated"/>
             <ns:column columnName="NextUpdate"/>
             <ns:column columnName="UpdateDelay"/>
+            <ns:column columnName="QueryTableName"/>
         </ns:columns>
     </ns:table>
 </ns:tables>

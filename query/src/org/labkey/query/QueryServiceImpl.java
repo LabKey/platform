@@ -89,6 +89,7 @@ public class QueryServiceImpl extends QueryService
     public ActionURL urlFor(User user, Container container, QueryAction action, String schema, String query)
     {
         ActionURL ret = null;
+
         if (schema != null && query != null)
         {
             UserSchema userschema = QueryService.get().getUserSchema(user, container, schema);
@@ -123,10 +124,10 @@ public class QueryServiceImpl extends QueryService
     public Map<String, QueryDefinition> getQueryDefs(Container container, String schemaName)
     {
         Map<String, QueryDefinition> ret = new LinkedHashMap<String,QueryDefinition>();
+
         for (QueryDefinition queryDef : getAllQueryDefs(container, schemaName, true, false).values())
-        {
             ret.put(queryDef.getName(), queryDef);
-        }
+
         return ret;
     }
 
@@ -151,35 +152,40 @@ public class QueryServiceImpl extends QueryService
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
 
         //look in all the active modules in this container to see if they contain any query definitions
-        if(null != schemaName)
+        if (null != schemaName)
         {
             Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
-            for(Module module : modules)
+
+            for (Module module : modules)
             {
                 File schemaDir = new File(getModuleQueriesDir(module), schemaName);
                 File[] fileSet;
 
                 //always scan the file system in dev mode
-                if(AppProps.getInstance().isDevMode())
+                if (AppProps.getInstance().isDevMode())
+                {
                     fileSet = schemaDir.listFiles(moduleQueryFileFilter);
+                }
                 else
                 {
                     //in production, cache the set of query defs for each module on first request
                     String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString();
                     fileSet = (File[])_moduleResourcesCache.get(fileSetCacheKey);
-                    if(null == fileSet && schemaDir.exists())
+
+                    if (null == fileSet && schemaDir.exists())
                     {
                         fileSet = schemaDir.listFiles(moduleQueryFileFilter);
                         _moduleResourcesCache.put(fileSetCacheKey, fileSet);
                     }
                 }
 
-                if(null != fileSet)
+                if (null != fileSet)
                 {
-                    for(File sqlFile : fileSet)
+                    for (File sqlFile : fileSet)
                     {
                         ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(sqlFile.getAbsolutePath());
-                        if(null == moduleQueryDef || moduleQueryDef.isStale())
+
+                        if (null == moduleQueryDef || moduleQueryDef.isStale())
                         {
                             moduleQueryDef = new ModuleQueryDef(sqlFile, schemaName);
                             _moduleResourcesCache.put(sqlFile.getAbsolutePath(), moduleQueryDef);
@@ -197,19 +203,22 @@ public class QueryServiceImpl extends QueryService
             Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
             ret.put(key, new CustomQueryDefinitionImpl(queryDef));
         }
+
         if (!inheritable)
             return ret;
+
         Container containerCur = container;
+
         while (!containerCur.isRoot())
         {
             containerCur = containerCur.getParent();
+
             for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, true))
             {
                 Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
+
                 if (!ret.containsKey(key))
-                {
                     ret.put(key, new CustomQueryDefinitionImpl(queryDef));
-                }
             }
         }
 
@@ -217,10 +226,9 @@ public class QueryServiceImpl extends QueryService
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true))
         {
             Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
+
             if (!ret.containsKey(key))
-            {
                 ret.put(key, new CustomQueryDefinitionImpl(queryDef));
-            }
         }
 
         return ret;
@@ -228,11 +236,11 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition getQueryDef(Container container, String schema, String name)
     {
-        Map<String, QueryDefinition> ret = new LinkedHashMap<String,QueryDefinition>();
+        Map<String, QueryDefinition> ret = new LinkedHashMap<String, QueryDefinition>();
+
         for (QueryDefinition queryDef : getAllQueryDefs(container, schema, true, true, true).values())
-        {
             ret.put(queryDef.getName(), queryDef);
-        }
+
         return ret.get(name);
     }
 
@@ -240,8 +248,10 @@ public class QueryServiceImpl extends QueryService
     {
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(container, schema, false, true);
         Map<String, CustomView> views = new HashMap<String, CustomView>();
+
         for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
             addCustomView(container, user, views, cstmView, queryDefs);
+
         return views;
     }
 
@@ -277,6 +287,7 @@ public class QueryServiceImpl extends QueryService
         {
             Map<String, CustomViewInfo> views = new HashMap<String, CustomViewInfo>();
             String key = StringUtils.defaultString(schema, "") + "-" + StringUtils.defaultString(query, "");
+
             for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
                 views.put(key + "-" + cstmView.getName(), new CustomViewInfoImpl(cstmView));
 
@@ -291,6 +302,7 @@ public class QueryServiceImpl extends QueryService
     private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView cstmView, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
     {
         QueryDefinition qd = queryDefs.get(new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName()));
+
         if (qd == null)
             qd = QueryService.get().getUserSchema(user, container, cstmView.getSchema()).getQueryDefForTable(cstmView.getQueryName());
 
@@ -348,10 +360,10 @@ public class QueryServiceImpl extends QueryService
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
     {
         Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<String, QuerySnapshotDefinition>();
+
         for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schemaName))
-        {
             ret.put(queryDef.getName(), new QuerySnapshotDefImpl(queryDef));
-        }
+
         return ret;
     }
 
@@ -368,10 +380,10 @@ public class QueryServiceImpl extends QueryService
     public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema)
     {
         List<QuerySnapshotDefinition> ret = new ArrayList<QuerySnapshotDefinition>();
+
         for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schema))
-        {
             ret.add(new QuerySnapshotDefImpl(queryDef));
-        }
+
         return ret;
     }
 
@@ -408,18 +420,19 @@ public class QueryServiceImpl extends QueryService
             {
                 List<ColumnInfo> pkColumns = table.getPkColumns();
                 Map<String, ColumnInfo> pkColumnMap = new HashMap<String, ColumnInfo>();
+
                 for (ColumnInfo column : pkColumns)
-                {
                     pkColumnMap.put(column.getName(), column);
-                }
+
                 StringExpression url = table.getDetailsURL(pkColumnMap);
+
                 if (url != null)
-                {
                     ret.setURL(url);
-                }
             }
+
             if (ret != null && !AliasManager.isLegalName(ret.getName()))
                 ret = new AliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
+
             return ret;
         }
 
@@ -427,15 +440,18 @@ public class QueryServiceImpl extends QueryService
             return columnMap.get(key);
 
         ColumnInfo parent = getColumn(manager, table, columnMap, key.getParent());
+
         if (parent == null)
             return null;
 
         ColumnInfo lookup = table.getLookupColumn(parent, StringUtils.trimToNull(key.getName()));
+
         if (lookup == null)
             return null;
 
         AliasedColumn ret = new AliasedColumn(key, manager.decideAlias(key.toString()), lookup, true);
         columnMap.put(key, ret);
+
         return ret;
     }
 
@@ -451,18 +467,18 @@ public class QueryServiceImpl extends QueryService
         AliasManager manager = new AliasManager(table, existingColumns);
         Map<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey,ColumnInfo>();
+
         for (ColumnInfo existingColumn : existingColumns)
-        {
             columnMap.put(existingColumn.getFieldKey(), existingColumn);
-        }
+
         for (FieldKey field : fields)
         {
             ColumnInfo column = getColumn(manager, table, columnMap, field);
+
             if (column != null)
-            {
                 ret.put(field, column);
-            }
         }
+
         return ret;
     }
 
@@ -471,24 +487,28 @@ public class QueryServiceImpl extends QueryService
     {
         List<DisplayColumn> ret = new ArrayList<DisplayColumn>();
         Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
+
         for (Map.Entry<FieldKey, ?> entry : fields)
-        {
             fieldKeys.add(entry.getKey());
-        }
+
         Map<FieldKey, ColumnInfo> columns = getColumns(table, fieldKeys);
+
         for (Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>> entry : fields)
         {
             ColumnInfo column = columns.get(entry.getKey());
+
             if (column == null)
                 continue;
+
             DisplayColumn displayColumn = column.getRenderer();
             String caption = entry.getValue().get(CustomViewInfo.ColumnProperty.columnTitle);
+
             if (caption != null)
-            {
                 displayColumn.setCaption(caption);
-            }
+
             ret.add(displayColumn);
         }
+
         return ret;
     }
 
@@ -498,31 +518,33 @@ public class QueryServiceImpl extends QueryService
         AliasManager manager = new AliasManager(table, columns);
         Set<FieldKey> selectedColumns = new HashSet<FieldKey>();
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey,ColumnInfo>();
+
         for (ColumnInfo column : columns)
         {
             FieldKey key = FieldKey.fromString(column.getName());
             selectedColumns.add(key);
             columnMap.put(key, column);
         }
+
         Set<String> names = new HashSet<String>();
+
         if (filter != null)
-        {
             names.addAll(filter.getWhereParamNames());
-        }
+
         if (sort != null)
-        {
             for (Sort.SortField field : sort.getSortList())
-            {
                 names.add(field.getColumnName());
-            }
-        }
+
         for (String name : names)
         {
             if (StringUtils.isEmpty(name))
                 continue;
+
             FieldKey field = FieldKey.fromString(name);
+
             if (selectedColumns.contains(field))
                 continue;
+
             ColumnInfo column = getColumn(manager, table, columnMap, field);
 
             if (column != null)
@@ -533,11 +555,10 @@ public class QueryServiceImpl extends QueryService
             else
             {
                 if (unresolvedColumns != null)
-                {
                     unresolvedColumns.add(name);
-                }
             }
         }
+
         if (unresolvedColumns != null)
         {
             for (String columnName : unresolvedColumns)
@@ -547,10 +568,9 @@ public class QueryServiceImpl extends QueryService
                     SimpleFilter simpleFilter = (SimpleFilter) filter;
                     simpleFilter.deleteConditions(columnName);
                 }
+
                 if (sort != null)
-                {
                     sort.deleteSortColumn(columnName);
-                }
             }
         }
     }
@@ -570,24 +590,28 @@ public class QueryServiceImpl extends QueryService
     {
         Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
         DbUserSchemaDef[] defs = QueryManager.get().getDbUserSchemaDefs(folderSchema.getContainer());
+
         for (DbUserSchemaDef def : defs)
-        {
             ret.put(def.getUserSchemaName(), new DbUserSchema(folderSchema.getUser(), folderSchema.getContainer(), def));
-        }
+
         return ret;
     }
 
     public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns)
     {
         List<FieldKey> ret = new ArrayList<FieldKey>();
+
         for (ColumnInfo column : columns)
         {
             if (column.isHidden())
                 continue;
+
             if (CustomViewImpl.isUnselectable(column))
                 continue;
+
             ret.add(FieldKey.fromParts(column.getName()));
         }
+
         return ret;
     }
 
@@ -597,6 +621,7 @@ public class QueryServiceImpl extends QueryService
         if (tableInfo instanceof AbstractTableInfo && tableInfo.isMetadataOverrideable())
         {
             QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, false);
+
             if (queryDef != null && queryDef.getMetaData() != null)
             {
                 try
@@ -612,6 +637,7 @@ public class QueryServiceImpl extends QueryService
                 }
             }
         }
+
         return tableInfo;
     }
 
@@ -620,12 +646,17 @@ public class QueryServiceImpl extends QueryService
 	{
 		Query q = new Query(schema);
 		q.parse(sql);
+
 		if (q.getParseErrors().size() > 0)
 			throw q.getParseErrors().get(0);
+
 		TableInfo table = q.getTableInfo();
+
 		if (q.getParseErrors().size() > 0)
 			throw q.getParseErrors().get(0);
+
         SQLFragment sqlf = getSelectSQL(table, null, null, null, 0, 0);
+
 		return Table.executeQuery(table.getSchema(), sqlf);
 	}
 
@@ -639,22 +670,20 @@ public class QueryServiceImpl extends QueryService
 
 	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> selectColumns, Filter filter, Sort sort, int rowCount, long offset)
 	{
+        if (null == selectColumns)
+            selectColumns = table.getColumns();
+
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-
-		if (null == selectColumns)
-			selectColumns = table.getColumns();
-
         ArrayList<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
         ensureRequiredColumns(table, allColumns, filter, sort, null);
         Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
-
         SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT");
         String strComma = "\n";
-
         String tableAlias = AliasManager.makeLegalName(table.getName(), table.getSchema().getSqlDialect());
+
 		for (ColumnInfo column : allColumns)
 		{
 			assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
@@ -665,10 +694,12 @@ public class QueryServiceImpl extends QueryService
             selectFrag.append(dialect.getColumnSelectName(column.getAlias()));
             strComma = ",\n";
         }
+
         if (requiresExtraColumns)
         {
             outerSelect = new SQLFragment("SELECT ");
             strComma = "";
+
             for (ColumnInfo column : selectColumns)
             {
                 outerSelect.append(strComma);
@@ -679,6 +710,7 @@ public class QueryServiceImpl extends QueryService
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
         String selectName = table.getSelectName();
+
         if (null != selectName)
         {
             fromFrag.append(selectName);
@@ -689,6 +721,7 @@ public class QueryServiceImpl extends QueryService
             fromFrag.append(table.getFromSQL());
             fromFrag.append(")");
         }
+
         fromFrag.append(" ").append(tableAlias).append(" ");
 
 		for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
@@ -697,16 +730,19 @@ public class QueryServiceImpl extends QueryService
 		}
 
 		SQLFragment filterFrag = null;
+
 		if (filter != null)
 		{
 			filterFrag = filter.getSQLFragment(dialect, columnMap);
 		}
 
-		String orderBy = null;
 		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0))
 		{
 			sort = createDefaultSort(selectColumns);
 		}
+
+        String orderBy = null;
+
 		if (sort != null)
 		{
 			orderBy = sort.getOrderByClause(dialect, columnMap);
@@ -720,8 +756,8 @@ public class QueryServiceImpl extends QueryService
 
 		SQLFragment nestedFrom = new SQLFragment();
 		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
-
 		SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, rowCount, offset);
+
         if (AppProps.getInstance().isDevMode())
         {
             SQLFragment t = new SQLFragment();
@@ -729,8 +765,9 @@ public class QueryServiceImpl extends QueryService
             t.append(ret);
             t.appendComment("</QueryServiceImpl.getSelectSQL()>");
             String s = _prettyPrint(t.getSQL());
-            ret = new SQLFragment(s, ret.getParams());
+//            ret = new SQLFragment(s, ret.getParams());
         }
+
 	    return ret;
     }
 
@@ -770,25 +807,29 @@ public class QueryServiceImpl extends QueryService
     private String _prettyPrint(String s)
     {
         StringBuilder sb = new StringBuilder(s.length() + 200);
-
         String[] lines = StringUtils.split(s, '\n');
         int indent = 0;
+
         for (String line : lines)
         {
             String t = line.trim();
+
             if (t.length() == 0)
                 continue;
+
             if (t.startsWith("-- </"))
                 indent = Math.max(0,indent-1);
 
             for (int i=0 ; i<indent ; i++)
                 sb.append('\t');
+
             sb.append(line);
             sb.append('\n');
 
             if (t.startsWith("-- <") && !t.startsWith("-- </"))
                 indent++;
         }
+
         return sb.toString();
     }
 

@@ -145,9 +145,9 @@ public class QuerySelect extends QueryRelation
                 continue;
             qtable.setQueryRelation(relation);
             if (!AliasManager.isLegalName(relation.getAlias()))
-                relation.setAlias(AliasManager.makeLegalName(relation.getAlias(), getSqlDialect()) + "$" + _query.incrementAliasCounter());
+                relation.setAlias(AliasManager.makeLegalName(relation.getAlias(), getSqlDialect()) + "_" + _query.incrementAliasCounter());
             else
-                relation.setAlias(relation.getAlias() + "$" + _query.incrementAliasCounter());
+                relation.setAlias(relation.getAlias() + "_" + _query.incrementAliasCounter());
             _tables.put(qtable.getAlias(), relation);
         }
 
@@ -863,7 +863,7 @@ loop:
             {
                 for (String s : _queryText.split("\n"))
                     if (null != StringUtils.trimToNull(s))
-                        ret.append("--|         ").append(s).append("\n");
+                        ret.appendComment("|         " + s);
             }
             ret.append(sql);
             ret.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");

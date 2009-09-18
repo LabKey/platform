@@ -160,6 +160,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         {
             frag.append("\nLIMIT ");
             frag.append(Integer.toString(rowCount));
+
             if (offset > 0)
             {
                 frag.append(" OFFSET ");
@@ -489,7 +490,7 @@ class SqlDialectPostgreSQL extends SqlDialect
             errors.add("Do not use \"SET search_path TO <schema>\".  Instead, schema-qualify references to all objects.");
 
         if (!lowerNoWhiteSpace.endsWith(";"))
-            errors.add("Script should end with a semicolon");
+            errors.add("Script must end with a semicolon");
     }
 
 
