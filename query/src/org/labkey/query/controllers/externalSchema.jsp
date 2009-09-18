@@ -62,7 +62,8 @@ var f = new LABKEY.ext.FormPanel({
             // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out). 
             dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', xtype:'combo', store:dataSources[<%=coreIndex%>][2], editable:true, triggerAction:'all'}),
             {name:'userSchemaName', fieldLabel:'Schema Name', xtype:'textfield'},
-            {name:'editable', fieldLabel:'Editable', xtype:'checkbox'},
+            {name:'editable', id:'myeditable', fieldLabel:'Editable', xtype:'checkbox'},
+            {name:'@editable', xtype:'hidden'},
             {name:'metaData', fieldLabel:'Meta Data', xtype:'textarea'}
         ],
         buttons:[{text:'Create', type:'submit', handler:function() {f.getForm().submit();}}, {text:'Cancel'}], // TODO: Cancel URL
