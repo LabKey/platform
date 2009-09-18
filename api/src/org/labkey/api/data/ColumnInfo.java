@@ -276,7 +276,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     @Override
     public String getLabel()
     {
-        if (null == label)
+        if (null == label && getFieldKey() != null)
             label = labelFromName(getFieldKey().getName());
         return label;
     }
