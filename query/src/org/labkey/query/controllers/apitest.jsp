@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%
     JspView me = (JspView) HttpView.currentView();
     ActionURL defGetUrl = new ActionURL(QueryControllerSpring.GetQueryAction.class, me.getViewContext().getContainer());
@@ -221,6 +223,82 @@
         }
     }
 
+    function recordTest()
+    {
+        var pairs = [];
+        var regexp = /%20/g;
+        var getUrl = document.getElementById("txtUrlGet").value;
+        var postUrl = document.getElementById("txtUrlPost").value;
+        var postData = document.getElementById("txtPost").value;
+        var response = document.getElementById("lblResponse").innerHTML;
+
+        pairs.push('getUrl=' + encodeURIComponent(getUrl).replace(regexp, "+"));
+        pairs.push('postUrl=' + encodeURIComponent(postUrl).replace(regexp, "+"));
+
+        if (postData != null)
+            pairs.push('postData=' + encodeURIComponent(postData).replace(regexp, "+"));
+        if (response != null)
+            pairs.push('response=' + encodeURIComponent(response).replace(regexp, "+"));
+
+        var req = getXmlHttpRequest();
+
+        if(null == req)
+        {
+            onError("Couldn't get the XMLHttpRequest object!");
+            return;
+        }
+
+        setStatus("Recording the data as a Test Case...");
+        try
+        {
+            req.onreadystatechange = function()
+            {
+                if(req.readyState == 4)
+                {
+                    if(req.status == 200 && onSuccess)
+                        showTest(req.responseText);
+                    if(req.status != 200 && onError)
+                        onError(req.statusText, req.responseText);
+                }
+            };
+            req.open("POST", "<%=new ActionURL(QueryControllerSpring.SaveApiTestAction.class, HttpView.currentContext().getContainer()).getLocalURIString()%>", true);
+            req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+            req.send(pairs.join('&'));
+        }
+        catch(e)
+        {
+            onError(e);
+        }
+    }
+
+    function showTest(responseText)
+    {
+        var obj = eval("(" + responseText + ")");
+        var win = new Ext.Window({
+            title: 'Recorded Test',
+            border: false,
+            constrain: true,
+            closeAction: 'close',
+            autoScroll: true,
+            modal: true,
+            items: [{
+                name: 'description',
+                xtype: 'textarea',
+                grow: true,
+                growMax: 600,
+                width: 750,
+                value: obj.xml
+            }],
+
+            buttons: [{
+                text: 'Close',
+                id: 'btn_close',
+                handler: function(){win.close();}
+            }]
+        });
+        win.show();
+    }
+
     function onGetUrlKeyDown(event)
     {
         var evt = event || window.event;
@@ -268,6 +346,8 @@
         <td width="100%"><pre id="lblResponse" class="response">&nbsp;</pre></td>
     </tr>
     <tr>
-        <td width="100%"><input type="button" id="btnEval" value="Eval" onclick="evalResponse()"/></td>
+        <td width="100%">
+            <input type="button" id="btnEval" value="Eval" onclick="evalResponse()"/>&nbsp;
+            <input type="button" id="btnSaveTest" value="Record Test" onclick="recordTest()"/></td>
     </tr>
 </table>

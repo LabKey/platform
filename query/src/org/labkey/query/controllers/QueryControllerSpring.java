@@ -19,6 +19,7 @@ package org.labkey.query.controllers;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlOptions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -55,19 +56,21 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.xml.ApiTestsDocument;
+import org.labkey.query.xml.TestCaseType;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.beans.PropertyValues;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.sql.SQLException;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
@@ -2978,6 +2981,92 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Validate Queries");
+        }
+    }
+
+    private static class SaveApiTestForm
+    {
+        private String _getUrl;
+        private String _postUrl;
+        private String _postData;
+        private String _response;
+
+        public String getGetUrl()
+        {
+            return _getUrl;
+        }
+
+        public void setGetUrl(String getUrl)
+        {
+            _getUrl = getUrl;
+        }
+
+        public String getPostUrl()
+        {
+            return _postUrl;
+        }
+
+        public void setPostUrl(String postUrl)
+        {
+            _postUrl = postUrl;
+        }
+
+        public String getResponse()
+        {
+            return _response;
+        }
+
+        public void setResponse(String response)
+        {
+            _response = response;
+        }
+
+        public String getPostData()
+        {
+            return _postData;
+        }
+
+        public void setPostData(String postData)
+        {
+            _postData = postData;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SaveApiTestAction extends ApiAction<SaveApiTestForm>
+    {
+        public ApiResponse execute(SaveApiTestForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            ApiTestsDocument doc = ApiTestsDocument.Factory.newInstance();
+
+            TestCaseType test = doc.addNewApiTests().addNewTest();
+            test.setName("recorded test case");
+
+            if (!StringUtils.isEmpty(form.getGetUrl()))
+            {
+                test.setType("get");
+                test.setUrl(form.getGetUrl());
+            }
+            else if (!StringUtils.isEmpty(form.getPostUrl()))
+            {
+                test.setType("post");
+                test.setUrl(form.getPostUrl());
+                test.setFormData(form.getPostData());
+            }
+
+            test.setResponse(form.getResponse());
+
+            XmlOptions opts = new XmlOptions();
+            opts.setSaveCDataEntityCountThreshold(0);
+            opts.setSaveCDataLengthThreshold(0);
+            opts.setSavePrettyPrint();
+            opts.setUseDefaultNamespace();
+
+            response.put("xml", doc.xmlText(opts));
+
+            return response;
         }
     }
 }
