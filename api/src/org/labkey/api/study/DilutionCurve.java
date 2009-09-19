@@ -78,6 +78,16 @@ public interface DilutionCurve
             }
             return null;
         }
+
+        public static FitType fromColSuffix(String suffix)
+        {
+            for (FitType type : values())
+            {
+                if (type.getColSuffix().equals(suffix))
+                    return type;
+            }
+            return null;
+        }
     }
 
     DoublePoint[] getCurve() throws FitFailedException;

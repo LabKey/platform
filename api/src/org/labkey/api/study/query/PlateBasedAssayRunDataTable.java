@@ -16,10 +16,7 @@
 
 package org.labkey.api.study.query;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -33,10 +30,7 @@ import org.labkey.api.study.assay.*;
 
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -113,7 +107,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
             propertyLookupColumn.setFk(fk);
             addColumn(propertyLookupColumn);
 
-            Set<String> hiddenCols = new HashSet<String>();
+            Set<String> hiddenCols = getHiddenColumns(protocol);
             for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
                 hiddenCols.add(pd.getName());
             hiddenCols.add(getInputMaterialPropertyName());
@@ -169,4 +163,8 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         setDefaultVisibleColumns(visibleColumns);
     }
 
+    protected Set<String> getHiddenColumns(ExpProtocol protocol)
+    {
+        return new HashSet<String>();
+    }
 }
