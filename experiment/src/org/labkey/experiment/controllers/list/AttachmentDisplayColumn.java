@@ -40,7 +40,8 @@ public class AttachmentDisplayColumn extends DataColumn
         super(col);
     }
 
-    public String getURL(RenderContext ctx)
+    @Override
+    public String renderURL(RenderContext ctx)
     {
         if (null == _colEntityId)
             return null;
@@ -105,12 +106,12 @@ public class AttachmentDisplayColumn extends DataColumn
 
             if (link)
             {
-                url = getURL(ctx);
+                url = renderURL(ctx);
 
                 if (null != url)
                 {
                     out.write("<a href=\"");
-                    out.write(PageFlowUtil.filter(getURL(ctx)));
+                    out.write(PageFlowUtil.filter(renderURL(ctx)));
                     out.write("\">");
                 }
             }

@@ -19,13 +19,11 @@ package org.labkey.study.designer;
 import org.labkey.api.data.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.query.FieldKey;
 import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.sql.SQLException;
 import java.io.Writer;
 import java.io.IOException;
@@ -137,17 +135,20 @@ public class MapArrayExcelWriter extends ExcelWriter
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
+        @Override
         public void setURL(String url)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
+        @Override
         public String getURL()
         {
             return null;
         }
 
-        public String getURL(RenderContext ctx)
+        @Override
+        public String renderURL(RenderContext ctx)
         {
             return null;
         }

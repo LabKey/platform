@@ -171,7 +171,8 @@ public class MothershipSchema extends UserSchema
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
-        result.getColumn("ServerHostName").setURL(url + "serverInstallationId=${ServerInstallationId}");
+        url.addParameter("serverInstallationId","${ServerInstallationId}");
+        result.getColumn("ServerHostName").setURL(StringExpressionFactory.createURL(url));
 
         SQLFragment firstPingSQL = new SQLFragment("(SELECT MIN(EarliestKnownTime) FROM ");
         firstPingSQL.append(MothershipManager.get().getTableInfoServerSession(), "ss");
@@ -290,9 +291,12 @@ public class MothershipSchema extends UserSchema
         result.addColumn(minRevisionColumn);
 
         ActionURL issueURL = new ActionURL("Issues", "details.view", MothershipManager.get().getIssuesContainer(getContainer()));
-        result.getColumn("BugNumber").setURL(issueURL.toString() + "issueId=${BugNumber}");
+        issueURL.addParameter("issueId", "${BugNumber}");
+        result.getColumn("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
 
-        result.getColumn("ExceptionStackTraceId").setURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()) + "exceptionStackTraceId=${ExceptionStackTraceId}");
+        ActionURL stack = new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer());
+        stack.addParameter("exceptionStackTraceId","${ExceptionStackTraceId}");
+        result.getColumn("ExceptionStackTraceId").setURL(StringExpressionFactory.createURL(stack));
         result.getColumn("ExceptionStackTraceId").setLabel("Exception");
         result.getColumn("ExceptionStackTraceId").setFormatString("'#'0");
 
@@ -367,7 +371,7 @@ public class MothershipSchema extends UserSchema
         result.getColumn("PageflowName").setLabel("Controller");
         result.getColumn("PageflowAction").setLabel("Action");
 
-        result.getColumn("ServerSessionId").setURL("showServerSessionDetail.view?serverSessionId=${ServerSessionId}");
+        result.getColumn("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
         result.getColumn("ServerSessionId").setLabel("Session");
         result.getColumn("ServerSessionId").setFormatString("'#'0");
         LookupForeignKey fk = new LookupForeignKey("ServerSessionId")

@@ -408,7 +408,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         sb.append("<a href=\"");
                         ctx.put("experimentId", matchingRunGroup.getRowId());
-                        String url = getURL(ctx);
+                        String url = renderURL(ctx);
                         if (url == null)
                         {
                             url = ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(matchingRunGroup.getContainer(), matchingRunGroup).getLocalURIString();

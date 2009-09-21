@@ -208,7 +208,8 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
             out.write("&nbsp;");
         }
 
-        public String getURL(RenderContext ctx)
+        @Override
+        public String renderURL(RenderContext ctx)
         {
             Integer id = (Integer)ctx.get("RowId");
             return new ActionURL(ListController.HistoryDetailAction.class, ctx.getContainer()).addParameter("eventId", id).getLocalURIString();
@@ -256,7 +257,8 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
             out.write("&nbsp;");
         }
 
-        public String getURL(RenderContext ctx)
+        @Override
+        public String renderURL(RenderContext ctx)
         {
             String containerId = (String)ctx.get("ContainerId");
             Container c = ContainerManager.getForId(containerId);

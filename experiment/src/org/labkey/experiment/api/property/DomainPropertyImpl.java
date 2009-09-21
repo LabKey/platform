@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.*;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -238,7 +239,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setURL(String url)
     {
-        edit().setURL(url);
+        edit().setURL(StringExpressionFactory.createURL(url));
     }
 
     public String getURL()

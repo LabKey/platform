@@ -354,7 +354,8 @@ public class CoreModule extends SpringModule
             FileUtil.TestCase.class,
             MemTracker.TestCase.class,
             SqlDialect.SqlDialectTestCase.class,
-            HString.TestCase.class
+            HString.TestCase.class,
+            StringExpressionFactory.TestCase.class
         ));
     }
 

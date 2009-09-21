@@ -33,6 +33,7 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
@@ -500,7 +501,9 @@ public class UserController extends SpringActionController
                 {
                     super.setupDataView(ret);
 
-                    SimpleDisplayColumn securityDetails = new UrlColumn(new UserUrlsImpl().getUserAccessURL(getContainer()) + "userId=${UserId}", "permissions");
+                    ActionURL permissions = new UserUrlsImpl().getUserAccessURL(getContainer());
+                    permissions.addParameter("userId", "${UserId}");
+                    SimpleDisplayColumn securityDetails = new UrlColumn(StringExpressionFactory.createURL(permissions.getLocalURIString(true)), "permissions");
                     ret.getDataRegion().addDisplayColumn(1, securityDetails);
 
                     ret.getRenderContext().setBaseSort(new Sort("email"));

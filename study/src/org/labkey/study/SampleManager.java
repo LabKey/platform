@@ -1714,10 +1714,10 @@ public class SampleManager
 
             FieldKey visitKey = FieldKey.fromParts("Visit");
             Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
-            List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+            Collection<ColumnInfo> cols = new ArrayList<ColumnInfo>();
             cols.add(colMap.get(visitKey));
             Set<String> unresolvedColumns = new HashSet<String>();
-            QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
+            cols = QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
             if (!unresolvedColumns.isEmpty())
                 throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
             // generate our select SQL:
@@ -1994,11 +1994,11 @@ public class SampleManager
         }
 
         // turn our fieldkeys into columns:
-        List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+        Collection<ColumnInfo> cols = new ArrayList<ColumnInfo>();
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, columns);
         Set<String> unresolvedColumns = new HashSet<String>();
         cols.addAll(colMap.values());
-        QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
+        cols = QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
         if (!unresolvedColumns.isEmpty())
             throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
         // generate our select SQL:

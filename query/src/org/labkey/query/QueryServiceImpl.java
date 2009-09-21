@@ -461,22 +461,28 @@ public class QueryServiceImpl extends QueryService
         return getColumns(table, fields, Collections.<ColumnInfo>emptySet());
     }
 
+
     @NotNull
-    public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields, Collection<ColumnInfo> existingColumns)
+    public LinkedHashMap<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields, Collection<ColumnInfo> existingColumns)
     {
         AliasManager manager = new AliasManager(table, existingColumns);
-        Map<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
+        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<FieldKey,ColumnInfo>();
 
         for (ColumnInfo existingColumn : existingColumns)
+        {
             columnMap.put(existingColumn.getFieldKey(), existingColumn);
+            ret.put(existingColumn.getFieldKey(), existingColumn);
+        }
 
         for (FieldKey field : fields)
         {
-            ColumnInfo column = getColumn(manager, table, columnMap, field);
-
-            if (column != null)
-                ret.put(field, column);
+            if (!ret.containsKey(field))
+            {
+                ColumnInfo column = getColumn(manager, table, columnMap, field);
+                if (column != null)
+                    ret.put(field, column);
+            }
         }
 
         return ret;
@@ -513,7 +519,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public void ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns)
+    public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns)
     {
         AliasManager manager = new AliasManager(table, columns);
         Set<FieldKey> selectedColumns = new HashSet<FieldKey>();
@@ -535,6 +541,7 @@ public class QueryServiceImpl extends QueryService
             for (Sort.SortField field : sort.getSortList())
                 names.add(field.getColumnName());
 
+        ArrayList<ColumnInfo> ret = null;
         for (String name : names)
         {
             if (StringUtils.isEmpty(name))
@@ -549,8 +556,10 @@ public class QueryServiceImpl extends QueryService
 
             if (column != null)
             {
+                if (null == ret)
+                    ret = new ArrayList<ColumnInfo>(columns);
                 assert field.getTable() == null || columnMap.containsKey(field);
-                columns.add(column);
+                ret.add(column);
             }
             else
             {
@@ -573,6 +582,8 @@ public class QueryServiceImpl extends QueryService
                     sort.deleteSortColumn(columnName);
             }
         }
+        assert null == ret || ret.size() > 0;
+        return null == ret ? columns : ret;
     }
 
 
@@ -676,7 +687,7 @@ public class QueryServiceImpl extends QueryService
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         ArrayList<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
-        ensureRequiredColumns(table, allColumns, filter, sort, null);
+        allColumns = (ArrayList<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null);
         Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
         SQLFragment outerSelect = new SQLFragment("SELECT *");

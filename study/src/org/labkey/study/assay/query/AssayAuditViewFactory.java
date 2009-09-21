@@ -225,7 +225,8 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
                 out.write("&nbsp;");
         }
 
-        public String getURL(RenderContext ctx)
+        @Override
+        public String renderURL(RenderContext ctx)
         {
             String containerId = (String)_containerId.getValue(ctx);
             Container c = ContainerManager.getForId(containerId);

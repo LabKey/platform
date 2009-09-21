@@ -31,6 +31,7 @@ import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -166,7 +167,8 @@ public class AssaySchemaImpl extends AssaySchema
         urlParams.put(paramName, "RowId");
         result.setDetailsURL(new DetailsURL(runsURL, urlParams));
 
-        result.getColumn(ExpExperimentTable.Column.Name).setURL(runsURL.toString() + "&" + paramName + "=${RowId}");
+        runsURL.addParameter(paramName, "${RowId}");
+        result.getColumn(ExpExperimentTable.Column.Name).setURL(StringExpressionFactory.createURL(runsURL));
         result.setBatchProtocol(protocol);
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.Name));
