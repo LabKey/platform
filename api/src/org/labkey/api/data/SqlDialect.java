@@ -888,6 +888,7 @@ public abstract class SqlDialect
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
     public abstract boolean isCaseSensitive();
+    public abstract boolean isEditable();
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols);

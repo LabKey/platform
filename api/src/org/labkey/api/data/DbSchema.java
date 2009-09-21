@@ -63,7 +63,7 @@ public class DbSchema
         return get(schemaName, "dbschema");
     }
 
-    protected static DbSchema get(String schemaName, String jndiName)
+    protected static DbSchema get(String schemaName, String jndiEnvironmentName)
     {
         // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
         // load process directly or indirectly causing another call to this method.)
@@ -99,7 +99,7 @@ public class DbSchema
                         return schema;
                 }
 
-                schema = createFromMetaData(schemaName, jndiName);
+                schema = createFromMetaData(schemaName, jndiEnvironmentName);
 
                 if (null != schema)
                 {
@@ -230,13 +230,13 @@ public class DbSchema
     }
 
 
-    protected static DbSchema createFromMetaData(String dbSchemaName, String jndiName) throws SQLException, NamingException, ServletException
+    protected static DbSchema createFromMetaData(String dbSchemaName, String jndiEnvironmentName) throws SQLException, NamingException, ServletException
     {
         DbSchema dbSchema;
-        Properties props = getDbSchemaProperties(jndiName);
+        Properties props = getDbSchemaProperties(jndiEnvironmentName);
 
         if (props.isEmpty())
-            throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiName + "' is not properly configured in labkey.xml.");
+            throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiEnvironmentName + "' is not properly configured in labkey.xml.");
 
         String schemaInfo = props.getProperty(dbSchemaName);
 
@@ -245,7 +245,7 @@ public class DbSchema
             String defaultDsName = props.getProperty("--default--");
 
             if (null == defaultDsName)
-                throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiName + "' is not properly configured in labkey.xml.");
+                throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiEnvironmentName + "' is not properly configured in labkey.xml.");
 
             schemaInfo = defaultDsName + "," + dbSchemaName;
         }
