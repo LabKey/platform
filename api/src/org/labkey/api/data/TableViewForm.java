@@ -32,7 +32,6 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
