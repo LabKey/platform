@@ -18,10 +18,12 @@
     import org.apache.commons.beanutils.ConversionException;
     import org.apache.commons.collections.ArrayStack;
     import org.apache.commons.collections15.multimap.MultiHashMap;
+    import org.apache.commons.lang.StringUtils;
     import org.apache.log4j.Logger;
     import org.springframework.beans.MutablePropertyValues;
     import org.springframework.beans.PropertyValue;
     import org.springframework.beans.PropertyValues;
+    import org.labkey.api.settings.AppProps;
 
     import javax.servlet.http.HttpServletRequest;
     import java.io.Serializable;
@@ -72,7 +74,21 @@
 
         public URLHelper(String url) throws URISyntaxException
         {
-            _setURI(new URI(url));
+            String p;
+            String q;
+            int i = url.indexOf('?');
+            if (i == -1)
+            {
+                p = url;
+                q = "";
+            }
+            else
+            {
+                p = url.substring(0,i);
+                q = url.substring(i+1);
+            }
+            _setURI(new URI(p));
+            setRawQuery(q);
         }
 
 
@@ -127,6 +143,13 @@
             return sb.toString();
         }
 
+        public String getURIString(boolean allowSubstSyntax)
+        {
+            StringBuilder sb = getBaseServer(getScheme(), getHost(), getPort());
+            sb.append(getLocalURIString(allowSubstSyntax));
+            return sb.toString();
+        }
+
         public String getBaseServerURI()
         {
             return getBaseServer(getScheme(), getHost(), getPort()).toString();
@@ -137,14 +160,14 @@
             return getLocalURIString(false);
         }
 
-        public String getLocalURIString(boolean forward)
+        public String getLocalURIString(boolean allowSubstSyntax)
         {
-            StringBuilder uriString = new StringBuilder(getPath(forward));
+            StringBuilder uriString = new StringBuilder(getPath());
             boolean hasParams = (null != _parameters && _parameters.size() > 0);
             if (_hasFile || hasParams)
                 uriString.append('?');      // makes it easier for users who want to concatentate
             if (hasParams)
-                uriString.append(getQueryString());
+                uriString.append(getQueryString(allowSubstSyntax));
             if (null != _fragment && _fragment.length() > 0)
                 uriString.append("#").append(_fragment);
             return uriString.toString();
@@ -246,6 +269,10 @@
             return PageFlowUtil.toQueryString(_parameters);
         }
 
+        public String getQueryString(boolean allowSubstSyntax)
+        {
+            return PageFlowUtil.toQueryString(_parameters, allowSubstSyntax);
+        }
 
         public void setHost(String host)
         {

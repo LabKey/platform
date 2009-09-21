@@ -19,10 +19,12 @@ package org.labkey.api.data;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
+import java.util.HashSet;
 
 public class SimpleDisplayColumn extends DisplayColumn
 {
@@ -55,31 +57,6 @@ public class SimpleDisplayColumn extends DisplayColumn
         return _displayHTML == null ? null : _displayHTML.eval(ctx);
     }
 
-    public void setURL(String url)
-    {
-        _url = StringExpressionFactory.create(url, true);
-    }
-
-    protected void setURL(StringExpression url)
-    {
-        _url = url;
-    }
-
-    public String getURL()
-    {
-        return _url == null ? null : _url.getSource();
-    }
-
-    public String getURL(RenderContext ctx)
-    {
-        return _url == null ? null : _url.eval(ctx);
-    }
-
-    protected StringExpression getURLExpression()
-    {
-        return _url;
-    }
-
     public ColumnInfo getColumnInfo()
     {
         return null;
@@ -95,8 +72,13 @@ public class SimpleDisplayColumn extends DisplayColumn
         return false;
     }
 
-    public void addQueryColumns(Set<ColumnInfo> set)
+    public void addQueryFieldKeys(Set<FieldKey> keys)
     {
+        super.addQueryFieldKeys(keys);
+        Set<ColumnInfo> cols = new HashSet<ColumnInfo>();
+        addQueryColumns(cols);
+        for (ColumnInfo c : cols)
+            keys.add(c.getFieldKey());
     }
 
     public boolean isSortable()
@@ -128,7 +110,7 @@ public class SimpleDisplayColumn extends DisplayColumn
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        String url = getURL(ctx);
+        String url = renderURL(ctx);
         if (null != url)
         {
             out.write("<a href='");

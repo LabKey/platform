@@ -1207,8 +1207,10 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
         rgn.setMaxRows(ExcelWriter.MAX_ROWS);
-        ResultSet rs = rgn.getResultSet(view.getRenderContext());
-        return new ExcelWriter(rs, getExportColumns(rgn.getDisplayColumns()));
+        RenderContext rc = view.getRenderContext();
+        ResultSet rs = rgn.getResultSet(rc);
+        Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
+        return new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
     }
 
     // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
@@ -1317,8 +1319,9 @@ public class QueryView extends WebPartView<Object>
             try
             {
                 rgn.setAllowAsync(false);
-                rs = rgn.getResultSet(view.getRenderContext());
-                response.initialize(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
+                RenderContext rc = view.getRenderContext();
+                rs = rgn.getResultSet(rc);
+                response.initialize(rs, rc.getFieldMap(), table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
             }
             finally
             {

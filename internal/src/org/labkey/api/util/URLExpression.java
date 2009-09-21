@@ -20,6 +20,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.Collections;
 import java.io.Writer;
 import java.io.IOException;
 
@@ -62,5 +64,25 @@ public class URLExpression implements StringExpression
     public void addParameter(String key, String value)
     {
         _baseURL.addParameter(key, value);
+    }
+
+    public URLExpression copy()
+    {
+        return clone();
+    }
+
+    @Override
+    protected URLExpression clone()
+    {
+        try
+        {
+            URLExpression clone = (URLExpression)super.clone();
+            clone._baseURL = this._baseURL.clone();
+            return clone;
+        }
+        catch (CloneNotSupportedException x)
+        {
+            throw new RuntimeException(x);
+        }
     }
 }

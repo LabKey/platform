@@ -396,9 +396,24 @@ public class ActionURL extends URLHelper implements Cloneable
         // UNDONE: however there is a problem with context path handling
         String context = getContextPath();
         URI uri;
+
+        String p;
+        String q;
+        int i = url.indexOf('?');
+        if (i == -1)
+        {
+            p = url;
+            q = "";
+        }
+        else
+        {
+            p = url.substring(0,i);
+            q = url.substring(i+1);
+        }
+
         try
         {
-            uri = new URI(url);
+            uri = new URI(p);
         }
         catch (URISyntaxException use)
         {
@@ -418,9 +433,7 @@ public class ActionURL extends URLHelper implements Cloneable
         setPageFlow(m.group(indexPageFlow));
         setAction(m.group(indexAction));
 
-        String query = uri.getRawQuery();
-        if (null != query && query.length() > 0)
-            setRawQuery(query);
+        setRawQuery(q);
     }
 
 

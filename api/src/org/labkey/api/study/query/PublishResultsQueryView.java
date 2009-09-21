@@ -161,7 +161,8 @@ public class PublishResultsQueryView extends ResultsQueryView
         dr.setShowPagination(true);
         dr.setShowRows(ShowRows.ALL);
         dr.setMaxRows(0);
-        List<DisplayColumn> extraColumns = getExtraColumns(dr.getSelectColumns());
+        Map<FieldKey,ColumnInfo> cols = dr.getSelectColumns();
+        List<DisplayColumn> extraColumns = getExtraColumns(cols.values());
         int idx = 0;
         for (DisplayColumn extra : extraColumns)
         {
@@ -644,7 +645,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
     }
 
-    protected List<DisplayColumn> getExtraColumns(List<ColumnInfo> selectColumns)
+    protected List<DisplayColumn> getExtraColumns(Collection<ColumnInfo> selectColumns)
     {
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         List<DisplayColumn> columns = new ArrayList<DisplayColumn>();

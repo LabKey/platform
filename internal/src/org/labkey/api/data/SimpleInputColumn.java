@@ -17,10 +17,12 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
+import java.util.Collections;
 
 /**
  * User: migra
@@ -103,17 +105,20 @@ public class SimpleInputColumn<T> extends DisplayColumn
         out.write("\">");
     }
 
+    @Override
     public void setURL(String url)
     {
 
     }
 
+    @Override
     public String getURL()
     {
         return null;
     }
 
-    public String getURL(RenderContext ctx)
+    @Override
+    public String renderURL(RenderContext ctx)
     {
         return null;
     }

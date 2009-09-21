@@ -1271,18 +1271,18 @@ public class Table
     }
 
 
-    public static TableResultSet selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset)
+    public static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
         return selectForDisplay(table, select, filter, sort, rowCount, offset, true);
     }
 
-    public static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, List<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
+    public static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
     {
         return selectAggregatesForDisplay(table, aggregates, select, filter, cache, null);
     }
 
-    private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, List<ColumnInfo> select, Filter filter, boolean cache, AsyncQueryRequest asyncRequest)
+    private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache, AsyncQueryRequest asyncRequest)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1328,7 +1328,7 @@ public class Table
         }
     }
 
-    public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates, final List<ColumnInfo> select, final Filter filter, final boolean cache, HttpServletResponse response)
+    public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates, final Collection<ColumnInfo> select, final Filter filter, final boolean cache, HttpServletResponse response)
             throws SQLException, IOException
     {
         final AsyncQueryRequest<Map<String, Aggregate.Result>> asyncRequest = new AsyncQueryRequest<Map<String, Aggregate.Result>>(response);
@@ -1341,14 +1341,14 @@ public class Table
     }
 
 
-    public static TableResultSet selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache)
+    public static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache)
             throws SQLException
     {
         return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, null, null);
     }
 
 
-    private static TableResultSet selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, AsyncQueryRequest asyncRequest, Logger log)
+    private static TableResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, AsyncQueryRequest asyncRequest, Logger log)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1368,7 +1368,7 @@ public class Table
     }
 
 
-    public static TableResultSet selectForDisplayAsync(final TableInfo table, final List<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, HttpServletResponse response) throws SQLException, IOException
+    public static TableResultSet selectForDisplayAsync(final TableInfo table, final Collection<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
         final AsyncQueryRequest<TableResultSet> asyncRequest = new AsyncQueryRequest<TableResultSet>(response);
@@ -1389,7 +1389,7 @@ public class Table
     }
 
 
-    public static <K> K[] selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, Class<K> clss)
+    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
@@ -1422,7 +1422,7 @@ public class Table
     }
 
 
-    private static Map<String,ColumnInfo> getDisplayColumnsList(List<ColumnInfo> arrColumns)
+    private static Map<String,ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
         Map<String, ColumnInfo> columns = new LinkedHashMap<String, ColumnInfo>();
         ColumnInfo existing;

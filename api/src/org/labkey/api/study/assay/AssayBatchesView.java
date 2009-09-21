@@ -25,6 +25,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.study.actions.AssayBatchDetailsAction;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -53,7 +54,7 @@ public class AssayBatchesView extends AbstractAssayView
         // Need to make sure that we keep the same container filter after following the link
         ExpExperimentTable tableInfo = (ExpExperimentTable)batchesView.getTable();
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(context.getContainer(), protocol, tableInfo.getContainerFilter());
-        tableInfo.getColumn(ExpExperimentTable.Column.Name).setURL(runsURL.toString() + "&" + batchParam);
+        tableInfo.getColumn(ExpExperimentTable.Column.Name).setURL(StringExpressionFactory.createURL(runsURL.toString() + "&" + batchParam));
 
         if (provider.hasCustomView(ExpProtocol.AssayDomainTypes.Batch, true))
         {

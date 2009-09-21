@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.util.StringExpressionFactory;
+
 /**
  * Represents a ColumnInfo for an aggregate in a crosstab table info
  *
@@ -43,8 +45,8 @@ public class AggregateColumnInfo extends ColumnInfo
         setName(getColumnName(_member, _measure));
         setLabel(_measure.getCaption());
 
-        if(null != measure.getUrl() && null != member)
-            setURL(measure.getUrl(member));
+        if (null != measure.getUrl() && null != member)
+            setURL(StringExpressionFactory.createURL(measure.getUrl(member)));
 
         //if the agg function is something other than min or max, clear the FK
         if(_measure.getAggregateFunction() != CrosstabMeasure.AggregateFunction.MAX &&

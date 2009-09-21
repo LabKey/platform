@@ -425,6 +425,12 @@ public class PageFlowUtil
 
     public static String toQueryString(Collection<? extends Map.Entry<?,?>> c)
     {
+        return toQueryString(c, false);
+    }
+
+    
+    public static String toQueryString(Collection<? extends Map.Entry<?,?>> c, boolean allowSubstSyntax)
+    {
         if (null == c || c.isEmpty())
             return null;
         String strAnd = "";
@@ -439,7 +445,10 @@ public class PageFlowUtil
             String value = v == null ? "" : String.valueOf(v);
             sb.append(encode(String.valueOf(key)));
             sb.append('=');
-            sb.append(encode(value));
+            if (allowSubstSyntax && value.length()>3 && value.startsWith("${") && value.endsWith("}"))
+                sb.append(value);
+            else
+                sb.append(encode(value));
             strAnd = "&";
         }
         return sb.toString();

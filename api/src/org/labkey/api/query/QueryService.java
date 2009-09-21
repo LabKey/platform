@@ -26,10 +26,7 @@ import org.labkey.api.view.WebPartView;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 abstract public class QueryService
 {
@@ -68,7 +65,7 @@ abstract public class QueryService
      */
     @NotNull
     abstract public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields);
-    abstract public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields, Collection<ColumnInfo> existingColumns);
+    abstract public LinkedHashMap<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields, Collection<ColumnInfo> existingColumns);
 
     abstract public List<DisplayColumn> getDisplayColumns(TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields);
 
@@ -79,7 +76,7 @@ abstract public class QueryService
      *
      * NOTE: shouldn't need to call this anymore unless you really care about the unresolvedColumns
      */
-    abstract public void ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
+    abstract public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
 
     abstract public String[] getAvailableWebPartNames(UserSchema schema);
     abstract public WebPartView[] getWebParts(UserSchema schema, String location);

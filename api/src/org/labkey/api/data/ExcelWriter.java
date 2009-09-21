@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.query.FieldKey;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -45,6 +46,7 @@ public class ExcelWriter
     public static final int MAX_ROWS = 65535;
 
     protected ResultSet _rs;
+    Map<FieldKey,ColumnInfo> _fieldMap;
 
     private static Logger _log = Logger.getLogger(ExcelWriter.class);
 
@@ -87,6 +89,13 @@ public class ExcelWriter
     }
 
 
+    public ExcelWriter(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, List<DisplayColumn> displayColumns)
+    {
+        setResultSet(rs, fieldMap);
+        addDisplayColumns(displayColumns);
+    }
+
+
     public ExcelWriter(DbSchema schema, String query) throws SQLException
     {
         ResultSet rs = Table.executeQuery(schema, new SQLFragment(query), MAX_ROWS);
@@ -115,6 +124,11 @@ public class ExcelWriter
         _rs = rs;
     }
 
+    public void setResultSet(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap)
+    {
+        _rs = rs;
+        _fieldMap = fieldMap;
+    }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
 
@@ -670,7 +684,7 @@ public class ExcelWriter
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             RenderContext ctx = new RenderContext(HttpView.currentContext());
-            ctx.setResultSet(rs);
+            ctx.setResultSet(rs, _fieldMap);
 
             // Output all the rows
             while (rs.next())

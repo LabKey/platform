@@ -25,6 +25,7 @@ import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.settings.AppProps;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 
@@ -32,6 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.ResultSetMetaData;
 import java.util.*;
 
 public class RenderContext extends BoundMap // extends ViewContext
@@ -53,6 +55,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
     private String _viewName;
+    private Map<FieldKey,ColumnInfo> _fieldMap;
 
     public RenderContext(ViewContext context)
     {
@@ -153,8 +156,32 @@ public class RenderContext extends BoundMap // extends ViewContext
     public void setResultSet(ResultSet rs)
     {
         _rs = rs;
+        if (AppProps.getInstance().isDevMode())
+            _log.warn("Call to RenderContext.setResultSet() without a field map"); // , new Throwable());
+        _fieldMap = new LinkedHashMap<FieldKey,ColumnInfo>();
+        try
+        {
+            ResultSetMetaData rsmd = rs.getMetaData();
+            for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
+            {
+                String name = rsmd.getColumnName(i);
+                ColumnInfo col = new ColumnInfo(name);
+                col.setAlias(name);
+                _fieldMap.put(col.getFieldKey(),col);
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
+    public void setResultSet(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap)
+    {
+        _rs = rs;
+        _fieldMap = fieldMap;
+    }
+    
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
         Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new LinkedHashSet<ColumnInfo>());
@@ -200,23 +227,43 @@ public class RenderContext extends BoundMap // extends ViewContext
         return context.cloneActionURL();
     }
 
-    public ResultSet getResultSet(List<ColumnInfo> cols, TableInfo tinfo, int maxRows, long offset, String name) throws SQLException, IOException
+    /** valid after call to getResultSet() */
+    public Map<FieldKey,ColumnInfo> getFieldMap()
     {
-        return getResultSet(cols, tinfo, maxRows, offset, name, false);
+        return _fieldMap;
     }
 
-    public ResultSet getResultSet(List<ColumnInfo> cols, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public ResultSet getResultSet(Map<FieldKey,ColumnInfo> map, TableInfo tinfo, int maxRows, long offset, String name) throws SQLException, IOException
+    {
+        return getResultSet(map, tinfo, maxRows, offset, name, false);
+    }
+
+
+    public ResultSet getResultSet(Map<FieldKey,ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url = getViewContext().cloneActionURL();
 
         SimpleFilter filter = buildFilter(tinfo, url, name);
         Sort sort = buildSort(tinfo, url, name);
 
+        Collection<ColumnInfo> cols = fieldMap.values();
         if (null != QueryService.get())
-            QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
+            cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
 
-        return selectForDisplay(tinfo, cols, filter, sort, maxRows, offset, async);
+        _fieldMap = fieldMap;
+        _rs = selectForDisplay(tinfo, cols, filter, sort, maxRows, offset, async);
+        return _rs;
     }
+
+    
+    public ResultSet getResultSet(Collection<ColumnInfo> cols, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    {
+        LinkedHashMap<FieldKey,ColumnInfo> map = new LinkedHashMap<FieldKey, ColumnInfo>();
+        for (ColumnInfo c : cols)
+            map.put(c.getFieldKey(), c);
+        return getResultSet(map, tinfo, maxRows, offset, name, async);
+    }
+    
     
     public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, boolean async) throws SQLException, IOException
     {
@@ -225,13 +272,13 @@ public class RenderContext extends BoundMap // extends ViewContext
 
         Set<String> ignoredAggregateFilters = new HashSet<String>();
         ActionURL url = getViewContext().cloneActionURL();
-        List<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
+        Collection<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
 
         SimpleFilter filter = buildFilter(tinfo, url, dataRegionName);
         Sort sort = buildSort(tinfo, url, dataRegionName);
 
         if (null != QueryService.get())
-            QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, ignoredAggregateFilters);
+            cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, ignoredAggregateFilters);
 
         if (!ignoredAggregateFilters.equals(_ignoredColumnFilters))
         {
@@ -330,7 +377,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         filter.addClause(clause);
     }
 
-    protected ResultSet selectForDisplay(TableInfo table, List<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected ResultSet selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         if (async)
         {
@@ -468,6 +515,20 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         Object val = null;
 
+        if (key instanceof FieldKey)
+        {
+            if (null != _fieldMap)
+            {
+                ColumnInfo col = _fieldMap.get(key);
+                return col == null ? null : col.getValue(_row);
+            }
+            // <UNDONE>
+            assert false : "where's the _fieldMap?";
+            FieldKey f = (FieldKey)key;
+            key = f.getParent() == null ? f.getName() : f.encode();
+            // </UNDONE>
+        }
+
         if (null != _row)
             val = _row.get(key);
 
@@ -477,6 +538,20 @@ public class RenderContext extends BoundMap // extends ViewContext
         return val;
     }
 
+
+    // for backward compatibility in URL substitution
+    public String getContainerPath()
+    {
+//        assert false : "don't use ${containerPath}";
+        return getViewContext().getContainer().getPath();
+    }
+
+    // for backward compatibility in URL substitution
+    public String getContextPath()
+    {
+//        assert false : "don't use ${contextPath}";
+        return getViewContext().getContextPath();
+    }
 
 
     /** ViewContext wrappers */

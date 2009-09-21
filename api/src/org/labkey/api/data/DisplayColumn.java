@@ -19,10 +19,15 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.action.HasViewContext;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -33,6 +38,7 @@ import java.text.Format;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map;
 
 public abstract class DisplayColumn extends RenderColumn
 {
@@ -48,6 +54,13 @@ public abstract class DisplayColumn extends RenderColumn
     private String _description = null;
     protected boolean _htmlFiltered = true;
     private String _displayClass;
+
+    // for URL generation
+    private String _url;
+    private StringExpression _urlExpression;
+    private StringExpression _compiled;
+    protected Map<FieldKey,ColumnInfo> _allColumns;
+    
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -67,15 +80,75 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException;
 
-    public abstract void setURL(String url);
 
-    public abstract String getURL();
+    public String renderURL(RenderContext ctx)
+    {
+        StringExpression s = compileExpression(ctx.getViewContext());
+        return null == s ? null : s.eval(ctx);
+    }
 
-    public abstract String getURL(RenderContext ctx);
+    public String getURL()
+    {
+        return _url != null ? _url : _urlExpression != null ? _urlExpression.getSource() : null;
+    }
+
+    public void setURL(String url)
+    {
+        _url = url;
+        _urlExpression = null;
+    }
+
+    public void setURLExpression(StringExpression se)
+    {
+        _urlExpression = se;
+        _url = null;
+    }
+
+
+    public StringExpression getURLExpression()
+    {
+        return _urlExpression;
+    }
+
+    public StringExpression compileExpression(ViewContext context)
+    {
+        if (null == _compiled)
+        {
+            if (null != _urlExpression)
+                _compiled = _urlExpression.copy();
+            else if (null != _url)
+                _compiled = StringExpressionFactory.createURL(_url);
+            if (_compiled instanceof HasViewContext)
+                ((HasViewContext)_compiled).setViewContext(context);
+        }
+        return _compiled;
+    }
 
     public abstract boolean isQueryColumn();
 
-    public abstract void addQueryColumns(Set<ColumnInfo> columns);
+
+    /** return a set of FieldKeys that this DisplayColumn depends on */
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        StringExpression se = null;
+        if (null != _urlExpression)
+            se = _urlExpression;
+        else if (null != _url)
+            se = StringExpressionFactory.createURL(_url);
+
+        if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
+        {
+            Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression)se).getFieldKeys();
+            keys.addAll(fields);
+        }
+    }
+
+
+    /** implement getQueryFieldKeys() instead */
+    @Deprecated
+    public void addQueryColumns(Set<ColumnInfo> columns)
+    {
+    }
 
     public abstract ColumnInfo getColumnInfo();
 
@@ -806,5 +879,13 @@ public abstract class DisplayColumn extends RenderColumn
         {
             _displayClass = _displayClass + " " + className;
         }
+    }
+
+    public void setAllColumns(Map<FieldKey,ColumnInfo> map)
+    {
+        _allColumns = map;
+        // may need to recompile the _urlExpression
+        if (null != _url)
+            _urlExpression = null;
     }
 }

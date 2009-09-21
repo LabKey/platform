@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -277,14 +278,29 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    public List<ColumnInfo> getSelectColumns()
-    {
-        List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(getDisplayColumns(), getTable());
 
-        Set<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
+
+    public LinkedHashMap<FieldKey,ColumnInfo> getSelectColumns()
+    {
+        List<DisplayColumn> displayCols = getDisplayColumns();
+
+        // includes old DisplayColumn.addQueryColumns()
+        List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(displayCols, getTable());
+
+        LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
         addQueryColumns(columns);
 
-        return new ArrayList<ColumnInfo>(columns);
+        // add any additional columns specified by FieldKey
+        LinkedHashSet<FieldKey> keys = new LinkedHashSet<FieldKey>();
+        for (DisplayColumn dc : displayCols)
+            dc.addQueryFieldKeys(keys);
+
+        LinkedHashMap<FieldKey,ColumnInfo> ret = QueryService.get().getColumns(getTable(),keys, columns);
+
+        for (DisplayColumn dc : displayCols)
+            dc.setAllColumns(ret);
+
+        return ret;
     }
 
 
@@ -566,7 +582,6 @@ public class DataRegion extends DisplayElement
                 else
                 {
                     rs = getResultSet(ctx, isAllowAsync());
-                    ctx.setResultSet(rs);
                 }
             }
 
@@ -579,10 +594,13 @@ public class DataRegion extends DisplayElement
         }
     }
 
+
     protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        return ctx.getResultSet(getSelectColumns(), getTable(), _maxRows, _offset, getName(), async);
+        LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
+        return ctx.getResultSet(selectKeyMap, getTable(), _maxRows, _offset, getName(), async);
     }
+    
 
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
@@ -1392,9 +1410,9 @@ public class DataRegion extends DisplayElement
         }
         else
         {
-            List<ColumnInfo> cols = getSelectColumns();
-            rs = Table.selectForDisplay(tinfoMain, cols, ctx.getBaseFilter(), ctx.getBaseSort(), _maxRows, _offset);
-            ctx.setResultSet(rs);
+            LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
+            rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort(), _maxRows, _offset);
+            ctx.setResultSet(rs, selectKeyMap);
         }
     }
 
@@ -1469,7 +1487,8 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                Map[] maps = Table.select(getTable(), getSelectColumns(), new PkFilter(getTable(), viewForm.getPkVals()), null, Map.class);
+                LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
+                Map[] maps = Table.select(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null, Map.class);
                 if (maps.length > 0)
                     valueMap = maps[0];
             }

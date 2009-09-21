@@ -15,16 +15,26 @@
  */
 package org.labkey.api.util;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CacheMap;
 import org.labkey.api.collections.LimitedCacheMap;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.action.HasViewContext;
 
+import javax.script.Bindings;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URISyntaxException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -33,211 +43,183 @@ import java.util.*;
  */
 public class StringExpressionFactory
 {
-    private static CacheMap<Pair<String, Boolean>, StringExpression> templates = new LimitedCacheMap<Pair<String, Boolean>, StringExpression>(1000, 1000);
+    private static CacheMap<String, StringExpression> templates = new LimitedCacheMap<String, StringExpression>(1000, 1000);
     public static final StringExpression NULL_STRING = new ConstantStringExpression(null);
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
 
     public static StringExpression create(String str)
     {
-        return create(str, Collections.EMPTY_MAP, false);
+        return create(str, false);
     }
 
 
     public static StringExpression create(String str, boolean urlEncodeSubstitutions)
     {
-        return create(str, Collections.EMPTY_MAP, urlEncodeSubstitutions);
-    }
+        if (StringUtils.isEmpty(str))
+            return EMPTY_STRING;
 
-
-    /** map from column.getName() to column.getAlias() */
-    public static StringExpression createMapColumns(String str, Collection<ColumnInfo> cols, boolean urlEncodeSubstitutions)
-    {
-        Map<FieldKey,String> map = new HashMap<FieldKey, String>(cols.size()*2);
-        for (ColumnInfo col : cols)
-            map.put(FieldKey.fromString(col.getName()), col.getAlias());
-        return create(str, map, urlEncodeSubstitutions);
-    }
-
-
-    /** map from FieldKey to column.getAlias() */
-    public static StringExpression createMapFields(String str, Map<FieldKey,ColumnInfo> cols, boolean urlEncodeSubstitutions)
-    {
-        Map<FieldKey,String> map = new HashMap<FieldKey, String>(cols.size()*2);
-        for (Map.Entry<FieldKey,ColumnInfo> entry : cols.entrySet())
-            map.put(entry.getKey(), entry.getValue().getAlias());
-        return create(str, map, urlEncodeSubstitutions);
-    }
-
-
-    public static StringExpression createMapStrings(String str, Map<String,String> strings, boolean urlEncodeSubstitutions)
-    {
-        Map<FieldKey,String> map = new HashMap<FieldKey, String>(strings.size()*2);
-        for (Map.Entry<String,String> entry : strings.entrySet())
-            map.put(new FieldKey(null, entry.getKey()), entry.getValue());
-        return create(str, map, urlEncodeSubstitutions);
-    }
-
-
-    public static StringExpression create(String str, Map<FieldKey,String> fkMap, boolean urlEncodeSubstitutions)
-    {
-        if (null == str)
-            return NULL_STRING;
-
-        if (str.indexOf("<%") < 0 && str.indexOf("${") < 0)
+        if (str.indexOf("${") < 0)
             return new ConstantStringExpression(str);
 
-        Pair<String, Boolean> key = new Pair<String, Boolean>(str + "?" + PageFlowUtil.toQueryString(fkMap.entrySet()), urlEncodeSubstitutions);
+        String key = "simple:" + str + "(" + urlEncodeSubstitutions + ")";
 
         StringExpression expr = templates.get(key);
         if (null != expr)
             return expr;
 
-        expr = new GStringExpression(str, fkMap, urlEncodeSubstitutions);
+        expr = new SimpleStringExpression(str, urlEncodeSubstitutions);
         templates.put(key, expr);
         return expr;
     }
 
 
-    private static class ConstantStringExpression implements StringExpression
+
+    /**
+      *HANDLES two cases
+      *
+      *  a) http:*?param=${Column}
+      *  b) action:/Controller/Action.view?param=${Column}
+      *
+      * CONSIDER javascript: (permissions!)
+      *
+      */
+
+     private static Pattern actionPattern = Pattern.compile("/(\\w|\\-)+/(\\w|\\-)+.view?.*");
+
+     public static StringExpression createURL(String str)
+     {
+         String key = "url:" + str;
+
+         StringExpression expr = templates.get(key);
+//         if (null != expr)
+//             return expr;
+
+         expr = new URLStringExpression(str);
+
+         templates.put(key, expr);
+         return expr;
+     }
+
+
+    public static StringExpression createURL(ActionURL url)
     {
-        String str;
+        String key = "url:" + url.getLocalURIString(true);
 
-        ConstantStringExpression(String str)
-        {
-            this.str = str;
-        }
+        StringExpression expr = templates.get(key);
+        if (null != expr)
+            return expr;
 
-        public String eval(Map map)
-        {
-            return str;
-        }
+        expr = new URLStringExpression(url);
 
-        public String getSource()
-        {
-            return str;
-        }
-
-        public String toString()
-        {
-            return str;
-        }
-
-        public void addParameter(String key, String value)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public void render(Writer out, Map map) throws IOException
-        {
-            out.write(str);
-        }
+        templates.put(key, expr);
+        return expr;
     }
 
 
-    private static class GStringExpression implements StringExpression
+    //
+    // StringExpression implementatations
+    //
+    
+
+    protected static abstract class StringPart
     {
-        private static class StringPortion
+        abstract String getValue(Map map);
+        final String valueOf(Object o)
         {
-            private String _value;
-            private boolean _isSubstitution;
-            public StringPortion(String value, boolean isReplacement)
-            {
-                _value = value;
-                _isSubstitution = isReplacement;
-            }
-            public boolean isSubstitution()
-            {
-                return _isSubstitution;
-            }
-            public String getValue()
-            {
-                return _value;
-            }
+            return o == null ? "" : String.valueOf(o);
+        }
+    }
+    private static class ConstantPart extends StringPart
+    {
+        private String _value;
+        public ConstantPart(String value)
+        {
+            _value = value;
+        }
+        public String getValue(Map map)
+        {
+            return _value;
+        }
+        @Override
+        public String toString()
+        {
+            return _value;
+        }
+    }
+    private static class SubstitutePart extends StringPart
+    {
+        protected String _value;
+        public SubstitutePart(String value)
+        {
+            _value = value;
+        }
+        public String getValue(Map map)
+        {
+            return valueOf(map.get(_value));
         }
 
-        private List<StringPortion> _parsedExpression = new ArrayList<StringPortion>();
-        private String _source;
-        private boolean _urlEncodeSubstitutions;
+        @Override
+        public String toString()
+        {
+            return "${" + _value + "}";
+        }
+    }
+    private static class EncodePart extends SubstitutePart
+    {
+        public EncodePart(String value)
+        {
+            super(value);
+        }
+        public String getValue(Map map)
+        {
+            return PageFlowUtil.encodePath(valueOf(map.get(_value)));
+        }
+    }
 
+    
 
+    public static abstract class AbstractStringExpression implements StringExpression, Cloneable
+    {
+        protected String _source;
+        protected ArrayList<StringPart> _parsedExpression = null;
 
-        GStringExpression(String source, Map<FieldKey,String> map, boolean urlEncodeSubstitutions)
+        AbstractStringExpression(String source)
         {
             _source = source;
-            _urlEncodeSubstitutions = urlEncodeSubstitutions;
+        }
+
+        protected void parse()
+        {
+            _parsedExpression = new ArrayList<StringPart>();
             int start = 0;
             int index;
-            while (start < source.length() && (index = source.indexOf("${", start)) >= 0)
+            while (start < _source.length() && (index = _source.indexOf("${", start)) >= 0)
             {
                 if (index > 0)
-                    _parsedExpression.add(new StringPortion(source.substring(start, index), false));
-                int closeIndex = source.indexOf('}', index + 2);
-                String sub = source.substring(index+2,closeIndex);
-                String rep = map.get(FieldKey.decode(sub));
-                _parsedExpression.add(new StringPortion(null!=rep?rep:sub, true));
+                    _parsedExpression.add(new ConstantPart(_source.substring(start, index)));
+                int closeIndex = _source.indexOf('}', index + 2);
+                String sub = _source.substring(index+2,closeIndex);
+                _parsedExpression.add(parsePart(sub));
                 start = closeIndex + 1;
             }
-            if (start < source.length())
-                _parsedExpression.add(new StringPortion(source.substring(start), false));
+            if (start < _source.length())
+                _parsedExpression.add(new ConstantPart(_source.substring(start)));
         }
 
+        protected abstract StringPart parsePart(String expr);
 
-        public void addParameter(String key, String value)
-        {
-            _parsedExpression.add(new StringPortion("&" + key + "=", false));
-            if (value.startsWith("${") && value.endsWith("}"))
-            {
-                _parsedExpression.add(new StringPortion(value.substring(2, value.length() - 3), true));
-            }
-            else
-            {
-                _parsedExpression.add(new StringPortion(value, false));
-            }
-        }
-
-
+        
         public String eval(Map context)
         {
-            ViewContext viewContext = null;
-            if (context instanceof ViewContext)
-            {
-                viewContext = (ViewContext)context;
-            }
-            else if (context instanceof RenderContext)
-            {
-                viewContext = ((RenderContext)context).getViewContext();
-            }
-            return eval(viewContext, context);
-        }
-
-
-        public String eval(ViewContext viewContext, Map context)
-        {
+            if (null == _parsedExpression)
+                parse();
+            if (_parsedExpression.size() == 1)
+                return _parsedExpression.get(0).getValue(context);
+            
             StringBuilder builder = new StringBuilder();
-            for (StringPortion portion : _parsedExpression)
-            {
-                if (portion.isSubstitution())
-                {
-                    String key = portion.getValue();
-                    String s = null;
-
-                    if (viewContext != null)
-                    {
-                        if (key.equalsIgnoreCase("contextPath"))
-                            s = viewContext.getContextPath();
-                        else if (key.equalsIgnoreCase("containerPath"))
-                            s = viewContext.getContainer().getPath();
-                    }
-                    if (s == null)
-                        s = String.valueOf(context.get(key));
-                    if (_urlEncodeSubstitutions)
-                        s = PageFlowUtil.encode(s);
-                    builder.append(s);
-                }
-                else
-                    builder.append(portion.getValue());
-            }
+            for (StringPart part : _parsedExpression)
+                builder.append(part.getValue(context));
             return builder.toString();
         }
 
@@ -248,6 +230,7 @@ public class StringExpressionFactory
         }
 
 
+        @Override
         public String toString()
         {
             return _source;
@@ -257,8 +240,398 @@ public class StringExpressionFactory
         {
             out.write(eval(context));
         }
+
+        public void addParameter(String key, String value)
+        {
+            _parsedExpression.add(new ConstantPart("&" + key + "="));
+            if (value.startsWith("${") && value.endsWith("}"))
+            {
+                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
+            }
+            else
+            {
+                _parsedExpression.add(new ConstantPart(value));
+            }
+        }
+        
+        @Override
+        public AbstractStringExpression clone()
+        {
+            try
+            {
+                AbstractStringExpression clone = (AbstractStringExpression)super.clone();
+                clone._parsedExpression = null;
+                return clone;
+            }
+            catch (CloneNotSupportedException x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+
+        public AbstractStringExpression copy()
+        {
+            return clone();
+        }
     }
 
+
+    
+    public static class ConstantStringExpression extends AbstractStringExpression
+    {
+        ConstantStringExpression(String str)
+        {
+            super(str);
+        }
+
+        protected StringPart parsePart(String expr)
+        {
+            throw new IllegalArgumentException(this._source);
+        }
+
+        @Override
+        public String eval(Map map)
+        {
+            return _source;
+        }
+
+        public void addParameter(String key, String value)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+
+
+    public static class SimpleStringExpression extends AbstractStringExpression
+    {
+        boolean _urlEncodeSubstitutions = true;
+
+        SimpleStringExpression(String source, boolean urlEncdoeSubstitutions)
+        {
+            super(source);
+            _urlEncodeSubstitutions = urlEncdoeSubstitutions;
+        }
+        
+        protected StringPart parsePart(String expr)
+        {
+            if (_urlEncodeSubstitutions)
+                return new EncodePart(expr);
+            else
+                return new SubstitutePart(expr);
+        }
+
+        public void addParameter(String key, String value)
+        {
+            _parsedExpression.add(new ConstantPart("&" + key + "="));
+            if (value.startsWith("${") && value.endsWith("}"))
+            {
+                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
+            }
+            else
+            {
+                _parsedExpression.add(new ConstantPart(value));
+            }
+        }
+    }
+
+
+    static class FieldPart extends StringPart
+    {
+        FieldKey key;
+
+        FieldPart(String s)
+        {
+            key = FieldKey.decode(s);
+        }
+        String getValue(Map map)
+        {
+            return PageFlowUtil.encodePath(valueOf(map.get(key)));
+        }
+        @Override
+        public String toString()
+        {
+            return "${" + key.encode() + "}";
+        }
+    }
+
+
+    public static class FieldKeyStringExpression extends AbstractStringExpression
+    {
+        FieldKeyStringExpression(String source)
+        {
+            super(source);
+        }
+
+        protected StringPart parsePart(String expr)
+        {
+            // HACK
+            if ("containerPath".equals(expr) || "contextPath".equals(expr))
+                return new SubstitutePart(expr);
+            return new FieldPart(expr);
+        }
+
+        /**
+         * Used to fixup column names when a table is refered to via a lookup.
+         * E.g. consider column lk in table A, which joins to pk in table B
+         *
+         * remap    pk -> fk
+         * parent   title -> lk/title
+         */
+        protected FieldKeyStringExpression addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
+        {
+            FieldKeyStringExpression clone = this.clone();
+            clone.parse();
+            StringBuilder source = new StringBuilder();
+            for (StringPart p : clone._parsedExpression)
+            {
+                if (p instanceof FieldPart)
+                {
+                    FieldPart fp = (FieldPart)p;
+                    FieldKey replace = remap == null ? null : remap.get(fp.key);
+                    if (null != replace)
+                        fp.key = replace;
+                    else
+                        fp.key = FieldKey.fromParts(parent, fp.key);
+                }
+                source.append(p.toString());
+            }
+            clone._source = source.toString();
+            return clone;
+        }
+
+        public Set<FieldKey> getFieldKeys()
+        {
+            Set<FieldKey> set = new HashSet<FieldKey>();
+            if (null == _parsedExpression)
+                parse();
+            for (StringPart p : _parsedExpression)
+            {
+                if (p instanceof FieldPart)
+                    set.add(((FieldPart)p).key);
+            }
+            return set;
+        }
+
+        @Override
+        public FieldKeyStringExpression clone()
+        {
+            return (FieldKeyStringExpression)super.clone();
+        }
+    }
+
+
+    /**
+     *  Same as FieldKeyExpression, but validates !startsWith(javascript:)
+     * additional constructor
+     */
+    public static class URLStringExpression extends FieldKeyStringExpression implements HasViewContext
+    {
+        String _urlSource = null;
+        ActionURL _url;
+        ViewContext _context;
+
+        URLStringExpression(String source)
+        {
+            super("");
+            _urlSource = source.trim();
+        }
+
+        URLStringExpression(ActionURL url)
+        {
+            super("");
+            _url = url;
+        }
+
+        @Override
+        protected void parse()
+        {
+            if (null != _url)
+            {
+                _source = _url.getLocalURIString(true);                
+            }
+
+            else if (null != _urlSource)
+            {
+                String expr = _urlSource;
+                int i = StringUtils.indexOfAny(expr,": /");
+                String protocol = (i != -1 && expr.charAt(i) == ':') ? expr.substring(0,i) : "";
+
+                if (protocol.contains("script"))
+                    throw new IllegalArgumentException(expr);
+
+                if (actionPattern.matcher(expr).matches())
+                {
+                    ActionURL url = new ActionURL(expr);
+                    url.setContextPath(AppProps.getInstance().getContextPath());
+
+                    if (null != _context)
+                        url.setContainer(_context.getContainer());
+                    else
+                        url.setExtraPath("${containerPath}");
+
+                    _source = getURIString(url, null == _context ? null : _context.getActionURL());
+                }
+                else
+                {
+                    try
+                    {
+                        URLHelper url = new URLHelper(expr);
+                        _source = getURIString(url, null == _context ? null : _context.getActionURL());
+                    }
+                    catch (URISyntaxException x)
+                    {
+                        throw new IllegalArgumentException(expr);
+                    }
+                }
+            }
+            
+            super.parse();
+        }
+
+
+        @Override
+        public String eval(Map context)
+        {
+            String ret = super.eval(context);
+            int i = StringUtils.indexOfAny(ret, ": /");
+            if (i != -1 && ret.charAt(i) == ':')
+            {
+                int s = ret.indexOf("script");
+                if (s > -1 && s < i)
+                    return null;
+            }
+            return ret;
+        }
+
+        public void setViewContext(ViewContext context)
+        {
+            _context = context;
+        }
+
+        public ViewContext getViewContext()
+        {
+            return _context;
+        }
+    }
+
+
+    private static String getURIString(URLHelper url, URLHelper base)
+    {
+        if (null != base)
+        {
+            if (StringUtils.isEmpty(url.getScheme()))
+                url.setScheme(base.getScheme());
+            if (StringUtils.isEmpty(url.getHost()))
+                url.setHost(base.getHost());
+            if (url.getPort() == -1)
+                url.setPort(base.getPort());
+        }
+        if (StringUtils.isEmpty(url.getHost()) || StringUtils.isEmpty(url.getScheme()))
+            return url.getLocalURIString(true);
+        else
+            return url.getURIString(true);
+    }
+
+
+    /** example */
+    public static class ScriptEngineStringExpression extends AbstractStringExpression
+    {
+        ScriptEngine _engine;
+
+        class ScriptPart extends SubstitutePart
+        {
+            ScriptPart(String value)
+            {
+                super(value);
+            }
+            public String getValue(Map map)
+            {
+                if (!(map instanceof Bindings))
+                    throw new IllegalArgumentException();
+                try
+                {
+                    return valueOf(_engine.eval(_value, (Bindings)map));
+                }
+                catch (ScriptException x)
+                {
+                    throw new RuntimeException(x);
+                }
+            }
+        }
+        
+        ScriptEngineStringExpression(String source, ScriptEngine engine)
+        {
+            super(source);
+            _engine = engine;
+        }
+
+        protected StringPart parsePart(String expr)
+        {
+            return new ScriptPart(expr);
+        }
+
+        public void addParameter(String key, String value)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase()
+        {
+            super("StringExpression");
+        }
+
+
+        public TestCase(String name)
+        {
+            super(name);
+        }
+
+
+        public void testSimple() throws ServletException
+        {
+            Map<Object,Object> m = new HashMap<Object,Object>();
+
+            StringExpression a = StringExpressionFactory.create("${one} ${and} ${two} = ${three}");
+            m.put("and", "y");
+            m.put("one", "uno");
+            m.put("two", "dos");
+            m.put("three", "tres");
+
+            assertEquals("uno y dos = tres", a.eval(m));
+
+            StringExpression b = StringExpressionFactory.create("${contextPath}/controller${containerPath}/details.view?id=${rowId}&label=${label}", true);
+            m.put("contextPath","/labkey");
+            m.put("containerPath","/home");
+            m.put("rowId",5);
+            m.put("label","%encode me%");
+            assertEquals("/labkey/controller/home/details.view?id=5&label=%25encode%20me%25", b.eval(m));
+
+
+            FieldKeyStringExpression fkse = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
+            m.put(FieldKey.fromParts("A","rowid"), "BUG");
+            m.put(new FieldKey(null, "lookup"), 5);
+            m.put(FieldKey.fromParts("A","title"), "title one");
+            Map<FieldKey,FieldKey> remap = new HashMap<FieldKey, FieldKey>();
+            remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
+            FieldKeyStringExpression lookup = fkse.addParent(new FieldKey(null, "A"), remap);
+            assertEquals("details.view?id=5&title=title%20one", lookup.eval(m));
+        }
+
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
+    }
+
+
+    /* UNDONE: can't distinguish simple string expression and a custom URL expression */
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
         public Object convert(Class type, Object value)
@@ -266,7 +639,7 @@ public class StringExpressionFactory
             if (value == null || value instanceof StringExpression)
                 return value;
 
-            return StringExpressionFactory.create(String.valueOf(value));
+            return StringExpressionFactory.createURL(String.valueOf(value));
         }
     }
 }

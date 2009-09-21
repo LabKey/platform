@@ -29,7 +29,7 @@ public class UrlColumn extends SimpleDisplayColumn
     public UrlColumn(StringExpression urlExpression, String text)
     {
         setDisplayHtml(text);
-        setURL(urlExpression);
+        setURLExpression(urlExpression);
     }
 
     public UrlColumn(String url, String text)
@@ -41,7 +41,7 @@ public class UrlColumn extends SimpleDisplayColumn
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object value = getValue(ctx);
-        String url = getURL(ctx);
+        String url = renderURL(ctx);
         if (value != null && url != null)
         {
             out.write("[<a href=\"");

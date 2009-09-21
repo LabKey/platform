@@ -24,6 +24,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -208,9 +209,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setDefaultValueType(col.getDefaultValueType());
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
-        // We also do not copy URL since the column aliases do not get fixed up.
-        // Instead, set the URL on the FK
 
+        // often in Query this does not make sense
+        setURL(col.getURL());
+        
         // Consider: it does not always make sense to preserve the "isKeyField" property.
         setKeyField(col.isKeyField());
 
@@ -567,6 +569,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         isReadOnly = readOnly;
     }
 
+    @Override
     public StringExpression getURL()
     {
         StringExpression result = super.getURL();
@@ -672,7 +675,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (xmlCol.isSetInputType())
             inputType = xmlCol.getInputType();
         if (xmlCol.isSetUrl())
-            setURL(xmlCol.getUrl());
+        {
+            String url = xmlCol.getUrl();
+            if (!StringUtils.isEmpty(url))
+                setURL(StringExpressionFactory.createURL(url));
+        }
         if (xmlCol.isSetIsAutoInc())
             isAutoIncrement = xmlCol.getIsAutoInc();
         if (xmlCol.isSetIsReadOnly())

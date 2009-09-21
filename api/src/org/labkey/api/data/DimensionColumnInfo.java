@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.util.StringExpressionFactory;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Dave
@@ -33,7 +35,7 @@ public class DimensionColumnInfo extends ColumnInfo
         _dimension = dimension;
         setName(_dimension.getSourceColumn().getAlias());
         setLabel(_dimension.getSourceColumn().getLabel());
-        setURL(dimension.getUrl());
+        setURL(StringExpressionFactory.createURL(dimension.getUrl()));
     }
 
     public CrosstabDimension getDimension()

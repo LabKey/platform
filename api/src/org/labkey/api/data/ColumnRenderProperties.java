@@ -182,10 +182,10 @@ public class ColumnRenderProperties
         return this.url;
     }
 
-    public void setURL(String url)
-    {
-        this.url = StringExpressionFactory.create(url);
-    }
+//    public void setURL(String url)
+//    {
+//        this.url = null == url ? null : StringExpressionFactory.createURL(url);
+//    }
 
     public void setURL(StringExpression url)
     {

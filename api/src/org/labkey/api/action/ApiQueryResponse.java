@@ -98,7 +98,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return _fieldKeys;
     }
 
-    public void initialize(ResultSet rs, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount) throws Exception
+    public void initialize(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount) throws Exception
     {
         _rs = rs;
         _tinfo = table;
@@ -107,7 +107,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             _rowCount = rowCount.longValue();
 
         _ctx = new RenderContext(_viewContext);
-        _ctx.setResultSet(_rs);
+        _ctx.setResultSet(_rs, fieldMap);
     }
 
     protected double getFormatVersion()
@@ -320,7 +320,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         //with the name "<URL_COL_PREFIX><colname>"
         if (null != value)
         {
-            String url = dc.getURL(_ctx);
+            String url = dc.renderURL(_ctx);
             if(null != url)
                 row.put(URL_COL_PREFIX + dc.getColumnInfo().getName(), url);
         }

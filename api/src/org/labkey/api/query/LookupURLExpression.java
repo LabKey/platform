@@ -70,4 +70,24 @@ public class LookupURLExpression implements StringExpression
     {
         return _joinParams.values();
     }
+
+    public LookupURLExpression copy()
+    {
+        return clone();
+    }
+
+    @Override
+    protected LookupURLExpression clone()
+    {
+        try
+        {
+            LookupURLExpression clone = (LookupURLExpression)super.clone();
+            clone._base = this._base.clone();
+            return clone;
+        }
+        catch (CloneNotSupportedException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
 }

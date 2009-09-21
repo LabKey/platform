@@ -81,7 +81,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         //url
         if (null != value)
         {
-            String url = dc.getURL(getRenderContext());
+            String url = dc.renderURL(getRenderContext());
             if(null != url)
                 colMap.put(ColMapEntry.url.name(), url);
         }

@@ -20,14 +20,14 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -42,7 +42,6 @@ public class DataColumn extends DisplayColumn
     private Sort.SortDirection _defaultSort = Sort.SortDirection.ASC;
     private ColumnInfo _filterColumn;
 
-    private StringExpression _url;
     private String _inputType;
     private int _inputRows;
     private int _inputLength;
@@ -67,7 +66,7 @@ public class DataColumn extends DisplayColumn
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
-        _url = _boundColumn.getURL();
+        super.setURLExpression(_boundColumn.getURL());
         setFormatString(_displayColumn.getFormatString());
         setTsvFormatString(_displayColumn.getTsvFormatString());
         setExcelFormatString(_displayColumn.getExcelFormatString());
@@ -85,33 +84,6 @@ public class DataColumn extends DisplayColumn
     public String toString()
     {
         return getClass().getName() + ": " + getName();
-    }
-
-
-    public String getURL(RenderContext ctx)
-    {
-        if (null == _url)
-            return null;
-
-        return _url.eval(ctx);
-    }
-
-    public String getURL()
-    {
-        if (null == _url)
-            return null;
-
-        return _url.getSource();
-    }
-
-    public void setURL(String url)
-    {
-        _url = url == null ? null : StringExpressionFactory.create(url, true);
-    }
-
-    public void setURLExpression(StringExpression se)
-    {
-        _url = se;
     }
 
     public int getInputRows()
@@ -157,6 +129,19 @@ public class DataColumn extends DisplayColumn
     public boolean isQueryColumn()
     {
         return true;
+    }
+
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        super.addQueryFieldKeys(keys);
+        if (_boundColumn != null)
+            keys.add(_boundColumn.getFieldKey());
+        if (_displayColumn != null)
+            keys.add(_displayColumn.getFieldKey());
+        if (_filterColumn != null)
+            keys.add(_filterColumn.getFieldKey());
+        if (_sortColumn != null)
+            keys.add(_sortColumn.getFieldKey());
     }
 
     public void addQueryColumns(Set<ColumnInfo> columns)
@@ -211,7 +196,7 @@ public class DataColumn extends DisplayColumn
         Object value = _boundColumn.getValue(ctx);
         if (null != value)
         {
-            String url = getURL(ctx);
+            String url = renderURL(ctx);
 
             if (null != url)
             {
@@ -277,7 +262,7 @@ public class DataColumn extends DisplayColumn
 
         if (null != o)
         {
-            String url = getURL(ctx);
+            String url = renderURL(ctx);
 
             if (null != url)
             {

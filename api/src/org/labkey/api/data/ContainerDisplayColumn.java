@@ -102,7 +102,6 @@ public class ContainerDisplayColumn extends DataColumn
             {
                 _url.setContainer(_c);
             }
-            ctx.put("ContainerPath", _c.getPath());  // TODO: Encoded path?
             super.renderGridCellContents(ctx, out);
         }
     }

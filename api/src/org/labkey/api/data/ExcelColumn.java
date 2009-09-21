@@ -225,7 +225,7 @@ public class ExcelColumn extends RenderColumn
                     break;
                 case(TYPE_STRING):
                 default:
-                    URL url = createURL(_dc.getURL(ctx));
+                    URL url = createURL(_dc.renderURL(ctx));
                     if (url != null)
                         sheet.addHyperlink(new WritableHyperlink(column, row, column, row, url, o.toString()));
                     else

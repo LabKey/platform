@@ -350,8 +350,8 @@ public class CrosstabTableInfo extends VirtualTable
         GroupTableInfo groupTable = getGroupTable();
         Filter aggFilter = getAggregateFilter();
 
-        List<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(groupTable.getColumns());    // Make a copy
-        QueryService.get().ensureRequiredColumns(groupTable, reqCols, aggFilter, null, null);
+        Collection<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(groupTable.getColumns());    // Make a copy
+        reqCols = QueryService.get().ensureRequiredColumns(groupTable, reqCols, aggFilter, null, null);
         
         sql.append("SELECT * FROM (\n");
         sql.append(Table.getSelectSQL(groupTable, reqCols, null, null));
@@ -487,7 +487,7 @@ public class CrosstabTableInfo extends VirtualTable
         return new CrosstabTableInfo(getSettings())._columnMap;
     }
 
-    protected Map<String, ColumnInfo> getAggregateFilterColMap(List<ColumnInfo> cols)
+    protected Map<String, ColumnInfo> getAggregateFilterColMap(Collection<ColumnInfo> cols)
     {
         Map<String,ColumnInfo> map = new HashMap<String,ColumnInfo>(cols.size());
         for(ColumnInfo col : cols)
