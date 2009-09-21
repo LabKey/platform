@@ -2,8 +2,28 @@
 <%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page import="org.labkey.query.persist.DbUserSchemaDef" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     QueryControllerSpring.ExternalSchemaBean bean = (QueryControllerSpring.ExternalSchemaBean)HttpView.currentModel();
+
+    DbUserSchemaDef def = bean.getSchemaDef();
+
+    DbScope initialScope = null;
+
+    try
+    {
+        initialScope = DbScope.getDbScope(def.getDataSource());
+    }
+    catch (Exception e)
+    {
+    }
+
+    if (null == initialScope)
+    {
+        initialScope = CoreSchema.getInstance().getSchema().getScope();
+    }
 %>
 
 <div id="form"></div>
@@ -13,18 +33,19 @@
 
     Ext.QuickTips.init();
 
-    var dataSources = [<%
-    DbScope coreScope = CoreSchema.getInstance().getSchema().getScope();    // TODO: Get currently selected data source from form
+    var dataSources = [
+<%
     int coreIndex = 0;
     int i = 0;
-    String sep = "";
+    String sep = "        ";
 
     for (DbScope scope : bean.getScopes())
     {
         out.print(sep);
         out.print("[");
         out.print("'" + scope.getJndiName() + "', ");
-        out.print("'" + getDisplayName(scope.getJndiName()) + "', [");
+        out.print("'" + getDisplayName(scope.getJndiName()) + "', ");
+        out.print(scope.getSqlDialect().isEditable() + ", [");
 
         String sep2 = "";
 
@@ -37,20 +58,25 @@
 
         out.print("]]");
 
-        if (scope == coreScope)
+        if (scope == initialScope)
             coreIndex = i;
 
-        sep = ",";
+        sep = ",\n" + sep;
         i++;
     }
-%>];
+%>
+    ];
 
     var store = new Ext.data.SimpleStore({
-    fields:['value', 'name', 'schemas'],
+    fields:['value', 'name', 'editable', 'schemas'],
     data:dataSources
 });
 
 //var values={dbSchemaName:'guest'};
+var dataSourceCombo;
+var dbSchemaCombo;
+var userSchemaText;
+var editableCheckBox;
 
 var f = new LABKEY.ext.FormPanel({
 //        values:values,
@@ -60,36 +86,51 @@ var f = new LABKEY.ext.FormPanel({
             // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
             dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', value:dataSources[<%=coreIndex%>][0]}),
             // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out). 
-            dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', xtype:'combo', store:dataSources[<%=coreIndex%>][2], editable:true, triggerAction:'all'}),
-            {name:'userSchemaName', fieldLabel:'Schema Name', xtype:'textfield'},
-            {name:'editable', id:'myeditable', fieldLabel:'Editable', xtype:'checkbox'},
+            dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', xtype:'combo', store:dataSources[<%=coreIndex%>][3], value:<%=q(h(def.getDbSchemaName()))%>, editable:true, triggerAction:'all'}),
+            userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', xtype:'textfield', value:<%=q(h(def.getUserSchemaName()))%>}),
+            editableCheckBox = new Ext.form.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', xtype:'checkbox'}),
             {name:'@editable', xtype:'hidden'},
-            {name:'metaData', fieldLabel:'Meta Data', xtype:'textarea'}
+            metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', xtype:'textarea', value:<%=PageFlowUtil.jsString(def.getMetaData())%>})
         ],
-        buttons:[{text:'Create', type:'submit', handler:function() {f.getForm().submit();}}, {text:'Cancel'}], // TODO: Cancel URL
+        buttons:[{text:'<%=(bean.isInsert()? "Create" : "Update")%>', type:'submit', handler:function() {f.getForm().submit();}}, {text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
         buttonAlign:'left'
     });
 
 Ext.onReady(function()
 {
-    dataSourceCombo.on('select', dataSourceCombo_onSelect);
-
     f.render('form');
+    dataSourceCombo.on('select', dataSourceCombo_onSelect);
+    dbSchemaCombo.on('select', dbSchemaCombo_onSelect);
+    initEditable(<%=def.isEditable()%>, <%=initialScope.getSqlDialect().isEditable()%>);
 });
 
-// Replace the "Database Schema Name" combobox with a new one containing the new data source's schemas
-// TODO: More efficient way to do this?
+// Populate the "Database Schema Name" combobox with new data source's schemas
 function dataSourceCombo_onSelect()
 {
-    var dataSourceIndex = store.find("value", dataSourceCombo.value);
-    f.remove(dbSchemaCombo);
-    dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', xtype:'combo', store:dataSources[dataSourceIndex][2], editable:false, triggerAction:'all'});
-    f.insert(1, dbSchemaCombo);
-    f.doLayout();
+    userSchemaText.setValue("");
+    var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
+    dbSchemaCombo.store.loadData(dataSources[dataSourceIndex][3]);
+    dbSchemaCombo.setValue("");
+    dbSchemaCombo_onSelect();  // reset all fields that depend on database schema name
+}
+
+// Default to schema name = database schema name, editable false, editable disabled for non-editable scopes, meta data blank
+function dbSchemaCombo_onSelect()
+{
+    userSchemaText.setValue(dbSchemaCombo.getValue());
+    var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
+    initEditable(false, dataSources[dataSourceIndex][2]);
+    metaDataTextArea.setValue("");
+}
+
+function initEditable(value, enabled)
+{
+    editableCheckBox.setValue(value);
+    editableCheckBox.setDisabled(!enabled);
 }
 </script>
 <%!
-    // Strip off "jdbc/" and "DataSource" to create friendly name.  TODO: Add admin UI to allow setting this for each data source.
+    // Strip off "jdbc/" and "DataSource" to create friendly name.  TODO: Add UI to allow site admin to add this for each data source.
     private String getDisplayName(String jndiName)
     {
         if (jndiName.startsWith("jdbc/"))

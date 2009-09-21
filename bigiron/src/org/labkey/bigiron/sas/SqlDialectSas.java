@@ -337,6 +337,11 @@ public class SqlDialectSas extends SqlDialect
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean isEditable()
+    {
+        return false;
+    }
+
     public boolean isSqlServer()
     {
         return false;

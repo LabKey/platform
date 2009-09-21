@@ -563,6 +563,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return false;
     }
 
+    public boolean isEditable()
+    {
+        return true;
+    }
+
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
     {
         return new SqlServerColumnMetaDataReader(rsCols);

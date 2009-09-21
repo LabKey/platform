@@ -48,7 +48,7 @@ if (null != StringUtils.trimToNull(reloadedSchema))
     <%
     for (DbUserSchemaDef def : defs)
     {
-        ActionURL urlEdit = new ActionURL(QueryControllerSpring.AdminEditDbUserSchemaAction.class, getContainer());
+        ActionURL urlEdit = new ActionURL(QueryControllerSpring.EditExternalSchemaAction.class, getContainer());
         urlEdit.addParameter("dbUserSchemaId", Integer.toString(def.getDbUserSchemaId()));
         ActionURL urlView = new ActionURL(QueryControllerSpring.SchemaAction.class, getContainer());
         urlView.addParameter("schemaName", def.getUserSchemaName());

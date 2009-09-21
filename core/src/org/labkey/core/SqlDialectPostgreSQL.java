@@ -686,6 +686,11 @@ class SqlDialectPostgreSQL extends SqlDialect
         return true;
     }
 
+    public boolean isEditable()
+    {
+        return true;
+    }
+
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
     {
         return new PostgreSQLColumnMetaDataReader(rsCols);

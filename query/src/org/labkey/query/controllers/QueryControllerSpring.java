@@ -67,10 +67,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.Connection;
 import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
@@ -166,7 +166,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class BeginAction extends QueryControllerSpring.QueryViewAction
+    public class BeginAction extends QueryViewAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
@@ -182,7 +182,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class SchemaAction extends QueryControllerSpring.QueryViewAction
+    public class SchemaAction extends QueryViewAction
     {
         public SchemaAction() {}
 
@@ -201,7 +201,7 @@ public class QueryControllerSpring extends SpringActionController
         {
             String schemaName = _form.getSchemaName().toString();
             ActionURL url = new ActionURL(BeginAction.class, _form.getViewContext().getContainer());
-            (new QueryControllerSpring.BeginAction()).appendNavTrail(root)
+            (new BeginAction()).appendNavTrail(root)
                 .addChild(schemaName + " Schema", url.toString() + "#" + getBrowseBookmark(_form));
             return root;
         }
@@ -297,7 +297,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root)
+            (new SchemaAction(_form)).appendNavTrail(root)
                     .addChild("New Query", actionURL(QueryAction.newQuery));
             return root;
         }
@@ -434,7 +434,7 @@ public class QueryControllerSpring extends SpringActionController
         {
             setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
 
-            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root)
+            (new SchemaAction(_form)).appendNavTrail(root)
                     .addChild("Edit " + _form.getQueryName(), _form.urlFor(QueryAction.sourceQuery));
             return root;
         }
@@ -473,7 +473,7 @@ public class QueryControllerSpring extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_READ)
-    public class ExecuteQueryAction extends QueryControllerSpring.QueryViewAction
+    public class ExecuteQueryAction extends QueryViewAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
@@ -503,7 +503,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root);
+            (new SchemaAction(_form)).appendNavTrail(root);
             root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
             return root;
         }
@@ -512,7 +512,7 @@ public class QueryControllerSpring extends SpringActionController
 
     // for backwards compat same as _executeQuery.view ?_print=1
     @RequiresPermission(ACL.PERM_READ)
-    public class PrintRowsAction extends QueryControllerSpring.ExecuteQueryAction
+    public class PrintRowsAction extends ExecuteQueryAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
@@ -939,7 +939,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root);
+            (new SchemaAction(_form)).appendNavTrail(root);
             String name = _queryDef.getName();
             root.addChild("Design query " + name, getViewContext().getActionURL());
             return root;
@@ -2123,7 +2123,8 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean());
+            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
+            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true));
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
@@ -2150,9 +2151,15 @@ public class QueryControllerSpring extends SpringActionController
     public static class ExternalSchemaBean
     {
         private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
+        private final Container _c;
+        private final DbUserSchemaDef _def;
+        private final boolean _insert;
 
-        public ExternalSchemaBean()
+        public ExternalSchemaBean(Container c, DbUserSchemaDef def, boolean insert)
         {
+            _c = c;
+            _def = def;
+            _insert = insert;
             Collection<DbScope> scopes = DbScope.getDbScopes();
 
             for (DbScope scope : scopes)
@@ -2206,9 +2213,25 @@ public class QueryControllerSpring extends SpringActionController
         {
             return _scopesAndSchemas.get(scope);
         }
+
+        public DbUserSchemaDef getSchemaDef()
+        {
+            return _def;
+        }
+
+        public boolean isInsert()
+        {
+            return _insert;
+        }
+
+        public ActionURL getReturnURL()
+        {
+            return new ActionURL(AdminAction.class, _c);
+        }
     }
 
 
+    @Deprecated // TODO: Delete this
     @RequiresPermission(ACL.PERM_ADMIN)
     public class AdminEditDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
     {
@@ -2266,6 +2289,74 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class EditExternalSchemaAction extends FormViewAction<DbUserSchemaForm>
+    {
+		public void validateCommand(DbUserSchemaForm form, Errors errors)
+		{
+			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
+			if (i.isTainted())
+				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters and Underscores");
+		}
+
+        public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            // TODO: Get def directly from form?
+            DbUserSchemaDef def = QueryManager.get().getDbUserSchemaDef(form.getBean().getDbUserSchemaId());
+
+            Container defContainer = ContainerManager.getForId(def.getContainerId());
+
+            if (!defContainer.equals(getContainer()))
+                throw new UnauthorizedException();
+
+            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
+            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false));
+/*
+            UpdateView view = new UpdateView(form, errors);
+            ButtonBar bb = new ButtonBar();
+            bb.add(new ActionButton("adminEditDbUserSchema.post", "Update"));
+            bb.add(new ActionButton("Cancel", getSuccessURL(form)));
+            ActionURL urlDelete = new ActionURL(AdminDeleteDbUserSchemaAction.class, getContainer());
+            urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
+            bb.add(new ActionButton("Delete", urlDelete));
+            view.getDataRegion().setButtonBar(bb);
+            view.getDataRegion().removeColumns("DbContainer", "DbUserSchemaId");
+            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
+
+            HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
+
+            return new VBox(view, help);
+*/        }
+
+        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
+        {
+            DbUserSchemaDef def = form.getBean();
+            String container = def.getDbContainer();
+            Container c = ContainerManager.getForId(container);
+            if (c == null)
+            {
+                c = ContainerManager.getForPath(container);
+                if (null != c)
+                    def.setDbContainer(c.getId());
+            }
+            form.doUpdate();
+            return true;
+        }
+
+        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
+        {
+            return actionURL(QueryAction.admin);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new AdminAction().appendNavTrail(root);
+            root.addChild("Edit External Schema", actionURL(QueryAction.adminNewDbUserSchema));
+            return root;
+        }
+    }
+
+
     @RequiresSiteAdmin
     public class AdminDeleteDbUserSchemaAction extends ConfirmAction<DbUserSchemaForm>
     {
@@ -2309,8 +2400,8 @@ public class QueryControllerSpring extends SpringActionController
         {
             form.refreshFromDb();
             DbUserSchemaDef def = form.getBean();
-            ActionURL fwd = new ActionURL(AdminAction.class, getContainer());
-            fwd.addParameter("reloadedSchema", def.getUserSchemaName());
+            ActionURL url = new ActionURL(AdminAction.class, getContainer());
+            url.addParameter("reloadedSchema", def.getUserSchemaName());
             QueryManager.get().reloadDbUserSchema(def);
             return HttpView.redirect(getSuccessURL(form));
         }
