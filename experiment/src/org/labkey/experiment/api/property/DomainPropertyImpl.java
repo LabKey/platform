@@ -28,7 +28,6 @@ import org.labkey.api.exp.property.*;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -87,14 +86,6 @@ public class DomainPropertyImpl implements DomainProperty
     public String getLabel()
     {
         return _pd.getLabel();
-    }
-
-    public ActionURL detailsURL()
-    {
-        ActionURL ret = getDomain().urlEditDefinition(false, false, false);
-        ret.setAction("showProperty");
-        ret.replaceParameter("propertyId", Integer.toString(getPropertyId()));
-        return ret;
     }
 
     public Domain getDomain()
@@ -243,6 +234,16 @@ public class DomainPropertyImpl implements DomainProperty
             }
         }
         return result;
+    }
+
+    public void setURL(String url)
+    {
+        edit().setURL(url);
+    }
+
+    public String getURL()
+    {
+        return _pd.getURL() == null ? null : _pd.getURL().toString();
     }
 
     private PropertyDescriptor edit()

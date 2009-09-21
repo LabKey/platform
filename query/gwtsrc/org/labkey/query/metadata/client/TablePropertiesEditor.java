@@ -15,11 +15,14 @@
  */
 package org.labkey.query.metadata.client;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
+import org.labkey.api.gwt.client.ui.property.URLItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +44,9 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     {
         if (_wrapFieldButton == null)
         {
-            _wrapFieldButton = new ImageButton("Alias Field", new ClickListener()
+            _wrapFieldButton = new ImageButton("Alias Field", new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent e)
                 {
                     final ListBox list = new ListBox(false);
                     for (GWTColumnInfo pd : _domain.getFields())
@@ -65,9 +68,9 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
 
                     HorizontalPanel buttonPanel = new HorizontalPanel();
 
-                    ImageButton okButton = new ImageButton("OK", new ClickListener()
+                    ImageButton okButton = new ImageButton("OK", new ClickHandler()
                     {
-                        public void onClick(Widget sender)
+                        public void onClick(ClickEvent e)
                         {
                             for (GWTPropertyDescriptor existingPD : _domain.getFields())
                             {
@@ -84,9 +87,9 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
                             }
                         }
                     });
-                    ImageButton cancelButton = new ImageButton("Cancel", new ClickListener()
+                    ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
                     {
-                        public void onClick(Widget sender)
+                        public void onClick(ClickEvent e)
                         {
                             dialog.hide();
                         }
@@ -127,6 +130,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     {
         PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Additional Properties");
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        propertyPane.addItem(new URLItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
         List<PropertyPane<GWTTableInfo, GWTColumnInfo>> result = new ArrayList<PropertyPane<GWTTableInfo, GWTColumnInfo>>();

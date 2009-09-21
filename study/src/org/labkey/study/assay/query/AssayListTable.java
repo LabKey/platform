@@ -16,13 +16,19 @@
 
 package org.labkey.study.assay.query;
 
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.query.*;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupURLExpression;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.controllers.assay.AssayController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -83,8 +89,7 @@ public class AssayListTable extends FilteredTable
         ColumnInfo rowid = columns.get("RowId");
         if (rowid == null)
             return null;
-        ActionURL url = new ActionURL("assay",
-            "summaryRedirect", _schema.getContainer());
+        ActionURL url = new ActionURL(AssayController.SummaryRedirectAction.class, _schema.getContainer());
         return new LookupURLExpression(url, Collections.singletonMap("rowId", rowid));
     }
 }

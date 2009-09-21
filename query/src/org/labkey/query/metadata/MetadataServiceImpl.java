@@ -82,6 +82,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setLabel(columnInfo.getLabel());
             gwtColumnInfo.setFormat(columnInfo.getFormatString());
             gwtColumnInfo.setDescription(columnInfo.getDescription());
+            gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
             if (columnInfo.getFk() != null)
             {
@@ -318,6 +319,17 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             else if (xmlColumn.isSetColumnTitle())
             {
                 xmlColumn.unsetColumnTitle();
+            }
+
+            // Set the URL
+            String originalURL = rawColumnInfo.getURL() == null ? null : rawColumnInfo.getURL().toString();
+            if (shouldStoreValue(gwtColumnInfo.getURL(), originalURL))
+            {
+                xmlColumn.setUrl(gwtColumnInfo.getURL());
+            }
+            else if (xmlColumn.isSetUrl())
+            {
+                xmlColumn.unsetUrl();
             }
 
             // Set the FK
