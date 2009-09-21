@@ -70,8 +70,10 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
             expandable: false,
             draggable: false,
             listeners: {
-                expand: {
-                    fn: function(){this.fireEvent("schemasloaded");},
+                load: {
+                    fn: function(node){
+                        this.fireEvent("schemasloaded", node.childNodes);
+                    },
                     scope: this
                 }
             }
@@ -384,9 +386,101 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
 Ext.reg('labkey-query-details-panel', LABKEY.ext.QueryDetailsPanel);
 
+LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
+    initComponent : function() {
+        this.bodyStyle = "padding: 5px";
+        if (this.schemaBrowser)
+            this.schemaBrowser.on("schemasloaded", function(browser, schemaNodes){
+                this.setSchemas(schemaNodes);
+            }, this);
+        LABKEY.ext.SchemaBrowserHomePanel.superclass.initComponent.apply(this, arguments);
+    },
+
+    onRender : function() {
+        //call superclass to create basic elements
+        LABKEY.ext.SchemaBrowserHomePanel.superclass.onRender.apply(this, arguments);
+        this.body.createChild({
+            tag: 'div',
+            cls: 'lk-qd-loading',
+            html: 'loading...'
+        });
+    },
+
+    setSchemas : function(schemaNodes) {
+        this.schemas = schemaNodes;
+
+        this.body.update("");
+
+        this.body.createChild({
+            tag: 'div',
+            cls: 'lk-sb-instructions',
+            html: 'Use the tree on the left to select a query, or select a schema below to expand that schema in the tree.'
+        });
+
+        var table = this.body.createChild({
+            tag: 'table',
+            cls: 'lk-qd-coltable',
+            children: [
+                {
+                    tag: 'thead',
+                    children: [
+                        {
+                            tag: 'tr',
+                            children: [
+                                {
+                                    tag: 'th',
+                                    html: 'Name'
+                                },
+                                {
+                                    tag: 'th',
+                                    html: 'Description'
+                                }
+
+                            ]
+                        }
+                    ]
+                }
+            ]
+        });
+        var tbody = table.createChild({
+            tag: 'tbody'
+        });
+
+        for (var idx = 0; idx < schemaNodes.length; ++idx)
+        {
+            var schemaNode = schemaNodes[idx];
+
+            var tr = tbody.createChild({
+                tag: 'tr'
+            });
+            var tdName = tr.createChild({
+                tag: 'td'
+            });
+            var spanName = tdName.createChild({
+                tag: 'span',
+                cls: 'labkey-link',
+                html: schemaNode.attributes.schemaName
+            });
+            spanName.on("click", function(evt, t){
+                if (this.schemaBrowser)
+                    this.schemaBrowser.selectSchema(t.innerHTML);
+            }, this);
+
+            tr.createChild({
+                tag: 'td',
+                html: schemaNode.attributes.description
+            });
+        }
+    }
+});
+
+Ext.reg('labkey-schema-browser-home-panel', LABKEY.ext.SchemaBrowserHomePanel);
+
 LABKEY.requiresCss("_images/icons.css");
 
 LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
+
+    qdpPrefix: 'qdp-',
 
     initComponent : function(){
         var tbar = [
@@ -443,7 +537,9 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                             scope: this
                         },
                         schemasloaded: {
-                            fn: function(){this.fireEvent("schemasloaded", this);},
+                            fn: function(schemaNodes){
+                                this.fireEvent("schemasloaded", this, schemaNodes);
+                            },
                             scope: this
                         }
                     }
@@ -455,8 +551,10 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     activeTab: 0,
                     items: [
                         {
+                            xtype: 'labkey-schema-browser-home-panel',
                             title: 'Home',
-                            html: '<p style="padding: 10px">Choose a query on the left to see information about it.</p>'
+                            schemaBrowser: this,
+                            id: 'lk-sb-panel-home'
                         }
                     ],
                     enableTabScroll:true,
@@ -494,10 +592,16 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     onHistoryChange : function(token) {
         if (!token)
-            return;
-        var tokenMap = this.parseHistoryToken(token);
-        if (tokenMap)
-            this.selectQuery(tokenMap.schemaName, tokenMap.queryName);
+        {
+            //back to home panel
+            this.getComponent("details").activate("lk-sb-panel-home");
+        }
+        else
+        {
+            var tokenMap = this.parseHistoryToken(token);
+            if (tokenMap)
+                this.selectQuery(tokenMap.schemaName, tokenMap.queryName);
+        }
     },
 
     getHistoryToken : function(schemaName, queryName) {
@@ -556,7 +660,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     showQueryDetails : function(schemaName, queryName) {
-        var id = schemaName + "." + queryName;
+        var id = this.qdpPrefix + schemaName + "." + queryName;
         var tabs = this.getComponent('details');
         if (tabs.getComponent(id))
             tabs.activate(id);
@@ -567,7 +671,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 schemaName: schemaName,
                 queryName: queryName,
                 id: id,
-                title: id,
+                title: schemaName + "." + queryName,
                 autoScroll: true,
                 listeners: {
                     lookupclick: {
