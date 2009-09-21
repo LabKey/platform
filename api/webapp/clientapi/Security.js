@@ -807,7 +807,7 @@ LABKEY.Security = new function()
         /**
          * Deletes a group.
          * @param config A configuration object with the following properties:
-         * @param {String} config.groupId The id of the group to delete
+         * @param {int} config.groupId The id of the group to delete
          * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -840,9 +840,45 @@ LABKEY.Security = new function()
         },
 
         /**
+         * Renames a group.
+         * @param config A configuration object with the following properties:
+         * @param {int} config.groupId The id of the group to delete
+         * @param {String} config.newName The new name for the group
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with the following properties: 'renamed'=the group id; 'oldName'=the old name; 'newName'=the new name.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
+         */
+        renameGroup : function(config) {
+            var params = {id: config.groupId, newName: config.newName};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "renameGroup", config.containerPath),
+                method: "POST",
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData: params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+
+        },
+
+        /**
          * Adds a new member to an existing group.
          * @param config A configuration object with the following properties:
-         * @param {String} config.groupId The id of the group to which you want to add the member.
+         * @param {int} config.groupId The id of the group to which you want to add the member.
          * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to add as members.
          * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
@@ -882,7 +918,7 @@ LABKEY.Security = new function()
         /**
          * Removes a member from an existing group.
          * @param config A configuration object with the following properties:
-         * @param {String} config.groupId The id of the group from which you want to remove the member.
+         * @param {int} config.groupId The id of the group from which you want to remove the member.
          * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to remove.
          * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:

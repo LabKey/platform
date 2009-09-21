@@ -993,6 +993,28 @@ public class SecurityManager
         return null != getGroupId(c, groupName, ownerId, false, true);
     }
 
+    public static void renameGroup(Group group, String newName, User currentUser)
+    {
+        if (group.isSystemGroup())
+            throw new IllegalArgumentException("System groups may not be renamed!");
+        Container c = ContainerManager.getForId(group.getContainer());
+        if (null == c)
+            throw new IllegalArgumentException("The container the group exists in no longer exists!");
+
+        if (null != getGroupId(c, newName, false))
+            throw new IllegalArgumentException("Cannot rename group '" + group.getName() + "' to '" + newName + "' because that name is already used by another group!");
+
+        try
+        {
+            group.setName(newName);
+            Table.update(currentUser, core.getTableInfoPrincipals(), group, group.getUserId());
+            removeGroupFromCache(group.getUserId());
+        }
+        catch(SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     public static void deleteGroup(String groupPath)
     {
