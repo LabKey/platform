@@ -25,6 +25,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
@@ -64,8 +65,8 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
                 JSONObject schemaProps = new JSONObject();
                 schemaProps.put("id", "s:" + name);
-                schemaProps.put("text", name);
-                schemaProps.put("description", schema.getDescription());
+                schemaProps.put("text", PageFlowUtil.filter(name));
+                schemaProps.put("description", PageFlowUtil.filter(schema.getDescription()));
                 schemaProps.put("qtip", schema.getDescription());
                 schemaProps.put("schemaName", name);
 
@@ -148,12 +149,12 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
         qprops.put("id", "q:" + qname);
-        qprops.put("text", qname);
+        qprops.put("text", PageFlowUtil.filter(qname));
         qprops.put("leaf", true);
         if (null != description)
         {
             qprops.put("description", description);
-            qprops.put("qtip", description);
+            qprops.put("qtip", PageFlowUtil.filter(description));
         }
         list.put(qprops);
     }

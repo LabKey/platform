@@ -124,6 +124,16 @@ public class QueryControllerSpring extends SpringActionController
         return form.getSchema() != null && form.getSchema().getTable(form.getQueryName()) != null;
     }
 
+    public String getBrowseBookmark(QueryForm form)
+    {
+        return getBrowseBookmark(form.getSchemaName().toString(), form.getQueryName());
+    }
+
+    public String getBrowseBookmark(String schemaName, String queryName)
+    {
+        return (null != queryName ? PageFlowUtil.encode(schemaName) + "&" + PageFlowUtil.encode(queryName) : PageFlowUtil.encode(schemaName));
+    }
+
     protected void assertQueryExists(QueryForm form) throws ServletException
     {
         if (form.getSchema() == null)
@@ -190,8 +200,9 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             String schemaName = _form.getSchemaName().toString();
+            ActionURL url = new ActionURL(BeginAction.class, _form.getViewContext().getContainer());
             (new QueryControllerSpring.BeginAction()).appendNavTrail(root)
-                .addChild(schemaName + " Schema", actionURL(QueryAction.schema, QueryParam.schemaName, schemaName));
+                .addChild(schemaName + " Schema", url.toString() + "#" + getBrowseBookmark(_form));
             return root;
         }
     }
@@ -1166,7 +1177,10 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(PropertiesForm propertiesForm)
         {
-            return _form.getSchema().urlFor(QueryAction.schema);
+            ActionURL url = new ActionURL(BeginAction.class, propertiesForm.getViewContext().getContainer());
+            url.addParameter("schemaName", propertiesForm.getSchemaName());
+            url.addParameter("queryName", propertiesForm.getQueryName());
+            return url;
         }
 
         public NavTree appendNavTrail(NavTree root)

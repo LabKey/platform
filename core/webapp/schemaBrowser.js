@@ -84,7 +84,7 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
 Ext.reg('labkey-query-tree-panel', LABKEY.ext.QueryTreePanel);
 
 LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
-    colspan : 7,
+    colspan : 7, //number of columns in the column details table (used for cells that need to span the whole row)
 
     initComponent : function() {
         this.addEvents("lookupclick");
@@ -485,6 +485,31 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         this.addEvents("schemasloaded");
 
         LABKEY.ext.SchemaBrowser.superclass.initComponent.apply(this, arguments);
+        if (this.useHistory)
+        {
+            Ext.History.init();
+            Ext.History.on('change', this.onHistoryChange, this);
+        }
+    },
+
+    onHistoryChange : function(token) {
+        if (!token)
+            return;
+        var tokenMap = this.parseHistoryToken(token);
+        if (tokenMap)
+            this.selectQuery(tokenMap.schemaName, tokenMap.queryName);
+    },
+
+    getHistoryToken : function(schemaName, queryName) {
+        return encodeURIComponent(schemaName) + "&" + encodeURIComponent(queryName);
+    },
+
+    parseHistoryToken : function(token) {
+        var parts = token.split('&');
+        if (parts.length == 2)
+            return {schemaName: decodeURIComponent(parts[0]), queryName: decodeURIComponent(parts[1])};
+        else
+            return null;
     },
 
     resizeToViewport : function(w,h) {
@@ -554,6 +579,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             });
             tabs.add(qdetailsPanel).show();
         }
+        Ext.History.add(this.getHistoryToken(schemaName, queryName));
     },
 
     onSchemaAdminClick : function() {

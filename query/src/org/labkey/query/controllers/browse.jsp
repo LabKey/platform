@@ -33,6 +33,7 @@
         renderTo: 'browser',
         height: 600,
         width: 900,
+        useHistory: true,
         listeners: {
             schemasloaded: {
                 fn: onSchemasLoaded,
@@ -50,5 +51,14 @@
             browser.selectQuery(schemaName, queryName);
         else if (schemaName)
             browser.selectSchema(schemaName, queryName);
+
+        if (window.location.hash && window.location.hash.length > 1)
+            browser.onHistoryChange(window.location.hash.substring(1));
     }
 </script>
+
+<!-- Fields required for history management -->
+<form id="history-form" class="x-hidden">
+    <input type="hidden" id="x-history-field" />
+    <iframe id="x-history-frame"></iframe>
+</form>
