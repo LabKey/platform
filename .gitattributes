@@ -1768,6 +1768,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -tex
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RangeValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RegexValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RequiredItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/URLItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ValidatorItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/reports/AbstractChartPanel.java -text

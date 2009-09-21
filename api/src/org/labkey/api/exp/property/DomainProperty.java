@@ -22,7 +22,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 
 import java.util.Set;
 
@@ -36,7 +35,6 @@ public interface DomainProperty
     String getDescription();
     String getFormatString();
     String getLabel();
-    ActionURL detailsURL();
     
     Domain getDomain();
     IPropertyType getType();
@@ -56,8 +54,11 @@ public interface DomainProperty
     void setRequired(boolean b);
     void setHidden(boolean hidden);
     void setMvEnabled(boolean mv);
+
     void setImportAliasSet(Set<String> aliases);
     Set<String> getImportAliasSet();
+    void setURL(String url);
+    String getURL();
 
     DefaultValueType getDefaultValueTypeEnum();
 

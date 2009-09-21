@@ -258,4 +258,15 @@ public class StringExpressionFactory
             out.write(eval(context));
         }
     }
+
+    public static class Converter implements org.apache.commons.beanutils.Converter
+    {
+        public Object convert(Class type, Object value)
+        {
+            if (value == null || value instanceof StringExpression)
+                return value;
+
+            return StringExpressionFactory.create(String.valueOf(value));
+        }
+    }
 }

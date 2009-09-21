@@ -16,29 +16,30 @@
 package org.labkey.api.exp.property;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
-import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringExpression;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.sql.SQLException;
-import java.sql.ResultSet;
 
 /**
  * User: jgarms
@@ -180,6 +181,8 @@ public class DomainUtil
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
+        StringExpression url = prop.getPropertyDescriptor().getURL();
+        gwtProp.setURL(url == null ? null : url.toString());
 
         List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
         for (IPropertyValidator pv : prop.getValidators())

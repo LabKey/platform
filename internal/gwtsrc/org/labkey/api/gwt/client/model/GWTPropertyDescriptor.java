@@ -56,6 +56,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty defaultDisplayValue = new StringProperty("[none]");
     private BooleanProperty mvEnabled = new BooleanProperty(false);
     private StringProperty importAliases = new StringProperty();
+    private StringProperty url = new StringProperty();
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
 
@@ -86,6 +87,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDefaultValue(s.getDefaultValue());
         setDefaultDisplayValue(s.getDefaultDisplayValue());
         setImportAliases(s.getImportAliases());
+        setURL(s.getURL());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -421,6 +423,16 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setImportAliases(String importAliases)
     {
         this.importAliases.set(importAliases);
+    }
+
+    public String getURL()
+    {
+        return url.toString();
+    }
+
+    public void setURL(String url)
+    {
+        this.url.set(url);
     }
 
     public String getLookupDescription()

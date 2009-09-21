@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.StringExpression;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -59,7 +60,7 @@ public class Parameter
         assert !(value instanceof File || value instanceof MultipartFile);
 
         _value = value;
-        if (value == null && sqlType == Types.JAVA_OBJECT)
+        if ((value == null || value instanceof StringExpression) && sqlType == Types.JAVA_OBJECT)
         {
             sqlType = Types.VARCHAR;
         }
@@ -174,6 +175,8 @@ public class Parameter
             else
                 return _value.toString();
         }
+        else if (_value instanceof StringExpression)
+            return ((StringExpression)_value).getSource();
         else if (_value.getClass() == Container.class)
             return ((Container) _value).getId();
         else if (_value instanceof Enum)

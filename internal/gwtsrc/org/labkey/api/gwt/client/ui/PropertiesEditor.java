@@ -271,6 +271,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, basicPropertyPane);
         basicPropertyPane.addItem(_defaultValueSelector);
         basicPropertyPane.addItem(new ImportAliasesItem<DomainType, FieldType>(basicPropertyPane));
+        basicPropertyPane.addItem(new URLItem<DomainType, FieldType>(basicPropertyPane));
 
         PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
         validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(basicPropertyPane));

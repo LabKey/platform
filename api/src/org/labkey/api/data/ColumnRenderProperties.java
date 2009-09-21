@@ -15,6 +15,9 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+
 /**
  * User: matthewb
  * Date: Jul 21, 2008
@@ -38,6 +41,7 @@ public class ColumnRenderProperties
     protected String name;
     protected String description;
     protected boolean hidden;
+    protected StringExpression url;
 
     public void copyTo(ColumnRenderProperties to)
     {
@@ -171,5 +175,20 @@ public class ColumnRenderProperties
     public void setHidden(boolean hidden)
     {
         this.hidden = hidden;
+    }
+
+    public StringExpression getURL()
+    {
+        return this.url;
+    }
+
+    public void setURL(String url)
+    {
+        this.url = StringExpressionFactory.create(url);
+    }
+
+    public void setURL(StringExpression url)
+    {
+        this.url = url;
     }
 }

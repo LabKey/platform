@@ -35,9 +35,9 @@ import java.beans.PropertyEditorSupport;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.HashSet;
-import java.text.ParseException;
 
 
 public class ConvertHelper implements PropertyEditorRegistrar
@@ -116,6 +116,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new DateFriendlyStringConverter()), String.class);
         _register(new StringArrayConverter(), String[].class);
         _register(new URLHelper.Converter(), URLHelper.class);
+        _register(new StringExpressionFactory.Converter(), StringExpression.class);
         _register(new LenientTimeOnlyConverter(), TimeOnlyDate.class);
     }
 

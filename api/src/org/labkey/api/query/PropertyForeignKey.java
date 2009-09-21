@@ -220,6 +220,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
             column.setFormatString(pd.getFormat());
         column.setNullable(!pd.isRequired());
         column.setHidden(pd.isHidden());
+        column.setURL(pd.getURL());
         column.setSqlTypeName(CoreSchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getPropertyType().getSqlType()));
         column.setDescription(pd.getDescription());
         column.setFk(new PdLookupForeignKey(user, pd));

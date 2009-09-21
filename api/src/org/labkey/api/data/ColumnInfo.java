@@ -19,11 +19,10 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
@@ -53,7 +52,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String cssClass;
     private String cssStyle;
     private ForeignKey fk = null;
-    private StringExpression url = null;
     private String defaultValue = null;
     private String autoFillValue = null;
     private int scale = 0;
@@ -571,23 +569,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public StringExpression getURL()
     {
-        if (this.url != null)
-            return this.url;
+        StringExpression result = super.getURL();
+        if (result != null)
+            return result;
         ForeignKey fk = getFk();
         if (fk == null)
             return null;
 
         return fk.getURL(this);
-    }
-
-    public void setURL(String url)
-    {
-        this.url = StringExpressionFactory.create(url, true);
-    }
-
-    public void setURL(StringExpression expr)
-    {
-        this.url = expr;
     }
 
     public void copyToXml(ColumnType xmlCol, boolean full)
