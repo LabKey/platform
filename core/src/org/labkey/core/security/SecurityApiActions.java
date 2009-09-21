@@ -927,6 +927,64 @@ public class SecurityApiActions
         }
     }
 
+    public static class RenameForm
+    {
+        private int _id = -1;
+        private HString _newName;
+
+        public int getId()
+        {
+            return _id;
+        }
+
+        public void setId(int id)
+        {
+            _id = id;
+        }
+
+        public HString getNewName()
+        {
+            return _newName;
+        }
+
+        public void setNewName(HString newName)
+        {
+            _newName = newName;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class RenameGroupAction extends MutatingApiAction<RenameForm>
+    {
+        public ApiResponse execute(RenameForm form, BindException errors) throws Exception
+        {
+            if(form.getId() < 0)
+                throw new IllegalArgumentException("You must specify an id parameter!");
+
+            Group group = SecurityManager.getGroup(form.getId());
+            Container c = getViewContext().getContainer();
+            if (null == group || (c.isRoot() && null != group.getContainer()) || (!c.isRoot() && !getViewContext().getContainer().getId().equals(group.getContainer())))
+                throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
+
+            String oldName = group.getName();
+            SecurityManager.renameGroup(group, form.getNewName().toString(), getViewContext().getUser());
+            writeToAuditLog(group, oldName);
+            
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("renamed", group.getUserId());
+            resp.put("oldName", oldName);
+            resp.put("newName", group.getName());
+            return resp;
+        }
+
+        public void writeToAuditLog(Group group, String oldName)
+        {
+            AuditLogService.get().addEvent(getViewContext(), GroupManager.GROUP_AUDIT_EVENT, group.getName(),
+                    "The security group named '" + oldName + "' was renamed to '" + group.getName() + "'.");
+
+        }
+    }
+
     public static class GroupMemberForm
     {
         private int _groupId = -1;
