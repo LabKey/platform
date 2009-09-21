@@ -92,7 +92,7 @@ var f = new LABKEY.ext.FormPanel({
             {name:'@editable', xtype:'hidden'},
             metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', xtype:'textarea', value:<%=PageFlowUtil.jsString(def.getMetaData())%>})
         ],
-        buttons:[{text:'<%=(bean.isInsert()? "Create" : "Update")%>', type:'submit', handler:function() {f.getForm().submit();}}, {text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
+        buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:function() {f.getForm().submit();}}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
         buttonAlign:'left'
     });
 

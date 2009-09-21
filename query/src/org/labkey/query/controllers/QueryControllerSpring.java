@@ -2112,7 +2112,7 @@ public class QueryControllerSpring extends SpringActionController
 
     
     @RequiresSiteAdmin
-    public class AdminNewDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
+    public class InsertExternalSchemaAction extends FormViewAction<DbUserSchemaForm>
     {
         public void validateCommand(DbUserSchemaForm form, Errors errors)
         {
@@ -2228,66 +2228,15 @@ public class QueryControllerSpring extends SpringActionController
         {
             return new ActionURL(AdminAction.class, _c);
         }
-    }
 
-
-    @Deprecated // TODO: Delete this
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class AdminEditDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
-    {
-		public void validateCommand(DbUserSchemaForm form, Errors errors)
-		{
-			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
-			if (i.isTainted())
-				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters and Underscores");
-		}
-
-        public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ActionURL getDeleteURL()
         {
-            UpdateView view = new UpdateView(form, errors);
-            ButtonBar bb = new ButtonBar();
-            bb.add(new ActionButton("adminEditDbUserSchema.post", "Update"));
-            bb.add(new ActionButton("Cancel", getSuccessURL(form)));
-            ActionURL urlDelete = new ActionURL(AdminDeleteDbUserSchemaAction.class, getContainer());
-            urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
-            bb.add(new ActionButton("Delete", urlDelete));
-            view.getDataRegion().setButtonBar(bb);
-            view.getDataRegion().removeColumns("DbContainer", "DbUserSchemaId");
-            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
-
-            HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
-
-            return new VBox(view, help);
-        }
-
-        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
-        {
-            DbUserSchemaDef def = form.getBean();
-            String container = def.getDbContainer();
-            Container c = ContainerManager.getForId(container);
-            if (c == null)
-            {
-                c = ContainerManager.getForPath(container);
-                if (null != c)
-                    def.setDbContainer(c.getId());
-            }
-            form.doUpdate();
-            return true;
-        }
-
-        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
-        {
-            return actionURL(QueryAction.admin);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            new AdminAction().appendNavTrail(root);
-            root.addChild("Edit Schema", actionURL(QueryAction.adminNewDbUserSchema));
-            return root;
+            return getDeleteExternalSchemaURL(_c, _def.getDbUserSchemaId());
         }
     }
 
+
+    // TODO: Add help info: HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
 
     @RequiresPermission(ACL.PERM_ADMIN)
     public class EditExternalSchemaAction extends FormViewAction<DbUserSchemaForm>
@@ -2301,9 +2250,8 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
-            // TODO: Get def directly from form?
-            DbUserSchemaDef def = QueryManager.get().getDbUserSchemaDef(form.getBean().getDbUserSchemaId());
-
+            form.refreshFromDb();
+            DbUserSchemaDef def = form.getBean();
             Container defContainer = ContainerManager.getForId(def.getContainerId());
 
             if (!defContainer.equals(getContainer()))
@@ -2311,22 +2259,7 @@ public class QueryControllerSpring extends SpringActionController
 
             setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
             return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false));
-/*
-            UpdateView view = new UpdateView(form, errors);
-            ButtonBar bb = new ButtonBar();
-            bb.add(new ActionButton("adminEditDbUserSchema.post", "Update"));
-            bb.add(new ActionButton("Cancel", getSuccessURL(form)));
-            ActionURL urlDelete = new ActionURL(AdminDeleteDbUserSchemaAction.class, getContainer());
-            urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
-            bb.add(new ActionButton("Delete", urlDelete));
-            view.getDataRegion().setButtonBar(bb);
-            view.getDataRegion().removeColumns("DbContainer", "DbUserSchemaId");
-            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
-
-            HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
-
-            return new VBox(view, help);
-*/        }
+        }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
         {
@@ -2357,8 +2290,16 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
+    public static ActionURL getDeleteExternalSchemaURL(Container c, int schemaId)
+    {
+        ActionURL url = new ActionURL(DeleteExternalSchemaAction.class, c);
+        url.addParameter("dbUserSchemaId", schemaId);
+        return url;
+    }
+
+
     @RequiresSiteAdmin
-    public class AdminDeleteDbUserSchemaAction extends ConfirmAction<DbUserSchemaForm>
+    public class DeleteExternalSchemaAction extends ConfirmAction<DbUserSchemaForm>
     {
         public String getConfirmText()
         {
@@ -2797,7 +2738,6 @@ public class QueryControllerSpring extends SpringActionController
                     selection, form.isChecked());
             return new SelectionResponse(count);
         }
-
     }
 
     public static class SetCheckForm extends SelectForm

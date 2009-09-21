@@ -64,4 +64,4 @@ if (null != StringUtils.trimToNull(reloadedSchema))
     </table>
 <% } %>
 <br>
-<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL(QueryControllerSpring.AdminNewDbUserSchemaAction.class, getContainer())%>" text="define new schema"/><%}%>
+<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL(QueryControllerSpring.InsertExternalSchemaAction.class, getContainer())%>" text="define new schema"/><%}%>
