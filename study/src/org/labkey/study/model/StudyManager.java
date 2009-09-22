@@ -531,7 +531,7 @@ public class StudyManager
                 if (showCohorts(study.getContainer(), user))
                     filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
             }
-            return _visitHelper.get(study.getContainer(), filter, order.getSortColumn() + ",SequenceNumMin");
+            return _visitHelper.get(study.getContainer(), filter, order.getSortColumns());
         }
         catch (SQLException x)
         {
