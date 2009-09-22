@@ -99,7 +99,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         Set<String> filenames = _module.getSqlScripts(schemaName, CoreSchema.getInstance().getSqlDialect());
 
         // Every script directory should have at least one script... but don't fail in production mode.
-        assert !filenames.isEmpty() : "No SQL scripts found for schema \"" + schemaName + "\" in module \"" + _module.getName() + "\"";
+        assert !filenames.isEmpty() : "No SQL scripts found " + (null != schemaName ? "for schema \"" + schemaName + "\" " : "") + "in module \"" + _module.getName() + "\"";
 
         return filenames;
     }

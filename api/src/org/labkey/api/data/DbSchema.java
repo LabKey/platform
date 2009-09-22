@@ -29,7 +29,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
@@ -60,10 +59,10 @@ public class DbSchema
 
     public static DbSchema get(String schemaName)
     {
-        return get(schemaName, "dbschema");
+        return get(schemaName, DbScope.getLabkeyScope());
     }
 
-    protected static DbSchema get(String schemaName, String jndiEnvironmentName)
+    protected static DbSchema get(String schemaName, DbScope scope)
     {
         // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
         // load process directly or indirectly causing another call to this method.)
@@ -99,7 +98,7 @@ public class DbSchema
                         return schema;
                 }
 
-                schema = createFromMetaData(schemaName, jndiEnvironmentName);
+                schema = createFromMetaData(schemaName, scope);
 
                 if (null != schema)
                 {
@@ -143,7 +142,7 @@ public class DbSchema
         Module module = getModuleForSchemaName(schemaName);
         if (null == module)
         {
-            _log.info("no module for schema '" + schemaName + "'");
+            _log.debug("no module for schema '" + schemaName + "'");
             return null;
         }
         return module.getResourceStream("/schemas/" + schemaName + ".xml");
@@ -155,7 +154,7 @@ public class DbSchema
         Module module = getModuleForSchemaName(schemaName);
         if (null == module)
         {
-            _log.info("no module for schema '" + schemaName + "'");
+            _log.debug("no module for schema '" + schemaName + "'");
             return null;
         }
         return module.getResourceStreamIfChanged("/schemas/" + schemaName + ".xml", tsPrevious);
@@ -168,126 +167,17 @@ public class DbSchema
     }
 
 
-    private static Properties getDbSchemaProperties(String jndiName)
-    {
-        Properties result = new Properties();
-
-        try
-        {
-            InitialContext ctx = new InitialContext();
-            Context envCtx = (Context) ctx.lookup("java:comp/env");
-            CompositeName rootName = new CompositeName(jndiName);
-            NamingEnumeration<NameClassPair> e = envCtx.list(rootName);
-
-            while (e.hasMoreElements())
-            {
-                NameClassPair pair = e.next();
-                String key = pair.getName();
-                String schemaInfo = (String) envCtx.lookup(jndiName + "/" + key);
-                result.setProperty(key, schemaInfo);
-            }
-        }
-        catch (NamingException e)
-        {
-            _log.error("Problem getting dbschemas out of JNDI", e);
-        }
-
-        return result;
-    }
-
-    public static DbSchema getDbSchema(String catalog, String owner)
-    {
-        Properties props = getDbSchemaProperties("dbschema");
-        String schemaInfo;
-        String [] schemaStrings;
-        String catalogName = null;
-        String ownerName = "dbo";
-        String key;
-
-        for (Object o : props.keySet())
-        {
-            key = (String) o;
-            schemaInfo = (String) props.get(key);
-            schemaStrings = schemaInfo.split(",");
-
-            if (schemaStrings.length > 1 && schemaStrings[1].trim().length() > 0)
-                catalogName = schemaStrings[1].trim();
-
-            if (schemaStrings.length > 2 && schemaStrings[2].trim().length() > 0)
-                ownerName = schemaStrings[2].trim();
-
-            if (catalog.equals(catalogName) && owner.equals(ownerName))
-                return get(key);
-        }
-
-        return null;
-    }
-
-
     public static DbSchema createFromMetaData(String dbSchemaName) throws SQLException, NamingException, ServletException
     {
-        return createFromMetaData(dbSchemaName, "dbschema");
+        return createFromMetaData(dbSchemaName, DbScope.getLabkeyScope());
     }
 
 
-    protected static DbSchema createFromMetaData(String dbSchemaName, String jndiEnvironmentName) throws SQLException, NamingException, ServletException
+    protected static DbSchema createFromMetaData(String dbSchemaName, DbScope scope) throws SQLException, NamingException, ServletException
     {
-        DbSchema dbSchema;
-        Properties props = getDbSchemaProperties(jndiEnvironmentName);
+        String ownerName = dbSchemaName;  // TODO: Get rid of this
 
-        if (props.isEmpty())
-            throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiEnvironmentName + "' is not properly configured in labkey.xml.");
-
-        String schemaInfo = props.getProperty(dbSchemaName);
-
-        if (null == schemaInfo)
-        {
-            String defaultDsName = props.getProperty("--default--");
-
-            if (null == defaultDsName)
-                throw new ConfigurationException("Schema '" + dbSchemaName + "' using JNDI name '" + jndiEnvironmentName + "' is not properly configured in labkey.xml.");
-
-            schemaInfo = defaultDsName + "," + dbSchemaName;
-        }
-
-        String[] schemaStrings = schemaInfo.split(",");
-        String dsName = schemaStrings[0];
-        String ownerName = "dbo";
-        DbScope scope;
-
-        try
-        {
-            scope = DbScope.getDbScope(dsName);
-        }
-        catch (NamingException e)
-        {
-            throw new ConfigurationException("DataSource '" + dsName + "' is not properly configured in labkey.xml.", e);
-        }
-
-        String dbName = scope.getDatabaseName();
-
-        // Support old format that included catalog
-        if (3 == schemaStrings.length)
-        {
-            String catalogName = schemaStrings[1].trim();
-            ownerName = schemaStrings[2].trim();
-
-            if (!dbName.equalsIgnoreCase(catalogName))
-            {
-                String error = "Catalog name \"" + catalogName + "\" specified in \"" + dbSchemaName + "\" configuration doesn't match database name \"" + dbName + "\" specified in the corresponding datasource \"" + dsName + "\".\n";
-                error = error + "This mismatch means meta data will be read from one database and all database operations will be directed to a different database.  Review your settings in " + AppProps.getInstance().getWebappConfigurationFilename() + ".";
-                throw new ServletException(error);
-            }
-        }
-
-        // New format doesn't specify catalog
-        if (2 == schemaStrings.length)
-        {
-            ownerName = schemaStrings[1].trim();
-        }
-
-        dbSchema = createFromMetaData(dbSchemaName, scope, ownerName);
-        return dbSchema;
+        return createFromMetaData(dbSchemaName, scope, ownerName);
     }
 
     public static DbSchema createFromMetaData(String name, DbScope scope, String owner) throws SQLException, SqlDialect.SqlDialectNotSupportedException

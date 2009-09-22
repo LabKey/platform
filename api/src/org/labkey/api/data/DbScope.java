@@ -16,10 +16,8 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.util.ConfigurationException;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.lang.ref.Reference;
@@ -43,6 +41,7 @@ public class DbScope
     private static final Logger _log = Logger.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<String, DbScope>();
+    private static DbScope _labkeyScope = null;
 
     private String _jndiName;
     private DataSource _dataSource;
@@ -68,12 +67,6 @@ public class DbScope
 
     protected DbScope()
     {
-    }
-
-
-    DbScope(String jndiName) throws NamingException, ServletException, SQLException
-    {
-        this(jndiName, getDataSourceFromJNDI(jndiName));
     }
 
 
@@ -120,14 +113,6 @@ public class DbScope
         }
     }
 
-
-    private static DataSource getDataSourceFromJNDI(String dsName) throws NamingException
-    {
-        InitialContext ctx = new InitialContext();
-        Context envCtx = (Context) ctx.lookup("java:comp/env");
-
-        return (DataSource) envCtx.lookup(dsName);
-    }
 
     public String getJndiName()
     {
@@ -440,22 +425,47 @@ public class DbScope
         });
     }
 
-    // TODO: Make this package and pass datasource name into DbSchema.createFromMetaData()?
-    public static DbScope getDbScope(String dsName) throws NamingException, ServletException, SQLException
-    {
-        DbScope scope;
 
+    public static void initializeScopes(Collection<DbScope> scopes) throws ConfigurationException
+    {
         synchronized (_scopes)
         {
-            scope = _scopes.get(dsName);
-            if (null == scope)
-            {
-                scope = new DbScope(dsName);
-                _scopes.put(dsName, scope);
-            }
-        }
+            if (!_scopes.isEmpty())
+                throw new IllegalStateException("DbScopes are already initialized");
 
-        return scope;
+            for (DbScope scope : scopes)
+                _scopes.put(scope.getJndiName(), scope);
+
+            _labkeyScope = _scopes.get("labkeyDataSource");
+
+            if (null == _labkeyScope)
+                _labkeyScope = _scopes.get("cpasDataSource");
+
+            if (null == _labkeyScope)
+                throw new ConfigurationException("You must have a labkeyDataSource defined in labkey.xml");
+        }
+    }
+
+
+    public static DbScope getLabkeyScope()
+    {
+        synchronized (_scopes)
+        {
+            return _labkeyScope;
+        }
+    }
+
+
+    public static DbScope getDbScope(String dsName)
+    {
+        synchronized (_scopes)
+        {
+            // TODO: Temp hack
+            if (dsName.startsWith("jdbc/"))
+                dsName = dsName.substring(5);
+            
+            return _scopes.get(dsName);
+        }
     }
 
     public static Collection<DbScope> getDbScopes()

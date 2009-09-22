@@ -36,7 +36,7 @@ import java.util.TreeMap;
  */
 public class TableXmlUtils
 {
-    private static Logger _log = Logger.getLogger(TableXmlUtils.class);
+    private static final Logger _log = Logger.getLogger(TableXmlUtils.class);
 
     public static TablesDocument getXmlDocumentFromMetaData(String dbSchemaName, boolean bFull) throws Exception
     {
@@ -53,7 +53,8 @@ public class TableXmlUtils
         return xmlTablesDoc;
     }
 
-    public static void loadMapsFromTableXml(String dbSchemaName, Map tableNameMap, Map columnNameMap)
+    // Unused: TODO: Delete?
+    public static void loadMapsFromTableXml(String dbSchemaName, Map<String, String> tableNameMap, Map<String, String> columnNameMap)
     {
         InputStream xmlStream = null;
 
@@ -73,13 +74,13 @@ public class TableXmlUtils
             TableType[] ts = tablesDoc.getTables().getTableArray();
             ColumnType[] cs;
 
-            Map ttempMap = new CaseInsensitiveHashMap(ts.length);
-            Map ctempMap;
+            Map<String, String> ttempMap = new CaseInsensitiveHashMap<String>(ts.length);
+            Map<String, String> ctempMap;
             for (TableType t : ts)
             {
                 ttempMap.put(t.getTableName(), t.getTableName());
                 cs = t.getColumns().getColumnArray();
-                ctempMap = new CaseInsensitiveHashMap(cs.length);
+                ctempMap = new CaseInsensitiveHashMap<String>(cs.length);
                 for (ColumnType c : cs)
                     ctempMap.put(c.getColumnName(), c.getColumnName());
 

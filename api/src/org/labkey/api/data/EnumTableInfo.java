@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.ExprColumn;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
 import java.sql.Types;
@@ -74,6 +75,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         setName(e.getSimpleName());
     }
 
+    @Override @NotNull
     public SQLFragment getFromSQL()
     {
         SQLFragment sql = new SQLFragment();

@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.FilteredTable;
+import org.jetbrains.annotations.NotNull;
 /*
  * User: brittp
  * Date: Mar 15, 2009
@@ -35,7 +36,7 @@ public class ProtocolFilteredObjectTable extends FilteredTable
         _protocolLsid = protocolLsid;
     }
 
-    @Override
+    @Override @NotNull
     public SQLFragment getFromSQL()
     {
         SQLFragment fromSQL = new SQLFragment("(");

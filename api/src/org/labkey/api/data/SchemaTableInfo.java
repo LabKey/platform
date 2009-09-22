@@ -27,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -102,6 +103,7 @@ public class SchemaTableInfo implements TableInfo
     }
 
 
+    @NotNull
     public SQLFragment getFromSQL()
     {
         return new SQLFragment().append("SELECT * FROM ").append(selectName);

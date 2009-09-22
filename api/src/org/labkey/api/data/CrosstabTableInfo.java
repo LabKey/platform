@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Types;
 import java.util.*;
@@ -465,6 +466,7 @@ public class CrosstabTableInfo extends VirtualTable
      *
      * @return The FROM clause
      */
+    @Override @NotNull
     public SQLFragment getFromSQL()
     {
         assert null != getColMembers();

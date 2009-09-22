@@ -411,6 +411,7 @@ public class ModuleLoader implements Filter
             InitialContext ctx = new InitialContext();
             Context envCtx = (Context) ctx.lookup("java:comp/env");
             NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
+            Collection<DbScope> scopes = new LinkedList<DbScope>();
 
             while (iter.hasMore())
             {
@@ -418,12 +419,22 @@ public class ModuleLoader implements Filter
                 String dsName = o.getName();
                 DataSource ds = (DataSource) o.getObject();
                 ensureDataBase(ds, dsName);
+                scopes.add(new DbScope(dsName, ds));
             }
+
+            DbScope.initializeScopes(scopes);
         }
         catch (NamingException e)
         {
             _log.error("ensureDatabases", e);
         }
+        catch (SQLException e)
+        {
+            _log.error("ensureDatabases", e);
+        }
+
+//            throw new ConfigurationException("DataSource '" + dsName + "' is not properly configured in labkey.xml.", e);
+
     }
 
 

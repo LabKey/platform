@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.AliasedColumn;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -61,6 +62,7 @@ public class GroupTableInfo extends VirtualTable
         this(source, filter, Arrays.asList(groupByCols), Arrays.asList(measures));
     }
 
+    @Override @NotNull
     public SQLFragment getFromSQL()
     {
         SQLFragment sql = new SQLFragment("SELECT ");

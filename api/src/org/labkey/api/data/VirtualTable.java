@@ -16,12 +16,16 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+
 public class VirtualTable extends AbstractTableInfo
 {
     public VirtualTable(DbSchema schema)
     {
         super(schema);
     }
+
+    @NotNull
     public SQLFragment getFromSQL()
     {
         throw new UnsupportedOperationException();

@@ -593,7 +593,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 org.labkey.data.xml.ColumnType.Fk xmlFk = xmlCol.addNewFk();
                 xmlFk.setFkColumnName(sfk._lookupKey);
                 xmlFk.setFkTable(sfk._tableName);
-                DbSchema fkDbOwnerSchema = DbSchema.getDbSchema(sfk._dbSchemaName, sfk._ownerName);
+                DbSchema fkDbOwnerSchema = DbSchema.get(sfk._dbSchemaName, sfk.getLookupTableInfo().getSchema().getScope());
 
                 if (null==fkDbOwnerSchema)
                 {
