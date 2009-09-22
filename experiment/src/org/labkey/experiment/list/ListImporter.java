@@ -55,6 +55,11 @@ public class ListImporter implements ExternalStudyImporter
         }
     }
 
+    public void postProcess(StudyContext ctx, File root) throws Exception
+    {
+        //nothing for now
+    }
+
     public static class Factory implements ExternalStudyImporterFactory
     {
         public ExternalStudyImporter create()

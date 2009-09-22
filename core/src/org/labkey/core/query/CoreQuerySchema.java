@@ -44,7 +44,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String SITE_USERS_TABLE_NAME = "SiteUsers";
     public static final String PRINCIPALS_TABLE_NAME = "Principals";
     public static final String MEMBERS_TABLE_NAME = "Members";
-    public static final String SCHEMA_DESCR = "Contain data about the system users and groups.";
+    public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
 
     public CoreQuerySchema(User user, Container c)
     {

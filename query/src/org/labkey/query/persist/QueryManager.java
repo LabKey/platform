@@ -18,10 +18,10 @@ package org.labkey.query.persist;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.query.view.DbUserSchema;
 
 import java.beans.PropertyChangeEvent;
@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -435,4 +436,45 @@ public class QueryManager
         }
 
     };
+
+    public void validateQuery(String schemaName, String queryName, User user, Container container) throws SQLException, QueryParseException
+    {
+        validateQuery(schemaName, queryName, user, container, true);
+    }
+
+    public void validateQuery(String schemaName, String queryName, User user, Container container, boolean testAllColumns) throws SQLException, QueryParseException
+    {
+        UserSchema schema = (UserSchema) DefaultSchema.get(user, container).getSchema(schemaName);
+        if (null == schema)
+            throw new IllegalArgumentException("Could not find the schema '" + schemaName + "'!");
+
+        TableInfo table = schema.getTable(queryName);
+        if (null == table)
+            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaName + "'!");
+
+        //get the set of columns
+        List<ColumnInfo> cols = null;
+        if (testAllColumns)
+        {
+            List<FieldKey> defVisCols = table.getDefaultVisibleColumns();
+            Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(table, defVisCols);
+            cols = new ArrayList<ColumnInfo>(colMap.values());
+        }
+
+        //try to execute it with a rowcount of 0 (will throw SQLException to client if it fails
+        Table.TableResultSet results = null;
+        try
+        {
+            //use selectForDisplay to mimic the behavior one would get in the UI
+            if (testAllColumns)
+                results = Table.selectForDisplay(table, Table.ALL_COLUMNS, null, null, 0, 0);
+            else
+                results = Table.selectForDisplay(table, cols, null, null, 0, 0);
+        }
+        finally
+        {
+            ResultSetUtil.close(results);
+        }
+
+    }
 }

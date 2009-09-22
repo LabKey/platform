@@ -16,13 +16,16 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.query.*;
 import org.labkey.api.study.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.User;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.query.persist.QueryManager;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -113,6 +116,39 @@ public class QueryImporter implements ExternalStudyImporter
 
             // TODO: As a check, remove meta data files from map on each save and check for map.size == 0
         }
+    }
+
+    public void postProcess(StudyContext ctx, File root) throws Exception
+    {
+        //validate all queries in all schemas in the container
+        ctx.getLogger().info("Validating all queries in all schemas...");
+        Container container = ctx.getContainer();
+        User user = ctx.getUser();
+        DefaultSchema defSchema = DefaultSchema.get(user, container);
+        QueryManager mgr = QueryManager.get();
+
+        for (String sname : defSchema.getUserSchemaNames())
+        {
+            QuerySchema qschema = defSchema.getSchema(sname);
+            if (!(qschema instanceof UserSchema))
+                continue;
+            UserSchema uschema = (UserSchema)qschema;
+            for (String qname : uschema.getTableAndQueryNames(true))
+            {
+                ctx.getLogger().info("Validating query " + sname + "." + qname + "...");
+
+                try
+                {
+                    mgr.validateQuery(sname, qname, user, container);
+                }
+                catch(Exception e)
+                {
+                    ctx.getLogger().warn("VALIDATION ERROR: Query " + sname + "." + qname + " failed validation!", e);
+                }
+            }
+        }
+
+        ctx.getLogger().info("Finished validating queries.");
     }
 
     public static class Factory implements ExternalStudyImporterFactory

@@ -68,3 +68,48 @@
     padding-top: 5px !important;
     padding-bottom: 5px !important;
 }
+
+.lk-sb-button
+{
+    margin: 5px !important;
+}
+
+.lk-vq-status
+{
+    padding: 5px !important;
+    border: 1px solid #AAAAAA !important;
+    background-color: #DDDDDD;
+}
+
+.lk-vq-errors-table
+{
+    border-collapse: collapse;
+    margin-left: 20px !important;
+}
+
+.lk-vq-errors-table th
+{
+    font-weight: bold;
+    padding: 2px;
+    border-bottom: 1px solid #000000;
+}
+
+.lk-vq-errors-table td
+{
+    border-bottom: 1px solid #CCCCCC;
+    padding: 2px 5px 2px 2px;
+    vertical-align: top;
+    background-color: #FFAAAA;
+}
+
+.lk-vq-status-error
+{
+    border: 2px solid #FF5555 !important;
+    background-color: #FFAAAA;
+}
+
+.lk-vq-status-all-ok
+{
+    border: 2px solid #55FF55 !important;
+    background-color: #AAFFAA;
+}

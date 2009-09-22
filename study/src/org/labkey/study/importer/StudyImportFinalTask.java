@@ -63,12 +63,21 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
                 job.info("Done importing " + importer.getDescription());
             }
 
-            for (ExternalStudyImporter importer : StudySerializationRegistryImpl.get().getRegisteredStudyImporters())
+            Collection<ExternalStudyImporter> externalStudyImporters = StudySerializationRegistryImpl.get().getRegisteredStudyImporters();
+            for (ExternalStudyImporter importer : externalStudyImporters)
             {
                 job.info("Importing " + importer.getDescription());
                 job.setStatus("IMPORT " + importer.getDescription());
                 importer.process(support.getImportContext(), support.getRoot());
                 job.info("Done importing " + importer.getDescription());
+            }
+
+            for (ExternalStudyImporter importer : externalStudyImporters)
+            {
+                job.info("Post-processing " + importer.getDescription());
+                job.setStatus("POST-PROCESS " + importer.getDescription());
+                importer.postProcess(support.getImportContext(), support.getRoot());
+                job.info("Done post-processing " + importer.getDescription());
             }
         }
         catch (Exception e)
