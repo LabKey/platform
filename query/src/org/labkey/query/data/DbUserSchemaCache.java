@@ -16,22 +16,25 @@
 
 package org.labkey.query.data;
 
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.query.persist.DbUserSchemaDef;
-import org.labkey.data.xml.TablesDocument;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.query.persist.DbUserSchemaDef;
 
 import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DbUserSchemaCache
 {
-    static private final Logger _log = Logger.getLogger(DbUserSchemaCache.class);
-    static public class DbUserSchemaException extends Exception
+    private static final Logger _log = Logger.getLogger(DbUserSchemaCache.class);
+    private static final DbUserSchemaCache instance = new DbUserSchemaCache();
+
+    private final Map<Integer, SchemaEntry> map = new ConcurrentHashMap<Integer, SchemaEntry>();
+
+    public static class DbUserSchemaException extends Exception
     {
         public DbUserSchemaException(String message, Throwable cause)
         {
@@ -39,15 +42,13 @@ public class DbUserSchemaCache
         }
     }
 
-    static private class SchemaEntry
+    private static class SchemaEntry
     {
         DbUserSchemaDef dbUserSchemaDef;
         DbSchema schema;
     }
-    Map<Integer, SchemaEntry> map = Collections.synchronizedMap(new HashMap());
-    static private DbUserSchemaCache instance = new DbUserSchemaCache();
 
-    static public DbUserSchemaCache get()
+    public static DbUserSchemaCache get()
     {
         return instance;
     }

@@ -8,6 +8,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Types;
 import java.util.List;
@@ -63,6 +64,7 @@ public class DataSetColumnsTable extends FilteredTable
         setDefaultVisibleColumns(defaultCols);
     }
 
+    @Override @NotNull
     public SQLFragment getFromSQL()
     {
         SQLFragment sql = super.getFromSQL();

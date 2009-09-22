@@ -27,7 +27,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.DbUserSchemaTable;
 import org.labkey.query.persist.DbUserSchemaDef;
 
-import javax.naming.NamingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,10 +62,6 @@ public class DbUserSchema extends SimpleModuleUserSchema
                 {
                     DbScope scope = DbScope.getDbScope(def.getDataSource());
                     dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName(), scope, def.getDbSchemaName());
-                }
-                catch (NamingException e)
-                {
-                    throw new RuntimeException(e);  // TODO: Previously used DataSource can't be found -- just log an error?
                 }
                 catch (Exception e)
                 {

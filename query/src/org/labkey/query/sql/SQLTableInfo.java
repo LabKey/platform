@@ -17,11 +17,12 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.*;
+import org.jetbrains.annotations.NotNull;
 
 
 public class SQLTableInfo extends AbstractTableInfo
 {
-    SQLFragment _fromSQL;
+    private SQLFragment _fromSQL;
 
     public SQLTableInfo(DbSchema schema)
     {
@@ -33,6 +34,7 @@ public class SQLTableInfo extends AbstractTableInfo
         return true;
     }
 
+    @NotNull
     public SQLFragment getFromSQL()
     {
         return _fromSQL;

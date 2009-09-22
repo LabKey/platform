@@ -32,6 +32,6 @@ public class SasDbSchema extends DbSchema
 
     public static DbSchema get(String name)
     {
-        return DbSchema.get(name, "sasschema");
+        return DbSchema.get(name, DbScope.getDbScope("sasDataSource"));
     }
 }

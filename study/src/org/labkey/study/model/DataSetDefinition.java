@@ -774,6 +774,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
 
         @Override
+        @NotNull
         public SQLFragment getFromSQL()
         {
             return _fromSql;

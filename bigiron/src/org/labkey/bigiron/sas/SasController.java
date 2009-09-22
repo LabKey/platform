@@ -49,7 +49,7 @@ public class SasController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            DbScope scope = DbScope.getDbScope("jdbc/sasDataSource");
+            DbScope scope = DbScope.getDbScope("sasDataSource");
             Connection con = scope.getConnection();
             DatabaseMetaData dbmd = con.getMetaData();
 

@@ -1,9 +1,8 @@
-<%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
 <%@ page import="org.labkey.query.persist.DbUserSchemaDef" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     QueryControllerSpring.ExternalSchemaBean bean = (QueryControllerSpring.ExternalSchemaBean)HttpView.currentModel();
@@ -22,7 +21,7 @@
 
     if (null == initialScope)
     {
-        initialScope = CoreSchema.getInstance().getSchema().getScope();
+        initialScope = DbScope.getLabkeyScope();
     }
 %>
 
@@ -37,12 +36,12 @@
 <%
     int coreIndex = 0;
     int i = 0;
-    String sep = "        ";
+    String sep = "";
 
     for (DbScope scope : bean.getScopes())
     {
         out.print(sep);
-        out.print("[");
+        out.print("        [");
         out.print("'" + scope.getJndiName() + "', ");
         out.print("'" + getDisplayName(scope.getJndiName()) + "', ");
         out.print(scope.getSqlDialect().isEditable() + ", [");
@@ -61,7 +60,7 @@
         if (scope == initialScope)
             coreIndex = i;
 
-        sep = ",\n" + sep;
+        sep = ",\n";
         i++;
     }
 %>
