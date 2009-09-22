@@ -239,7 +239,10 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setURL(String url)
     {
-        edit().setURL(StringExpressionFactory.createURL(url));
+        if (null == url)
+            edit().setURL(null);
+        else
+            edit().setURL(StringExpressionFactory.createURL(url));
     }
 
     public String getURL()
