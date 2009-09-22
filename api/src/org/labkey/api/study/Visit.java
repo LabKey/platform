@@ -87,20 +87,20 @@ public interface Visit extends StudyEntity
 
     public enum Order
     {
-        CHRONOLOGICAL("ChronologicalOrder"),
-        DISPLAY("DisplayOrder"),
+        CHRONOLOGICAL("ChronologicalOrder,SequenceNumMin"),
+        DISPLAY("DisplayOrder,SequenceNumMin"),
         SEQUENCE_NUM("SequenceNumMin");
 
-        private String _sortColumn;
+        private String _sortColumns;
 
         Order(String sortColumn)
         {
-            _sortColumn = sortColumn;
+            _sortColumns = sortColumn;
         }
 
-        public String getSortColumn()
+        public String getSortColumns()
         {
-            return _sortColumn;
+            return _sortColumns;
         }
     }
 }
