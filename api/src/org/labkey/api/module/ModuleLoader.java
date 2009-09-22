@@ -38,9 +38,6 @@ import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -246,7 +243,7 @@ public class ModuleLoader implements Filter
         File modulesDir = coreModuleDir.getParentFile();
         new BreakpointThread(modulesDir).start();
 
-        ensureDataBases();
+        initializeDataSources();
 
         if (getTableInfoModules().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
             _newInstall = true;
@@ -402,168 +399,39 @@ public class ModuleLoader implements Filter
     // attempt to create the database.
     //
     // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
-    private void ensureDataBases() throws ServletException
+    private void initializeDataSources() throws ServletException
     {
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
+
+        Map<String, DataSource> dataSources = new LinkedHashMap<String, DataSource>();
 
         try
         {
             InitialContext ctx = new InitialContext();
             Context envCtx = (Context) ctx.lookup("java:comp/env");
             NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
-            Collection<DbScope> scopes = new LinkedList<DbScope>();
 
             while (iter.hasMore())
             {
-                Binding o = iter.next();
-                String dsName = o.getName();
-                DataSource ds = (DataSource) o.getObject();
-                ensureDataBase(ds, dsName);
-                scopes.add(new DbScope(dsName, ds));
-            }
-
-            DbScope.initializeScopes(scopes);
-        }
-        catch (NamingException e)
-        {
-            _log.error("ensureDatabases", e);
-        }
-        catch (SQLException e)
-        {
-            _log.error("ensureDatabases", e);
-        }
-
-//            throw new ConfigurationException("DataSource '" + dsName + "' is not properly configured in labkey.xml.", e);
-
-    }
-
-
-    // Ensure we can connect to the specified datasource.  If the connection fails with a "database doesn't exist" exception
-    // then attempt to create the database.  Return true if the database existed, false if it was just created.  Throw if some
-    // other exception occurs (connection fails repeatedly with something other than "database doesn't exist" or database can't
-    // be created.
-    private boolean ensureDataBase(DataSource ds, String dsName) throws ServletException
-    {
-        Connection conn = null;
-        SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(ds);
-
-        // Need the dialect to:
-        // 1) determine whether an exception is "no database" or something else and
-        // 2) get the name of the "master" database
-        //
-        // Only way to get the right dialect is to look up based on the driver class name.
-        SqlDialect dialect = SqlDialect.getFromDataSourceProperties(props);
-
-        SQLException lastException = null;
-
-        // Attempt a connection three times before giving up
-        for (int i = 0; i < 3; i++)
-        {
-            if (i > 0)
-            {
-                _log.error("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
-
                 try
                 {
-                    Thread.sleep(10000);  // Wait 10 seconds before trying again
+                    Binding o = iter.next();
+                    String dsName = o.getName();
+                    DataSource ds = (DataSource) o.getObject();
+                    dataSources.put(dsName, ds);
                 }
-                catch (InterruptedException e)
+                catch (NamingException e)
                 {
-                    _log.error("ensureDataBase", e);
-                }
-            }
-
-            try
-            {
-                // Load the JDBC driver
-                Class.forName(props.getDriverClassName());
-                // Create non-pooled connection... don't want to pool a failed connection
-                conn = DriverManager.getConnection(props.getUrl(), props.getUsername(), props.getPassword());
-                _log.debug("Successful connection to \"" + dsName + "\" at " + props.getUrl());
-                return true;        // Database already exists
-            }
-            catch (SQLException e)
-            {
-                if (dialect.isNoDatabaseException(e))
-                {
-                    createDataBase(props, dialect);
-                    return false;   // Successfully created database
-                }
-                else
-                {
-                    _log.error("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
-                    _log.error("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
-                    lastException = e;
-                }
-            }
-            catch (Exception e)
-            {
-                _log.error("ensureDataBase", e);
-                throw new ServletException("Internal error", e);
-            }
-            finally
-            {
-                try
-                {
-                    if (null != conn) conn.close();
-                }
-                catch (Exception x)
-                {
-                    _log.error("Error closing connection", x);
+                    _log.error("DataSources are not properly configured in labkey.xml.", e);
                 }
             }
         }
-
-        _log.error("Attempted to connect three times... giving up.", lastException);
-        throw new ConfigurationException("Can't connect to datasource \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
-    }
-
-
-    private void createDataBase(SqlDialect.DataSourceProperties props, SqlDialect dialect) throws ServletException
-    {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-
-        String dbName = dialect.getDatabaseName(props.getUrl());
-
-        _log.info("Attempting to create database \"" + dbName + "\"");
-
-        String masterUrl = StringUtils.replace(props.getUrl(), dbName, dialect.getMasterDataBaseName());
-
-        try
+        catch (Exception e)
         {
-            conn = DriverManager.getConnection(masterUrl, props.getUsername(), props.getPassword());
-            // get version specific dialect
-            dialect = SqlDialect.getFromMetaData(conn.getMetaData());
-            stmt = conn.prepareStatement(dialect.getCreateDatabaseSql(dbName));
-            stmt.execute();
-        }
-        catch (SQLException e)
-        {
-            _log.error("createDataBase() failed", e);
-            dialect.handleCreateDatabaseException(e);
-        }
-        finally
-        {
-            try
-            {
-                if (null != conn) conn.close();
-            }
-            catch (Exception x)
-            {
-                _log.error("", x);
-            }
-            try
-            {
-                if (null != stmt) stmt.close();
-            }
-            catch (Exception x)
-            {
-                _log.error("", x);
-            }
+            throw new ConfigurationException("DataSources are not properly configured in labkey.xml.", e);
         }
 
-        _log.info("Database \"" + dbName + "\" created");
+        DbScope.initializeScopes(dataSources);
     }
 
 
