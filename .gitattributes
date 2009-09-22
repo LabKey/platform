@@ -770,6 +770,10 @@ api/src/org/labkey/api/study/query/ResultsQueryView.java -text
 api/src/org/labkey/api/study/query/RunDataLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/query/RunListQueryView.java -text
 api/src/org/labkey/api/study/query/ValidParticipantVisitDisplayColumn.java -text
+api/src/org/labkey/api/study/reports/Crosstab.java -text
+api/src/org/labkey/api/study/reports/CrosstabReport.java -text
+api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
+api/src/org/labkey/api/study/reports/CrosstabView.java -text
 api/src/org/labkey/api/unused/ApplicationContext.java -text
 api/src/org/labkey/api/unused/BasicStatistics.java -text
 api/src/org/labkey/api/unused/PropertyBag.java -text
@@ -860,6 +864,7 @@ api/src/org/labkey/api/view/RequestBasicAuthException.java -text
 api/src/org/labkey/api/view/ServletView.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
+api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabBoxView.java -text
 api/src/org/labkey/api/view/TabStripView.java -text
 api/src/org/labkey/api/view/TermsOfUseException.java -text
@@ -1794,7 +1799,6 @@ internal/src/org/labkey/api/announcements/CommSchema.java -text
 internal/src/org/labkey/api/announcements/DiscussionService.java -text
 internal/src/org/labkey/api/attachments/ImageServlet.java -text
 internal/src/org/labkey/api/data/ButtonBarLineBreak.java -text
-internal/src/org/labkey/api/data/Crosstab.java -text
 internal/src/org/labkey/api/data/DataSourceSessionFactory.archive -text
 internal/src/org/labkey/api/data/DropDownList.java -text
 internal/src/org/labkey/api/data/GroupedResultSet.java -text
@@ -1841,7 +1845,6 @@ internal/src/org/labkey/api/view/JavaScriptFilter.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text
 internal/src/org/labkey/api/view/SiteDownServlet.java -text
 internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
-internal/src/org/labkey/api/view/Stats.java -text
 internal/src/org/labkey/api/view/StatsView.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text

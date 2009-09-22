@@ -23,6 +23,7 @@ import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.RReportBean;
@@ -31,7 +32,11 @@ import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.*;
+import org.labkey.api.study.reports.CrosstabReport;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 
@@ -109,6 +114,8 @@ public class QueryView extends WebPartView<Object>
         {
             if (RReport.TYPE.equals(type)) return true;
             if (QuerySnapshotService.TYPE.equals(type)) return true;
+            if (CrosstabReport.TYPE.equals(type)) return true;
+            if (ChartQueryReport.TYPE.equals(type)) return true;
             return false;
         }
     };

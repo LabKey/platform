@@ -40,4 +40,5 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlManageViewsSummary(Container c);
     ActionURL urlPlotChart(Container c);
     ActionURL urlDeleteReport(Container c);
+    ActionURL urlExportCrosstab(Container c);
 }

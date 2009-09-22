@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.data;
+package org.labkey.api.study.reports;
 
 import jxl.format.Alignment;
 import jxl.format.VerticalAlignment;
@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 import org.labkey.api.arrays.DoubleArray;
+import org.labkey.api.data.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
