@@ -91,7 +91,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         @Override
         protected boolean isDisabledInput()
         {
-            return _property.getPropertyDescriptor().getPropertyType().getJavaType() == File.class;
+            return super.isDisabledInput() || _property.getPropertyDescriptor().getPropertyType().getJavaType() == File.class;
         }
     }
 

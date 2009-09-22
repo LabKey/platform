@@ -327,7 +327,8 @@ public class DataColumn extends DisplayColumn
 
     protected boolean isDisabledInput()
     {
-        return _boundColumn.getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE;
+        return _boundColumn.getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE ||
+                _boundColumn.isReadOnly() || !_boundColumn.isUserEditable();
     }
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException

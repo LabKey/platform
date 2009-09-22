@@ -413,7 +413,8 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
             // find a converter for each column type
             for (ColumnDescriptor column : _columns)
-                column.converter = ConvertUtils.lookup(column.clazz);
+                if (column.converter == null)
+                    column.converter = ConvertUtils.lookup(column.clazz);
         }
 
 

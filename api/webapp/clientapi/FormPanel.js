@@ -277,7 +277,7 @@ LABKEY.ext.FormHelper =
      */
     getFieldEditor : function(config, defaultType)
     {
-        var field = LABKEY.form.FormHelper.getDefaultFieldConfig(config);
+        var field = LABKEY.ext.FormHelper.getFieldEditorConfig(config);
         return Ext.ComponentMgr.create(field, defaultType || 'textfield');
     },
 

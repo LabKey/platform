@@ -110,17 +110,24 @@ public enum CompareType
                 // Each compare type uses CompareClause by default
                 FilterClause createFilterClause(String colName, Object value)
                 {
-                    List<String> values = new ArrayList<String>();
-                    if (value != null && !value.toString().trim().equals(""))
+                    if (value instanceof Collection)
                     {
-                        StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
-                        while (st.hasMoreTokens())
-                        {
-                            String token = st.nextToken().trim();
-                            values.add(token);
-                        }
+                        return new SimpleFilter.InClause(colName, (Collection)value, false);
                     }
-                    return new SimpleFilter.InClause(colName, values, true);
+                    else
+                    {
+                        List<String> values = new ArrayList<String>();
+                        if (value != null && !value.toString().trim().equals(""))
+                        {
+                            StringTokenizer st = new StringTokenizer(value.toString(), ";", false);
+                            while (st.hasMoreTokens())
+                            {
+                                String token = st.nextToken().trim();
+                                values.add(token);
+                            }
+                        }
+                        return new SimpleFilter.InClause(colName, values, true);
+                    }
                 }
             },
     HAS_QC("Has a QC Value", "hasqcvalue", false, null, "QC_VALUE")           // TODO: Switch to MV_INDICATOR
