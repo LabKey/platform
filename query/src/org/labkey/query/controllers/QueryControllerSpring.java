@@ -107,16 +107,31 @@ public class QueryControllerSpring extends SpringActionController
         {
             return new ActionURL(BeginAction.class, c);
         }
-    }
 
-    private ActionURL actionURL(QueryAction action)
-    {
-        return new ActionURL("query", action.name(), getContainer());
-    }
+        public ActionURL urlExternalSchemaAdmin(Container c)
+        {
+            return urlExternalSchemaAdmin(c, null);
+        }
 
-    private ActionURL actionURL(QueryAction action, QueryParam param, String value)
-    {
-        return new ActionURL("query", action.name(), getContainer()).addParameter(param, value);
+        public ActionURL urlExternalSchemaAdmin(Container c, String reloadedSchema)
+        {
+            ActionURL url = new ActionURL(AdminAction.class, c);
+
+            if (null != reloadedSchema)
+                url.addParameter("reloadedSchema", reloadedSchema);
+
+            return url;
+        }
+
+        public ActionURL urlInsertExternalSchema(Container c)
+        {
+            return new ActionURL(InsertExternalSchemaAction.class, c);
+        }
+
+        public ActionURL urlNewQuery(Container c)
+        {
+            return new ActionURL(NewQueryAction.class, c);
+        }
     }
 
     protected boolean queryExists(QueryForm form)
@@ -166,7 +181,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Query Schema Browser", actionURL(QueryAction.begin));
+            root.addChild("Query Schema Browser", new QueryUrlsImpl().urlSchemaBrowser(getContainer()));
             return root;
         }
     }
@@ -290,7 +305,7 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new SchemaAction(_form)).appendNavTrail(root)
-                    .addChild("New Query", actionURL(QueryAction.newQuery));
+                    .addChild("New Query", new QueryUrlsImpl().urlNewQuery(getContainer()));
             return root;
         }
     }
@@ -2097,7 +2112,7 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction().appendNavTrail(root);
-            root.addChild("Schema Administration", actionURL(QueryAction.admin));
+            root.addChild("Schema Administration", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
     }
@@ -2128,13 +2143,13 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
         {
-            return actionURL(QueryAction.admin);
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction().appendNavTrail(root);
-            root.addChild("Define External Schema", actionURL(QueryAction.adminNewDbUserSchema));
+            root.addChild("Define External Schema", new QueryUrlsImpl().urlInsertExternalSchema(getContainer()));
             return root;
         }
     }
@@ -2270,13 +2285,13 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
         {
-            return actionURL(QueryAction.admin);
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction().appendNavTrail(root);
-            root.addChild("Edit External Schema", actionURL(QueryAction.adminNewDbUserSchema));
+            root.addChild("Edit External Schema", new QueryUrlsImpl().urlInsertExternalSchema(getContainer()));
             return root;
         }
     }
@@ -2320,7 +2335,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
         {
-            return actionURL(QueryAction.admin);
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
     }
 
@@ -2341,9 +2356,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(DbUserSchemaForm form)
         {
-            ActionURL url = actionURL(QueryAction.admin);
-            url.addParameter("reloadedSchema", form.getBean().getUserSchemaName());
-            return url;
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), form.getBean().getUserSchemaName());
         }
 
         public NavTree appendNavTrail(NavTree root)

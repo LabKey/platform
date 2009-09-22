@@ -188,7 +188,12 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     @Override
-    public boolean supportOffset()
+    public boolean supportsOffset()
+    {
+        return true;
+    }
+
+    public boolean supportsComments()
     {
         return true;
     }

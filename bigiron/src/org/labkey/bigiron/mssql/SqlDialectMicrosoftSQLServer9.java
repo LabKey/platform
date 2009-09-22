@@ -50,7 +50,7 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
 
 
     @Override
-    public boolean supportOffset()
+    public boolean supportsOffset()
     {
         return true;
     }

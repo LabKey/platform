@@ -858,15 +858,15 @@ loop:
             if (!StringUtils.isEmpty(_savedName))
                 comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
             comment += ">";
-            ret.appendComment(comment);
+            ret.appendComment(comment, getSqlDialect());
             if (null != _queryText)
             {
                 for (String s : _queryText.split("\n"))
                     if (null != StringUtils.trimToNull(s))
-                        ret.appendComment("|         " + s);
+                        ret.appendComment("|         " + s, getSqlDialect());
             }
             ret.append(sql);
-            ret.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
+            ret.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">", getSqlDialect());
         }
         return ret;
     }

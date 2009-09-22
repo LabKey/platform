@@ -138,7 +138,7 @@ public class QueryTable extends QueryRelation
 
     public SQLFragment getSql()
     {
-        Map<String, SQLFragment> joins = new LinkedHashMap<String,SQLFragment>();
+        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         SQLFragment sql = new SQLFragment();
 
         String selectName = _tableInfo.getSelectName();
@@ -153,7 +153,7 @@ public class QueryTable extends QueryRelation
         if (!StringUtils.isEmpty(_savedName))
             comment += " savedName='" + _savedName + "'";
         comment += " name='" + this._tableInfo.getName() + "' class='" + this._tableInfo.getClass().getSimpleName() + "'>";
-        assert sql.appendComment(comment);
+        assert sql.appendComment(comment, _schema.getDbSchema().getSqlDialect());
 
         for (ColumnInfo c : _tableInfo.getColumns())
             if (c.isKeyField())
@@ -191,7 +191,7 @@ public class QueryTable extends QueryRelation
         }
         for (SQLFragment j : joins.values())
             sql.append(j);
-        assert sql.appendComment("</QueryTable@" + System.identityHashCode(this) + ">");
+        assert sql.appendComment("</QueryTable@" + System.identityHashCode(this) + ">", _schema.getDbSchema().getSqlDialect());
         return sql;
     }
 

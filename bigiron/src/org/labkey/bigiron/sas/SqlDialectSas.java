@@ -114,9 +114,14 @@ public class SqlDialectSas extends SqlDialect
         return sql;
     }
 
-    public boolean supportOffset()
+    public boolean supportsOffset()
     {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean supportsComments()
+    {
+        return false;
     }
 
     public String execute(DbSchema schema, String procedureName, String parameters)

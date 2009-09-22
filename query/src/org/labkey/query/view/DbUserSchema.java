@@ -42,7 +42,7 @@ public class DbUserSchema extends SimpleModuleUserSchema
         _def = def;
         if (_dbSchema == null)
         {
-            _dbSchema = CoreSchema.getInstance().getSchema();
+            _dbSchema = CoreSchema.getInstance().getSchema();             // TODO: Assuming core schema is troubling... assert _dbSchema != null instead?
         }
     }
 

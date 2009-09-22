@@ -151,7 +151,7 @@ public class QueryUnion extends QueryRelation
 
 		String unionOperator = "";
         SQLFragment unionSql = new SQLFragment();
-        assert unionSql.appendComment("<QueryUnion@" + System.identityHashCode(this) + ">");
+        assert unionSql.appendComment("<QueryUnion@" + System.identityHashCode(this) + ">", _schema.getDbSchema().getSqlDialect());
 
 		for (QueryRelation term : _termList)
 		{
@@ -194,7 +194,7 @@ public class QueryUnion extends QueryRelation
         for (UnionColumn unioncol : _allColumns)
             ret.addUnionColumn(new RelationColumnInfo(ret, unioncol));
         
-        assert unionSql.appendComment("</QueryUnion@" + System.identityHashCode(this) + ">");
+        assert unionSql.appendComment("</QueryUnion@" + System.identityHashCode(this) + ">", _schema.getDbSchema().getSqlDialect());
 		_unionSql = unionSql;
         return ret;
     }

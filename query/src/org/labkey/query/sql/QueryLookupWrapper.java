@@ -15,12 +15,13 @@
  */
 package org.labkey.query.sql;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.ColumnType;
-import static org.apache.commons.lang.StringUtils.defaultString;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
 
 import java.util.*;
 
@@ -205,9 +206,9 @@ public class QueryLookupWrapper extends QueryRelation
             return _source.getSql();
         }
 
-        Map<String, SQLFragment> joins = new LinkedHashMap<String,SQLFragment>();
+        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         SQLFragment sql = new SQLFragment();
-        assert sql.appendComment("<QueryLookupWrapper@" + System.identityHashCode(this) + ">");
+        assert sql.appendComment("<QueryLookupWrapper@" + System.identityHashCode(this) + ">", getSchema().getDbSchema().getSqlDialect());
 
         sql.append("SELECT ");
         String comma = "";
@@ -234,7 +235,7 @@ public class QueryLookupWrapper extends QueryRelation
         for (SQLFragment j : joins.values())
             sql.append(j);
 
-        assert sql.appendComment("</QueryLookupWrapper@" + System.identityHashCode(this) + ">");
+        assert sql.appendComment("</QueryLookupWrapper@" + System.identityHashCode(this) + ">", getSchema().getDbSchema().getSqlDialect());
         return sql;
     }
 

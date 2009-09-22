@@ -190,9 +190,14 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     @Override
-    public boolean supportOffset()
+    public boolean supportsOffset()
     {
         return false;
+    }
+
+    public boolean supportsComments()
+    {
+        return true;
     }
 
     protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
