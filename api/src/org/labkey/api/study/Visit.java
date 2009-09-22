@@ -36,6 +36,10 @@ public interface Visit extends StudyEntity
 
     Cohort getCohort();
 
+    int getChronologicalOrder();
+
+    void setChronologicalOrder(int chronologicalOrder);
+
     public enum Type
     {
         SCREENING('X', "Screening"),
@@ -78,6 +82,25 @@ public interface Visit extends StudyEntity
                     return type;
             }
             return null;
+        }
+    }
+
+    public enum Order
+    {
+        CHRONOLOGICAL("ChronologicalOrder"),
+        DISPLAY("DisplayOrder"),
+        SEQUENCE_NUM("SequenceNumMin");
+
+        private String _sortColumn;
+
+        Order(String sortColumn)
+        {
+            _sortColumn = sortColumn;
+        }
+
+        public String getSortColumn()
+        {
+            return _sortColumn;
         }
     }
 }

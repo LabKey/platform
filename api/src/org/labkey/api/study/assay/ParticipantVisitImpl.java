@@ -35,6 +35,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
     private String _participantID;
     private Double _visitID;
     private String _specimenID;
+    private Integer _cohortID;
     private Container _container;
     private ExpMaterial _material;
     private Date _date;
@@ -134,6 +135,16 @@ public class ParticipantVisitImpl implements ParticipantVisit
         _date = date;
     }
 
+    public Integer getCohortID()
+    {
+        return _cohortID;
+    }
+
+    public void setCohortID(Integer cohortID)
+    {
+        _cohortID = cohortID;
+    }
+
     public boolean equals(Object o)
     {
         if (this == o) return true;
@@ -145,6 +156,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
         if (_participantID != null ? !_participantID.equals(that._participantID) : that._participantID != null)
             return false;
         if (_specimenID != null ? !_specimenID.equals(that._specimenID) : that._specimenID != null) return false;
+        if (_cohortID != null ? !_cohortID.equals(that._cohortID) : that._cohortID != null) return false;
         return !(_visitID != null ? !_visitID.equals(that._visitID) : that._visitID != null);
     }
 
@@ -154,6 +166,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
         result = (_participantID != null ? _participantID.hashCode() : 0);
         result = 31 * result + (_visitID != null ? _visitID.hashCode() : 0);
         result = 31 * result + (_specimenID != null ? _specimenID.hashCode() : 0);
+        result = 31 * result + (_cohortID != null ? _cohortID.hashCode() : 0);
         result = 31 * result + (_date != null ? _date.hashCode() : 0);
         return result;
     }

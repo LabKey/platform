@@ -26,7 +26,7 @@ import java.util.Date;
  */
 public interface Study extends StudyEntity
 {
-    Visit[] getVisits();
+    Visit[] getVisits(Visit.Order order);
 
     DataSet getDataSet(int id);
 
@@ -35,6 +35,8 @@ public interface Study extends StudyEntity
     Site[] getSites();
 
     Cohort[] getCohorts(User user);
+
+    boolean isAdvancedCohorts();
 
     boolean isDateBased();
 

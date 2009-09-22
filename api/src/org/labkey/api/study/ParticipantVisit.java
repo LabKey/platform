@@ -35,6 +35,8 @@ public interface ParticipantVisit
 
     String getSpecimenID();
 
+    Integer getCohortID();
+
     Date getDate();
 
     ExpMaterial getMaterial();

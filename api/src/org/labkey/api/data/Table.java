@@ -1277,7 +1277,7 @@ public class Table
         return selectForDisplay(table, select, filter, sort, rowCount, offset, true);
     }
 
-    public static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
+    public static Map<String, Aggregate.Result>selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, Collection<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
     {
         return selectAggregatesForDisplay(table, aggregates, select, filter, cache, null);
     }
