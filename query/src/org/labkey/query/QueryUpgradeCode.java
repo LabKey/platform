@@ -15,10 +15,7 @@
  */
 package org.labkey.query;
 
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
@@ -72,7 +69,7 @@ public class QueryUpgradeCode implements UpgradeCode
         if (!ctx.isNewInstall())
         {
             // Get the DataSource name associated with the core schema (in most cases, "labkeyDataSource")
-            String dataSourceName = CoreSchema.getInstance().getSchema().getScope().getJndiName();
+            String dataSourceName = DbScope.getLabkeyScope().getDataSourceName();
 
             // Update all existing DbUserSchema rows with labkey DataSource name
             SQLFragment sql = new SQLFragment("UPDATE " + QueryManager.get().getTableInfoDbUserSchema() + " SET DataSource = ?", Collections.<Object>singletonList(dataSourceName));

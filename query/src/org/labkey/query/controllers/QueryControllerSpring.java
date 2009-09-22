@@ -2183,7 +2183,7 @@ public class QueryControllerSpring extends SpringActionController
                 }
                 catch (SQLException e)
                 {
-                    LOG.error("Exception retrieving schemas from DbScope '" + scope.getJndiName() + "'");
+                    LOG.error("Exception retrieving schemas from DbScope '" + scope.getDataSourceName() + "'");
                 }
                 finally
                 {

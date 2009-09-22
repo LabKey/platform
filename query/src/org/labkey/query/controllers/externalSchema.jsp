@@ -6,9 +6,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     QueryControllerSpring.ExternalSchemaBean bean = (QueryControllerSpring.ExternalSchemaBean)HttpView.currentModel();
-
     DbUserSchemaDef def = bean.getSchemaDef();
-
     DbScope initialScope = null;
 
     try
@@ -42,8 +40,8 @@
     {
         out.print(sep);
         out.print("        [");
-        out.print("'" + scope.getJndiName() + "', ");
-        out.print("'" + getDisplayName(scope.getJndiName()) + "', ");
+        out.print("'" + scope.getDataSourceName() + "', ");
+        out.print("'" + getDisplayName(scope.getDataSourceName()) + "', ");
         out.print(scope.getSqlDialect().isEditable() + ", [");
 
         String sep2 = "";
@@ -129,15 +127,12 @@ function initEditable(value, enabled)
 }
 </script>
 <%!
-    // Strip off "jdbc/" and "DataSource" to create friendly name.  TODO: Add UI to allow site admin to add this for each data source.
-    private String getDisplayName(String jndiName)
+    // Strip off "DataSource" to create friendly name.  TODO: Add UI to allow site admin to add friendly name to each data source.
+    private String getDisplayName(String dsName)
     {
-        if (jndiName.startsWith("jdbc/"))
-            jndiName = jndiName.substring(5);
+        if (dsName.endsWith("DataSource"))
+            dsName = dsName.substring(0, dsName.length() - 10);
 
-        if (jndiName.endsWith("DataSource"))
-            jndiName = jndiName.substring(0, jndiName.length() - 10);
-
-        return jndiName;
+        return dsName;
     }
 %>
