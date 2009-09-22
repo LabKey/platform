@@ -427,6 +427,8 @@ api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipelineSettings.java -text
 api/src/org/labkey/api/pipeline/file/PathMapper.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/qc/DataExchangeHandler.java -text
+api/src/org/labkey/api/qc/DataTransformer.java -text
+api/src/org/labkey/api/qc/DataValidator.java -text
 api/src/org/labkey/api/qc/DefaultTransformResult.java -text
 api/src/org/labkey/api/qc/PlateBasedDataExchangeHandler.java -text
 api/src/org/labkey/api/qc/TransformDataHandler.java -text
@@ -731,6 +733,7 @@ api/src/org/labkey/api/study/assay/AssayUrls.java -text
 api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/BatchListQueryView.java -text
 api/src/org/labkey/api/study/assay/BulkPropertiesUploadWizardAction.java -text
+api/src/org/labkey/api/study/assay/DefaultDataTransformer.java -text
 api/src/org/labkey/api/study/assay/FileLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/FileUploadDataCollector.java -text
 api/src/org/labkey/api/study/assay/ParticipantVisitImpl.java -text

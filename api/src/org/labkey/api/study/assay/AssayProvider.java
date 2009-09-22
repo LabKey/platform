@@ -26,7 +26,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.qc.TransformResult;
+import org.labkey.api.qc.DataTransformer;
+import org.labkey.api.qc.DataValidator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -159,10 +160,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type);
 
-    void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
-
-    TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException;
-
     /**
      * @return the data type that this run creates for its analyzed results
      */
@@ -175,4 +172,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * Return the helper to handle data exchange between the server and external scripts.
      */
     DataExchangeHandler getDataExchangeHandler();
+
+    DataTransformer getDataTransformer();
+    DataValidator getDataValidator();
 }
