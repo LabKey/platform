@@ -23,6 +23,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;

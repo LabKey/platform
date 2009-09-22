@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineJob;
@@ -42,6 +43,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
+import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -137,6 +139,11 @@ public class ReportsController extends SpringActionController
         public ActionURL urlManageViewsSummary(Container c)
         {
             return new ActionURL(ManageViewsSummaryAction.class, c);
+        }
+
+        public ActionURL urlExportCrosstab(Container c)
+        {
+            return new ActionURL(CrosstabExportAction.class, c);
         }
     }
 
@@ -1634,6 +1641,30 @@ public class ReportsController extends SpringActionController
 
                 out.write("<img src='" + url + "'>");
             }
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CrosstabExportAction extends SimpleViewAction<ReportDesignBean>
+    {
+        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        {
+            ReportIdentifier reportId = form.getReportId();
+            if (reportId != null)
+            {
+                Report report = reportId.getReport();
+                if (report instanceof CrosstabReport)
+                {
+                    ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
+                    writer.write(getViewContext().getResponse());
+                }
+            }
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 }

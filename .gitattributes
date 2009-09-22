@@ -2235,8 +2235,6 @@ study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/AttachmentReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/ChartReportView.java -text
-study/src/org/labkey/study/reports/CrosstabReport.java -text
-study/src/org/labkey/study/reports/CrosstabReportDescriptor.java -text
 study/src/org/labkey/study/reports/EnrollmentReport.java -text
 study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
@@ -2323,7 +2321,6 @@ study/src/org/labkey/study/view/AssayListWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayResultsWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayRunsWebPartFactory.java -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
-study/src/org/labkey/study/view/CrosstabView.java -text
 study/src/org/labkey/study/view/DataHeader.java -text
 study/src/org/labkey/study/view/DataSetSummaryPage.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text

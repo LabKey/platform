@@ -27,13 +27,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.StudySchema;
 import org.apache.commons.lang.math.NumberUtils;
 
-import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;/*
  * User: Karl Lum

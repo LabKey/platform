@@ -37,6 +37,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.*;
+import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;

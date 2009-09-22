@@ -42,6 +42,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -776,30 +777,6 @@ public class ReportsController extends BaseStudyController
             if (_stats.length > 0) descriptor.setStats(_stats);
 
             return report;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class CrosstabExportAction extends SimpleViewAction<ReportDesignBean>
-    {
-        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
-        {
-            ReportIdentifier reportId = form.getReportId();
-            if (reportId != null)
-            {
-                Report report = reportId.getReport();
-                if (report instanceof CrosstabReport)
-                {
-                    ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
-                    writer.write(getViewContext().getResponse());
-                }
-            }
-            return null; 
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
