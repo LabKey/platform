@@ -80,6 +80,9 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
         });
 
         LABKEY.ext.QueryTreePanel.superclass.initComponent.apply(this, arguments);
+        this.getLoader().on("loadexception", function(loader, node, response){
+            LABKEY.Utils.displayAjaxErrorResponse(response);
+        }, this);
     }
 });
 
