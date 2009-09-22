@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.qc.DataValidator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -204,7 +205,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                     context.getUser(), context.getActionURL()), LOG, false);
 
         // programmatic qc validation
-        provider.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
+        DataValidator dataValidator = provider.getDataValidator();
+        if (dataValidator != null)
+            dataValidator.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
 
         TsvDataHandler dataHandler = new TsvDataHandler();
         dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
