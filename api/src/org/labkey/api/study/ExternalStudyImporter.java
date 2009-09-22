@@ -28,4 +28,5 @@ public interface ExternalStudyImporter
     // Brief description of the types of objects this class imports
     String getDescription();
     void process(StudyContext ctx, File root) throws Exception;
+    void postProcess(StudyContext ctx, File root) throws Exception;
 }
