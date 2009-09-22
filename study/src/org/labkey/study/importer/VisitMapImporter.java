@@ -138,6 +138,8 @@ public class VisitMapImporter
                 visit = new VisitImpl(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
                 visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 visit.setShowByDefault(record.isShowByDefault());
+                visit.setChronologicalOrder(record.getChronologicalOrder());
+                visit.setDisplayOrder(record.getDisplayOrder());
                 int rowId = studyManager.createVisit(study, user, visit);
                 record.setVisitRowId(rowId);
                 assert record.getVisitRowId() > 0;

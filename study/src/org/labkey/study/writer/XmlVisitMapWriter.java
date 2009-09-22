@@ -75,6 +75,12 @@ public class XmlVisitMapWriter implements Writer<VisitImpl[], StudyExportContext
             if (null != visit.getVisitDateDatasetId() && ctx.isExportedDataset(visit.getVisitDateDatasetId()))
                 visitXml.setVisitDateDatasetId(visit.getVisitDateDatasetId().intValue());
 
+            if (visit.getDisplayOrder() > 0)
+                visitXml.setDisplayOrder(visit.getDisplayOrder());
+
+            if (visit.getChronologicalOrder() > 0)
+                visitXml.setChronologicalOrder(visit.getChronologicalOrder());
+
             List<VisitDataSet> vds = visit.getVisitDataSets();
 
             if (!vds.isEmpty())

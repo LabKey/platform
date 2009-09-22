@@ -42,7 +42,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+
+
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -1196,7 +1199,7 @@ public class ReportsController extends BaseStudyController
         {
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
             _datasets = StudyManager.getInstance().getDataSetDefinitions(study);
-            _visits = StudyManager.getInstance().getVisits(study);
+            _visits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
         }
 
         public DataSetDefinition[] getDatasets()
@@ -1998,7 +2001,7 @@ public class ReportsController extends BaseStudyController
             if (def != null)
             {
                 String qcState = getViewContext().getActionURL().getParameter(SharedFormParameters.QCState);
-                _appendNavTrail(root, def.getDataSetId(), 0, 0, qcState);
+                _appendNavTrail(root, def.getDataSetId(), 0, null, qcState);
             }
             return root;
         }

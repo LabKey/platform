@@ -18,11 +18,11 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page import="org.labkey.study.model.CohortImpl" %>
-<%@ page import="org.labkey.study.model.Participant" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.study.model.*" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -43,7 +43,7 @@
     Map<Participant, CohortImpl> participant2Cohort = new LinkedHashMap<Participant, CohortImpl>();
     for (Participant participant : manager.getParticipants(study))
     {
-        CohortImpl cohort = manager.getCohortForParticipant(
+        CohortImpl cohort = manager.getCurrentCohortForParticipant(
                 study.getContainer(),
                 getViewContext().getUser(),
                 participant.getParticipantId());
@@ -59,15 +59,37 @@
     nullCohort.setLabel("<Unassigned>");
     cohorts.add(nullCohort);
 
-    out.println("<b>Note:</b> Only users with read access to this folder will be able to view Cohort information.<p>");
-
+    ActionURL securityUrl = new ActionURL(SecurityController.BeginAction.class, study.getContainer());
+    if (!study.isManualCohortAssignment())
+    {
+        if (study.getSecurityType() == SecurityType.ADVANCED_READ || study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+        {
+            %>
+            <b>Note:</b> Only users with read access to the Cohort Dataset specified above can view Cohort information.<p>
+            <%
+        }
+        else
+        {
+            %>
+            <b>Note:</b> All users with read access to this folder can view Cohort information.
+                If cohort blinding is required, <a href="<%= securityUrl.getLocalURIString() %>">enable dataset-level security</a>.<p>
+            <%
+        }
+    }
+    else
+    {
+        %>
+        <b>Note:</b> All users with read access to this folder can view Cohort information.
+                If cohort blinding is required, enable automatic cohort assignment and <a href="<%= securityUrl.getLocalURIString() %>">dataset-level security</a>.<p>
+        <%
+    }
     // If we're using automatic assignment, the user can't alter the specific assignments,
     // but we want to show a read-only view of them
     %>
     <table>
         <tr>
             <th>Participant ID</th>
-            <th>Cohort</th>
+            <th>Current Cohort</th>
         </tr>
     <%
     for (Map.Entry<Participant, CohortImpl> entry : participant2Cohort.entrySet())
@@ -88,7 +110,7 @@
                 {
                     %>
                 <input type="hidden" name="participantId" value="<%=entry.getKey().getParticipantId()%>">
-                <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>"><%
+                <select name="<%= CohortFilter.Params.cohortId.name() %>"><%
                     // Need to display selection drop-down for each participant
                     CohortImpl selectedCohort = entry.getValue();
                     

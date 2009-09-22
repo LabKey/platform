@@ -103,11 +103,11 @@ public class CohortController extends BaseStudyController
             VBox vbox = new VBox();
 
             StudyJspView<Object> top = new StudyJspView<Object>(getStudy(), "manageCohortsTop.jsp", null, errors);
-            top.setTitle("Assignment Type");
+            top.setTitle("Cohort Assignment");
             vbox.addView(top);
 
             CohortQueryView queryView = new CohortQueryView(getUser(), getStudy(), HttpView.currentContext(), true);
-            queryView.setTitle("All Cohorts");
+            queryView.setTitle("Defined Cohorts");
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
             vbox.addView(queryView);
             
@@ -137,17 +137,17 @@ public class CohortController extends BaseStudyController
                 return true;
             }
 
-            if (form.isManualCohortAssignment() != study.isManualCohortAssignment())
-            {
-                study.setManualCohortAssignment(form.isManualCohortAssignment());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-
-                // We'll ignore anything else, since our whole view is about to change
-                return true;
-            }
-
             if (form.isManualCohortAssignment())
             {
+                if (form.isManualCohortAssignment() != study.isManualCohortAssignment())
+                {
+                    study.setManualCohortAssignment(form.isManualCohortAssignment());
+                    StudyManager.getInstance().updateStudy(getUser(), study);
+
+                    // We'll ignore anything else, since our whole view is about to change
+                    return true;
+                }
+
                 // Update the assignments from the individual entries in the form
                 int[] cohorts = form.getCohortId();
                 String[] participants = form.getParticipantId();
@@ -173,7 +173,9 @@ public class CohortController extends BaseStudyController
                 // Update all participants via the new dataset column
                 // Note: we need to do this even if no changes have been made to
                 // this setting, as it's possible that the user manually set some cohorts previously
-                CohortManager.updateAutomaticCohortAssignment(study, getUser(), form.getParticipantCohortDataSetId(), form.getParticipantCohortProperty());
+                boolean updateNow = form.isUpdateParticipants() || (study.isAdvancedCohorts() != form.isAdvancedCohortSupport());
+                CohortManager.updateAutomaticCohortAssignment(study, getUser(), form.getParticipantCohortDataSetId(),
+                        form.getParticipantCohortProperty(), form.isAdvancedCohortSupport(), updateNow);
             }
 
             return true;
@@ -196,12 +198,17 @@ public class CohortController extends BaseStudyController
         private String participantCohortProperty;
         private boolean reshow;
         private boolean clearParticipants;
+        private boolean updateParticipants;
+        private boolean advancedCohortSupport;
 
         public int[] getCohortId() {return cohortId;}
         public void setCohortId(int[] cohortId) {this.cohortId = cohortId;}
 
         public boolean isManualCohortAssignment() {return manualCohortAssignment;}
         public void setManualCohortAssignment(boolean manualCohortAssignment) {this.manualCohortAssignment = manualCohortAssignment;}
+
+        public boolean isAdvancedCohortSupport() {return advancedCohortSupport;}
+        public void setAdvancedCohortSupport(boolean advancedCohortSupport) {this.advancedCohortSupport = advancedCohortSupport;}
 
         public Integer getParticipantCohortDataSetId() {return participantCohortDataSetId;}
         public void setParticipantCohortDataSetId(Integer participantCohortDataSetId) {this.participantCohortDataSetId = participantCohortDataSetId;}
@@ -223,6 +230,16 @@ public class CohortController extends BaseStudyController
         public void setClearParticipants(boolean clearParticipants)
         {
             this.clearParticipants = clearParticipants;
+        }
+
+        public boolean isUpdateParticipants()
+        {
+            return updateParticipants;
+        }
+
+        public void setUpdateParticipants(boolean updateParticipants)
+        {
+            this.updateParticipants = updateParticipants;
         }
     }
 

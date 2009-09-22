@@ -25,6 +25,7 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.Specimen;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.samples.AutoCompleteAction;
 
 import java.sql.SQLException;
@@ -71,6 +72,11 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         public String getSpecimenID()
         {
             return _specimenID;
+        }
+
+        public Integer getCohortID()
+        {
+            throw new UnsupportedOperationException("Not Implemented for StudyParticipantVisit");
         }
 
         public ExpMaterial getMaterial()

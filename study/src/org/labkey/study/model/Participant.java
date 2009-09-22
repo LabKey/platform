@@ -29,7 +29,8 @@ public class Participant
     private Integer _enrollmentSiteId;
     private Integer _currentSiteId;
     private Date _startDate;
-    private Integer _cohortId;
+    private Integer _initialCohortId;
+    private Integer _currentCohortId;
 
     public Container getContainer()
     {
@@ -81,13 +82,23 @@ public class Participant
         _startDate = startDate;
     }
 
-    public Integer getCohortId()
+    public Integer getCurrentCohortId()
     {
-        return _cohortId;
+        return _currentCohortId;
     }
 
-    public void setCohortId(Integer cohortId)
+    public void setCurrentCohortId(Integer currentCohortId)
     {
-        _cohortId = cohortId;
+        _currentCohortId = currentCohortId;
+    }
+
+    public Integer getInitialCohortId()
+    {
+        return _initialCohortId;
+    }
+
+    public void setInitialCohortId(Integer initialCohortId)
+    {
+        _initialCohortId = initialCohortId;
     }
 }

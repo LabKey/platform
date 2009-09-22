@@ -16,15 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.study.model.VisitImpl"%>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <table>
 <%
-    if (getVisits().length > 0)
+    if (getVisits(Visit.Order.DISPLAY).length > 0)
     {
 %>
     <tr>
-        <td>Visits can be displayed in any order.</td>
-        <td><%= textLink("Change Display Order", "visitDisplayOrder.view")%></td>
+        <td>Visit ordering affects the study view, reports, and cohort determinations.</td>
+        <td><%= textLink("Change Visit Order", "visitOrder.view")%></td>
     </tr>
     <tr>
         <td>Visit visibility and label can be changed.</td>
@@ -49,7 +50,7 @@
 </table>
 
 <%
-    if (getVisits().length > 0)
+    if (getVisits(Visit.Order.DISPLAY).length > 0)
     {
 %>
 <p>
@@ -64,7 +65,7 @@
         <th>&nbsp;</th>
     </tr>
     <%
-        for (VisitImpl visit : getVisits())
+        for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))
         {
     %>
         <tr>

@@ -1885,6 +1885,7 @@ study/resources/schemas/dbscripts/postgresql/study-9.191-9.192.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.192-9.193.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.193-9.194.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.194-9.195.sql -text
+study/resources/schemas/dbscripts/postgresql/study-9.201-9.21.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2000,9 +2001,11 @@ study/resources/schemas/dbscripts/sqlserver/study-9.191-9.192.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.192-9.193.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.193-9.194.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.194-9.195.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-9.201-9.21.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
+study/src/org/labkey/study/CohortFilter.java -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/SampleManager.java -text
 study/src/org/labkey/study/SpecimenServiceImpl.java -text
@@ -2424,7 +2427,7 @@ study/src/org/labkey/study/view/updateQCState.jsp -text
 study/src/org/labkey/study/view/uploadAttachmentReport.jsp -text
 study/src/org/labkey/study/view/uploadVisitMap.jsp -text
 study/src/org/labkey/study/view/viewPreferences.jsp -text
-study/src/org/labkey/study/view/visitDisplayOrder.jsp -text
+study/src/org/labkey/study/view/visitOrder.jsp -text
 study/src/org/labkey/study/view/visitVisibility.jsp -text
 study/src/org/labkey/study/visitmanager/DateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text

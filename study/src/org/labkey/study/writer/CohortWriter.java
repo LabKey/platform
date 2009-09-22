@@ -25,6 +25,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.CohortMode;
 
 import java.util.Collection;
 
@@ -50,6 +51,7 @@ public class CohortWriter implements InternalStudyWriter
         if (study.isManualCohortAssignment())
         {
             cohortsXml.setType(CohortType.MANUAL);
+            cohortsXml.setMode(CohortMode.SIMPLE);
             cohortsXml.setFile(COHORTS_FILENAME);
 
             CohortImpl[] cohorts = study.getCohorts(ctx.getUser());
@@ -57,7 +59,7 @@ public class CohortWriter implements InternalStudyWriter
 
             for (Participant participant : StudyManager.getInstance().getParticipants(study))
             {
-                Integer id = participant.getCohortId();
+                Integer id = participant.getCurrentCohortId();
 
                 if (null != id)
                     participantsInEachCohort.put(id, participant.getParticipantId());
@@ -81,6 +83,7 @@ public class CohortWriter implements InternalStudyWriter
         else
         {
             cohortsXml.setType(CohortType.AUTOMATIC);
+            cohortsXml.setMode(study.isAdvancedCohorts() ? CohortMode.ADVANCED : CohortMode.SIMPLE);
 
             Integer datasetId = study.getParticipantCohortDataSetId();
             String datasetProperty = study.getParticipantCohortProperty();

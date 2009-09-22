@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -102,7 +103,7 @@
     </tr>
     <tr>
         <th align="left"><%= visitLabel %></th>
-        <td>This study defines <%= getVisits().length %> <%=visitLabel%></td>
+        <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>
         <td><%= textLink("Manage " + visitLabel, "manageVisits.view") %></td>
     </tr>
     <tr>

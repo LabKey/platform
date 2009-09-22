@@ -25,6 +25,7 @@
 <%@ page import="java.util.HashMap"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 //    Study study;
@@ -54,7 +55,7 @@ for (DataSetDefinition ds : datasets)
 if (selectedDataset != null)
 {
     HashMap<Integer, VisitImpl> visits = new HashMap<Integer, VisitImpl>();
-    for (VisitImpl visit : bean.study.getVisits())
+    for (VisitImpl visit : bean.study.getVisits(Visit.Order.DISPLAY))
     {
         if (visit.getSequenceNumMin() == visit.getSequenceNumMax())
             visits.put(visit.getRowId(), visit);

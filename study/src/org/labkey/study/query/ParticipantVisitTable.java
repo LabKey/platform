@@ -24,6 +24,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.StudySchema;
 
 public class ParticipantVisitTable extends FilteredTable
@@ -60,6 +61,21 @@ public class ParticipantVisitTable extends FilteredTable
                     }
                 });
                 addColumn(visitColumn);
+            }
+            else if ("CohortID".equalsIgnoreCase(col.getName()))
+            {
+                if (StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
+                {
+                    ColumnInfo cohortColumn = new AliasedColumn(this, "Cohort", col);
+                    cohortColumn.setFk(new LookupForeignKey("RowId")
+                    {
+                        public TableInfo getLookupTableInfo()
+                        {
+                            return new CohortTable(_schema);
+                        }
+                    });
+                    addColumn(cohortColumn);
+                }
             }
             else  if (_pvForeign == null)
                 addWrapColumn(col);

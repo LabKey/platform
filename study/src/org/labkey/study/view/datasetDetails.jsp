@@ -29,6 +29,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -106,7 +107,7 @@ if (!pipelineSet)
     HashMap<Integer,VisitDataSet> visitMap = new HashMap<Integer, VisitDataSet>();
     for (VisitDataSet vds : visitList)
         visitMap.put(vds.getVisitRowId(), vds);
-    for (VisitImpl visit : study.getVisits())
+    for (VisitImpl visit : study.getVisits(Visit.Order.DISPLAY))
     {
         VisitDataSet vm = visitMap.get(visit.getRowId());
         VisitDataSetType type = vm == null ? VisitDataSetType.NOT_ASSOCIATED : vm.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL;

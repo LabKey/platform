@@ -30,6 +30,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Visit;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 
@@ -274,7 +275,7 @@ def:    for (DataSetDefinition def : defs)
 
     private void searchVisits(StudyImpl study, SearchTermParser parser, List<SearchHit> hits)
     {
-        VisitImpl[] visits = study.getVisits();
+        VisitImpl[] visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
         for (VisitImpl visit : visits)
         {
             if (parser.matches(visit.getLabel()) || parser.matches(visit.getDisplayString()))

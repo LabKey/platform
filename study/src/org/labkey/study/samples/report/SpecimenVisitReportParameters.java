@@ -10,11 +10,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.SampleManager;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.SQLException;
@@ -78,8 +79,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
     }
 
-    private Integer _cohortId;
-    private CohortImpl _cohort;
+    private CohortFilter _cohortFilter = null;
     private Status _statusFilter = Status.ALL;
     private String _baseCustomViewName;
     private boolean _viewVialCount = false;
@@ -90,6 +90,11 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     private boolean _excelExport;
     private List<? extends SpecimenVisitReport> _reports;
     private SampleManager.SpecimenTypeLevel _typeLevel = SampleManager.SpecimenTypeLevel.Derivative;
+
+    public SpecimenVisitReportParameters()
+    {
+        _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());    
+    }
 
     public String getTypeLevel()
     {
@@ -106,22 +111,20 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return _typeLevel;
     }
 
-    public Integer getCohortId()
+    public CohortFilter getCohortFilter()
     {
-        return _cohortId;
-    }
-
-    public void setCohortId(Integer cohortId)
-    {
-        if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
-            _cohortId = cohortId;
+        return _cohortFilter;
     }
 
     public CohortImpl getCohort()
     {
-        if (_cohort == null)
-            _cohort = _cohortId != null ? StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), _cohortId) : null;
-        return _cohort;
+        return _cohortFilter != null ? _cohortFilter.getCohort(getContainer(), getUser()) : null;
+    }
+
+    public void setCohortFilter(CohortFilter cohortFilter)
+    {
+        if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+            _cohortFilter = cohortFilter;
     }
 
     public List<Pair<String, String>> getAdditionalFormInputHtml()
@@ -219,8 +222,8 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         if (allowsAvailabilityFilter() && getStatusFilter() != null)
              addAvailabilityFilter(filter, getStatusFilter());
 
-        if (allowsCohortFilter() && getCohortId() != null)
-            addCohortFilter(filter, getCohortId());
+        if (allowsCohortFilter() && getCohortFilter() != null)
+            addCohortFilter(filter, getCohortFilter());
     }
 
     public static final String COMPLETED_REQUESTS_FILTER_SQL =
@@ -259,21 +262,35 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
     }
 
-    protected void addCohortFilter(SimpleFilter filter, Integer cohortId)
+    protected void addCohortFilter(SimpleFilter filter, CohortFilter cohortFilter)
     {
         StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
-        if (cohortId != null)
-        {
-            filter.addWhereClause("ParticipantId IN\n" +
-                    "(SELECT ParticipantId FROM study.participant WHERE cohortId = ? AND Container = ?)",
-                    new Object[] { cohortId, getContainer().getId()});
-        }
-        else
+        if (cohortFilter == CohortFilter.UNASSIGNED)
         {
             filter.addWhereClause("(ParticipantId IN\n" +
-                    "(SELECT ParticipantId FROM study.participant WHERE cohortId IS NULL AND Container = ?)" +
+                    "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId IS NULL AND Container = ?)" +
                     "OR (ParticipantId NOT IN (SELECT ParticipantId FROM study.participant WHERE Container = ?)))",
                     new Object[] { getContainer().getId(), getContainer().getId()});
+        }
+        else if (cohortFilter != null)
+        {
+            switch (cohortFilter.getType())
+            {
+                case DATA_COLLECTION:
+                    filter.addWhereClause("CollectionCohort = ? AND Container = ?",
+                            new Object[] { cohortFilter.getCohortId(), getContainer().getId()});
+                    break;
+                case PTID_CURRENT:
+                    filter.addWhereClause("ParticipantId IN\n" +
+                            "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId = ? AND Container = ?)",
+                            new Object[] { cohortFilter.getCohortId(), getContainer().getId()});
+                    break;
+                case PTID_INITIAL:
+                    filter.addWhereClause("ParticipantId IN\n" +
+                            "(SELECT ParticipantId FROM study.participant WHERE InitialCohortId = ? AND Container = ?)",
+                            new Object[] { cohortFilter.getCohortId(), getContainer().getId()});
+                    break;
+            }
         }
     }
 
@@ -323,14 +340,14 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                     builder.append("<option value=\"").append(PageFlowUtil.filter(DEFAULT_VIEW_ID)).append("\"");
                     if (_baseCustomViewName != null && _baseCustomViewName.equals(DEFAULT_VIEW_ID))
                         builder.append(" SELECTED");
-                    builder.append(">Base on default view (filtered)</option");
+                    builder.append(">Base on default view (filtered)</option>");
                 }
                 else
                 {
                     builder.append("<option value=\"").append(PageFlowUtil.filter(view.getName())).append("\"");
                     if (_baseCustomViewName != null && _baseCustomViewName.equals(view.getName()))
                         builder.append(" SELECTED");
-                    builder.append(">Base on view: ").append(PageFlowUtil.filter(view.getName())).append("</option");
+                    builder.append(">Base on view: ").append(PageFlowUtil.filter(view.getName())).append("</option>");
                 }
             }
         }

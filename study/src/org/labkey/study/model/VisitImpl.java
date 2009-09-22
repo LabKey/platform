@@ -46,6 +46,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
+    private int _chronologicalOrder;
     
     public VisitImpl()
     {
@@ -229,5 +230,15 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         if (_cohortId == null)
             return null;
         return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, CohortImpl.class);
+    }
+
+    public int getChronologicalOrder()
+    {
+        return _chronologicalOrder;
+    }
+
+    public void setChronologicalOrder(int chronologicalOrder)
+    {
+        _chronologicalOrder = chronologicalOrder;
     }
 }

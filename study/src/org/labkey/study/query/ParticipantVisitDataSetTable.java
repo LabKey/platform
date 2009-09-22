@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
@@ -252,7 +253,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
         if (-1 == seq)
         {
-            for (VisitImpl v : StudyManager.getInstance().getVisits(_study))
+            for (VisitImpl v : StudyManager.getInstance().getVisits(_study, Visit.Order.SEQUENCE_NUM))
             {
                 if (name.equals(v.getLabel()))
                 {

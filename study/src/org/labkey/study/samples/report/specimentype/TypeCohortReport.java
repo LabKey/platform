@@ -3,9 +3,11 @@ package org.labkey.study.samples.report.specimentype;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
+import org.labkey.study.CohortFilter;
 
 /**
  * Copyright (c) 2008-2009 LabKey Corporation
@@ -27,21 +29,24 @@ import org.labkey.study.samples.report.SpecimenTypeVisitReport;
  */
 public class TypeCohortReport extends SpecimenTypeVisitReport
 {
-    private Integer _cohortId;
+    private CohortFilter _cohortFilter;
 
-    public TypeCohortReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, Integer cohortId)
+    public TypeCohortReport(String titlePrefix, VisitImpl[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, CohortFilter cohortFilter)
     {
         super(titlePrefix, visits, filter, parameters);
-        _cohortId = cohortId;
+        _cohortFilter = cohortFilter;
     }
 
     protected SimpleFilter getViewFilter()
     {
         SimpleFilter filter = super.getViewFilter();
-        if (_cohortId != null)
-            filter.addCondition(FieldKey.fromParts("ParticipantId", "Cohort", "RowId").toString(), _cohortId);
-        else
-            filter.addCondition(FieldKey.fromParts("ParticipantId", "Cohort", "RowId").toString(), null, CompareType.ISBLANK);
+        if (_cohortFilter != null)
+        {
+            if (_cohortFilter == CohortFilter.UNASSIGNED)
+                filter.addCondition(_cohortFilter.getType().getFilterColumn().toString(), null, CompareType.ISBLANK);
+            else
+                filter.addCondition(_cohortFilter.getType().getFilterColumn().toString(), _cohortFilter.getCohortId());
+        }
         return filter;
     }
 }

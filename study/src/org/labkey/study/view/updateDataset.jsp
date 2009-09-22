@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
@@ -128,7 +129,7 @@
             <td>
                 <table>
                 <%
-                    for (VisitImpl visit : study.getVisits())
+                    for (VisitImpl visit : study.getVisits(Visit.Order.DISPLAY))
                     {
                         VisitDataSetType type = dataset.getVisitType(visit.getRowId());
                 %>

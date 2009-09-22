@@ -25,6 +25,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.GUID;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
@@ -59,6 +60,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Integer _reloadInterval;
     private Date _lastReload;
     private Integer _reloadUser;
+    private boolean _advancedCohorts;
 
     public StudyImpl()
     {
@@ -117,9 +119,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    public VisitImpl[] getVisits()
+    public VisitImpl[] getVisits(Visit.Order order)
     {
-        return StudyManager.getInstance().getVisits(this);
+        return StudyManager.getInstance().getVisits(this, order);
     }
 
 
@@ -375,6 +377,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setReloadUser(Integer reloadUser)
     {
         _reloadUser = reloadUser;
+    }
+
+    public boolean isAdvancedCohorts()
+    {
+        return _advancedCohorts;
+    }
+
+    public void setAdvancedCohorts(boolean advancedCohorts)
+    {
+        _advancedCohorts = advancedCohorts;
     }
 
     public static class SummaryStatistics

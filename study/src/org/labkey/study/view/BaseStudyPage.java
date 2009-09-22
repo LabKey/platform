@@ -40,9 +40,9 @@ public abstract class BaseStudyPage extends JspBase
         return _study;
     }
 
-    protected VisitImpl[] getVisits()
+    protected VisitImpl[] getVisits(Visit.Order order)
     {
-        return getStudy().getVisits();
+        return getStudy().getVisits(order);
     }
 
     protected DataSetDefinition[] getDataSets()

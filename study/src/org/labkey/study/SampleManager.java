@@ -2219,7 +2219,7 @@ public class SampleManager
     }
 
     public SummaryByVisitParticipant[] getParticipantSummaryByVisitType(Container container, User user, 
-                                                                        SimpleFilter specimenDetailFilter, CustomView baseView) throws SQLException
+                                SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType) throws SQLException
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2231,15 +2231,37 @@ public class SampleManager
         }
         SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, null);
 
+        String cohortJoinClause = null;
+        switch (cohortType)
+        {
+            case DATA_COLLECTION:
+                cohortJoinClause = "LEFT OUTER JOIN study.ParticipantVisit ON\n " +
+                        "\tSpecimenQuery.Visit = study.ParticipantVisit.SequenceNum AND\n" +
+                        "\tSpecimenQuery.ParticipantId = study.ParticipantVisit.ParticipantId AND\n" +
+                        "\tSpecimenQuery.Container = study.ParticipantVisit.Container\n" +
+                        "LEFT OUTER JOIN study.Cohort ON \n" +
+                        "\tstudy.ParticipantVisit.CohortId = study.Cohort.RowId AND\n" +
+                        "\tstudy.ParticipantVisit.Container = study.Cohort.Container\n";
+                break;
+            case PTID_CURRENT:
+                cohortJoinClause = "LEFT OUTER JOIN study.Cohort ON \n" +
+                        "\tstudy.Participant.CurrentCohortId = study.Cohort.RowId AND\n" +
+                        "\tstudy.Participant.Container = study.Cohort.Container\n";
+                break;
+            case PTID_INITIAL:
+                cohortJoinClause = "LEFT OUTER JOIN study.Cohort ON \n" +
+                        "\tstudy.Participant.InitialCohortId = study.Cohort.RowId AND\n" +
+                        "\tstudy.Participant.Container = study.Cohort.Container\n";
+                break;
+        }
+
         String ptidSpecimenSQL = "SELECT SpecimenQuery.Visit AS SequenceNum, SpecimenQuery.ParticipantId,\n" +
                 "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n" +
                 "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS SpecimenQuery\n" +
                 "LEFT OUTER JOIN study.Participant ON\n" +
                 "\tSpecimenQuery.ParticipantId = study.Participant.ParticipantId AND\n" +
                 "\tSpecimenQuery.Container = study.Participant.Container\n" +
-                "LEFT OUTER JOIN study.Cohort ON \n" +
-                "\tstudy.Participant.CohortId = study.Cohort.RowId AND\n" +
-                "\tstudy.Participant.Container = study.Cohort.Container\n" +
+                cohortJoinClause +
                 "GROUP BY study.Cohort.Label, SpecimenQuery.ParticipantId, Visit\n" +
                 "ORDER BY study.Cohort.Label, SpecimenQuery.ParticipantId, Visit";
 

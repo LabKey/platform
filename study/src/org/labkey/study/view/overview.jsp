@@ -30,6 +30,8 @@
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -45,7 +47,7 @@
     CohortImpl[] cohorts = null;
     if (showCohorts)
     {
-        selectedCohort = bean.cohortId != null ? manager.getCohortForRowId(container, user, bean.cohortId) : null;
+        selectedCohort = bean.cohortFilter != null ? bean.cohortFilter.getCohort(container, user) : null;
         cohorts = manager.getCohorts(container, user);
     }
 
@@ -58,7 +60,7 @@
         qcStateSetOptions = QCStateSet.getSelectableSets(container);
     }
 
-    VisitImpl[] visits = manager.getVisits(study, selectedCohort, user);
+    VisitImpl[] visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
     String basePage = "overview.view?";
@@ -92,7 +94,8 @@
     {
 %>
 <br><br>
-    Cohort: <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
+    <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
+    Participant's current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
         for (CohortImpl cohort : cohorts)
@@ -208,18 +211,14 @@
         }
         if (userCanRead)
         {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("defaultDatasetReport.view?");
-            sb.append(DataSetDefinition.DATASETKEY);
-            sb.append("=");
-            sb.append(dataSet.getDataSetId());
-            if (selectedCohort != null)
-                sb.append("&cohortId=").append(selectedCohort.getRowId());
+            ActionURL defaultReportURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, container);
+            defaultReportURL.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
+            if (selectedCohort != null && bean.cohortFilter != null)
+                bean.cohortFilter.addURLParameters(defaultReportURL);
             if (bean.qcStates != null)
-                sb.append("&QCState=").append(bean.qcStates.getFormValue());
+                defaultReportURL.addParameter("QCState", bean.qcStates.getFormValue());
 
-            %><a href="<%=sb%>"><%=totalCount%></a><%
+            %><a href="<%= defaultReportURL.getLocalURIString() %>"><%=totalCount%></a><%
         }
         else
         {
@@ -262,7 +261,7 @@
                 datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
                 datasetLink.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
                 if (selectedCohort != null)
-                    datasetLink.addParameter(BaseStudyController.SharedFormParameters.cohortId, selectedCohort.getRowId());
+                    bean.cohortFilter.addURLParameters(datasetLink);
                 if (bean.qcStates != null)
                     datasetLink.addParameter(BaseStudyController.SharedFormParameters.QCState, bean.qcStates.getFormValue());
 

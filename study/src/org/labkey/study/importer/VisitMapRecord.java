@@ -51,8 +51,12 @@ class VisitMapRecord
     private final int _missedNotificationPlate;
     private final String _terminationWindow;
     private final String _cohort;
+    private final int _displayOrder;
+    private final int _chronologicalOrder;
 
-    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel, String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault)
+    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel,
+                          String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault,
+                          int displayOrder, int chronologicalOrder)
     {
         _sequenceNumberMin = sequenceNumberMin;
         _sequenceNumberMax = sequenceNumberMax;
@@ -63,6 +67,8 @@ class VisitMapRecord
         _requiredPlates = requiredPlates;
         _optionalPlates = optionalPlates;
         _showByDefault = showByDefault;
+        _displayOrder = displayOrder;
+        _chronologicalOrder = chronologicalOrder;
 
         // These are not currently used
         _visitDateField = null;
@@ -97,6 +103,9 @@ class VisitMapRecord
         _missedNotificationPlate = defaultInt((Integer)record.get("missedNotificationPlate"), -1);
         _terminationWindow = (String)record.get("terminationWindow");
         _showByDefault = true;
+
+        _displayOrder = defaultInt((Integer)record.get("displayOrder"), 0);
+        _chronologicalOrder = defaultInt((Integer)record.get("chronologicalOrder"), 0);
     }
 
     private static int defaultInt(Integer i, int defaultInt)
@@ -119,6 +128,8 @@ class VisitMapRecord
     public Visit.Type getVisitType()        { return _visitType; }
     public String getCohort()               { return _cohort; }
     public boolean isShowByDefault()        { return _showByDefault; }
+    public int getDisplayOrder()            { return _displayOrder; }
+    public int getChronologicalOrder()      { return _chronologicalOrder; }
 
 /*    private int toInt(String str, int defaultValue)
     {

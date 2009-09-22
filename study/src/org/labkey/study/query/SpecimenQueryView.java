@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SampleManager;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -311,31 +312,38 @@ public class SpecimenQueryView extends BaseStudyQueryView
     }
 
     protected SpecimenQueryView(ViewContext context, UserSchema schema, QuerySettings settings,
-                            SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered)
+                            SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered, CohortFilter cohortFilter)
     {
         super(context, schema, settings, filter, sort);
         _viewType = viewType;
+        _cohortFilter = cohortFilter;
         _participantVisitFiltered = participantVisitFiltered;
     }
 
     public static SpecimenQueryView createView(ViewContext context, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
-        return createView(context, filter, createDefaultSort(viewType), viewType, false);
+        return createView(context, filter, createDefaultSort(viewType), viewType, false, null);
+    }
+
+    public static SpecimenQueryView createView(ViewContext context, ViewType viewType, CohortFilter cohortFilter)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        return createView(context, filter, createDefaultSort(viewType), viewType, false, cohortFilter);
     }
 
     public static SpecimenQueryView createView(ViewContext context, Specimen[] samples, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
         addFilterClause(filter, samples, viewType);
-        return createView(context, filter, createDefaultSort(viewType), viewType, false);
+        return createView(context, filter, createDefaultSort(viewType), viewType, false, null);
     }
 
     public static SpecimenQueryView createView(ViewContext context, ParticipantDataset[] participantDatasets, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
         addFilterClause(filter, participantDatasets);
-        return createView(context, filter, createDefaultSort(viewType), viewType, true);
+        return createView(context, filter, createDefaultSort(viewType), viewType, true, null);
     }
 
     public enum PARAMS
@@ -395,7 +403,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
             addPreviouslyRequestedClause(filter, context.getContainer(), false, true);
     }
 
-    private static SpecimenQueryView createView(ViewContext context, SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered)
+    private static SpecimenQueryView createView(ViewContext context, SimpleFilter filter, Sort sort, ViewType viewType,
+                                                boolean participantVisitFiltered, CohortFilter cohortFilter)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
@@ -414,7 +423,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         addOnlyPreviouslyRequestedFilter(context, filter);
         addEnrollmentSiteRequestFilter(context, filter);
         addRequestFilter(context, filter);
-        return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered);
+        return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered, cohortFilter);
     }
 
     public Map<String, Integer> getSampleCounts(RenderContext ctx)

@@ -5,6 +5,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.study.StudySchema;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.model.*;
 
 import java.sql.ResultSet;
@@ -36,7 +37,7 @@ public class SequenceVisitManager extends VisitManager
         super(study);
     }
 
-    public Map<VisitMapKey, Integer> getVisitSummary(CohortImpl cohort, QCStateSet qcStates) throws SQLException
+    public Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException
     {
         Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -56,8 +57,8 @@ public class SequenceVisitManager extends VisitManager
 
         try
         {
-            String sql;
-            if (cohort == null)
+            String sql = null;
+            if (cohortFilter == null)
             {
                  sql = "SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
                     "FROM " + studyData + " SD\n" +
@@ -69,13 +70,32 @@ public class SequenceVisitManager extends VisitManager
             }
             else
             {
-                sql = "SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
-                    "FROM " + studyData + " SD, " + participantTable + " P\n" +
-                    "WHERE SD.Container = ? AND P.ParticipantId = SD.ParticipantId AND P.Container = SD.Container AND P.CohortID = ?\n" +
-                    (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
-                    "GROUP BY DatasetId, SequenceNum\n" +
-                    "ORDER BY 1, 2";
-                rows = Table.executeQuery(schema, sql, new Object[] {_study.getContainer().getId(), cohort.getRowId()}, 0, false);
+                switch (cohortFilter.getType())
+                {
+                    case DATA_COLLECTION:
+                        sql = "SELECT DatasetId, SD.SequenceNum, CAST(COUNT(*) AS INT)\n" +
+                                "FROM study.studydata SD, study.ParticipantVisit PV\n" +
+                                "WHERE SD.Container = ? AND \n" +
+                                "\tPV.ParticipantId = SD.ParticipantId AND \n" +
+                                "\tPV.SequenceNum = SD.SequenceNum AND\n" +
+                                "\tPV.Container = SD.Container AND \n" +
+                                "\tPV.CohortID = ?\n" +
+                                (qcStates != null ? "\tAND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
+                                "GROUP BY DatasetId, SD.SequenceNum\n" +
+                                "ORDER BY 1, 2";
+                        break;
+                    case PTID_CURRENT:
+                    case PTID_INITIAL:
+                        sql = "SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
+                            "FROM " + studyData + " SD, " + participantTable + " P\n" +
+                            "WHERE SD.Container = ? AND P.ParticipantId = SD.ParticipantId AND P.Container = SD.Container AND P." +
+                                (cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId") + " = ?\n" +
+                            (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
+                            "GROUP BY DatasetId, SequenceNum\n" +
+                            "ORDER BY 1, 2";
+                        break;
+                }
+                rows = Table.executeQuery(schema, sql, new Object[] {_study.getContainer().getId(), cohortFilter.getCohortId()}, 0, false);
             }
 
             VisitMapKey key = null;

@@ -9,6 +9,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.Pair;
 
 import java.util.*;
@@ -96,7 +97,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
                 VisitImpl[] visits = null;
                 if (showCohorts)
                 {
-                    CohortImpl cohort = StudyManager.getInstance().getCohortForParticipant(getContainer(), getUser(), participantId);
+                    CohortImpl cohort = StudyManager.getInstance().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);
                     if (cohort != null)
                     {
                         visits = visitListCache.get(cohort.getRowId());
@@ -111,7 +112,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
                 if (visits == null)
                 {
                     if (allVisits == null)
-                        allVisits = StudyManager.getInstance().getVisits(study);
+                        allVisits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
                     visits = allVisits;
                 }
                 reports.add(new RequestParticipantReport(participantId, visits, filter, this));

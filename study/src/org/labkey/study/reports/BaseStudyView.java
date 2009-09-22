@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Visit;
 
 import java.util.HashMap;
 
@@ -62,7 +63,7 @@ public class BaseStudyView<T> extends HttpView<T>
     {
         if (null == _visits)
         {
-            _visits =  _studyManager.getVisits(_study);
+            _visits =  _studyManager.getVisits(_study, Visit.Order.DISPLAY);
             for (VisitImpl v : _visits)
                 _visitMap.put(v.getRowId(), v);
         }

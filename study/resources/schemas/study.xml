@@ -37,6 +37,7 @@
       <ns:column columnName="ReloadInterval"/>
       <ns:column columnName="LastReload"/>
       <ns:column columnName="ReloadUser"/>
+      <ns:column columnName="AdvancedCohorts"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
@@ -67,6 +68,7 @@
       <ns:column columnName="SequenceNumMax"/>
       <ns:column columnName="SequenceNumMin"/>
       <ns:column columnName="cohortid"/>
+      <ns:column columnName="ChronologicalOrder"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="VisitMap" tableDbType="TABLE">
@@ -206,7 +208,8 @@
       <ns:column columnName="EnrollmentSiteId"/>
       <ns:column columnName="CurrentSiteId"/>
       <ns:column columnName="StartDate"/>
-      <ns:column columnName="cohortid"/>
+      <ns:column columnName="CurrentCohortId"/>
+      <ns:column columnName="InitialCohortId"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequestActor" tableDbType="TABLE">
@@ -364,7 +367,9 @@
   </ns:table>
   <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:datatype>int</ns:datatype>
+      </ns:column>        
       <ns:column columnName="SpecimenId"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="GlobalUniqueId"/>
@@ -596,6 +601,7 @@
       <ns:column columnName="visitrowid"/>
       <ns:column columnName="sequencenum"/>
       <ns:column columnName="Day"/>
+      <ns:column columnName="CohortID"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="participantview" tableDbType="TABLE">

@@ -33,7 +33,7 @@
             <th align="left">Show By Default</th>
         </tr>
     <%
-        for (VisitImpl visit : getVisits())
+        for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))
         {
     %>
         <tr>

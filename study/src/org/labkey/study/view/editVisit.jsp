@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
@@ -101,7 +102,7 @@
                     else
                     {
                     %>
-                    <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>">
+                    <select name="<%= CohortFilter.Params.cohortId.name() %>">
                         <option value="">All</option>
                     <%
 

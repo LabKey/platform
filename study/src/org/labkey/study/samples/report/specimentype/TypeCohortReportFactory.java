@@ -5,12 +5,12 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Copyright (c) 2008-2009 LabKey Corporation
@@ -44,30 +44,34 @@ public class TypeCohortReportFactory extends TypeReportFactory
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        List<CohortImpl> reportCohorts = new ArrayList<CohortImpl>();
-        if (getCohort() != null)
-            reportCohorts.add(getCohort());
+        List<CohortFilter> reportCohorts = new ArrayList<CohortFilter>();
+        if (getCohortFilter() != null)
+            reportCohorts.add(getCohortFilter());
         else
-            reportCohorts.addAll(Arrays.asList(StudyManager.getInstance().getCohorts(getContainer(), getUser())));
-        // add null cohort so we can view unassigned participants
-        reportCohorts.add(null);
+        {
+            for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+                reportCohorts.add(new CohortFilter(CohortFilter.Type.DATA_COLLECTION, cohort.getRowId()));
+            reportCohorts.add(CohortFilter.UNASSIGNED);
+        }
 
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
-        for (CohortImpl cohort : reportCohorts)
+        for (CohortFilter cohortFilter : reportCohorts)
         {
+            CohortImpl cohort = cohortFilter.getCohort(getContainer(), getUser());
             String title = cohort != null ? cohort.getLabel() : "[No cohort assigned]";
-            Integer cohortId = cohort != null ? cohort.getRowId() : null;
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
-            addCohortFilter(filter, cohortId);
+            addCohortFilter(filter, cohortFilter);
             VisitImpl[] visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
-            reports.add(new TypeCohortReport(title, visits, filter, this, cohortId));
+            reports.add(new TypeCohortReport(title, visits, filter, this, cohortFilter));
         }
         return reports;
     }
 
     public String getLabel()
     {
-        return getCohort() != null ? getCohort().getLabel() : "By Cohort";
+        CohortFilter filter = getCohortFilter();
+        CohortImpl cohort = filter != null ? filter.getCohort(getContainer(), getUser()) : null;
+        return cohort != null ? cohort.getLabel() : "By Cohort";
     }
 }

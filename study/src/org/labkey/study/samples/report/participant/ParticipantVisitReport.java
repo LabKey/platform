@@ -3,6 +3,7 @@ package org.labkey.study.samples.report.participant;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
@@ -43,8 +44,9 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
     {
         try
         {
+            CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
             SampleManager.SummaryByVisitParticipant[] countSummary =
-                    SampleManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView());
+                    SampleManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
             Map<String, Row> rows = new TreeMap<String, Row>();
             for (SampleManager.SummaryByVisitParticipant count : countSummary)
             {

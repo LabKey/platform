@@ -31,6 +31,7 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.reports.ReportManager;
+import org.labkey.study.CohortFilter;
 
 import java.io.PrintWriter;
 import java.util.Collections;
@@ -102,7 +103,7 @@ public class DataHeader extends HttpView
         {
             if (!"Dataset.viewName".equalsIgnoreCase(parameter.getKey()) &&
                 !"prevView".equalsIgnoreCase(parameter.getKey()) &&
-                !BaseStudyController.SharedFormParameters.cohortId.name().equalsIgnoreCase(parameter.getKey()) &&
+                !CohortFilter.isCohortFilterParameterName(parameter.getKey()) &&
                 !"participantId".equalsIgnoreCase(parameter.getKey()) &&
                 !"tabId".equalsIgnoreCase(parameter.getKey()) &&
                 !"reportId".equalsIgnoreCase(parameter.getKey()) &&

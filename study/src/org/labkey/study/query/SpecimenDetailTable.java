@@ -19,6 +19,7 @@
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -94,6 +95,9 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(new QualityControlFlagColumn(this));
         addColumn(new QualityControlCommentsColumn(this));
 
+        if (StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
+            addColumn(new CollectionCohortColumn(_schema, this));
+
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
 
         addWrapColumn(_rootTable.getColumn("VialCount"));
@@ -127,6 +131,45 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment()).append(" AS ");
             joinSql.append(tableAlias).append(" ON ");
             joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
+            joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");
+
+            map.put(tableAlias, joinSql);
+        }
+    }
+
+    public static class CollectionCohortColumn extends ExprColumn
+    {
+        protected static final String COLLECTION_COHORT_JOIN = "CollectionCohortJoin$";
+
+        public CollectionCohortColumn(final StudyQuerySchema schema, TableInfo parent)
+        {
+            super(parent, "CollectionCohort",
+                    new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + COLLECTION_COHORT_JOIN + ".CohortId"),
+                    Types.INTEGER);
+
+            setFk(new LookupForeignKey("RowId")
+            {
+                public TableInfo getLookupTableInfo()
+                {
+                    return new CohortTable(schema);
+                }
+            });
+        }
+
+        @Override
+        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+        {
+            super.declareJoins(parentAlias, map);
+
+            String tableAlias = parentAlias + "$" + COLLECTION_COHORT_JOIN;
+            if (map.containsKey(tableAlias))
+                return;
+
+            SQLFragment joinSql = new SQLFragment();
+            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit()).append(" AS ");
+            joinSql.append(tableAlias).append(" ON ");
+            joinSql.append(parentAlias).append(".PTID = ").append(tableAlias).append(".ParticipantId AND ");
+            joinSql.append(parentAlias).append(".VisitValue = ").append(tableAlias).append(".SequenceNum AND ");
             joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");
 
             map.put(tableAlias, joinSql);

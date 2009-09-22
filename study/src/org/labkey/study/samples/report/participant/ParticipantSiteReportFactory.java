@@ -8,6 +8,7 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 

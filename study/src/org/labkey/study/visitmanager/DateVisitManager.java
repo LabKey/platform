@@ -5,6 +5,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.model.*;
 
@@ -49,7 +50,7 @@ public class DateVisitManager extends VisitManager
         return "Timepoints";
     }
     
-    public Map<VisitMapKey, Integer> getVisitSummary(CohortImpl cohort, QCStateSet qcStates) throws SQLException
+    public Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException
     {
         Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -60,7 +61,7 @@ public class DateVisitManager extends VisitManager
 
         try
         {
-            if (cohort == null)
+            if (cohortFilter == null)
             {
                 rows = Table.executeQuery(schema,
                         "SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
@@ -74,16 +75,25 @@ public class DateVisitManager extends VisitManager
             }
             else
             {
-                rows = Table.executeQuery(schema,
-                        "SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
-                        "FROM " + studyData + " SD\n" +
-                        "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND SD.Container=PV.Container\n" +
-                        "JOIN " + participantTable + " P ON SD.ParticipantId=P.ParticipantId AND SD.Container=P.Container\n" +
-                        "WHERE SD.Container = ? AND P.CohortId = ?\n" +
-                        (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
-                        "GROUP BY DatasetId, Day\n" +
-                        "ORDER BY 1, 2",
-                        new Object[] {_study.getContainer().getId(), cohort.getRowId()}, 0, false);
+                String sql = null;
+                switch (cohortFilter.getType())
+                {
+                    case DATA_COLLECTION:
+                        break;
+                    case PTID_CURRENT:
+                    case PTID_INITIAL:
+                        sql = "SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
+                            "FROM " + studyData + " SD\n" +
+                            "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND SD.Container=PV.Container\n" +
+                            "JOIN " + participantTable + " P ON SD.ParticipantId=P.ParticipantId AND SD.Container=P.Container\n" +
+                            "WHERE SD.Container = ? AND P." + (cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId") + " = ?\n" +
+                            (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
+                            "GROUP BY DatasetId, Day\n" +
+                            "ORDER BY 1, 2";
+
+                        break;
+                }
+                rows = Table.executeQuery(schema, sql, new Object[] { _study.getContainer().getId(), cohortFilter.getCohortId() }, 0, false);
             }
             VisitMapKey key = null;
             int cumulative = 0;

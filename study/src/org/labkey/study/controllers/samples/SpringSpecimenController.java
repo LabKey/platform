@@ -36,6 +36,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
@@ -91,6 +92,7 @@ public class SpringSpecimenController extends BaseStudyController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SpringSpecimenController.class,
             ShowUploadSpecimensAction.class,
+            ShowUploadSpecimensAction.ImportCompleteAction.class,
             ShowGroupMembersAction.class,
             ShowSearchAction.class,
             AutoCompleteAction.class
@@ -221,10 +223,10 @@ public class SpringSpecimenController extends BaseStudyController
             SpecimenQueryView view;
             if (lsids != null)
             {
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum());
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum(), null);
             }
             else
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.getViewModeEnum());
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.getViewModeEnum(), null);
             view.setAllowExportExternalQuery(false);
             return view;
         }
@@ -250,7 +252,8 @@ public class SpringSpecimenController extends BaseStudyController
         protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             _vialView = form.isShowVials();
-            SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.getViewModeEnum());
+            CohortFilter cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
+            SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.getViewModeEnum(), cohortFilter);
             if (SpecimenUtils.isCommentsMode(getContainer(), form.getViewModeEnum()))
                 view.setRestrictRecordSelectors(false);
             return view;

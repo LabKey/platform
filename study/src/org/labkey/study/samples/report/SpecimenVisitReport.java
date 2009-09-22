@@ -3,6 +3,8 @@ package org.labkey.study.samples.report;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
+import org.labkey.study.StudySchema;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.api.view.ActionURL;
@@ -10,6 +12,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -158,8 +161,14 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         fullFilter.addAllClauses(_filter);
         // When querying the study.SpecimenDetail view, we use an 'IN' clause for participant id.
         // We need to translate this to a query-based lookup for view filtering purposes:
-        if (_parameters.getCohortId() != null)
-            fullFilter.addCondition(FieldKey.fromParts("ParticipantId", "Cohort", "RowId").toString(), _parameters.getCohortId());
+        CohortFilter cohortFilter = _parameters.getCohortFilter();
+        if (cohortFilter != null)
+        {
+            if (cohortFilter == CohortFilter.UNASSIGNED)
+                fullFilter.addCondition(cohortFilter.getType().getFilterColumn().toString(), null, CompareType.ISBLANK);
+            else
+                fullFilter.addCondition(cohortFilter.getType().getFilterColumn().toString(), cohortFilter.getCohortId());
+        }
 
         // This is a terrible hack to deal with the fact that the some SpecimenDetail columns have been aliased
         // in the query view.  As a result, we need to use the view's column name for filtering
@@ -181,6 +190,13 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         }
         else
             ret += "&SpecimenDetail.ignoreFilter=1";
+
+        if (_parameters.getCohortFilter() != null)
+        {
+            ActionURL blankURL = new ActionURL();
+            _parameters.getCohortFilter().addURLParameters(blankURL);
+            ret += "&" + blankURL.getQueryString();
+        }
 
         switch (_parameters.getStatusFilter())
         {
@@ -348,6 +364,13 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     protected String getStatusFilterName()
     {
         return _parameters.getStatusFilterName();
+    }
+
+    protected CohortFilter getCohortFilter()
+    {
+        if (StudyManager.getInstance().showCohorts(_container, getUser()))
+            return _parameters.getCohortFilter();
+        return null;
     }
 
     protected CustomView getBaseCustomView()

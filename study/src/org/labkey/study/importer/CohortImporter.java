@@ -22,6 +22,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.CohortMode;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.InvalidFileException;
 
@@ -51,13 +52,15 @@ public class CohortImporter implements InternalStudyImporter
         if (null != cohortsXml)
         {
             CohortType.Enum cohortType = cohortsXml.getType();
+            CohortMode.Enum cohortMode = cohortsXml.getMode();
 
             if (cohortType == CohortType.AUTOMATIC)
             {
                 ctx.getLogger().info("Loading automatic cohort settings");
                 Integer dataSetId = cohortsXml.getDatasetId();
                 String dataSetProperty = cohortsXml.getDatasetProperty();
-                CohortManager.updateAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty);
+                CohortManager.updateAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty, 
+                        cohortMode == CohortMode.ADVANCED, true);
             }
             else
             {

@@ -71,7 +71,8 @@ public class XmlVisitMapReader implements VisitMapReader
             VisitMapRecord record = new VisitMapRecord(visitXml.getSequenceNum(), maxSequenceNum, visitXml.getTypeCode(),
                     visitXml.getLabel(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(),
                     ArrayUtils.toPrimitive(required.toArray(new Integer[required.size()])),
-                    ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault());
+                    ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault(),
+                    visitXml.getDisplayOrder(), visitXml.getChronologicalOrder());
 
             visits.add(record);
         }

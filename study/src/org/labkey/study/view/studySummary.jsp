@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
@@ -70,7 +71,7 @@ if (null == getStudy())
     <tr><td valign="top">This study defines
 <ul>
     <li><%= getDataSets().length %> Datasets (Forms and Assays) &nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
-    <li><%= getVisits().length %> <%=visitLabel%>&nbsp;<%=!dateBased && isAdmin && getVisits().length < 0 ?
+    <li><%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>&nbsp;<%=!dateBased && isAdmin && getVisits(Visit.Order.DISPLAY).length < 0 ?
                         textLink("Import Visit Map", url.setAction(StudyController.UploadVisitMapAction.class)) : "" %><%=
                         isAdmin ? textLink("Manage " + visitLabel, url.setAction(StudyController.ManageVisitsAction.class)) : "" %></li>
     <li><%= getSites().length %> Labs and Sites&nbsp;<%= isAdmin ? textLink("Manage Labs/Sites", url.setAction(StudyController.ManageSitesAction.class)) : ""%></li>

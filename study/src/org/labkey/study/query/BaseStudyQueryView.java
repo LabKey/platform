@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.CohortFilter;
 
 import java.util.List;
 
@@ -36,6 +37,7 @@ import java.util.List;
 public abstract class BaseStudyQueryView extends QueryView
 {
     protected SimpleFilter _filter;
+    protected CohortFilter _cohortFilter;
     protected Sort _sort;
     private List<DisplayElement> _buttons;
 
@@ -56,6 +58,10 @@ public abstract class BaseStudyQueryView extends QueryView
             filter.addAllClauses(_filter);
         else
             filter = _filter;
+
+        if (_cohortFilter != null)
+            _cohortFilter.addFilterCondition(view.getTable(), filter);
+
         view.getRenderContext().setBaseFilter(filter);
         if (view.getRenderContext().getBaseSort() == null)
             view.getRenderContext().setBaseSort(_sort);

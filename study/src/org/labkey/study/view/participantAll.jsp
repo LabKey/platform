@@ -46,6 +46,7 @@
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -73,7 +74,7 @@
     Study study = manager.getStudy(context.getContainer());
     AllParticipantData all = manager.getAllParticipantData(study, bean.getParticipantId(), bean.getQCStateSet());
 
-    VisitImpl[] allVisits = manager.getVisits(study);
+    VisitImpl[] allVisits = manager.getVisits(study, Visit.Order.DISPLAY);
     ArrayList<VisitImpl> visits = new ArrayList<VisitImpl>(all.getVisitSequenceMap().size());
     for (VisitImpl visit : allVisits)
     {

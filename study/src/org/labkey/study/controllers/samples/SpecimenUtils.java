@@ -30,6 +30,7 @@ import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
@@ -92,9 +93,9 @@ public class SpecimenUtils
         return _controller.getStudy();
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode) throws ServletException, SQLException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter) throws ServletException, SQLException
     {
-        return getSpecimenQueryView(showVials, forExport, null, viewMode);
+        return getSpecimenQueryView(showVials, forExport, null, viewMode, cohortFilter);
     }
 
     private String urlFor(Class<? extends Controller> action)
@@ -119,7 +120,7 @@ public class SpecimenUtils
                 (selectedMode == SpecimenQueryView.Mode.DEFAULT && SampleManager.getInstance().getDisplaySettings(container).isDefaultToCommentsMode());
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode) throws ServletException, SQLException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter) throws ServletException, SQLException
     {
         boolean commentsMode = isCommentsMode(getContainer(), viewMode);
 
@@ -133,7 +134,7 @@ public class SpecimenUtils
         else
             gridView = SpecimenQueryView.createView(getViewContext(),
                             showVials ? SpecimenQueryView.ViewType.VIALS :
-                                        SpecimenQueryView.ViewType.SUMMARY);
+                                        SpecimenQueryView.ViewType.SUMMARY, cohortFilter);
         gridView.setShowHistoryLinks(showVials && !forExport && !settings.isSimple());
         gridView.setDisableLowVialIndicators(forExport || settings.isSimple());
         gridView.setShowRecordSelectors(settings.isEnableRequests() || commentsMode);
@@ -142,6 +143,10 @@ public class SpecimenUtils
             return gridView;
 
         List<DisplayElement> buttons = new ArrayList<DisplayElement>();
+
+        ActionButton cohortButton = CohortManager.createCohortButton(getViewContext(), cohortFilter);
+        if (cohortButton != null)
+            buttons.add(cohortButton);
 
         if (settings.isEnableRequests())
         {

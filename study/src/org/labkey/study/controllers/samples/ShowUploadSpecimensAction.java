@@ -213,6 +213,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         return root;
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
     public static class ImportCompleteAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
@@ -65,15 +66,30 @@ public class ParticipantTable extends FilteredTable
 
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {
-            ColumnInfo cohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
-            cohortColumn.setFk(new LookupForeignKey("RowId")
+            ColumnInfo currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CurrentCohortId"));
+            currentCohortColumn.setFk(new LookupForeignKey("RowId")
             {
                 public TableInfo getLookupTableInfo()
                 {
                     return new CohortTable(_schema);
                 }
             });
-            addColumn(cohortColumn);
+            addColumn(currentCohortColumn);
+
+            Study study = StudyManager.getInstance().getStudy(schema.getContainer());
+
+            if (study.isAdvancedCohorts())
+            {
+                ColumnInfo initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("InitialCohortId"));
+                initialCohortColumn.setFk(new LookupForeignKey("RowId")
+                {
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return new CohortTable(_schema);
+                    }
+                });
+                addColumn(initialCohortColumn);
+            }
         }
         
         ForeignKey fkSite = SiteTable.fkFor(_schema);

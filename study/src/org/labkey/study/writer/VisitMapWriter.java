@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
@@ -38,12 +39,12 @@ public class VisitMapWriter implements InternalStudyWriter
         if (ctx.useOldFormats())
         {
             DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
-            writer.write(study.getVisits(), ctx, vf);
+            writer.write(study.getVisits(Visit.Order.DISPLAY), ctx, vf);
         }
         else
         {
             XmlVisitMapWriter writer = new XmlVisitMapWriter();
-            writer.write(study.getVisits(), ctx, vf);
+            writer.write(study.getVisits(Visit.Order.DISPLAY), ctx, vf);
         }
     }
 }

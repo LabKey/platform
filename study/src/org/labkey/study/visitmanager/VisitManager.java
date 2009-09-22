@@ -3,8 +3,10 @@ package org.labkey.study.visitmanager;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.study.Visit;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.model.*;
 
 import java.sql.ResultSet;
@@ -62,7 +64,7 @@ public abstract class VisitManager
 
     protected abstract void updateParticipantVisitTable(User user);
     protected abstract void updateVisitTable(User user);
-    public abstract Map<VisitMapKey, Integer> getVisitSummary(CohortImpl cohort, QCStateSet qcStates) throws SQLException;
+    public abstract Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException;
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
     protected abstract String getDatasetSequenceNumsSQL();
@@ -106,7 +108,7 @@ public abstract class VisitManager
      */
     public TreeMap<Double, VisitImpl> getVisitSequenceMap()
     {
-        VisitImpl[] visits = _study.getVisits();
+        VisitImpl[] visits = _study.getVisits(Visit.Order.DISPLAY);
         TreeMap<Double, VisitImpl> visitMap = new TreeMap<Double, VisitImpl>();
         for (VisitImpl v : visits)
             visitMap.put(v.getSequenceNumMin(),v);

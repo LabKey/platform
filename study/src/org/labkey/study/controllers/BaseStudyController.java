@@ -34,6 +34,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.BaseStudyPage;
 import org.labkey.study.view.StudyNavigationView;
+import org.labkey.study.CohortFilter;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -50,8 +51,7 @@ public abstract class BaseStudyController extends SpringActionController
 {
     public enum SharedFormParameters
     {
-        QCState,
-        cohortId
+        QCState
     }
     static final boolean extprototype = false;
 
@@ -191,14 +191,14 @@ public abstract class BaseStudyController extends SpringActionController
         return _appendNavTrail(root, null);
     }
 
-    protected NavTree _appendNavTrail(NavTree root, Integer cohortId)
+    protected NavTree _appendNavTrail(NavTree root, CohortFilter cohortFilter)
     {
         try {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             ActionURL overviewURL = new ActionURL(StudyController.OverviewAction.class, getContainer());
-            if (cohortId != null)
-                overviewURL.addParameter(SharedFormParameters.cohortId, cohortId.intValue());
+            if (cohortFilter != null)
+                cohortFilter.addURLParameters(overviewURL);
             root.addChild("Study Overview", overviewURL);
         }
         catch (ServletException e)
@@ -209,21 +209,21 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId)
     {
-        return _appendNavTrail(root, datasetId, visitId, -1, null);
+        return _appendNavTrail(root, datasetId, visitId, null, null);
     }
 
-    protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId, int cohortId, String qcStateSetFormValue)
+    protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter, String qcStateSetFormValue)
     {
         try {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             ActionURL overviewURL = new ActionURL(StudyController.OverviewAction.class, getContainer());
-            if (cohortId >= 0)
-                overviewURL.addParameter(SharedFormParameters.cohortId, cohortId);
+            if (cohortFilter != null)
+                cohortFilter.addURLParameters(overviewURL);
             if (qcStateSetFormValue != null)
                 overviewURL.addParameter(SharedFormParameters.QCState, qcStateSetFormValue);
             root.addChild("Study Overview", overviewURL);
-            _appendDataset(root, study, datasetId, visitId, cohortId, qcStateSetFormValue);
+            _appendDataset(root, study, datasetId, visitId, cohortFilter, qcStateSetFormValue);
         }
         catch (ServletException e)
         {
@@ -231,7 +231,7 @@ public abstract class BaseStudyController extends SpringActionController
         return root;
     }
 
-    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, int cohortId, String qcStateSetFormValue)
+    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, CohortFilter cohortFilter, String qcStateSetFormValue)
     {
         if (datasetId > 0)
         {
@@ -256,8 +256,8 @@ public abstract class BaseStudyController extends SpringActionController
 
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId);
-                if (cohortId >= 0)
-                    datasetUrl.addParameter(SharedFormParameters.cohortId, cohortId);
+                if (cohortFilter != null)
+                    cohortFilter.addURLParameters(datasetUrl);
                 if (qcStateSetFormValue != null)
                     datasetUrl.addParameter(SharedFormParameters.QCState, qcStateSetFormValue);
                 root.addChild(label.toString(), datasetUrl.getLocalURIString());

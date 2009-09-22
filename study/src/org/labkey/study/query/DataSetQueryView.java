@@ -41,6 +41,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.*;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.reports.StudyRReport;
+import org.labkey.study.CohortFilter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -56,7 +57,7 @@ public class DataSetQueryView extends QueryView
     private final DataSetDefinition _dataset;
     private List<ActionButton> _buttons;
     private final VisitImpl _visit;
-    private final CohortImpl _cohort;
+    private final CohortFilter _cohortFilter;
     private boolean _showSourceLinks;
     private boolean _forExport;
     public static final String DATAREGION = "Dataset";
@@ -65,7 +66,7 @@ public class DataSetQueryView extends QueryView
     private ExpProtocol _protocol;
     private AssayProvider _provider;
 
-    public DataSetQueryView(DataSetDefinition dataset, UserSchema schema, QuerySettings settings, VisitImpl visit, CohortImpl cohort, QCStateSet qcStateSet)
+    public DataSetQueryView(DataSetDefinition dataset, UserSchema schema, QuerySettings settings, VisitImpl visit, CohortFilter cohortFilter, QCStateSet qcStateSet)
     {
         super(schema, settings);
         if (dataset == null)
@@ -75,7 +76,7 @@ public class DataSetQueryView extends QueryView
         getSettings().setAllowChooseView(false);
         _dataset = dataset;
         _visit = visit;
-        _cohort = cohort;
+        _cohortFilter = cohortFilter;
 
         Integer protocolId = _dataset.getProtocolId();
         if (protocolId != null)
@@ -115,7 +116,7 @@ public class DataSetQueryView extends QueryView
             }
             _visit.addVisitFilter(filter);
         }
-        if (null != _cohort)
+        if (null != _cohortFilter)
         {
             SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
             if (null == filter)
@@ -123,10 +124,7 @@ public class DataSetQueryView extends QueryView
                 filter = new SimpleFilter();
                 view.getRenderContext().setBaseFilter(filter);
             }
-            FieldKey cohortKey = FieldKey.fromParts("ParticipantId", "Cohort", "rowid");
-            Map<FieldKey, ColumnInfo> cohortColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(cohortKey));
-            ColumnInfo cohortColumn = cohortColumnMap.get(cohortKey);
-            filter.addCondition(cohortColumn.getName(), _cohort.getRowId());
+            _cohortFilter.addFilterCondition(view.getDataRegion().getTable(), filter);
         }
         if (null != _qcStateSet)
         {

@@ -25,8 +25,11 @@
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ReportConfigurationBean> me = (JspView<SpringSpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -34,6 +37,7 @@
     Container container = me.getViewContext().getContainer();
     User user = me.getViewContext().getUser();
     boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);
+    Study study = StudyManager.getInstance().getStudy(container);
     CohortImpl[] cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
@@ -83,7 +87,7 @@
             <tr class="<%= rowClass %>">
                 <th style="text-align:right"><%= h(factory.getLabel())%></th>
                 <td class="<%= rowClass %>">
-                    [<a href="#" id="showOptionsLink<%= showHideSuffix %>" onclick="return showOrHide('<%= showHideSuffix %>')">show options</a>]
+                    [<a href="#" id="showOptionsLink<%= showHideSuffix %>" onclick="return showOrHide('<%= showHideSuffix %>');">show options</a>]
                 <td valign="top" align="left" class="<%= rowClass %>">
                     <%= generateSubmitButton("View") %>
                 </td>
@@ -96,23 +100,64 @@
                 <span id="reportParameters<%= showHideSuffix %>" style="display:<%= bean.isListView() ? "none" : "block" %>">
                     <table>
                 <%
-                    if (factory.allowsCohortFilter())
+                    if (showCohorts && factory.allowsCohortFilter())
                     {
+                        Map<String, CohortFilter> cohortOptions = new LinkedHashMap<String, CohortFilter>();
+                        if (study.isAdvancedCohorts())
+                        {
+                            for (CohortFilter.Type type : CohortFilter.Type.values())
+                            {
+                                for (CohortImpl cohort : cohorts)
+                                {
+                                    CohortFilter filter = new CohortFilter(type, cohort.getRowId());
+                                    cohortOptions.put(type.getTitle() + " is " + cohort.getLabel(), filter);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (CohortImpl cohort : cohorts)
+                            {
+                                CohortFilter filter = new CohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
+                                cohortOptions.put(cohort.getLabel(), filter);
+                            }
+                        }
                 %>
+                    <script type="text/javascript">
+                        var cohortOptions = {};
+                <%
+                        for (Map.Entry<String, CohortFilter> option : cohortOptions.entrySet())
+                        {
+                %>
+                        cohortOptions["<%= option.getKey() %>"] = { cohortId : <%= option.getValue().getCohortId() %>, cohortFilterType : '<%= option.getValue().getType().name() %>'};
+                <%
+                        }
+                %>
+                        function updateCohortInputs(selectedText)
+                        {
+                            var cohortId = cohortOptions[selectedText].cohortId;
+                            var cohortFilterType = cohortOptions[selectedText].cohortFilterType;
+                            document.forms['<%= formName %>']['<%= CohortFilter.Params.cohortId %>'].value = cohortId;
+                            document.forms['<%= formName %>']['<%= CohortFilter.Params.cohortFilterType %>'].value = cohortFilterType;
+                        }
+                    </script>
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter</td>
                         <td>
-                            <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>">
+                            <input type="hidden" name="<%= CohortFilter.Params.cohortId %>" value="">
+                            <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType %>" value="">
+                            <select onchange="updateCohortInputs(this.options[this.selectedIndex].text);">
                                 <option value="">All Cohorts</option>
                                 <%
-                                    for (CohortImpl cohort : cohorts)
+                                    for (Map.Entry<String, CohortFilter> option : cohortOptions.entrySet())
                                     {
+                                        String label = option.getKey();
+                                        CohortFilter filter = option.getValue();
                                 %>
-                                <option value="<%= cohort.getRowId() %>" <%= factory.getCohortId() != null &&
-                                        factory.getCohortId() == cohort.getRowId() ? "SELECTED" : ""%>>
-                                    <%= h(cohort.getLabel()) %>
-                                </option>
-                                <%
+                                    <option <%= factory.getCohortFilter() != null && factory.getCohortFilter().equals(filter) ? "SELECTED" : ""%>>
+                                        <%= h(label) %>
+                                    </option>
+                                    <%
                                     }
                                 %>
                             </select>
