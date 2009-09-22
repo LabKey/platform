@@ -374,7 +374,9 @@ public abstract class SqlDialect
     public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset);
 
     /** Does the dialect support limitRows() with an offset? */
-    public abstract boolean supportOffset();
+    public abstract boolean supportsOffset();
+
+    public abstract boolean supportsComments();
 
     public abstract String execute(DbSchema schema, String procedureName, String parameters);
 

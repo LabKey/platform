@@ -33,7 +33,6 @@ import org.labkey.api.util.*;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
@@ -1252,7 +1251,7 @@ public class Table
     {
         long queryOffset = offset, scrollOffset = 0;
         int queryRowCount = rowCount;
-        if (offset > 0 && !table.getSqlDialect().supportOffset())
+        if (offset > 0 && !table.getSqlDialect().supportsOffset())
         {
             queryOffset = 0;
             scrollOffset = offset;
@@ -1356,7 +1355,7 @@ public class Table
 
         long queryOffset = offset, scrollOffset = 0;
         int queryRowCount = rowCount;
-        if (offset > 0 && !table.getSqlDialect().supportOffset())
+        if (offset > 0 && !table.getSqlDialect().supportsOffset())
         {
             queryOffset = 0;
             scrollOffset = offset;

@@ -41,9 +41,6 @@ public enum QueryAction
     createRReport,
     tableInfo,
     excelWebQueryDefinition,
-    admin,
-    adminNewDbUserSchema,
-    adminDeleteDbUserSchema,
     createSnapshot,
     editSnapshot,
 }

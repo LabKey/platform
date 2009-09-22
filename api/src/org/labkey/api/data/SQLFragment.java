@@ -206,16 +206,20 @@ public class SQLFragment
     }
 
 
-    // return boolean so this can be used in an assert
-    public boolean appendComment(String comment)
+    // return boolean so this can be used in an assert.  passing in a dialect is not ideal, but parsing comments out
+    // before submitting the fragment is not reliable and holding statements & comments separately (to eliminate the
+    // need to parse them) isn't particularly easy... so punt for now.
+    public boolean appendComment(String comment, SqlDialect dialect)
     {
-// TODO: Comments disabled temporarily to get SAS connectivity working
-/*        StringBuilder sb = getStringBuilder();
-//        int len = sb.length();
-//        if (len > 0 && sb.charAt(len-1) != '\n')
-//            sb.append('\n');
-        sb.append("\n-- ").append(comment).append('\n');
-*/        return true;
+        if (dialect.supportsComments())
+        {
+            StringBuilder sb = getStringBuilder();
+            int len = sb.length();
+            if (len > 0 && sb.charAt(len-1) != '\n')
+                sb.append('\n');
+            sb.append("\n-- ").append(comment).append('\n');
+        }
+        return true;
     }
 
 
