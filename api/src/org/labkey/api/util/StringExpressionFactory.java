@@ -25,6 +25,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.data.Container;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
@@ -85,20 +87,18 @@ public class StringExpressionFactory
       *
       */
 
-     private static Pattern actionPattern = Pattern.compile("/(\\w|\\-)+/(\\w|\\-)+.view?.*");
-
      public static StringExpression createURL(String str)
      {
          String key = "url:" + str;
 
          StringExpression expr = templates.get(key);
-//         if (null != expr)
-//             return expr;
+         if (null != expr)
+             return expr.copy();
 
          expr = new URLStringExpression(str);
 
          templates.put(key, expr);
-         return expr;
+         return expr.copy();
      }
 
 
@@ -187,6 +187,7 @@ public class StringExpressionFactory
         AbstractStringExpression(String source)
         {
             _source = source;
+            assert MemTracker.put(this);
         }
 
         protected void parse()
@@ -241,19 +242,21 @@ public class StringExpressionFactory
             out.write(eval(context));
         }
 
-        public void addParameter(String key, String value)
-        {
-            _parsedExpression.add(new ConstantPart("&" + key + "="));
-            if (value.startsWith("${") && value.endsWith("}"))
-            {
-                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
-            }
-            else
-            {
-                _parsedExpression.add(new ConstantPart(value));
-            }
-        }
-        
+//        public void addParameter(String key, String value)
+//        {
+//            if (null == _parsedExpression)
+//                parse();
+//            _parsedExpression.add(new ConstantPart("&" + key + "="));
+//            if (value.startsWith("${") && value.endsWith("}"))
+//            {
+//                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
+//            }
+//            else
+//            {
+//                _parsedExpression.add(new ConstantPart(value));
+//            }
+//        }
+
         @Override
         public AbstractStringExpression clone()
         {
@@ -294,11 +297,6 @@ public class StringExpressionFactory
         {
             return _source;
         }
-
-        public void addParameter(String key, String value)
-        {
-            throw new UnsupportedOperationException();
-        }
     }
 
 
@@ -321,18 +319,18 @@ public class StringExpressionFactory
                 return new SubstitutePart(expr);
         }
 
-        public void addParameter(String key, String value)
-        {
-            _parsedExpression.add(new ConstantPart("&" + key + "="));
-            if (value.startsWith("${") && value.endsWith("}"))
-            {
-                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
-            }
-            else
-            {
-                _parsedExpression.add(new ConstantPart(value));
-            }
-        }
+//        public void addParameter(String key, String value)
+//        {
+//            _parsedExpression.add(new ConstantPart("&" + key + "="));
+//            if (value.startsWith("${") && value.endsWith("}"))
+//            {
+//                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
+//            }
+//            else
+//            {
+//                _parsedExpression.add(new ConstantPart(value));
+//            }
+//        }
     }
 
 
@@ -378,7 +376,7 @@ public class StringExpressionFactory
          * remap    pk -> fk
          * parent   title -> lk/title
          */
-        protected FieldKeyStringExpression addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
+        public FieldKeyStringExpression addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
         {
             FieldKeyStringExpression clone = this.clone();
             clone.parse();
@@ -391,13 +389,40 @@ public class StringExpressionFactory
                     FieldKey replace = remap == null ? null : remap.get(fp.key);
                     if (null != replace)
                         fp.key = replace;
-                    else
+                    else if (null != parent)
                         fp.key = FieldKey.fromParts(parent, fp.key);
                 }
                 source.append(p.toString());
             }
             clone._source = source.toString();
             return clone;
+        }
+
+        /**
+         * @param set set of FieldKeys
+         * @return true if set contains all substitutions in this string expression
+         */
+        public boolean validateFieldKeys(Set<FieldKey> set)
+        {
+            Set<FieldKey> keys = getFieldKeys();
+            return set.containsAll(keys);
+        }
+
+        /**
+         * @param set set of column names
+         * @return true if set contains all substitutions in this string expression
+         */
+        public boolean validateColumns(Set<String> set)
+        {
+            Set<FieldKey> keys = getFieldKeys();
+            for (FieldKey key : keys)
+            {
+                if (key.getParent() != null)
+                    return false;
+                if (!set.contains(key.getName()))
+                    return false;
+            }
+            return true;
         }
 
         public Set<FieldKey> getFieldKeys()
@@ -421,26 +446,59 @@ public class StringExpressionFactory
     }
 
 
+    private static Pattern actionPattern = Pattern.compile("/[\\w\\-]+/[\\w\\-]+.view?.*");
+    private static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
+
+
     /**
      *  Same as FieldKeyExpression, but validates !startsWith(javascript:)
      * additional constructor
      */
     public static class URLStringExpression extends FieldKeyStringExpression implements HasViewContext
     {
-        String _urlSource = null;
-        ActionURL _url;
+        protected String _urlSource = null;
+        protected ActionURL _url;
         ViewContext _context;
 
-        URLStringExpression(String source)
+        public URLStringExpression(String source)
         {
             super("");
             _urlSource = source.trim();
         }
 
-        URLStringExpression(ActionURL url)
+        public URLStringExpression(ActionURL url)
         {
             super("");
-            _url = url;
+            _url = url.clone();
+        }
+
+        protected Container getContainer()
+        {
+            return null;
+        }
+
+        @Override
+        public URLStringExpression addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
+        {
+            URLStringExpression ret = (URLStringExpression)super.addParent(parent, remap);
+            // keep things consistent
+            ret._url = null;
+            ret._urlSource = ret._source;
+            return ret;
+        }
+
+        @Override
+        public String toString()
+        {
+            if (null != _urlSource)
+                return _urlSource;
+            else if (null != _url)
+                return _url.getLocalURIString(true);
+            else
+            {
+                parse();
+                return _source;
+            }
         }
 
         @Override
@@ -460,12 +518,26 @@ public class StringExpressionFactory
                 if (protocol.contains("script"))
                     throw new IllegalArgumentException(expr);
 
+                ActionURL url = null;
                 if (actionPattern.matcher(expr).matches())
                 {
-                    ActionURL url = new ActionURL(expr);
+                    url = new ActionURL(expr);
                     url.setContextPath(AppProps.getInstance().getContextPath());
+                }
+                else if (classPattern.matcher(expr).matches())
+                {
+                    String className = expr.substring(0,expr.indexOf(".class?"));
+                    Class<Controller> cls;
+                    try { cls = (Class<Controller>)Class.forName(className); } catch (Exception x) {throw new IllegalArgumentException(expr);}
+                    url = new ActionURL(cls, null);
+                    url.setRawQuery(expr.substring(expr.indexOf('?')+1));
+                }
+                if (null != url)
+                {
 
-                    if (null != _context)
+                    if (null != getContainer())
+                        url.setContainer(getContainer());
+                    else if (null != _context)
                         url.setContainer(_context.getContainer());
                     else
                         url.setExtraPath("${containerPath}");
@@ -476,8 +548,8 @@ public class StringExpressionFactory
                 {
                     try
                     {
-                        URLHelper url = new URLHelper(expr);
-                        _source = getURIString(url, null == _context ? null : _context.getActionURL());
+                        URLHelper u = new URLHelper(expr);
+                        _source = getURIString(u, null == _context ? null : _context.getActionURL());
                     }
                     catch (URISyntaxException x)
                     {
@@ -512,6 +584,31 @@ public class StringExpressionFactory
         public ViewContext getViewContext()
         {
             return _context;
+        }
+
+        @Override
+        public FieldKeyStringExpression clone()
+        {
+            URLStringExpression clone = (URLStringExpression)super.clone();
+            clone._url = _url == null ? null : _url.clone();
+            return clone;
+        }
+
+
+        // NOTE not all URLStringExpressions are ActionURLs
+        public ActionURL getActionURL()
+        {
+            if (null != _url)
+                return _url;
+
+            try
+            {
+                return new ActionURL(_urlSource);
+            }
+            catch (IllegalArgumentException x)
+            {
+                return null;
+            }
         }
     }
 
@@ -569,11 +666,6 @@ public class StringExpressionFactory
         protected StringPart parsePart(String expr)
         {
             return new ScriptPart(expr);
-        }
-
-        public void addParameter(String key, String value)
-        {
-            throw new UnsupportedOperationException();
         }
     }
 

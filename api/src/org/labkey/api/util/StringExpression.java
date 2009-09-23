@@ -16,10 +16,6 @@ public interface StringExpression extends Cloneable
 
     public String getSource();
 
-    /** shouldn't be needed any more, see StringExpressionFactory  */
-    @Deprecated
-    public void addParameter(String key, String value);
-
     public void render(Writer out, Map ctx) throws IOException;
 
     public StringExpression copy(); // clone without the Exception

@@ -102,6 +102,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)
             return null;
-        return lookupTable.getDetailsURL(Collections.singletonMap(lookupTable.getPkColumnNames().get(0), parent));
+        return lookupTable.getDetailsURL(Collections.singleton(lookupTable.getPkColumnNames().get(0)), null);
     }
 }

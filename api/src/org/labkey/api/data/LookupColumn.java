@@ -33,6 +33,7 @@ public class LookupColumn extends ColumnInfo
             return null;
         LookupColumn ret = new LookupColumn(foreignKey, lookupKey, lookupColumn);
         ret.copyAttributesFrom(lookupColumn);
+        ret.copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
         if (prefixColumnCaption)
         {
             ret.setLabel(foreignKey.getLabel() + " " + lookupColumn.getLabel());

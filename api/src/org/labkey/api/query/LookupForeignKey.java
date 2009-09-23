@@ -19,6 +19,8 @@ package org.labkey.api.query;
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Collections;
@@ -120,26 +122,35 @@ abstract public class LookupForeignKey extends AbstractForeignKey
 
     /**
      * Override this method if the primary key of the lookup table does not really exist.
-     *
-     * @param table
-     * @return
      */
     protected ColumnInfo getPkColumn(TableInfo table)
     {
         return table.getColumn(_columnName);
     }
 
+
     public StringExpression getURL(ColumnInfo parent)
     {
-        if (_baseURL == null)
+        if (null != _baseURL)
+            return new DetailsURL(_baseURL, _param.toString(), parent.getFieldKey());
+
+        TableInfo lookupTable = getLookupTableInfo();
+        if (lookupTable == null || _columnName == null)
+            return null;
+
+        StringExpression expr = lookupTable.getDetailsURL(PageFlowUtil.insensitiveSet(_columnName), null);
+        if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
-            TableInfo lookupTable = getLookupTableInfo();
-            if (lookupTable == null || _columnName == null)
-            {
-                return null;
-            }
-            return lookupTable.getDetailsURL(new CaseInsensitiveHashMap<ColumnInfo>(Collections.singletonMap(_columnName, parent)));
+            StringExpressionFactory.FieldKeyStringExpression f = (StringExpressionFactory.FieldKeyStringExpression)expr;
+            StringExpressionFactory.FieldKeyStringExpression rewrite;
+
+            // if the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
+            if (f.validateColumns(Collections.singleton(_columnName)))
+                rewrite = f.addParent(null, Collections.singletonMap(new FieldKey(null,_columnName), parent.getFieldKey()));
+            else
+                rewrite = f.addParent(parent.getFieldKey(), null);
+            return rewrite;
         }
-        return new LookupURLExpression(_baseURL, Collections.singletonMap(_param, parent));
+        return null;
     }
 }

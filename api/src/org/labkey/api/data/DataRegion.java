@@ -287,6 +287,7 @@ public class DataRegion extends DisplayElement
         // includes old DisplayColumn.addQueryColumns()
         List<ColumnInfo> originalColumns = RenderContext.getSelectColumns(displayCols, getTable());
 
+        // allow DataRegion subclass to add columns (yuck)
         LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
         addQueryColumns(columns);
 
@@ -295,7 +296,7 @@ public class DataRegion extends DisplayElement
         for (DisplayColumn dc : displayCols)
             dc.addQueryFieldKeys(keys);
 
-        LinkedHashMap<FieldKey,ColumnInfo> ret = QueryService.get().getColumns(getTable(),keys, columns);
+        LinkedHashMap<FieldKey,ColumnInfo> ret = QueryService.get().getColumns(getTable(), keys, columns);
 
         for (DisplayColumn dc : displayCols)
             dc.setAllColumns(ret);

@@ -658,33 +658,34 @@ public class SchemaTableInfo implements TableInfo
     public ActionURL getGridURL(Container container)
     {
         if (_gridURL != null)
-            return _gridURL.getBaseURL(container);
+            return _gridURL.copy(container).getActionURL();
         return null;
     }
 
     public ActionURL getInsertURL(Container container)
     {
         if (_insertURL != null)
-            return _insertURL.getBaseURL(container);
+            return _insertURL.copy(container).getActionURL();
         return null;
     }
 
-    public StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getUpdateURL(Set<String> columns, Container container)
     {
         if (_updateURL != null)
-            return _updateURL.getURL(columns, container);
+        {
+            if (_updateURL.validateColumns(columns))
+                return _updateURL.copy(container);
+        }
         return null;
     }
-
-    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
-    {
-        return getDetailsURL(columns, null);
-    }
     
-    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getDetailsURL(Set<String> columns, Container container)
     {
         if (_detailsURL != null)
-            return _detailsURL.getURL(columns, container);
+        {
+            if (_detailsURL.validateColumns(columns))
+            return _updateURL.copy(container);
+        }
         return null;
     }
 

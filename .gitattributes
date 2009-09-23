@@ -461,7 +461,6 @@ api/src/org/labkey/api/query/FolderSchemaProvider.java -text
 api/src/org/labkey/api/query/InvalidKeyException.java -text
 api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
 api/src/org/labkey/api/query/LookupForeignKey.java -text
-api/src/org/labkey/api/query/LookupURLExpression.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
 api/src/org/labkey/api/query/PdLookupForeignKey.java -text
 api/src/org/labkey/api/query/PropertyColumnDecorator.java -text
@@ -1837,7 +1836,6 @@ internal/src/org/labkey/api/util/LogPrintWriter.java -text
 internal/src/org/labkey/api/util/Search.java -text
 internal/src/org/labkey/api/util/SessionTempFileHolder.java -text
 internal/src/org/labkey/api/util/TextExtractor.java -text
-internal/src/org/labkey/api/util/URLExpression.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
 internal/src/org/labkey/api/view/CGIServlet.java -text
 internal/src/org/labkey/api/view/ClientAPIWebPartFactory.java -text

@@ -126,6 +126,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         this(from.getFieldKey(), parent);
         copyAttributesFrom(from);
+        copyURLFrom(from, null, null);
     }
 
 
@@ -209,14 +210,36 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setDefaultValueType(col.getDefaultValueType());
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
+        // URL copy/rewrite is handled separately
 
-        // often in Query this does not make sense
-        setURL(col.getURL());
-        
         // Consider: it does not always make sense to preserve the "isKeyField" property.
         setKeyField(col.isKeyField());
 
         setMvColumnName(col.getMvColumnName());
+    }
+
+
+    /**
+     * copy the url string expression from col with the specified rewrites
+     * @param col source of the url StringExpression
+     * @param parent FieldKey to prepend to any FieldKeys in the source expression (unless explicitly mapped), may be null
+     * @param remap explicit list of FieldKey mappings, may be null
+     *
+     * Example
+     *   given col.url = "?id=${RowId}&title=${Title}"
+     *
+     * copyURLFrom(col, "Discussion", null) --> "?id=${discussion/RowId}&title=${discussion/Title}
+     * copyURLFrom(Col, null, {("RowId","Run")}) --> "?id=${Run}&title=${Title}
+     */
+    public void copyURLFrom(ColumnInfo col, FieldKey parent, Map<FieldKey,FieldKey> remap)
+    {
+        StringExpression url = col.getURL();
+        if (null != url)
+        {
+            if ((null != parent || null != remap) && url instanceof StringExpressionFactory.FieldKeyStringExpression)
+                url = ((StringExpressionFactory.FieldKeyStringExpression)url).addParent(parent, remap);
+            setURL(url);
+        }
     }
 
 
@@ -410,7 +433,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return displayWidth = String.valueOf(Math.min(getScale() * 6, 200));
         else if (isDateTimeType())
             return displayWidth = "90";
-        else
+        else          
             return displayWidth = "60";
     }
 

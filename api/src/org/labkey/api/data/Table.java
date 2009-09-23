@@ -1558,6 +1558,7 @@ public class Table
         {
             ColumnInfo colDirect = new ColumnInfo(col.getAlias());
             colDirect.copyAttributesFrom(col);
+            colDirect.copyURLFrom(col, null, null);
             cols.add(colDirect);
         }
 

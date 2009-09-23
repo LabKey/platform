@@ -21,6 +21,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
 import java.util.Map;
+import java.util.Collections;
 
 public class AliasedColumn extends ColumnInfo
 {
@@ -30,6 +31,7 @@ public class AliasedColumn extends ColumnInfo
     {
         super(key, parent);
         copyAttributesFrom(column);
+        copyURLFrom(column, null, Collections.singletonMap(column.getFieldKey(),getFieldKey()));
         if (!forceKeepLabel && !getFieldKey().getName().equalsIgnoreCase(column.getFieldKey().getName()))
             setLabel(null);
         _column = column;

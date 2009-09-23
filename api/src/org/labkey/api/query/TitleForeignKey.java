@@ -60,6 +60,6 @@ public class TitleForeignKey extends AbstractForeignKey
     {
         if (_baseURL == null)
             return null;
-        return new LookupURLExpression(_baseURL, Collections.singletonMap(_paramName, parent));
+        return new DetailsURL(_baseURL, _paramName, parent.getFieldKey());
     }
 }

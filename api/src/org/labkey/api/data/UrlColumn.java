@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.query.LookupURLExpression;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -54,9 +53,5 @@ public class UrlColumn extends SimpleDisplayColumn
 
     public void addQueryColumns(Set<ColumnInfo> set)
     {
-        if (getURLExpression() instanceof LookupURLExpression)
-        {
-            set.addAll(((LookupURLExpression)getURLExpression()).getQueryColumns());
-        }
     }
 }

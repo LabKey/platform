@@ -22,147 +22,123 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
-public class DetailsURL
+public class DetailsURL extends StringExpressionFactory.URLStringExpression
 {
-    /**
-     * Create a new DetailsURL from a string of the form "pageflow/action.view?paramKey=${paramVal}".
-     * A Container will be required when creating the url using {@link DetailsURL#getURL(Map, Container)}.
-     */
-    static public DetailsURL fromString(String str) throws MetadataException
-    {
-        return fromString(null, str);
-    }
-
-    /**
-     * Create a new DetailsURL from a string of the form "pageflow/action.view?paramKey=${paramVal}".
-     */
-    static public DetailsURL fromString(Container container, String str) throws MetadataException
-    {
-        int ichQuery = str.indexOf("?");
-        if (ichQuery < 0)
-            throw new MetadataException("Expected '?' in path string.");
-        String strPath = str.substring(0, ichQuery);
-        String strQuery = str.substring(ichQuery + 1);
-        String[] pathParts = StringUtils.split(strPath, "/");
-        String[] queryParams = StringUtils.split(strQuery, "&");
-        if (pathParts.length != 2)
-            throw new MetadataException("Expected 'pageflow/action.view'");
-        String strPageFlow = pathParts[0];
-        String strAction = pathParts[1];
-        if (!strAction.endsWith(".view"))
-            throw new MetadataException("Action name should end with '.view'");
-        strAction = strAction.substring(0, strAction.length() - 5);
-        Map<String, String> fixedParams = new HashMap<String, String>();
-        Map<String, String> params = new HashMap<String, String>();
-        for (String param : queryParams)
-        {
-            String[] pair = StringUtils.split(param, "=");
-            if (pair.length != 2)
-            {
-                throw new MetadataException("Unable to parse '" + param + "'");
-            }
-            String key = decode(pair[0]);
-            String value = pair[1];
-            if (value.startsWith("${") && value.endsWith("}"))
-            {
-                params.put(key, value.substring(2, value.length() - 1));
-            }
-            else
-            {
-                fixedParams.put(key, decode(value));
-            }
-        }
-        return new DetailsURL(strPageFlow, strAction, container, fixedParams, params);
-    }
-    static private String decode(String str) throws MetadataException
-    {
-        try
-        {
-            return PageFlowUtil.decode(str);
-        }
-        catch (Exception e)
-        {
-            throw new MetadataException("Error decoding '" + str + "'", e);
-        }
-    }
-
-    ActionURL _baseURL;
-    String _controller;
-    String _action;
     Container _container;
-    Map<String, String> _fixedParams;
-    Map<String, String> _columnParams;
+    ActionURL _baseURL;     // url w/o substitution parameters
 
-    /**
-     *
-     * @param columnParams map from URL parameter to column name
-     */
 
-    public DetailsURL(ActionURL baseURL, Map<String, String> columnParams)
+    public DetailsURL(String str)
     {
-        _controller = baseURL.getPageFlow();
-        _action = baseURL.getAction();
-        _container = ContainerManager.getForPath(baseURL.getExtraPath());
-        _fixedParams = new HashMap<String, String>();
-        for (Pair<String, String> param : baseURL.getParameters())
-            _fixedParams.put(param.getKey(), param.getValue());
-        _columnParams = columnParams;
-        _baseURL = baseURL;
+        super(str);
     }
+
+
+    public DetailsURL(Container c, String str)
+    {
+        super(str);
+        _container = c;
+    }
+
+
+    public static DetailsURL fromString(String str)
+    {
+        return new DetailsURL(str);
+    }
+
+    
+    public static DetailsURL fromString(Container c, String str)
+    {
+        return new DetailsURL(c, str);
+    }
+    
+    
+    @Override
+    protected Container getContainer()
+    {
+        return _container;
+    }
+
+
+    public DetailsURL(ActionURL baseURL, Map<String,? extends Object> columnParams)
+    {
+        super(baseURL);
+        _baseURL = baseURL.clone();
+        for (Map.Entry<String,? extends Object> e : columnParams.entrySet())
+        {
+            Object v = e.getValue();
+            String strValue;
+            if (v instanceof String)
+                strValue = (String)v;
+            else if (v instanceof FieldKey)
+                strValue = ((FieldKey)v).encode();
+            else if (v instanceof ColumnInfo)
+                strValue = ((ColumnInfo)v).getFieldKey().encode();
+            else
+                throw new IllegalArgumentException(String.valueOf(v));
+            _url.addParameter(e.getKey(), "${" + strValue + "}");
+        }
+    }
+
+
+    public DetailsURL(ActionURL baseURL, String param, FieldKey subst)
+    {
+        super(baseURL);
+        _baseURL = baseURL.clone();
+        _url.addParameter(param, "${" + subst.encode() + "}");
+    }
+
 
     public DetailsURL(String controller, String action, Container container, Map<String, String> fixedParams, Map<String, String> columnParams)
     {
-        _controller = controller;
-        _action = action;
-        _container = container;
-        _fixedParams = fixedParams;
-        _columnParams = columnParams;
-        if (_container != null)
-            _baseURL = buildURL(_container);
+        super(new ActionURL(controller, action, container));
+        for (Map.Entry<String,String> e : fixedParams.entrySet())
+            _url.addParameter(e.getKey(), e.getValue());
+        _baseURL = _url.clone();
+        for (Map.Entry<String,String> e : columnParams.entrySet())
+            _url.addParameter(e.getKey(), "${" + e.getValue() + "}");
     }
 
-    public StringExpression getURL(Map<String, ColumnInfo> columns)
+
+    /** @deprecated use FieldKeyStringExpression.validateFields() and copy(c) */
+    @Deprecated
+    public StringExpression getURL(Map<String,ColumnInfo> columns, Container c)
     {
-        return getURL(columns, null);
+        Set<FieldKey> keys = new HashSet<FieldKey>();
+        for (String s : columns.keySet())
+            keys.add(new FieldKey(null,s));
+        if (!validateFieldKeys(keys))
+            return null;
+        return copy(c);
     }
 
-    public StringExpression getURL(Map<String, ColumnInfo> columns, Container c)
+
+    public DetailsURL copy(Container c)
     {
-        Map<String, ColumnInfo> params = new LinkedHashMap();
-        for (Map.Entry<String, String> entry : _columnParams.entrySet())
+        DetailsURL ret = (DetailsURL)copy();
+        if (null != c)
         {
-            ColumnInfo column = columns.get(entry.getValue());
-            if (column == null)
-                return null;
-            params.put(entry.getKey(), column);
+            ret._container = c;
+            if (null != _baseURL)
+                ret._baseURL.setContainer(c);
+            if (null != _url)
+                ret._url.setContainer(c);
         }
-        return new LookupURLExpression(getBaseURL(c), params);
+        return ret;
     }
 
-    public ActionURL getBaseURL(Container c)
-    {
-        if (c == null && _container == null)
-            throw new IllegalArgumentException("container required");
-        return c == null ? _baseURL : buildURL(c);
-    }
 
-    private ActionURL buildURL(Container c)
+    @Override
+    public DetailsURL clone()
     {
-        ActionURL url = new ActionURL(_controller, _action, c);
-        for (Map.Entry<String, String> entry : _fixedParams.entrySet())
-            url.addParameter(entry.getKey(), entry.getValue());
-        return url;
-    }
-
-    public Map<String, String> getColumnParams()
-    {
-        return _columnParams;
+        DetailsURL clone = (DetailsURL)super.clone();
+        clone._baseURL = _baseURL == null ? null : _baseURL.clone();
+        return clone;
     }
 }

@@ -33,10 +33,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.reports.CrosstabReport;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 
@@ -304,8 +301,18 @@ public class QueryView extends WebPartView<Object>
             case insertQueryRow:
             case updateQueryRow:
             case deleteQueryRows:
-                expr.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
-                break;
+            {
+                // ICK
+                if (expr instanceof StringExpressionFactory.URLStringExpression)
+                {
+                    ActionURL url = ((StringExpressionFactory.URLStringExpression)expr).getActionURL();
+                    if (null != url)
+                    {
+                        url.addParameter(QueryParam.srcURL, getReturnURL().getLocalURIString());
+                        return StringExpressionFactory.createURL(url);
+                    }
+                }
+            }
         }
 
         return expr;
@@ -1427,7 +1434,7 @@ public class QueryView extends WebPartView<Object>
             return Collections.emptyList();
         if (_showDetailsColumn && !isPrintView() && !isExportView())
         {
-            StringExpression urlDetails = table.getDetailsURL(Table.createColumnMap(table, null), getContainer());
+            StringExpression urlDetails = table.getDetailsURL(table.getColumnNameSet(), getContainer());
             if (urlDetails != null)
             {
                 ret.add(new DetailsColumn(urlDetails));

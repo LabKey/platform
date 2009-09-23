@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A table that filters down to a particular set of values. A typical example
@@ -103,14 +104,14 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     }
 
     @Override
-    public StringExpression getUpdateURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getUpdateURL(Set<String> columns, Container container)
     {
         StringExpression expr = super.getUpdateURL(columns, container);
         return expr != null ? expr : getRealTable().getUpdateURL(columns, container);
     }
 
     @Override
-    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container container)
+    public StringExpression getDetailsURL(Set<String> columns, Container container)
     {
         StringExpression expr = super.getDetailsURL(columns, container);
         return expr != null ? expr : getRealTable().getDetailsURL(columns, container);
@@ -136,6 +137,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         assert underlyingColumn.getParentTable() == _rootTable;
         ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getSqlTypeInt());
         ret.copyAttributesFrom(underlyingColumn);
+        ret.copyURLFrom(underlyingColumn, null, null);
         ret.setLabel(ColumnInfo.labelFromName(alias));
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)
         {

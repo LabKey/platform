@@ -57,7 +57,7 @@ public class RowIdForeignKey extends AbstractForeignKey
 
     public StringExpression getURL(ColumnInfo parent)
     {
-        return getLookupTableInfo().getDetailsURL(Collections.singletonMap(_rowidColumn.getName(), parent));
+        return getLookupTableInfo().getDetailsURL(Collections.singleton(_rowidColumn.getName()), null);
     }
 
     public ColumnInfo getOriginalColumn()
