@@ -43,6 +43,4 @@ public class JunitRunner
             result.addError(dummy, x);
         }
     }
-
-    
 }

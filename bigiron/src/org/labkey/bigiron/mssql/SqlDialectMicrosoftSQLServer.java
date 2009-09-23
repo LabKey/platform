@@ -623,9 +623,9 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         TestSuite suite = new TestSuite();
         suite.addTest(new JavaUpgradeCodeTestCase());
         suite.addTest(new JdbcHelperTestCase());
+        suite.addTest(new DialectRetrievalTestCase());
         return suite;
     }
-
 
 
     public class JavaUpgradeCodeTestCase extends TestCase
@@ -675,6 +675,24 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             {
                 fail("SQL Exception running test: " + e.getMessage());
             }
+        }
+    }
+
+
+    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
+    {
+        public void testDialectRetrieval()
+        {
+            // These should result in bad database exception
+            badProductName("Gobbledygood", 1.0, 12.0);
+            badProductName("SQL Server", 1.0, 12.0);
+            badProductName("sqlserver", 1.0, 12.0);
+
+            // < 9.0 should result in SqlDialectMicrosoftSQLServer -- no bad versions at the moment
+            good("Microsoft SQL Server", 0.0, 8.9, SqlDialectMicrosoftSQLServer.class);
+
+            // >= 9.0 should result in SqlDialectMicrosoftSQLServer9
+            good("Microsoft SQL Server", 9.0, 11.0, SqlDialectMicrosoftSQLServer9.class);
         }
     }
 }

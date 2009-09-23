@@ -19,10 +19,10 @@ package org.labkey.core;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 
@@ -96,9 +96,24 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "org.postgresql.Driver".equals(driverClassName);
     }
 
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion) throws DatabaseNotSupportedException
     {
-        return getProductName().equals(dataBaseProductName);
+        if (!getProductName().equals(dataBaseProductName))
+            return false;
+
+        int version = majorVersion * 10 + minorVersion;   // 8.2 => 82, 8.3 => 83, 8.4 => 84, etc.
+
+        // Version 8.2 or greater is allowed...
+        if (version >= 82)
+        {
+            // ...but warn for anything greater than 8.4
+            if (version > 84)
+                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + majorVersion + "." + minorVersion + ".  PostgreSQL 8.4 is the recommended version.");
+
+            return true;
+        }
+
+        throw new DatabaseNotSupportedException(getProductName() + " version " + majorVersion + "." + minorVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 8.2 or greater.");
     }
 
     public boolean isSqlServer()
@@ -752,9 +767,21 @@ class SqlDialectPostgreSQL extends SqlDialect
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
     }
 
+
+    public String getExtraInfo(SQLException e)
+    {
+        // Deadlock between two different DB connections
+        if ("40P01".equals(e.getSQLState()))
+        {
+            return getOtherDatabaseThreads();
+        }
+        return null;
+    }
+
     public TestSuite getTestSuite()
     {
         TestSuite suite = new TestSuite();
+        suite.addTest(new DialectRetrievalTestCase());
         suite.addTest(new JavaUpgradeCodeTestCase());
         suite.addTest(new JdbcHelperTestCase());
         return suite;
@@ -804,14 +831,20 @@ class SqlDialectPostgreSQL extends SqlDialect
         }
     }
 
-    public String getExtraInfo(SQLException e)
+    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
     {
-        // Deadlock between two different DB connections
-        if ("40P01".equals(e.getSQLState()))
+        public void testDialectRetrieval()
         {
-            return getOtherDatabaseThreads();
-        }
-        return null;
-    }
+            // These should result in bad database exception
+            badProductName("Gobbledygood", 8.0, 8.5);
+            badProductName("Postgres", 8.0, 8.5);
+            badProductName("postgresql", 8.0, 8.5);
 
+            // 8.1 or lower should result in bad version number
+            badVersion("PostgreSQL", -5.0, 8.1);
+
+            //  > 8.1 should be good
+            good("PostgreSQL", 8.2, 11.0, SqlDialectPostgreSQL.class);
+        }
+    }
 }

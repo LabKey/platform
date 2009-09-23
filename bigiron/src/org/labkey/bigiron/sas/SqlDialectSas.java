@@ -62,9 +62,10 @@ public class SqlDialectSas extends SqlDialect
         return driverClassName.equals(ShareNetDriver.class.getName());
     }
 
+    // NOTE: SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so this will never return true.
     protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return dataBaseProductName.equals(getProductName());
     }
 
     public void prepareNewDbSchema(DbSchema schema)
