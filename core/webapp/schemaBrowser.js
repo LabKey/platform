@@ -406,7 +406,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         LABKEY.ext.ValidateQueriesPanel.superclass.onRender.apply(this, arguments);
         this.body.createChild({
             tag: 'p',
-            html: 'This will validate that all queries in all schemas parse and execute without errors. This will not validate the returned data against any expectations.',
+            html: 'This will validate that all queries in all schemas parse and execute without errors. This will not examine the data returned from the query.',
             cls: 'lk-sb-instructions'
         });
         this.body.createChild({
@@ -434,25 +434,33 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     },
 
     setStatus : function(msg, cls, resetCls) {
-        var elem = Ext.get("lk-vq-status");
-        if (!elem)
+        var frame = Ext.get("lk-vq-status-frame");
+        if (!frame)
         {
-            elem = this.body.createChild({
-                id: 'lk-vq-status',
+            frame = this.body.createChild({
+                id: 'lk-vq-status-frame',
                 tag: 'div',
-                cls: 'lk-vq-status'
+                cls: 'lk-vq-status-frame',
+                children: [
+                    {
+                        id: 'lk-vq-status',
+                        tag: 'div',
+                        cls: 'lk-vq-status'
+                    }
+                ]
             });
         }
+        var elem = Ext.get("lk-vq-status");
         elem.update(msg);
 
         if (true === resetCls)
-            elem.dom.className = "lk-vq-status";
+            frame.dom.className = "lk-vq-status-frame";
         
         if (cls)
         {
             if (this.curStatusClass)
-                elem.removeClass(this.curStatusClass);
-            elem.addClass(cls);
+                frame.removeClass(this.curStatusClass);
+            frame.addClass(cls);
             this.curStatusClass = cls;
         }
 
@@ -481,6 +489,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         });
         Ext.get("lk-vq-start").dom.disabled = true;
         Ext.get("lk-vq-stop").dom.disabled = false;
+        Ext.get("lk-vq-stop").focus();
         this.setStatus("Starting validation...", null, true);
         this.setStatusIcon("iconAjaxLoadingGreen");
     },
@@ -573,6 +582,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     onFinish : function() {
         Ext.get("lk-vq-start").dom.disabled = false;
         Ext.get("lk-vq-stop").dom.disabled = true;
+        Ext.get("lk-vq-start").focus();
         var msg = (this.stop ? "Validation stopped by user." : "Finished Validation.");
         msg += " " + this.numValid + (1 == this.numValid ? " query was valid." : " queries were valid.");
         msg += " " + this.numErrors + (1 == this.numErrors ? " query" : " queries") + " failed validation.";
@@ -585,66 +595,46 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     },
 
     clearValidationErrors : function() {
-        var errorsTable = Ext.get("lk-vq-errors-table");
-        if (errorsTable)
-            errorsTable.remove();
+        var errors = Ext.get("lk-vq-errors");
+        if (errors)
+            errors.remove();
     },
 
     addValidationError : function(schemaName, queryName, errorInfo) {
-        var errorsTable = Ext.get("lk-vq-errors-table");
-        if (!errorsTable)
+        var errors = Ext.get("lk-vq-errors");
+        if (!errors)
         {
-            errorsTable = this.body.createChild({
-                id: 'lk-vq-errors-table',
-                tag: 'table',
-                cls: 'lk-vq-errors-table',
-                children: [
-                    {
-                        tag: 'thead',
-                        children: [
-                            {
-                                tag: 'tr',
-                                children: [
-                                    {
-                                        tag: 'th',
-                                        html: 'Query'
-                                    },
-                                    {
-                                        tag: 'th',
-                                        html: 'Error'
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        tag: 'tbody'
-                    }
-                ]
+            errors = this.body.createChild({
+                id: 'lk-vq-errors',
+                tag: 'div',
+                cls: 'lk-vq-errors-frame'
             });
         }
 
-        var tbody = errorsTable.down("tbody");
-        var trNew = tbody.createChild({
-            tag: 'tr',
+        var error = errors.createChild({
+            tag: 'div',
+            cls: 'lk-vq-error',
             children: [
                 {
-                    tag: 'td',
+                    tag: 'div',
+                    cls: 'labkey-vq-error-name',
                     children: [
                         {
                             tag: 'span',
-                            cls: 'labkey-link',
+                            cls: 'labkey-link lk-vq-error-name',
                             html: schemaName + "." + queryName
                         }
                     ]
                 },
                 {
-                    tag: 'td',
+                    tag: 'div',
+                    cls: 'lk-vq-error-message',
                     html: errorInfo.exception
                 }
             ]
         });
-        trNew.down("td span.labkey-link").on("click", function(){
+
+        error.down("div span.labkey-link").on("click", function(){
             this.fireEvent("queryclick", schemaName, queryName);
         }, this);
     }

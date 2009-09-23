@@ -74,18 +74,24 @@
     margin: 5px !important;
 }
 
+.lk-vq-status-frame
+{
+    border: 2px solid #AAAAAA;
+    padding: 5px !important;
+}
+
 .lk-vq-status
 {
-    padding: 5px 5px 5px 21px !important;
+    padding-left: 21px !important;
     background-repeat: no-repeat;
     background-position: center left;
-    border: 1px solid #AAAAAA;
 }
 
 .lk-vq-errors-table
 {
     border-collapse: collapse;
     margin-left: 20px !important;
+    margin-top: 10px !important;
 }
 
 .lk-vq-errors-table th
@@ -113,4 +119,25 @@
 {
     border: 2px solid #55FF55 !important;
     background-color: #AAFFAA;
+}
+
+.lk-vq-errors-frame
+{
+    padding-left: 10px !important;
+    padding-top: 10px !important;
+}
+
+.lk-vq-error
+{
+    padding-bottom: 10px !important;
+}
+
+.lk-vq-error-name
+{
+    font-weight: bold !important;
+}
+
+.lk-vq-error-message
+{
+    color: #FF0000 !important;
 }
