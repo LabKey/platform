@@ -187,7 +187,7 @@ public class StringExpressionFactory
         AbstractStringExpression(String source)
         {
             _source = source;
-            assert MemTracker.put(this);
+            //assert MemTracker.put(this);
         }
 
         protected void parse()
