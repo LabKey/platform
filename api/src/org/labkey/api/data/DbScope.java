@@ -71,25 +71,38 @@ public class DbScope
 
     private DbScope(String dsName, DataSource dataSource) throws ServletException, SQLException
     {
-        _dsName = dsName;
-        _dataSource = dataSource;
-        _dialect = SqlDialect.get(_dataSource);
-        _databaseName = _dialect.getDatabaseName(_dataSource);
-
         Connection conn = null;
 
         try
         {
-            conn = _dataSource.getConnection();
+            conn = dataSource.getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
 
-            _log.info("Initializing DbScope with the following configuration:" +
-                    "\n    Server URL:               " + dbmd.getURL() +
-                    "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                    "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
-                    "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
-                    "\n    JDBC Driver Version:      " + dbmd.getDriverVersion());
+            try
+            {
+                _dialect = SqlDialect.getFromMetaData(dbmd);
+            }
+            catch (SQLException e)
+            {
+                // Fall back to retrieving dialect from driver -- SAS/SHARE driver throws when calling getDatabaseMajorVersion() and getDatabaseMinorVersion()
+                _dialect = SqlDialect.getFromDataSourceProperties(new SqlDialect.DataSourceProperties(dataSource));
+            }
+            finally
+            {
+                // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis      
+                _log.info("Initializing DbScope with the following configuration:" +
+                                            "\n    DataSource Name:          " + dsName +
+                                            "\n    Server URL:               " + dbmd.getURL() +
+                                            "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
+                                            "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
+                                            "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
+                                            "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
+                        (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : ""));
+            }
 
+            _dsName = dsName;
+            _dataSource = dataSource;
+            _databaseName = _dialect.getDatabaseName(_dataSource);
             _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
@@ -453,10 +466,17 @@ public class DbScope
                     DbScope scope = new DbScope(dsName, entry.getValue());
                     _scopes.put(dsName, scope);
                 }
+                catch (ConfigurationException ce)
+                {
+                    // Rethrow a ConfigurationException -- it includes important details about the failure  
+                    throw ce;
+                }
                 catch (Exception e)
                 {
-                    if (!dsName.equals(labkeyDsName))
-                        _log.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.");
+                    if (dsName.equals(labkeyDsName))
+                        throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml.  Server cannot start.", e);
+                    else
+                        _log.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.", e);
                 }
             }
 

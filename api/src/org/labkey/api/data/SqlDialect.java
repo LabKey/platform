@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import junit.framework.TestCase;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -27,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.query.AliasManager;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -279,6 +281,15 @@ public abstract class SqlDialect
     }
 
 
+    public static class DatabaseNotSupportedException extends ConfigurationException
+    {
+        public DatabaseNotSupportedException(String message)
+        {
+            super(message);
+        }
+    }
+
+
     /**
      * Getting the SqlDialect from the driver class name won't return the version
      * specific dialect -- use getFromMetaData() if possible.
@@ -297,19 +308,19 @@ public abstract class SqlDialect
     }
 
 
-    public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException
+    public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         return getFromProductName(md.getDatabaseProductName(), md.getDatabaseMajorVersion(), md.getDatabaseMinorVersion());
     }
 
 
-    private static SqlDialect getFromProductName(String dataBaseProductName, int majorVersion, int minorVersion) throws SqlDialectNotSupportedException
+    private static SqlDialect getFromProductName(String dataBaseProductName, int majorVersion, int minorVersion) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialect dialect : _dialects)
             if (dialect.claimsProductNameAndVersion(dataBaseProductName, majorVersion, minorVersion))
                 return dialect;
 
-        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + majorVersion + "." + minorVersion + " -- is not supported in your installation.");
+        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + majorVersion + "." + minorVersion + " -- is not supported by your LabKey installation.");
     }
 
     /**
@@ -330,7 +341,8 @@ public abstract class SqlDialect
 
     protected abstract boolean claimsDriverClassName(String driverClassName);
 
-    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion);
+    // Implementation should throw only if it's responsible for the specified database server but doesn't support the specified version
+    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion) throws DatabaseNotSupportedException;
 
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);
@@ -599,24 +611,6 @@ public abstract class SqlDialect
     public String getBooleanFALSE()
     {
         return "CAST(0 AS " + getBooleanDatatype() + ")";
-    }
-
-
-    public static SqlDialect get(DataSource ds) throws ServletException
-    {
-        try
-        {
-            DataSourceProperties props = new DataSourceProperties(ds);
-            return getFromDataSourceProperties(props);
-        }
-        catch (SqlDialectNotSupportedException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new ServletException("Error determining SqlDialect from DataSource", e);
-        }
     }
 
 
@@ -932,6 +926,58 @@ public abstract class SqlDialect
         public int getCounter()
         {
             return _counter;
+        }
+    }
+
+
+    protected static abstract class AbstractDialectRetrievalTestCase extends TestCase
+    {
+        public AbstractDialectRetrievalTestCase()
+        {
+            super("testDialectRetrieval");
+        }
+
+        public abstract void testDialectRetrieval();
+
+        protected void good(String databaseName, double beginVersion, double endVersion, Class<? extends SqlDialect> expectedDialectClass)
+        {
+            testRange(databaseName, beginVersion, endVersion, expectedDialectClass, null);
+        }
+
+        protected void badProductName(String databaseName, double beginVersion, double endVersion)
+        {
+            testRange(databaseName, beginVersion, endVersion, null, SqlDialectNotSupportedException.class);
+        }
+
+        protected void badVersion(String databaseName, double beginVersion, double endVersion)
+        {
+            testRange(databaseName, beginVersion, endVersion, null, DatabaseNotSupportedException.class);
+        }
+
+        private void testRange(String databaseName, double beginVersion, double endVersion, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
+        {
+            int begin = (int)Math.round(beginVersion * 10);
+            int end = (int)Math.round(endVersion * 10);
+
+            for (int i = begin; i < end; i++)
+            {
+                int majorVersion = i / 10;
+                int minorVersion = i % 10;
+
+                String description = databaseName + " version " + majorVersion + "." + minorVersion;
+
+                try
+                {
+                    SqlDialect dialect = getFromProductName(databaseName, majorVersion, minorVersion);
+                    assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
+                    assertEquals(description + " returned " + dialect.getClass().getSimpleName() + "; expected " + expectedDialectClass.getSimpleName(), dialect.getClass(), expectedDialectClass);
+                }
+                catch (Exception e)
+                {
+                    assertTrue(description + " failed; expected success", null == expectedDialectClass);
+                    assertEquals(description + " resulted in a " + e.getClass().getSimpleName() + "; expected " + expectedExceptionClass, e.getClass(), expectedExceptionClass);
+                }
+            }
         }
     }
 }
