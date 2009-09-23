@@ -94,7 +94,7 @@ public class QueryForeignKey implements ForeignKey
         TableInfo table = getLookupTableInfo();
         if (table == null)
             return null;
-        return table.getDetailsURL(Collections.singleton(_lookupKey), null);
+        return LookupForeignKey.getDetailsURL(parent, table, _lookupKey);
     }
 
     public String getLookupTableName()
