@@ -28,6 +28,7 @@ import org.labkey.api.settings.WriteableAppProps;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.io.Writer;
 import java.io.IOException;
 
@@ -91,6 +92,7 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
 
         ExprColumn detailsCol = new ExprColumn(table, "details", idCol.getValueSql(ExprColumn.STR_TABLE_ALIAS), idCol.getSqlTypeInt());
         detailsCol.copyAttributesFrom(idCol);
+        detailsCol.copyURLFrom(idCol, null, Collections.singletonMap(idCol.getFieldKey(), detailsCol.getFieldKey()));
         detailsCol.setLabel("Details");
         detailsCol.setDisplayColumnFactory(new DisplayColumnFactory(){
             public DisplayColumn createRenderer(ColumnInfo colInfo)

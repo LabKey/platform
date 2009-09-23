@@ -23,6 +23,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -32,6 +33,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
@@ -72,6 +74,14 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("LSID", "LSID")));
     }
+
+
+    @Override
+    public StringExpression getDetailsURL(Set<String> columns, Container container)
+    {
+        return super.getDetailsURL(columns, container);
+    }
+    
 
     public ColumnInfo createColumn(String alias, Column column)
     {

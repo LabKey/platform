@@ -20,15 +20,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupURLExpression;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.assay.AssayController;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: brittp
@@ -48,7 +45,7 @@ public class AssayListTable extends FilteredTable
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));
-        nameCol.setURL(getDetailsURL(Collections.singletonMap("RowId", getColumn("RowId"))));
+        nameCol.setURL(getDetailsURL(Collections.singleton("RowId"), null));
         ColumnInfo desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
         addColumn(desc);
         addWrapColumn(_rootTable.getColumn("Created"));
@@ -84,12 +81,12 @@ public class AssayListTable extends FilteredTable
         addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = exp.protocol.lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
     }
 
-    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
+    @Override
+    public StringExpression getDetailsURL(Set<String> columns, Container c)
     {
-        ColumnInfo rowid = columns.get("RowId");
-        if (rowid == null)
+        if (!columns.contains("RowId"))
             return null;
         ActionURL url = new ActionURL(AssayController.SummaryRedirectAction.class, _schema.getContainer());
-        return new LookupURLExpression(url, Collections.singletonMap("rowId", rowid));
+        return new DetailsURL(url, "rowId", new FieldKey(null,"RowId"));
     }
 }

@@ -89,7 +89,7 @@
 				<ns:nullable>false</ns:nullable>
 				<ns:isReadOnly>true</ns:isReadOnly>
 				<ns:isUserEditable>false</ns:isUserEditable>
-                <ns:url>/issues/details.view?issueId=${IssueId}</ns:url>
+                <ns:url>org.labkey.issue.IssuesController$DetailsAction.class?issueId=${IssueId}</ns:url>
 			</ns:column>
 			<ns:column columnName="EntityId">
 				<ns:columnTitle>Entity Id</ns:columnTitle>

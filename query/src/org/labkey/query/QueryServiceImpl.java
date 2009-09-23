@@ -419,12 +419,12 @@ public class QueryServiceImpl extends QueryService
             if (ret != null && key.getName().equals(table.getTitleColumn()) && ret.getURL() == null)
             {
                 List<ColumnInfo> pkColumns = table.getPkColumns();
-                Map<String, ColumnInfo> pkColumnMap = new HashMap<String, ColumnInfo>();
+                Set<String> pkColumnMap = new HashSet<String>();
 
                 for (ColumnInfo column : pkColumns)
-                    pkColumnMap.put(column.getName(), column);
+                    pkColumnMap.add(column.getName());
 
-                StringExpression url = table.getDetailsURL(pkColumnMap);
+                StringExpression url = table.getDetailsURL(pkColumnMap, null);
 
                 if (url != null)
                     ret.setURL(url);

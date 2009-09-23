@@ -303,6 +303,7 @@
       <ns:column columnName="Container"/>
       <ns:column columnName="Title">
         <ns:displayWidth>300</ns:displayWidth>
+        <ns:url>org.labkey.announcements.AnnouncementsController$ThreadAction.class?rowId=${RowId}</ns:url>
       </ns:column>
       <ns:column columnName="Body"/>
       <ns:column columnName="RendererType"/>

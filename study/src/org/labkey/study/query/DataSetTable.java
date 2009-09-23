@@ -79,11 +79,7 @@ public class DataSetTable extends FilteredTable
                     public StringExpression getURL(ColumnInfo parent) {
                         ActionURL base = new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
                         base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(_dsd.getDataSetId()));
-
-                        Map params = new HashMap();
-                        params.put("participantId", parent);
-
-                        return new LookupURLExpression(base, params);
+                        return new DetailsURL(base, "participantId", parent.getFieldKey());
                     }
                 });
                 addColumn(column);

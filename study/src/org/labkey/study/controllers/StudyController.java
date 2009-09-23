@@ -2273,10 +2273,7 @@ public class StudyController extends BaseStudyController
                                 base.addParameter(param.getKey(), param.getValue());
                             }
                         }
-                        Map<Object,ColumnInfo> params = new HashMap<Object,ColumnInfo>();
-                        params.put("participantId", parent);
-
-                        return new LookupURLExpression(base, params);
+                        return new DetailsURL(base, "participantId", parent.getFieldKey());
                     }
                 });
                 return;

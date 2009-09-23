@@ -456,7 +456,7 @@ public class DomainImpl implements Domain
                 Map.Entry<TableInfo, ColumnInfo> entry = getTableInfo();
                 if (entry == null)
                     return null;
-                return entry.getKey().getDetailsURL(Collections.singletonMap((String) null, parent));
+                return entry.getKey().getDetailsURL(Collections.singleton(getName()), null);
             }
         });
     }

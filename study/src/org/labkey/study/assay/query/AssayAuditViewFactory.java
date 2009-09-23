@@ -24,10 +24,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.LookupURLExpression;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -233,7 +230,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
             if (c == null)
                 return null;
 
-            return new LookupURLExpression(new ActionURL("Study", "publishHistoryDetails", c), _columns).eval(ctx);
+            return new DetailsURL(new ActionURL("Study", "publishHistoryDetails", c), _columns).eval(ctx);
         }
 
         @Override

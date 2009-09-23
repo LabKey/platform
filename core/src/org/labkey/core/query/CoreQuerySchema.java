@@ -314,7 +314,7 @@ public class CoreQuerySchema extends UserSchema
             users.addWrapColumn(usersBase.getColumn("LastLogin"));
 
             // The details action requires admin permission so don't offer the link if they can't see it
-            users.setDetailsURL(new DetailsURL(new ActionURL(UserController.DetailsAction.class, getContainer()), Collections.singletonMap("userId", "userId")));
+            users.setDetailsURL(new DetailsURL(new ActionURL(UserController.DetailsAction.class, getContainer()), Collections.singletonMap("userId", "UserId")));
         }
 
 

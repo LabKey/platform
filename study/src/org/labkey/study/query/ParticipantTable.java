@@ -26,6 +26,7 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 public class ParticipantTable extends FilteredTable
 {
@@ -104,11 +105,11 @@ public class ParticipantTable extends FilteredTable
         return new ActionURL("Study", "participant", _schema.getContainer());
     }
 
-    public StringExpression getDetailsURL(Map<String, ColumnInfo> columns, Container c)
+    @Override
+    public StringExpression getDetailsURL(Set<String> columns, Container c)
     {
-        ColumnInfo colRowId = columns.get("ParticipantId");
-        if (colRowId == null)
+        if (!columns.contains("ParticipantId"))
             return null;
-        return new LookupURLExpression(getBaseDetailsURL(), Collections.singletonMap("participantId", colRowId));
+        return new DetailsURL(getBaseDetailsURL(), "participantId", new FieldKey(null,"ParticipantId"));
     }
 }

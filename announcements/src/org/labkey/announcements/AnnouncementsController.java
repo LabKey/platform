@@ -2424,7 +2424,6 @@ public class AnnouncementsController extends SpringActionController
 
             TableInfo tinfo = _comm.getTableInfoThreads();
             DisplayColumn title = new DataColumn(tinfo.getColumn("Title"));
-            title.setURL(url.relativeUrl("thread", "rowId=${RowId}", "announcements"));
             rgn.addDisplayColumn(title);
 
             if (settings.hasStatus())

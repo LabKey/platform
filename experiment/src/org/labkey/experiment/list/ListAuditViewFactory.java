@@ -28,8 +28,8 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.LookupURLExpression;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -37,7 +37,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.controllers.list.ListController;
 
 import java.io.IOException;
-import java.io.Writer;
+import java.io.Writer;                              
 import java.util.*;
 
 /**
@@ -267,7 +267,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
             ActionURL url = new ActionURL(ListController.ListItemDetailsAction.class, c);
             url.addParameter("redirectURL", ctx.getViewContext().getActionURL().getLocalURIString());
-            return new LookupURLExpression(url, _columns).eval(ctx);
+            return new DetailsURL(url, _columns).eval(ctx);
         }
 
         @Override
@@ -308,7 +308,6 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
                     new PropertyInfo("newRecord", "New Record", PropertyType.STRING),
                     new PropertyInfo("oldRecordMap", "Old Record Map", PropertyType.STRING),
                     new PropertyInfo("newRecordMap", "New Record Map", PropertyType.STRING)
-
             });
         }
     }

@@ -187,6 +187,7 @@ public class ParticipantVisitTable extends FilteredTable
         {
             super(foreignKey, lookupKey, lookupColumn);
             copyAttributesFrom(lookupColumn);
+            copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
             setLabel(foreignKey.getLabel() + " " + lookupColumn.getLabel());
         }
 
