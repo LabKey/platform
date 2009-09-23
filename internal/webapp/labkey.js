@@ -17,6 +17,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.dirty = false;
     LABKEY.submit = false;
     LABKEY.buttonBarMenu = false;
+    LABKEY.fieldMarker = '@';
 
     LABKEY._requestedScriptFiles = [];
     LABKEY._loadedScriptFiles = {};

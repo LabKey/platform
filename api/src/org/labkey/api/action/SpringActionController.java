@@ -68,7 +68,8 @@ import java.util.*;
 public abstract class SpringActionController implements Controller, HasViewContext, ViewResolver
 {
     // This is a prefix to indicate that a field is present on a form
-    // For instance for checkboxes (with checkbox name = 'myField' use hidden name="@myField" 
+    // For instance for checkboxes (with checkbox name = 'myField' use hidden name="@myField"
+    // if you change this, change labkey.js (LABKEY.fieldMarker) as well
     public static final String FIELD_MARKER = "@";
 
     // common error codes
