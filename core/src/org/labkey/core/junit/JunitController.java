@@ -22,21 +22,22 @@ import junit.framework.TestResult;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.Format;
 import java.util.*;
@@ -290,5 +291,36 @@ public class JunitController extends SpringActionController
                 }
             }
         }
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class EchoFormAction implements Controller
+    {
+        public ModelAndView handleRequest(HttpServletRequest req, HttpServletResponse res) throws Exception
+        {
+            PrintWriter out = res.getWriter();
+            out.println("<html><head></head><body><form method=GET>");
+            Enumeration<String> names = req.getParameterNames();
+            while (names.hasMoreElements())
+            {
+                String name = names.nextElement();
+                out.print("<input name='");
+                out.print(h(name));
+                out.print("' value='");
+                out.print(h(req.getParameter(name)));
+                out.print("'>");
+                out.print(h(name));
+                out.println("<br>");
+            }
+
+            out.println("<input type=submit></body></html>");
+            return null;
+        }
+    }
+
+    static String h(String s)
+    {
+        return PageFlowUtil.filter(s);
     }
 }
