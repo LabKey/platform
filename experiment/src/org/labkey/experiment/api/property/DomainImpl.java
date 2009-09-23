@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
@@ -456,7 +457,7 @@ public class DomainImpl implements Domain
                 Map.Entry<TableInfo, ColumnInfo> entry = getTableInfo();
                 if (entry == null)
                     return null;
-                return entry.getKey().getDetailsURL(Collections.singleton(getName()), null);
+                return LookupForeignKey.getDetailsURL(parent, entry.getKey(), getName());
             }
         });
     }
