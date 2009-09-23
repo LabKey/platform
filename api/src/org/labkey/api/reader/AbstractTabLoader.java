@@ -406,7 +406,8 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
             for (int i = 0; i < columns.length; i++)
             {
-                colMap.put(columns[i].name, i);
+                if (columns[i].load)
+                    colMap.put(columns[i].name, i);
             }
 
             factory = new RowMapFactory<Object>(colMap);
