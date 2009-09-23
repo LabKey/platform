@@ -275,6 +275,18 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     @Override
+    public String getBooleanTRUE()
+    {
+        return "true";
+    }
+
+    @Override
+    public String getBooleanFALSE()
+    {
+        return "false";
+    }
+
+    @Override
     public String getBooleanLiteral(boolean b)
     {
         return Boolean.toString(b);

@@ -561,6 +561,7 @@ public class Query
     {
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.* FROM R", Rcolumns, Rsize),
+        new SqlTest("SELECT true as T, false as F FROM R", 2, Rsize),
         new SqlTest("SELECT COUNT(*) AS _count FROM R", 1, 1),
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
         new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),

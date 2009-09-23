@@ -16,9 +16,7 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang.StringUtils;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.query.sql.SqlTokenTypes;
+import org.labkey.api.data.SqlDialect;
 
 import java.sql.Types;
 
@@ -42,7 +40,8 @@ public class QBoolean extends QExpr implements IConstant
 
     public void appendSql(SqlBuilder builder)
     {
-        builder.append(getValue().toString());
+        SqlDialect d = builder.getDialect();
+        builder.append(getValue().booleanValue() ? d.getBooleanTRUE() : d.getBooleanFALSE());
     }
 
     public void appendSource(SourceBuilder builder)
