@@ -3020,20 +3020,6 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ValidateQueriesAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView("/org/labkey/query/controllers/validateQueries.jsp");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Validate Queries");
-        }
-    }
-
     private static class SaveApiTestForm
     {
         private String _getUrl;

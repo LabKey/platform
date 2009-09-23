@@ -1571,7 +1571,6 @@ query/src/org/labkey/query/controllers/TableInfoForm.java -text
 query/src/org/labkey/query/controllers/ValidateQueryAction.java -text
 query/src/org/labkey/query/controllers/admin.jsp -text
 query/src/org/labkey/query/controllers/apitest.jsp -text
-query/src/org/labkey/query/controllers/begin.jsp -text
 query/src/org/labkey/query/controllers/browse.jsp -text
 query/src/org/labkey/query/controllers/builtInTablesList.jsp -text
 query/src/org/labkey/query/controllers/chooseColumns.jsp -text
@@ -1589,7 +1588,6 @@ query/src/org/labkey/query/controllers/manageViews.jsp -text
 query/src/org/labkey/query/controllers/newQuery.jsp -text
 query/src/org/labkey/query/controllers/propertiesQuery.jsp -text
 query/src/org/labkey/query/controllers/sourceQuery.jsp -text
-query/src/org/labkey/query/controllers/validateQueries.jsp -text
 query/src/org/labkey/query/data/DbUserQueryUpdateService.java -text
 query/src/org/labkey/query/data/DbUserSchemaCache.java -text
 query/src/org/labkey/query/data/DbUserSchemaTable.java -text

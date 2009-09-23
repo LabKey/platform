@@ -933,10 +933,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         return LABKEY.ActionURL.buildURL("query", "newQuery", undefined, {schemaName: schemaName});
     },
 
-    getValidateQueriesUrl : function() {
-        return LABKEY.ActionURL.buildURL("query", "validateQueries");
-    },
-
     onTabChange : function(tabpanel, tab) {
         if (tab.queryDetails)
             this.selectQuery(tab.queryDetails.schemaName, tab.queryDetails.name);
