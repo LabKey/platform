@@ -138,15 +138,21 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         if (lookupTable == null || _columnName == null)
             return null;
 
-        StringExpression expr = lookupTable.getDetailsURL(PageFlowUtil.insensitiveSet(_columnName), null);
+        return getDetailsURL(parent, lookupTable, _columnName);
+    }
+
+    
+    public static StringExpression getDetailsURL(ColumnInfo parent, TableInfo lookupTable, String columnName)
+    {
+        StringExpression expr = lookupTable.getDetailsURL(PageFlowUtil.insensitiveSet(columnName), null);
         if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
             StringExpressionFactory.FieldKeyStringExpression f = (StringExpressionFactory.FieldKeyStringExpression)expr;
             StringExpressionFactory.FieldKeyStringExpression rewrite;
 
             // if the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
-            if (f.validateColumns(Collections.singleton(_columnName)))
-                rewrite = f.addParent(null, Collections.singletonMap(new FieldKey(null,_columnName), parent.getFieldKey()));
+            if (f.validateColumns(Collections.singleton(columnName)))
+                rewrite = f.addParent(null, Collections.singletonMap(new FieldKey(null,columnName), parent.getFieldKey()));
             else
                 rewrite = f.addParent(parent.getFieldKey(), null);
             return rewrite;
