@@ -777,7 +777,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             layout: 'border',
             items : [
                 {
-                    id: 'tree',
+                    id: 'lk-sb-tree',
                     xtype: 'labkey-query-tree-panel',
                     region: 'west',
                     split: true,
@@ -799,7 +799,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     }
                 },
                 {
-                    id: 'details',
+                    id: 'lk-sb-details',
                     xtype: 'tabpanel',
                     region: 'center',
                     activeTab: 0,
@@ -818,7 +818,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                             fn: this.onTabChange,
                             scope: this
                         }
-                    }
+                    },
+                    plugins: new Ext.ux.TabCloseMenu()
                 }
             ],
            tbar: tbar
@@ -842,7 +843,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     showPanel : function(id) {
-        var tabs = this.getComponent("details");
+        var tabs = this.getComponent("lk-sb-details");
         if (tabs.getComponent(id))
             tabs.activate(id);
         else
@@ -920,7 +921,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     onCreateQueryClick : function() {
         //determine which schema is selected in the tree
-        var tree = this.getComponent("tree");
+        var tree = this.getComponent("lk-sb-tree");
         var node = tree.getSelectionModel().getSelectedNode();
         if (node && node.attributes.schemaName)
             window.open(this.getCreateQueryUrl(node.attributes.schemaName), "createQuery");
@@ -936,7 +937,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     onTabChange : function(tabpanel, tab) {
         if (tab.queryDetails)
             this.selectQuery(tab.queryDetails.schemaName, tab.queryDetails.name);
-        if (tabpanel.items.length > 1)
+        if (tabpanel.items.length > 1 || Ext.History.getToken())
             Ext.History.add(tab.id);
     },
 
@@ -960,14 +961,14 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         this._qdcache.clearAll();
 
         //remove all tabs except for the first one (home)
-        var tabs = this.getComponent("details");
+        var tabs = this.getComponent("lk-sb-details");
         while (tabs.items.length > 1)
         {
             tabs.remove(tabs.items.length - 1, true);
         }
 
         //if tree selection is below a schema, refresh only that schema
-        var tree = this.getComponent("tree");
+        var tree = this.getComponent("lk-sb-tree");
         var nodeToReload = tree.getRootNode();
         var nodeSelected = tree.getSelectionModel().getSelectedNode();
 
@@ -992,7 +993,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     selectSchema : function(schemaName) {
-        var tree = this.getComponent("tree");
+        var tree = this.getComponent("lk-sb-tree");
         var root = tree.getRootNode();
         var schemaToFind = schemaName.toLowerCase();
         var schemaNode = root.findChildBy(function(node){
@@ -1009,7 +1010,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     selectQuery : function(schemaName, queryName) {
-        var tree = this.getComponent("tree");
+        var tree = this.getComponent("lk-sb-tree");
         var root = tree.getRootNode();
         var schemaNode = root.findChildBy(function(node){return node.attributes.schemaName.toLowerCase() == schemaName.toLowerCase();});
         if (!schemaNode)
@@ -1040,3 +1041,67 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         });
     }
 });
+
+//adapted from http://www.extjs.com/deploy/dev/examples/tabs/tabs-adv.js
+Ext.ux.TabCloseMenu = function(){
+    var tabs, menu, ctxItem;
+    this.init = function(tp){
+        tabs = tp;
+        tabs.on('contextmenu', onContextMenu);
+    };
+
+    function onContextMenu(ts, item, e){
+        if(!menu){ // create context menu on first right click
+            menu = new Ext.menu.Menu({
+            cls: 'extContainer',
+            items: [{
+                id: tabs.id + '-close',
+                text: 'Close',
+                handler : function(){
+                    tabs.remove(ctxItem);
+                }
+            },{
+                id: tabs.id + '-close-all',
+                text: 'Close All',
+                handler : function(){
+                    tabs.items.each(function(item){
+                        if(item.closable){
+                            tabs.remove(item);
+                        }
+                    });
+                }
+            },{
+                id: tabs.id + '-close-others',
+                text: 'Close Others',
+                handler : function(){
+                    tabs.items.each(function(item){
+                        if(item.closable && item != ctxItem){
+                            tabs.remove(item);
+                        }
+                    });
+                }
+            }]});
+        }
+        ctxItem = item;
+        var items = menu.items;
+        items.get(tabs.id + '-close').setDisabled(!item.closable);
+        var disableOthers = true;
+        var disableAll = true;
+        tabs.items.each(function(){
+            if(this != item && this.closable){
+                disableOthers = false;
+                return false;
+            }
+        });
+        tabs.items.each(function(){
+            if(this.closable){
+                disableAll = false;
+                return false;
+            }
+        });
+        items.get(tabs.id + '-close-others').setDisabled(disableOthers);
+        items.get(tabs.id + '-close-all').setDisabled(disableAll);
+	    e.stopEvent();
+        menu.showAt(e.getPoint());
+    }
+};
