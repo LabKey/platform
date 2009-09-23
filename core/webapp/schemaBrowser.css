@@ -76,9 +76,10 @@
 
 .lk-vq-status
 {
-    padding: 5px !important;
-    border: 1px solid #AAAAAA !important;
-    background-color: #DDDDDD;
+    padding: 5px 5px 5px 21px !important;
+    background-repeat: no-repeat;
+    background-position: center left;
+    border: 1px solid #AAAAAA;
 }
 
 .lk-vq-errors-table

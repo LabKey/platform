@@ -433,7 +433,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         Ext.get("lk-vq-stop").on("click", this.stopValidation, this);
     },
 
-    setStatus : function(msg, cls) {
+    setStatus : function(msg, cls, resetCls) {
         var elem = Ext.get("lk-vq-status");
         if (!elem)
         {
@@ -444,10 +444,29 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
             });
         }
         elem.update(msg);
-        if (cls)
-            elem.addClass(cls);
-        else
+
+        if (true === resetCls)
             elem.dom.className = "lk-vq-status";
+        
+        if (cls)
+        {
+            if (this.curStatusClass)
+                elem.removeClass(this.curStatusClass);
+            elem.addClass(cls);
+            this.curStatusClass = cls;
+        }
+
+        return elem;
+    },
+
+    setStatusIcon : function(iconCls) {
+        var elem = Ext.get("lk-vq-status");
+        if (!elem)
+            elem = this.setStatus("");
+        if (this.curIconClass)
+            elem.removeClass(this.curIconClass);
+        elem.addClass(iconCls);
+        this.curIconClass = iconCls;
     },
 
     startValidation : function() {
@@ -462,7 +481,8 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         });
         Ext.get("lk-vq-start").dom.disabled = true;
         Ext.get("lk-vq-stop").dom.disabled = false;
-        this.setStatus("Starting validation...");
+        this.setStatus("Starting validation...", null, true);
+        this.setStatusIcon("iconAjaxLoadingGreen");
     },
 
     stopValidation : function() {
@@ -523,6 +543,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         //add to errors list
         var queryLabel = this.getCurrentQueryLabel();
         this.setStatus("Validating '" + queryLabel + "'...FAILED: " + errorInfo.exception);
+        this.setStatusIcon("iconAjaxLoadingRed");
         this.addValidationError(this.schemaNames[this.curSchemaIdx], this.queries[this.curQueryIdx].name, errorInfo);
         this.advance();
     },
@@ -556,6 +577,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         msg += " " + this.numValid + (1 == this.numValid ? " query was valid." : " queries were valid.");
         msg += " " + this.numErrors + (1 == this.numErrors ? " query" : " queries") + " failed validation.";
         this.setStatus(msg, (this.numErrors > 0 ? "lk-vq-status-error" : "lk-vq-status-all-ok"));
+        this.setStatusIcon(this.numErrors > 0 ? "iconWarning" : "iconCheck");
     },
 
     getCurrentQueryLabel : function() {
@@ -843,7 +865,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     closable: true,
                     title: "Validate Queries",
                     listeners: {
-                        click: {
+                        queryclick: {
                             fn: this.selectQuery,
                             scope: this
                         }
