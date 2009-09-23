@@ -588,7 +588,18 @@ public abstract class SqlDialect
         }
     }
 
+
     public abstract String getBooleanDatatype();
+    
+    public String getBooleanTRUE()
+    {
+        return "CAST(1 AS " + getBooleanDatatype() + ")";
+    }
+
+    public String getBooleanFALSE()
+    {
+        return "CAST(0 AS " + getBooleanDatatype() + ")";
+    }
 
 
     public static SqlDialect get(DataSource ds) throws ServletException
