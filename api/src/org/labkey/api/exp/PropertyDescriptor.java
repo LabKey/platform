@@ -15,17 +15,16 @@
  */
 package org.labkey.api.exp;
 
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.*;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
-import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * User: migra
@@ -350,6 +349,25 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
 
         // two property descriptors are equal if they have the same row ID:
         return ((PropertyDescriptor) obj).getPropertyId() == getPropertyId();
+    }
+
+
+    static
+    {
+    ObjectFactory.Registry.register(PropertyDescriptor.class,
+            new BeanObjectFactory<PropertyDescriptor>(PropertyDescriptor.class)
+            {
+                @Override
+                public Map toMap(PropertyDescriptor bean, Map m)
+                {
+                    m = super.toMap(bean, m);
+                    Object o = m.get("URL");
+                    if (o instanceof StringExpression)
+                        m.put("URL", o.toString());
+                    return m;
+                }
+            }
+    );
     }
 }
 
