@@ -9,3 +9,6 @@
 .iconFolderNew { background-image: url(folder_new.png) !important; }
 .iconMessage { background-image: url(message.png) !important; }
 .iconCheck { background-image: url(check.png) !important; }
+.iconAjaxLoadingGreen {background-image: url(ajax-loading-green.gif) !important;}
+.iconAjaxLoadingRed {background-image: url(ajax-loading-red.gif) !important;}
+.iconWarning {background-image: url(warning-icon.png) !important;}

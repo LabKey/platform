@@ -1910,6 +1910,8 @@ internal/webapp/_icons/xltm.gif -text
 internal/webapp/_icons/xltx.gif -text
 internal/webapp/_icons/xml.gif -text
 internal/webapp/_icons/zip.gif -text
+internal/webapp/_images/ajax-loading-green.gif -text
+internal/webapp/_images/ajax-loading-red.gif -text
 internal/webapp/_images/beta.gif -text
 internal/webapp/_images/button_arrow.gif -text
 internal/webapp/_images/button_bar_bg.gif -text
@@ -1995,6 +1997,7 @@ internal/webapp/_images/topgrad.gif -text
 internal/webapp/_images/up.png -text
 internal/webapp/_images/uparrow.gif -text
 internal/webapp/_images/uparrow_disabled.gif -text
+internal/webapp/_images/warning-icon.png -text
 internal/webapp/_images/warning-small.png -text
 internal/webapp/_yui/README -text
 internal/webapp/_yui/build/animation/README -text
