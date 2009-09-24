@@ -96,7 +96,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "org.postgresql.Driver".equals(driverClassName);
     }
 
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion) throws DatabaseNotSupportedException
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
             return false;
@@ -107,7 +107,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         if (version >= 82)
         {
             // ...but warn for anything greater than 8.4
-            if (version > 84)
+            if (logWarnings && version > 84)
                 _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + majorVersion + "." + minorVersion + ".  PostgreSQL 8.4 is the recommended version.");
 
             return true;

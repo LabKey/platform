@@ -56,7 +56,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null != queryDefs && queryDefs.containsKey(form.getQueryName()))
             resp.put("isUserDefined", true);
 
-        TableInfo tinfo = null;
+        TableInfo tinfo;
         try
         {
             tinfo = schema.getTable(form.getQueryName());

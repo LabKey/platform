@@ -43,7 +43,7 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
 
 
     @Override
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings)
     {
         return dataBaseProductName.equals("Microsoft SQL Server") && (majorVersion >= 9);
     }

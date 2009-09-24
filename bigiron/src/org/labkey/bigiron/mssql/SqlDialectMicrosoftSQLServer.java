@@ -95,7 +95,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "net.sourceforge.jtds.jdbc.Driver".equals(driverClassName);
     }
 
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings)
     {
         return dataBaseProductName.equals("Microsoft SQL Server") && (majorVersion < 9);
     }

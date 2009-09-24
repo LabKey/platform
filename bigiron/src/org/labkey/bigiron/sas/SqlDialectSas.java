@@ -63,7 +63,7 @@ public class SqlDialectSas extends SqlDialect
     }
 
     // NOTE: SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so this will never return true.
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings)
     {
         return dataBaseProductName.equals(getProductName());
     }
