@@ -295,7 +295,7 @@ public class SqlDialectSas extends SqlDialect
     // SAS has no database name, so override both getDatabaseName() methods and return null.
 
     @Override
-    public String getDatabaseName(DataSource ds) throws ServletException
+    public String getDatabaseName(String dsName, DataSource ds) throws ServletException
     {
         return null;
     }

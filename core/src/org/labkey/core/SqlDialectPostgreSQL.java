@@ -678,8 +678,8 @@ class SqlDialectPostgreSQL extends SqlDialect
             DbScope scope = coreSchema.getScope();
             String tempSchemaName = getGlobalTempTablePrefix();
             if (tempSchemaName.endsWith("."))
-                tempSchemaName = tempSchemaName.substring(0,tempSchemaName.length()-1);
-            String dbName = getDatabaseName(scope.getDataSource());
+                tempSchemaName = tempSchemaName.substring(0, tempSchemaName.length()-1);
+            String dbName = getDatabaseName(scope.getDataSourceName(), scope.getDataSource());
 
             Connection conn = null;
             ResultSet rs = null;
