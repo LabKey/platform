@@ -27,10 +27,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
@@ -224,12 +221,12 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static String urlDetailsData(Container c)
+    public static StringExpression urlDetailsData(Container c)
     {
         // Would be better to return an ActionURL, but it doesn't yet
         // seem to support this binding.
-        return new ActionURL(DetailsAction.class, c).getLocalURIString() +
-                RowIdForm.Params.rowId + "=${RowId}";
+        ActionURL url = new ActionURL(DetailsAction.class, c).addParameter(RowIdForm.Params.rowId, "${RowId}");
+        return StringExpressionFactory.createURL(url);
     }
 
     public static ActionURL urlDetails(Container c, int rowId)
@@ -845,7 +842,7 @@ public class StatusController extends SpringActionController
         rgn.setApiAction(apiAction);
         rgn.setColumns(PipelineStatusManager.getTableInfo().getColumns("Status, Created, FilePath, Description"));
         DisplayColumn col = rgn.getDisplayColumn("Status");
-        col.setURL(urlDetailsData(c));
+        col.setURLExpression(urlDetailsData(c));
         col.setNoWrap(true);
         col = rgn.getDisplayColumn("FilePath");
         col.setVisible(false);
@@ -890,7 +887,7 @@ public class StatusController extends SpringActionController
         rgn.setShowBorders(true);
         rgn.setColumns(getTableInfo().getColumns("Status, Created, FilePath, Description, Provider, Container"));
         DisplayColumn col = rgn.getDisplayColumn("Status");
-        col.setURL(urlDetailsData(c));
+        col.setURLExpression(urlDetailsData(c));
         col.setNoWrap(true);
         col = rgn.getDisplayColumn("Description");
         col.setVisible(false);

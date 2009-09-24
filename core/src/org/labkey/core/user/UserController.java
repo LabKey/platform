@@ -503,7 +503,7 @@ public class UserController extends SpringActionController
 
                     ActionURL permissions = new UserUrlsImpl().getUserAccessURL(getContainer());
                     permissions.addParameter("userId", "${UserId}");
-                    SimpleDisplayColumn securityDetails = new UrlColumn(StringExpressionFactory.createURL(permissions.getLocalURIString(true)), "permissions");
+                    SimpleDisplayColumn securityDetails = new UrlColumn(StringExpressionFactory.createURL(permissions), "permissions");
                     ret.getDataRegion().addDisplayColumn(1, securityDetails);
 
                     ret.getRenderContext().setBaseSort(new Sort("email"));
