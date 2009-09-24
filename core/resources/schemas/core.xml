@@ -158,7 +158,9 @@
   </ns:table>
   <ns:table tableName="Contacts" tableDbType="VIEW">
     <ns:columns>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="Name">
+          <ns:url>org.labkey.core.user.UserController$DetailsAction.class?userId=${UserId}</ns:url>
+      </ns:column>
       <ns:column columnName="Email"/>
       <ns:column columnName="Phone"/>
       <ns:column columnName="UserId"/>

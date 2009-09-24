@@ -1534,11 +1534,6 @@ public class WikiController extends SpringActionController
 
             dr.addDisplayColumn(new DataColumn(tinfoVersions.getColumn("Created")));
 
-            //url displays version
-            ActionURL urlVersion = getVersionURL(wikiname);
-            String urlstring = urlVersion.toString() + "&version=${Version}";
-            dr.getDisplayColumn("Version").setURL(urlstring);
-
             ButtonBar buttonBar = new ButtonBar();
             dr.setButtonBar(buttonBar);
 

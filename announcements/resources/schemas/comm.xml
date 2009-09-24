@@ -223,7 +223,9 @@
         <ns:formatString>DateTime</ns:formatString>
       </ns:column>
       <ns:column columnName="Owner"/>
-      <ns:column columnName="Version"/>
+      <ns:column columnName="Version">
+          <ns:url>org.labkey.wiki.WikiController$VersionAction.class?name=${PageEntityId/Name}&amp;version=${Version}</ns:url>
+      </ns:column>
       <ns:column columnName="Title"/>
       <ns:column columnName="Body"/>
       <ns:column columnName="RendererType"/>
