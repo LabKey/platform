@@ -18,12 +18,14 @@ package org.labkey.experiment;
 import org.labkey.api.view.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.validation.BindException;
 
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * User: jeckels
@@ -52,7 +54,7 @@ public class ProtocolWebPart extends WebPartView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,Created");
         dr.setColumns(cols);
         dr.getDisplayColumn(0).setVisible(false);
-        dr.getDisplayColumn(1).setURL(new ActionURL(ExperimentController.ProtocolDetailsAction.class, c) + "rowId=${RowId}");
+        dr.getDisplayColumn(1).setURLExpression(new DetailsURL(new ActionURL(ExperimentController.ProtocolDetailsAction.class, c), Collections.singletonMap("rowId","RowId")));
         dr.getDisplayColumn(2).setTextAlign("left");
 
         if (!_narrow)
