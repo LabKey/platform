@@ -310,14 +310,14 @@ public abstract class SqlDialect
 
     public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
-        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseMajorVersion(), md.getDatabaseMinorVersion());
+        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseMajorVersion(), md.getDatabaseMinorVersion(), true);
     }
 
 
-    private static SqlDialect getFromProductName(String dataBaseProductName, int majorVersion, int minorVersion) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
+    private static SqlDialect getFromProductName(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialect dialect : _dialects)
-            if (dialect.claimsProductNameAndVersion(dataBaseProductName, majorVersion, minorVersion))
+            if (dialect.claimsProductNameAndVersion(dataBaseProductName, majorVersion, minorVersion, logWarnings))
                 return dialect;
 
         throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + majorVersion + "." + minorVersion + " -- is not supported by your LabKey installation.");
@@ -342,7 +342,7 @@ public abstract class SqlDialect
     protected abstract boolean claimsDriverClassName(String driverClassName);
 
     // Implementation should throw only if it's responsible for the specified database server but doesn't support the specified version
-    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion) throws DatabaseNotSupportedException;
+    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings) throws DatabaseNotSupportedException;
 
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);
@@ -974,7 +974,7 @@ public abstract class SqlDialect
 
                 try
                 {
-                    SqlDialect dialect = getFromProductName(databaseName, majorVersion, minorVersion);
+                    SqlDialect dialect = getFromProductName(databaseName, majorVersion, minorVersion, false);
                     assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
                     assertEquals(description + " returned " + dialect.getClass().getSimpleName() + "; expected " + expectedDialectClass.getSimpleName(), dialect.getClass(), expectedDialectClass);
                 }
