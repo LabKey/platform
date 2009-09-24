@@ -4,7 +4,7 @@ activation.jar|JavaBeans Activation Framework|1.1.1|{link:Sun|http://java.sun.co
 ant.jar|Apache Ant|1.7.0|{link:Apache|http://ant.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Jasper dependency for dev-mode JSP auto-recompile
 jtds.jar|jTDS JDBC Driver|1.2.3|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server databases
 mail.jar|JavaMail|1.4.1|{link:Sun|http://java.sun.com/products/javamail}|{link:Sun Binary Distribution License|https://www.labkey.org/download/javamail-LICENSE.txt}|adam|Send email from LabKey Server
-postgresql.jar|PostgreSQL JDBC Driver|603 JDBC 3|{link:postgres.org|http://jdbc.postgresql.org/index.html}|{link:BSD|http://jdbc.postgresql.org/license.html}|adam|Connect with PostgreSQL databases
+postgresql.jar|PostgreSQL JDBC Driver|8.4-701 JDBC3|{link:postgres.org|http://jdbc.postgresql.org/index.html}|{link:BSD|http://jdbc.postgresql.org/license.html}|adam|Connect with PostgreSQL databases
 {table}
 
 
