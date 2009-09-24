@@ -129,7 +129,7 @@ public abstract class SqlDialect
 
                 try
                 {
-                    DataSourceProperties props = new DataSourceProperties(ds);
+                    DataSourceProperties props = new DataSourceProperties(scope.getDataSourceName(), ds);
                     url = props.getUrl();
                     _log.info("Database maintenance on " + url + " started");
                 }
@@ -304,7 +304,7 @@ public abstract class SqlDialect
             if (dialect.claimsDriverClassName(driverClassName))
                 return dialect;
 
-        throw new SqlDialectNotSupportedException("The database driver '" + props.getDriverClassName() + "' associated with JDBC url '" + props.getUrl() + "' is not supported in your installation.");
+        throw new SqlDialectNotSupportedException("The database driver \"" + props.getDriverClassName() + "\" specified in data source \"" + props.getDataSourceName() + "\" is not supported in your installation.");
     }
 
 
@@ -622,11 +622,11 @@ public abstract class SqlDialect
     //
     // Currently, JdbcHelper only finds the database name.  It could be extended if we require querying
     // other components or if replacement/reassembly becomes necessary.
-    public String getDatabaseName(DataSource ds) throws ServletException
+    public String getDatabaseName(String dsName, DataSource ds) throws ServletException
     {
         try
         {
-            DataSourceProperties props = new DataSourceProperties(ds);
+            DataSourceProperties props = new DataSourceProperties(dsName, ds);
             String url = props.getUrl();
             return getDatabaseName(url);
         }
@@ -765,10 +765,12 @@ public abstract class SqlDialect
     // these properties, but we don't want to cast to a specific implementation class, so use reflection to get them.
     public static class DataSourceProperties
     {
-        private DataSource _ds;
+        private final String _dsName;
+        private final DataSource _ds;
 
-        public DataSourceProperties(DataSource ds)
+        public DataSourceProperties(String dsName, DataSource ds)
         {
+            _dsName = dsName;
             _ds = ds;
         }
 
@@ -785,6 +787,10 @@ public abstract class SqlDialect
             }
         }
 
+        public String getDataSourceName()
+        {
+            return _dsName;
+        }
 
         public String getUrl() throws ServletException
         {

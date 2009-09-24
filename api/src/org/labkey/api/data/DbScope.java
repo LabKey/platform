@@ -85,7 +85,7 @@ public class DbScope
             catch (SQLException e)
             {
                 // Fall back to retrieving dialect from driver -- SAS/SHARE driver throws when calling getDatabaseMajorVersion() and getDatabaseMinorVersion()
-                _dialect = SqlDialect.getFromDataSourceProperties(new SqlDialect.DataSourceProperties(dataSource));
+                _dialect = SqlDialect.getFromDataSourceProperties(new SqlDialect.DataSourceProperties(dsName, dataSource));
             }
             finally
             {
@@ -102,7 +102,7 @@ public class DbScope
 
             _dsName = dsName;
             _dataSource = dataSource;
-            _databaseName = _dialect.getDatabaseName(_dataSource);
+            _databaseName = _dialect.getDatabaseName(_dsName, _dataSource);
             _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
@@ -455,7 +455,7 @@ public class DbScope
             if (null == labkeyDsName)
                 throw new ConfigurationException("You must have a DataSource named \"labkeyDataSource\" defined in labkey.xml.");
             else
-                ensureDataBase(dataSources.get(labkeyDsName), labkeyDsName);
+                ensureDataBase(labkeyDsName, dataSources.get(labkeyDsName));
 
             for (Map.Entry<String, DataSource> entry : dataSources.entrySet())
             {
@@ -492,10 +492,10 @@ public class DbScope
     // then attempt to create the database.  Return true if the database existed, false if it was just created.  Throw if some
     // other exception occurs (connection fails repeatedly with something other than "database doesn't exist" or database can't
     // be created.
-    private static boolean ensureDataBase(DataSource ds, String dsName) throws ServletException
+    private static boolean ensureDataBase(String dsName, DataSource ds) throws ServletException
     {
         Connection conn = null;
-        SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(ds);
+        SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(dsName, ds);
 
         // Need the dialect to:
         // 1) determine whether an exception is "no database" or something else and
