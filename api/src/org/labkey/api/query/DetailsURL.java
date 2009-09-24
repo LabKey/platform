@@ -21,6 +21,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
@@ -240,12 +241,20 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     @Override
     public String toString()
     {
-        if (_parsedUrl != null)
-            return _parsedUrl.getPath() + _source;
-        else if (null != _urlSource)
+        if (null != _urlSource)
             return _urlSource;
-        else if (null != _url)
-            return _url.getLocalURIString(true);
-        return "";
+        String controller = _url.getPageFlow();
+        String action = _url.getAction();
+        if (!action.endsWith(".view"))
+            action = action + ".view";
+        String to = "/" + encode(controller) + "/" + encode(action) + "?" + _url.getQueryString(true);
+        assert null == DetailsURL.validateURL(to);
+        return to;
+    }
+    
+
+    private String encode(String s)
+    {
+        return PageFlowUtil.encode(s);
     }
 }
