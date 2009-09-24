@@ -20,9 +20,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.query.DetailsURL;
 import org.springframework.validation.BindException;
 
 import java.io.PrintWriter;
+import java.util.Map;
+import java.util.Collections;
 
 /**
  * User: Mark Igra
@@ -83,7 +86,6 @@ public class ContactWebPart extends WebPartView
 
         rgn.setColumns(CoreSchema.getInstance().getTableInfoContacts().getColumns("Name,DisplayName,Email,Phone,UserId"));
         DisplayColumn nameDC = rgn.getDisplayColumn("name");
-        nameDC.setURL(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(ContainerManager.getRoot()).toString() + "userId=${UserId}");
         nameDC.setHtmlFiltered(false);
 
         rgn.getDisplayColumn("Email").setURL("mailto:${Email}");

@@ -26,7 +26,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -60,7 +59,14 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     public static DetailsURL fromString(String str)
     {
         DetailsURL ret = new DetailsURL(str);
-        ret.parse();    // validate
+        try
+        {
+            ret.parse();
+        }
+        catch (IllegalStateException x)
+        {
+            // ignore during startup
+        }
         return ret;
     }
 
