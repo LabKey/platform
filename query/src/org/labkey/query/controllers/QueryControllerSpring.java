@@ -3079,19 +3079,28 @@ public class QueryControllerSpring extends SpringActionController
 
             TestCaseType test = doc.addNewApiTests().addNewTest();
             test.setName("recorded test case");
+            ActionURL url = null;
 
             if (!StringUtils.isEmpty(form.getGetUrl()))
             {
                 test.setType("get");
-                test.setUrl(form.getGetUrl());
+                url = new ActionURL(form.getGetUrl());
             }
             else if (!StringUtils.isEmpty(form.getPostUrl()))
             {
                 test.setType("post");
-                test.setUrl(form.getPostUrl());
                 test.setFormData(form.getPostData());
+                url = new ActionURL(form.getPostUrl());
             }
 
+            if (url != null)
+            {
+                String uri = url.getLocalURIString();
+                if (uri.startsWith(url.getContextPath()))
+                    uri = uri.substring(url.getContextPath().length() + 1);
+
+                test.setUrl(uri);
+            }
             test.setResponse(form.getResponse());
 
             XmlOptions opts = new XmlOptions();
