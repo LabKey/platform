@@ -243,6 +243,22 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
+    /* only copy if all field keys are in the map */
+    public void copyURLFromStrict(ColumnInfo col, Map<FieldKey,FieldKey> remap)
+    {
+        StringExpression url = col.getURL();
+        if (url instanceof StringExpressionFactory.FieldKeyStringExpression)
+        {
+            StringExpressionFactory.FieldKeyStringExpression fkse = (StringExpressionFactory.FieldKeyStringExpression)url;
+            if (fkse.validateFieldKeys(remap.keySet()))
+            {
+                StringExpression mapped = (fkse).addParent(null, remap);
+                setURL(mapped);
+            }
+        }
+    }
+
+
     public String getMetaDataName()
     {
         return metaDataName;      // Actual name returned by metadata; use to query meta data or to select columns enclosed in quotes
