@@ -402,6 +402,17 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         LABKEY.ext.ValidateQueriesPanel.superclass.initComponent.apply(this, arguments);
     },
 
+    initEvents : function() {
+        LABKEY.ext.ValidateQueriesPanel.superclass.initEvents.apply(this, arguments);
+        this.ownerCt.on("beforeremove", function(){
+            if (this.validating)
+            {
+                Ext.Msg.alert("Validation in Process", "Please stop the validation process before closing this tab.");
+                return false;
+            }
+        }, this);
+    },
+
     onRender : function() {
         LABKEY.ext.ValidateQueriesPanel.superclass.onRender.apply(this, arguments);
         this.body.createChild({
@@ -492,6 +503,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         Ext.get("lk-vq-stop").focus();
         this.setStatus("Starting validation...", null, true);
         this.setStatusIcon("iconAjaxLoadingGreen");
+        this.validating = true;
     },
 
     stopValidation : function() {
@@ -588,6 +600,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
         msg += " " + this.numErrors + (1 == this.numErrors ? " query" : " queries") + " failed validation.";
         this.setStatus(msg, (this.numErrors > 0 ? "lk-vq-status-error" : "lk-vq-status-all-ok"));
         this.setStatusIcon(this.numErrors > 0 ? "iconWarning" : "iconCheck");
+        this.validating = false;
     },
 
     getCurrentQueryLabel : function() {
