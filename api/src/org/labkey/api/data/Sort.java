@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.util.URLHelper;
 
 import java.util.*;
@@ -153,7 +154,11 @@ public class Sort
             sortKeys = sortParam.split(",");
             //Insert keys backwards since we always insert at the front...
             for (int i = sortKeys.length - 1; i >= 0; i--)
-                insertSortColumn(sortKeys[i], true);
+            {
+                String k = StringUtils.trimToNull(sortKeys[i]);
+                if (null != k)
+                    insertSortColumn(k, true);
+            }
         }
     }
 
