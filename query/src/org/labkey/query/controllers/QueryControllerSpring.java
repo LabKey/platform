@@ -79,7 +79,8 @@ public class QueryControllerSpring extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
             ValidateQueryAction.class,
             GetSchemaQueryTreeAction.class,
-            GetQueryDetailsAction.class);
+            GetQueryDetailsAction.class,
+            ViewQuerySourceAction.class);
 
     public QueryControllerSpring() throws Exception
     {

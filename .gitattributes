@@ -1569,6 +1569,7 @@ query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text
 query/src/org/labkey/query/controllers/TableInfoForm.java -text
 query/src/org/labkey/query/controllers/ValidateQueryAction.java -text
+query/src/org/labkey/query/controllers/ViewQuerySourceAction.java -text
 query/src/org/labkey/query/controllers/admin.jsp -text
 query/src/org/labkey/query/controllers/apitest.jsp -text
 query/src/org/labkey/query/controllers/browse.jsp -text

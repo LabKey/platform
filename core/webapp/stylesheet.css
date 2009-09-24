@@ -2139,3 +2139,9 @@ div.yuimenu li.checked em.checkedindicator.disabled {
     background-image: url(./_images/elipsis.gif) !important;
     cursor: pointer;
 }
+
+.labkey-query-source
+{
+    font-family: monospace;
+    padding: 5px;
+}

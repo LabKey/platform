@@ -194,6 +194,9 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         }
         else
         {
+            if (queryDetails.isUserDefined)
+                html += this.buildLink("query", "viewQuerySource", params, "view source") + "&nbsp;";
+            
             html += this.buildLink("query", "metadataQuery", params, "customize display");
         }
 
@@ -781,7 +784,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 handler: function(){this.showPanel("lk-vq-panel");},
                 scope: this,
                 iconCls: 'iconCheck',
-                tooltip: 'Takes you to the validate queries page where you can validate all the queries defined in this folder.'
+                tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.'
             });
         }
 
