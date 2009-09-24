@@ -112,13 +112,13 @@
 .lk-vq-status-error
 {
     border: 2px solid #FF5555 !important;
-    background-color: #FFAAAA;
+    background-color: #FFDDDD;
 }
 
 .lk-vq-status-all-ok
 {
     border: 2px solid #55FF55 !important;
-    background-color: #AAFFAA;
+    background-color: #DDFFDD;
 }
 
 .lk-vq-errors-frame
