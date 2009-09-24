@@ -385,11 +385,11 @@ public class JSONObject extends HashMap<String, Object> {
      */
     public boolean getBoolean(String key) throws JSONException {
         Object o = get(key);
-        if (o.equals(Boolean.FALSE) ||
+        if (Boolean.FALSE.equals(o) ||
                 (o instanceof String &&
                 ((String)o).equalsIgnoreCase("false"))) {
             return false;
-        } else if (o.equals(Boolean.TRUE) ||
+        } else if (Boolean.TRUE.equals(o) ||
                 (o instanceof String &&
                 ((String)o).equalsIgnoreCase("true"))) {
             return true;
