@@ -565,7 +565,7 @@ public class DbScope
         }
 
         _log.error("Attempted to connect three times... giving up.", lastException);
-        throw new ConfigurationException("Can't connect to datasource \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
+        throw new ConfigurationException("Can't connect to data source \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
     }
 
 
