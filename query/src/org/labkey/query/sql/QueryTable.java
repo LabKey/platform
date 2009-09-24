@@ -249,6 +249,7 @@ public class QueryTable extends QueryRelation
         void copyColumnAttributesTo(ColumnInfo to)
         {
             to.copyAttributesFrom(_col);
+            to.copyURLFrom(_col, null, null);
         }
     }
 

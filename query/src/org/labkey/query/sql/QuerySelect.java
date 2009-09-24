@@ -1189,7 +1189,19 @@ loop:
 
         void copyColumnAttributesTo(ColumnInfo to)
         {
-            to.copyAttributesFrom(getColumnInfo());
+            ColumnInfo col = getColumnInfo();
+            to.copyAttributesFrom(col);
+
+            // copy URL if possible
+            FieldKey fk = null != getField() ? getField().getFieldKey() : null;
+            if (null != fk)
+            {
+                // need to strip table alias off the front of this fk
+                List<String> parts = fk.getParts();
+                parts.remove(0);
+                fk = FieldKey.fromParts(parts);
+                to.copyURLFromStrict(col, Collections.singletonMap(fk,to.getFieldKey()));
+            }
         }
 
         public void appendSource(SourceBuilder builder)
