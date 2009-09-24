@@ -31,6 +31,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collections;
 
 public class AssayBatchesView extends AbstractAssayView
 {
@@ -49,12 +50,13 @@ public class AssayBatchesView extends AbstractAssayView
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, context.getContainer());
         fakeURL.addFilter(AssayService.get().getRunsTableName(protocol),
                 AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
-        String batchParam = fakeURL.getParameters()[0].getKey() + "=" + fakeURL.getParameters()[0].getValue();
+        String key = fakeURL.getParameters()[0].getKey();
 
         // Need to make sure that we keep the same container filter after following the link
         ExpExperimentTable tableInfo = (ExpExperimentTable)batchesView.getTable();
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(context.getContainer(), protocol, tableInfo.getContainerFilter());
-        tableInfo.getColumn(ExpExperimentTable.Column.Name).setURL(StringExpressionFactory.createURL(runsURL.toString() + "&" + batchParam));
+        DetailsURL expr = new DetailsURL(runsURL, Collections.singletonMap(key,"RowId"));
+        tableInfo.getColumn(ExpExperimentTable.Column.Name).setURL(expr);
 
         if (provider.hasCustomView(ExpProtocol.AssayDomainTypes.Batch, true))
         {

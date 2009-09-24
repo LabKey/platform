@@ -34,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -266,6 +267,14 @@ public class DomainUtil
             catch (IllegalArgumentException e)
             {
                 errors.add(format + " is an illegal format" + type);
+            }
+
+            String url = pd.getURL();
+            if (null != url)
+            {
+                String message = StringExpressionFactory.validateURL(url);
+                if (null != message)
+                    errors.add(message);
             }
 
             s.remove(pd.getPropertyId());

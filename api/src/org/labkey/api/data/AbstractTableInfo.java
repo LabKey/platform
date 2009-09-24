@@ -309,7 +309,9 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         if (_gridURL != null)
         {
-            return _gridURL.copy(container).getActionURL();
+            ActionURL url = _gridURL.getActionURL();
+            url.setContainer(container);
+            return url;
         }
         return null;
     }
@@ -317,7 +319,11 @@ abstract public class AbstractTableInfo implements TableInfo
     public ActionURL getInsertURL(Container container)
     {
         if (_insertURL != null)
-            return _insertURL.copy(container).getActionURL();
+        {
+            ActionURL url = _insertURL.getActionURL();
+            url.setContainer(container);
+            return url;
+        }
         return null;
     }
 

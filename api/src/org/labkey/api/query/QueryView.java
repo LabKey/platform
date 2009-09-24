@@ -303,9 +303,9 @@ public class QueryView extends WebPartView<Object>
             case deleteQueryRows:
             {
                 // ICK
-                if (expr instanceof StringExpressionFactory.URLStringExpression)
+                if (expr instanceof DetailsURL)
                 {
-                    ActionURL url = ((StringExpressionFactory.URLStringExpression)expr).getActionURL();
+                    ActionURL url = ((DetailsURL)expr).getActionURL();
                     if (null != url)
                     {
                         url.addParameter(QueryParam.srcURL, getReturnURL().getLocalURIString());

@@ -16,60 +16,79 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.Container;
+import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.api.view.ViewContext;
+import org.springframework.web.servlet.mvc.Controller;
 
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.regex.Pattern;
 
-public class DetailsURL extends StringExpressionFactory.URLStringExpression
+
+public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression implements HasViewContext
 {
+    public static Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
+    public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
+
     Container _container;
-    ActionURL _baseURL;     // url w/o substitution parameters
+
+    // constructor parameters
+    ActionURL _url;
+    String _urlSource;
+
+    // parsed fields
+    ActionURL _parsedUrl;
+    // _source from AbstractStringExpression            
 
 
-    public DetailsURL(String str)
+    public static String validateURL(String str)
     {
-        super(str);
-    }
+        if (DetailsURL.actionPattern.matcher(str).matches() || DetailsURL.classPattern.matcher(str).matches())
+            return null;
 
-
-    public DetailsURL(Container c, String str)
-    {
-        super(str);
-        _container = c;
+        return "invalid url pattern " + str;
     }
 
 
     public static DetailsURL fromString(String str)
     {
-        return new DetailsURL(str);
+        DetailsURL ret = new DetailsURL(str);
+        ret.parse();    // validate
+        return ret;
     }
 
-    
+
     public static DetailsURL fromString(Container c, String str)
     {
-        return new DetailsURL(c, str);
-    }
-    
-    
-    @Override
-    protected Container getContainer()
-    {
-        return _container;
+        DetailsURL ret = new DetailsURL(c, str);
+        ret.parse();    // validate
+        return ret;
     }
 
 
-    public DetailsURL(ActionURL baseURL, Map<String,? extends Object> columnParams)
+    protected DetailsURL(String str)
     {
-        super(baseURL);
-        _baseURL = baseURL.clone();
+        _urlSource = str;
+    }
+
+
+    protected DetailsURL(Container c, String str)
+    {
+        _urlSource = str;
+        _container = c;
+    }
+
+
+    public DetailsURL(ActionURL url, Map<String,? extends Object> columnParams)
+    {
+        super();
+        url = url.clone();
         for (Map.Entry<String,? extends Object> e : columnParams.entrySet())
         {
             Object v = e.getValue();
@@ -82,40 +101,81 @@ public class DetailsURL extends StringExpressionFactory.URLStringExpression
                 strValue = ((ColumnInfo)v).getFieldKey().encode();
             else
                 throw new IllegalArgumentException(String.valueOf(v));
-            _url.addParameter(e.getKey(), "${" + strValue + "}");
+            url.addParameter(e.getKey(), "${" + strValue + "}");
         }
+        _url = url;
     }
 
 
     public DetailsURL(ActionURL baseURL, String param, FieldKey subst)
     {
-        super(baseURL);
-        _baseURL = baseURL.clone();
-        _url.addParameter(param, "${" + subst.encode() + "}");
+        this(baseURL, Collections.singletonMap(param,subst));
     }
 
 
-    public DetailsURL(String controller, String action, Container container, Map<String, String> fixedParams, Map<String, String> columnParams)
+    @Override
+    protected void parse()
     {
-        super(new ActionURL(controller, action, container));
-        for (Map.Entry<String,String> e : fixedParams.entrySet())
-            _url.addParameter(e.getKey(), e.getValue());
-        _baseURL = _url.clone();
-        for (Map.Entry<String,String> e : columnParams.entrySet())
-            _url.addParameter(e.getKey(), "${" + e.getValue() + "}");
+        assert null == _url || null == _urlSource;
+
+        if (null != _url)
+        {
+            _parsedUrl = _url;
+        }
+        else if (null != _urlSource)
+        {
+            String expr = _urlSource;
+            int i = StringUtils.indexOfAny(expr,": /");
+            String protocol = (i != -1 && expr.charAt(i) == ':') ? expr.substring(0,i) : "";
+
+            if (protocol.contains("script"))
+                throw new IllegalArgumentException(expr);
+
+            if (actionPattern.matcher(expr).matches())
+            {
+                if (!expr.startsWith("/")) expr = "/" + expr;
+                _parsedUrl = new ActionURL(expr);
+            }
+            else if (classPattern.matcher(expr).matches())
+            {
+                String className = expr.substring(0,expr.indexOf(".class?"));
+                Class<Controller> cls;
+                try { cls = (Class<Controller>)Class.forName(className); } catch (Exception x) {throw new IllegalArgumentException(expr);}
+                _parsedUrl = new ActionURL(cls, null);
+                _parsedUrl.setRawQuery(expr.substring(expr.indexOf('?')+1));
+            }
+            else
+                throw new IllegalArgumentException(_urlSource);
+        }
+        else
+            throw new IllegalStateException();
+            
+        _source = StringUtils.trimToEmpty(_parsedUrl.getQueryString(true));
+
+        super.parse();
     }
 
 
-    /** @deprecated use FieldKeyStringExpression.validateFields() and copy(c) */
-    @Deprecated
-    public StringExpression getURL(Map<String,ColumnInfo> columns, Container c)
+    @Override
+    public DetailsURL addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
     {
-        Set<FieldKey> keys = new HashSet<FieldKey>();
-        for (String s : columns.keySet())
-            keys.add(new FieldKey(null,s));
-        if (!validateFieldKeys(keys))
-            return null;
-        return copy(c);
+        DetailsURL copy = (DetailsURL)super.addParent(parent, remap);
+        // copy changes backwards
+        copy._parsedUrl.setRawQuery(copy._source);
+        copy._url = copy._parsedUrl;
+        copy._urlSource = null;
+        return copy;
+    }
+
+
+    @Override
+    public String eval(Map context)
+    {
+        String query = super.eval(context);
+        Container c = getContainer();
+        if (null != c)
+            _parsedUrl.setContainer(getContainer());
+        return _parsedUrl.getPath() + "?" + query;
     }
 
 
@@ -123,13 +183,7 @@ public class DetailsURL extends StringExpressionFactory.URLStringExpression
     {
         DetailsURL ret = (DetailsURL)copy();
         if (null != c)
-        {
             ret._container = c;
-            if (null != _baseURL)
-                ret._baseURL.setContainer(c);
-            if (null != _url)
-                ret._url.setContainer(c);
-        }
         return ret;
     }
 
@@ -138,7 +192,60 @@ public class DetailsURL extends StringExpressionFactory.URLStringExpression
     public DetailsURL clone()
     {
         DetailsURL clone = (DetailsURL)super.clone();
-        clone._baseURL = _baseURL == null ? null : _baseURL.clone();
+        if (null != clone._url)
+            clone._url = clone._url.clone();
+        if (null != clone._parsedUrl)
+            clone._parsedUrl = clone._parsedUrl.clone();
         return clone;
+    }
+
+    ViewContext _context;
+
+    public void setViewContext(ViewContext context)
+    {
+        _context = context;
+    }
+
+
+    public ViewContext getViewContext()
+    {
+        return _context;
+    }
+
+
+    Container getContainer()
+    {
+        if (null != _container)
+            return _container;
+        if (null != _context)
+            return _context.getContainer();
+        return null;
+    }
+
+
+    void setContainer(Container c)
+    {
+        _container = c;
+    }
+
+
+    public ActionURL getActionURL()
+    {
+        if (null == _parsedUrl)
+            parse();
+        return null == _parsedUrl ? null : _parsedUrl.clone();
+    }
+
+
+    @Override
+    public String toString()
+    {
+        if (_parsedUrl != null)
+            return _parsedUrl.getPath() + _source;
+        else if (null != _urlSource)
+            return _urlSource;
+        else if (null != _url)
+            return _url.getLocalURIString(true);
+        return "";
     }
 }

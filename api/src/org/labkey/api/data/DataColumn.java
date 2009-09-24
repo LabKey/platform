@@ -28,6 +28,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpression;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -66,7 +67,9 @@ public class DataColumn extends DisplayColumn
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
-        super.setURLExpression(_boundColumn.getURL());
+        StringExpression url = _boundColumn.getURL();
+        if (null != url)
+            super.setURLExpression(url);
         setFormatString(_displayColumn.getFormatString());
         setTsvFormatString(_displayColumn.getTsvFormatString());
         setExcelFormatString(_displayColumn.getExcelFormatString());

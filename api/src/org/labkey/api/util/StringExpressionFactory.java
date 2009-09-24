@@ -20,13 +20,9 @@ import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CacheMap;
 import org.labkey.api.collections.LimitedCacheMap;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.data.Container;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
@@ -36,7 +32,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -78,28 +73,64 @@ public class StringExpressionFactory
 
 
     /**
-      *HANDLES two cases
-      *
-      *  a) http:*?param=${Column}
-      *  b) action:/Controller/Action.view?param=${Column}
-      *
-      * CONSIDER javascript: (permissions!)
-      *
-      */
+     * HANDLES two cases
+     *
+     *  freeform
+     *  a) http://*?param=${Column}
+     *     free form
+     *
+     *  b) /Controller/Action.view?param=${Column}
+     *     org.labkey.module.Controller$Action.class?param=${Column}\s
+     *     special w/ some container support
+     *
+     * CONSIDER javascript: (permissions!)
+     *
+     */
 
-     public static StringExpression createURL(String str)
-     {
-         String key = "url:" + str;
+    public static StringExpression createURL(String str)
+    {
+        String key = "url:" + str;
 
-         StringExpression expr = templates.get(key);
-         if (null != expr)
-             return expr.copy();
+        StringExpression expr = templates.get(key);
+        if (null != expr)
+            return expr.copy();
 
-         expr = new URLStringExpression(str);
+        try
+        {
+            if (str.startsWith("http://") || str.startsWith("http://"))
+                expr = new URLStringExpression(str);
+            else if (null == DetailsURL.validateURL(str))
+                expr = DetailsURL.fromString(str);
+            else
+                return null;
+        }
+        catch (URISyntaxException x)
+        {
+            return null;
+        }
 
-         templates.put(key, expr);
-         return expr.copy();
-     }
+        templates.put(key, expr);
+        return expr.copy();
+    }
+
+
+    public static String validateURL(String str)
+    {
+        if (str.startsWith("http://") || str.startsWith("http://"))
+        {
+            try
+            {
+                new URLHelper(str);
+                return null;
+            }
+            catch (URISyntaxException x)
+            {
+                return x.getMessage();
+            }
+        }
+
+        return DetailsURL.validateURL(str);
+    }
 
 
     public static StringExpression createURL(ActionURL url)
@@ -122,12 +153,25 @@ public class StringExpressionFactory
     //
     
 
-    protected static abstract class StringPart
+    protected static abstract class StringPart implements Cloneable
     {
         abstract String getValue(Map map);
         final String valueOf(Object o)
         {
             return o == null ? "" : String.valueOf(o);
+        }
+
+        @Override
+        public  Object clone()
+        {
+            try
+            {
+                return super.clone();
+            }
+            catch (CloneNotSupportedException x)
+            {
+                throw new RuntimeException(x);
+            }
         }
     }
     private static class ConstantPart extends StringPart
@@ -230,7 +274,6 @@ public class StringExpressionFactory
             return _source;
         }
 
-
         @Override
         public String toString()
         {
@@ -242,28 +285,18 @@ public class StringExpressionFactory
             out.write(eval(context));
         }
 
-//        public void addParameter(String key, String value)
-//        {
-//            if (null == _parsedExpression)
-//                parse();
-//            _parsedExpression.add(new ConstantPart("&" + key + "="));
-//            if (value.startsWith("${") && value.endsWith("}"))
-//            {
-//                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
-//            }
-//            else
-//            {
-//                _parsedExpression.add(new ConstantPart(value));
-//            }
-//        }
-
         @Override
         public AbstractStringExpression clone()
         {
             try
             {
                 AbstractStringExpression clone = (AbstractStringExpression)super.clone();
-                clone._parsedExpression = null;
+                if (null != clone._parsedExpression)
+                {
+                    clone._parsedExpression = new ArrayList<StringPart>(clone._parsedExpression);
+                    for (int i=0 ; i<clone._parsedExpression.size() ; i++)
+                        clone._parsedExpression.set(i, (StringPart)clone._parsedExpression.get(i).clone());
+                }
                 return clone;
             }
             catch (CloneNotSupportedException x)
@@ -356,7 +389,12 @@ public class StringExpressionFactory
 
     public static class FieldKeyStringExpression extends AbstractStringExpression
     {
-        FieldKeyStringExpression(String source)
+        protected FieldKeyStringExpression()
+        {
+            super("");
+        }
+        
+        protected FieldKeyStringExpression(String source)
         {
             super(source);
         }
@@ -446,121 +484,24 @@ public class StringExpressionFactory
     }
 
 
-    private static Pattern actionPattern = Pattern.compile("/[\\w\\-]+/[\\w\\-]+.view?.*");
-    private static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
-
-
     /**
      *  Same as FieldKeyExpression, but validates !startsWith(javascript:)
      * additional constructor
      */
-    public static class URLStringExpression extends FieldKeyStringExpression implements HasViewContext
+    public static class URLStringExpression extends FieldKeyStringExpression
     {
-        protected String _urlSource = null;
-        protected ActionURL _url;
-        ViewContext _context;
-
-        public URLStringExpression(String source)
+        public URLStringExpression(String source) throws URISyntaxException
         {
             super("");
-            _urlSource = source.trim();
+            _source = source.trim();
+            new URLHelper(_source);
         }
 
         public URLStringExpression(ActionURL url)
         {
             super("");
-            _url = url.clone();
+            _source = url.getLocalURIString(true);
         }
-
-        protected Container getContainer()
-        {
-            return null;
-        }
-
-        @Override
-        public URLStringExpression addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
-        {
-            URLStringExpression ret = (URLStringExpression)super.addParent(parent, remap);
-            // keep things consistent
-            ret._url = null;
-            ret._urlSource = ret._source;
-            return ret;
-        }
-
-        @Override
-        public String toString()
-        {
-            if (null != _urlSource)
-                return _urlSource;
-            else if (null != _url)
-                return _url.getLocalURIString(true);
-            else
-            {
-                parse();
-                return _source;
-            }
-        }
-
-        @Override
-        protected void parse()
-        {
-            if (null != _url)
-            {
-                _source = _url.getLocalURIString(true);                
-            }
-
-            else if (null != _urlSource)
-            {
-                String expr = _urlSource;
-                int i = StringUtils.indexOfAny(expr,": /");
-                String protocol = (i != -1 && expr.charAt(i) == ':') ? expr.substring(0,i) : "";
-
-                if (protocol.contains("script"))
-                    throw new IllegalArgumentException(expr);
-
-                ActionURL url = null;
-                if (actionPattern.matcher(expr).matches())
-                {
-                    url = new ActionURL(expr);
-                    url.setContextPath(AppProps.getInstance().getContextPath());
-                }
-                else if (classPattern.matcher(expr).matches())
-                {
-                    String className = expr.substring(0,expr.indexOf(".class?"));
-                    Class<Controller> cls;
-                    try { cls = (Class<Controller>)Class.forName(className); } catch (Exception x) {throw new IllegalArgumentException(expr);}
-                    url = new ActionURL(cls, null);
-                    url.setRawQuery(expr.substring(expr.indexOf('?')+1));
-                }
-                if (null != url)
-                {
-
-                    if (null != getContainer())
-                        url.setContainer(getContainer());
-                    else if (null != _context)
-                        url.setContainer(_context.getContainer());
-                    else
-                        url.setExtraPath("${containerPath}");
-
-                    _source = getURIString(url, null == _context ? null : _context.getActionURL());
-                }
-                else
-                {
-                    try
-                    {
-                        URLHelper u = new URLHelper(expr);
-                        _source = getURIString(u, null == _context ? null : _context.getActionURL());
-                    }
-                    catch (URISyntaxException x)
-                    {
-                        throw new IllegalArgumentException(expr);
-                    }
-                }
-            }
-            
-            super.parse();
-        }
-
 
         @Override
         public String eval(Map context)
@@ -575,45 +516,10 @@ public class StringExpressionFactory
             }
             return ret;
         }
-
-        public void setViewContext(ViewContext context)
-        {
-            _context = context;
-        }
-
-        public ViewContext getViewContext()
-        {
-            return _context;
-        }
-
-        @Override
-        public FieldKeyStringExpression clone()
-        {
-            URLStringExpression clone = (URLStringExpression)super.clone();
-            clone._url = _url == null ? null : _url.clone();
-            return clone;
-        }
-
-
-        // NOTE not all URLStringExpressions are ActionURLs
-        public ActionURL getActionURL()
-        {
-            if (null != _url)
-                return _url;
-
-            try
-            {
-                return new ActionURL(_urlSource);
-            }
-            catch (IllegalArgumentException x)
-            {
-                return null;
-            }
-        }
     }
 
 
-    private static String getURIString(URLHelper url, URLHelper base)
+    protected static String getURIString(URLHelper url, URLHelper base)
     {
         if (null != base)
         {
