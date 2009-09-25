@@ -38,7 +38,7 @@ public class RepositorySettings
         //no-arg constructor for struts reflection
     }
 
-    public RepositorySettings(Map<String,String> map)
+    public RepositorySettings(Map<String, String> map)
     {
         this();
         String simple = map.get(KEY_SIMPLE);
@@ -47,7 +47,7 @@ public class RepositorySettings
         _enableRequests = null == enableRequests ? !_simple : Boolean.parseBoolean(enableRequests);
     }
 
-    public void populateMap(Map<String,String> map)
+    public void populateMap(Map<String, String> map)
     {
         map.put(KEY_SIMPLE, Boolean.toString(_simple));
         map.put(KEY_ENABLE_REQUESTS, Boolean.toString(_enableRequests));

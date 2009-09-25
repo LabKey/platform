@@ -17,15 +17,15 @@
 package org.labkey.experiment.list;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.*;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.ColumnType;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -42,6 +42,7 @@ public class ListWriter implements ExternalStudyWriter
 {
     private static final Logger LOG = Logger.getLogger(ListWriter.class);
     private static final String DEFAULT_DIRECTORY = "lists";
+    public static final String SCHEMA_FILENAME = "lists.xml";
 
     public String getSelectionText()
     {
@@ -58,29 +59,66 @@ public class ListWriter implements ExternalStudyWriter
             ctx.getStudyXml().addNewLists().setDir(DEFAULT_DIRECTORY);
             VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
 
+            // Create meta data doc
+            TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
+            TablesDocument.Tables tablesXml = tablesDoc.addNewTables();
+
             for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
             {
                 ListDefinition def = entry.getValue();
                 TableInfo tinfo = def.getTable(ctx.getUser());
-                Collection<ColumnInfo> columns = getColumnsToExport(tinfo);
-                ResultSet rs = QueryService.get().select(tinfo, columns, null, null);
+
+                // Write meta data
+                TableType tableXml = tablesXml.addNewTable();
+                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(tinfo, def, getColumnsToExport(tinfo, true));
+                xmlWriter.writeTable(tableXml);
+
+                // Write data
+                ResultSet rs = QueryService.get().select(tinfo, getColumnsToExport(tinfo, false), null, null);
                 TSVGridWriter tsvWriter = new TSVGridWriter(rs);
                 tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
                 PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                 tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
             }
+
+            listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
         }
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo)
+    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metadata)
     {
         Collection<ColumnInfo> columns = new LinkedList<ColumnInfo>();
 
         for (ColumnInfo column : tinfo.getColumns())
-            if (column.isUserEditable())
+            if (column.isUserEditable() || (metadata && column.isKeyField()))
                 columns.add(column);
 
         return columns;
+    }
+
+    private static class ListTableInfoWriter extends TableInfoWriter
+    {
+        private final ListDefinition _def;
+
+        protected ListTableInfoWriter(TableInfo ti, ListDefinition def, Collection<ColumnInfo> columns)
+        {
+            super(ti, columns, null);
+            _def = def;
+        }
+
+        @Override
+        public void writeColumn(ColumnInfo column, ColumnType columnXml)
+        {
+            super.writeColumn(column, columnXml);
+
+            if (column.getName().equals(_def.getKeyName()))
+            {
+                columnXml.setIsKeyField(true);
+
+                if (column.isAutoIncrement())
+                    columnXml.setIsAutoInc(true);
+            }
+        }
     }
 
     public static class Factory implements ExternalStudyWriterFactory

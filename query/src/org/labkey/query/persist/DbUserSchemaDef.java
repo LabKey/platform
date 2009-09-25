@@ -45,7 +45,7 @@ public class DbUserSchemaDef extends Entity
     private String _dbSchemaName;
     private String _dbContainer;
     private boolean _editable;
-    private String _metadata;
+    private String _metaData;
     private String _dataSource;
 
     public int getDbUserSchemaId()
@@ -90,12 +90,12 @@ public class DbUserSchemaDef extends Entity
 
     public String getMetaData()
     {
-        return _metadata;
+        return _metaData;
     }
 
-    public void setMetaData(String metadata)
+    public void setMetaData(String metaData)
     {
-        _metadata = metadata;
+        _metaData = metaData;
     }
 
     public String getDataSource()
@@ -119,7 +119,7 @@ public class DbUserSchemaDef extends Entity
         if (_dbContainer != null ? !_dbContainer.equals(that._dbContainer) : that._dbContainer != null) return false;
         if (_dbSchemaName != null ? !_dbSchemaName.equals(that._dbSchemaName) : that._dbSchemaName != null)
             return false;
-        if (_metadata != null ? !_metadata.equals(that._metadata) : that._metadata != null) return false;
+        if (_metaData != null ? !_metaData.equals(that._metaData) : that._metaData != null) return false;
         if (_userSchemaName != null ? !_userSchemaName.equals(that._userSchemaName) : that._userSchemaName != null)
             return false;
 
@@ -133,7 +133,7 @@ public class DbUserSchemaDef extends Entity
         result = 31 * result + (_userSchemaName != null ? _userSchemaName.hashCode() : 0);
         result = 31 * result + (_dbSchemaName != null ? _dbSchemaName.hashCode() : 0);
         result = 31 * result + (_dbContainer != null ? _dbContainer.hashCode() : 0);
-        result = 31 * result + (_metadata != null ? _metadata.hashCode() : 0);
+        result = 31 * result + (_metaData != null ? _metaData.hashCode() : 0);
         return result;
     }
 

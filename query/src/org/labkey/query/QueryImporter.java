@@ -16,16 +16,15 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.*;
+import org.labkey.api.security.User;
 import org.labkey.api.study.*;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.User;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.study.xml.StudyDocument;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.study.xml.StudyDocument;
 
 import javax.servlet.ServletException;
 import java.io.File;

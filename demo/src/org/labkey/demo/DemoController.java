@@ -111,7 +111,6 @@ public class DemoController extends SpringActionController
 
         protected ModelAndView showForm(HttpServletRequest request, HttpServletResponse response, BindException errors, Map controlModel) throws Exception
         {
-//            TableViewForm.copyErrorsToStruts(errors, request);    // this is where InsertView expects them
             InsertView insertView = new InsertView(getDataRegion(), errors);
             return insertView;
         }

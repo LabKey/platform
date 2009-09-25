@@ -15,10 +15,10 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.data.*;
-import org.labkey.api.exp.property.Type;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.study.StudyContext;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.data.xml.ColumnType;
@@ -27,8 +27,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.model.DataSetDefinition;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -61,95 +59,54 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
         for (DataSetDefinition def : definitions)
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
-            Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(ti, def, true);
-
-            // Write metadata
             TableType tableXml = tablesXml.addNewTable();
-            tableXml.setTableName(def.getName());
-            tableXml.setTableDbType("TABLE");
-            if (null != def.getLabel())
-                tableXml.setTableTitle(def.getLabel());
-            if (null != def.getDescription())
-                tableXml.setDescription(def.getDescription());
-            TableType.Columns columnsXml = tableXml.addNewColumns();
-
-            if (null == _defaultDateFormat)
-                _defaultDateFormat = DateUtil.getStandardDateFormatString();
-
-            String visitDatePropertyName = def.getVisitDatePropertyName();
-
-            for (ColumnInfo column : columns)
-            {
-                ColumnType columnXml = columnsXml.addNewColumn();
-                String columnName = column.getName();
-                columnXml.setColumnName(columnName);
-
-                Class clazz = column.getJavaClass();
-                Type t = Type.getTypeByClass(clazz);
-
-                if (null == t)
-                    throw new IllegalStateException(columnName + " in dataset " + def.getName() + " (" + def.getLabel() + ") has unknown java class " + clazz.getName());
-
-                columnXml.setDatatype(t.getSqlTypeName());
-
-                if (null != column.getLabel())
-                    columnXml.setColumnTitle(column.getLabel());
-
-                if (null != column.getDescription())
-                    columnXml.setDescription(column.getDescription());
-
-                if (!column.isNullable())
-                    columnXml.setNullable(false);
-
-                if (columnName.equals(visitDatePropertyName))
-                    columnXml.setPropertyURI(DataSetDefinition.getVisitDateURI());
-
-                String formatString = column.getFormatString();
-
-                // Write only if it's non-null (and in the case of dates, different from the global default)
-                if (null != formatString && (!Date.class.isAssignableFrom(column.getJavaClass()) || !formatString.equals(_defaultDateFormat)))
-                    columnXml.setFormatString(formatString);
-
-                if (column.isMvEnabled())
-                    columnXml.setIsMvEnabled(true);
-
-                ForeignKey fk = column.getFk();
-
-                if (null != fk && null != fk.getLookupColumnName())
-                {
-                    ColumnType.Fk fkXml = columnXml.addNewFk();
-
-                    String fkContainerId = fk.getLookupContainerId();
-
-                    // Null means current container... which means don't set anything in the XML
-                    if (null != fkContainerId)
-                    {
-                        Container fkContainer = ContainerManager.getForId(fkContainerId);
-
-                        if (null != fkContainer)
-                            fkXml.setFkFolderPath(fkContainer.getPath());
-                    }
-
-                    TableInfo tinfo = fk.getLookupTableInfo();
-                    fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
-                    fkXml.setFkTable(tinfo.getPublicName());
-                    fkXml.setFkColumnName(fk.getLookupColumnName());
-                }
-
-                if (columnName.equals(def.getKeyPropertyName()))
-                {
-                    columnXml.setIsKeyField(true);
-
-                    if (def.isKeyPropertyManaged())
-                        columnXml.setIsAutoInc(true);
-                }
-
-                // TODO: Field validators?
-                // TODO: Default values / Default value types
-                // TODO: ConceptURI
-            }
+            DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat);
+            w.writeTable(tableXml);
         }
 
         vf.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
+    }
+
+
+    private static class DatasetTableInfoWriter extends TableInfoWriter
+    {
+        private final DataSetDefinition _def;
+
+        protected DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat)
+        {
+            super(ti, DatasetWriter.getColumnsToExport(ti, def, true), defaultDateFormat);
+            _def = def;
+        }
+
+        @Override
+        public void writeTable(TableType tableXml)
+        {
+            super.writeTable(tableXml);
+
+            tableXml.setTableName(_def.getName());  // Use dataset name, not temp table name
+            if (null != _def.getLabel())
+                tableXml.setTableTitle(_def.getLabel());
+            if (null != _def.getDescription())
+                tableXml.setDescription(_def.getDescription());
+        }
+
+        @Override
+        public void writeColumn(ColumnInfo column, ColumnType columnXml)
+        {
+            super.writeColumn(column, columnXml);
+
+            String columnName = column.getName();
+
+            if (columnName.equals(_def.getVisitDatePropertyName()))
+                columnXml.setPropertyURI(DataSetDefinition.getVisitDateURI());
+
+            if (columnName.equals(_def.getKeyPropertyName()))
+            {
+                columnXml.setIsKeyField(true);
+
+                if (_def.isKeyPropertyManaged())
+                    columnXml.setIsAutoInc(true);
+            }
+        }
     }
 }

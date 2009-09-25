@@ -91,6 +91,7 @@ var dataSourceCombo;
 var dbSchemaCombo;
 var userSchemaText;
 var editableCheckBox;
+var metaDataTextArea;
 
 var f = new LABKEY.ext.FormPanel({
 //        values:values,
@@ -100,11 +101,10 @@ var f = new LABKEY.ext.FormPanel({
             // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
             dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', value:dataSources[<%=coreIndex%>][0]}),
             // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out). 
-            dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', xtype:'combo', store:dataSources[<%=coreIndex%>][3], value:<%=q(h(def.getDbSchemaName()))%>, editable:true, triggerAction:'all'}),
-            userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', xtype:'textfield', value:<%=q(h(def.getUserSchemaName()))%>}),
-            editableCheckBox = new Ext.form.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', xtype:'checkbox'}),
-            {name:'@editable', xtype:'hidden'},
-            metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', xtype:'textarea', value:<%=PageFlowUtil.jsString(def.getMetaData())%>})
+            dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', store:dataSources[<%=coreIndex%>][3], value:<%=q(h(def.getDbSchemaName()))%>, editable:true, triggerAction:'all'}),
+            userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', value:<%=q(h(def.getUserSchemaName()))%>}),
+            editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable'}),
+            metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', value:<%=PageFlowUtil.jsString(def.getMetaData())%>})
         ],
         buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:function() {f.getForm().submit();}}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
         buttonAlign:'left'
