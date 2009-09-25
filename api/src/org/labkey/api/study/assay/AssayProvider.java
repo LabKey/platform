@@ -52,6 +52,9 @@ import java.util.Set;
  */
 public interface AssayProvider extends Handler<ExpProtocol>
 {
+    /** Get a schema for any additional TableInfos. */
+    AssaySchema getProviderSchema(User user, Container container, ExpProtocol protocol);
+
     Domain getBatchDomain(ExpProtocol protocol);
 
     Domain getRunDomain(ExpProtocol protocol);

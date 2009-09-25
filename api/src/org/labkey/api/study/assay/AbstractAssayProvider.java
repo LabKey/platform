@@ -98,6 +98,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         registerLsidHandler();
     }
 
+    public AssaySchema getProviderSchema(User user, Container container, ExpProtocol protocol)
+    {
+        return null;
+    }
+
     protected void setStandardPropertyAttributes(ColumnInfo colInfo, PropertyDescriptor studyPd)
     {
         studyPd.setLabel(colInfo.getLabel());

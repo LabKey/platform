@@ -32,6 +32,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     private final AssaySchema _schema;
     private final AssayProvider _provider;
     private final ExpProtocol _protocol;
+    private final AssayTableMetadata _tableMetadata;
     private final ContainerFilter _studyContainerFilter;
 
     private static final String ASSAY_SUBQUERY_SUFFIX = "$AssayJoin";
@@ -42,10 +43,16 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
+        this(schema, provider, protocol, provider.getTableMetadata());
+    }
+
+    public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol, AssayTableMetadata tableMetadata)
+    {
         super("RowId");
         _schema = schema;
         _provider = provider;
         _protocol = protocol;
+        _tableMetadata = tableMetadata;
         _studyContainerFilter = new StudyContainerFilter(schema);
     }
 
@@ -61,10 +68,9 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         SQLFragment sql = new SQLFragment();
 
-        AssayTableMetadata tableMetadata = _provider.getTableMetadata();
-        FieldKey participantFK = tableMetadata.getParticipantIDFieldKey();
-        FieldKey visitFK = tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
-        FieldKey dateFK = tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
+        FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
+        FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
+        FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
         FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
         AssaySchema assaySchema = AssayService.get().createSchema(studySchema.getUser(), studySchema.getContainer());
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(assaySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK, drawDateFK));
@@ -197,18 +203,17 @@ public class SpecimenForeignKey extends LookupForeignKey
         @Override
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
-            AssayTableMetadata tableMetadata = _provider.getTableMetadata();
-            FieldKey batchFK = new FieldKey(tableMetadata.getRunRowIdFieldKeyFromResults().getParent(), AssayService.BATCH_COLUMN_NAME);
+            FieldKey batchFK = new FieldKey(_tableMetadata.getRunRowIdFieldKeyFromResults().getParent(), AssayService.BATCH_COLUMN_NAME);
             FieldKey batchPropertiesFK = new FieldKey(batchFK, AssayService.BATCH_PROPERTIES_COLUMN_NAME);
             FieldKey targetStudyFK = new FieldKey(batchPropertiesFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
 
-            FieldKey participantFK = tableMetadata.getParticipantIDFieldKey();
-            FieldKey specimenFK = tableMetadata.getSpecimenIDFieldKey();
-            FieldKey visitFK = tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
-            FieldKey dateFK = tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
+            FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
+            FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();
+            FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
+            FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
             // Need to support this other name for dates
             FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
-            FieldKey objectIdFK = tableMetadata.getResultRowIdFieldKey();
+            FieldKey objectIdFK = _tableMetadata.getResultRowIdFieldKey();
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK, drawDateFK));
 
             ColumnInfo targetStudyCol = columns.get(targetStudyFK);
