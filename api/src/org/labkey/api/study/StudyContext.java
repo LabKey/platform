@@ -30,6 +30,6 @@ import java.io.File;
 public interface StudyContext extends ContainerUser
 {
     public StudyDocument.Study getStudyXml() throws StudyImportException;
-    public File getStudyDir(File root, String dirName, String source) throws StudyImportException;
+    public File getStudyDir(File root, String dirName) throws StudyImportException;
     public Logger getLogger();
 }
