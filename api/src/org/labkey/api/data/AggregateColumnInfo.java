@@ -46,7 +46,7 @@ public class AggregateColumnInfo extends ColumnInfo
         setLabel(_measure.getCaption());
 
         if (null != measure.getUrl() && null != member)
-            setURL(StringExpressionFactory.createURL(measure.getUrl(member)));
+            setURL(StringExpressionFactory.createURL(measure.getUrl(member).getActionURL()));
 
         //if the agg function is something other than min or max, clear the FK
         if(_measure.getAggregateFunction() != CrosstabMeasure.AggregateFunction.MAX &&

@@ -15,6 +15,12 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.Pair;
+
+import java.util.Collections;
+
 /**
  * Represents a member of a dimension. Mostly this is used for the Column axis members.
  *
@@ -25,8 +31,10 @@ package org.labkey.api.data;
  */
 public class CrosstabMember
 {
-    public static final String VALUE_TOKEN = "${value}";
-    public static final String CAPTION_TOKEN = "${caption}";
+    public static final String VALUE_NAME = "**value**";
+    public static final String VALUE_TOKEN = "${" + VALUE_NAME + "}";
+    public static final String CAPTION_NAME = "**caption**";
+    public static final String CAPTION_TOKEN = "${" + CAPTION_NAME + "}";
 
     private Object _value = null;
     private String _caption = null;
@@ -73,6 +81,23 @@ public class CrosstabMember
     public void setDimension(CrosstabDimension dimension)
     {
         _dimension = dimension;
+    }
+
+    public DetailsURL replaceTokens(DetailsURL url)
+    {
+        ActionURL rewrittenURL = url.getActionURL().clone();
+        for (Pair<String, String> param : rewrittenURL.getParameters())
+        {
+            if (VALUE_TOKEN.equals(param.getValue()))
+            {
+                rewrittenURL.replaceParameter(param.getKey(), getValue().toString());
+            }
+            if (CAPTION_TOKEN.equals(param.getValue()))
+            {
+                rewrittenURL.replaceParameter(param.getKey(), getCaption());
+            }
+        }
+        return new DetailsURL(rewrittenURL, Collections.<String, Object>emptyMap());
     }
 
     public String replaceTokens(String template)

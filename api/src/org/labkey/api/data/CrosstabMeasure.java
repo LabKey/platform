@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.DetailsURL;
 
 import java.util.Arrays;
 import java.sql.Types;
@@ -68,7 +69,7 @@ public class CrosstabMeasure
     private AggregateFunction _aggregateFunction = AggregateFunction.COUNT;
     private String _name;
     private String _caption;
-    private String _url;
+    private DetailsURL _url;
 
     public CrosstabMeasure(ColumnInfo sourceColumn, AggregateFunction aggFunction)
     {
@@ -115,7 +116,7 @@ public class CrosstabMeasure
         _caption = caption;
     }
 
-    public String getUrl()
+    public DetailsURL getUrl()
     {
         return _url;
     }
@@ -125,12 +126,12 @@ public class CrosstabMeasure
      * @param member The member to use for replacing tokens
      * @return The url with member tokens replaced
      */
-    public String getUrl(CrosstabMember member)
+    public DetailsURL getUrl(CrosstabMember member)
     {
         return member.replaceTokens(_url);
     }
 
-    public void setUrl(String url)
+    public void setUrl(DetailsURL url)
     {
         _url = url;
     }

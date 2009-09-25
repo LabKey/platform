@@ -496,7 +496,6 @@ public class ActionURL extends URLHelper implements Cloneable
         return this;
     }
 
-
     public String getAction()
     {
         return _path.size() > indexAction ? (String) _path.get(indexAction) : null;
