@@ -35,6 +35,7 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     ListDefinition _list;
     DomainProperty[] _properties;
     ColumnDescriptor _cdKey;
+
     public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey)
     {
         _user = user;

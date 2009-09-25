@@ -76,15 +76,15 @@ public class ImportContext extends AbstractContext
     }
 
 
-    public File getStudyDir(File root, String dirName, String source) throws StudyImportException
+    public File getStudyDir(File root, String dirName) throws StudyImportException
     {
         File dir = null != dirName ? new File(root, dirName) : root;
 
         if (!dir.exists())
-            throw new StudyImportException(source + " refers to a directory that does not exist: " + StudyImportException.getRelativePath(root, dir));
+            throw new StudyImportException(_studyXml.getName() + " refers to a directory that does not exist: " + StudyImportException.getRelativePath(root, dir));
 
         if (!dir.isDirectory())
-            throw new StudyImportException(source + " refers to " + StudyImportException.getRelativePath(root, dir) + ": expected a directory but found a file");
+            throw new StudyImportException(_studyXml.getName() + " refers to " + StudyImportException.getRelativePath(root, dir) + ": expected a directory but found a file");
 
         return dir;
     }

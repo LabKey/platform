@@ -52,7 +52,7 @@ public class QueryImporter implements ExternalStudyImporter
 
         if (null != queriesXml)
         {
-            File queriesDir = ctx.getStudyDir(root, queriesXml.getDir(), "Study.xml");
+            File queriesDir = ctx.getStudyDir(root, queriesXml.getDir());
 
             File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)

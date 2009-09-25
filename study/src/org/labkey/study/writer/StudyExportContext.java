@@ -51,7 +51,7 @@ public class StudyExportContext extends AbstractContext
         initializeDatasets(study);
     }
 
-    public File getStudyDir(File root, String dirName, String source) throws StudyImportException
+    public File getStudyDir(File root, String dirName) throws StudyImportException
     {
         throw new IllegalStateException("Not supported during export");
     }

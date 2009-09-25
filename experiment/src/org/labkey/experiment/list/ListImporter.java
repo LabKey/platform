@@ -42,7 +42,7 @@ public class ListImporter implements ExternalStudyImporter
 
         if (null != listsXml)
         {
-            File listsDir = ctx.getStudyDir(root, listsXml.getDir(), "Study.xml");
+            File listsDir = ctx.getStudyDir(root, listsXml.getDir());
 
             File[] listFiles = listsDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)

@@ -131,7 +131,7 @@ public class DatasetImporter
             if (null == datasetsXml.getDir())
                 return root;
 
-            return ctx.getStudyDir(root, datasetsXml.getDir(), "Study.xml");
+            return ctx.getStudyDir(root, datasetsXml.getDir());
         }
 
         return null;

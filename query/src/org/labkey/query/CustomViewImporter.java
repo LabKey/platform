@@ -44,7 +44,7 @@ public class CustomViewImporter implements ExternalStudyImporter
 
         if (null != viewsXml)
         {
-            File viewDir = ctx.getStudyDir(root, viewsXml.getDir(), "Study.xml");
+            File viewDir = ctx.getStudyDir(root, viewsXml.getDir());
 
             int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
 

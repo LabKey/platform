@@ -45,7 +45,7 @@ public class ReportImporter implements ExternalStudyImporter
 
         if (null != reportsXml)
         {
-            File reportsDir = ctx.getStudyDir(root, reportsXml.getDir(), "Study.xml");
+            File reportsDir = ctx.getStudyDir(root, reportsXml.getDir());
 
             File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
