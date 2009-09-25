@@ -182,6 +182,7 @@ api/src/org/labkey/api/data/TSVGridWriter.java -text
 api/src/org/labkey/api/data/TSVWriter.java -text
 api/src/org/labkey/api/data/TableInfo.java -text
 api/src/org/labkey/api/data/TableInfoGetter.java -text
+api/src/org/labkey/api/data/TableInfoWriter.java -text
 api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
