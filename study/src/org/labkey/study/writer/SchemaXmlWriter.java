@@ -38,7 +38,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
-    private String _defaultDateFormat;
+    private final String _defaultDateFormat;
 
     public SchemaXmlWriter(String defaultDateFormat)
     {
@@ -72,7 +72,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
     {
         private final DataSetDefinition _def;
 
-        protected DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat)
+        private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat)
         {
             super(ti, DatasetWriter.getColumnsToExport(ti, def, true), defaultDateFormat);
             _def = def;

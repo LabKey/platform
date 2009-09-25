@@ -132,7 +132,7 @@ public class ZipFile implements Archive
         return _makeLegalName(name);
     }
 
-    public static String _makeLegalName(String name)
+    private static String _makeLegalName(String name)
     {
         return FileSystemFile.makeLegal(name);
     }

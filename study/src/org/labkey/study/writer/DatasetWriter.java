@@ -23,7 +23,6 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.StudyImportException;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -44,7 +43,7 @@ import java.util.*;
  * Date: Apr 16, 2009
  * Time: 3:10:37 PM
  */
-public class DatasetWriter implements InternalStudyWriter
+class DatasetWriter implements InternalStudyWriter
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";

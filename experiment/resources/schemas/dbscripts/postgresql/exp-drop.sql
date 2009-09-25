@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
--- DROP obsolete views.  Do not remove; these are needed when upgrading from older versions.
+
+-- DROP all views (current and obsolete).
+-- NOTE: Never remove any of these drop statements, even if we stop using the view.  These drop statements must remain
+--   in place so we can correctly upgrade from older versions.  If you're not convinced, talk to adam.
+
+-- DROP obsolete views -- do not remove any of these statements
 SELECT core.fn_dropifexists('materialsource', 'cabig', 'VIEW', NULL);
 SELECT core.fn_dropifexists('experimentrun', 'cabig', 'VIEW', NULL);
 
--- DROP current views.
+-- DROP current views -- do not remove any of these statements 
 SELECT core.fn_dropifexists('MaterialSourceWithProject', 'exp', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ObjectPropertiesView', 'exp', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ExperimentRunMaterialOutputs', 'exp', 'VIEW', NULL);

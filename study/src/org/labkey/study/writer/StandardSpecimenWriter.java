@@ -32,7 +32,7 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 9:51:36 AM
  */
-public class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, StudyContext>
+class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, StudyContext>
 {
     public String getSelectionText()
     {

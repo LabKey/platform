@@ -29,7 +29,7 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 23, 2009
  * Time: 11:28:37 AM
  */
-public class SpecimenArchiveWriter implements InternalStudyWriter
+class SpecimenArchiveWriter implements InternalStudyWriter
 {
     private static final String DEFAULT_DIRECTORY = "specimens";
 

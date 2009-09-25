@@ -27,7 +27,7 @@ import java.io.IOException;
  * Date: Apr 15, 2009
  * Time: 10:52:38 AM
  */
-public class VisitMapWriter implements InternalStudyWriter
+class VisitMapWriter implements InternalStudyWriter
 {
     public String getSelectionText()
     {

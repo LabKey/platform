@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 -- DROP current view.
+-- NOTE: Don't remove this drop statement, even if we stop using the view.  This drop statement must remain
+--   in place so we can correctly upgrade from older versions.  If you're not convinced, talk to adam.
 EXEC core.fn_dropifexists 'PropertyEntries', 'prop', 'VIEW', NULL
 GO

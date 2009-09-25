@@ -28,7 +28,7 @@ import java.io.IOException;
 // Allows overriding arbitrary OutputStreams.  A little strange, since OutputStream is an abstract class not an interface...
 public class OutputStreamWrapper extends OutputStream
 {
-    private OutputStream _out;
+    private final OutputStream _out;
 
     public OutputStreamWrapper(OutputStream out)
     {

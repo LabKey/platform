@@ -26,7 +26,7 @@ import org.labkey.study.model.StudyImpl;
 */
 // DatasetWriter actually writes all datasets (crf & assay).  This is a do-nothing writer to gets the assay dataset checkbox
 // to show up in the UI.  TODO: More flexible data-driven UI mechanism.
-public class AssayDatasetWriter implements InternalStudyWriter
+class AssayDatasetWriter implements InternalStudyWriter
 {
     static final String SELECTION_TEXT = "Assay Datasets";
 

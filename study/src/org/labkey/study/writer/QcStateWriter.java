@@ -24,7 +24,7 @@ import org.labkey.study.xml.StudyDocument;
  * Date: Apr 23, 2009
  * Time: 11:43:38 AM
  */
-public class QcStateWriter implements InternalStudyWriter
+class QcStateWriter implements InternalStudyWriter
 {
     public String getSelectionText()
     {

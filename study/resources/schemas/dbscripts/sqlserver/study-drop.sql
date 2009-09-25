@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
--- DROP current views.
+-- DROP all views (current and obsolete).
+-- NOTE: Never remove any of these drop statements, even if we stop using the view.  These drop statements must remain
+--   in place so we can correctly upgrade from older versions.  If you're not convinced, talk to adam.
 EXEC core.fn_dropifexists 'SpecimenSummary', 'study', 'VIEW', NULL
 EXEC core.fn_dropifexists 'SpecimenDetail', 'study', 'VIEW', NULL
 EXEC core.fn_dropifexists 'VialCounts', 'study', 'VIEW', NULL

@@ -34,7 +34,7 @@ import java.util.Collection;
  * Date: Apr 23, 2009
  * Time: 11:29:36 AM
  */
-public class CohortWriter implements InternalStudyWriter
+class CohortWriter implements InternalStudyWriter
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
 
