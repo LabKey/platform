@@ -102,7 +102,15 @@ public class StringExpressionFactory
             else if (null == DetailsURL.validateURL(str))
                 expr = DetailsURL.fromString(str);
             else
-                return null;
+            {
+                // improve compatibility with old URLs
+                // UNDONE: remove these, or make a new createHelper() 
+                ActionURL url = new ActionURL(str);
+                if (StringUtils.isEmpty(url.getExtraPath()))
+                    expr = new DetailsURL(url);
+                else
+                    expr = new URLStringExpression(url);
+            }
         }
         catch (URISyntaxException x)
         {
@@ -114,6 +122,7 @@ public class StringExpressionFactory
     }
 
 
+    /** somewhat stricter than createURL() to enforce doc'd syntax (above) */
     public static String validateURL(String str)
     {
         if (str.startsWith("http://") || str.startsWith("http://"))

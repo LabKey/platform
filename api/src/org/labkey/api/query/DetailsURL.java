@@ -92,9 +92,14 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     }
 
 
+    public DetailsURL(ActionURL url)
+    {
+        _url = url.clone();
+    }
+
+
     public DetailsURL(ActionURL url, Map<String,? extends Object> columnParams)
     {
-        super();
         url = url.clone();
         for (Map.Entry<String,? extends Object> e : columnParams.entrySet())
         {
