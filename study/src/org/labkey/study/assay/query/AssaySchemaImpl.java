@@ -88,6 +88,9 @@ public class AssaySchemaImpl extends AssaySchema
                 names.add(getBatchesTableName(protocol));
                 names.add(getRunsTableName(protocol));
                 names.add(getResultsTableName(protocol));
+                AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
+                if (providerSchema != null)
+                    names.addAll(providerSchema.getTableNames());
             }
         }
         return names;
@@ -106,6 +109,12 @@ public class AssaySchemaImpl extends AssaySchema
     public static String getResultsTableName(ExpProtocol protocol)
     {
         return protocol.getName() + " Data";
+    }
+
+    public static String getProviderTableName(ExpProtocol protocol, String tableName)
+    {
+        assert tableName != null;
+        return protocol.getName() + " " + tableName;
     }
 
     private List<ExpProtocol> getProtocols()
@@ -140,6 +149,12 @@ public class AssaySchemaImpl extends AssaySchema
                     if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
                         return provider.createDataTable(this, protocol);
+                    }
+
+                    AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
+                    if (providerSchema != null && name.startsWith(protocol.getName() + " "))
+                    {
+                        return providerSchema.getTable(name, true);
                     }
                 }
             }
