@@ -121,7 +121,7 @@ public class ErrorRenderer
             String s;
 
             // Show the request attributes and database details, but only if it's not a startup failure
-            if (!_isStartupFailure)
+            if (!_isStartupFailure && !(_exception instanceof HideConfigurationDetails))
             {
                 out.println("<b>request attributes</b><br>");
                 for (Enumeration e = request.getAttributeNames(); e.hasMoreElements();)

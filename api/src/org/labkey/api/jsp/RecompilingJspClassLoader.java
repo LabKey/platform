@@ -22,11 +22,11 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HideConfigurationDetails;
 
 import javax.servlet.ServletContext;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
+import javax.servlet.ServletException;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -47,9 +47,9 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final Set<String> _compiledJsps = new HashSet<String>();    // Used during test mode
 
     @Override
-    public Class loadClass(ServletContext context, String packageName, String jspFileName) throws ClassNotFoundException
+    public Class loadClass(ServletContext context, String packageName, String jspFilename) throws ClassNotFoundException
     {
-        String compiledJspPath = getCompiledJspPath(packageName, jspFileName);
+        String compiledJspPath = getCompiledJspPath(packageName, jspFilename);
         Collection<ResourceFinder> finders = ModuleLoader.getInstance().getResourceFindersForPath(compiledJspPath);
 
         if (null == finders)
@@ -64,15 +64,15 @@ public class RecompilingJspClassLoader extends JspClassLoader
                 File classFile = new File(jspTempBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
                 File sourceFile = null;
                 if (null != finder.getSourcePath())
-                    sourceFile = new File(finder.getSourcePath() + "/src" + getSourceJspPath(packageName, jspFileName));
+                    sourceFile = new File(finder.getSourcePath() + "/src" + getSourceJspPath(packageName, jspFilename));
 
                 if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
-                    return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFileName);
+                    return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFilename);
             }
         }
 
         _log.warn("Can't load " + compiledJspPath);
-        return super.loadClass(context, packageName, jspFileName);
+        return super.loadClass(context, packageName, jspFilename);
     }
 
 
@@ -129,7 +129,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     // Compile the _jsp.java file
                     String stagingJava = classFile.getAbsolutePath().replaceFirst("\\.class", ".java");
-                    boolean success = (0 == compileJavaFile(stagingJava, cp.getPath()));
+                    compileJavaFile(stagingJava, cp.getPath(), jspFileName);
 
                     _classLoaders.remove(finder);
 
@@ -157,23 +157,44 @@ public class RecompilingJspClassLoader extends JspClassLoader
     }
 
 
-    private int compileJavaFile(String filePath, String classPath) throws Exception
+    private void compileJavaFile(String filePath, String classPath, String jspFilename) throws Exception
     {
         /*
             This is the code I want to execute here:
 
                 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                compiler.run(null, null, null, stagingJava, "-cp", cp.getPath());
+                compiler.run(null, null, errorString, filePath, "-cp", classPath);
 
-            ...but these are Java 1.6 specific classes and we still need to compile on Java 1.5, so use reflection instead.
+            ...but this is a Java 1.6 specific class and we still need to compile on Java 1.5, so use reflection instead.
         */
 
         Class<?> clazz = Class.forName("javax.tools.ToolProvider");
         Method getSystemJavaCompilerMethod = clazz.getMethod("getSystemJavaCompiler");
         Object javaCompiler = getSystemJavaCompilerMethod.invoke(null);
         Method compileJavaMethod = javaCompiler.getClass().getMethod("run", InputStream.class, OutputStream.class, OutputStream.class, String[].class);
-        Integer ret = (Integer)compileJavaMethod.invoke(javaCompiler, null, null, null, new String[]{filePath, "-cp", classPath});
-        return ret.intValue();
+        ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+        Integer ret = (Integer)compileJavaMethod.invoke(javaCompiler, null, null, errorStream, new String[]{filePath, "-cp", classPath});
+
+        if (0 != ret.intValue())
+            throw new JspCompilationException(jspFilename, errorStream.toString());
+    }
+
+
+    private static class JspCompilationException extends ServletException implements HideConfigurationDetails
+    {
+        private final String _errors;
+
+        private JspCompilationException(String jspFilename, String errors)
+        {
+            super("Error trying to compile " + jspFilename);
+            _errors = errors;
+        }
+
+        @Override
+        public void printStackTrace(PrintWriter pw)
+        {
+            pw.println(_errors);
+        }
     }
 
 
