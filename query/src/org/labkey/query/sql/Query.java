@@ -655,13 +655,17 @@ public class Query
 
         // METHODS
         new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d,1) AS _rnd, ROUND(3.1415,2) AS _pi, CONVERT(R.d,SQL_VARCHAR) AS _str FROM R", 4, Rsize),
+
+        // LIMIT
+        new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
+        new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 10", 3, 10),
     };
 
 	static SqlTest[] postgres = new SqlTest[]
 	{
 		// ORDER BY tests
-		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date"),
-		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
+		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date", 3, Rsize),
+        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
 	};
 
 	static SqlTest[] negative = new SqlTest[]
