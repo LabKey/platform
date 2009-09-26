@@ -467,9 +467,9 @@ public class QueryManager
         {
             //use selectForDisplay to mimic the behavior one would get in the UI
             if (testAllColumns)
-                results = Table.selectForDisplay(table, Table.ALL_COLUMNS, null, null, 0, 0);
+                results = Table.selectForDisplay(table, Table.ALL_COLUMNS, null, null, 1, 0);
             else
-                results = Table.selectForDisplay(table, cols, null, null, 0, 0);
+                results = Table.selectForDisplay(table, cols, null, null, 1, 0);
         }
         finally
         {
