@@ -81,7 +81,7 @@ public class DatasetImporter
 
                 if (null != metaDataFilename)
                 {
-                    File schemaXmlFile = StudyImportJob.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile());
+                    File schemaXmlFile = ctx.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile());
                     ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaXmlFile));
                     reader = new SchemaXmlReader(study, root, schemaXmlFile, extraProps);
                 }
@@ -98,7 +98,7 @@ public class DatasetImporter
                     String typeNameColumn = schema.getTypeNameColumn();
                     String typeIdColumn = schema.getTypeIdColumn();
 
-                    File schemaTsvFile = StudyImportJob.getStudyFile(root, datasetDir, schemaTsvSource, "Study.xml");
+                    File schemaTsvFile = ctx.getStudyFile(root, datasetDir, schemaTsvSource);
 
                     ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaTsvFile));
                     reader = new SchemaTsvReader(study, schemaTsvFile, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
@@ -149,12 +149,13 @@ public class DatasetImporter
 
             if (null != datasetsXmlFilename)
             {
-                File datasetsXmlFile = StudyImportJob.getStudyFile(root, datasetDir, datasetsXmlFilename, "Study.xml");
+                File datasetsXmlFile = ctx.getStudyFile(root, datasetDir, datasetsXmlFilename);
 
                 try
                 {
                     if (log)
                         ctx.getLogger().info("Loading datasets manifest from " + StudyImportException.getRelativePath(root, datasetsXmlFile));
+
                     return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
                 }
                 catch (XmlException e)

@@ -22,7 +22,6 @@ import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.ImportContext;
 import org.labkey.study.importer.StudyJobSupport;
-import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
 
@@ -63,7 +62,7 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
                 File specimenDir = ctx.getStudyDir(root, specimens.getDir());
 
                 if (null != specimens.getFile())
-                    return StudyImportJob.getStudyFile(root, specimenDir, specimens.getFile(), "Study.xml");
+                    return ctx.getStudyFile(root, specimenDir, specimens.getFile());
             }
         }
 

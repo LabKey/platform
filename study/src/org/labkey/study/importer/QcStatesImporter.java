@@ -27,7 +27,7 @@ import java.sql.SQLException;
  * Date: May 16, 2009
  * Time: 9:36:25 PM
  */
-public class QcStatesImporter
+class QcStatesImporter
 {
     void process(StudyImpl study, ImportContext ctx) throws SQLException, StudyImportException
     {

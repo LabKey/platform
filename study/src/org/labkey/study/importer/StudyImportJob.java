@@ -15,18 +15,20 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.pipeline.*;
+import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-import org.labkey.api.study.StudyImportException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.springframework.validation.BindException;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 
@@ -52,7 +54,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         _root = studyXml.getParentFile();
         setLogFile(StudyPipeline.logForInputFile(new File(_root, "study_load")));
         _errors = errors;
-        _ctx = new ImportContext(user, c, studyXml, url, getLogger());
+        _ctx = new ImportContext(user, c, studyXml, getLogger());
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);
@@ -105,18 +107,5 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     public String getDescription()
     {
         return "Study " + (_reload ? "reload" : "import");
-    }
-
-    public static File getStudyFile(File root, File dir, String name, String source) throws StudyImportException
-    {
-        File file = new File(dir, name);
-
-        if (!file.exists())
-            throw new StudyImportException(source + " refers to a file that does not exist: " + StudyImportException.getRelativePath(root, file));
-
-        if (!file.isFile())
-            throw new StudyImportException(source + " refers to " + StudyImportException.getRelativePath(root, file) + ": expected a file but found a directory");
-
-        return file;
     }
 }

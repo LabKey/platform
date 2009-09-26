@@ -30,7 +30,7 @@ import java.util.Map;
  * Date: May 16, 2009
  * Time: 9:20:22 PM
  */
-public class MissingValueImporter
+class MissingValueImporter
 {
     void process(ImportContext ctx) throws IOException, SQLException, StudyImportException
     {

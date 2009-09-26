@@ -64,7 +64,7 @@ public class CohortImporter implements InternalStudyImporter
             }
             else
             {
-                File cohortFile = StudyImportJob.getStudyFile(root, root, cohortsXml.getFile(), "Study.xml");
+                File cohortFile = ctx.getStudyFile(root, root, cohortsXml.getFile());
                 ctx.getLogger().info("Loading manual cohort assignments from " + StudyImportException.getRelativePath(root, cohortFile));
                 CohortsDocument cohortAssignmentXml;
 

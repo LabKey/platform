@@ -68,11 +68,11 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                 unzipDir = new File(specimenArchive.getParentFile(), tempDirName);
                 try
                 {
-                    job.setStatus("Unzipping");
+                    job.setStatus("UNZIPPING SPECIMEN ARCHIVE");
                     List<File> files = ZipUtil.unzipToDirectory(specimenArchive, unzipDir, job.getLogger());
                     job.info("Archive unzipped to " + unzipDir.getPath());
                     job.info("Starting import...");
-                    job.setStatus("Processing");
+                    job.setStatus("PROCESSING SPECIMENS");
 
                     SpecimenImporter importer = new SpecimenImporter();
                     importer.process(job.getUser(), job.getContainer(), files, job.getLogger());

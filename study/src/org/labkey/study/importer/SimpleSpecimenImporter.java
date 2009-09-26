@@ -51,7 +51,8 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     public static final String PARTICIPANT_ID = "ptid";
 
 
-    public static final HashMap<String,String> DEFAULT_COLUMN_LABELS = new HashMap<String,String>();
+    private static final HashMap<String, String> DEFAULT_COLUMN_LABELS = new HashMap<String, String>();
+
     static
     {
         DEFAULT_COLUMN_LABELS.put(VIAL_ID, "Vial Id");
@@ -64,8 +65,8 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         DEFAULT_COLUMN_LABELS.put(PARTICIPANT_ID, "Subject Id");
     }
 
-    private Map<String,String> _columnLabels;
-    private boolean _dateBasedStudy;
+    private Map<String, String> _columnLabels;
+    private final boolean _dateBasedStudy;
 
     public SimpleSpecimenImporter()
     {
@@ -85,7 +86,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return str == null ? columnName : str;
     }
 
-    public void setColumnLabels(Map<String,String> map)
+    public void setColumnLabels(Map<String, String> map)
     {
         _columnLabels = map;
     }
@@ -208,7 +209,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     @Deprecated // Should convert SimpleSpecimenImporter to iterators only, not half map / half iterator
     private static class CloseableListIterator<K> implements CloseableIterator<K>
     {
-        private Iterator<K> _iter;
+        private final Iterator<K> _iter;
 
         private CloseableListIterator(List<K> list)
         {
@@ -238,11 +239,11 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
     private static class LookupTable
     {
-        private String name;
-        private String foreignKeyCol;
-        private String idCol;
-        private String labelCol;
-        private HashMap<String, Integer> keyMap = new HashMap<String, Integer>();
+        private final String name;
+        private final String foreignKeyCol;
+        private final String idCol;
+        private final String labelCol;
+        private final HashMap<String, Integer> keyMap = new HashMap<String, Integer>();
 
         LookupTable(String name, String foreignKeyCol, String idCol, String labelCol)
         {
@@ -300,7 +301,8 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     private static class LabLookupTable extends LookupTable
     {
         static final String DEFAULT_LAB = "Not Specified";
-        private Integer defaultLabId;
+        private final Integer defaultLabId;
+
         LabLookupTable()
         {
             super("labs", "lab_id", "lab_id", "lab_name");

@@ -36,7 +36,7 @@ import java.util.List;
 */
 public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialTask.Factory>
 {
-    public StudyImportInitialTask(Factory factory, PipelineJob job)
+    private StudyImportInitialTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }

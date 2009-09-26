@@ -15,11 +15,10 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlException;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.writer.AbstractContext;
@@ -35,21 +34,12 @@ import java.io.IOException;
  */
 public class ImportContext extends AbstractContext
 {
-    private final ActionURL _url;
     private final File _studyXml;
 
-    public ImportContext(User user, Container c, File studyXml, ActionURL url, Logger logger)
+    public ImportContext(User user, Container c, File studyXml, Logger logger)
     {
         super(user, c, null, logger);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
-        _url = url;
         _studyXml = studyXml;
-    }
-
-    @Deprecated
-    // TODO: All importers should new up ActionURLs using getContainer() 
-    public ActionURL getUrl()
-    {
-        return _url;
     }
 
     @Override
@@ -75,6 +65,24 @@ public class ImportContext extends AbstractContext
         return studyDoc;
     }
 
+    // Assume file was referenced in study.xml file   // TODO: Context should hold onto the root -- shouldn't have to pass it in
+    public File getStudyFile(File root, File dir, String name) throws StudyImportException
+    {
+        return getStudyFile(root, dir, name, _studyXml.getName());
+    }
+
+    public File getStudyFile(File root, File dir, String name, String source) throws StudyImportException
+    {
+        File file = new File(dir, name);
+
+        if (!file.exists())
+            throw new StudyImportException(source + " refers to a file that does not exist: " + StudyImportException.getRelativePath(root, file));
+
+        if (!file.isFile())
+            throw new StudyImportException(source + " refers to " + StudyImportException.getRelativePath(root, file) + ": expected a file but found a directory");
+
+        return file;
+    }
 
     public File getStudyDir(File root, String dirName) throws StudyImportException
     {

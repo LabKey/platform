@@ -30,7 +30,7 @@ import java.util.*;
 */
 public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.Factory>
 {
-    public StudyImportFinalTask(Factory factory, PipelineJob job)
+    private StudyImportFinalTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }

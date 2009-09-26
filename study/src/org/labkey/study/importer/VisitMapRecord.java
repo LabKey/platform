@@ -78,7 +78,7 @@ class VisitMapRecord
         _terminationWindow = null;
     }
 
-    public VisitMapRecord(Map record)
+    private VisitMapRecord(Map record)
     {
         String range = (String)record.get("sequenceRange");
         if (null == range)
@@ -150,7 +150,7 @@ class VisitMapRecord
         return Integer.parseInt(str.trim());
     }
 
-    static private int[] emptyIntArray = new int[0];
+    private static final int[] emptyIntArray = new int[0];
 
     private int[] toIntArray(String list)
     {
@@ -211,7 +211,7 @@ class VisitMapRecord
     }
 
     // UNDONE: should have BaseObjectFactory to implement handle in terms of fromMap()
-    static class VisitMapRecordFactory implements ObjectFactory<VisitMapRecord>
+    private static class VisitMapRecordFactory implements ObjectFactory<VisitMapRecord>
     {
         public VisitMapRecord fromMap(Map<String, ?> m)
         {

@@ -49,10 +49,10 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         if (null != datasetsXml)
         {
             File datasetDir = DatasetImporter.getDatasetDirectory(ctx, root);
-        String datasetFilename = datasetsXml.getDefinition().getFile();
+            String datasetFilename = datasetsXml.getDefinition().getFile();
 
-        if (null != datasetFilename)
-            return StudyImportJob.getStudyFile(root, datasetDir, datasetFilename, "Study.xml");
+            if (null != datasetFilename)
+                return ctx.getStudyFile(root, datasetDir, datasetFilename);
         }
 
         return null;

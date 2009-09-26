@@ -51,24 +51,24 @@ import java.util.*;
  */
 public class SpecimenImporter
 {
-    CPUTimer cpuPopulateMaterials = new CPUTimer("populateMaterials");
-    CPUTimer cpuUpdateSpecimens = new CPUTimer("updateSpecimens");
-    CPUTimer cpuInsertSpecimens = new CPUTimer("insertSpecimens");
-    CPUTimer cpuUpdateSpecimenEvents = new CPUTimer("updateSpecimenEvents");
-    CPUTimer cpuInsertSpecimenEvents = new CPUTimer("insertSpecimenEvents");
-    CPUTimer cpuMergeTable = new CPUTimer("mergeTable");
-    CPUTimer cpuCreateTempTable = new CPUTimer("createTempTable");
-    CPUTimer cpuPopulateTempTable = new CPUTimer("populateTempTable");
-    CPUTimer cpuCurrentLocations = new CPUTimer("updateCurrentLocations");
+    private final CPUTimer cpuPopulateMaterials = new CPUTimer("populateMaterials");
+    private final CPUTimer cpuUpdateSpecimens = new CPUTimer("updateSpecimens");
+    private final CPUTimer cpuInsertSpecimens = new CPUTimer("insertSpecimens");
+    private final CPUTimer cpuUpdateSpecimenEvents = new CPUTimer("updateSpecimenEvents");
+    private final CPUTimer cpuInsertSpecimenEvents = new CPUTimer("insertSpecimenEvents");
+    private final CPUTimer cpuMergeTable = new CPUTimer("mergeTable");
+    private final CPUTimer cpuCreateTempTable = new CPUTimer("createTempTable");
+    private final CPUTimer cpuPopulateTempTable = new CPUTimer("populateTempTable");
+    private final CPUTimer cpuCurrentLocations = new CPUTimer("updateCurrentLocations");
 
 
     public static class ImportableColumn
     {
-        private String _tsvColumnName;
-        protected String _dbType;
-        private String _dbColumnName;
+        private final String _tsvColumnName;
+        protected final String _dbType;
+        private final String _dbColumnName;
         private Class _javaType = null;
-        private boolean _unique;
+        private final boolean _unique;
 
         public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType)
         {
@@ -272,7 +272,7 @@ public class SpecimenImporter
 
     public static class SpecimenColumn extends ImportableColumn
     {
-        private TargetTable _targetTable;
+        private final TargetTable _targetTable;
         private String _fkTable;
         private String _joinType;
         private String _fkColumn;
@@ -348,11 +348,11 @@ public class SpecimenImporter
 
     private static class SpecimenLoadInfo
     {
-        private String _tempTableName;
-        private List<SpecimenColumn> _availableColumns;
-        private Container _container;
-        private User _user;
-        private DbSchema _schema;
+        private final String _tempTableName;
+        private final List<SpecimenColumn> _availableColumns;
+        private final Container _container;
+        private final User _user;
+        private final DbSchema _schema;
 
         public SpecimenLoadInfo(User user, Container container, DbSchema schema, List<SpecimenColumn> availableColumns, String tempTableName)
         {

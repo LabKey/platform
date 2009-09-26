@@ -32,7 +32,7 @@ import java.util.List;
  * Date: May 17, 2009
  * Time: 8:11:51 AM
  */
-public class VisitImporter
+class VisitImporter
 {
     boolean process(StudyImpl study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImportException
     {
@@ -41,7 +41,7 @@ public class VisitImporter
 
         if (null != visitsXml)
         {
-            File visitMap = StudyImportJob.getStudyFile(root, root, visitsXml.getFile(), "Study.xml");
+            File visitMap = ctx.getStudyFile(root, root, visitsXml.getFile());
             ctx.getLogger().info("Loading visit map from " + StudyImportException.getRelativePath(root, visitMap));
             String content = PageFlowUtil.getFileContentsAsString(visitMap);
 
