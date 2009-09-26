@@ -214,7 +214,12 @@ public class SpecimenForeignKey extends LookupForeignKey
             // Need to support this other name for dates
             FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
             FieldKey objectIdFK = _tableMetadata.getResultRowIdFieldKey();
-            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK, drawDateFK));
+
+            List<FieldKey> targetStudyFieldKeys = new ArrayList<FieldKey>(Arrays.asList(targetStudyFK, objectIdFK, participantFK, specimenFK, visitFK, dateFK, drawDateFK));
+            List<String> foreignPKs = getParentTable().getPkColumnNames();
+            for (String foreignPK : foreignPKs)
+                targetStudyFieldKeys.add(FieldKey.fromParts(foreignPK));
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), targetStudyFieldKeys);
 
             ColumnInfo targetStudyCol = columns.get(targetStudyFK);
             Container targetStudy = _schema.getTargetStudy();
@@ -237,9 +242,19 @@ public class SpecimenForeignKey extends LookupForeignKey
                 String specimenSubqueryAlias = parentAlias + SPECIMEN_SUBQUERY_SUFFIX;
                 String vialSubqueryAlias = parentAlias + VIAL_SUBQUERY_SUFFIX;
                 String studySubqueryAlias = parentAlias + STUDY_SUBQUERY_SUFFIX;
-                ColumnInfo parentKeyCol = foreignKey.getParentTable().getPkColumns().get(0);
                 ColumnInfo specimenColumnInfo = columns.get(specimenFK);
-                sql.append(") AS " + assaySubqueryAlias + " ON " + assaySubqueryAlias + "." + objectIdCol.getAlias() + " = " + parentAlias + "." + parentKeyCol.getName());
+
+                sql.append(") AS " + assaySubqueryAlias + " ON ");
+                List<ColumnInfo> pks = getParentTable().getPkColumns();
+                assert pks.size() > 0;
+                String sep = "";
+                for (ColumnInfo pk : pks)
+                {
+                    sql.append(sep);
+                    sql.append(assaySubqueryAlias + "." + pk.getName() + " = " + parentAlias + "." + pk.getName());
+                    sep = " AND ";
+                }
+
                 sql.append("\n\tLEFT OUTER JOIN study.vial AS " + vialSubqueryAlias);
                 sql.append(" ON " + vialSubqueryAlias + ".GlobalUniqueId = " + assaySubqueryAlias + "." + specimenColumnInfo.getAlias());
                 if (targetStudy != null)
