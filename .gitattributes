@@ -355,6 +355,7 @@ api/src/org/labkey/api/pipeline/PipelineJob.java -text
 api/src/org/labkey/api/pipeline/PipelineJobData.java -text
 api/src/org/labkey/api/pipeline/PipelineJobException.java -text
 api/src/org/labkey/api/pipeline/PipelineJobService.java -text
+api/src/org/labkey/api/pipeline/PipelineJobWarning.java -text
 api/src/org/labkey/api/pipeline/PipelineProtocol.java -text
 api/src/org/labkey/api/pipeline/PipelineProtocolFactory.java -text
 api/src/org/labkey/api/pipeline/PipelineProvider.java -text

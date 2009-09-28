@@ -16,7 +16,11 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.pipeline.PipelineJobWarning;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
+import java.util.Collection;
 
 /*
 * User: adam
@@ -28,5 +32,6 @@ public interface ExternalStudyImporter
     // Brief description of the types of objects this class imports
     String getDescription();
     void process(StudyContext ctx, File root) throws Exception;
-    void postProcess(StudyContext ctx, File root) throws Exception;
+    @Nullable
+    Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception;
 }
