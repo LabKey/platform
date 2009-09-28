@@ -3020,7 +3020,8 @@ public class QueryControllerSpring extends SpringActionController
         {
             Map<String,Object> viewInfo = new HashMap<String,Object>();
             viewInfo.put("name", view.getName());
-            viewInfo.put("owner", view.getOwner().getDisplayName(getViewContext()));
+            if (null != view.getOwner())
+                viewInfo.put("owner", view.getOwner().getDisplayName(getViewContext()));
             List<Map<String,Object>> colInfos = new ArrayList<Map<String,Object>>();
             for(FieldKey key : view.getColumns())
             {
