@@ -23,13 +23,12 @@ import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
@@ -96,34 +95,18 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     @NotNull
     protected DataLoader<Map<String, Object>> getDataLoader() throws ImportException
     {
-        File file = getImportFile();
-        String filename = file.getName();
         try
         {
-            if (filename.endsWith("xls"))
-            {
-                return new ExcelLoader(file, true);
-            }
-            else if (filename.endsWith("txt") || filename.endsWith("tsv"))
-            {
-                return new TabLoader(file, true);
-            }
-            else if (filename.endsWith("csv"))
-            {
-                TabLoader loader = new TabLoader(file, true);
-                loader.parseAsCSV();
-                return loader;
-            }
-            else
-            {
-                throw new ImportException("Unknown file type. Please upload a file with a suffix of .xls, .txt, .tsv or .csv");
-            }
+            return DataLoader.getDataLoaderForFile(getImportFile());
+        }
+        catch (ServletException e)
+        {
+            throw new ImportException(e.getMessage());
         }
         catch (IOException e)
         {
             throw new ImportException(e.getMessage());
         }
-
     }
 
     private List<InferencedColumn> getColumns(DataLoader<Map<String, Object>> loader) throws ImportException

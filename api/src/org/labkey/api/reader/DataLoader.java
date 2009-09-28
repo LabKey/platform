@@ -23,6 +23,7 @@ import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.FilterIterator;
 
+import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -59,6 +60,28 @@ public abstract class DataLoader<T> implements Iterable<T>
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     protected Transformer _transformer = null;
+
+    public static DataLoader<Map<String, Object>> getDataLoaderForFile(File file) throws ServletException, IOException
+    {
+        String filename = file.getName();
+
+        if (filename.endsWith("xls"))
+        {
+            return new ExcelLoader(file, true);
+        }
+        else if (filename.endsWith("txt") || filename.endsWith("tsv"))
+        {
+            return new TabLoader(file, true);
+        }
+        else if (filename.endsWith("csv"))
+        {
+            TabLoader loader = new TabLoader(file, true);
+            loader.parseAsCSV();
+            return loader;
+        }
+
+        throw new ServletException("Unknown file type. File must have a suffix of .xls, .txt, .tsv or .csv.");
+    }
 
     public final ColumnDescriptor[] getColumns() throws IOException
     {

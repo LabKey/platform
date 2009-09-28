@@ -29,7 +29,8 @@ public enum Type
     IntType("Integer", "xsd:int", "integer", Integer.class, Integer.TYPE),
     DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class),
-    BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE);
+    BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
+    AttachmentType("Attachment", "xsd:attachment", "varchar", String.class);
 
     private String label;
     private String xsd;

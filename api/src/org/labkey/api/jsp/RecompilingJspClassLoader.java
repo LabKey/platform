@@ -17,7 +17,7 @@ package org.labkey.api.jsp;
 
 import org.apache.jasper.JspC;
 import org.apache.log4j.Logger;
-import org.apache.axis.utils.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.settings.AppProps;
@@ -142,7 +142,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                 if (null == loader)
                 {
                     // Convert directory to a URL
-                    URL url = jspTempBuildDirectory.toURL();
+                    URL url = jspTempBuildDirectory.toURI().toURL();
                     loader = new URLClassLoader(new URL[]{url}, Thread.currentThread().getContextClassLoader());
                     _classLoaders.put(finder, loader);
                 }
@@ -159,20 +159,22 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
     private void compileJavaFile(String filePath, String classPath, String jspFilename) throws Exception
     {
+        ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+
         /*
             This is the code I want to execute here:
 
                 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                compiler.run(null, null, errorString, filePath, "-cp", classPath);
+                int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath);
 
-            ...but this is a Java 1.6 specific class and we still need to compile on Java 1.5, so use reflection instead.
+            ...but these are Java 1.6 specific classes and we still need to compile on Java 1.5, so use reflection instead.
+
+            We check the Java version before using RecompilingJspClassLoader, so this code is never executed on Java 1.5.
         */
-
         Class<?> clazz = Class.forName("javax.tools.ToolProvider");
         Method getSystemJavaCompilerMethod = clazz.getMethod("getSystemJavaCompiler");
         Object javaCompiler = getSystemJavaCompilerMethod.invoke(null);
         Method compileJavaMethod = javaCompiler.getClass().getMethod("run", InputStream.class, OutputStream.class, OutputStream.class, String[].class);
-        ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
         Integer ret = (Integer)compileJavaMethod.invoke(javaCompiler, null, null, errorStream, new String[]{filePath, "-cp", classPath});
 
         if (0 != ret.intValue())
@@ -193,6 +195,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
         @Override
         public void printStackTrace(PrintWriter pw)
         {
+            // Don't care about the stack trace -- render the compile errors instead
             pw.println(_errors);
         }
     }

@@ -308,7 +308,7 @@ public class TSVGridWriter extends TSVWriter
                         header.append(name);
 
                     }
-                        break;
+                    break;
                 }
                 header.append('\t');
             }
