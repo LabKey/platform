@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.*;
@@ -31,8 +32,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: adam
@@ -117,8 +117,10 @@ public class QueryImporter implements ExternalStudyImporter
         }
     }
 
-    public void postProcess(StudyContext ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception
     {
+        List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
+
         //validate all queries in all schemas in the container
         ctx.getLogger().info("Validating all queries in all schemas...");
         Container container = ctx.getContainer();
@@ -143,11 +145,13 @@ public class QueryImporter implements ExternalStudyImporter
                 catch(Exception e)
                 {
                     ctx.getLogger().warn("VALIDATION ERROR: Query " + sname + "." + qname + " failed validation!", e);
+                    warnings.add(new PipelineJobWarning("Query " + sname + "." + qname + " failed validation!", e));
                 }
             }
         }
 
         ctx.getLogger().info("Finished validating queries.");
+        return warnings;
     }
 
     public static class Factory implements ExternalStudyImporterFactory

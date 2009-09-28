@@ -20,12 +20,14 @@ import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.study.StudyContext;
+import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -63,9 +65,10 @@ public class ReportImporter implements ExternalStudyImporter
         }
     }
 
-    public void postProcess(StudyContext ctx, File root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception
     {
         //nothing for now
+        return null;
     }
 
     public static class Factory implements ExternalStudyImporterFactory
