@@ -84,6 +84,10 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         {
             switch (action)
             {
+                case detailsQueryRow:
+                    expr = table.getDetailsURL(table.getColumnNameSet(), container);
+                    break;
+                
                 case updateQueryRow:
                     expr = table.getUpdateURL(table.getColumnNameSet(), container);
                     break;

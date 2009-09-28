@@ -640,7 +640,9 @@ public class QueryServiceImpl extends QueryService
                     TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetaData());
 
                     List<QueryException> errors = new ArrayList<QueryException>();
-                    ((AbstractTableInfo)tableInfo).loadFromXML(schema, doc.getTables().getTableArray(0), errors);
+                    TablesDocument.Tables tables = doc.getTables();
+                    if (tables != null && tables.sizeOfTableArray() > 0)
+                        ((AbstractTableInfo)tableInfo).loadFromXML(schema, tables.getTableArray(0), errors);
                 }
                 catch (org.apache.xmlbeans.XmlException e)
                 {

@@ -1281,6 +1281,24 @@ public class QueryControllerSpring extends SpringActionController
             return _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
         }
 
+        public ActionURL getCancelURL(QueryUpdateForm form)
+        {
+            ActionURL cancelURL;
+            if (getViewContext().getActionURL().getParameter(QueryParam.srcURL) != null)
+            {
+                cancelURL = new ActionURL(getViewContext().getActionURL().getParameter(QueryParam.srcURL));
+            }
+            else if (_schema != null && _table != null)
+            {
+                cancelURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+            }
+            else
+            {
+                cancelURL = new ActionURL(ExecuteQueryAction.class, form.getContainer());
+            }
+            return cancelURL;
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
             if (_table != null)
@@ -1395,7 +1413,9 @@ public class QueryControllerSpring extends SpringActionController
         {
             ButtonBar bb = new ButtonBar();
             ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
+            ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
             bb.add(btnSubmit);
+            bb.add(btnCancel);
             InsertView view = new InsertView(tableForm, errors);
             view.getDataRegion().setButtonBar(bb);
             return view;
@@ -1422,7 +1442,9 @@ public class QueryControllerSpring extends SpringActionController
         {
             ButtonBar bb = new ButtonBar();
             ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
+            ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
             bb.add(btnSubmit);
+            bb.add(btnCancel);
             UpdateView view = new UpdateView(tableForm, errors);
             view.getDataRegion().setButtonBar(bb);
             return view;
