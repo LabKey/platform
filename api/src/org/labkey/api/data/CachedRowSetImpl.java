@@ -597,6 +597,17 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         return _lastObject;
     }
 
+
+    // careful! this does no error checking
+    public void _setObject(int columnIndex, Object o) throws SQLException
+    {
+        if (null != _arrayListMaps)
+            _arrayListMaps[_row].set(columnIndex,o);
+        else
+            _maps[_row].put(_md.getColumnName(columnIndex),o);
+    }
+
+
     public int findColumn(String columnName) throws SQLException
     {
         Integer i = _columns.get(columnName.toLowerCase());
@@ -604,6 +615,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
             throw new SQLException("No such column: " + columnName);
         return i;
     }
+
 
     public Reader getCharacterStream(int columnIndex) throws SQLException
     {

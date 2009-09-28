@@ -143,6 +143,13 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         return labkey.toString();
     }
 
+
+    public void setScriptSource(String script)
+    {
+        getDescriptor().setProperty(RReportDescriptor.Prop.script, script);
+    }
+
+
     protected String createScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
     {
         String script = super.createScript(context, outputSubst, inputDataTsv);

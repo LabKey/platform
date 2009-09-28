@@ -132,13 +132,6 @@ public abstract class DefaultModule implements Module
         if(null != getSourcePath() && null != getBuildPath())
             ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
 
-        Collection<? extends WebPartFactory> wpFactories = getWebPartFactories();
-        if(null != wpFactories)
-        {
-            for (WebPartFactory part : wpFactories)
-                part.setModule(this);
-        }
-
         if (AppProps.getInstance().isDevMode() && _sourcePath != null)
         {
             File f = new File(_sourcePath);
@@ -147,7 +140,15 @@ public abstract class DefaultModule implements Module
         }
 
         init();
+
+        Collection<? extends WebPartFactory> wpFactories = getWebPartFactories();
+        if(null != wpFactories)
+        {
+            for (WebPartFactory part : wpFactories)
+                part.setModule(this);
+        }
     }
+    
 
     protected abstract void init();
     protected abstract Collection<? extends WebPartFactory> createWebPartFactories();

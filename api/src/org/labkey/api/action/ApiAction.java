@@ -41,7 +41,7 @@ import java.util.Iterator;
  */
 public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 {
-    private ApiResponseWriter.Format _reqFormat = null;
+    protected ApiResponseWriter.Format _reqFormat = null;
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = 0;

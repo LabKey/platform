@@ -324,7 +324,7 @@ public class DateUtil
                  * no-timezone style of GMT+4:30 works
                  */
 validNum:       {
-                    if ((prevc == '+' || prevc == '-')/*  && year>=0 */)
+                    if ((prevc == '+' || prevc == '-') && hour >= 0 /* && year>=0 */)
                     {
                         /* make ':' case below change tzoffset */
                         seenplusminus = true;
@@ -345,7 +345,7 @@ validNum:       {
                     {
                         if (year >= 0)
                             throw new ConversionException(s);
-                        else if (c <= ' ' || c == ',' || c == '/' || i >= limit)
+                        else if (c <= ' ' || c == ',' || c == '/' || c == '-' || i >= limit)
                         {
                             if (n >= 100)
                                 year = n;
@@ -912,6 +912,7 @@ Parse:
             s = ConvertUtils.convert(new Date(datetimeExpected));
             assertEquals(datetimeExpected, DateUtil.parseDateTime(s));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
 
             s = new Date(dateExpected).toString();
             assertEquals(dateExpected, DateUtil.parseDateTime(s));
