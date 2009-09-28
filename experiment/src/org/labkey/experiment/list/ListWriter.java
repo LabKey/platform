@@ -34,10 +34,7 @@ import org.labkey.data.xml.TablesDocument;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /*
 * User: adam
@@ -84,8 +81,13 @@ public class ListWriter implements ExternalStudyWriter
 
                 if (!columns.isEmpty())
                 {
+                    List<DisplayColumn> displayColumns = new LinkedList<DisplayColumn>();
+
+                    for (ColumnInfo col : columns)
+                        displayColumns.add(new ListExportDataColumn(col));
+
                     ResultSet rs = QueryService.get().select(tinfo, columns, null, null);
-                    TSVGridWriter tsvWriter = new TSVGridWriter(rs);
+                    TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
                     PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
@@ -105,6 +107,20 @@ public class ListWriter implements ExternalStudyWriter
                 columns.add(column);
 
         return columns;
+    }
+
+    private static class ListExportDataColumn extends DataColumn
+    {
+        private ListExportDataColumn(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            return getValue(ctx);
+        }
     }
 
     private static class ListTableInfoWriter extends TableInfoWriter

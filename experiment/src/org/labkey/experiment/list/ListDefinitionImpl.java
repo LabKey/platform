@@ -685,4 +685,10 @@ public class ListDefinitionImpl implements ListDefinition
                 throw new IllegalStateException();
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return getName() + ", id: " + getListId();
+    }
 }

@@ -49,7 +49,6 @@ import java.util.Map;
 public class ListImporter implements ExternalStudyImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
-    private final List<Map<String, Object>> _importMaps = new LinkedList<Map<String, Object>>();
 
     public String getDescription()
     {
@@ -101,23 +100,6 @@ public class ListImporter implements ExternalStudyImporter
                 }
             }
 
-            final Map<String, ListDefinition> listsForDomainURIs = ListService.get().getLists(ctx.getContainer());
-
-            DomainURIFactory factory = new DomainURIFactory() {
-                public String getDomainURI(String name)
-                {
-                    return listsForDomainURIs.get(name).getDomain().getTypeURI();
-                }
-            };
-
-            List<String> importErrors = new LinkedList<String>();
-            OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, _importMaps, importErrors, ctx.getContainer(), true);
-
-            for (String error : importErrors)
-            {
-                ctx.getLogger().error(error);
-            }
-
             lists = ListService.get().getLists(ctx.getContainer());
 
             for (String name : names)
@@ -166,6 +148,7 @@ public class ListImporter implements ExternalStudyImporter
 
         // Set up RowMap with all the keys that OntologyManager.importTypes() handles
         RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery");
+        List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
         {
@@ -181,6 +164,9 @@ public class ListImporter implements ExternalStudyImporter
 
             String dataType = columnXml.getDatatype();
             Type t = Type.getTypeBySqlTypeName(dataType);
+
+            if (t == null)
+                t = Type.getTypeByLabel(dataType);
 
             if (t == null)
                 throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
@@ -208,8 +194,23 @@ public class ListImporter implements ExternalStudyImporter
                 null != fk ? fk.getFkTable() : null
             });
 
-            _importMaps.add(map);
+            importMaps.add(map);
         }
+
+        final String typeURI = list.getDomain().getTypeURI();
+
+        DomainURIFactory factory = new DomainURIFactory() {
+            public String getDomainURI(String name)
+            {
+                return typeURI;
+            }
+        };
+
+        List<String> importErrors = new LinkedList<String>();
+        OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, importErrors, ctx.getContainer(), true);
+
+        for (String error : importErrors)
+            ctx.getLogger().error(error);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException

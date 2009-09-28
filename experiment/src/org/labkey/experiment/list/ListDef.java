@@ -182,4 +182,10 @@ public class ListDef extends Entity implements Cloneable
             throw UnexpectedException.wrap(cnse);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return getName() + ", id: " + getRowId();
+    }
 }
