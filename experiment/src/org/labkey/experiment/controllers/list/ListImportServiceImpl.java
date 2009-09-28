@@ -55,6 +55,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
         List<String> errors;
         DataLoader<Map<String, Object>> loader = getDataLoader();
+
         try
         {
             errors = def.insertListItems(getUser(), loader);
@@ -67,6 +68,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         {
             loader.close();
         }
+
         if (errors.isEmpty())
         {
             deleteImportFile();

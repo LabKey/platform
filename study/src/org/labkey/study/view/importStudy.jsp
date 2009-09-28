@@ -22,7 +22,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
-    boolean reload = (Boolean)HttpView.currentModel();
+    boolean reload = ((Boolean) HttpView.currentModel()).booleanValue();
 %>
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>

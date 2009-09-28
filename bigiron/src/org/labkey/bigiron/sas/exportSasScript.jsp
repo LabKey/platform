@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %><%@ page import="org.labkey.bigiron.sas.ExportSasScriptModel" %><%
+%><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %><%@ page import="org.labkey.bigiron.sas.ExportSasScriptModel" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
+<%
     JspView<ExportSasScriptModel> me = (JspView<ExportSasScriptModel>) HttpView.currentView();
     ExportSasScriptModel model = me.getModelBean();
     me.getViewContext().getResponse().setContentType("text/plain");

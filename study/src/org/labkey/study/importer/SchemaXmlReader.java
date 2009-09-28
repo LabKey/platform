@@ -29,10 +29,7 @@ import org.labkey.study.model.StudyImpl;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: adam
@@ -43,7 +40,7 @@ public class SchemaXmlReader implements SchemaReader
 {
     private static final String NAME_KEY = "PlateName";
 
-    private final List<Map<String, Object>> _importMaps;
+    private final List<Map<String, Object>> _importMaps = new LinkedList<Map<String, Object>>();
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
 
@@ -63,7 +60,6 @@ public class SchemaXmlReader implements SchemaReader
         TablesDocument.Tables tablesXml = tablesDoc.getTables();
 
         _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>(tablesXml.getTableArray().length);
-        _importMaps = new ArrayList<Map<String, Object>>();
 
         for (TableType tableXml : tablesXml.getTableArray())
         {

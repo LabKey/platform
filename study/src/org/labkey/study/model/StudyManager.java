@@ -2501,7 +2501,7 @@ public class StudyManager
                 }
             };
 
-            PropertyDescriptor[] pds = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
+            PropertyDescriptor[] pds = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true);
 
             if (!importErrors.isEmpty())
             {

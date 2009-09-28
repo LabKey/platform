@@ -20,16 +20,22 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.*;
+import org.labkey.api.study.ExternalStudyWriter;
+import org.labkey.api.study.ExternalStudyWriterFactory;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -74,11 +80,16 @@ public class ListWriter implements ExternalStudyWriter
                 xmlWriter.writeTable(tableXml);
 
                 // Write data
-                ResultSet rs = QueryService.get().select(tinfo, getColumnsToExport(tinfo, false), null, null);
-                TSVGridWriter tsvWriter = new TSVGridWriter(rs);
-                tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
-                PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
-                tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                Collection<ColumnInfo> columns = getColumnsToExport(tinfo, false);
+
+                if (!columns.isEmpty())
+                {
+                    ResultSet rs = QueryService.get().select(tinfo, columns, null, null);
+                    TSVGridWriter tsvWriter = new TSVGridWriter(rs);
+                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
+                    PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
+                    tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                }
             }
 
             listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
@@ -99,11 +110,22 @@ public class ListWriter implements ExternalStudyWriter
     private static class ListTableInfoWriter extends TableInfoWriter
     {
         private final ListDefinition _def;
+        private final Map<String, DomainProperty> _properties = new HashMap<String, DomainProperty>();
 
         protected ListTableInfoWriter(TableInfo ti, ListDefinition def, Collection<ColumnInfo> columns)
         {
             super(ti, columns, null);
             _def = def;
+
+            for (DomainProperty prop : _def.getDomain().getProperties())
+                _properties.put(prop.getName(), prop);
+        }
+
+        @Override
+        public void writeTable(TableType tableXml)
+        {
+            super.writeTable(tableXml);
+            tableXml.setPkColumnName(_def.getKeyName());
         }
 
         @Override
@@ -111,12 +133,21 @@ public class ListWriter implements ExternalStudyWriter
         {
             super.writeColumn(column, columnXml);
 
-            if (column.getName().equals(_def.getKeyName()))
+            String columnName = column.getName();
+
+            if (columnName.equals(_def.getKeyName()))
             {
                 columnXml.setIsKeyField(true);
 
                 if (column.isAutoIncrement())
                     columnXml.setIsAutoInc(true);
+            }
+            else
+            {
+                PropertyType propType = _properties.get(columnName).getPropertyDescriptor().getPropertyType();
+
+                if (propType == PropertyType.ATTACHMENT)
+                    columnXml.setDatatype(propType.getXmlName());
             }
         }
     }
