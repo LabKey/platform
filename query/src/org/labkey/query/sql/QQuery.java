@@ -17,6 +17,8 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.Table;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.QueryParseException;
 
 
 public class QQuery extends QExpr
@@ -105,6 +107,14 @@ public class QQuery extends QExpr
         if (_select == null)
         {
             throw new IllegalStateException("Fields should have been resolved");
+        }
+        SQLFragment f = _select.getSql();
+        if (null == f)
+        {
+
+            String src = "";
+            try {src=getSourceText();}catch(Exception x){}
+            throw new QueryParseException("Unexpected error parsing subselect: " + src, null, getLine(), getColumn());
         }
         builder.append("(");
         builder.append(_select.getSql());
