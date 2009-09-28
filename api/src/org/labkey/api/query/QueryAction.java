@@ -33,6 +33,7 @@ public enum QueryAction
     exportScript,
     printRows,
     deleteQueryRows,
+    detailsQueryRow,
     insertQueryRow,
     updateQueryRow,
     chooseColumns,

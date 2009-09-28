@@ -495,7 +495,7 @@ public class SchemaTableInfo implements TableInfo
         }
         if (xmlTable.getInsertUrl() != null)
         {
-            _gridURL = DetailsURL.fromString(xmlTable.getInsertUrl());
+            _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl());
         }
         if (xmlTable.getUpdateUrl() != null)
         {
@@ -684,7 +684,7 @@ public class SchemaTableInfo implements TableInfo
         if (_detailsURL != null)
         {
             if (_detailsURL.validateColumns(columns))
-            return _updateURL.copy(container);
+                return _detailsURL.copy(container);
         }
         return null;
     }

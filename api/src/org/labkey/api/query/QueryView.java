@@ -52,7 +52,7 @@ public class QueryView extends WebPartView<Object>
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
     private boolean _showDetailsColumn = true;
-    private boolean _showUpdateColumn = false;
+    private boolean _showUpdateColumn = true;
 
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<String, ExportScriptFactory>();
 
@@ -298,6 +298,7 @@ public class QueryView extends WebPartView<Object>
 
         switch (action)
         {
+            case detailsQueryRow:
             case insertQueryRow:
             case updateQueryRow:
             case deleteQueryRows:
@@ -335,6 +336,7 @@ public class QueryView extends WebPartView<Object>
                 if (getSettings().getViewName() != null)
                     ret.addParameter(QueryParam.viewName.toString(), getSettings().getViewName());
                 break;
+            case detailsQueryRow:
             case insertQueryRow:
             case updateQueryRow:
             case deleteQueryRows:
@@ -1441,7 +1443,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_showUpdateColumn && table.hasPermission(getUser(), ACL.PERM_UPDATE) && !isPrintView() && !isExportView())
+        if (_showUpdateColumn && canUpdate() && !isPrintView() && !isExportView())
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
             if (urlUpdate != null)
