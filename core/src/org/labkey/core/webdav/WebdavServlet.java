@@ -52,11 +52,11 @@ public class WebdavServlet extends HttpServlet
     {
         String fullPath = (null==request.getServletPath()?"":request.getServletPath()) + (null==request.getPathInfo()?"":request.getPathInfo());
 
+        URLHelper helper = new URLHelper(request);
+
         // Store the original URL in case we need to redirect for authentication
-        URLHelper helper = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL); 
-        if (helper == null)
+        if (null == request.getAttribute(ViewServlet.ORIGINAL_URL))
         {
-            helper = new URLHelper(request);
             request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
         }
 
