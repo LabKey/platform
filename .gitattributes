@@ -1176,6 +1176,7 @@ api/webapp/ext-2.2/ext-all-debug.js -text
 api/webapp/ext-2.2/ext-all.js -text
 api/webapp/ext-2.2/ext-core-debug.js -text
 api/webapp/ext-2.2/ext-core.js -text
+api/webapp/ext-2.2/ext-patches.js -text
 api/webapp/ext-2.2/floss-exception.html -text
 api/webapp/ext-2.2/license.txt -text
 api/webapp/ext-2.2/resources/css/README.txt -text
@@ -1190,6 +1191,7 @@ api/webapp/ext-2.2/resources/css/debug.css -text
 api/webapp/ext-2.2/resources/css/dialog.css -text
 api/webapp/ext-2.2/resources/css/editor.css -text
 api/webapp/ext-2.2/resources/css/ext-all.css -text
+api/webapp/ext-2.2/resources/css/ext-patches.css -text
 api/webapp/ext-2.2/resources/css/form.css -text
 api/webapp/ext-2.2/resources/css/grid.css -text
 api/webapp/ext-2.2/resources/css/layout.css -text

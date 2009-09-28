@@ -158,6 +158,7 @@ LABKEY.requiresExtJs = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
+    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css');
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
     if (LABKEY.devMode && false)
     {
@@ -167,6 +168,7 @@ LABKEY.requiresExtJs = function(immediate)
     {
         LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
     }
+    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
 };
 
 LABKEY.requiresClientAPI = function(immediate)
