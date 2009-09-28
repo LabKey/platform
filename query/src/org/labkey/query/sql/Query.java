@@ -420,6 +420,7 @@ public class Query
 
             QueryRelation ret = query._queryRoot;
             ret.setQuery(this);
+            this.getParseErrors().addAll(query.getParseErrors());
 
             if (query.getTablesDocument() != null && query.getTablesDocument().getTables().getTableArray().length > 0)
             {

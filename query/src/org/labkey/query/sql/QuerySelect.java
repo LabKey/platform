@@ -88,7 +88,7 @@ public class QuerySelect extends QueryRelation
     @Override
     void setQuery(Query query)
     {
-        assert getParseErrors().size() == 0;
+//        assert getParseErrors().size() == 0;
         super.setQuery(query);
         for (QueryRelation r : _tables.values())
             r.setQuery(query);
