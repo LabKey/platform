@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.file;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.module.Module;
 
 import java.io.File;
 
@@ -28,9 +29,9 @@ abstract public class AbstractFileAnalysisProvider<P extends AbstractFileAnalysi
         T extends TaskPipeline>
     extends PipelineProvider
 {
-    public AbstractFileAnalysisProvider(String name)
+    public AbstractFileAnalysisProvider(String name, Module owningModule)
     {
-        super(name);
+        super(name, owningModule);
     }
 
     abstract public P getProtocolFactory(T pipeline);

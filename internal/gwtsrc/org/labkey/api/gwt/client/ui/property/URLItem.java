@@ -52,7 +52,7 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
     {
         if (_textBox.isEnabled())
         {
-            boolean changed = !nullSafeEquals(pd.getDescription(), trimValue(_textBox.getText()));
+            boolean changed = !nullSafeEquals(pd.getURL(), trimValue(_textBox.getText()));
             pd.setURL(trimValue(_textBox.getText()));
             return changed;
         }

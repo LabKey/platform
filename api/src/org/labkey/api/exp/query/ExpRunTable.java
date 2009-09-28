@@ -73,6 +73,4 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
      * Returns a column which displays the number of data inputs of the specified role.
      */
     ColumnInfo addDataCountColumn(String alias, String roleName);
-
-    public void setDescription(String description);
 }

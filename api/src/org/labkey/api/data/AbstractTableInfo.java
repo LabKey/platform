@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
@@ -489,6 +490,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         if (xbColumn.isSetIsKeyField())
         {
             column.setKeyField(xbColumn.getIsKeyField());
+        }
+        if (xbColumn.isSetUrl())
+        {
+            column.setURL(StringExpressionFactory.createURL(xbColumn.getUrl()));
         }
     }
 

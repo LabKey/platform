@@ -22,6 +22,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
+import org.labkey.api.module.Module;
 import org.springframework.web.servlet.mvc.Controller;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -558,10 +559,12 @@ abstract public class PipelineProvider
     }
 
     protected String _name;
+    private final Module _owningModule;
 
-    public PipelineProvider(String name)
+    public PipelineProvider(String name, Module owningModule)
     {
         _name = name;
+        _owningModule = owningModule;
     }
 
     /**
@@ -624,6 +627,11 @@ abstract public class PipelineProvider
      */
     public void preCompleteStatusFile(PipelineStatusFile sf) throws StatusUpdateException
     {
+    }
+
+    public Module getOwningModule()
+    {
+        return _owningModule;
     }
 
     /**

@@ -337,6 +337,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getDefaultValue() != null ? !getDefaultValue().equals(that.getDefaultValue()) : that.getDefaultValue() != null) return false;
         if (getDefaultDisplayValue() != null ? !getDefaultDisplayValue().equals(that.getDefaultDisplayValue()) : that.getDefaultDisplayValue() != null) return false;
         if (getImportAliases() != null ? !getImportAliases().equals(that.getImportAliases()) : that.getImportAliases() != null) return false;
+        if (getURL() != null ? !getURL().equals(that.getURL()) : that.getURL() != null) return false;
 
         if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
         GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
