@@ -167,6 +167,20 @@ public class DataSetTable extends FilteredTable
         setDefaultVisibleColumns(defaultVisibleCols);
     }
 
+
+    @Override
+    public boolean hasContainerContext()
+    {
+        return null != _dsd && null != _dsd.getContainer();
+    }
+
+    @Override
+    public Container getContainer(Map m)
+    {
+        return _dsd.getContainer();
+    }
+
+
     private class QCStateDisplayColumn extends DataColumn
     {
         private Map<Integer, QCState> _qcStateCache;

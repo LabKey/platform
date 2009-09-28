@@ -29,10 +29,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.list.AttachmentDisplayColumn;
 import org.labkey.experiment.controllers.list.ListController;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.Collections;
+import java.util.*;
 
 public class ListTable extends FilteredTable
 {
@@ -137,6 +134,20 @@ public class ListTable extends FilteredTable
         DetailsURL detailsURL = new DetailsURL(_list.urlDetails(null), Collections.singletonMap("pk", _list.getKeyName()));
         setDetailsURL(detailsURL);
     }
+
+
+    @Override
+    public boolean hasContainerContext()
+    {
+        return null != _list && null != _list.getContainer();
+    }
+
+    @Override
+    public Container getContainer(Map m)
+    {
+        return _list.getContainer();
+    }
+
 
     @Override
     public StringExpression getDetailsURL(Set<String> columns, Container container)
