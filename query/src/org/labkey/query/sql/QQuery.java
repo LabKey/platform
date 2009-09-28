@@ -111,13 +111,15 @@ public class QQuery extends QExpr
         SQLFragment f = _select.getSql();
         if (null == f)
         {
-
-            String src = "";
-            try {src=getSourceText();}catch(Exception x){}
-            throw new QueryParseException("Unexpected error parsing subselect: " + src, null, getLine(), getColumn());
+            if (null != _select && _select.getParseErrors().size() > 0)
+                return;
+            String message = "Unexpected error parsing subselect: " + getSourceText();
+            _select.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
+            builder.append("#ERROR:" + message + "#");
+            return;
         }
         builder.append("(");
-        builder.append(_select.getSql());
+        builder.append(f);
         builder.append(")");
     }
 }

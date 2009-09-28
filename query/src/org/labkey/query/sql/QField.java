@@ -68,6 +68,15 @@ public class QField extends QInternalExpr
     public void appendSql(SqlBuilder builder)
     {
         QueryRelation.RelationColumn col = getRelationColumn();
+        if (null == col)
+        {
+            if (_table.getParseErrors().size() > 0)
+                return;
+            String message = "Unexpected error parsing field:" + getSourceText();
+            _table.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
+            builder.append("#ERROR: " + message + "#");
+            return;
+        }
         builder.append(col.getValueSql(_table.getAlias()));
     }
 

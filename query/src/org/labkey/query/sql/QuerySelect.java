@@ -36,7 +36,7 @@ public class QuerySelect extends QueryRelation
     private QOrder _orderBy;
     private QWhere _where;
     private QWhere _having;
-    private QQuery _root;
+    QQuery _root;
     private QLimit _limit;
     private QDistinct _distinct;
     private Map<FieldKey, QTable> _from;
@@ -622,12 +622,6 @@ loop:
         if (error != null)
             getParseErrors().add(error);
         return ret;
-    }
-
-
-    public List<QueryParseException> getParseErrors()
-    {
-        return _query.getParseErrors();
     }
 
 
