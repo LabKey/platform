@@ -31,6 +31,7 @@
       <ns:column columnName="Created"/>
       <ns:column columnName="Container"/>
     </ns:columns>
+    <ns:description>Contains one row per data (typically a file with raw data or analysis results) object in this folder.</ns:description>
   </ns:table>
   <ns:table tableName="DataInput" tableDbType="TABLE">
     <ns:columns>
@@ -79,6 +80,7 @@
       <ns:column columnName="Hidden"/>
       <ns:column columnName="BatchProtocolId"/>
     </ns:columns>
+    <ns:description>Contains one row per run group, which consist of a collection of experiment runs.</ns:description>
   </ns:table>
   <ns:table tableName="ExperimentRun" tableDbType="TABLE">
       <ns:titleColumn>Name</ns:titleColumn>
@@ -115,6 +117,7 @@
       <ns:column columnName="Container"/>
       <ns:column columnName="FilePathRoot"/>
     </ns:columns>
+    <ns:description>Contains a row per experiment run in this folder.</ns:description>
   </ns:table>
   <ns:table tableName="List" tableDbType="TABLE">
       <ns:columns>
@@ -166,6 +169,7 @@
       <ns:column columnName="Created"/>
       <ns:column columnName="Container"/>
     </ns:columns>
+    <ns:description>Contains a row per material or sample described in this folder.</ns:description>
   </ns:table>
   <ns:table tableName="MaterialInput" tableDbType="TABLE">
     <ns:columns>
@@ -207,6 +211,7 @@
       </ns:column>
       <ns:column columnName="Container"/>
     </ns:columns>
+    <ns:description>Contains a row per sample set, a collection of samples.</ns:description>
   </ns:table>
     <ns:table tableName="MaterialSourceWithProject" tableDbType="VIEW">
         <ns:pkColumnName>RowId</ns:pkColumnName>
@@ -243,6 +248,7 @@
             <ns:isUserEditable>false</ns:isUserEditable>
         </ns:column>
       </ns:columns>
+      <ns:description>Contains a row per sample set, a collection of samples.</ns:description>
     </ns:table>
   <ns:table tableName="PropertyDescriptor" tableDbType="TABLE">
     <ns:columns>
@@ -341,6 +347,7 @@
       </ns:column>
       <ns:column columnName="Container"/>
     </ns:columns>
+    <ns:description>Contains a row per experiment protocol, a series of steps that may be performed when doing an experiment run.</ns:description>
   </ns:table>
   <ns:table tableName="ProtocolAction" tableDbType="TABLE">
     <ns:columns>
@@ -368,6 +375,7 @@
       <ns:column columnName="RunId"/>
       <ns:column columnName="ActionSequence"/>
     </ns:columns>
+    <ns:description>Contains a row per step taken when performing an experiment run.</ns:description>
   </ns:table>
   <ns:table tableName="ProtocolApplicationParameter" tableDbType="TABLE">
     <ns:columns>

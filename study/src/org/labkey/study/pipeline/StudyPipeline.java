@@ -26,6 +26,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
+import org.labkey.api.module.Module;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
@@ -44,9 +45,9 @@ public class StudyPipeline extends PipelineProvider
 {
     private static final Logger _log = Logger.getLogger(StudyPipeline.class);
 
-    public StudyPipeline()
+    public StudyPipeline(Module owningModule)
     {
-        super("Study");
+        super("Study", owningModule);
     }
 
 

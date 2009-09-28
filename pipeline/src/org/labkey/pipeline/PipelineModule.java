@@ -114,7 +114,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         initWebApplicationContext();
 
         PipelineService service = PipelineService.get();
-        service.registerPipelineProvider(new FileAnalysisPipelineProvider());
+        service.registerPipelineProvider(new FileAnalysisPipelineProvider(this));
 
         ContainerManager.addContainerListener(this);
 

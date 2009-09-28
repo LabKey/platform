@@ -28,6 +28,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.module.Module;
 
 import java.io.File;
 import java.util.List;
@@ -39,9 +40,9 @@ public class FileContentPipelineProvider extends PipelineProvider
 {
     private static Logger _log = Logger.getLogger(FileContentPipelineProvider.class);
 
-    FileContentPipelineProvider()
+    FileContentPipelineProvider(Module owningModule)
     {
-        super("File Content");
+        super("File Content", owningModule);
     }
 
     public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)

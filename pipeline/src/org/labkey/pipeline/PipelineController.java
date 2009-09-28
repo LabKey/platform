@@ -34,6 +34,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.module.Module;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
@@ -50,10 +51,7 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PipelineController extends SpringActionController
 {
@@ -387,11 +385,15 @@ public class PipelineController extends SpringActionController
 
                 if (root != null)
                 {
+                    Set<Module> activeModules = c.getActiveModules();
                     for (PipelineProvider provider : service.getPipelineProviders())
                     {
-                        HttpView part = provider.getSetupWebPart(c);
-                        if (part != null)
-                            leftBox.addView(part);
+                        if (activeModules.contains(provider.getOwningModule()))
+                        {
+                            HttpView part = provider.getSetupWebPart(c);
+                            if (part != null)
+                                leftBox.addView(part);
+                        }
                     }
                 }
             }

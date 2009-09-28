@@ -204,6 +204,9 @@ public class AssaySchemaImpl extends AssaySchema
         propsCol.setFk(new AssayPropertyForeignKey(pdsArray));
 
         result.setDefaultVisibleColumns(defaultCols);
+
+        result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
+
         return result;
     }
 
@@ -255,6 +258,8 @@ public class AssaySchemaImpl extends AssaySchema
         }
 
         runTable.setDefaultVisibleColumns(visibleColumns);
+
+        runTable.setDescription("Contains a row per " + protocol.getName() + " run.");
 
         return runTable;
     }

@@ -77,8 +77,6 @@ public class ExperimentModule extends SpringModule
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
-    private static final Logger _log = Logger.getLogger(ExperimentModule.class);
-
     public String getName()
     {
         return ExperimentService.MODULE_NAME;
@@ -207,7 +205,7 @@ public class ExperimentModule extends SpringModule
 
     public void startup(ModuleContext context)
     {
-        PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider());
+        PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
         ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
         {
             public Set<ExperimentRunType> getExperimentRunTypes(Container container)

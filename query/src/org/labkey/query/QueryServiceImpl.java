@@ -695,7 +695,14 @@ public class QueryServiceImpl extends QueryService
         SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT");
         String strComma = "\n";
-        String tableAlias = AliasManager.makeLegalName(table.getName(), table.getSchema().getSqlDialect());
+        String tableName = table.getName();
+        if (tableName == null)
+        {
+            // This shouldn't happen, but if it's null we'll blow up later without enough context to give a good error
+            // message
+            throw new NullPointerException("Null table name from " + table);
+        }
+        String tableAlias = AliasManager.makeLegalName(tableName, table.getSchema().getSqlDialect());
 
 		for (ColumnInfo column : allColumns)
 		{

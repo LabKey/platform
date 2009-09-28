@@ -31,28 +31,18 @@
     boolean hasError = !bean.getErrors().isEmpty();
     List<SpecimenArchive.EntryDescription> entries = bean.getArchive().getEntryDescriptions();
 %>
-Specimen archive <b><%= bean.getArchive().getDefinitionFile().getName() %></b> contains the following files:<br><br>
+Specimen archive <b><%= h(bean.getArchive().getDefinitionFile().getName()) %></b> contains the following files:<br><br>
 <table class="labkey-data-region labkey-show-borders">
-    <colgroup><col><col></colgroup>
+    <tr><th>File</th><th>Size</th><th>Modified</th></tr>
     <%
         int row = 0;
         for (SpecimenArchive.EntryDescription entry : entries)
         {
     %>
         <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
-            <td class="labkey-row-header" align="left"><%= h(entry.getName()) %></td>
-            <td>
-                <table>
-                    <tr>
-                        <th align="right" style="border: 0px">Size</th>
-                        <td><%= entry.getSize() / 1000 %> kb</td>
-                    </tr>
-                    <tr>
-                        <th align="right" style="border: 0px">Modified</th>
-                        <td><%= h(formatDateTime(entry.getDate())) %></td>
-                    </tr>
-                </table>
-            </td>
+            <td><%= h(entry.getName()) %></td>
+            <td align="right"><%= entry.getSize() == 0 ? "0" : Math.max(1, entry.getSize() / 1000) %> kb</td>
+            <td><%= h(formatDateTime(entry.getDate())) %></td>
         </tr>
     <%
         }

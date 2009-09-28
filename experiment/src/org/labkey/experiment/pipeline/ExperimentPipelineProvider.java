@@ -19,9 +19,8 @@ package org.labkey.experiment.pipeline;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
@@ -60,9 +59,9 @@ public class ExperimentPipelineProvider extends PipelineProvider
         return new File(new File(systemDir, DIR_NAME_EXPERIMENT), name);
     }
 
-    public ExperimentPipelineProvider()
+    public ExperimentPipelineProvider(Module owningModule)
     {
-        super(NAME);
+        super(NAME, owningModule);
     }
 
     public void initSystemDirectory(File rootDir, File systemDir)
@@ -76,12 +75,6 @@ public class ExperimentPipelineProvider extends PipelineProvider
         File f = new File(systemDir, name);
         if (f.exists())
             f.renameTo(getExperimentDirectory(systemDir, name));
-    }
-
-    // returns the web part appearing on the main page.
-    public HttpView getSetupWebPart(Container container)
-    {
-        return null;
     }
 
     public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)

@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.security.ACL;
+import org.labkey.api.module.Module;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 
@@ -34,9 +35,9 @@ import java.util.List;
 */
 public class StudyImportProvider extends PipelineProvider
 {
-    public StudyImportProvider()
+    public StudyImportProvider(Module owningModule)
     {
-        super("StudyImport");
+        super("StudyImport", owningModule);
     }
 
     @Override

@@ -114,7 +114,7 @@ public class QueryModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
-        PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider());
+        PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
         ReportsController.registerAdminConsoleLinks();
 
         ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabkeyScriptEngineManager());

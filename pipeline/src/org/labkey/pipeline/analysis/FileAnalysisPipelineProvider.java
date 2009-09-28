@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.module.Module;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -40,9 +41,9 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
 {
     public static String name = "File Analysis";
 
-    public FileAnalysisPipelineProvider()
+    public FileAnalysisPipelineProvider(Module owningModule)
     {
-        super(name);
+        super(name, owningModule);
     }
 
     public FileAnalysisProtocolFactory getProtocolFactory(FileAnalysisTaskPipeline pipeline)

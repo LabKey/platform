@@ -61,6 +61,11 @@ public class DatasetFileReader
         _task = task;
     }
 
+    public File getDefinitionFile()
+    {
+        return _definitionFile;
+    }
+
     public List<DatasetImportRunnable> getRunnables()
     {
         if (null == _runnables)

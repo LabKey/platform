@@ -18,6 +18,7 @@ package org.labkey.query.reports;
 
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.module.Module;
 
 import java.io.File;
 
@@ -30,9 +31,9 @@ public class ReportsPipelineProvider extends PipelineProvider
 {
     static String NAME = "reports";
 
-    public ReportsPipelineProvider()
+    public ReportsPipelineProvider(Module owningModule)
     {
-        super(NAME);
+        super(NAME, owningModule);
     }
 
     public void preDeleteStatusFile(PipelineStatusFile sf) throws StatusUpdateException

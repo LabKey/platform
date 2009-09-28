@@ -82,8 +82,6 @@ import java.util.*;
 
 public class StudyModule extends SpringModule
 {
-    private static final Logger _log = Logger.getLogger(DefaultModule.class);
-
     public static final String MODULE_NAME = "Study";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
@@ -198,8 +196,8 @@ public class StudyModule extends SpringModule
         RoleManager.registerRole(new SpecimenRequesterRole());
         RoleManager.registerRole(new AssayDesignerRole());
 
-        PipelineService.get().registerPipelineProvider(new StudyPipeline());
-        PipelineService.get().registerPipelineProvider(new StudyImportProvider());
+        PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
+        PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
         ContainerManager.addContainerListener(new StudyContainerListener());
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
