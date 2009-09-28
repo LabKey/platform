@@ -24,6 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.collections.BoundMap;
@@ -48,7 +49,7 @@ import java.util.*;
  *
  * UNDONE: kill BoundMap functionality of ViewContext
  */
-public class ViewContext extends BoundMap implements MessageSource
+public class ViewContext extends BoundMap implements MessageSource, ContainerContext
 {
     private WebApplicationContext _webApplicationContext;
     private HttpServletRequest _request;
@@ -281,6 +282,13 @@ public class ViewContext extends BoundMap implements MessageSource
             _c = c;
         }
         return _c;
+    }
+
+
+    /** ContainerContext */
+    public Container getContainer(Map context)
+    {
+        return getContainer();
     }
 
 

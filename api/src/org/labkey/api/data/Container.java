@@ -29,6 +29,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.*;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.reports.ReportService;
@@ -49,7 +50,7 @@ import java.util.*;
  *
  * CONSIDER: extend org.labkey.api.data.Entity
  */
-public class Container implements Serializable, Comparable<Container>, SecurableResource
+public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext
 {
     static Logger _log = Logger.getLogger(Container.class);
 
@@ -88,6 +89,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
+    }
+
+
+    public Container getContainer(Map context)
+    {
+        return this;
     }
 
 

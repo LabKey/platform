@@ -94,10 +94,10 @@ abstract public class UserSchema extends AbstractSchema
         TableInfo table = createTable(name);
         if (table != null)
         {
-            if (!includeExtraMetadata)
-                return table;
-            else
-                return QueryService.get().overlayMetadata(table, name, this);
+            if (includeExtraMetadata)
+                table =  QueryService.get().overlayMetadata(table, name, this);
+            afterConstruct(table);
+            return table;
         }
 
         QueryDefinition def = QueryService.get().getQueryDef(getContainer(), getSchemaName(), name);
@@ -110,7 +110,6 @@ abstract public class UserSchema extends AbstractSchema
 
         return def;
     }
-
 
     public final TableInfo getTable(String name)
     {

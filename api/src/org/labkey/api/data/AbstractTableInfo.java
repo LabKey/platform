@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -32,7 +33,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-abstract public class AbstractTableInfo implements TableInfo
+abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 {
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
@@ -67,10 +68,12 @@ abstract public class AbstractTableInfo implements TableInfo
         return Collections.unmodifiableList(ret);
     }
 
+
     public String getRowTitle(Object pk) throws SQLException
     {
         return null;
     }
+
 
     public AbstractTableInfo(DbSchema schema)
     {
@@ -78,6 +81,20 @@ abstract public class AbstractTableInfo implements TableInfo
         _columnMap = constructColumnMap();
         MemTracker.put(this);
     }
+
+
+    public void afterConstruct()
+    {
+        if (hasContainerContext())
+         {
+             for (ColumnInfo c : getColumns())
+             {
+                 if (c.getURL() instanceof DetailsURL)
+                     ((DetailsURL)c.getURL()).setContainer(this);
+             }
+         }
+     }
+
 
     protected Map<String, ColumnInfo> constructColumnMap()
     {
@@ -603,6 +620,22 @@ abstract public class AbstractTableInfo implements TableInfo
         // UNDONE: consider allowing all query tables to be updated via update service
         //if (getTableType() == TableInfo.TABLE_TYPE_TABLE)
         //    return new DefaultQueryUpdateService(this);
+        return null;
+    }
+
+
+    /**
+     * return true if all rows from this table come from a single container.
+     * if true, getContainer(Map) must return non-null value
+     * @return
+     */
+    public boolean hasContainerContext()
+    {
+        return false;
+    }
+
+    public Container getContainer(Map context)
+    {
         return null;
     }
 }

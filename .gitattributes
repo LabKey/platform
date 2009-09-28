@@ -789,6 +789,7 @@ api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
 api/src/org/labkey/api/util/CloseableIterator.java -text
 api/src/org/labkey/api/util/ConfigurationException.java -text
+api/src/org/labkey/api/util/ContainerContext.java -text
 api/src/org/labkey/api/util/ContainerUtil.java -text
 api/src/org/labkey/api/util/ContextListener.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text

@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
@@ -36,7 +37,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     public static Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
     public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class?.*");
 
-    Container _container;
+    ContainerContext _container;
 
     // constructor parameters
     ActionURL _url;
@@ -184,14 +185,14 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     public String eval(Map context)
     {
         String query = super.eval(context);
-        Container c = getContainer();
+        Container c = getContainer(context);
         if (null != c)
-            _parsedUrl.setContainer(getContainer());
+            _parsedUrl.setContainer(c);
         return _parsedUrl.getPath() + "?" + query;
     }
 
 
-    public DetailsURL copy(Container c)
+    public DetailsURL copy(ContainerContext c)
     {
         DetailsURL ret = (DetailsURL)copy();
         if (null != c)
@@ -225,17 +226,17 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     }
 
 
-    Container getContainer()
+    Container getContainer(Map context)
     {
         if (null != _container)
-            return _container;
+            return _container.getContainer(context);
         if (null != _context)
             return _context.getContainer();
         return null;
     }
 
 
-    void setContainer(Container c)
+    public void setContainer(ContainerContext c)
     {
         _container = c;
     }

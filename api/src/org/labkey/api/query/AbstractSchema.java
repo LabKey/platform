@@ -16,9 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 
@@ -111,5 +109,14 @@ abstract public class AbstractSchema implements QuerySchema
         return _dbSchema.getScope().isTransactionActive();
     }
 
+
+    protected void afterConstruct(TableInfo info)
+    {
+        if (info instanceof AbstractTableInfo)
+        {
+            AbstractTableInfo t = ((AbstractTableInfo)info);
+            t.afterConstruct();
+        }
+    }
 
 }
