@@ -27,9 +27,7 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TSVGridWriter extends TSVWriter
 {
@@ -71,6 +69,12 @@ public class TSVGridWriter extends TSVWriter
     }
 
 
+    public TSVGridWriter(ResultSet rs, Collection<ColumnInfo> columns)
+    {
+        init(rs, columns);
+    }
+
+
     protected TSVGridWriter(List<DisplayColumn> displayColumns)
     {
         init(null, null, displayColumns);
@@ -92,21 +96,21 @@ public class TSVGridWriter extends TSVWriter
     private void init(ResultSet rs) throws SQLException
     {
         ResultSetMetaData md = rs.getMetaData();
-        ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
+        Collection<ColumnInfo> cols = new LinkedList<ColumnInfo>();
 
-        for (int i = 0; i < cols.length; i++)
+        for (int i = 0; i < md.getColumnCount(); i++)
         {
             int sqlColumn = i + 1;
-            cols[i] = new ColumnInfo(md, sqlColumn);
+            cols.add(new ColumnInfo(md, sqlColumn));
         }
 
         init(rs, cols);
     }
 
 
-    private void init(ResultSet rs, ColumnInfo[] cols)
+    private void init(ResultSet rs, Collection<ColumnInfo> cols)
     {
-        List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>(cols.length);
+        List<DisplayColumn> dataColumns = new LinkedList<DisplayColumn>();
 
         for (ColumnInfo col : cols)
             dataColumns.add(new DataColumn(col));

@@ -236,7 +236,7 @@ public class FieldKey implements Comparable
 
     public String toString()
     {
-        List<String> encodedParts = new ArrayList();
+        List<String> encodedParts = new ArrayList<String>();
         for (String part : getParts())
         {
             String encodedPart = encodePart(part);

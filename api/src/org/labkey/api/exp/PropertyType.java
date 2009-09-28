@@ -205,27 +205,31 @@ public enum PropertyType
     }
 
 
-    public static PropertyType getFromURI(String concept, String datatype, PropertyType def)
+    static
     {
-        if (null == uriToProperty)
+        Map<String, PropertyType> m = new HashMap<String, PropertyType>();
+
+        for (PropertyType t : values())
         {
-            Map<String, PropertyType> m = new HashMap<String, PropertyType>();
-            for (PropertyType t : values())
+            String uri = t.getTypeUri();
+            m.put(uri, t);
+            m.put(t.getXmlName(), t);
+
+            if (uri.startsWith("http://www.w3.org/2001/XMLSchema#") || uri.startsWith("http://www.labkey.org/exp/xml#"))
             {
-                String uri = t.getTypeUri();
-                m.put(uri, t);
-                m.put(t.getXmlName(), t);
-                if (uri.startsWith("http://www.w3.org/2001/XMLSchema#"))
-                {
-                    String xsdName = uri.substring("http://www.w3.org/2001/XMLSchema#".length());
-                    m.put("xsd:" + xsdName, t);
-                    m.put(xsdName, t);
-                }
+                String xsdName = uri.substring(uri.indexOf('#') + 1);
+                m.put("xsd:" + xsdName, t);
+                m.put(xsdName, t);
             }
-            uriToProperty = m;
         }
 
+        uriToProperty = m;
+    }
+
+    public static PropertyType getFromURI(String concept, String datatype, PropertyType def)
+    {
         PropertyType p = uriToProperty.get(concept);
+
         if (null == p)
         {
             p = uriToProperty.get(datatype);
