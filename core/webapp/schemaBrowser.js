@@ -760,7 +760,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 scope: this,
                 iconCls:'iconReload',
                 tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.'
-            },
+            }
         ];
 
         if (LABKEY.Security.currentUser.isAdmin)
