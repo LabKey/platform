@@ -108,7 +108,7 @@ public class CohortFilter
     {
         if (type == null)
             throw new IllegalArgumentException("Cohort filter type must not be null");
-        if (cohortId <= 0)
+        if (cohortId < 0)
             throw new IllegalArgumentException("Invalid cohort ID: " + cohortId);
         _type = type;
         _cohortId = cohortId;

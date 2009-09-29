@@ -769,7 +769,7 @@ public class StudyController extends BaseStudyController
 
         private void createCohortButton(List<ActionButton> buttonBar, CohortFilter currentCohortFilter) throws ServletException
         {
-            ActionButton cohortButton = CohortManager.createCohortButton(getViewContext(), currentCohortFilter);
+            ActionButton cohortButton = CohortManager.getInstance().createCohortButton(getViewContext(), currentCohortFilter);
             if (cohortButton != null)
                 buttonBar.add(cohortButton);
         }
@@ -2164,6 +2164,9 @@ public class StudyController extends BaseStudyController
                 {
                     StudyService.get().deleteDatasetRow(getUser(), getContainer(), datasetId, lsid);
                 }
+
+                if (safeEquals(datasetId, getStudy().getParticipantCohortDataSetId()))
+                    CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudy());
 
                 scope.commitTransaction();
                 inTransaction = false;
@@ -4849,7 +4852,7 @@ public class StudyController extends BaseStudyController
         {
             if (form.getSnapshotDatasetId() != -1)
             {
-                Study study = StudyManager.getInstance().getStudy(getContainer());
+                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
 
                 // a dataset definition was edited previously, but under a different name, need to delete the old one
                 DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotDatasetId());

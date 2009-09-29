@@ -8,6 +8,8 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -41,18 +43,33 @@ public class TypeCohortReportFactory extends TypeReportFactory
     {
         return SpringSpecimenController.TypeCohortReportAction.class;
     }
+    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    {
+        List<Pair<String, String>> inputs = super.getAdditionalFormInputHtml();
+        StringBuilder cohortTypeSelect = new StringBuilder();
+        CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
+        
+        cohortTypeSelect.append("<input type=\"hidden\" name=\"").append(CohortFilter.Params.cohortId.name()).append("\" value=\"0\">\n");
+        cohortTypeSelect.append("<select name=\"").append(CohortFilter.Params.cohortFilterType.name()).append("\">\n");
+        for (CohortFilter.Type type : CohortFilter.Type.values())
+        {
+            cohortTypeSelect.append("\t<option value=\"").append(type.name()).append("\" ");
+            cohortTypeSelect.append(type == currentType ? "SELECTED" : "").append(">");
+            cohortTypeSelect.append(PageFlowUtil.filter(type.getTitle()));
+            cohortTypeSelect.append("</option>\n");
+        }
+        cohortTypeSelect.append("</select>\n");
+        inputs.add(new Pair<String, String>("Cohort Filter Type", cohortTypeSelect.toString()));
+        return inputs;
+    }
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<CohortFilter> reportCohorts = new ArrayList<CohortFilter>();
-        if (getCohortFilter() != null)
-            reportCohorts.add(getCohortFilter());
-        else
-        {
-            for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
-                reportCohorts.add(new CohortFilter(CohortFilter.Type.DATA_COLLECTION, cohort.getRowId()));
-            reportCohorts.add(CohortFilter.UNASSIGNED);
-        }
+        CohortFilter.Type type = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
+        for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+            reportCohorts.add(new CohortFilter(type, cohort.getRowId()));
+        reportCohorts.add(CohortFilter.UNASSIGNED);
 
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
         for (CohortFilter cohortFilter : reportCohorts)

@@ -79,6 +79,15 @@ public abstract class BaseStudyController extends SpringActionController
         return page;
     }
 
+    protected static boolean safeEquals(Object a, Object b)
+    {
+        if (a == null && b == null)
+            return true;
+        if (a == null || b == null)
+            return false;
+        return a.equals(b);
+    }
+
     protected ModelAndView getTemplate(ViewContext context, final ModelAndView mv, final Controller action, PageConfig page)
     {
         if (!extprototype)

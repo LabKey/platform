@@ -37,16 +37,13 @@ public class TypeCohortReport extends SpecimenTypeVisitReport
         _cohortFilter = cohortFilter;
     }
 
-    protected SimpleFilter getViewFilter()
+    // override addCohortURLFilter to use the filter we're passed, rather than the cohort filter on the base
+    // parameters object (the base parameter filter just contains the type, since this report can render multiple
+    // reports, one for each cohort):
+    @Override
+    protected void addCohortURLFilter(ActionURL url)
     {
-        SimpleFilter filter = super.getViewFilter();
         if (_cohortFilter != null)
-        {
-            if (_cohortFilter == CohortFilter.UNASSIGNED)
-                filter.addCondition(_cohortFilter.getType().getFilterColumn().toString(), null, CompareType.ISBLANK);
-            else
-                filter.addCondition(_cohortFilter.getType().getFilterColumn().toString(), _cohortFilter.getCohortId());
-        }
-        return filter;
+            _cohortFilter.addURLParameters(url);
     }
 }

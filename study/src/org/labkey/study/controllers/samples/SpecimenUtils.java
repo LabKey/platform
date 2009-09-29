@@ -144,7 +144,7 @@ public class SpecimenUtils
 
         List<DisplayElement> buttons = new ArrayList<DisplayElement>();
 
-        ActionButton cohortButton = CohortManager.createCohortButton(getViewContext(), cohortFilter);
+        ActionButton cohortButton = CohortManager.getInstance().createCohortButton(getViewContext(), cohortFilter);
         if (cohortButton != null)
             buttons.add(cohortButton);
 

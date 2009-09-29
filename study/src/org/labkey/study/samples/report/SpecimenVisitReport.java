@@ -3,19 +3,15 @@ package org.labkey.study.samples.report;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
-import org.labkey.study.StudySchema;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.*;
 
@@ -107,7 +103,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
                     if (_nonEmptyColumns.containsKey(visit.getSequenceNumMin()))
                         visits.add(visit);
                 }
-                _nonEmptyVisits = visits.toArray(new VisitImpl[0]);
+                _nonEmptyVisits = visits.toArray(new VisitImpl[visits.size()]);
             }
             return _nonEmptyVisits;
         }
@@ -155,21 +151,10 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return suffixBuilder.toString();
     }
 
-    protected SimpleFilter getViewFilter()
+    private SimpleFilter geBaseViewFilter()
     {
         SimpleFilter fullFilter =  new SimpleFilter();
         fullFilter.addAllClauses(_filter);
-        // When querying the study.SpecimenDetail view, we use an 'IN' clause for participant id.
-        // We need to translate this to a query-based lookup for view filtering purposes:
-        CohortFilter cohortFilter = _parameters.getCohortFilter();
-        if (cohortFilter != null)
-        {
-            if (cohortFilter == CohortFilter.UNASSIGNED)
-                fullFilter.addCondition(cohortFilter.getType().getFilterColumn().toString(), null, CompareType.ISBLANK);
-            else
-                fullFilter.addCondition(cohortFilter.getType().getFilterColumn().toString(), cohortFilter.getCohortId());
-        }
-
         // This is a terrible hack to deal with the fact that the some SpecimenDetail columns have been aliased
         // in the query view.  As a result, we need to use the view's column name for filtering
         // at the database layer, and then map this column name for use in a query view filter parameter:
@@ -180,23 +165,24 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return fullFilter;
     }
 
+    protected void addCohortURLFilter(ActionURL url)
+    {
+        if (_parameters.getCohortFilter() != null)
+            _parameters.getCohortFilter().addURLParameters(url);
+    }
+
     protected String getFilterQueryString(VisitImpl visit, CELLDATA summary)
     {
-        String ret = getViewFilter().toQueryString("SpecimenDetail");
+        ActionURL url = new ActionURL();
         if (_parameters.getBaseCustomViewName() != null && _parameters.getBaseCustomViewName().length() > 0)
         {
             if (!SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(_parameters.getBaseCustomViewName()))
-                ret += "&SpecimenDetail.viewName=" + PageFlowUtil.encode(_parameters.getBaseCustomViewName());
+                url.addParameter("SpecimenDetail.viewName",  _parameters.getBaseCustomViewName());
         }
         else
-            ret += "&SpecimenDetail.ignoreFilter=1";
+            url.addParameter("SpecimenDetail.ignoreFilter", "1");
 
-        if (_parameters.getCohortFilter() != null)
-        {
-            ActionURL blankURL = new ActionURL();
-            _parameters.getCohortFilter().addURLParameters(blankURL);
-            ret += "&" + blankURL.getQueryString();
-        }
+        addCohortURLFilter(url);
 
         switch (_parameters.getStatusFilter())
         {
@@ -206,16 +192,18 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             case REQUESTED_INPROCESS:
             case NOT_REQUESTED_INPROCESS:
                 // We don't need to add any special URL parameter here: these filters are just based on columns
-                // in SpecimenDetail, so the query string should be populated correctly due to  getViewFilter().toQueryString().
+                // in SpecimenDetail, so the query string should be populated correctly due to  geBaseViewFilter().toQueryString().
                 break;
             case NOT_REQUESTED_COMPLETE:
-                ret += "&" + SpecimenQueryView.PARAMS.showNotCompleteRequestedOnly + "=true";
+                url.addParameter(SpecimenQueryView.PARAMS.showNotCompleteRequestedOnly, "true");
                 break;
             case REQUESTED_COMPLETE:
-                ret += "&" + SpecimenQueryView.PARAMS.showCompleteRequestedOnly + "=true";
+                url.addParameter(SpecimenQueryView.PARAMS.showCompleteRequestedOnly, "true");
                 break;
         }
-        return ret;
+
+        String baseParams = geBaseViewFilter().toQueryString("SpecimenDetail");
+        return baseParams + "&" + url.getQueryString();
     }
 
     public int getLabelDepth()

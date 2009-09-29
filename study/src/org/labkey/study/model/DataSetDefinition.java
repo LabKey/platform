@@ -40,6 +40,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
@@ -48,6 +50,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.DataSetsTable;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.CohortTable;
 
 import java.sql.SQLException;
 import java.sql.Types;
@@ -536,7 +539,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private synchronized TableInfo getJoinTableInfo(User user)
     {
         if (null == _tableInfoProperties)
-            _tableInfoProperties = new StudyDataTableInfo(this, user);
+        {
+            if (getStudy().getParticipantCohortDataSetId() != null &&
+                getStudy().getParticipantCohortDataSetId().intValue() == this.getDataSetId())
+            {
+                _tableInfoProperties = new CohortDatasetTableInfo(this, user);
+            }
+            else
+                _tableInfoProperties = new StudyDataTableInfo(this, user);
+        }
         return _tableInfoProperties;
     }
 
@@ -655,6 +666,28 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return null == _description ? "The study dataset " + getName() : _description;
     }
 
+    private static class AutoCompleteDisplayColumnFactory implements DisplayColumnFactory
+    {
+        private String _completionBase;
+
+        public AutoCompleteDisplayColumnFactory(Container studyContainer, SpecimenService.CompletionType type)
+        {
+            _completionBase = SpecimenService.get().getCompletionURLBase(studyContainer, type);
+        }
+
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            return new DataColumn(colInfo)
+            {
+                @Override
+                protected String getAutoCompleteURLPrefix()
+                {
+                    return _completionBase;
+                }
+            };
+        }
+    }
+
     private static class StudyDataTableInfo extends SchemaTableInfo
     {
         int _datasetId;
@@ -674,11 +707,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","sourcelsid", "created","modified");
             for (ColumnInfo col : columnsBase)
             {
-                if (!"participantid".equals(col.getColumnName()))
+                boolean ptid = "participantid".equals(col.getColumnName());
+                if (!ptid)
                     col.setUserEditable(false);
-                columns.add(newDatasetColumnInfo(this, col));
+                ColumnInfo wrapped = newDatasetColumnInfo(this, col);
+                if (ptid)
+                    wrapped.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(c, SpecimenService.CompletionType.ParticipantId));
+                columns.add(wrapped);
             }
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
+            sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(c, SpecimenService.CompletionType.VisitId));
+
             if (study.isDateBased())
             {
                 sequenceNumCol.setNullable(true);
@@ -778,6 +817,44 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         public SQLFragment getFromSQL()
         {
             return _fromSql;
+        }
+    }
+
+    /*
+    This TableInfo is used only when a dataset has been identified as the 'cohort' dataset
+    for a given study.  In this case, the specified cohort field (which must be of type 'text')
+    is displayed as an editable drop-down of available cohorts, instead of a text field.
+     */
+    private static class CohortDatasetTableInfo extends StudyDataTableInfo
+    {
+        CohortDatasetTableInfo(DataSetDefinition def, final User user)
+        {
+            super(def, user);
+            StudyImpl study = def.getStudy();
+            String cohortProperty = study.getParticipantCohortProperty();
+            ColumnInfo cohortCol = getColumn(cohortProperty);
+            if (cohortCol != null)
+            {
+                final Container container = study.getContainer();
+                // make the cohort column behave as a drop-down by specifying an FK:
+                cohortCol.setFk(new LookupForeignKey("Label")
+                {
+                    public TableInfo getLookupTableInfo()
+                    {
+                        // make the value of the FK be the label, so the correct text is stored in the DB
+                        StudyImpl study = StudyManager.getInstance().getStudy(container);
+                        return new CohortTable(new StudyQuerySchema(study, user, true))
+                        {
+                            @Override
+                            public List<ColumnInfo> getPkColumns()
+                            {
+                                ColumnInfo labelCol = getColumn("Label");
+                                return Collections.singletonList(labelCol);
+                            }
+                        };
+                    }
+                });
+            }
         }
     }
 

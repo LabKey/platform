@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.CohortManager;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -40,6 +41,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     private boolean hasErrors = false;
 
     transient private StudyManager _studyManager = StudyManager.getInstance();
+    transient private CohortManager _cohortManager = CohortManager.getInstance();
 
     public AbstractDatasetImportTask(FactoryType factory, PipelineJob job)
     {
@@ -52,6 +54,11 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     protected StudyManager getStudyManager()
     {
         return _studyManager;
+    }
+
+    protected CohortManager getCohortManager()
+    {
+        return _cohortManager;
     }
 
     public RecordedActionSet run() throws PipelineJobException
@@ -122,7 +129,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
                 try
                 {
-                    getStudyManager().updateParticipantCohorts(pj.getUser(), getStudy());
+                    getCohortManager().updateParticipantCohorts(pj.getUser(), getStudy());
                 }
                 catch (SQLException e)
                 {

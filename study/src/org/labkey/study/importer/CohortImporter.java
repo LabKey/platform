@@ -59,7 +59,7 @@ public class CohortImporter implements InternalStudyImporter
                 ctx.getLogger().info("Loading automatic cohort settings");
                 Integer dataSetId = cohortsXml.getDatasetId();
                 String dataSetProperty = cohortsXml.getDatasetProperty();
-                CohortManager.updateAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty, 
+                CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty,
                         cohortMode == CohortMode.ADVANCED, true);
             }
             else
@@ -83,13 +83,13 @@ public class CohortImporter implements InternalStudyImporter
                 for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)
                 {
                     String label = cohortXml.getLabel();
-                    CohortImpl cohort = CohortManager.createCohort(study, ctx.getUser(), label);
+                    CohortImpl cohort = CohortManager.getInstance().createCohort(study, ctx.getUser(), label);
 
                     for (String ptid : cohortXml.getIdArray())
                         p2c.put(ptid, cohort.getRowId());
                 }
 
-                CohortManager.updateManualCohortAssignment(study, ctx.getUser(), p2c);
+                CohortManager.getInstance().setManualCohortAssignment(study, ctx.getUser(), p2c);
             }
         }
     }

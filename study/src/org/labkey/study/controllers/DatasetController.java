@@ -43,10 +43,7 @@ import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.client.DatasetImporter;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -116,7 +113,7 @@ public class DatasetController extends BaseStudyController
                 throw new UnauthorizedException("User does not have permission to view this dataset");
             }
 
-            TableInfo datasetTable = ds.getTableInfo(getUser());
+            TableInfo datasetTable = ds.getTableInfo(getUser(), true, false);
             QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
 
             DataView view;
@@ -172,8 +169,7 @@ public class DatasetController extends BaseStudyController
             buttonBar.add(btnCancel);
 
             dataRegion.setButtonBar(buttonBar);
-
-            return view;
+            return new VBox(new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript(\"completion.js\");</script>"), view);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -268,6 +264,9 @@ public class DatasetController extends BaseStudyController
                 StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
                 StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser());
             }
+
+            if (safeEquals(form.getDatasetId(), getStudy().getParticipantCohortDataSetId()))
+                CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudy());
 
             return true;
         }

@@ -423,15 +423,6 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    private static boolean safeEquals(Object a, Object b)
-    {
-        if (a == null && b == null)
-            return true;
-        if (a == null || b == null)
-            return false;
-        return a.equals(b);
-    }
-
     public static class ViewEventForm extends IdForm
     {
         private boolean _selected;

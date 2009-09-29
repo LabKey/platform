@@ -133,7 +133,7 @@ public class CohortController extends BaseStudyController
 
             if (form.isClearParticipants())
             {
-                StudyManager.getInstance().clearParticipantCohorts(getUser(), study);
+                CohortManager.getInstance().clearParticipantCohorts(study);
                 return true;
             }
 
@@ -166,7 +166,7 @@ public class CohortController extends BaseStudyController
                     p2c.put(participants[i], cohorts[i]);
                 }
 
-                CohortManager.updateManualCohortAssignment(study, getUser(), p2c);
+                CohortManager.getInstance().setManualCohortAssignment(study, getUser(), p2c);
             }
             else
             {
@@ -174,7 +174,7 @@ public class CohortController extends BaseStudyController
                 // Note: we need to do this even if no changes have been made to
                 // this setting, as it's possible that the user manually set some cohorts previously
                 boolean updateNow = form.isUpdateParticipants() || (study.isAdvancedCohorts() != form.isAdvancedCohortSupport());
-                CohortManager.updateAutomaticCohortAssignment(study, getUser(), form.getParticipantCohortDataSetId(),
+                CohortManager.getInstance().setAutomaticCohortAssignment(study, getUser(), form.getParticipantCohortDataSetId(),
                         form.getParticipantCohortProperty(), form.isAdvancedCohortSupport(), updateNow);
             }
 
@@ -341,7 +341,7 @@ public class CohortController extends BaseStudyController
             {
                 if (isInsert())
                 {
-                    cohort = CohortManager.createCohort(getStudy(), getUser(), newLabel);
+                    cohort = CohortManager.getInstance().createCohort(getStudy(), getUser(), newLabel);
                 }
                 else
                 {

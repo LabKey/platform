@@ -278,7 +278,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
             //Make sure that the study is updated with the correct timepoints.
             StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user);
-            StudyManager.getInstance().updateParticipantCohorts(user, targetStudy);
+            CohortManager.getInstance().updateParticipantCohorts(user, targetStudy);
 
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, targetContainer);
             url.addParameter(DataSetDefinition.DATASETKEY, dataset.getRowId());
