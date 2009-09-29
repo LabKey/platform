@@ -38,6 +38,10 @@
       <ns:column columnName="LastReload"/>
       <ns:column columnName="ReloadUser"/>
       <ns:column columnName="AdvancedCohorts"/>
+      <ns:column columnName="ParticipantCommentDatasetId"/>
+      <ns:column columnName="ParticipantCommentProperty"/>
+      <ns:column columnName="ParticipantVisitCommentDatasetId"/>
+      <ns:column columnName="ParticipantVisitCommentProperty"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
