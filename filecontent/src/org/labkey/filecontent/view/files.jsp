@@ -31,6 +31,8 @@
 <%@ page import="org.labkey.filecontent.FilesWebPart" %>
 <%@ page import="java.io.File" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = HttpView.currentContext();
@@ -63,6 +65,14 @@
 
     String fileSetName = parent.getLabel();
     Attachment[] attachments = AttachmentService.get().getAttachments(parent);
+
+    Arrays.sort(attachments, new Comparator<Attachment>() {
+        public int compare(Attachment a1, Attachment a2)
+        {
+            return a1.getName().compareToIgnoreCase(a2.getName());
+        }
+    });
+
     //Need to use URLHelper insetad of ViewURLHelper so that .view is not appended to files automatically
     URLHelper fileUrl = new URLHelper(new ActionURL("files", "", context.getContainer()).toString());
     if (null != me.getFileSet())
@@ -76,10 +86,10 @@
 %>
     <table>
         <tr>
-            <th class="labkey-header">File</th>
-            <th class="labkey-header">Size</th>
-            <th class="labkey-header">Date</th>
-            <th class="labkey-header">Person</th>
+            <th style="color:#003399;text-align:left;">File</th>
+            <th style="color:#003399;text-align:right;">Size</th>
+            <th style="color:#003399;text-align:left;">Date</th>
+            <th style="color:#003399;text-align:left;">Person</th>
             <th>&nbsp;</th>
             <%if (canDelete)
             {

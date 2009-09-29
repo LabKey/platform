@@ -17,6 +17,7 @@
 package org.labkey.core.security;
 
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.Group;
 import org.labkey.api.view.JspView;
 import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
@@ -29,13 +30,14 @@ import java.util.List;
 */
 public class GroupView extends JspView<GroupView.GroupBean>
 {
-    public GroupView(String groupName, List<Pair<Integer,String>> members, List<String> messages, boolean systemGroup, BindException errors)
+    public GroupView(Group group, List<Pair<Integer,String>> members, List<String> messages, boolean systemGroup, BindException errors)
     {
         super("/org/labkey/core/security/group.jsp", new GroupBean(), errors);
 
         GroupBean bean = getModelBean();
 
-        bean.groupName = groupName;
+        bean.group = group;
+        bean.groupName = group.getPath();
         bean.members = members;
         bean.messages = messages;
         bean.isSystemGroup = systemGroup;
@@ -44,6 +46,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
 
     public static class GroupBean
     {
+        public Group group;
         public String groupName;
         public List<Pair<Integer, String>> members;
         public List<String> messages;

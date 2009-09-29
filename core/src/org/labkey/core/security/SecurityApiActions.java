@@ -27,8 +27,9 @@ import org.labkey.api.security.roles.*;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.util.HString;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
 
@@ -954,28 +955,78 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public static class RenameGroupAction extends MutatingApiAction<RenameForm>
+    public static class RenameGroupAction extends FormApiAction<RenameForm>
     {
-        public ApiResponse execute(RenameForm form, BindException errors) throws Exception
-        {
-            if(form.getId() < 0)
-                throw new IllegalArgumentException("You must specify an id parameter!");
+        Group group;
 
+        private Group getGroup(RenameForm form)
+        {
+            if (form.getId() < 0)
+                return null;
             Group group = SecurityManager.getGroup(form.getId());
             Container c = getViewContext().getContainer();
             if (null == group || (c.isRoot() && null != group.getContainer()) || (!c.isRoot() && !getViewContext().getContainer().getId().equals(group.getContainer())))
+                return null;
+            return group;
+        }
+
+        public ModelAndView getView(RenameForm form, BindException errors) throws Exception
+        {
+            group = getGroup(form);
+            if (null == group)
+                HttpView.throwNotFound();
+            return new JspView<Group>(SecurityController.class, "renameGroup.jsp", group, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Permissions", new ActionURL(SecurityController.ProjectAction.class, getViewContext().getContainer()));
+            root.addChild("Manage Group", new ActionURL(SecurityController.GroupAction.class, getViewContext().getContainer()).addParameter("id",group.getUserId()));
+            root.addChild("Rename Group: " + group.getName());
+            return root;
+
+        }
+
+        @Override
+        public ModelAndView handleRequest() throws Exception
+        {
+            return super.handleRequest();
+        }
+        
+
+        public ApiResponse execute(RenameForm form, BindException errors) throws Exception
+        {
+            if (form.getId() < 0)
+                throw new IllegalArgumentException("You must specify an id parameter!");
+
+            group = getGroup(form);
+            Container c = getViewContext().getContainer();
+            if (null == group)
                 throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
 
             String oldName = group.getName();
-            SecurityManager.renameGroup(group, form.getNewName().toString(), getViewContext().getUser());
-            writeToAuditLog(group, oldName);
+            try
+            {
+                SecurityManager.renameGroup(group, form.getNewName().toString(), getViewContext().getUser());
+                writeToAuditLog(group, oldName);
+            }
+            catch (IllegalArgumentException x)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, x.getMessage());    
+                errors.rejectValue("newName", SpringActionController.ERROR_MSG, x.getMessage());
+            }
+
+            if (errors.getErrorCount() > 0)
+                return null;
             
             ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
             resp.put("renamed", group.getUserId());
             resp.put("oldName", oldName);
             resp.put("newName", group.getName());
             return resp;
         }
+        
 
         public void writeToAuditLog(Group group, String oldName)
         {

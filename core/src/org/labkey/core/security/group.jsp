@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.core.security.GroupView" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -61,38 +62,40 @@
         return true;
     }
 
+Ext.onReady(function()
+{
+    var f = new LABKEY.Form('groupMembersForm');
+});
+
 </script>
-<form action="updateMembers.post" method="POST">
+
+<%=PageFlowUtil.generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%>
+
+<form id="groupMembersForm" action="updateMembers.post" method="POST">
 <%
 if (bean.messages.size() > 0)
-    {
-    %>
-    <b>System membership status for new group members:</b><br>
-    <div id="messages">
-    <%
+{
+    %><b>System membership status for new group members:</b><br>
+    <div id="messages"><%
     for (String message : bean.messages)
-        {
-        %>
-        <%= message %><br>
-        <%
-        }
-    %>
-    </div><br>
-    <%
+    {
+        %><%= message %><br><%
     }
+    %></div><br><%
+}
 %>
 <labkey:errors />
 <%
+WebPartView.startTitleFrame(out, "Group members", null, "100%", null);
 if (bean.members.size() <= 0)
-    {
+{
     %><p>This group currently has no members.</p><%
-    }
+}
 else
-    {
+{
     %>
     <div id="current-members">
-    Group members
-    <br><table>
+<table>
         <tr>
             <th>Remove</th>
             <th>Email</th>
@@ -130,11 +133,9 @@ else
         </tr>
 
     </table>
-    </div>
-    <%
-    }
-    %>
-<br>
+    </div><%
+}
+%><br>
 <div id="add-members">
 Add New Members (enter one email address per line):<br>
 <textarea name="names" cols="30" rows="8"
@@ -182,4 +183,6 @@ if (!bean.isSystemGroup)
     </div>
 <%
     }
+
+    WebPartView.endTitleFrame(out);
 %>

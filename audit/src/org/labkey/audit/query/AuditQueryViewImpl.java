@@ -106,13 +106,6 @@ public class AuditQueryViewImpl extends AuditLogQueryView
         }
     }
 
-    protected void renderDataRegion(PrintWriter out) throws Exception
-    {
-        if (_title != null)
-            out.print("<br/>" + _title + "<br/>");
-        super.renderDataRegion(out);
-    }
-
     protected TableInfo createTable()
     {
         AuditLogTable table = new AuditLogTable(getSchema(), LogManager.get().getTinfoAuditLog(), getSettings().getQueryName());

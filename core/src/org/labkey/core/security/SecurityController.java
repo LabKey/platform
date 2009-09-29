@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -881,10 +882,12 @@ public class SecurityController extends SpringActionController
         if (null == members)
             HttpView.throwNotFound();
 
-        VBox view = new VBox(new GroupView(group.getPath(), members, messages, group.isSystemGroup(), errors));
+        VBox view = new VBox(new GroupView(group, members, messages, group.isSystemGroup(), errors));
         if (getUser().isAdministrator())
         {
-            view.addView(GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), group.getUserId()));
+            AuditLogQueryView log = GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), group.getUserId());
+            log.setFrame(WebPartView.FrameType.TITLE);
+            view.addView(log);
         }
         return view;
     }

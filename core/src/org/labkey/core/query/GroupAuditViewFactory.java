@@ -148,7 +148,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
             filter.addAllClauses(extraFilter);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
-        view.setTitle("<br/><b>" + title + "</b>");
+        view.setTitle(title);
         view.setVisibleColumns(visibleColumns);
         view.setSort(new Sort("-Date"));
 
@@ -161,7 +161,7 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         filter.addCondition("EventType", GroupManager.GROUP_AUDIT_EVENT);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
-        view.setTitle("<b>Group Membership History:</b>");
+        view.setTitle("Group Membership History");
         view.setVisibleColumns(new String[]{"Date", "CreatedBy", "ContainerId", "Comment"});
         view.setSort(new Sort("-Date"));
 

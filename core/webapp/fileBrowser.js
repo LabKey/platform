@@ -815,29 +815,48 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 
     pendingPropfind : {},
 
+
+    uncacheListing : function(record)
+    {
+        var path = (typeof record == "string") ? record : record.data.path;
+        this.directoryMap[path] = null;
+
+        var args = this.pendingPropfind[path];
+        if (args && args.transId)
+        {
+            this.connection.abort(args.transId);
+            this.connection.url = args.url;
+            this.proxy.load({method:"PROPFIND",depth:"1"}, this.transferReader, this.processFiles, this, args);
+            args.transId = this.connection.transId;
+        }
+    },
+
+
     reloadFiles : function(path, callback, scope)
     {
         var cb = callback.createDelegate(scope||this);
-        var url = this.concatPaths(this.prefixUrl, encodeURI(path));
-        this.connection.url = url;
 
-        var args = this.pendingPropfind[url];
+        var args = this.pendingPropfind[path];
         if (args)
         {
-            console.debug("pending " + url);
+            console.debug("pending " + args.url);
             args.callbacks.push(cb);
             return;
         }
+
+        var url = this.concatPaths(this.prefixUrl, encodeURI(path));
+        this.connection.url = url;
         console.debug("requesting " + url);
-        this.pendingPropfind[url] = args = {url: url, path: path, callbacks:[cb]};
+        this.pendingPropfind[path] = args = {url: url, path: path, callbacks:[cb]};
         this.proxy.load({method:"PROPFIND",depth:"1"}, this.transferReader, this.processFiles, this, args);
+        args.transId = this.connection.transId;
         return true;
     },
 
 
     processFiles : function(result, args, success)
     {
-        delete this.pendingPropfind[args.url];
+        delete this.pendingPropfind[args.path];
 
         var path = args.path;
 
