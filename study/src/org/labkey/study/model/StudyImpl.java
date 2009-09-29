@@ -61,6 +61,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Date _lastReload;
     private Integer _reloadUser;
     private boolean _advancedCohorts;
+    private Integer _participantCommentDataSetId;
+    private String _participantCommentProperty;
+    private Integer _participantVisitCommentDataSetId;
+    private String _participantVisitCommentProperty;
 
     public StudyImpl()
     {
@@ -387,6 +391,46 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setAdvancedCohorts(boolean advancedCohorts)
     {
         _advancedCohorts = advancedCohorts;
+    }
+
+    public Integer getParticipantCommentDataSetId()
+    {
+        return _participantCommentDataSetId;
+    }
+
+    public void setParticipantCommentDataSetId(Integer participantCommentDataSetId)
+    {
+        _participantCommentDataSetId = participantCommentDataSetId;
+    }
+
+    public String getParticipantCommentProperty()
+    {
+        return _participantCommentProperty;
+    }
+
+    public void setParticipantCommentProperty(String participantCommentProperty)
+    {
+        _participantCommentProperty = participantCommentProperty;
+    }
+
+    public Integer getParticipantVisitCommentDataSetId()
+    {
+        return _participantVisitCommentDataSetId;
+    }
+
+    public void setParticipantVisitCommentDataSetId(Integer participantVisitCommentDataSetId)
+    {
+        _participantVisitCommentDataSetId = participantVisitCommentDataSetId;
+    }
+
+    public String getParticipantVisitCommentProperty()
+    {
+        return _participantVisitCommentProperty;
+    }
+
+    public void setParticipantVisitCommentProperty(String participantVisitCommentProperty)
+    {
+        _participantVisitCommentProperty = participantVisitCommentProperty;
     }
 
     public static class SummaryStatistics

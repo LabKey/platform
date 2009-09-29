@@ -20,6 +20,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.DataSetDefinition;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -53,9 +55,19 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
 
-        boolean joinCommentsToSpecimens = true;
-        addVialCommentsColumn(joinCommentsToSpecimens);
+        //boolean joinCommentsToSpecimens = true;
+        //addVialCommentsColumn(joinCommentsToSpecimens);
 
+        ColumnInfo specimenComment = createSpecimenCommentColumn(_schema, true);
+        specimenComment.setName("Comments");
+        specimenComment.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new SpecimenCommentDisplayColumn(colInfo);
+            }
+        });
+        addColumn(specimenComment);
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
         addWrapColumn(_rootTable.getColumn("Requestable"));

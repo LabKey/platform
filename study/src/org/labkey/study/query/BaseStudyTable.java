@@ -19,10 +19,13 @@ package org.labkey.study.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
-import java.sql.Types;
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
+import java.sql.Types;
 import java.util.Map;
 
 public abstract class BaseStudyTable extends FilteredTable
@@ -162,6 +165,126 @@ public abstract class BaseStudyTable extends FilteredTable
         addColumn(commentsColumn);
     }
 
+    protected ColumnInfo createSpecimenCommentColumn(StudyQuerySchema schema, boolean includeVialComments)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(_schema.getContainer());
+
+        DataSetDefinition defPtid = null;
+        DataSetDefinition defPtidVisit = null;
+
+        if (study.getParticipantCommentDataSetId() != null)
+            defPtid = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+        if (study.getParticipantVisitCommentDataSetId() != null)
+            defPtidVisit = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
+        
+        TableInfo participantCommentTable = defPtid != null ? defPtid.getTableInfo(schema.getUser()) : null;
+        TableInfo participantVisitCommentTable = defPtidVisit != null ? defPtidVisit.getTableInfo(schema.getUser()) : null;
+
+        return new SpecimenCommentColumn(this, participantCommentTable, study.getParticipantCommentProperty(),
+                participantVisitCommentTable, study.getParticipantVisitCommentProperty(), includeVialComments);
+    }
+
+    public static class SpecimenCommentColumn extends ExprColumn
+    {
+        public static final String COLUMN_NAME = "SpecimenComment";
+        protected static final String VIAL_COMMENT_ALIAS = "VialComment";
+        protected static final String PARTICIPANT_COMMENT_JOIN = "ParticipantCommentJoin$";
+        protected static final String PARTICIPANT_COMMENT_ALIAS = "ParticipantComment";
+        protected static final String PARTICIPANTVISIT_COMMENT_JOIN = "ParticipantVisitCommentJoin$";
+        protected static final String PARTICIPANTVISIT_COMMENT_ALIAS = "ParticipantVisitComment";
+        protected static final String SPECIMEN_COMMENT_JOIN = "SpecimenCommentJoin$";
+
+        private TableInfo _ptidCommentTable;
+        private TableInfo _ptidVisitCommentTable;
+        private boolean _includeVialComments;
+
+        public SpecimenCommentColumn(TableInfo parent, TableInfo ptidCommentTable, String ptidCommentProperty,
+                                     TableInfo ptidVisitCommentTable, String ptidVisitCommentProperty, boolean includeVialComments)
+        {
+            super(parent, COLUMN_NAME, new SQLFragment(), Types.VARCHAR);
+
+            _ptidCommentTable = ptidCommentTable;
+            _ptidVisitCommentTable = ptidVisitCommentTable;
+            _includeVialComments = includeVialComments;
+
+            SQLFragment sql = new SQLFragment();
+            String concatOperator = parent.getSchema().getSqlDialect().getConcatenationOperator();
+
+            if (_includeVialComments)
+                sql.append(ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment AS " + VIAL_COMMENT_ALIAS + ",\n");
+            if (ptidCommentTable != null && ptidCommentProperty != null)
+                sql.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentProperty + " AS " + PARTICIPANT_COMMENT_ALIAS + ",\n");
+            if (ptidVisitCommentTable != null && ptidVisitCommentProperty != null)
+                sql.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentProperty + " AS " + PARTICIPANTVISIT_COMMENT_ALIAS + ",\n");
+
+            String concat = "";
+            StringBuilder sb = new StringBuilder();
+            if (_includeVialComments)
+            {
+                sb.append(ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment");
+                concat = concatOperator;
+            }
+            if (ptidCommentTable != null && ptidCommentProperty != null)
+            {
+                sb.append(concat);
+                sb.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentProperty);
+                concat = concatOperator;
+            }
+            if (ptidVisitCommentTable != null && ptidVisitCommentProperty != null)
+            {
+                sb.append(concat);
+                sb.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentProperty);
+            }
+
+            sql.append("(");
+            if (sb.length() > 0)
+                sql.append(sb.toString());
+            else
+                sql.append("' '");
+            sql.append(")");
+            setValueSQL(sql);
+        }
+
+        @Override
+        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+        {
+            super.declareJoins(parentAlias, map);
+
+            String tableAlias = parentAlias + "$" + SPECIMEN_COMMENT_JOIN;
+            if (map.containsKey(tableAlias))
+                return;
+
+            SQLFragment joinSql = new SQLFragment();
+            if (_includeVialComments)
+            {
+                joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment()).append(" AS ");
+                joinSql.append(tableAlias).append(" ON ");
+                joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
+                joinSql.append(parentAlias).append(".Container = ").append(tableAlias).append(".Container\n");
+            }
+
+            if (_ptidCommentTable != null)
+            {
+                String ptidTableAlias = parentAlias + "$" + PARTICIPANT_COMMENT_JOIN;
+
+                joinSql.append(" LEFT OUTER JOIN ").append(_ptidCommentTable.getSelectName()).append(" AS ");
+                joinSql.append(ptidTableAlias).append(" ON ");
+                joinSql.append(parentAlias).append(".Ptid = ").append(ptidTableAlias).append(".ParticipantId\n");
+            }
+
+            if (_ptidVisitCommentTable != null)
+            {
+                String ptidTableAlias = parentAlias + "$" + PARTICIPANTVISIT_COMMENT_JOIN;
+
+                joinSql.append(" LEFT OUTER JOIN ").append(_ptidVisitCommentTable.getSelectName()).append(" AS ");
+                joinSql.append(ptidTableAlias).append(" ON ");
+                joinSql.append(parentAlias).append(".Ptid = ").append(ptidTableAlias).append(".ParticipantId AND ");
+                joinSql.append(parentAlias).append(".VisitValue = ").append(ptidTableAlias).append(".SequenceNum\n");
+            }
+            map.put(tableAlias, joinSql);
+        }
+    }
+
     public static class CommentDisplayColumn extends DataColumn
     {
         public CommentDisplayColumn(ColumnInfo commentColumn)
@@ -184,5 +307,49 @@ public abstract class BaseStudyTable extends FilteredTable
             if (value != null  && value instanceof String)
                 out.write((String) value);
         }
+    }
+
+    public static class SpecimenCommentDisplayColumn extends DataColumn
+    {
+        public SpecimenCommentDisplayColumn(ColumnInfo commentColumn)
+        {
+            super(commentColumn);
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            out.write(formatParticipantComments(ctx, "<br>"));
+        }
+    }
+
+    protected static String formatParticipantComments(RenderContext ctx, String lineSeparator)
+    {
+        Map<String, Object> row = ctx.getRow();
+
+        Object vialComment = row.get(SpecimenCommentColumn.VIAL_COMMENT_ALIAS);
+        Object participantComment = row.get(SpecimenCommentColumn.PARTICIPANT_COMMENT_ALIAS);
+        Object participantVisitComment = row.get(SpecimenCommentColumn.PARTICIPANTVISIT_COMMENT_ALIAS);
+
+        StringBuilder sb = new StringBuilder();
+
+        if (vialComment instanceof String)
+        {
+            sb.append("<i>vial:&nbsp;</i>");
+            sb.append(vialComment);
+            sb.append(lineSeparator);
+        }
+        if (participantComment instanceof String)
+        {
+            sb.append("<i>participant:&nbsp;</i>");
+            sb.append(participantComment);
+            sb.append(lineSeparator);
+        }
+        if (participantVisitComment instanceof String)
+        {
+            sb.append("<i>participant/visit:&nbsp;</i>");
+            sb.append(participantVisitComment);
+            sb.append(lineSeparator);
+        }
+        return sb.toString();
     }
 }

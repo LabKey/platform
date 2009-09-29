@@ -150,9 +150,8 @@ public abstract class BaseStudyController extends SpringActionController
         return t;
     }
 
-    public StudyImpl getStudy(boolean allowNullStudy) throws ServletException
+    public static StudyImpl getStudy(boolean allowNullStudy, Container c) throws ServletException
     {
-        Container c = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(c);
         if (!allowNullStudy && study == null)
         {
@@ -165,7 +164,12 @@ public abstract class BaseStudyController extends SpringActionController
 
     public StudyImpl getStudy() throws ServletException
     {
-        return getStudy(false);
+        return getStudy(false, getContainer());
+    }
+
+    public StudyImpl getStudy(boolean allowNullStudy) throws ServletException
+    {
+        return getStudy(allowNullStudy, getContainer());
     }
 
     protected BaseViewAction initAction(BaseViewAction parent, BaseViewAction action)

@@ -133,6 +133,12 @@
         <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
     </tr>
     <tr>
+        <th align="left">Comments</th>
+        <td>Manage participant and participant/visit comments</td>
+        <td><%= textLink("Manage Comments",
+                new ActionURL(SpringSpecimenController.ManageSpecimenCommentsAction.class, c)) %></td>
+    </tr>
+    <tr>
         <td colspan="3" class="labkey-announcement-title"><span>Specimen Repository Settings</span></td>
     </tr>
     <tr><td colspan="3" class="labkey-title-area-line"></td></tr>

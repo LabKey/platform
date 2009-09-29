@@ -21,44 +21,33 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.MvFieldWrapper;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Cohort;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
-import org.labkey.study.query.CohortTable;
-import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.client.DatasetImporter;
-import org.labkey.study.model.*;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
-import java.io.Writer;
-import java.io.IOException;
-import java.util.*;
-import java.sql.Types;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -76,6 +65,10 @@ public class DatasetController extends BaseStudyController
     @RequiresPermission(ACL.PERM_UPDATE)
     public class UpdateAction extends InsertUpdateAction
     {
+        public UpdateAction()
+        {
+            super(EditDatasetRowForm.class);
+        }
 
         protected boolean isInsert()
         {
@@ -91,6 +84,10 @@ public class DatasetController extends BaseStudyController
     @RequiresPermission(ACL.PERM_INSERT)
     public class InsertAction extends InsertUpdateAction
     {
+        public InsertAction()
+        {
+            super(EditDatasetRowForm.class);
+        }
 
         protected boolean isInsert()
         {
@@ -103,6 +100,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
+/*
     public abstract class InsertUpdateAction extends FormViewAction<EditDatasetRowForm>
     {
         protected abstract boolean isInsert();
@@ -160,45 +158,6 @@ public class DatasetController extends BaseStudyController
                     });
                 }
             }
-
-            /*
-    This TableInfo is used only when a dataset has been identified as the 'cohort' dataset
-    for a given study.  In this case, the specified cohort field (which must be of type 'text')
-    is displayed as an editable drop-down of available cohorts, instead of a text field.
-    private static class CohortDatasetTableInfo extends StudyDataTableInfo
-    {
-        CohortDatasetTableInfo(DataSetDefinition def, final User user)
-        {
-            super(def, user);
-            StudyImpl study = def.getStudy();
-            String cohortProperty = study.getParticipantCohortProperty();
-            ColumnInfo cohortCol = getColumn(cohortProperty);
-            if (cohortCol != null)
-            {
-                final Container container = study.getContainer();
-                // make the cohort column behave as a drop-down by specifying an FK:
-                cohortCol.setFk(new LookupForeignKey("Label")
-                {
-                    public TableInfo getLookupTableInfo()
-                    {
-                        // make the value of the FK be the label, so the correct text is stored in the DB
-                        StudyImpl study = StudyManager.getInstance().getStudy(container);
-                        return new CohortTable(new StudyQuerySchema(study, user, true))
-                        {
-                            @Override
-                            public List<ColumnInfo> getPkColumns()
-                            {
-                                ColumnInfo labelCol = getColumn("Label");
-                                return Collections.singletonList(labelCol);
-                            }
-                        };
-                    }
-                });
-            }
-        }
-    }
-             */
-
 
             QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
 
@@ -374,6 +333,7 @@ public class DatasetController extends BaseStudyController
 
     }
 
+*/
     @RequiresPermission(ACL.PERM_ADMIN)
     public class DatasetAuditHistoryAction extends SimpleViewAction<DatasetAuditHistoryForm>
     {

@@ -15,22 +15,34 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="org.labkey.study.model.Specimen" %>
 <%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.api.data.MenuButton" %>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.UpdateSpecimenCommentsBean> me = (JspView<SpringSpecimenController.UpdateSpecimenCommentsBean>) HttpView.currentView();
     SpringSpecimenController.UpdateSpecimenCommentsBean bean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
+
+
+    NavTree migrateButton = new NavTree("Migrate Comment");
+
+    NavTree participantItem = new NavTree("To Participant", "#");
+    participantItem.setScript("document.updateComments.migrateToParticipant.value='true'; document.updateComments.submit()");
+    NavTree participantVisitItem = new NavTree("To Participant/Visit", "#");
+    participantVisitItem.setScript("document.updateComments.migrateToParticipantVisit.value='true'; document.updateComments.submit()");
+
+    migrateButton.addChild(participantItem);
+    migrateButton.addChild(participantVisitItem);
 %>
-<form action="updateComments.post" id="updateCommentForm" method="POST">
+<form action="updateComments.post" name="updateComments" id="updateCommentForm" method="POST">
+    <input type="hidden" name="migrateToParticipant" value="false">
+    <input type="hidden" name="migrateToParticipantVisit" value="false">
 <%
     if (SampleManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
     {
@@ -103,6 +115,13 @@
         <tr>
             <td>
                 <%= generateSubmitButton("Save Changes") %>
+                <%
+                    if (!StringUtils.isBlank(bean.getCurrentComment()) && !bean.isMixedComments() && bean.getParticipants() == 1)
+                    {
+                        PopupMenu menu = new PopupMenu(migrateButton);
+                        menu.render(out);
+                    }
+                %>
                 <%= generateButton("Cancel", new ActionURL(bean.getReferrer()))%>
             </td>
         </tr>

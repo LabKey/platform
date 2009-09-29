@@ -27,27 +27,29 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.InsertUpdateAction;
 import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.*;
-import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.pipeline.SpecimenArchive;
-import org.labkey.study.query.SpecimenEventQueryView;
-import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.query.SpecimenRequestQueryView;
-import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.pipeline.SpecimenBatch;
+import org.labkey.study.query.*;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.ByteArrayAttachmentFile;
@@ -79,6 +81,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
@@ -2914,6 +2917,8 @@ public class SpringSpecimenController extends BaseStudyController
         private boolean _saveCommentsPost;
         private String _conflictResolve;
         private Boolean _qualityControlFlag;
+        private boolean _migrateToParticipant;
+        private boolean _migrateToParticipantVisit;
 
         public String getComments()
         {
@@ -2989,6 +2994,26 @@ public class SpringSpecimenController extends BaseStudyController
         {
             _qualityControlFlag = qualityControlFlag;
         }
+
+        public boolean isMigrateToParticipant()
+        {
+            return _migrateToParticipant;
+        }
+
+        public void setMigrateToParticipant(boolean migrateToParticipant)
+        {
+            _migrateToParticipant = migrateToParticipant;
+        }
+
+        public boolean isMigrateToParticipantVisit()
+        {
+            return _migrateToParticipantVisit;
+        }
+
+        public void setMigrateToParticipantVisit(boolean migrateToParticipantVisit)
+        {
+            _migrateToParticipantVisit = migrateToParticipantVisit;
+        }
     }
     
     public static class UpdateSpecimenCommentsBean extends SamplesViewBean
@@ -2998,6 +3023,7 @@ public class SpringSpecimenController extends BaseStudyController
         private boolean _mixedComments;
         private boolean _currentFlagState;
         private boolean _mixedFlagState;
+        private int _participants;
 
         public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer)
         {
@@ -3006,6 +3032,11 @@ public class SpringSpecimenController extends BaseStudyController
             try
             {
                 Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
+                Set<String> participantSet = new HashSet<String>();
+
+                for (Specimen sample : samples)
+                    participantSet.add(sample.getPtid());
+                
                 _mixedComments = false;
                 _mixedFlagState = false;
                 SpecimenComment prevComment = currentComments.get(samples[0]);
@@ -3025,6 +3056,7 @@ public class SpringSpecimenController extends BaseStudyController
                 if (!_mixedComments && prevComment != null)
                     _currentComment = prevComment.getComment();
                 _currentFlagState = _mixedFlagState || (prevComment != null && prevComment.isQualityControlFlag());
+                _participants = participantSet.size();
             }
             catch (SQLException e)
             {
@@ -3055,6 +3087,11 @@ public class SpringSpecimenController extends BaseStudyController
         public boolean isMixedFlagState()
         {
             return _mixedFlagState;
+        }
+
+        public int getParticipants()
+        {
+            return _participants;
         }
     }
 
@@ -3094,6 +3131,8 @@ public class SpringSpecimenController extends BaseStudyController
     @RequiresPermissionClass(SetSpecimenCommentsPermission.class)
     public class UpdateCommentsAction extends FormViewAction<UpdateSpecimenCommentsForm>
     {
+        private ActionURL _successUrl;
+
         public void validateCommand(UpdateSpecimenCommentsForm specimenCommentsForm, Errors errors)
         {
             if (specimenCommentsForm.isSaveCommentsPost() &&
@@ -3131,6 +3170,22 @@ public class SpringSpecimenController extends BaseStudyController
 
             Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(vials.toArray(new Specimen[vials.size()]));
 
+            if (commentsForm.isMigrateToParticipant())
+            {
+                _successUrl = new ActionURL(ParticipantCommentAction.class, getContainer()).
+                        addParameter("participantId", vials.get(0).getPtid()).
+                        addParameter("comment", commentsForm.getComments());
+                return true;
+            }
+            else if (commentsForm.isMigrateToParticipantVisit())
+            {
+                _successUrl = new ActionURL(ParticipantCommentAction.class, getContainer()).
+                        addParameter("participantId", vials.get(0).getPtid()).
+                        addParameter("visitId", String.valueOf(vials.get(0).getVisitValue())).
+                        addParameter("comment", commentsForm.getComments());
+                return true;
+            }
+
             for (Specimen vial : vials)
             {
                 SpecimenComment previousComment = currentComments.get(vial);
@@ -3163,12 +3218,13 @@ public class SpringSpecimenController extends BaseStudyController
                 // If we haven't updated by now, our user has selected CommentsConflictResolution.SKIP and previousComments is non-null
                 // so we no-op for this vial.
             }
+            _successUrl = new ActionURL(commentsForm.getReferrer());
             return true;
         }
 
         public ActionURL getSuccessURL(UpdateSpecimenCommentsForm commentsForm)
         {
-            return new ActionURL(commentsForm.getReferrer());
+            return _successUrl;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4238,6 +4294,291 @@ public class SpringSpecimenController extends BaseStudyController
         public void setId(int id)
         {
             _id = id;
+        }
+    }
+
+    public static class ManageCommentsForm
+    {
+        private Integer participantCommentDataSetId;
+        private String participantCommentProperty;
+        private Integer participantVisitCommentDataSetId;
+        private String participantVisitCommentProperty;
+        private boolean _reshow;
+
+        public Integer getParticipantCommentDataSetId()
+        {
+            return participantCommentDataSetId;
+        }
+
+        public void setParticipantCommentDataSetId(Integer participantCommentDataSetId)
+        {
+            this.participantCommentDataSetId = participantCommentDataSetId;
+        }
+
+        public String getParticipantCommentProperty()
+        {
+            return participantCommentProperty;
+        }
+
+        public void setParticipantCommentProperty(String participantCommentProperty)
+        {
+            this.participantCommentProperty = participantCommentProperty;
+        }
+
+        public Integer getParticipantVisitCommentDataSetId()
+        {
+            return participantVisitCommentDataSetId;
+        }
+
+        public void setParticipantVisitCommentDataSetId(Integer participantVisitCommentDataSetId)
+        {
+            this.participantVisitCommentDataSetId = participantVisitCommentDataSetId;
+        }
+
+        public String getParticipantVisitCommentProperty()
+        {
+            return participantVisitCommentProperty;
+        }
+
+        public void setParticipantVisitCommentProperty(String participantVisitCommentProperty)
+        {
+            this.participantVisitCommentProperty = participantVisitCommentProperty;
+        }
+
+        public boolean isReshow()
+        {
+            return _reshow;
+        }
+
+        public void setReshow(boolean reshow)
+        {
+            _reshow = reshow;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageSpecimenCommentsAction extends FormViewAction<ManageCommentsForm>
+    {
+        public void validateCommand(ManageCommentsForm form, Errors errors)
+        {
+            final Study study = StudyManager.getInstance().getStudy(getContainer());
+            if (form.getParticipantCommentDataSetId() != null)
+            {
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
+                if (def != null && !def.isDemographicData())
+                {
+                    errors.reject(ERROR_MSG, "The Dataset specified to contain participant comments must be a demographics dataset.");
+                }
+            }
+        }
+
+        public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudy();
+            if (!form.isReshow())
+            {
+                form.setParticipantCommentDataSetId(study.getParticipantCommentDataSetId());
+                form.setParticipantCommentProperty(study.getParticipantCommentProperty());
+
+                form.setParticipantVisitCommentDataSetId(study.getParticipantVisitCommentDataSetId());
+                form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
+            }
+            StudyJspView<Object> view = new StudyJspView<Object>(study, "manageComments.jsp", form, errors);
+            view.setTitle("Specimen Comment Configuration");
+
+            return view;
+        }
+
+        public boolean handlePost(ManageCommentsForm form, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudy().createMutable();
+
+            // participant comment dataset
+            study.setParticipantCommentDataSetId(form.getParticipantCommentDataSetId());
+            study.setParticipantCommentProperty(form.getParticipantCommentProperty());
+
+            // participant/visit comment dataset
+            study.setParticipantVisitCommentDataSetId(form.getParticipantVisitCommentDataSetId());
+            study.setParticipantVisitCommentProperty(form.getParticipantVisitCommentProperty());
+
+            StudyManager.getInstance().updateStudy(getUser(), study);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ManageCommentsForm form)
+        {
+            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage Comments");
+        }
+    }
+
+    public static class ParticipantCommentForm extends DatasetController.EditDatasetRowForm
+    {
+        private int _datasetId;
+        private String _participantId;
+
+        public int getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            _datasetId = datasetId;
+        }
+
+        public String getParticipantId()
+        {
+            return _participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            _participantId = participantId;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class SpecimenCommentInsertAction extends InsertUpdateAction<ParticipantCommentForm>
+    {
+        public SpecimenCommentInsertAction()
+        {
+            super(ParticipantCommentForm.class);
+        }
+        
+        @Override
+        public ModelAndView getView(final ParticipantCommentForm form, boolean reshow, BindException errors) throws Exception
+        {
+            ModelAndView view = super.getView(form, reshow, errors);
+            if (view instanceof InsertView)
+            {
+                ((InsertView)view).setInitialValue("ParticipantId", form.getParticipantId());
+            }
+            return view;
+        }
+
+        protected boolean isInsert()
+        {
+            return true;
+        }
+
+        protected NavTree appendExtraNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ParticipantCommentAction extends SimpleViewAction<ParticipantCommentForm>
+    {
+        public ModelAndView getView(final ParticipantCommentForm form, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudy();
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+            if (def != null)
+            {
+                StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
+                QuerySettings qs = new QuerySettings(getViewContext(), DataSetQueryView.DATAREGION);
+                qs.setSchemaName(querySchema.getSchemaName());
+                qs.setQueryName(def.getLabel());
+
+                DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, null, null, null)
+                {
+                    @Override
+                    public DataView createDataView()
+                    {
+                        DataView view = super.createDataView();
+
+                        SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+                        if (null == filter)
+                        {
+                            filter = new SimpleFilter();
+                            view.getRenderContext().setBaseFilter(filter);
+                        }
+                        filter.addCondition("participantId", form.getParticipantId());
+
+                        return view;
+                    }
+                };
+
+                String lsid = getLsid(queryView);
+
+                if (lsid != null)
+                    return HttpView.redirect(new ActionURL(DatasetController.UpdateAction.class, getContainer()).
+                            addParameter("datasetId", def.getDataSetId()).
+                            addParameter("lsid", lsid));
+                else
+                    return HttpView.redirect(new ActionURL(SpecimenCommentInsertAction.class, getContainer()).
+                            addParameter("datasetId", def.getDataSetId()).
+                            addParameter("participantId", form.getParticipantId()));
+            }
+            return new HtmlView("Dataset could not be found");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public List<String> getComments(QueryView queryView, String commentCol)
+        {
+            final TableInfo table = queryView.getTable();
+            if (table != null)
+            {
+                Set<String> participantSet = new LinkedHashSet<String>();
+                ResultSet rs = null;
+                try
+                {
+                    rs = queryView.getResultset();
+                    while (rs.next())
+                    {
+                        String ptid = rs.getString(commentCol);
+                        participantSet.add(ptid);
+                    }
+                    return new ArrayList<String>(participantSet);
+                }
+                catch (Exception e)
+                {
+                }
+                finally
+                {
+                    if (null != rs)
+                        try { rs.close(); } catch (SQLException e){}
+                }
+            }
+            return Collections.emptyList();
+        }
+
+        private String getLsid(QueryView queryView)
+        {
+            final TableInfo table = queryView.getTable();
+            if (table != null)
+            {
+                ResultSet rs = null;
+                try {
+                    rs = queryView.getResultset();
+                    while (rs.next())
+                    {
+                        String lsid = rs.getString("lsid");
+                        if (lsid != null)
+                            return lsid;
+                    }
+                }
+                catch (Exception e)
+                {
+                }
+                finally
+                {
+                    if (null != rs)
+                        try { rs.close(); } catch (SQLException e){}
+                }
+            }
+            return null;
         }
     }
 }

@@ -92,6 +92,11 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 return new CommentDisplayColumn(colInfo);
             }
         });
+
+        ColumnInfo specimenComment = createSpecimenCommentColumn(_schema, false);
+        specimenComment.setHidden(true);
+        addColumn(specimenComment);
+        
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
         SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
                 "SUM(CAST(QualityControlFlag AS INT)) = 0 THEN ? ELSE ? END FROM " +
@@ -133,9 +138,11 @@ public class SpecimenSummaryTable extends BaseStudyTable
             FieldKey specimenHashKey = new FieldKey(me.getParent(), "SpecimenHash");
             // select the base 'comments' column (our bound column is an exprcolumn that doesn't simply select the base value):
             FieldKey commentsHashKey = new FieldKey(me.getParent(), "Comments");
+            FieldKey participantCommentKey = new FieldKey(me.getParent(), SpecimenCommentColumn.COLUMN_NAME);
             Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
             fieldKeys.add(specimenHashKey);
             fieldKeys.add(commentsHashKey);
+            fieldKeys.add(participantCommentKey);
             Map<FieldKey, ColumnInfo> requiredColumns = QueryService.get().getColumns(getBoundColumn().getParentTable(), fieldKeys);
             _specimenHashColumn = requiredColumns.get(specimenHashKey);
             if (_specimenHashColumn != null)
@@ -143,6 +150,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
             ColumnInfo col = requiredColumns.get(commentsHashKey);
             if (col != null)
                 columns.add(col);
+            ColumnInfo participantCommentCol = requiredColumns.get(participantCommentKey);
+            if (participantCommentCol != null)
+                columns.add(participantCommentCol);
         }
 
         private Map<String, String> _commentCache;
@@ -250,20 +260,26 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 return "ERROR: SpecimenHash column must be added to query to retrive comment information.";
 
             String maxPossibleCount = (String) getValue(ctx);
+            StringBuilder sb = new StringBuilder();
             // the string compare below is a big of a hack, but it's cheaper than converting the string to a number and
             // equally effective.  The column type is string so that exports to excel correctly set the column type as string.
+
             if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
             {
                 try
                 {
-                    return getCommentText(ctx, ctx.getResultSet().getString("SpecimenHash"), lineSeparator);
+                    sb.append(getCommentText(ctx, ctx.getResultSet().getString("SpecimenHash"), lineSeparator));
                 }
                 catch (SQLException e)
                 {
                     throw new RuntimeSQLException(e);
                 }
             }
-            return "";
+            if (sb.length() > 0)
+                sb.append(lineSeparator);
+            sb.append(formatParticipantComments(ctx, lineSeparator));
+
+            return sb.toString();
         }
 
         public Object getDisplayValue(RenderContext ctx)

@@ -32,7 +32,7 @@
 %>
 
 <labkey:errors/>
-<form action="handleUpdateDisplaySettings.post" method="POST">
+<form action="manageDisplaySettings.view" method="POST">
     <table class="labkey-manage-display" width=600>
         <tr>
             <td colspan="2" class="labkey-announcement-title" align="left">
