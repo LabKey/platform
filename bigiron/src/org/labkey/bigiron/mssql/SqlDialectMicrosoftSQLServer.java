@@ -160,7 +160,10 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
                 throw new IllegalArgumentException("ERROR: Limit SQL Doesn't Start with SELECT: " + sql);
 
-            frag.insert(6, " TOP " + rowCount);
+            int offset = 6;
+            if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))
+                offset = 15;
+            frag.insert(offset, " TOP " + rowCount);
         }
         return frag;
     }

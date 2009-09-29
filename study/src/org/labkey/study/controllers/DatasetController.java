@@ -31,16 +31,21 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Cohort;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
+import org.labkey.study.query.CohortTable;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.client.DatasetImporter;
 import org.labkey.study.model.*;
@@ -50,7 +55,10 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
+import java.io.Writer;
+import java.io.IOException;
 import java.util.*;
+import java.sql.Types;
 
 /**
  * User: jgarms
@@ -102,7 +110,8 @@ public class DatasetController extends BaseStudyController
 
         public ModelAndView getView(EditDatasetRowForm form, boolean reshow, BindException errors) throws Exception
         {
-            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+            StudyImpl study = getStudy();
+            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
             if (null == ds)
             {
                 redirectTypeNotFound(form.getDatasetId());
@@ -114,6 +123,83 @@ public class DatasetController extends BaseStudyController
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser(), true, false);
+
+            // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
+            // than a text entry box:
+            if (!study.isManualCohortAssignment() && safeEquals(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
+            {
+                final Cohort[] cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
+                ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
+                if (cohortCol != null && cohortCol.getSqlTypeInt() == Types.VARCHAR)
+                {
+                    cohortCol.setDisplayColumnFactory(new DisplayColumnFactory()
+                    {
+                        public DisplayColumn createRenderer(ColumnInfo colInfo)
+                        {
+                            return new DataColumn(colInfo)
+                            {
+                                @Override
+                                public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+                                {
+                                    boolean disabledInput = isDisabledInput();
+                                    String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
+                                    out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : "") + ">\n");
+                                    if (getBoundColumn().isNullable())
+                                        out.write("\t<option value=\"\">");
+                                    for (Cohort cohort : cohorts)
+                                    {
+                                        out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
+                                                (safeEquals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
+                                        out.write(PageFlowUtil.filter(cohort.getLabel()));
+                                        out.write("</option>\n");
+                                    }
+                                    out.write("</select>");
+                                }
+                            };
+                        }
+                    });
+                }
+            }
+
+            /*
+    This TableInfo is used only when a dataset has been identified as the 'cohort' dataset
+    for a given study.  In this case, the specified cohort field (which must be of type 'text')
+    is displayed as an editable drop-down of available cohorts, instead of a text field.
+    private static class CohortDatasetTableInfo extends StudyDataTableInfo
+    {
+        CohortDatasetTableInfo(DataSetDefinition def, final User user)
+        {
+            super(def, user);
+            StudyImpl study = def.getStudy();
+            String cohortProperty = study.getParticipantCohortProperty();
+            ColumnInfo cohortCol = getColumn(cohortProperty);
+            if (cohortCol != null)
+            {
+                final Container container = study.getContainer();
+                // make the cohort column behave as a drop-down by specifying an FK:
+                cohortCol.setFk(new LookupForeignKey("Label")
+                {
+                    public TableInfo getLookupTableInfo()
+                    {
+                        // make the value of the FK be the label, so the correct text is stored in the DB
+                        StudyImpl study = StudyManager.getInstance().getStudy(container);
+                        return new CohortTable(new StudyQuerySchema(study, user, true))
+                        {
+                            @Override
+                            public List<ColumnInfo> getPkColumns()
+                            {
+                                ColumnInfo labelCol = getColumn("Label");
+                                return Collections.singletonList(labelCol);
+                            }
+                        };
+                    }
+                });
+            }
+        }
+    }
+             */
+
+
             QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
 
             DataView view;
