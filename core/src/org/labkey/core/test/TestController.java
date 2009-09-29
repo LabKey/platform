@@ -578,4 +578,20 @@ public class TestController extends SpringActionController
             return null;
         }
     }
+
+
+    @RequiresSiteAdmin
+    public class HtmlViewAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            String title = getViewContext().getActionURL().getParameter("title");
+            return new HtmlView(title, "This is my HTML");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
 }
