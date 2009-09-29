@@ -293,118 +293,129 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
         switch (frameType)
         {
-        case NONE:
-            break;
+            case NONE:
+                break;
 
-        case DIV:
-            out.printf("<div class=\"%s\">", className);
-            break;
+            case DIV:
+                out.printf("<div class=\"%s\">", className);
+                break;
 
-        case TITLE:
-            startTitleFrame(out, title, href, "100%", className);
-            break;
+            case TITLE:
+                startTitleFrame(out, title, href, "100%", className);
+                break;
 
-        case DIALOG:
-        {
-            out.print("<table class=\"labkey-bordered\"><tr>");
-            out.print("<th>");
-            out.print(  PageFlowUtil.filter(title));
-            out.print(  "<br><img src='" + getViewContext().getContextPath() + "/_.gif' height=1 width=600>");
-            out.print("</th>");
-            if (getViewContext().get("closeURL") != null)
+            case DIALOG:
             {
-                Object o = getViewContext().get("closeURL");
-                Object closeUrl = o instanceof ActionURL ? ((ActionURL)o).getLocalURIString() : String.valueOf(o);
+                out.print("<table class=\"labkey-bordered\"><tr>");
                 out.print("<th>");
-                out.print("<a href=\"" + PageFlowUtil.filter(closeUrl) + "\">");
-                out.print("<img src=\"" + contextPath + "/_images/delete.gif\"></a>");
+                out.print(  PageFlowUtil.filter(title));
+                out.print(  "<br><img src='" + getViewContext().getContextPath() + "/_.gif' height=1 width=600>");
                 out.print("</th>");
-            }
 
-            out.print("</tr><tr><td colspan=2 class=\"" + className + "\">");
-            break;
-        }
-
-        case PORTAL:
-        {
-            out.print(
-                    "<!--webpart--><table class=\"labkey-wp\">" +
-                            "<tr class=\"labkey-wp-header\">" +
-                            "<th class=\"labkey-wp-title-left\" title=\"");
-            out.print(PageFlowUtil.filter(title));
-            out.print("\">");
-
-            Boolean collapsed = (Boolean) context.get("collapsed");
-            
-            if (collapsed != null)
-            {
-                String rootId = (String) context.get("rootId");
-                ActionURL expandCollapseUrl = null;
-                String expandCollapseGifId = "expandCollapse-" + rootId;
-                if (collapsed != null)
+                if (getViewContext().get("closeURL") != null)
                 {
-                    if (rootId == null)
-                        throw new IllegalArgumentException("pathToHere or rootId not provided");
-                    expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
+                    Object o = getViewContext().get("closeURL");
+                    Object closeUrl = o instanceof ActionURL ? ((ActionURL)o).getLocalURIString() : String.valueOf(o);
+                    out.print("<th>");
+                    out.print("<a href=\"" + PageFlowUtil.filter(closeUrl) + "\">");
+                    out.print("<img src=\"" + contextPath + "/_images/delete.gif\"></a>");
+                    out.print("</th>");
                 }
 
-                out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
-                        filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
-                String image = collapsed ? "plus.gif" : "minus.gif";
-                out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
-                
-                out.printf(" <a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
-                        filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
-                out.print(PageFlowUtil.filter(title));
-                out.print("</a>");
+                out.print("</tr><tr><td colspan=2 class=\"" + className + "\">");
+                break;
             }
-            else
-            {
-                if (null != href)
-                    out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
-                out.print(PageFlowUtil.filter(title));
-                if (null != href)
-                    out.print("</a>");
-            }
-            if (_helpPopup != null)
-            {
-                out.print(_helpPopup);
-            }
-            
-            out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-            NavTree[] links = getCustomizeLinks().getChildren();
-            if (links == null || links.length == 0)
-                out.print("&nbsp;");
-            else
-            {
-                String sep = "";
-                for (NavTree link : links)
-                {
-                    out.print(sep);
-                    String linkHref = link.second;
-                    String linkText = link.first;
 
-                    if (null != linkHref && 0 < linkHref.length())
-                        out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
-                    if (null != link.getImageSrc())
-                        out.print("<img src=\"" + link.getImageSrc() +
-                                "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                    else
-                        out.print(PageFlowUtil.filter(linkText));
-                    if (null != linkHref && 0 < linkHref.length())
+            case PORTAL:
+            {
+                out.println("<!--webpart-->");
+                out.println("<table class=\"labkey-wp\">");
+
+                Boolean collapsed = false;
+
+                // Don't render webpart header if title is null or blank
+                if (!StringUtils.isEmpty(title))
+                {
+                    out.println("<tr class=\"labkey-wp-header\">");
+                    out.print("<th class=\"labkey-wp-title-left\" title=\"");
+                    out.print(PageFlowUtil.filter(title));
+                    out.print("\">");
+
+                    collapsed = (Boolean) context.get("collapsed");
+
+                    if (collapsed != null)
+                    {
+                        String rootId = (String) context.get("rootId");
+                        ActionURL expandCollapseUrl = null;
+                        String expandCollapseGifId = "expandCollapse-" + rootId;
+                        if (collapsed != null)
+                        {
+                            if (rootId == null)
+                                throw new IllegalArgumentException("pathToHere or rootId not provided");
+                            expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
+                        }
+
+                        out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
+                                filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
+                        String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
+                        out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+
+                        out.printf(" <a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
+                                filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
+                        out.print(PageFlowUtil.filter(title));
                         out.print("</a>");
-                    sep = "&nbsp;";
+                    }
+                    else
+                    {
+                        if (null != href)
+                            out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
+                        out.print(PageFlowUtil.filter(title));
+                        if (null != href)
+                            out.print("</a>");
+                    }
+                    if (_helpPopup != null)
+                    {
+                        out.print(_helpPopup);
+                    }
+
+                    out.print("</th>\n<th class=\"labkey-wp-title-right\">");
+                    NavTree[] links = getCustomizeLinks().getChildren();
+                    if (links == null || links.length == 0)
+                        out.print("&nbsp;");
+                    else
+                    {
+                        String sep = "";
+                        for (NavTree link : links)
+                        {
+                            out.print(sep);
+                            String linkHref = link.second;
+                            String linkText = link.first;
+
+                            if (null != linkHref && 0 < linkHref.length())
+                                out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
+                            if (null != link.getImageSrc())
+                                out.print("<img src=\"" + link.getImageSrc() +
+                                        "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                            else
+                                out.print(PageFlowUtil.filter(linkText));
+                            if (null != linkHref && 0 < linkHref.length())
+                                out.print("</a>");
+                            sep = "&nbsp;";
+                        }
+                    }
+                    out.println("</th>");
+                    out.println("</tr>");
                 }
+
+                out.print("<tr id=\"" + getContentId() + "\" ");
+                if (collapsed != null && collapsed.booleanValue())
+                    out.print("style=\"display: none\"");
+                out.println(">");
+
+                out.print("<td colspan=2 class=\"" + className + " labkey-wp-body\">");
+                break;
             }
-            out.print("</th></tr>\n<tr id=\"" + getContentId() + "\" ");
-            if (collapsed != null && collapsed.booleanValue())
-            {
-                out.print("style=\"display: none\"");
-            }
-            out.print("><td colspan=2 class=\"" + className + " labkey-wp-body\">");
-            break;
-        }
-        case LEFT_NAVIGATION:
+            case LEFT_NAVIGATION:
             {
                 out.print("<!--leftnav-webpart--><table class=\"labkey-expandable-nav\">");
 
@@ -453,12 +464,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                     {
                         out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
                                 filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
-                        String image = collapsed ? "plus.gif" : "minus.gif";
+                        String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
                         out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
                     }
                     out.print("</th></tr>\n");
                 }
-                out.print("<tr" + (collapsed != null && collapsed ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
+                out.print("<tr" + (collapsed != null && collapsed.booleanValue() ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
                         "<td colspan=\"2\" class=\"labkey-expandable-nav-body\">");
                 break;
             }
