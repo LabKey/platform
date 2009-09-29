@@ -1428,7 +1428,7 @@ public class Table
         for (ColumnInfo column : arrColumns)
         {
             existing = columns.get(column.getAlias());
-            assert null == existing || existing.getName().equals(column.getName());
+            assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
             columns.put(column.getAlias(), column);
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
