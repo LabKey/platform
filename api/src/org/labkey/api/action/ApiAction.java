@@ -95,7 +95,29 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return "execute";
     }
 
+
+    protected boolean isPost()
+    {
+        return "POST".equals(getViewContext().getRequest().getMethod());
+    }
+
+
     public ModelAndView handleRequest() throws Exception
+    {
+        if (isPost())
+            return handlePost();
+        else
+            return handleGet();
+    }
+
+
+    protected ModelAndView handleGet() throws Exception
+    {
+        return handlePost();
+    }
+    
+    
+    public ModelAndView handlePost() throws Exception
     {
         FORM form = null;
         BindException errors = null;
@@ -103,7 +125,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         try
         {
             String contentType = getViewContext().getRequest().getContentType();
-            if(null != contentType && contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
+            if (null != contentType && contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
             {
                 _reqFormat = ApiResponseWriter.Format.JSON;
                 JSONObject jsonObj = getJsonObject();
@@ -145,7 +167,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             else
             {
                 ApiResponse response = execute(form, errors);
-                if(null != response)
+                if (null != response)
                     createResponseWriter().write(response);
                 else if (null != errors && errors.hasErrors())
                     createResponseWriter().write((Errors)errors);

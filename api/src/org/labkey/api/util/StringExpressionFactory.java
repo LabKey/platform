@@ -97,7 +97,7 @@ public class StringExpressionFactory
 
         try
         {
-            if (str.startsWith("http://") || str.startsWith("http://"))
+            if (str.startsWith("http://") || str.startsWith("https://"))
                 expr = new URLStringExpression(str);
             else if (null == DetailsURL.validateURL(str))
                 expr = DetailsURL.fromString(str);

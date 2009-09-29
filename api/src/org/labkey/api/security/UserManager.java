@@ -549,6 +549,7 @@ public class UserManager
             // GROUP (regular project or global)
             case ROLE:
             case GROUP:
+                // see renameGroup.jsp if you change this
                 if (!StringUtils.containsNone(name, "@./\\-&~_"))
                     return "Group name should not contain punctuation.";
                 break;

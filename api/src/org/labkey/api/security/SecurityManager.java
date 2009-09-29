@@ -993,6 +993,14 @@ public class SecurityManager
         return null != getGroupId(c, groupName, ownerId, false, true);
     }
 
+
+    public static void renameGroup(Group group, HString newName, User currentUser)
+    {
+        // renameGroup calls validGroupName(group.getName(), group.getType());
+        renameGroup(group, null==newName?null:newName.getSource(), currentUser);
+    }
+    
+
     public static void renameGroup(Group group, String newName, User currentUser)
     {
         if (group.isSystemGroup())
@@ -1000,7 +1008,11 @@ public class SecurityManager
         Container c = ContainerManager.getForId(group.getContainer());
         if (null == c)
             throw new IllegalArgumentException("The container the group exists in no longer exists!");
-
+        if (StringUtils.isEmpty(newName))
+            throw new IllegalArgumentException("Name is required (may not be blank)");
+        String valid = UserManager.validGroupName(newName, group.getType());
+        if (null != valid)
+            throw new IllegalArgumentException(valid);
         if (null != getGroupId(c, newName, false))
             throw new IllegalArgumentException("Cannot rename group '" + group.getName() + "' to '" + newName + "' because that name is already used by another group!");
 

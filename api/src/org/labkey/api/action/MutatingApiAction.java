@@ -40,12 +40,8 @@ public abstract class MutatingApiAction<FORM> extends ApiAction<FORM>
     }
 
     @Override
-    public ModelAndView handleRequest() throws Exception
+    protected ModelAndView handleGet() throws Exception
     {
-        //for actions that alter the server's state, the HTTP action must be POST
-        if (!"POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-            throw new IllegalArgumentException("You must use the POST method when calling this action!");
-
-        return super.handleRequest();
+        throw new IllegalArgumentException("You must use the POST method when calling this action!");
     }
 }
