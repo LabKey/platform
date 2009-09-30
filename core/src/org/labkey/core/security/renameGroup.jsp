@@ -21,14 +21,6 @@ function SubmitButton_onClick()
         success:function(form,action)
         {
             window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
-        },
-        failure:function(form,action)
-        {
-            console.dir(action.result.errors);
-            if (action.result && action.result.msg)
-                Ext.Msg.alert(action.result.msg);
-            else if (action.result && action.result.errors && action.result.errors.form)
-                Ext.Msg.alert(action.result.errors.form);
         }
     });
 }
@@ -47,6 +39,7 @@ function validGroupName(s)
 Ext.onReady(function(){
     renameForm = new LABKEY.ext.FormPanel({
         border:false,
+        errorEl:'errorDiv',
         url:'renameGroup.post',
         items:[
             {name:'newName', xtype:'textfield', fieldLabel:"New Name", allowBlank:false, validator:validGroupName},
@@ -58,6 +51,7 @@ Ext.onReady(function(){
 });
 </script>
 
+<div id="errorDiv" class="labkey-error">&nbsp;</div>
 <div id="renameDiv"></div>
 
 <%--<form action="renameGroup.post" method="POST">
