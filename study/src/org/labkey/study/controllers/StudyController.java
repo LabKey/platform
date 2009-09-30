@@ -106,11 +106,11 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.net.URI;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.zip.ZipException;
 
 /**
  * User: Karl Lum
@@ -3657,13 +3657,13 @@ public class StudyController extends BaseStudyController
         public ActionURL getRedirectURL(ImportStudyForm form) throws Exception
         {
             Container c = getContainer();
-            File pipelineRoot = StudyReload.getPipelineRoot(c);
+            URI pipelineRootURI = StudyReload.getPipelineRootURI(c);
 
-            if (null == pipelineRoot)
+            if (null == pipelineRootURI)
                 throw new NotFoundException("Pipeline root is not set");
 
-            File dir = new File(pipelineRoot, form.getPath());
-            File studyFile = new File(dir, form.getFileInputNames()[0]);
+            File path = new File(pipelineRootURI.resolve(new URI(form.getPath())));
+            File studyFile = new File(path, form.getFileInputNames()[0]);
 
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             BindException errors = new BindException(c, "import");
@@ -3677,7 +3677,21 @@ public class StudyController extends BaseStudyController
             else
             {
                 ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
-                throw new ServletException(firstError.getDefaultMessage());
+                throw new StudyImportException(firstError.getDefaultMessage());
+            }
+        }
+
+        @Override
+        protected ModelAndView getErrorView(Exception e, BindException errors) throws Exception
+        {
+            try
+            {
+                throw e;
+            }
+            catch (StudyImportException sie)
+            {
+                errors.reject("studyImport", e.getMessage());
+                return new SimpleErrorView(errors);
             }
         }
     }
@@ -3733,7 +3747,12 @@ public class StudyController extends BaseStudyController
                 ZipUtil.unzipToDirectory(studyFile, importDir);
                 studyXml = new File(importDir, "study.xml");
             }
-            catch (ZipException e)
+            catch (FileNotFoundException e)
+            {
+                errors.reject("studyImport", "File not found.");
+                return false;
+            }
+            catch (IOException e)
             {
                 errors.reject("studyImport", "This file does not appear to be a valid .zip file.");
                 return false;
