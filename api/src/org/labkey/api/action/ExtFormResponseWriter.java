@@ -48,7 +48,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
 
     public void write(Errors errors) throws IOException
     {
-        /*                                       IOUtil
+        /*
             Ext has a particular format they use for consuming validation errors expressed in JSON:
             {
                 success: false,
