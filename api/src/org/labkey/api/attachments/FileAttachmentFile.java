@@ -30,12 +30,14 @@ import java.io.InputStream;
  */
 public class FileAttachmentFile implements AttachmentFile
 {
-    private File _file;
+    private final File _file;
     private InputStream _in;
+    private String _filename;
 
     public FileAttachmentFile(File file)
     {
         _file = file;
+        _filename = file.getName();
     }
 
     public byte[] getBytes() throws IOException
@@ -58,12 +60,12 @@ public class FileAttachmentFile implements AttachmentFile
 
     public String getFilename()
     {
-        return _file.getName();
+        return _filename;
     }
 
     public void setFilename(String filename)
     {
-        throw new UnsupportedOperationException("Can't set filename");
+        _filename = filename;
     }
 
     public InputStream openInputStream() throws IOException

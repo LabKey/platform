@@ -17,8 +17,8 @@ package org.labkey.api.exp;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -147,9 +147,7 @@ public class OntologyManager
 					Table.insert(null, getTinfoObject(), objInsert);
 					objectId = objInsert.getObjectId();
 				}
-				assert ensure.stop();
 
-				assert insert.start();
 				for (int i = 0; i < descriptors.length; i++)
 				{
 					PropertyDescriptor pd = descriptors[i];
@@ -178,6 +176,7 @@ public class OntologyManager
                         throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + propertyTypes[i].getJavaType().getSimpleName());
                     }
 				}
+                assert ensure.stop();
 
                 if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
                 {
@@ -2734,7 +2733,10 @@ public class OntologyManager
                         this.stringValue = ConvertUtils.convert(value);
                     break;
                 case ATTACHMENT:
-                    this.stringValue = (String) value;
+                    if (value instanceof File)
+                        this.stringValue = ((File) value).getName();
+                    else
+                        this.stringValue = (String) value;
                     break;
                 case FILE_LINK:
                     if (value instanceof File)

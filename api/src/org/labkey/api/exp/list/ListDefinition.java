@@ -16,15 +16,17 @@
 
 package org.labkey.api.exp.list;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.reader.DataLoader;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -170,7 +172,7 @@ public interface ListDefinition
     ListItem getListItemForEntityId(String entityId);
 
     int getRowCount();
-    List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader) throws IOException;
+    List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader, @Nullable File attachmentDir) throws IOException;
 
     TableInfo getTable(User user);
 
