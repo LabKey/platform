@@ -22,6 +22,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * @param {object} [config.selectRowsResults] as returned by Query.selectRows
  * @param {boolean} [config.addAllFields] default=false.  If true, automatically create all fields specified in the metaData.
  * @param {object} [config.values] initial values to populate the form
+ * @param {object} [config.errorEl] if specified form errors will be written to this element, otherwise a MsgBox will be used.
  * selectRowsResults includes both a columnModel and the metaData so you don't need to specify all three.
  *
  * @example
@@ -48,11 +49,9 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         return LABKEY.ext.FormPanel.superclass.constructor.call(this,config);
     },
 
-
     defaultType : 'textfield',
     defaults : {width:200},
     allFields : [],
-
 
     initComponent : function()
     {
@@ -168,25 +167,33 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     },
 
     // we want to hook error handling to provide a mechanism to show form errors (vs field errors)
-    // form errors are reported on imaginary field names "_form"
+    // form errors are reported on imaginary field named "_form"
     createForm : function()
     {
         var f = LABKEY.ext.FormPanel.superclass.createForm.call(this);
-        var formPanel = this;
-        var findField = f.findField;
+        f.formPanel = this;
         f.findField = function(id)
         {
             if (id == "_form")
-                return formPanel;
-            return findField.call(this,id);
+                return this.formPanel;
+            return Ext.form.BasicForm.prototype.findField.call(this,id);
         };
         return f;
     },
 
-
+    // override this for special form error handling
     markInvalid : function(msg)
     {
-        Ext.Msg.alert("Error", msg);
+//        if (!this.qtipFormError)
+//            this.qtipFormError = new Ext.ToolTip({closable:true, target:this.el});
+//        this.qtipFormError.hide();
+//        this.qtipFormError.html = Ext.util.Format.htmlEncode(msg);
+//        this.qtipFormError.showAt(this.el.getXY());
+
+        if (this.errorEl)
+            Ext.get(this.errorEl).update(Ext.util.Format.htmlEncode(msg));
+        else
+            Ext.Msg.alert("Error", msg);
     }
 
 });
