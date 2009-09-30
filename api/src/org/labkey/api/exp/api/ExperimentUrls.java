@@ -65,5 +65,7 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getShowSampleSetURL(ExpSampleSet sampleSet);
 
-    ActionURL getShowRunGraph(Container container);
+    ActionURL getShowRunGraphURL(Container container);
+
+    ActionURL getUploadXARURL(Container container);
 }

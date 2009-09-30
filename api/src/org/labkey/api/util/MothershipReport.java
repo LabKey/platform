@@ -39,6 +39,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.management.ManagementFactory;
 
 /**
  * User: jeckels
@@ -216,6 +217,7 @@ public class MothershipReport implements Runnable
 
         boolean ldapEnabled = AuthenticationManager.isActive("LDAP");  // TODO: Send back all active auth providers (OpenSSO, LDAP, etc.)
         addParam("ldapEnabled", ldapEnabled);
+        addParam("heapSize", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax() / 1024 / 1024);
 
         DbSchema schema = CoreSchema.getInstance().getSchema();
         if (schema != null)

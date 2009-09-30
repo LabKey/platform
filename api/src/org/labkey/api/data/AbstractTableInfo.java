@@ -41,11 +41,6 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     private String _titleColumn;
     private int _cacheSize = DbCache.CACHE_SIZE;
 
-    public ColumnInfo getColumnFromPropertyURI(String propertyURI)
-    {
-        return null;
-    }
-
     protected final Map<String, ColumnInfo> _columnMap;
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
@@ -568,7 +563,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         //by default, all subclasses are public (i.e., accessible through Query)
         //override to change this
-        return true;
+        return getPublicName() != null && getPublicSchemaName() != null;
     }
 
     public String getPublicName()

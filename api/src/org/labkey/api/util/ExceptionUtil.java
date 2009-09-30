@@ -159,7 +159,7 @@ public class ExceptionUtil
                 ex != null &&
                 // Need this extra check to make sure we're not in an infinite loop if there's
                 // an exception when trying to submit an exception
-                (originalURL == null || !originalURL.contains("/Mothership/_mothership/reportException")))
+                (originalURL == null || !originalURL.toLowerCase().contains("/Mothership/_mothership/reportException".toLowerCase())))
         {
             try
             {
