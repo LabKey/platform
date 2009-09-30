@@ -343,7 +343,7 @@ Ext.onReady(function()
         ,allowChangeDirectory:true
         ,propertiesPanel:[{title:'Pipeline Actions', id:'pipelinePanel', autoScroll: true}]
         ,actions:{drop:dropAction}
-        ,tbar:['parentFolder', 'download', 'deletePath', 'refresh', 'uploadTool']
+        ,tbar:['parentFolder', 'download', 'deletePath', 'refresh', 'createDirectory', 'uploadTool']
     });
 
     fileBrowser.on(BROWSER_EVENTS.directorychange, updatePipelinePanel);
