@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="org.labkey.study.model.Specimen" %>
-<%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.api.data.MenuButton" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -39,10 +41,14 @@
 
     migrateButton.addChild(participantItem);
     migrateButton.addChild(participantVisitItem);
+
+    NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container));
 %>
 <form action="updateComments.post" name="updateComments" id="updateCommentForm" method="POST">
     <input type="hidden" name="migrateToParticipant" value="false">
     <input type="hidden" name="migrateToParticipantVisit" value="false">
+    <input type="hidden" name="migrateParticipantId" value="0">
+    <input type="hidden" name="migrateSampleId" value="0">
 <%
     if (SampleManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
     {
@@ -116,9 +122,9 @@
             <td>
                 <%= generateSubmitButton("Save Changes") %>
                 <%
-                    if (!StringUtils.isBlank(bean.getCurrentComment()) && !bean.isMixedComments() && bean.getParticipants() == 1)
+                    if (!StringUtils.isBlank(bean.getCurrentComment()) && copyButton != null)
                     {
-                        PopupMenu menu = new PopupMenu(migrateButton);
+                        PopupMenu menu = new PopupMenu(copyButton);
                         menu.render(out);
                     }
                 %>
@@ -134,4 +140,54 @@
 <% me.include(bean.getSpecimenQueryView(), out); %>
 <%
     WebPartView.endTitleFrame(out);
+%>
+
+<%!
+    public NavTree createCopyCommentButton(Map<String, Map<String, Integer>> pvMap, StudyImpl study)
+    {
+        boolean hasParticipantMenu = study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1;
+        boolean hasParticipantVisitMenu = study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1;
+
+        if (hasParticipantMenu || hasParticipantVisitMenu)
+        {
+            NavTree button = new NavTree("Copy Comment");
+
+            // participant comments
+            if (hasParticipantMenu)
+            {
+                NavTree participantItem = new NavTree("To Participant", "#");
+                button.addChild(participantItem);
+
+                for (String ptid : pvMap.keySet())
+                {
+                    NavTree subItem = new NavTree(ptid, "#");
+                    subItem.setScript("document.updateComments.migrateToParticipant.value='true'; document.updateComments.migrateParticipantId.value='" +
+                            ptid + "'; document.updateComments.submit()");
+                    participantItem.addChild(subItem);
+                }
+            }
+
+            // participant/visit comments
+            if (hasParticipantVisitMenu)
+            {
+                NavTree participantVisitItem = new NavTree("To Participant/Visit", "#");
+                button.addChild(participantVisitItem);
+                for (Map.Entry<String, Map<String, Integer>> entry : pvMap.entrySet())
+                {
+                    NavTree ptidItem = new NavTree(entry.getKey());
+
+                    for (Map.Entry<String, Integer> visitEntry : entry.getValue().entrySet())
+                    {
+                        NavTree visitItem = new NavTree(visitEntry.getKey());
+                        visitItem.setScript("document.updateComments.migrateToParticipantVisit.value='true'; document.updateComments.migrateSampleId.value='" +
+                                visitEntry.getValue() + "'; document.updateComments.submit()");
+                        ptidItem.addChild(visitItem);
+                    }
+                    participantVisitItem.addChild(ptidItem);
+                }
+            }
+            return button;
+        }
+        return null;
+    }
 %>

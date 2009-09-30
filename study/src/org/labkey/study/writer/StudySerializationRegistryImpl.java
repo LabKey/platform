@@ -80,6 +80,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new DatasetWriter(),
             new AssayDatasetWriter(),
             new SpecimenArchiveWriter(),
+            new ParticipantCommentWriter(),
             new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
         );
     }

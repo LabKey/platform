@@ -54,6 +54,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
 
             // Can't assign datasets to cohorts until the cohorts are created
             internalImporters.add(new DatasetCohortAssigner());
+            internalImporters.add(new ParticipantCommentImporter());
 
             for (InternalStudyImporter importer : internalImporters)
             {

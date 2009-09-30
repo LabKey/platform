@@ -19,6 +19,8 @@ package org.labkey.study.controllers.samples;
 import jxl.Range;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
@@ -35,6 +37,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.study.CohortFilter;
@@ -42,8 +45,8 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetController;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.InsertUpdateAction;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.*;
@@ -93,6 +96,7 @@ import java.util.*;
  */
 public class SpringSpecimenController extends BaseStudyController
 {
+    private static final Logger _log = Logger.getLogger(SpringSpecimenController.class);
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SpringSpecimenController.class,
             ShowUploadSpecimensAction.class,
             ShowUploadSpecimensAction.ImportCompleteAction.class,
@@ -2919,6 +2923,8 @@ public class SpringSpecimenController extends BaseStudyController
         private Boolean _qualityControlFlag;
         private boolean _migrateToParticipant;
         private boolean _migrateToParticipantVisit;
+        private int _migrateSampleId;
+        private String _migrateParticipantId;
 
         public String getComments()
         {
@@ -3014,6 +3020,26 @@ public class SpringSpecimenController extends BaseStudyController
         {
             _migrateToParticipantVisit = migrateToParticipantVisit;
         }
+
+        public int getMigrateSampleId()
+        {
+            return _migrateSampleId;
+        }
+
+        public void setMigrateSampleId(int migrateSampleId)
+        {
+            _migrateSampleId = migrateSampleId;
+        }
+
+        public String getMigrateParticipantId()
+        {
+            return _migrateParticipantId;
+        }
+
+        public void setMigrateParticipantId(String migrateParticipantId)
+        {
+            _migrateParticipantId = migrateParticipantId;
+        }
     }
     
     public static class UpdateSpecimenCommentsBean extends SamplesViewBean
@@ -3023,7 +3049,7 @@ public class SpringSpecimenController extends BaseStudyController
         private boolean _mixedComments;
         private boolean _currentFlagState;
         private boolean _mixedFlagState;
-        private int _participants;
+        private Map<String, Map<String, Integer>> _participantVisitMap = new TreeMap<String, Map<String, Integer>>();
 
         public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer)
         {
@@ -3032,11 +3058,7 @@ public class SpringSpecimenController extends BaseStudyController
             try
             {
                 Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
-                Set<String> participantSet = new HashSet<String>();
-
-                for (Specimen sample : samples)
-                    participantSet.add(sample.getPtid());
-                
+                _participantVisitMap = generateParticipantVisitMap(samples, StudyManager.getInstance().getStudy(context.getContainer()));
                 _mixedComments = false;
                 _mixedFlagState = false;
                 SpecimenComment prevComment = currentComments.get(samples[0]);
@@ -3056,12 +3078,29 @@ public class SpringSpecimenController extends BaseStudyController
                 if (!_mixedComments && prevComment != null)
                     _currentComment = prevComment.getComment();
                 _currentFlagState = _mixedFlagState || (prevComment != null && prevComment.isQualityControlFlag());
-                _participants = participantSet.size();
             }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
             }
+        }
+
+        protected Map<String, Map<String, Integer>> generateParticipantVisitMap(Specimen[] samples, Study study)
+        {
+            Map<String, Map<String, Integer>> pvMap = new TreeMap<String, Map<String, Integer>>();
+
+            for (Specimen sample : samples)
+            {
+                String ptid = sample.getPtid();
+                Visit v = StudyManager.getInstance().getVisitForSequence(study, sample.getVisitValue());
+                if (ptid != null && v != null)
+                {
+                    if (!pvMap.containsKey(ptid))
+                        pvMap.put(ptid, new HashMap<String, Integer>());
+                    pvMap.get(ptid).put(v.getLabel(), sample.getRowId());
+                }
+            }
+            return pvMap;
         }
 
         public String getReferrer()
@@ -3089,9 +3128,9 @@ public class SpringSpecimenController extends BaseStudyController
             return _mixedFlagState;
         }
 
-        public int getParticipants()
+        public Map<String, Map<String, Integer>> getParticipantVisitMap()
         {
-            return _participants;
+            return _participantVisitMap;
         }
     }
 
@@ -3173,17 +3212,24 @@ public class SpringSpecimenController extends BaseStudyController
             if (commentsForm.isMigrateToParticipant())
             {
                 _successUrl = new ActionURL(ParticipantCommentAction.class, getContainer()).
-                        addParameter("participantId", vials.get(0).getPtid()).
-                        addParameter("comment", commentsForm.getComments());
+                        addParameter("participantId", commentsForm.getMigrateParticipantId()).
+                        addParameter("comment", commentsForm.getComments()).
+                        addParameter("returnURL", commentsForm.getReferrer());
+
                 return true;
             }
             else if (commentsForm.isMigrateToParticipantVisit())
             {
-                _successUrl = new ActionURL(ParticipantCommentAction.class, getContainer()).
-                        addParameter("participantId", vials.get(0).getPtid()).
-                        addParameter("visitId", String.valueOf(vials.get(0).getVisitValue())).
-                        addParameter("comment", commentsForm.getComments());
-                return true;
+                Specimen vial = SampleManager.getInstance().getSpecimen(getContainer(), commentsForm.getMigrateSampleId());
+                if (vial != null)
+                {
+                    _successUrl = new ActionURL(ParticipantCommentAction.class, getContainer()).
+                            addParameter("participantId", vial.getPtid()).
+                            addParameter("visitId", String.valueOf(vial.getVisitValue())).
+                            addParameter("comment", commentsForm.getComments()).
+                            addParameter("returnURL", commentsForm.getReferrer());
+                    return true;
+                }
             }
 
             for (Specimen vial : vials)
@@ -4419,18 +4465,9 @@ public class SpringSpecimenController extends BaseStudyController
 
     public static class ParticipantCommentForm extends DatasetController.EditDatasetRowForm
     {
-        private int _datasetId;
         private String _participantId;
-
-        public int getDatasetId()
-        {
-            return _datasetId;
-        }
-
-        public void setDatasetId(int datasetId)
-        {
-            _datasetId = datasetId;
-        }
+        private int _visitId;
+        private String _comment;
 
         public String getParticipantId()
         {
@@ -4440,6 +4477,26 @@ public class SpringSpecimenController extends BaseStudyController
         public void setParticipantId(String participantId)
         {
             _participantId = participantId;
+        }
+
+        public int getVisitId()
+        {
+            return _visitId;
+        }
+
+        public void setVisitId(int visitId)
+        {
+            _visitId = visitId;
+        }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
         }
     }
 
@@ -4458,6 +4515,16 @@ public class SpringSpecimenController extends BaseStudyController
             if (view instanceof InsertView)
             {
                 ((InsertView)view).setInitialValue("ParticipantId", form.getParticipantId());
+                ((InsertView)view).setInitialValue("SequenceNum", form.getVisitId());
+
+                if (!StringUtils.isBlank(form.getComment()))
+                {
+                    StudyImpl study = getStudy();
+                    String commentProperty = form.getVisitId() != 0 ? study.getParticipantVisitCommentProperty() :
+                            study.getParticipantCommentProperty();
+
+                    ((InsertView)view).setInitialValue(commentProperty, form.getComment());
+                }
             }
             return view;
         }
@@ -4479,7 +4546,17 @@ public class SpringSpecimenController extends BaseStudyController
         public ModelAndView getView(final ParticipantCommentForm form, BindException errors) throws Exception
         {
             StudyImpl study = getStudy();
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+            DataSetDefinition def;
+
+            if (form.getVisitId() != 0)
+            {
+                def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
+            }
+            else
+            {
+                def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+            }
+
             if (def != null)
             {
                 StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
@@ -4501,21 +4578,26 @@ public class SpringSpecimenController extends BaseStudyController
                             view.getRenderContext().setBaseFilter(filter);
                         }
                         filter.addCondition("participantId", form.getParticipantId());
+                        if (form.getVisitId() != 0)
+                            filter.addCondition("sequenceNum", form.getVisitId());
 
                         return view;
                     }
                 };
 
                 String lsid = getLsid(queryView);
-
                 if (lsid != null)
                     return HttpView.redirect(new ActionURL(DatasetController.UpdateAction.class, getContainer()).
                             addParameter("datasetId", def.getDataSetId()).
-                            addParameter("lsid", lsid));
+                            addParameter("lsid", lsid).
+                            addParameter("returnURL", form.getReturnURL()));
                 else
                     return HttpView.redirect(new ActionURL(SpecimenCommentInsertAction.class, getContainer()).
                             addParameter("datasetId", def.getDataSetId()).
-                            addParameter("participantId", form.getParticipantId()));
+                            addParameter("participantId", form.getParticipantId()).
+                            addParameter("visitId", form.getVisitId()).
+                            addParameter("comment", form.getComment()).
+                            addParameter("returnURL", form.getReturnURL()));
             }
             return new HtmlView("Dataset could not be found");
         }
@@ -4544,6 +4626,7 @@ public class SpringSpecimenController extends BaseStudyController
                 }
                 catch (Exception e)
                 {
+                    _log.error("Error encountered trying to get participant comments", e);
                 }
                 finally
                 {
@@ -4571,6 +4654,7 @@ public class SpringSpecimenController extends BaseStudyController
                 }
                 catch (Exception e)
                 {
+                    _log.error("Error encountered trying to get participant comments", e);
                 }
                 finally
                 {

@@ -22,19 +22,17 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Site;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.study.Site;
-import org.labkey.api.study.Study;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.CohortFilter;
-import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
@@ -43,8 +41,11 @@ import org.labkey.study.samples.notifications.NotificationRecipientSet;
 import org.labkey.study.samples.notifications.RequestNotification;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
-import org.springframework.web.servlet.mvc.Controller;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -194,13 +195,13 @@ public class SpecimenUtils
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
                 String dataRegionName = gridView.getSettings().getDataRegionName();
                 String setCommentsURL = urlFor(SpringSpecimenController.UpdateCommentsAction.class);
-                NavTree setItem = commentsMenuButton.addMenuItem("Set Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected", "#",
+                NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected", "#",
                         "if (verifySelected(document.forms['" + dataRegionName + "'], '" + setCommentsURL +
                         "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
                 setItem.setId("Comments:Set");
 
                 String clearCommentsURL = urlFor(SpringSpecimenController.ClearCommentsAction.class);
-                NavTree clearItem = commentsMenuButton.addMenuItem("Clear Comments for Selected", "#",
+                NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected", "#",
                         "if (verifySelected(document.forms['" + dataRegionName + "'], '" + clearCommentsURL +
                         "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials.  " +
                                 (manualQCEnabled ? "Quality control states will remain unchanged.  " : "" )+ "Continue?')) " +
@@ -211,6 +212,32 @@ public class SpecimenUtils
                 endCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 NavTree exitItem = commentsMenuButton.addMenuItem("Exit Comments " + (manualQCEnabled ? "and QC " : "") + "mode", endCommentsURL);
                 exitItem.setId("Comments:Exit");
+
+                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                boolean addSep = true;
+                if (study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1)
+                {
+                    if (addSep)
+                    {
+                        commentsMenuButton.addSeparator();
+                        addSep = false;
+                    }
+                    NavTree ptidComments = commentsMenuButton.addMenuItem("Manage participant comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                            addParameter("datasetId", study.getParticipantCommentDataSetId()));
+                    ptidComments.setId("Comments:SetParticipant");
+                }
+
+                if (study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1)
+                {
+                    if (addSep)
+                    {
+                        commentsMenuButton.addSeparator();
+                        addSep = false;
+                    }
+                    NavTree ptidComments = commentsMenuButton.addMenuItem("Manage participant/visit comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                            addParameter("datasetId", study.getParticipantVisitCommentDataSetId()));
+                    ptidComments.setId("Comments:SetParticipantVisit");
+                }
                 buttons.add(commentsMenuButton);
             }
             else
