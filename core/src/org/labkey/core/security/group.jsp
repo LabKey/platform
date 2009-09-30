@@ -33,6 +33,8 @@
 <script type="text/javascript">
     LABKEY.requiresScript('completion.js');
 
+    var form;
+    
     function selectAllCheckboxes(form, value)
     {
         var elems = form.elements;
@@ -58,13 +60,17 @@
                 break;
             }
         }
-        if (selected) return confirm("Permanently remove selected users from this group?");
-        return true;
+        var ok = true;
+        if (selected)
+            ok = confirm("Permanently remove selected users from this group?");
+        if (ok)
+            form.setClean(); 
+        return ok;
     }
 
 Ext.onReady(function()
 {
-    var f = new LABKEY.Form('groupMembersForm');
+    form = new LABKEY.Form('groupMembersForm');
 });
 
 </script>
@@ -83,9 +89,7 @@ if (bean.messages.size() > 0)
     }
     %></div><br><%
 }
-%>
-<labkey:errors />
-<%
+%><labkey:errors /><%
 WebPartView.startTitleFrame(out, "Group members", null, "100%", null);
 if (bean.members.size() <= 0)
 {
@@ -146,12 +150,10 @@ Add New Members (enter one email address per line):<br>
 </textarea><br>
 <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
 if (null != bean.ldapDomain)
-    {
-%>, non-<%= bean.ldapDomain %>
-<%
-    }
-%>
-users.<br><br>
+{
+    %>, non-<%= bean.ldapDomain %><%
+}
+%>users.<br><br>
 Include the following message with the new user mail (optional):<br>
     <textarea rows="8" cols="30" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= bean.groupName %>">
@@ -160,29 +162,23 @@ Include the following message with the new user mail (optional):<br>
 </form>
 <%
 if (!bean.isSystemGroup)
+{
+    %><br><br><div id="delete-group"><%
+    if (bean.members.size() == 0)
     {
-%>
-    <br><br><div id="delete-group">
-    <%
-        if (bean.members.size() == 0)
-            {
-    %>
-    <form action="standardDeleteGroup.post" method="POST">
-    <%=PageFlowUtil.generateSubmitButton("Delete Empty Group", "return confirm('Permanently delete group " + bean.groupName + "?')")%>
-    <input type="hidden" name="group" value="<%= bean.groupName %>">
-    </form>
-    <%
-            }
-        else
-            {
-    %>
-    To delete this group, first remove all members.
-    <%
-            }
-    %>
-    </div>
-<%
+        %>
+        <form action="standardDeleteGroup.post" method="POST">
+        <%=PageFlowUtil.generateSubmitButton("Delete Empty Group", "return confirm('Permanently delete group " + bean.groupName + "?')")%>
+        <input type="hidden" name="group" value="<%= bean.groupName %>">
+        </form>
+        <%
     }
+    else
+    {
+        %>To delete this group, first remove all members.<%
+    }
+    %></div><%
+}
 
     WebPartView.endTitleFrame(out);
 %>
