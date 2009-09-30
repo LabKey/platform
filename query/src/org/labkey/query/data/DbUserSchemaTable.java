@@ -31,6 +31,8 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
 {
     TableType _metadata;
     String _containerId;
+    Container _container;
+    
 
     public DbUserSchemaTable(DbUserSchema schema, SchemaTableInfo table, TableType metadata)
     {
@@ -73,6 +75,7 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
             getColumn("container").setReadOnly(true);
             addCondition(colContainer, containerId);
             _containerId = containerId;
+            _container = ContainerManager.getForId(containerId);
         }
     }
 
@@ -87,6 +90,24 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
         if (_containerId != null)
             filter.addCondition("container", _containerId);
     }
+
+
+    @Override
+    public boolean hasContainerContext()
+    {
+        ColumnInfo colContainer = getRealTable().getColumn("container");
+        return null == colContainer || null != _container;
+    }
+    
+
+    @Override
+    public Container getContainer(Map context)
+    {
+        assert null == getRealTable().getColumn("container") || null != _container;
+        DbUserSchema s = getUserSchema();
+        return null != _container ? _container : s.getDbContainer();
+    }
+
 
     public ActionURL urlFor(DbUserSchemaController.Action action)
     {
