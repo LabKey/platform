@@ -2148,13 +2148,13 @@ public class QueryControllerSpring extends SpringActionController
         {
 			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
 			if (i.isTainted())
-                errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters and Underscores");
+                errors.reject(ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");
         }
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
-            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true));
+            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
@@ -2275,7 +2275,7 @@ public class QueryControllerSpring extends SpringActionController
 		{
 			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
 			if (i.isTainted())
-				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters and Underscores");
+				errors.reject(ERROR_MSG, "Schema name can only contain alphanumeric characters and underscores");
 		}
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
@@ -2288,7 +2288,7 @@ public class QueryControllerSpring extends SpringActionController
                 throw new UnauthorizedException();
 
             setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
-            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false));
+            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception

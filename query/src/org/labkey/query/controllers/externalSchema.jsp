@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -39,7 +40,7 @@
         initialScope = DbScope.getLabkeyScope();
     }
 %>
-
+<labkey:errors/>
 <div id="form"></div>
 
 <script type="text/javascript">

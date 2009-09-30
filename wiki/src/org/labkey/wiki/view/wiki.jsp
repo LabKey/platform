@@ -96,8 +96,6 @@ if (hasContent && includeLinks)
     </td></tr></table><%
 }
 
-
-
 //if page has no content, write out message and add content command
 if (!hasContent)
 {

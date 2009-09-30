@@ -1875,7 +1875,7 @@ public class AnnouncementsController extends SpringActionController
             //format email using same renderer chosen for message
             //note that we still send all messages, including plain text, as html-formatted messages; only the inserted body text differs between renderers.
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-            if(null != wikiService)
+            if (null != wikiService)
             {
                 WikiRenderer w = wikiService.getRenderer(currentRendererType);
                 page.body = w.format(a.getBody()).getHtml();

@@ -120,22 +120,33 @@ public class HtmlRenderer implements WikiRenderer
         }
 
         // back to html
-        StringBuilder innerHtml = new StringBuilder();
+        StringBuilder innerHtml;
 
-        //look for style elements, as tidy moves them to the head section
-        NodeList styleNodes = doc.getElementsByTagName("style");
-        for(int idx = 0; idx < styleNodes.getLength(); ++idx)
+        try
         {
-            innerHtml.append(PageFlowUtil.convertNodeToHtml(styleNodes.item(idx)));
-            innerHtml.append('\n');
-        }
-        
-        Node bodyNode = doc.getElementsByTagName("body").item(0);
-        // Uncomment the below to debug bodyNode contents
-        // inspectNode(bodyNode, 0);
+            innerHtml = new StringBuilder();
 
-        String bodyHtml = PageFlowUtil.convertNodeToHtml(bodyNode);
-        innerHtml.append(bodyHtml.substring("<body>".length(), bodyHtml.length()-"</body>".length()));
+            //look for style elements, as tidy moves them to the head section
+            NodeList styleNodes = doc.getElementsByTagName("style");
+            for (int idx = 0; idx < styleNodes.getLength(); ++idx)
+            {
+                innerHtml.append(PageFlowUtil.convertNodeToHtml(styleNodes.item(idx)));
+                innerHtml.append('\n');
+            }
+
+            Node bodyNode = doc.getElementsByTagName("body").item(0);
+            // Uncomment the below to debug bodyNode contents
+            // inspectNode(bodyNode, 0);
+
+            String bodyHtml = PageFlowUtil.convertNodeToHtml(bodyNode);
+            innerHtml.append(bodyHtml.substring("<body>".length(), bodyHtml.length()-"</body>".length()));
+        }
+        catch (Exception e)
+        {
+            innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occured while generating the HTML.  Please correct the content.</b></div><br>The error message was: ");
+            innerHtml.append(e.getMessage()); 
+            volatilePage = false;
+        }
 
         return new FormattedHtml(innerHtml.toString(), volatilePage);
     }

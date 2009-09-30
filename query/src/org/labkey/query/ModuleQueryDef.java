@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.w3c.dom.Node;
 import org.w3c.dom.Document;
 
+import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 
@@ -91,11 +92,11 @@ public class ModuleQueryDef extends ModuleFileResource
     }
 
 
-    protected void loadMetadata(Document doc)
+    protected void loadMetadata(Document doc) throws TransformerException, IOException
     {
         Node docElem = doc.getDocumentElement();
 
-        if(!docElem.getNodeName().equalsIgnoreCase("query"))
+        if (!docElem.getNodeName().equalsIgnoreCase("query"))
             return;
 
         _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(docElem, "hidden", "false"));
@@ -103,17 +104,16 @@ public class ModuleQueryDef extends ModuleFileResource
 
         //description
         Node node = DOMUtil.getFirstChildNodeWithName(docElem, "description");
-        if(null != node)
+        if (null != node)
             _description = DOMUtil.getNodeText(node);
 
         node = DOMUtil.getFirstChildNodeWithName(docElem, "metadata");
-        if(null != node)
+        if (null != node)
         {
             Node root = DOMUtil.getFirstChildElement(node);
-            if(null != root)
+            if (null != root)
                 _queryMetaData = PageFlowUtil.convertNodeToXml(root);
         }
-
     }
 
     public String getName()
