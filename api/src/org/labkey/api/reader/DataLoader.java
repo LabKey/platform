@@ -349,10 +349,17 @@ public abstract class DataLoader<T> implements Iterable<T>
         getColumns();
 
         List<T> rowList = new ArrayList<T>();
-        Iterator<T> it = iterator();
+        CloseableIterator<T> it = iterator();
 
-        while (it.hasNext())
-            rowList.add(it.next());
+        try
+        {
+            while (it.hasNext())
+                rowList.add(it.next());
+        }
+        finally
+        {
+            it.close();
+        }
 
         return rowList;
     }

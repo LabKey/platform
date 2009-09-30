@@ -26,7 +26,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
 {
-    public ModelAndView getView(FORM form, BindException errors) throws Exception
+    public final ModelAndView getView(FORM form, BindException errors) throws Exception
     {
         ActionURL url;
 
