@@ -3,6 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
 if (typeof LABKEY == "undefined")
 {
     var LABKEY = {};
@@ -23,28 +24,36 @@ if (typeof LABKEY == "undefined")
     LABKEY._loadedScriptFiles = {};
     LABKEY._emptyFunction = function(){};
 
-    // FireBug console
+    var nullConsole =
+    {
+        assert : LABKEY._emptyFunction,
+        count : LABKEY._emptyFunction,
+        debug : LABKEY._emptyFunction,
+        dir : LABKEY._emptyFunction,
+        dirxml: LABKEY._emptyFunction,
+        error : LABKEY._emptyFunction,
+        info : LABKEY._emptyFunction,
+        group : LABKEY._emptyFunction,
+        groupEnd : LABKEY._emptyFunction,
+        log : LABKEY._emptyFunction,
+        profile : LABKEY._emptyFunction,
+        profileEnd : LABKEY._emptyFunction,
+        time : LABKEY._emptyFunction,
+        timeEnd : LABKEY._emptyFunction,
+        trace : LABKEY._emptyFunction,
+        warn : LABKEY._emptyFunction
+    };
     if (!("console" in window))
     {
-        window.console =
-        {
-            assert : LABKEY._emptyFunction,
-            count : LABKEY._emptyFunction,
-            debug : LABKEY._emptyFunction,
-            dir : LABKEY._emptyFunction,
-            dirxml: LABKEY._emptyFunction,
-            error : LABKEY._emptyFunction,
-            info : LABKEY._emptyFunction,
-            group : LABKEY._emptyFunction,
-            groupEnd : LABKEY._emptyFunction,
-            log : LABKEY._emptyFunction,
-            profile : LABKEY._emptyFunction,
-            profileEnd : LABKEY._emptyFunction,
-            time : LABKEY._emptyFunction,
-            timeEnd : LABKEY._emptyFunction,
-            trace : LABKEY._emptyFunction,
-            warn : LABKEY._emptyFunction
-        };
+        window.console = nullConsole;
+    }
+    else
+    {
+        for (var f in nullConsole)
+            if (!(f in console))
+                console[f] = nullConsole[f];
+        if (console.debug == LABKEY._emptyFunction())
+            console.debug = console.warn;
     }
 }
 
