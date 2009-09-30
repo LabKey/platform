@@ -782,7 +782,7 @@ public class ListController extends SpringActionController
             TabLoader tl = new TabLoader(form.ff_data, true);
             _list = form.getList();
 
-            List<String> errorList = _list.insertListItems(getUser(), tl);
+            List<String> errorList = _list.insertListItems(getUser(), tl, null);
 
             if (errorList.isEmpty())
                 return true;

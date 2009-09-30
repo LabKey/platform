@@ -112,7 +112,7 @@ public class ListImporter implements ExternalStudyImporter
 
                     if (tsv.exists())
                     {
-                        List<String> errors = def.insertListItems(ctx.getUser(), DataLoader.getDataLoaderForFile(tsv));
+                        List<String> errors = def.insertListItems(ctx.getUser(), DataLoader.getDataLoaderForFile(tsv), listsDir);
 
                         for (String error : errors)
                             ctx.getLogger().error(error);

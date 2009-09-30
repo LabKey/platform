@@ -742,14 +742,14 @@ public class Query
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
-            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize));
+            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null);
 
             ListDefinition S = s.createList(qtest, "S");
             S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize));
+            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null);
         }
 
 

@@ -193,35 +193,6 @@ public class ListWriter implements ExternalStudyWriter
     }
 
 
-    // Uniquify filenames by inserting _n immediately before the extension
-    private static class FileNameUniquifier
-    {
-        private Set<String> _previous = new HashSet<String>();
-
-        private String uniquify(String name)
-        {
-            int i = 1;
-            String candidateName = name;
-
-            // Insert _2, _3, _4, _5, etc. before the extension until we have a unique identifier
-            while (_previous.contains(candidateName))
-            {
-                i++;
-                int dot = name.lastIndexOf('.');
-
-                if (-1 == dot)
-                    candidateName = name + '_' + i;
-                else
-                    candidateName = name.substring(0, dot) + '_' + i + name.substring(dot);
-            }
-
-            _previous.add(candidateName);
-
-            return candidateName;
-        }
-    }
-
-
     // We just want the underlying value, not the lookup
     private static class ListExportDataColumn extends DataColumn
     {

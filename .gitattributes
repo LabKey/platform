@@ -851,6 +851,7 @@ experiment/src/org/labkey/experiment/defaults/DefaultValueServiceImpl.java -text
 experiment/src/org/labkey/experiment/deriveSamplesChooseTarget.jsp -text
 experiment/src/org/labkey/experiment/experimentRunQueryHeader.jsp -text
 experiment/src/org/labkey/experiment/list/DomainAuditViewFactory.java -text
+experiment/src/org/labkey/experiment/list/FileNameUniquifier.java -text
 experiment/src/org/labkey/experiment/list/ListAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/list/ListDef.java -text
 experiment/src/org/labkey/experiment/list/ListDefinitionImpl.java -text

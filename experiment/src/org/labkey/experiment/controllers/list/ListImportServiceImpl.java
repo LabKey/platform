@@ -58,7 +58,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
         try
         {
-            errors = def.insertListItems(getUser(), loader);
+            errors = def.insertListItems(getUser(), loader, null);
         }
         catch (IOException ioe)
         {

@@ -16,8 +16,11 @@
 
 package org.labkey.experiment.list;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
@@ -28,16 +31,15 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.list.ListController;
 import org.labkey.experiment.controllers.list.ListImportHelper;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -307,17 +309,15 @@ public class ListDefinitionImpl implements ListDefinition
         }
     }
 
-    public List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader) throws IOException
+    public List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader, @Nullable File attachmentDir) throws IOException
     {
         List<String> errors = new ArrayList<String>();
-        ArrayList<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
         Set<String> mvIndicatorColumnNames = new CaseInsensitiveHashSet();
+
         for (DomainProperty property : getDomain().getProperties())
-        {
-            pds.add(property.getPropertyDescriptor());
             if (property.isMvEnabled())
                 mvIndicatorColumnNames.add(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
-        }
+
         Map<String, DomainProperty> propertiesByName = getDomain().createImportMap(true);
         Map<String, DomainProperty> foundProperties = new CaseInsensitiveHashMap<DomainProperty>();
         ColumnDescriptor cdKey = null;
@@ -423,7 +423,7 @@ public class ListDefinitionImpl implements ListDefinition
 
 		DomainProperty[] domainProperties = getDomain().getProperties();
 		
-        for (Map row : rows)
+        for (Map<String, Object> row : rows)
         {
             row = new CaseInsensitiveHashMap<Object>(row);
             for (DomainProperty domainProperty : domainProperties)
@@ -460,7 +460,7 @@ public class ListDefinitionImpl implements ListDefinition
                     missingValues.add(domainProperty.getName());
                     errors.add(domainProperty.getName() + " is required.");
                 }
-                else if (!valueMissing && domainProperty.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && !noUpload.contains(domainProperty.getName()))   // TODO: Change to allowUpload() getter on property
+                else if (domainProperty.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && null == attachmentDir && !valueMissing && !noUpload.contains(domainProperty.getName()))
                 {
                     noUpload.add(domainProperty.getName());
                     errors.add("Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + ".");
@@ -496,12 +496,12 @@ public class ListDefinitionImpl implements ListDefinition
         if (errors.size() > 0)
             return errors;
 
-        doBulkInsert(user, cdKey, getDomain(), foundProperties, rows, errors);
+        doBulkInsert(user, cdKey, getDomain(), foundProperties, rows, attachmentDir, errors);
 
         return errors;
     }
 
-    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, List<String> errors)
+    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, @Nullable File attachmentDir, List<String> errors)
     {
         boolean transaction = false;
 
@@ -518,7 +518,7 @@ public class ListDefinitionImpl implements ListDefinition
             for (DomainProperty dp : domain.getProperties())
                 if (properties.containsKey(dp.getPropertyURI()))
                     used.add(dp);
-            ListImportHelper helper = new ListImportHelper(user, this, used.toArray(new DomainProperty[used.size()]), cdKey);
+            ListImportHelper helper = new ListImportHelper(user, this, used.toArray(new DomainProperty[used.size()]), cdKey, attachmentDir);
 
             // our map of properties can have duplicates due to MV indicator columns (different columns, same URI)
             Set<PropertyDescriptor> propSet = new HashSet<PropertyDescriptor>();
@@ -539,12 +539,10 @@ public class ListDefinitionImpl implements ListDefinition
         {
             for (ValidationError error : ve.getErrors())
                 errors.add(error.getMessage());
-            return;
         }
         catch (SQLException se)
         {
             errors.add(se.getMessage());
-            return;
         }
         finally
         {
