@@ -1348,17 +1348,17 @@ public class PageFlowUtil
         }
     }
 
-    public static String convertNodeToHtml(Node node)
+    public static String convertNodeToHtml(Node node) throws TransformerException, IOException
     {
         return convertNodeToString(node, TransformFormat.html);
     }
 
-    public static String convertNodeToXml(Node node)
+    public static String convertNodeToXml(Node node) throws TransformerException, IOException
     {
         return convertNodeToString(node, TransformFormat.xml);
     }
 
-    public static String convertNodeToString(Node node, TransformFormat format)
+    public static String convertNodeToString(Node node, TransformFormat format) throws TransformerException, IOException
     {
         try
         {
@@ -1376,14 +1376,6 @@ public class PageFlowUtil
             throw new RuntimeException("There was a problem creating the XML transformer factory." +
                     " If you specified a class name in the 'javax.xml.transform.TransformerFactory' system property," +
                     " please ensure that this class is included in the classpath for web application.", e);
-        }
-        catch (TransformerException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
         }
     }
 

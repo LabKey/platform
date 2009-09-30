@@ -32,5 +32,6 @@ public interface WikiRenderer
         HString getName();
     }
 
+    // TODO: Pass in "wiki page", "message", "issue", etc. so we can tailor any error messages
     public FormattedHtml format(String text);
 }
