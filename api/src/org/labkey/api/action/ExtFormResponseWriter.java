@@ -48,7 +48,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
 
     public void write(Errors errors) throws IOException
     {
-        /*
+        /*                                       IOUtil
             Ext has a particular format they use for consuming validation errors expressed in JSON:
             {
                 success: false,
@@ -60,7 +60,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
 
             This is a bit strange, since you can't provide more than one error
             for a given field, and there's really no place to put object-level
-            errors.
+            errors.  Labkey.form
 
             Also, the response code must be 200, even though there are errors.
 
@@ -71,18 +71,11 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         for(ObjectError error : (List<ObjectError>)errors.getAllErrors())
         {
             String msg = error.getDefaultMessage();
-            String key = error.getObjectName();
-
-            if(error instanceof FieldError)
-            {
-                FieldError ferror = (FieldError)error;
-                key = ferror.getField();
-                msg = ferror.getDefaultMessage();
-
-                if(jsonErrors.has(ferror.getField()))
-                    msg = jsonErrors.get(ferror.getField()) + " " + ferror.getDefaultMessage();
-            }
-
+            String key = "_form";
+            if (error instanceof FieldError)
+                key = ((FieldError)error).getField();
+            if (jsonErrors.has(key))
+                msg = jsonErrors.get(key) + " " + msg;
             jsonErrors.put(key, msg);
         }
 

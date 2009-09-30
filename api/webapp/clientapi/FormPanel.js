@@ -82,6 +82,16 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     onRender : function(ct, position)
     {
         LABKEY.ext.FormPanel.superclass.onRender.call(this, ct, position);
+        new Ext.KeyMap(
+            this.el,
+            [{
+                key: [10, Ext.EventObject.ENTER],
+                ctrl: false,
+                alt: false,
+                shift: false,
+                scope: this.getForm(),
+                fn: this.getForm().submit
+            }]);
     },
 
 
@@ -155,7 +165,30 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         }
 
         return items;
+    },
+
+    // we want to hook error handling to provide a mechanism to show form errors (vs field errors)
+    // form errors are reported on imaginary field names "_form"
+    createForm : function()
+    {
+        var f = LABKEY.ext.FormPanel.superclass.createForm.call(this);
+        var formPanel = this;
+        var findField = f.findField;
+        f.findField = function(id)
+        {
+            if (id == "_form")
+                return formPanel;
+            return findField.call(this,id);
+        };
+        return f;
+    },
+
+
+    markInvalid : function(msg)
+    {
+        Ext.Msg.alert("Error", msg);
     }
+
 });
 
 
@@ -337,4 +370,9 @@ LABKEY.ext.Checkbox = Ext.extend(Ext.form.Checkbox,
     }
 });
 
+
 Ext.reg('checkbox', LABKEY.ext.Checkbox);
+Ext.reg('labkey-form', LABKEY.ext.FormPanel);
+
+
+
