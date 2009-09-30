@@ -19,6 +19,7 @@ package org.labkey.query;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.data.*;
@@ -603,7 +604,17 @@ public class QueryServiceImpl extends QueryService
         DbUserSchemaDef[] defs = QueryManager.get().getDbUserSchemaDefs(folderSchema.getContainer());
 
         for (DbUserSchemaDef def : defs)
-            ret.put(def.getUserSchemaName(), new DbUserSchema(folderSchema.getUser(), folderSchema.getContainer(), def));
+        {
+            try
+            {
+                UserSchema schema = new DbUserSchema(folderSchema.getUser(), folderSchema.getContainer(), def);
+                ret.put(def.getUserSchemaName(), schema);
+            }
+            catch (Exception e)
+            {
+                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource());
+            }
+        }
 
         return ret;
     }
