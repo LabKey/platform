@@ -61,7 +61,6 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
 
 LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
     initComponent : function(){
-        this.addEvents("schemasloaded");
         this.dataUrl = LABKEY.ActionURL.buildURL("query", "getSchemaQueryTree.api");
         this.root = new Ext.tree.AsyncTreeNode({
             id: 'root',
@@ -72,7 +71,9 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
             listeners: {
                 load: {
                     fn: function(node){
-                        this.fireEvent("schemasloaded", node.childNodes);
+                        try {
+                            this.fireEvent("schemasloaded", node.childNodes);
+                        } catch(ignore) {}
                     },
                     scope: this
                 }
@@ -80,6 +81,7 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
         });
 
         LABKEY.ext.QueryTreePanel.superclass.initComponent.apply(this, arguments);
+        this.addEvents("schemasloaded");
         this.getLoader().on("loadexception", function(loader, node, response){
             LABKEY.Utils.displayAjaxErrorResponse(response);
         }, this);
@@ -659,10 +661,6 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
 LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
     initComponent : function() {
         this.bodyStyle = "padding: 5px";
-        if (this.schemaBrowser)
-            this.schemaBrowser.on("schemasloaded", function(browser, schemaNodes){
-                this.setSchemas(schemaNodes);
-            }, this);
         LABKEY.ext.SchemaBrowserHomePanel.superclass.initComponent.apply(this, arguments);
     },
 
@@ -687,6 +685,35 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
             html: 'Use the tree on the left to select a query, or select a schema below to expand that schema in the tree.'
         });
 
+        //IE won't let you create the table rows incrementally
+        //so build the rows as a data structure first and then
+        //do one createChild() for the whole table
+        var rows = [];
+        for (var idx = 0; idx < schemaNodes.length; ++idx)
+        {
+            var schemaNode = schemaNodes[idx];
+
+            rows.push({
+                tag: 'tr',
+                children: [
+                    {
+                        tag: 'td',
+                        children: [
+                            {
+                                tag: 'span',
+                                cls: 'labkey-link',
+                                html: schemaNode.attributes.schemaName
+                            }
+                        ]
+                    },
+                    {
+                        tag: 'td',
+                        html: schemaNode.attributes.description
+                    }
+                ]
+            });
+        }
+
         var table = this.body.createChild({
             tag: 'table',
             cls: 'lk-qd-coltable',
@@ -709,37 +736,21 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
                             ]
                         }
                     ]
+                },
+                {
+                    tag: 'tbody',
+                    children: rows
                 }
             ]
         });
-        var tbody = table.createChild({
-            tag: 'tbody'
-        });
 
-        for (var idx = 0; idx < schemaNodes.length; ++idx)
+        var nameLinks = table.query("tbody tr td span");
+        for (idx = 0; idx < nameLinks.length; ++idx)
         {
-            var schemaNode = schemaNodes[idx];
-
-            var tr = tbody.createChild({
-                tag: 'tr'
-            });
-            var tdName = tr.createChild({
-                tag: 'td'
-            });
-            var spanName = tdName.createChild({
-                tag: 'span',
-                cls: 'labkey-link',
-                html: schemaNode.attributes.schemaName
-            });
-            spanName.on("click", function(evt, t){
+            Ext.get(nameLinks[idx]).on("click", function(evt,t){
                 if (this.schemaBrowser)
                     this.schemaBrowser.selectSchema(t.innerHTML);
             }, this);
-
-            tr.createChild({
-                tag: 'td',
-                html: schemaNode.attributes.description
-            });
         }
     }
 });
@@ -808,7 +819,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                         },
                         schemasloaded: {
                             fn: function(schemaNodes){
-                                this.fireEvent("schemasloaded", this, schemaNodes);
+                                this.getComponent('lk-sb-details').getComponent('lk-sb-panel-home').setSchemas(schemaNodes);
                             },
                             scope: this
                         }

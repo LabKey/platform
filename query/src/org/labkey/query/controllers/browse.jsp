@@ -29,17 +29,21 @@
 </script>
 
 <script type="text/javascript">
-    var _browser = new LABKEY.ext.SchemaBrowser({
-        renderTo: 'browser',
-        height: 600,
-        width: 900,
-        useHistory: true,
-        listeners: {
-            schemasloaded: {
-                fn: onSchemasLoaded,
-                scope: this
+    var _browser = null;
+
+    Ext.onReady(function(){
+        _browser = new LABKEY.ext.SchemaBrowser({
+            renderTo: 'browser',
+            height: 600,
+            width: 900,
+            useHistory: true,
+            listeners: {
+                schemasloaded: {
+                    fn: onSchemasLoaded,
+                    scope: this
+                }
             }
-        }
+        });
     });
 
     function onSchemasLoaded(browser) {
