@@ -72,6 +72,11 @@ LABKEY.ext.PersistentToolTip = Ext.extend(Ext.ToolTip,{
     } else {
       this.delayHide();
     }
+  },
+
+  show: function () {
+    LABKEY.ext.PersistentToolTip.superclass.show.call(this);
+    LABKEY.Utils.ensureBoxVisible(this);
   }
 });
 Ext.reg('persistenttip', LABKEY.ext.PersistentToolTip);
@@ -120,8 +125,7 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
     initComponent: function()
     {
       Ext.apply(this, {
-          mouseOffset: [2, 8],
-          autoWidth: true
+          mouseOffset: [2, 8]
       });
 
       if (!this.targetAutoEl) {
@@ -181,13 +185,12 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
 
                     if (json)
                     {
+                        self.hide();
                         if (tpl)
                             tpl.overwrite(el, json);
                         else if (renderer)
                             renderer(el, json);
-                        self.syncSize();
-
-                        LABKEY.Utils.ensureBoxVisible(self);
+                        self.show();
                     }
                 }
             };

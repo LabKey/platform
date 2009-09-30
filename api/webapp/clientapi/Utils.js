@@ -314,8 +314,8 @@ LABKEY.Utils = new function()
             var viewportWidth = Ext.lib.Dom.getViewWidth();
             var scrollLeft = Ext.dd.DragDropMgr.getScrollLeft();
 
-            if (viewportWidth + scrollLeft < box.width + box.x) {
-                var scrollBarWidth = 18;
+            var scrollBarWidth = 20;
+            if (viewportWidth - scrollBarWidth + scrollLeft < box.width + box.x) {
                 boxComponent.setPosition(viewportWidth + scrollLeft - box.width - scrollBarWidth);
             }
         },
