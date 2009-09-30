@@ -35,7 +35,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
     var _dt = null;
     var _lastUpdate = "";
     var _iDelay = 0;
-    var _delays = new Array(5, 15, 30, 60);
+    var _delays = new Array(15, 30, 60, 120);
 
     // private methods:
     var nextUpdate = function(iNext)

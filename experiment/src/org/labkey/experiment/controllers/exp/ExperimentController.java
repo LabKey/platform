@@ -1219,7 +1219,7 @@ public class ExperimentController extends SpringActionController
                             }
                             catch (BiffException e)
                             {
-                                throw new FileNotFoundException("Unable to parse file as Excel data: " + e);
+                                throw new NotFoundException("Unable to parse file as Excel data: " + e);
                             }
                             for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
                             {
@@ -4202,9 +4202,14 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
-        public ActionURL getShowRunGraph(Container container)
+        public ActionURL getShowRunGraphURL(Container container)
         {
             return new ActionURL(ShowRunGraphAction.class, container);
+        }
+
+        public ActionURL getUploadXARURL(Container container)
+        {
+            return new ActionURL(ShowAddXarFileAction.class, container);
         }
     }
 

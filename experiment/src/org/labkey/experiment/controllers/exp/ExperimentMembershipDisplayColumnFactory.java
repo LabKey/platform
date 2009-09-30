@@ -20,12 +20,9 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Set;
-import java.util.Collections;
-import java.util.Map;
 import java.io.Writer;
 import java.io.IOException;
 
@@ -37,7 +34,6 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
 {
     private ColumnInfo _expRowIdCol;
     private FieldKey _expRunFieldKey;
-    private ColumnInfo _expRunRowIdCol;
     private int _runId = -1;
     private int _expId = -1;
 
@@ -73,17 +69,23 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             return true;
         }
 
+        @Override
+        public void addQueryFieldKeys(Set<FieldKey> keys)
+        {
+            if (_runId == -1)
+            {
+                keys.add(getRunRowIdFieldKey());
+            }
+        }
+
+        private FieldKey getRunRowIdFieldKey()
+        {
+            return _expRunFieldKey == null ? FieldKey.fromParts("RowId") : new FieldKey(_expRunFieldKey, "RowId");
+        }
+
         public void addQueryColumns(Set<ColumnInfo> queryCols)
         {
             super.addQueryColumns(queryCols);
-            if (_runId == -1)
-            {
-                FieldKey runRowIdFieldKey = _expRunFieldKey == null ? FieldKey.fromParts("RowId") :new FieldKey(_expRunFieldKey, "RowId");
-                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getColumnInfo().getParentTable(), Collections.singleton(runRowIdFieldKey));
-                _expRunRowIdCol = cols.get(runRowIdFieldKey);
-                assert _expRunRowIdCol != null;
-                queryCols.add(_expRunRowIdCol);
-            }
             if (_expRowIdCol != null)
             {
                 queryCols.add(_expRowIdCol);
@@ -142,7 +144,15 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
         {
             if (_runId == -1)
             {
-                return ((Number)_expRunRowIdCol.getValue(ctx)).intValue();
+                ColumnInfo columnInfo = ctx.getFieldMap().get(getRunRowIdFieldKey());
+                if (columnInfo != null)
+                {
+                    return ((Number)columnInfo.getValue(ctx)).intValue();
+                }
+                else
+                {
+                    return -1;
+                }
             }
             else
             {

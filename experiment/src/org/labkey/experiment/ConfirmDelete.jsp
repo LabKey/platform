@@ -59,7 +59,7 @@ else
             Container runContainer = runEntry.getValue();
             %>
             <li>
-                <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraph(runContainer); %>
+                <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraphURL(runContainer); %>
                 <a href="<%= url %>rowId=<%= Integer.toString(run.getRowId()) %>"><%= run.getName() %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
@@ -80,7 +80,7 @@ else
             Container runContainer = runEntry.getValue();
             %>
             <li>
-                <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraph(runContainer); %>
+                <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraphURL(runContainer); %>
                 <a href="<%= url %>rowId=<%= Integer.toString(run.getRowId()) %>"><%= run.getName() %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>

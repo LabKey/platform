@@ -153,6 +153,11 @@ public class PipelineController extends SpringActionController
             String path = form.getPath();
             if (path != null && path.length() > 0)
             {
+                if (path.startsWith("\\\\"))
+                {
+                    error(errors, "UNC paths are not supported for pipline roots");
+                    return false;
+                }
                 File fileRoot = new File(path);
                 try
                 {

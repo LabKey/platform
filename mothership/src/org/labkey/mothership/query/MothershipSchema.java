@@ -157,6 +157,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromString("ActiveUserCount"));
         defaultCols.add(FieldKey.fromString("ContainerCount"));
         defaultCols.add(FieldKey.fromString("ExceptionCount"));
+        defaultCols.add(FieldKey.fromString("HeapSize"));
         result.setDefaultVisibleColumns(defaultCols);
 
         ActionURL base = new ActionURL(MothershipController.ShowServerSessionDetailAction.class, getContainer());
@@ -399,6 +400,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("Browser"));
         defaultCols.add(FieldKey.fromParts("ServerSessionId", "RuntimeOS"));
         defaultCols.add(FieldKey.fromParts("ServerSessionId", "JavaVersion"));
+        defaultCols.add(FieldKey.fromParts("ServerSessionId", "HeapSize"));
         result.setDefaultVisibleColumns(defaultCols);
 
         return result;

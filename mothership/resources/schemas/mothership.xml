@@ -152,6 +152,9 @@
             <ns:column columnName="ActiveUserCount"/>
             <ns:column columnName="ProjectCount"/>
             <ns:column columnName="ContainerCount"/>
+            <ns:column columnName="HeapSize">
+                <ns:columnTitle>Max Heap Size (MB)</ns:columnTitle>
+            </ns:column>
             <ns:column columnName="AdministratorEmail"/>
         </ns:columns>
     </ns:table>

@@ -46,6 +46,7 @@ public class ServerSession
     private Integer _activeUserCount;
     private Integer _projectCount;
     private Integer _containerCount;
+    private Integer _heapSize;
     private String _administratorEmail;
 
     public String getDatabaseProductVersion()
@@ -246,5 +247,15 @@ public class ServerSession
     public void setEnterprisePipelineEnabled(Boolean enterprisePipelineEnabled)
     {
         _enterprisePipelineEnabled = enterprisePipelineEnabled;
+    }
+
+    public Integer getHeapSize()
+    {
+        return _heapSize;
+    }
+
+    public void setHeapSize(Integer heapSize)
+    {
+        _heapSize = heapSize;
     }
 }

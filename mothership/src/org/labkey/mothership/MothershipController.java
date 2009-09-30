@@ -37,6 +37,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.UserManager;
@@ -800,6 +801,7 @@ public class MothershipController extends SpringActionController
         private Integer _activeUserCount;
         private Integer _projectCount;
         private Integer _containerCount;
+        private Integer _heapSize;
         private String _administratorEmail;
         private boolean _ldapEnabled;
         private boolean _enterprisePipelineEnabled;
@@ -967,6 +969,16 @@ public class MothershipController extends SpringActionController
             _administratorEmail = administratorEmail;
         }
 
+        public Integer getHeapSize()
+        {
+            return _heapSize;
+        }
+
+        public void setHeapSize(Integer heapSize)
+        {
+            _heapSize = heapSize;
+        }
+
         public ServerSession toSession(Container container)
         {
             ServerSession session = new ServerSession();
@@ -988,6 +1000,7 @@ public class MothershipController extends SpringActionController
             session.setAdministratorEmail(getAdministratorEmail());
             session.setLdapEnabled(isLDAPEnabled());
             session.setEnterprisePipelineEnabled(isEnterprisePipelineEnabled());
+            session.setHeapSize(getHeapSize());
 
             return session;
         }
@@ -1340,7 +1353,9 @@ public class MothershipController extends SpringActionController
             };
 
             replacementServerInstallationColumn.setCaption("Server Installation");
-            replacementServerInstallationColumn.setURL("showInstallationDetail.view?serverInstallationId=${ServerInstallationId}");
+            replacementServerInstallationColumn.setURLExpression(new DetailsURL(
+                    new ActionURL(ShowInstallationDetailAction.class, getViewContext().getContainer()),
+                    Collections.singletonMap("serverInstallationId", "ServerInstallationId")));
             getDataRegion().addDisplayColumn(3, replacementServerInstallationColumn);
 
             ButtonBar bb = new ButtonBar();
