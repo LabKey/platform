@@ -75,7 +75,7 @@ Ext.onReady(function()
 
 </script>
 
-<%=PageFlowUtil.generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%>
+<%if (bean.group.getUserId() > 0){%><%=PageFlowUtil.generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%><%}%>
 
 <form id="groupMembersForm" action="updateMembers.post" method="POST">
 <%
