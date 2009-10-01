@@ -50,7 +50,6 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     },
 
     defaultType : 'textfield',
-    defaults : {width:200},
     allFields : [],
 
     initComponent : function()
@@ -78,22 +77,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     },
 
 
-    onRender : function(ct, position)
-    {
-        LABKEY.ext.FormPanel.superclass.onRender.call(this, ct, position);
-        new Ext.KeyMap(
-            this.el,
-            [{
-                key: [10, Ext.EventObject.ENTER],
-                ctrl: false,
-                alt: false,
-                shift: false,
-                scope: this.getForm(),
-                fn: this.getForm().submit
-            }]);
-    },
-
-
+    /* called initComponent() before onRender() */
     applyDefaults : function(c)
     {
         if (this.fieldDefaults)
@@ -106,12 +90,55 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                 var name = c.name;
                 if (name && this.fieldDefaults[name])
                     Ext.applyIf(c, this.fieldDefaults[name]);
+                // check for helpPopup
+                if (c.fieldLabel && c.helpPopup)
+                {
+                    var help;
+                    var id = "helpPopup-" + (++Ext.Component.AUTO_ID);
+                    if (typeof c.helpPopup.show != "function")
+                        c.helpPopup = new Ext.ToolTip(Ext.applyIf(c.helpPopup,{autoHide:false, closable:true, minWidth:200}));
+                    c.helpPopup.target = id;
+                    c.labelSeparator = "<a id=" + id + " tabindex=\"-1\" href=\"javascript:void(0);\"><span class=\"labkey-help-pop-up\" style=\"font-size:10pt;\"><sup>?</sup></span></a>";
+                }
             }
             else
             {
             }
         }
         return LABKEY.ext.FormPanel.superclass.applyDefaults.call(this, c);
+    },
+
+
+    /* gets called before doLayout() */
+    onRender : function(ct, position)
+    {
+        LABKEY.ext.FormPanel.superclass.onRender.call(this, ct, position);
+//        new Ext.KeyMap(
+//            this.el,
+//            [{
+//                key: [10, Ext.EventObject.ENTER],
+//                ctrl: false,
+//                alt: false,
+//                shift: false,
+//                scope: this.getForm(),
+//                fn: this.getForm().submit
+//            }]);
+    },
+
+
+    /* labels are rendered as part of layout */
+    doLayout : function()
+    {
+        LABKEY.ext.FormPanel.superclass.doLayout.call(this);
+        var fn = function(c)
+        {
+            if (c.isFormField && c.helpPopup && c.helpPopup.target)
+                Ext.get(c.helpPopup.target).on("click", c.helpPopup.onTargetOver, c.helpPopup);
+//                c.helpPopup.initTarget();
+            if (c.items)
+                c.items.each(fn);
+        };
+        this.items.each(fn);
     },
 
 
