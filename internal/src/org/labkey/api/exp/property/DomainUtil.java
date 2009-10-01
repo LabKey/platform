@@ -272,9 +272,22 @@ public class DomainUtil
             String url = pd.getURL();
             if (null != url)
             {
-                String message = StringExpressionFactory.validateURL(url);
+                String message;
+                try
+                {
+                    message = StringExpressionFactory.validateURL(url);
+                    if (null == message && null == StringExpressionFactory.createURL(url))
+                        message = "Can't parse url: " + url;    // unexpected parse problem   
+                }
+                catch (Exception x)
+                {
+                    message = x.getMessage();
+                }
                 if (null != message)
+                {
                     errors.add(message);
+                    pd.setURL(null);    // or else _copyProperties() will blow up
+                }
             }
 
             s.remove(pd.getPropertyId());
