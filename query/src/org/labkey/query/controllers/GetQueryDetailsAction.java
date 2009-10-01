@@ -191,7 +191,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             }
             else
             {
-                lookupInfo.put("queryName", (null != lookupTable.getName() ? lookupTable.getName() : "(unknown)"));
+                lookupInfo.put("queryName", lookupTable.getName());
                 lookupInfo.put("schemaName", lookupTable.getSchema().getName());
 
             }

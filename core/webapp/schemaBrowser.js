@@ -360,31 +360,35 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
                 ]
             });
         }
-        
-        for (var idxCol = 0; idxCol < columns.length; ++idxCol)
+
+        if (columns)
         {
-            row = {tag: 'tr', children: []};
-            col = columns[idxCol];
-            for (var idxTable = 0; idxTable < this.tableCols.length; ++idxTable)
+            for (var idxCol = 0; idxCol < columns.length; ++idxCol)
             {
-                td = {tag: 'td'};
-                content = this.tableCols[idxTable].renderer.call(this, col);
-                if (Ext.type(content) == "array")
-                    td.children = content;
-                else if (Ext.type(content) == "object")
-                    td.children = [content];
-                else
-                    td.html = content;
-                
-                row.children.push(td);
+                row = {tag: 'tr', children: []};
+                col = columns[idxCol];
+                for (var idxTable = 0; idxTable < this.tableCols.length; ++idxTable)
+                {
+                    td = {tag: 'td'};
+                    content = this.tableCols[idxTable].renderer.call(this, col);
+                    if (Ext.type(content) == "array")
+                        td.children = content;
+                    else if (Ext.type(content) == "object")
+                        td.children = [content];
+                    else
+                        td.html = content;
+
+                    row.children.push(td);
+                }
+                rows.push(row);
             }
-            rows.push(row);
         }
+        
         return rows;
     },
 
     formatLookup : function(col) {
-        if (!col.lookup)
+        if (!col.lookup || null == col.lookup.queryName)
             return "";
 
         var schemaNameEncoded = Ext.util.Format.htmlEncode(col.lookup.schemaName);
