@@ -264,12 +264,12 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         {
             caption: 'Name',
             tip: 'This is the programmatic name used in the API and LabKey SQL.',
-            renderer: function(col){return col.name;}
+            renderer: function(col){return Ext.util.Format.htmlEncode(col.name);}
         },
         {
             caption: 'Caption',
             tip: 'This is the caption the user sees in views.',
-            renderer: function(col){return col.caption;}
+            renderer: function(col){return Ext.util.Format.htmlEncode(col.caption);}
         },
         {
             caption: 'Type',
@@ -289,7 +289,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         {
             caption: 'Description',
             tip: 'Description of the column.',
-            renderer: function(col){return col.description || "";}
+            renderer: function(col){return Ext.util.Format.htmlEncode((col.description || ""));}
         }
 
     ],
@@ -384,32 +384,41 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (!col.lookup)
             return "";
 
-        var tipText = "This column is a lookup to " + col.lookup.schemaName + "." + col.lookup.queryName;
-        var caption = col.lookup.schemaName + "." + col.lookup.queryName;
+        var schemaNameEncoded = Ext.util.Format.htmlEncode(col.lookup.schemaName);
+        var queryNameEncoded = Ext.util.Format.htmlEncode(col.lookup.queryName);
+        var keyColumnEncoded = Ext.util.Format.htmlEncode(col.lookup.keyColumn);
+        var displayColumnEncoded = Ext.util.Format.htmlEncode(col.lookup.displayColumn);
+        var containerPathEncoded = Ext.util.Format.htmlEncode(col.lookup.containerPath);
+
+        var caption = schemaNameEncoded + "." + queryNameEncoded;
+        var tipText = "This column is a lookup to " + caption;
         if (col.lookup.keyColumn)
         {
-            caption += "." + col.lookup.keyColumn;
-            tipText += " joining to the column " + col.lookup.keyColumn;
+            caption += "." + keyColumnEncoded;
+            tipText += " joining to the column " + keyColumnEncoded;
         }
         if (col.lookup.displayColumn)
         {
-            caption += " (" + col.lookup.displayColumn + ")";
-            tipText += " (the value from column " + col.lookup.displayColumn + " is usually displayed in grids)";
+            caption += " (" + displayColumnEncoded + ")";
+            tipText += " (the value from column " + displayColumnEncoded + " is usually displayed in grids)";
         }
-        tipText += ". To reference columns in the lookup table, use the syntax '" + col.name + "/col-in-lookup-table'.";
+        tipText += ". To reference columns in the lookup table, use the syntax '"
+                + Ext.util.Format.htmlEncode(col.name) + "/col-in-lookup-table'.";
 
         if (!col.lookup.isPublic)
             tipText += " Note that the lookup table is not publicly-available via the APIs.";
 
         if (col.lookup.containerPath)
-            tipText += " Note that the lookup table is defined in the folder '" + col.lookup.containerPath + "'.";
+            tipText += " Note that the lookup table is defined in the folder '" + containerPathEncoded + "'.";
 
         var span = {
             tag: 'span',
-            cls: 'labkey-link',
             html: caption,
             "ext:qtip": tipText
         };
+
+        if (col.lookup.isPublic)
+            span.cls = 'labkey-link';
 
         //add extra dom props for the event handler
         span[this.domProps.schemaName] = col.lookup.schemaName;
@@ -1236,8 +1245,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             return;
         }
 
-        //Ext 2.2 doesn't have a scope param on the expand() method
-        var thisScope = this;
         schemaNode.expand(false, false, function(schemaNode){
             //look for the query node under both built-in and user-defined
             var queryNode;
@@ -1254,7 +1261,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             }
 
             tree.selectPath(queryNode.getPath());
-            //thisScope.showQueryDetails(schemaName, queryName);
         });
     }
 });

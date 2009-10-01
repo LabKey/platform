@@ -67,7 +67,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 schemaProps.put("id", "s:" + name);
                 schemaProps.put("text", PageFlowUtil.filter(name));
                 schemaProps.put("description", PageFlowUtil.filter(schema.getDescription()));
-                schemaProps.put("qtip", schema.getDescription());
+                schemaProps.put("qtip", PageFlowUtil.filter(schema.getDescription()));
                 schemaProps.put("schemaName", name);
 
                 respArray.put(schemaProps);
