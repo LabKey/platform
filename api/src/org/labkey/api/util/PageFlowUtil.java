@@ -1205,7 +1205,7 @@ public class PageFlowUtil
 
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
-        String questionMarkHtml = "<span class=\"labkey-help-pop-up\"><sup>?</sup></span>";
+        String questionMarkHtml = "<span class=\"labkey-help-pop-up\">?</span>";
         return helpPopup(title, helpText, htmlHelpText, questionMarkHtml, width);
     }
 

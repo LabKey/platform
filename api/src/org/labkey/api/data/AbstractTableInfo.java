@@ -504,7 +504,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         }
         if (xbTable.getInsertUrl() != null)
         {
-            _gridURL = DetailsURL.fromString(schema.getContainer(), xbTable.getInsertUrl());
+            _insertURL = DetailsURL.fromString(schema.getContainer(), xbTable.getInsertUrl());
         }
         if (xbTable.getUpdateUrl() != null)
         {

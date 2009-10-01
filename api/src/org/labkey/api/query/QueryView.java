@@ -247,9 +247,15 @@ public class QueryView extends WebPartView<Object>
             {
                 button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
             }
-            NavTree editQueryItem = new NavTree("Edit Query", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
-            editQueryItem.setId("Query:EditQuery");
+            NavTree editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
+            editQueryItem.setId("Query:EditSource");
             button.addMenuItem(editQueryItem);
+            if (_queryDef.isMetadataEditable())
+            {
+                NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, _queryDef));
+                editMetadataItem.setId("Query:EditMetadata");
+                button.addMenuItem(editMetadataItem);
+            }
         }
         else
         {

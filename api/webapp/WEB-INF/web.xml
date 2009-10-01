@@ -64,10 +64,6 @@
         <filter-name>Static Content Caching Filter</filter-name>
         <url-pattern>*.js</url-pattern>
     </filter-mapping>
-    <filter-mapping>
-        <filter-name>Static Content Caching Filter</filter-name>
-        <url-pattern>*.js?*</url-pattern>
-    </filter-mapping>
 
     <filter-mapping>
         <filter-name>Form Authentication Filter</filter-name>

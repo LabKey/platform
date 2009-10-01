@@ -37,6 +37,7 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
 
     public int addToTable(FlexTable flexTable, int row)
     {
+        _textBox.setWidth("100%");
         _textBox.addChangeHandler(createChangeHandler());
         _textBox.addKeyUpHandler(createKeyUpHandler());
 
