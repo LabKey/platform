@@ -20,6 +20,11 @@
     padding-bottom: 10px !important;
 }
 
+.lk-qd-query-link
+{
+    margin-left: 4px !important;
+}
+
 .lk-qd-coltable
 {
     border-collapse: collapse;
@@ -46,7 +51,6 @@
 
 .lk-qd-collist-title
 {
-    font-weight: bold;
     background-color: #F0F0F0;
     color: #000000;
 }

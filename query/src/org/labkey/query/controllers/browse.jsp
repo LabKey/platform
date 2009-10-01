@@ -52,7 +52,10 @@
         var schemaName = params.schemaName;
         var queryName = params.queryName;
         if (queryName && schemaName)
+        {
             browser.selectQuery(schemaName, queryName);
+            browser.showQueryDetails(schemaName, queryName);
+        }
         else if (schemaName)
             browser.selectSchema(schemaName, queryName);
 
