@@ -1670,7 +1670,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var btnEl = Ext.fly(btnId);
 
         var br = Ext.get('$br$' + roleId);  // why doesn't Ext.fly() work?
-        if (typeof animate == 'boolean' && animate)
+        if (typeof animate == 'boolean' && animate && !Ext.isSafari)
         {
             if (!animEl)
                 animEl = this.getComponent('$add$' + roleId).el;
