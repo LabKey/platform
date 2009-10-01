@@ -2189,6 +2189,7 @@ public class QueryControllerSpring extends SpringActionController
         private final Container _c;
         private final DbUserSchemaDef _def;
         private final boolean _insert;
+        private final Map<String, String> _help = new HashMap<String, String>();
 
         public ExternalSchemaBean(Container c, DbUserSchemaDef def, boolean insert)
         {
@@ -2237,6 +2238,12 @@ public class QueryControllerSpring extends SpringActionController
                     }
                 }
             }
+
+            TableInfo ti = QueryManager.get().getTableInfoDbUserSchema();
+
+            for (ColumnInfo ci : ti.getColumns())
+                if (null != ci.getDescription())
+                    _help.put(ci.getName(), ci.getDescription());
         }
 
         public Collection<DbScope> getScopes()
@@ -2267,6 +2274,11 @@ public class QueryControllerSpring extends SpringActionController
         public ActionURL getDeleteURL()
         {
             return getDeleteExternalSchemaURL(_c, _def.getDbUserSchemaId());
+        }
+
+        public String getHelpHTML(String fieldName)
+        {
+            return _help.get(fieldName);
         }
     }
 
