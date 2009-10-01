@@ -82,7 +82,7 @@
 %>
     ];
 
-    var store = new Ext.data.SimpleStore({
+var store = new Ext.data.SimpleStore({
     fields:['value', 'name', 'editable', 'schemas'],
     data:dataSources
 });
@@ -94,8 +94,10 @@ var userSchemaText;
 var editableCheckBox;
 var metaDataTextArea;
 
-var f = new LABKEY.ext.FormPanel({
+var f = new Ext.FormPanel({
 //        values:values,
+        width:900,
+        labelWidth:140,
         border:false,
         standardSubmit:true,
         items:[
@@ -105,7 +107,7 @@ var f = new LABKEY.ext.FormPanel({
             dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', store:dataSources[<%=coreIndex%>][3], value:<%=q(h(def.getDbSchemaName()))%>, editable:true, triggerAction:'all'}),
             userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', value:<%=q(h(def.getUserSchemaName()))%>}),
             editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable'}),
-            metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', value:<%=PageFlowUtil.jsString(def.getMetaData())%>})
+            metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', width:700, height:400, value:<%=PageFlowUtil.jsString(def.getMetaData())%>})
         ],
         buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:function() {f.getForm().submit();}}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
         buttonAlign:'left'
