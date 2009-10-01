@@ -106,7 +106,7 @@ public class ListWriter implements ExternalStudyWriter
         }
     }
 
-    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile dir) throws SQLException, IOException
+    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir) throws SQLException, IOException
     {
         List<ColumnInfo> attachmentColumns = new ArrayList<ColumnInfo>();
 
@@ -116,6 +116,7 @@ public class ListWriter implements ExternalStudyWriter
 
         if (!attachmentColumns.isEmpty())
         {
+            VirtualFile listDir = listsDir.getDir(def.getName());
             Map<String, FileNameUniquifier> uniquifiers = new HashMap<String, FileNameUniquifier>();
 
             for (ColumnInfo attachmentColumn : attachmentColumns)
@@ -147,7 +148,7 @@ public class ListWriter implements ExternalStudyWriter
                             continue;
 
                         String columnName = attachmentColumn.getColumnName();
-                        VirtualFile columnDir = dir.getDir(columnName);
+                        VirtualFile columnDir = listDir.getDir(columnName);
 
                         InputStream is = null;
                         OutputStream os = null;
