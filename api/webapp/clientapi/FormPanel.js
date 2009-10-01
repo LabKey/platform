@@ -23,6 +23,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * @param {boolean} [config.addAllFields] default=false.  If true, automatically create all fields specified in the metaData.
  * @param {object} [config.values] initial values to populate the form
  * @param {object} [config.errorEl] if specified form errors will be written to this element, otherwise a MsgBox will be used.
+ * Also items may specify a ToolTip config in the helpPopup property to display a LabKey style ? help tip
  * selectRowsResults includes both a columnModel and the metaData so you don't need to specify all three.
  *
  * @example
@@ -33,7 +34,8 @@ Ext.namespace("LABKEY","LABKEY.ext");
         {
             selectRowsResults:data,
             addAllFields:true,
-            buttons:["submit"]
+            buttons:["submit"],
+            items:[{name:myField, fieldLabel:'My Field', helpPopup:{title:'help', html:'read the manual'}}]
         });
         form.render('formDiv);
     }
