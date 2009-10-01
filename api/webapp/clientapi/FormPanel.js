@@ -92,20 +92,20 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                 var name = c.name;
                 if (name && this.fieldDefaults[name])
                     Ext.applyIf(c, this.fieldDefaults[name]);
-                // check for helpPopup
-                if (c.fieldLabel && c.helpPopup)
-                {
-                    var help;
-                    var id = "helpPopup-" + (++Ext.Component.AUTO_ID);
-                    if (typeof c.helpPopup.show != "function")
-                        c.helpPopup = new Ext.ToolTip(Ext.applyIf(c.helpPopup,{autoHide:false, closable:true, minWidth:200}));
-                    c.helpPopup.target = id;
-                    c.labelSeparator = "<a id=" + id + " tabindex=\"-1\" href=\"javascript:void(0);\"><span class=\"labkey-help-pop-up\" style=\"font-size:10pt;\"><sup>?</sup></span></a>";
-                }
             }
             else
             {
             }
+        }
+        // check for helpPopup
+        if (c.fieldLabel && c.helpPopup)
+        {
+            var help;
+            var id = "helpPopup-" + (++Ext.Component.AUTO_ID);
+            if (typeof c.helpPopup.show != "function")
+                c.helpPopup = new Ext.ToolTip(Ext.applyIf(c.helpPopup,{autoHide:true, closable:false, minWidth:200}));
+            c.helpPopup.target = id;
+            c.labelSeparator = "<a id=" + id + " tabindex=\"-1\" href=\"javascript:void(0);\"><span class=\"labkey-help-pop-up\" style=\"font-size:10pt;\"><sup>?</sup></span></a>";
         }
         return LABKEY.ext.FormPanel.superclass.applyDefaults.call(this, c);
     },
@@ -135,8 +135,11 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         var fn = function(c)
         {
             if (c.isFormField && c.helpPopup && c.helpPopup.target)
-                Ext.get(c.helpPopup.target).on("click", c.helpPopup.onTargetOver, c.helpPopup);
-//                c.helpPopup.initTarget();
+            {
+                // First line: open on click; Second line: open on hover
+                //Ext.get(c.helpPopup.target).on("click", c.helpPopup.onTargetOver, c.helpPopup);
+                c.helpPopup.initTarget();
+            }
             if (c.items)
                 c.items.each(fn);
         };
