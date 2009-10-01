@@ -187,7 +187,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         var params = {schemaName: queryDetails.schemaName};
         params["query.queryName"] = queryDetails.name;
 
-        container.children.push(this.formatQueryLink("executeQuery", params, "view data", "_blank"));
+        container.children.push(this.formatQueryLink("executeQuery", params, "view data"));
 
         if (queryDetails.isUserDefined && LABKEY.Security.currentUser.isAdmin)
         {
@@ -244,7 +244,6 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
                         {
                             tag: 'a',
                             href: viewDataUrl,
-                            target: '_blank',
                             html: Ext.util.Format.htmlEncode(queryDetails.schemaName) + "." + Ext.util.Format.htmlEncode(queryDetails.name)
                         }
                     ]
@@ -1142,7 +1141,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         var tree = this.getComponent("lk-sb-tree");
         var node = tree.getSelectionModel().getSelectedNode();
         if (node && node.attributes.schemaName)
-            window.open(this.getCreateQueryUrl(node.attributes.schemaName), "createQuery");
+            window.location = this.getCreateQueryUrl(node.attributes.schemaName), "createQuery";
         else
             Ext.Msg.alert("Which Schema?", "Please select the schema in which you want to create the new query.");
 
