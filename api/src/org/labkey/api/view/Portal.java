@@ -393,7 +393,6 @@ public class Portal
         {
             getSchema().getScope().beginTransaction();
             Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("PageId", id));
-            Table.execute(getSchema(), "DELETE FROM " + getTableInfoPortalWebParts() + " WHERE PageId = ?", new Object[]{id});
             for (WebPart part1 : parts) {
                 Map m = _factory.toMap(part1, null);
                 Table.insert(null, getTableInfoPortalWebParts(), m);
