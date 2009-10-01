@@ -16,12 +16,11 @@
 package org.labkey.api.gwt.client.ui.property;
 
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.ui.FlexTable;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyPane;
+import org.labkey.api.gwt.client.ui.HelpPopup;
 
 /**
  * User: jeckels
@@ -41,7 +40,15 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
         _textBox.addChangeHandler(createChangeHandler());
         _textBox.addKeyUpHandler(createKeyUpHandler());
 
-        flexTable.setWidget(row, LABEL_COLUMN, new Label("URL"));
+        FlowPanel labelPanel = new FlowPanel();
+        labelPanel.add(new InlineLabel("URL"));
+        labelPanel.add(new HelpPopup("URL", "<p>A template for generating hyperlinks for this field.  Two formats are supported: </p>"+
+                "<span style='white-space:nowrap;'>Full URL</span><br><span style='white-space:nowrap;'>http://server/path/page.html?id=${Param}</span><br>" +
+                "&nbsp;<br>" +
+                "<span style='white-space:nowrap;'>Short LabKey URL (omit context path and folder path)</span><br><span style='white-space:nowrap;'>/wiki/page.view?name=${Name}</span>"
+                ));
+
+        flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
         DOM.setElementProperty(_textBox.getElement(), "id", "url");
         flexTable.setWidget(row, INPUT_COLUMN, _textBox);
 
