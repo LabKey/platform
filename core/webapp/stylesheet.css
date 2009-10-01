@@ -571,9 +571,10 @@ span.labkey-help-pop-up
 {
     cursor: help;
     font-weight: bold;
-    font-size: 10pt;
+    font-size: xx-small;
     text-decoration: none;
     padding-left: 2pt;
+    vertical-align: top;
 }
 
 /* Used for full screen pages such as for login or upgrade */

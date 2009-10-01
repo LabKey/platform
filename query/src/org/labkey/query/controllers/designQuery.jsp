@@ -208,6 +208,9 @@
     <input type="hidden" name="ff_redirect" id="ff_redirect" value="<%=form.ff_redirect%>">
     <labkey:button text="Save" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'designQuery';" />
 
-    <labkey:button text="Source View" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'sourceQuery'" />
-    <labkey:button text="Run Query" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'executeQuery'" />
+    <labkey:button text="Edit Source" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'sourceQuery'" />
+    <% if(form.getQueryDef().isMetadataEditable()) { %>
+        <labkey:button text="Edit Metadata" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'metadataQuery'" />
+    <% } %>
+    <labkey:button text="View Data" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'executeQuery'" />
 </form>

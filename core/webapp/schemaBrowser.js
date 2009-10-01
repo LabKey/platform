@@ -201,8 +201,11 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             if (queryDetails.isUserDefined)
                 container.children.push(this.formatQueryLink("viewQuerySource", params, "view source"));
 
-            container.children.push(this.formatQueryLink("metadataQuery", params, "customize display"));
         }
+        
+        if (queryDetails.isMetadataOverrideable)
+            container.children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
+        
         return container;
     },
 

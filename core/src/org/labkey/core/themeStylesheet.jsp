@@ -134,11 +134,6 @@ fieldset
 	background-color: #<%= formLabel %>;
 }
 
-span.labkey-help-pop-up
-{
-    font-size: <%= themeFont.getHeader_1Size() %>;
-}
-
 .labkey-full-screen-background
 {
     background-color: #<%= fullScreenBorder %>;

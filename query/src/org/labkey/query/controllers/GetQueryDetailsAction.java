@@ -54,12 +54,19 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         resp.put("schemaName", form.getSchemaName());
         Map<String,QueryDefinition> queryDefs = QueryService.get().getQueryDefs(container, form.getSchemaName());
         if (null != queryDefs && queryDefs.containsKey(form.getQueryName()))
+        {
             resp.put("isUserDefined", true);
+            resp.put("isMetadataOverrideable", true);
+        }
 
         TableInfo tinfo;
         try
         {
             tinfo = schema.getTable(form.getQueryName());
+            if (tinfo.isMetadataOverrideable())
+            {
+                resp.put("isMetadataOverrideable", true);
+            }
         }
         catch(Exception e)
         {

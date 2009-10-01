@@ -21,6 +21,8 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.Saveable;
@@ -34,6 +36,9 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     private MetadataServiceAsync _service;
     private static final String SCHEMA_NAME_PROPERTY = "schemaName";
     private static final String QUERY_NAME_PROPERTY = "queryName";
+    public static final String DESIGN_QUERY_URL = "designQueryURL";
+    public static final String EDIT_SOURCE_URL = "editSourceURL";
+    public static final String VIEW_DATA_URL = "viewDataURL";
     private TablePropertiesEditor _editor;
     private String _schemaName;
     private DialogBox _confirmDialog;
@@ -66,9 +71,9 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     {
         _editor = new TablePropertiesEditor(this, getService());
         VerticalPanel panel = new VerticalPanel();
-        _saveButton = new ImageButton("Save", new ClickListener()
+        _saveButton = new ImageButton("Save", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 save();
             }
@@ -84,13 +89,28 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
             }
         });
 
-        _editor.addButton(new ImageButton("Reset to Default", new ClickListener()
+        String designQueryURL = PropertyUtil.getServerProperty(DESIGN_QUERY_URL);
+        if (designQueryURL != null)
         {
-            public void onClick(Widget sender)
+            _editor.addButton(createSavePromptingNavigationButton("Design Query", designQueryURL));
+        }
+        String editSourceURL = PropertyUtil.getServerProperty(EDIT_SOURCE_URL);
+        if (editSourceURL != null)
+        {
+            _editor.addButton(createSavePromptingNavigationButton("Edit Source", editSourceURL));
+        }
+        String viewDataURL = PropertyUtil.getServerProperty(VIEW_DATA_URL);
+        if (viewDataURL != null)
+        {
+            _editor.addButton(createSavePromptingNavigationButton("View Data", viewDataURL));
+        }
+        _editor.addButton(new ImageButton("Reset to Default", new ClickHandler()
+        {
+            public void onClick(ClickEvent e)
             {
-                ImageButton okButton = new ImageButton("OK", new ClickListener()
+                ImageButton okButton = new ImageButton("OK", new ClickHandler()
                 {
-                    public void onClick(Widget sender)
+                    public void onClick(ClickEvent e)
                     {
                         _confirmDialog.hide();
                         _saveMessage.setText("");
@@ -113,57 +133,57 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                 showConfirmDialog("Confirm Reset", "Are you sure you want to reset? You will lose any edits you made.", okButton);
             }
         }));
-        final String xmlActionURL = PropertyUtil.getServerProperty("xmlActionURL");
-        if (xmlActionURL != null)
-        {
-            _editor.addButton(new ImageButton("Edit as XML", new ClickListener()
-            {
-                public void onClick(Widget sender)
-                {
-                    if (_editor.isDirty())
-                    {
-                        ImageButton saveButton = new ImageButton("Save", new ClickListener()
-                        {
-                            public void onClick(Widget sender)
-                            {
-                                saveAsync(new AsyncCallback<GWTTableInfo>()
-                                {
-                                    public void onFailure(Throwable caught)
-                                    {
-                                        WindowUtil.reportException("Failed to saveAsync", caught);
-                                    }
-
-                                    public void onSuccess(GWTTableInfo result)
-                                    {
-                                        Window.Location.replace(xmlActionURL);
-                                    }
-                                });
-                            }
-                        });
-
-                        ImageButton discardButton = new ImageButton("Discard", new ClickListener()
-                        {
-                            public void onClick(Widget sender)
-                            {
-                                Window.Location.replace(xmlActionURL);
-                            }
-                        });
-
-                        showConfirmDialog("Save Changes?", "Do you want to save your changes?", saveButton, discardButton);
-                    }
-                    else
-                    {
-                        Window.Location.replace(xmlActionURL);
-                    }
-                }
-            }));
-        }
         panel.add(_editor.getWidget());
 
         rootPanel.clear();
         rootPanel.add(panel);
         
         _editor.init(tableInfo);
+    }
+
+    private ImageButton createSavePromptingNavigationButton(String label, final String url)
+    {
+        return new ImageButton(label, new ClickHandler()
+        {
+            public void onClick(ClickEvent e)
+            {
+                if (_editor.isDirty())
+                {
+                    ImageButton saveButton = new ImageButton("Save", new ClickHandler()
+                    {
+                        public void onClick(ClickEvent e)
+                        {
+                            saveAsync(new AsyncCallback<GWTTableInfo>()
+                            {
+                                public void onFailure(Throwable caught)
+                                {
+                                    WindowUtil.reportException("Failed to saveAsync", caught);
+                                }
+
+                                public void onSuccess(GWTTableInfo result)
+                                {
+                                    Window.Location.replace(url);
+                                }
+                            });
+                        }
+                    });
+
+                    ImageButton discardButton = new ImageButton("Discard", new ClickHandler()
+                    {
+                        public void onClick(ClickEvent e)
+                        {
+                            Window.Location.replace(url);
+                        }
+                    });
+
+                    showConfirmDialog("Save Changes?", "Do you want to save your changes?", saveButton, discardButton);
+                }
+                else
+                {
+                    Window.Location.replace(url);
+                }
+            }
+        });
     }
 
     public void hideConfirmDialog()
@@ -190,9 +210,9 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         {
             buttonPanel.add(button);
         }
-        ImageButton cancelButton = new ImageButton("Cancel", new ClickListener()
+        ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 _confirmDialog.hide();
             }
@@ -231,6 +251,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         {
             public void onFailure(Throwable caught)
             {
+                _saveButton.setEnabled(true);
                 WindowUtil.reportException("Failed to save", caught);
             }
 

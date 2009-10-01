@@ -855,7 +855,12 @@ public class QueryControllerSpring extends SpringActionController
             Map<String, String> props = new HashMap<String, String>();
             props.put("schemaName", form.getSchemaName().toString());
             props.put("queryName", form.getQueryName());
-            props.put("xmlActionURL", _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString());
+            if (!_query.isTableQueryDefinition())
+            {
+                props.put(MetadataEditor.DESIGN_QUERY_URL, _form.getQueryDef().urlFor(QueryAction.designQuery, getContainer()).toString());
+            }
+            props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString());
+            props.put(MetadataEditor.VIEW_DATA_URL, _form.getQueryDef().urlFor(QueryAction.executeQuery, getContainer()).toString());
 
             return new GWTView(MetadataEditor.class, props);
         }
@@ -873,7 +878,7 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new SchemaAction(_form)).appendNavTrail(root);
-            root.addChild("Customize Display: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
+            root.addChild("Edit Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
             return root;
         }
     }

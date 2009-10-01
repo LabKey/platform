@@ -158,7 +158,9 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public boolean isMetadataEditable()
     {
-        return getTable(getSchema(), new ArrayList<QueryException>(), true).isMetadataOverrideable();
+        TableInfo tableInfo = getTable(getSchema(), new ArrayList<QueryException>(), true);
+        // Might have been deleted out from under us
+        return tableInfo != null && tableInfo.isMetadataOverrideable();
     }
 
 }

@@ -436,13 +436,6 @@ function ColumnPicker(tableInfoService)
                 td.style.fontWeight = 'bold';
             }
 
-            td.onmouseout = function() { return hideHelpDivDelay(); };
-            td.sourceColumn = column;
-            td.onmouseover = function()
-            {
-                return showColumnHelpPopupDelay(this.sourceColumn, this);
-            };
-
             if (!unselectable)
             {
                 td.onclick = onClickHandler(columnPicker, column.key);
@@ -470,8 +463,19 @@ function ColumnPicker(tableInfoService)
                 td.appendChild(doc.createTextNode('\240'));
             }
             td.appendChild(doc.createTextNode(column.caption));
+            var helpNode = doc.createElement('span');
+            helpNode.className = 'labkey-help-pop-up';
+            helpNode.appendChild(doc.createTextNode('?'));
+            td.appendChild(helpNode);
             tr.appendChild(td);
             tbody.appendChild(tr);
+
+            helpNode.sourceColumn = column;
+            helpNode.onmouseout = function() { return hideHelpDivDelay(); };
+            helpNode.onmouseover = function()
+            {
+                return showColumnHelpPopupDelay(this.sourceColumn, this);
+            };
         }
         elTable.appendChild(tbody);
         el.appendChild(elTable);
