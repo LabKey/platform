@@ -148,6 +148,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     {
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
+        qprops.put("queryName", qname);
         qprops.put("id", "q:" + qname);
         qprops.put("text", PageFlowUtil.filter(qname));
         qprops.put("leaf", true);

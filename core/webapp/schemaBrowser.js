@@ -272,7 +272,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         {
             caption: 'Caption',
             tip: 'This is the caption the user sees in views.',
-            renderer: function(col){return Ext.util.Format.htmlEncode(col.caption);}
+            renderer: function(col){return col.caption;} //caption is already HTML-encoded on the server
         },
         {
             caption: 'Type',
@@ -406,7 +406,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             tipText += " (the value from column " + displayColumnEncoded + " is usually displayed in grids)";
         }
         tipText += ". To reference columns in the lookup table, use the syntax '"
-                + Ext.util.Format.htmlEncode(col.name) + "/col-in-lookup-table'.";
+                + Ext.util.Format.htmlEncode(Ext.util.Format.htmlEncode(col.name)) //strangely-we need to double-encode this 
+                + "/col-in-lookup-table'.";
 
         if (!col.lookup.isPublic)
             tipText += " Note that the lookup table is not publicly-available via the APIs.";
@@ -1097,7 +1098,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     schemaName: idMap.schemaName,
                     queryName: idMap.queryName,
                     id: id,
-                    title: idMap.schemaName + "." + idMap.queryName,
+                    title: Ext.util.Format.htmlEncode(idMap.schemaName) + "." + Ext.util.Format.htmlEncode(idMap.queryName),
                     autoScroll: true,
                     listeners: {
                         lookupclick: {
@@ -1185,7 +1186,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         if (!node.leaf)
             return;
 
-        this.showQueryDetails(node.attributes.schemaName, node.text);
+        this.showQueryDetails(node.attributes.schemaName, node.attributes.queryName);
     },
 
     showQueryDetails : function(schemaName, queryName) {
@@ -1252,9 +1253,9 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             //look for the query node under both built-in and user-defined
             var queryNode;
             if (schemaNode.childNodes.length > 0)
-                queryNode = schemaNode.childNodes[0].findChildBy(function(node){return node.text.toLowerCase() == queryName.toLowerCase();});
+                queryNode = schemaNode.childNodes[0].findChildBy(function(node){return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();});
             if (!queryNode && schemaNode.childNodes.length > 1)
-                queryNode = schemaNode.childNodes[1].findChildBy(function(node){return node.text.toLowerCase() == queryName.toLowerCase();});
+                queryNode = schemaNode.childNodes[1].findChildBy(function(node){return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();});
 
             if (!queryNode)
             {
