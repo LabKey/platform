@@ -60,7 +60,16 @@
             browser.selectSchema(schemaName, queryName);
 
         if (window.location.hash && window.location.hash.length > 1)
-            browser.onHistoryChange(window.location.hash.substring(1));
+        {
+            //window.location.hash returns an decoded value, which
+            //is different from what Ext.History.getToken() returns
+            //so use the same technique Ext does for getting the hash
+            var href = top.location.href;
+            var idx = href.indexOf("#");
+            var hash = idx >= 0 ? href.substr(idx + 1) : null;
+            if (hash)
+                browser.onHistoryChange(hash);
+        }
     }
 </script>
 
