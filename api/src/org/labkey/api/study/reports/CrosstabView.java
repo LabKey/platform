@@ -54,7 +54,7 @@ public class CrosstabView extends WebPartView
         }
 
         if (_exportAction != null)
-            pw.write(PageFlowUtil.generateButton("Export to Excel (.xls)", _exportAction.getLocalURIString()));
+            pw.write(PageFlowUtil.generateButton("Export to Excel (.xls)", _exportAction));
 
         List<Object> colHeaders = _crosstab.getColHeaders();
         Set<Stats.StatDefinition> statSet = _crosstab.getStatSet();

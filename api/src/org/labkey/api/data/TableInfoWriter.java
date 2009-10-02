@@ -78,6 +78,9 @@ public class TableInfoWriter
 
         columnXml.setDatatype(t.getSqlTypeName());
 
+        if (column.getInputType().equals("textarea"))
+            columnXml.setInputType(column.getInputType());
+
         if (null != column.getLabel())
             columnXml.setColumnTitle(column.getLabel());
 

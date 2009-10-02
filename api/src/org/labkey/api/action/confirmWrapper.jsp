@@ -42,7 +42,7 @@
 <br><%=PageFlowUtil.generateSubmitButton(confirmAction.getConfirmText())%>&nbsp;<%
     if (null != cancelUrl)
     {
-        %><%=PageFlowUtil.generateButton(confirmAction.getCancelText(), cancelUrl.getLocalURIString())%><%
+        %><%=PageFlowUtil.generateButton(confirmAction.getCancelText(), cancelUrl)%><%
     }
     else if (confirmAction.isPopupConfirmation())
     {

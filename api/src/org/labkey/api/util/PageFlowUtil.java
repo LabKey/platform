@@ -1027,12 +1027,12 @@ public class PageFlowUtil
                 "><span>" + filter(text) + "</span></a>";
     }
 
-    public static String generateButton(String text, ActionURL href)
+    public static String generateButton(String text, URLHelper href)
     {
         return generateButton(text, href, null);
     }
 
-    public static String generateButton(String text, ActionURL href, String onClick)
+    public static String generateButton(String text, URLHelper href, String onClick)
     {
         return generateButton(text, href.toString(), onClick);
     }
