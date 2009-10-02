@@ -24,4 +24,4 @@
 %>
 <%=formatMissedErrors("form")%>
 <%=null != me.errorHtml ? me.errorHtml : ""%>
-<br><br><%=PageFlowUtil.generateButton("Continue", me.returnURL.getLocalURIString())%>
+<br><br><%=PageFlowUtil.generateButton("Continue", me.returnURL)%>

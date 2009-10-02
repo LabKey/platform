@@ -54,7 +54,7 @@
     {
         var td1 = document.getElementById(prefix + 'td1');
         var td2 = document.getElementById(prefix + 'td2');
-        var tr = document.getElementById(prefix + 'row')
+        var tr = document.getElementById(prefix + 'row');
         tr.removeChild(td1);
         tr.removeChild(td2);
 

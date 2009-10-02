@@ -269,14 +269,14 @@ if (!bean.isResponse && !bean.print)
             url.replaceParameter("discussion.id",""+announcement.getRowId());
             url.replaceParameter("discussion.reply","1");
             %>
-        <%=PageFlowUtil.generateButton("Post Response", url.getLocalURIString())%>&nbsp;<%
+        <%=PageFlowUtil.generateButton("Post Response", url)%>&nbsp;<%
         }
         else
         {
             ActionURL respond = announcementURL(c, AnnouncementsController.RespondAction.class, "parentId", announcement.getEntityId());
             respond.addReturnURL(bean.currentURL);
             %>
-        <%=PageFlowUtil.generateButton("Post Response", respond.getLocalURIString())%>&nbsp;<%
+        <%=PageFlowUtil.generateButton("Post Response", respond)%>&nbsp;<%
         }
     }
     if (bean.perm.allowDeleteMessage(announcement))
@@ -293,7 +293,7 @@ if (!bean.isResponse && !bean.print)
             deleteThread.addReturnURL(bean.messagesURL);
         }
         %>
-        <%=PageFlowUtil.generateButton("Delete " + settings.getConversationName(), deleteThread.getLocalURIString())%>&nbsp;<%
+        <%=PageFlowUtil.generateButton("Delete " + settings.getConversationName(), deleteThread)%>&nbsp;<%
     }
 }
 %>

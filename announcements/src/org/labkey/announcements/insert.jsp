@@ -133,7 +133,7 @@ if (bean.allowBroadcast)
 <br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%
 if (null != cancelUrl)
 {
-    %><%=PageFlowUtil.generateButton("Cancel", cancelUrl.getLocalURIString())%><%
+    %><%=PageFlowUtil.generateButton("Cancel", cancelUrl)%><%
 }
 else
 {

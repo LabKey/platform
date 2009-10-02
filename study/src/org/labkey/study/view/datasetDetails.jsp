@@ -66,11 +66,15 @@
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
-    %><br><%=PageFlowUtil.generateButton("View Dataset Data", viewDatasetURL.getLocalURIString())%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL.getLocalURIString())%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL.getLocalURIString())%><%
+    ActionURL exportSchemaURL = new ActionURL(StudyController.ExportDatasetSchemaAction.class, context.getContainer());
+    exportSchemaURL.addParameter("datasetId", dataset.getDataSetId());
+
+    %><br><%=PageFlowUtil.generateButton("View Dataset Data", viewDatasetURL)%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL)%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL)%><%
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Export Schema", exportSchemaURL)%><%
 }
 if (permissions.contains(UpdatePermission.class))
 {
@@ -80,8 +84,8 @@ if (permissions.contains(UpdatePermission.class))
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, context.getContainer());
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
-    %>&nbsp;<%=PageFlowUtil.generateButton("Show Import History", showHistoryURL.getLocalURIString())%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset Definition", editTypeURL.getLocalURIString())%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Show Import History", showHistoryURL)%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset Definition", editTypeURL)%><%
 }
 if (!pipelineSet)
 {

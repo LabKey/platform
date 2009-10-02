@@ -23,6 +23,7 @@ import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.security.User;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
@@ -55,14 +56,19 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
         schemaXml.setTypeIdColumn("plateno");
 
         PrintWriter writer = vf.getPrintWriter(schemaFilename);
+        writeDatasetSchema(ctx.getUser(), definitions, writer);
+        writer.close();
+    }
 
+    public void writeDatasetSchema(User user, List<DataSetDefinition> definitions, PrintWriter writer)
+    {
         writer.println("platename\tplatelabel\tplateno\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tkey\tautokey");
 
         for (DataSetDefinition def : definitions)
         {
             String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDataSetId() + '\t';
 
-            TableInfo tinfo = def.getTableInfo(ctx.getUser());
+            TableInfo tinfo = def.getTableInfo(user);
             String visitDatePropertyName = def.getVisitDatePropertyName();
 
             for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo, def, true))
@@ -101,7 +107,5 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
                 writer.println();
             }
         }
-
-        writer.close();
     }
 }

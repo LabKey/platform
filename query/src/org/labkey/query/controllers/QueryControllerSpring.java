@@ -1844,9 +1844,9 @@ public class QueryControllerSpring extends SpringActionController
             response.setHeader("Cache-Control", "private");
 
             if ("excel".equalsIgnoreCase(form.getFormat()))
-                view.exportToExcel(getViewContext().getResponse());
+                view.exportToExcel(response);
             else if ("tsv".equalsIgnoreCase(form.getFormat()))
-                view.exportToTsv(getViewContext().getResponse());
+                view.exportToTsv(response);
         }
     }
 
