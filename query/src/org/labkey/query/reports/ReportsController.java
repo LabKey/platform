@@ -1539,7 +1539,7 @@ public class ReportsController extends SpringActionController
             }
             catch (Exception e)
             {
-                errors.reject("reportDescription", "An error occured trying to change the report description");
+                errors.reject("reportDescription", "An error occurred trying to change the report description");
             }
         }
 

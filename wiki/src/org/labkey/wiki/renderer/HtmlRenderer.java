@@ -143,7 +143,7 @@ public class HtmlRenderer implements WikiRenderer
         }
         catch (Exception e)
         {
-            innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occured while generating the HTML.  Please correct the content.</b></div><br>The error message was: ");
+            innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while generating the HTML.  Please correct this content.</b></div><br>The error message was: ");
             innerHtml.append(e.getMessage()); 
             volatilePage = false;
         }

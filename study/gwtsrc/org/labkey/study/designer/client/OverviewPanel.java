@@ -176,14 +176,14 @@ public class OverviewPanel extends Composite
             {
                 layout.setText(layoutRow, 3, "Not saved.");
                 return;
-            };
+            }
 
             layout.setText(layoutRow, 3, definition.getRevision() + " (Loading List)");
             designer.getService().getVersions(definition.getCavdStudyId(), new AsyncCallback()
             {
                 public void onFailure(Throwable caught)
                 {
-                    Window.alert("Error occured getting revisions: " + caught.getMessage());
+                    Window.alert("Error occurred getting revisions: " + caught.getMessage());
                 }
 
                 public void onSuccess(Object result)

@@ -404,7 +404,7 @@ public class DesignerController extends SpringActionController
 
             //Wizard step is the *last* wizard step shown to the user.
             //Each method handles the post and sets up the form to render the next wizard step
-            //  or re-render same step if errors occured
+            //  or re-render same step if errors occurred
             switch(form.getWizardStep())
             {
                 case INIT:

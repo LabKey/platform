@@ -70,7 +70,7 @@ public class ScheduledTask extends TimerTask implements ShutdownListener
         }
         catch (Exception e)
         {
-            _log.error("An error occured initializing the scheduled sync tasks", e);
+            _log.error("An error occurred initializing the scheduled sync tasks", e);
         }
     }
 
@@ -128,7 +128,7 @@ public class ScheduledTask extends TimerTask implements ShutdownListener
             }
             catch (Exception e)
             {
-                _log.error("An error occured running a scheduled sync task for server: " + server.getName(), e);
+                _log.error("An error occurred running a scheduled sync task for server: " + server.getName(), e);
             }
             finally
             {

@@ -176,7 +176,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
         catch (SQLException x)
         {
-            _log.error("Error occured deleting reports for container", x);
+            _log.error("Error occurred deleting reports for container", x);
         }
     }
 
