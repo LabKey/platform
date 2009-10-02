@@ -2165,7 +2165,22 @@ public class QueryControllerSpring extends SpringActionController
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
         {
             form.setTypedValue("DbContainer", getContainer().getId());
-            form.doInsert();
+
+            try
+            {
+                form.doInsert();
+            }
+            catch (SQLException e)
+            {
+                if (SqlDialect.isConstraintException(e))
+                {
+                    errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
+                    return false;
+                }
+
+                throw e;
+            }
+
             return true;
         }
 
@@ -2283,8 +2298,6 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    // TODO: Add help info: HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
-
     @RequiresPermission(ACL.PERM_ADMIN)
     public class EditExternalSchemaAction extends FormViewAction<DbUserSchemaForm>
     {
@@ -2319,7 +2332,20 @@ public class QueryControllerSpring extends SpringActionController
                 if (null != c)
                     def.setDbContainer(c.getId());
             }
-            form.doUpdate();
+            try
+            {
+                form.doUpdate();
+            }
+            catch (SQLException e)
+            {
+                if (SqlDialect.isConstraintException(e))
+                {
+                    errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
+                    return false;
+                }
+
+                throw e;
+            }
             return true;
         }
 
