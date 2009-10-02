@@ -45,10 +45,10 @@
     NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container));
 %>
 <form action="updateComments.post" name="updateComments" id="updateCommentForm" method="POST">
-    <input type="hidden" name="migrateToParticipant" value="false">
-    <input type="hidden" name="migrateToParticipantVisit" value="false">
-    <input type="hidden" name="migrateParticipantId" value="0">
-    <input type="hidden" name="migrateSampleId" value="0">
+    <input type="hidden" name="copyToParticipant" value="false">
+    <input type="hidden" name="deleteVialComment" value="false">
+    <input type="hidden" name="copyParticipantId" value="0">
+    <input type="hidden" name="copySampleId" value="-1">
 <%
     if (SampleManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
     {
@@ -143,51 +143,85 @@
 %>
 
 <%!
-    public NavTree createCopyCommentButton(Map<String, Map<String, Integer>> pvMap, StudyImpl study)
+    private NavTree createCopyCommentButton(Map<String, Map<String, Integer>> pvMap, StudyImpl study)
     {
         boolean hasParticipantMenu = study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1;
         boolean hasParticipantVisitMenu = study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1;
 
         if (hasParticipantMenu || hasParticipantVisitMenu)
         {
-            NavTree button = new NavTree("Copy Comment");
+            NavTree button = new NavTree("Copy or Move Comment(s)");
 
-            // participant comments
-            if (hasParticipantMenu)
-            {
-                NavTree participantItem = new NavTree("To Participant", "#");
-                button.addChild(participantItem);
+            NavTree moveButton = new NavTree("Move");
+            NavTree copyButton = new NavTree("Copy");
 
-                for (String ptid : pvMap.keySet())
-                {
-                    NavTree subItem = new NavTree(ptid, "#");
-                    subItem.setScript("document.updateComments.migrateToParticipant.value='true'; document.updateComments.migrateParticipantId.value='" +
-                            ptid + "'; document.updateComments.submit()");
-                    participantItem.addChild(subItem);
-                }
-            }
+            button.addChild(moveButton);
+            button.addChild(copyButton);
 
-            // participant/visit comments
-            if (hasParticipantVisitMenu)
-            {
-                NavTree participantVisitItem = new NavTree("To Participant/Visit", "#");
-                button.addChild(participantVisitItem);
-                for (Map.Entry<String, Map<String, Integer>> entry : pvMap.entrySet())
-                {
-                    NavTree ptidItem = new NavTree(entry.getKey());
+            addParticipantMenuItems(moveButton, pvMap, hasParticipantMenu, hasParticipantVisitMenu, true);
+            addParticipantMenuItems(copyButton, pvMap, hasParticipantMenu, hasParticipantVisitMenu, false);
 
-                    for (Map.Entry<String, Integer> visitEntry : entry.getValue().entrySet())
-                    {
-                        NavTree visitItem = new NavTree(visitEntry.getKey());
-                        visitItem.setScript("document.updateComments.migrateToParticipantVisit.value='true'; document.updateComments.migrateSampleId.value='" +
-                                visitEntry.getValue() + "'; document.updateComments.submit()");
-                        ptidItem.addChild(visitItem);
-                    }
-                    participantVisitItem.addChild(ptidItem);
-                }
-            }
             return button;
         }
         return null;
+    }
+
+    private void addParticipantMenuItems(NavTree button, Map<String, Map<String, Integer>> pvMap,
+                                         boolean hasParticipantMenu, boolean hasParticipantVisitMenu, boolean isMove)
+    {
+        // participant comments
+        if (hasParticipantMenu)
+        {
+            StringBuilder sb = new StringBuilder();
+            NavTree participantItem = new NavTree("To Participant", "#");
+            button.addChild(participantItem);
+
+            for (String ptid : pvMap.keySet())
+            {
+                NavTree subItem = new NavTree(ptid, "#");
+                sb.setLength(0);
+                if (isMove)
+                    sb.append("if (confirm('This will permanently remove all vial comments for the displayed vials. Continue?')){");
+                sb.append("document.updateComments.copyToParticipant.value='true';");
+                sb.append("document.updateComments.copyParticipantId.value='").append(ptid).append("';");
+                sb.append("document.updateComments.deleteVialComment.value='").append(isMove).append("';");
+                sb.append("document.updateComments.submit()");
+                if (isMove)
+                    sb.append("}");
+
+                subItem.setScript(sb.toString());
+                participantItem.addChild(subItem);
+            }
+        }
+
+        // participant/visit comments
+        if (hasParticipantVisitMenu)
+        {
+            StringBuilder sb = new StringBuilder();
+            NavTree participantVisitItem = new NavTree("To Participant/Visit", "#");
+            button.addChild(participantVisitItem);
+            for (Map.Entry<String, Map<String, Integer>> entry : pvMap.entrySet())
+            {
+                NavTree ptidItem = new NavTree(entry.getKey());
+
+                for (Map.Entry<String, Integer> visitEntry : entry.getValue().entrySet())
+                {
+                    NavTree visitItem = new NavTree(visitEntry.getKey());
+                    sb.setLength(0);
+                    if (isMove)
+                        sb.append("if (confirm('This will permanently remove all vial comments for the displayed vials. Continue?')){");
+                    sb.append("document.updateComments.copyToParticipant.value='true';");
+                    sb.append("document.updateComments.copySampleId.value='").append(visitEntry.getValue()).append("';");
+                    sb.append("document.updateComments.deleteVialComment.value='").append(isMove).append("';");
+                    sb.append("document.updateComments.submit()");
+                    if (isMove)
+                        sb.append("}");
+
+                    visitItem.setScript(sb.toString());
+                    ptidItem.addChild(visitItem);
+                }
+                participantVisitItem.addChild(ptidItem);
+            }
+        }
     }
 %>

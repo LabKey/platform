@@ -156,10 +156,9 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
 
         QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
 
-        DataView view;
+        DataView view = createNewView(form, updateForm, errors);
         if (isInsert())
         {
-            view = new InsertView(updateForm, errors);
             if (!reshow)
             {
                 Domain domain = PropertyService.get().getDomain(getViewContext().getContainer(), ds.getTypeURI());
@@ -180,9 +179,6 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
                 }
             }
         }
-        else
-            view = new UpdateView(updateForm, errors);
-
         DataRegion dataRegion = view.getDataRegion();
 
         String referer = form.getReturnURL();
@@ -224,6 +220,14 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
         }
         catch (ServletException e) {}
         return root;
+    }
+
+    protected DataView createNewView(Form form, QueryUpdateForm updateForm, BindException errors)
+    {
+        if (isInsert())
+            return new InsertView(updateForm, errors);
+        else
+            return new UpdateView(updateForm, errors);
     }
 
     public void validateCommand(Form target, Errors errors) {}

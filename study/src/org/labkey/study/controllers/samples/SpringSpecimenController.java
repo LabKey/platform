@@ -27,10 +27,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -2921,10 +2918,6 @@ public class SpringSpecimenController extends BaseStudyController
         private boolean _saveCommentsPost;
         private String _conflictResolve;
         private Boolean _qualityControlFlag;
-        private boolean _migrateToParticipant;
-        private boolean _migrateToParticipantVisit;
-        private int _migrateSampleId;
-        private String _migrateParticipantId;
 
         public String getComments()
         {
@@ -3000,48 +2993,56 @@ public class SpringSpecimenController extends BaseStudyController
         {
             _qualityControlFlag = qualityControlFlag;
         }
-
-        public boolean isMigrateToParticipant()
-        {
-            return _migrateToParticipant;
-        }
-
-        public void setMigrateToParticipant(boolean migrateToParticipant)
-        {
-            _migrateToParticipant = migrateToParticipant;
-        }
-
-        public boolean isMigrateToParticipantVisit()
-        {
-            return _migrateToParticipantVisit;
-        }
-
-        public void setMigrateToParticipantVisit(boolean migrateToParticipantVisit)
-        {
-            _migrateToParticipantVisit = migrateToParticipantVisit;
-        }
-
-        public int getMigrateSampleId()
-        {
-            return _migrateSampleId;
-        }
-
-        public void setMigrateSampleId(int migrateSampleId)
-        {
-            _migrateSampleId = migrateSampleId;
-        }
-
-        public String getMigrateParticipantId()
-        {
-            return _migrateParticipantId;
-        }
-
-        public void setMigrateParticipantId(String migrateParticipantId)
-        {
-            _migrateParticipantId = migrateParticipantId;
-        }
     }
     
+    public static class UpdateParticipantCommentsForm extends UpdateSpecimenCommentsForm
+    {
+        private boolean _copyToParticipant;
+        private boolean _deleteVialComment;
+        private int _copySampleId;
+        private String _copyParticipantId;
+
+        public boolean isCopyToParticipant()
+        {
+            return _copyToParticipant;
+        }
+
+        public void setCopyToParticipant(boolean copyToParticipant)
+        {
+            _copyToParticipant = copyToParticipant;
+        }
+
+        public boolean isDeleteVialComment()
+        {
+            return _deleteVialComment;
+        }
+
+        public void setDeleteVialComment(boolean deleteVialComment)
+        {
+            _deleteVialComment = deleteVialComment;
+        }
+
+        public int getCopySampleId()
+        {
+            return _copySampleId;
+        }
+
+        public void setCopySampleId(int copySampleId)
+        {
+            _copySampleId = copySampleId;
+        }
+
+        public String getCopyParticipantId()
+        {
+            return _copyParticipantId;
+        }
+
+        public void setCopyParticipantId(String copyParticipantId)
+        {
+            _copyParticipantId = copyParticipantId;
+        }
+    }
+
     public static class UpdateSpecimenCommentsBean extends SamplesViewBean
     {
         private String _referrer;
@@ -3097,7 +3098,7 @@ public class SpringSpecimenController extends BaseStudyController
                 {
                     if (!pvMap.containsKey(ptid))
                         pvMap.put(ptid, new HashMap<String, Integer>());
-                    pvMap.get(ptid).put(v.getLabel(), sample.getRowId());
+                    pvMap.get(ptid).put(v.getDisplayString(), sample.getRowId());
                 }
             }
             return pvMap;
@@ -3168,11 +3169,11 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
     @RequiresPermissionClass(SetSpecimenCommentsPermission.class)
-    public class UpdateCommentsAction extends FormViewAction<UpdateSpecimenCommentsForm>
+    public class UpdateCommentsAction extends FormViewAction<UpdateParticipantCommentsForm>
     {
         private ActionURL _successUrl;
 
-        public void validateCommand(UpdateSpecimenCommentsForm specimenCommentsForm, Errors errors)
+        public void validateCommand(UpdateParticipantCommentsForm specimenCommentsForm, Errors errors)
         {
             if (specimenCommentsForm.isSaveCommentsPost() &&
                     (specimenCommentsForm.getRowId() == null ||
@@ -3182,7 +3183,7 @@ public class SpringSpecimenController extends BaseStudyController
             }
         }
 
-        public ModelAndView getView(UpdateSpecimenCommentsForm specimenCommentsForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(UpdateParticipantCommentsForm specimenCommentsForm, boolean reshow, BindException errors) throws Exception
         {
             Specimen[] selectedVials = getUtils().getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
 
@@ -3199,7 +3200,7 @@ public class SpringSpecimenController extends BaseStudyController
                     new UpdateSpecimenCommentsBean(getViewContext(), selectedVials, specimenCommentsForm.getReferrer()), errors);
         }
 
-        public boolean handlePost(UpdateSpecimenCommentsForm commentsForm, BindException errors) throws Exception
+        public boolean handlePost(UpdateParticipantCommentsForm commentsForm, BindException errors) throws Exception
         {
             if (commentsForm.getRowId() == null)
                 return false;
@@ -3209,27 +3210,43 @@ public class SpringSpecimenController extends BaseStudyController
 
             Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(vials.toArray(new Specimen[vials.size()]));
 
-            if (commentsForm.isMigrateToParticipant())
+            // copying or moving vial comments to participant level comments
+            if (commentsForm.isCopyToParticipant())
             {
-                _successUrl = new ActionURL(ParticipantCommentAction.class, getContainer()).
-                        addParameter("participantId", commentsForm.getMigrateParticipantId()).
-                        addParameter("comment", commentsForm.getComments()).
-                        addParameter("returnURL", commentsForm.getReferrer());
-
-                return true;
-            }
-            else if (commentsForm.isMigrateToParticipantVisit())
-            {
-                Specimen vial = SampleManager.getInstance().getSpecimen(getContainer(), commentsForm.getMigrateSampleId());
-                if (vial != null)
+                if (commentsForm.getCopySampleId() != -1)
                 {
-                    _successUrl = new ActionURL(ParticipantCommentAction.class, getContainer()).
-                            addParameter("participantId", vial.getPtid()).
-                            addParameter("visitId", String.valueOf(vial.getVisitValue())).
+                    Specimen vial = SampleManager.getInstance().getSpecimen(getContainer(), commentsForm.getCopySampleId());
+                    if (vial != null)
+                    {
+                        _successUrl = new ActionURL(CopyParticipantCommentAction.class, getContainer()).
+                                addParameter("participantId", vial.getPtid()).
+                                addParameter("visitId", String.valueOf(vial.getVisitValue())).
+                                addParameter("comment", commentsForm.getComments()).
+                                addParameter("returnURL", commentsForm.getReferrer());
+                    }
+                }
+                else
+                {
+                    _successUrl = new ActionURL(CopyParticipantCommentAction.class, getContainer()).
+                            addParameter("participantId", commentsForm.getCopyParticipantId()).
                             addParameter("comment", commentsForm.getComments()).
                             addParameter("returnURL", commentsForm.getReferrer());
-                    return true;
                 }
+
+                // delete existing vial comments if move is specified
+                if (commentsForm.isDeleteVialComment())
+                {
+                    for (Specimen specimen : vials)
+                    {
+                        SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
+                        if (comment != null)
+                        {
+                            SampleManager.getInstance().setSpecimenComment(getUser(), specimen, null,
+                                    comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
+                        }
+                    }
+                }
+                return true;
             }
 
             for (Specimen vial : vials)
@@ -3268,7 +3285,7 @@ public class SpringSpecimenController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(UpdateSpecimenCommentsForm commentsForm)
+        public ActionURL getSuccessURL(UpdateParticipantCommentsForm commentsForm)
         {
             return _successUrl;
         }
@@ -4468,6 +4485,7 @@ public class SpringSpecimenController extends BaseStudyController
         private String _participantId;
         private int _visitId;
         private String _comment;
+        private String _oldComment;
 
         public String getParticipantId()
         {
@@ -4497,6 +4515,16 @@ public class SpringSpecimenController extends BaseStudyController
         public void setComment(String comment)
         {
             _comment = comment;
+        }
+
+        public String getOldComment()
+        {
+            return _oldComment;
+        }
+
+        public void setOldComment(String oldComment)
+        {
+            _oldComment = oldComment;
         }
     }
 
@@ -4540,8 +4568,59 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(InsertPermission.class)
+    public class SpecimenCommentUpdateAction extends InsertUpdateAction<ParticipantCommentForm>
+    {
+        public SpecimenCommentUpdateAction()
+        {
+            super(ParticipantCommentForm.class);
+        }
+
+        @Override
+        protected DataView createNewView(final ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
+        {
+            try {
+                if (!StringUtils.isBlank(form.getComment()))
+                {
+                    updateForm.refreshFromDb();
+
+                    StudyImpl study = getStudy();
+                    String commentProperty = form.getVisitId() != 0 ? study.getParticipantVisitCommentProperty() :
+                            study.getParticipantCommentProperty();
+
+                    Object values = updateForm.getOldValues();
+                    if (values instanceof Map)
+                    {
+                        Map valueMap = (Map)values;
+                        String oldComment = String.valueOf(valueMap.get(commentProperty));
+                        String newComment = form.getComment();
+
+                        if (!StringUtils.isBlank(oldComment) && !StringUtils.equals(oldComment, form.getComment()))
+                            newComment = oldComment + " : " + form.getComment();
+                        valueMap.put(commentProperty, newComment);
+                    }
+                }
+                return new UpdateView(updateForm, errors);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected boolean isInsert()
+        {
+            return false;
+        }
+
+        protected NavTree appendExtraNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
-    public class ParticipantCommentAction extends SimpleViewAction<ParticipantCommentForm>
+    public class CopyParticipantCommentAction extends SimpleViewAction<ParticipantCommentForm>
     {
         public ModelAndView getView(final ParticipantCommentForm form, BindException errors) throws Exception
         {
@@ -4585,11 +4664,13 @@ public class SpringSpecimenController extends BaseStudyController
                     }
                 };
 
-                String lsid = getLsid(queryView);
+                String lsid = getExistingComment(queryView);
                 if (lsid != null)
-                    return HttpView.redirect(new ActionURL(DatasetController.UpdateAction.class, getContainer()).
+                    return HttpView.redirect(new ActionURL(SpecimenCommentUpdateAction.class, getContainer()).
                             addParameter("datasetId", def.getDataSetId()).
                             addParameter("lsid", lsid).
+                            addParameter("visitId", form.getVisitId()).
+                            addParameter("comment", form.getComment()).
                             addParameter("returnURL", form.getReturnURL()));
                 else
                     return HttpView.redirect(new ActionURL(SpecimenCommentInsertAction.class, getContainer()).
@@ -4607,37 +4688,7 @@ public class SpringSpecimenController extends BaseStudyController
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public List<String> getComments(QueryView queryView, String commentCol)
-        {
-            final TableInfo table = queryView.getTable();
-            if (table != null)
-            {
-                Set<String> participantSet = new LinkedHashSet<String>();
-                ResultSet rs = null;
-                try
-                {
-                    rs = queryView.getResultset();
-                    while (rs.next())
-                    {
-                        String ptid = rs.getString(commentCol);
-                        participantSet.add(ptid);
-                    }
-                    return new ArrayList<String>(participantSet);
-                }
-                catch (Exception e)
-                {
-                    _log.error("Error encountered trying to get participant comments", e);
-                }
-                finally
-                {
-                    if (null != rs)
-                        try { rs.close(); } catch (SQLException e){}
-                }
-            }
-            return Collections.emptyList();
-        }
-
-        private String getLsid(QueryView queryView)
+        private String getExistingComment(QueryView queryView)
         {
             final TableInfo table = queryView.getTable();
             if (table != null)
