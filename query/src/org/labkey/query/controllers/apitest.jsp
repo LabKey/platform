@@ -19,8 +19,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%
     JspView me = (JspView) HttpView.currentView();
     ActionURL defGetUrl = new ActionURL(QueryControllerSpring.GetQueryAction.class, me.getViewContext().getContainer());
@@ -61,6 +59,7 @@
 
 <script type="text/javascript">
     var startTime;
+    var responseJSON;
 
     function getXmlHttpRequest()
     {
@@ -145,6 +144,8 @@
         var resp = document.getElementById("lblResponse");
         if(null != resp)
         {
+            // save the json response
+            responseJSON = responseText;
             updateStats(responseText);
             resp.innerHTML = responseText;
             setStatus("Request Complete.");
@@ -214,7 +215,10 @@
     {
         try
         {
-            var obj = eval("(" + document.getElementById("lblResponse").innerHTML + ")");
+            if (responseJSON != undefined)
+                var obj = eval("(" + responseJSON + ")");
+            else
+                var obj = eval("(" + document.getElementById("lblResponse").innerHTML + ")");
             window.alert("JSON is valid.");
         }
         catch(e)
@@ -226,19 +230,19 @@
     function recordTest()
     {
         var pairs = [];
-        var regexp = /%20/g;
         var getUrl = document.getElementById("txtUrlGet").value;
         var postUrl = document.getElementById("txtUrlPost").value;
         var postData = document.getElementById("txtPost").value;
-        var response = document.getElementById("lblResponse").innerHTML;
+        //var response = document.getElementById("lblResponse").innerHTML;
+        var response = responseJSON;
 
-        pairs.push('getUrl=' + encodeURIComponent(getUrl).replace(regexp, "+"));
-        pairs.push('postUrl=' + encodeURIComponent(postUrl).replace(regexp, "+"));
+        pairs.push('getUrl=' + encodeURIComponent(encodeURI(getUrl)));
+        pairs.push('postUrl=' + encodeURIComponent(encodeURI(postUrl)));
 
         if (postData != null)
-            pairs.push('postData=' + encodeURIComponent(postData).replace(regexp, "+"));
+            pairs.push('postData=' + encodeURIComponent(postData));
         if (response != null)
-            pairs.push('response=' + encodeURIComponent(response).replace(regexp, "+"));
+            pairs.push('response=' + encodeURIComponent(response));
 
         var req = getXmlHttpRequest();
 

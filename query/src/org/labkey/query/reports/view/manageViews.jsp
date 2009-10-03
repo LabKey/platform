@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -64,6 +65,7 @@
             ,createMenu :[{
                 id: 'create_rView',
                 text:'R View',
+                icon: '<%=ReportService.get().getReportIcon(getViewContext(), RReport.TYPE)%>',
                 disabled: <%=!RReport.canCreateScript(context)%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}}]
             <% } %>

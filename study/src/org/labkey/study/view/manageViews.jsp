@@ -33,6 +33,9 @@
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.reports.ReportService" %>
+<%@ page import="org.labkey.api.reports.report.QueryReport" %>
+<%@ page import="org.labkey.api.study.reports.CrosstabReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -210,6 +213,7 @@
                 text:'R View',
                 hidden: <%=!RReport.isEnabled()%>,
                 disabled: <%=!RReport.canCreateScript(context)%>,
+                icon: '<%=ReportService.get().getReportIcon(getViewContext(), RReport.TYPE)%>',
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}
             },{
                 id: 'create_gridView',
