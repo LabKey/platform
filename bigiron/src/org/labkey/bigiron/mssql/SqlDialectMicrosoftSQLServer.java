@@ -95,9 +95,9 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "net.sourceforge.jtds.jdbc.Driver".equals(driverClassName);
     }
 
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings)
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
     {
-        return dataBaseProductName.equals("Microsoft SQL Server") && (majorVersion < 9);
+        return dataBaseProductName.equals("Microsoft SQL Server") && (databaseMajorVersion < 9);
     }
 
     public boolean isSqlServer()
@@ -687,15 +687,15 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygood", 1.0, 12.0);
-            badProductName("SQL Server", 1.0, 12.0);
-            badProductName("sqlserver", 1.0, 12.0);
+            badProductName("Gobbledygood", 1.0, 12.0, "");
+            badProductName("SQL Server", 1.0, 12.0, "");
+            badProductName("sqlserver", 1.0, 12.0, "");
 
             // < 9.0 should result in SqlDialectMicrosoftSQLServer -- no bad versions at the moment
-            good("Microsoft SQL Server", 0.0, 8.9, SqlDialectMicrosoftSQLServer.class);
+            good("Microsoft SQL Server", 0.0, 8.9, "", SqlDialectMicrosoftSQLServer.class);
 
             // >= 9.0 should result in SqlDialectMicrosoftSQLServer9
-            good("Microsoft SQL Server", 9.0, 11.0, SqlDialectMicrosoftSQLServer9.class);
+            good("Microsoft SQL Server", 9.0, 11.0, "", SqlDialectMicrosoftSQLServer9.class);
         }
     }
 }

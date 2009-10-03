@@ -96,24 +96,24 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "org.postgresql.Driver".equals(driverClassName);
     }
 
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
         if (!getProductName().equals(dataBaseProductName))
             return false;
 
-        int version = majorVersion * 10 + minorVersion;   // 8.2 => 82, 8.3 => 83, 8.4 => 84, etc.
+        int version = databaseMajorVersion * 10 + databaseMinorVersion;   // 8.2 => 82, 8.3 => 83, 8.4 => 84, etc.
 
         // Version 8.2 or greater is allowed...
         if (version >= 82)
         {
             // ...but warn for anything greater than 8.4
             if (logWarnings && version > 84)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + majorVersion + "." + minorVersion + ".  PostgreSQL 8.4 is the recommended version.");
+                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + ".  PostgreSQL 8.4 is the recommended version.");
 
             return true;
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + majorVersion + "." + minorVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 8.2 or greater.");
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + " is not supported.  You must upgrade your database server installation to " + getProductName() + " version 8.2 or greater.");
     }
 
     public boolean isSqlServer()
@@ -836,15 +836,15 @@ class SqlDialectPostgreSQL extends SqlDialect
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygood", 8.0, 8.5);
-            badProductName("Postgres", 8.0, 8.5);
-            badProductName("postgresql", 8.0, 8.5);
+            badProductName("Gobbledygood", 8.0, 8.5, "");
+            badProductName("Postgres", 8.0, 8.5, "");
+            badProductName("postgresql", 8.0, 8.5, "");
 
             // 8.1 or lower should result in bad version number
-            badVersion("PostgreSQL", -5.0, 8.1);
+            badVersion("PostgreSQL", -5.0, 8.1, null);
 
             //  > 8.1 should be good
-            good("PostgreSQL", 8.2, 11.0, SqlDialectPostgreSQL.class);
+            good("PostgreSQL", 8.2, 11.0, "", SqlDialectPostgreSQL.class);
         }
     }
 }

@@ -165,6 +165,8 @@ bigiron/src/org/labkey/bigiron/sas/SasController.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDbSchema.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas.java -text
+bigiron/src/org/labkey/bigiron/sas/SqlDialectSas91.java -text
+bigiron/src/org/labkey/bigiron/sas/SqlDialectSas92.java -text
 bigiron/src/org/labkey/bigiron/sas/exportSasScript.jsp -text
 biotrue/module.properties -text
 biotrue/resources/schemas/biotrue.xml -text

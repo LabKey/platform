@@ -33,17 +33,16 @@ import java.util.Map;
  * Date: Jan 21, 2009
  * Time: 3:15:40 PM
  */
-public class SqlDialectSas extends SqlDialect
+public abstract class SqlDialectSas extends SqlDialect
 {
-    public SqlDialectSas()
+    protected SqlDialectSas()
     {
         try
         {
-            new ShareNetDriver();
+            new ShareNetDriver();       // TODO: Remove this?
         }
         catch (SQLException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
 
@@ -62,12 +61,6 @@ public class SqlDialectSas extends SqlDialect
         return driverClassName.equals(ShareNetDriver.class.getName());
     }
 
-    // NOTE: SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so this will never return true.
-    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings)
-    {
-        return dataBaseProductName.equals(getProductName());
-    }
-
     public void prepareNewDbSchema(DbSchema schema)
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -75,7 +68,7 @@ public class SqlDialectSas extends SqlDialect
 
     protected String getProductName()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return "SAS";
     }
 
     public String getSQLScriptPath()
@@ -356,36 +349,6 @@ public class SqlDialectSas extends SqlDialect
     public boolean isPostgreSQL()
     {
         return false;
-    }
-
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
-    {
-        return new SasColumnMetaDataReader(rsCols);
-    }
-
-    private class SasColumnMetaDataReader extends ColumnMetaDataReader
-    {
-        private SasColumnMetaDataReader(ResultSet rsCols)
-        {
-            super(rsCols);
-
-            _nameKey = "NAME";
-            _sqlTypeKey = "SQLTYPE";
-            _scaleKey = "SIZE";
-            _nullableKey = "NULLABLE";
-            _postionKey = "POSITION";
-        }
-
-        @Override
-        public String getSqlTypeName() throws SQLException
-        {
-            return sqlTypeNameFromSqlTypeInt(getSqlType());
-        }
-
-        public boolean isAutoIncrement() throws SQLException
-        {
-            return false;
-        }
     }
 
     public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
