@@ -82,11 +82,6 @@ public class DbScope
             {
                 _dialect = SqlDialect.getFromMetaData(dbmd);
             }
-            catch (SQLException e)
-            {
-                // Fall back to retrieving dialect from driver -- SAS/SHARE driver throws when calling getDatabaseMajorVersion() and getDatabaseMinorVersion()
-                _dialect = SqlDialect.getFromDataSourceProperties(new SqlDialect.DataSourceProperties(dsName, dataSource));
-            }
             finally
             {
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis      

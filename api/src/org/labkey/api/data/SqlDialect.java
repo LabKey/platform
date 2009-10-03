@@ -310,17 +310,41 @@ public abstract class SqlDialect
 
     public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
-        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseMajorVersion(), md.getDatabaseMinorVersion(), true);
+        // SAS/SHARE drivers throw when requesting database version, so catch and set to 0
+
+        int databaseMajorVersion;
+
+        try
+        {
+            databaseMajorVersion = md.getDatabaseMajorVersion();
+        }
+        catch (SQLException e)
+        {
+            databaseMajorVersion = 0;
+        }
+
+        int databaseMinorVersion;
+
+        try
+        {
+            databaseMinorVersion = md.getDatabaseMinorVersion();
+        }
+        catch (SQLException e)
+        {
+            databaseMinorVersion = 0;
+        }
+
+        return getFromProductName(md.getDatabaseProductName(), databaseMajorVersion, databaseMinorVersion, md.getDriverVersion(), true);
     }
 
 
-    private static SqlDialect getFromProductName(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
+    private static SqlDialect getFromProductName(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialect dialect : _dialects)
-            if (dialect.claimsProductNameAndVersion(dataBaseProductName, majorVersion, minorVersion, logWarnings))
+            if (dialect.claimsProductNameAndVersion(dataBaseProductName, databaseMajorVersion, databaseMinorVersion, jdbcDriverVersion, logWarnings))
                 return dialect;
 
-        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + majorVersion + "." + minorVersion + " -- is not supported by your LabKey installation.");
+        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseMajorVersion + "." + databaseMinorVersion + " -- is not supported by your LabKey installation.");
     }
 
     /**
@@ -342,7 +366,7 @@ public abstract class SqlDialect
     protected abstract boolean claimsDriverClassName(String driverClassName);
 
     // Implementation should throw only if it's responsible for the specified database server but doesn't support the specified version
-    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion, boolean logWarnings) throws DatabaseNotSupportedException;
+    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
 
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);
@@ -945,22 +969,22 @@ public abstract class SqlDialect
 
         public abstract void testDialectRetrieval();
 
-        protected void good(String databaseName, double beginVersion, double endVersion, Class<? extends SqlDialect> expectedDialectClass)
+        protected void good(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, Class<? extends SqlDialect> expectedDialectClass)
         {
-            testRange(databaseName, beginVersion, endVersion, expectedDialectClass, null);
+            testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, expectedDialectClass, null);
         }
 
-        protected void badProductName(String databaseName, double beginVersion, double endVersion)
+        protected void badProductName(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion)
         {
-            testRange(databaseName, beginVersion, endVersion, null, SqlDialectNotSupportedException.class);
+            testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, null, SqlDialectNotSupportedException.class);
         }
 
-        protected void badVersion(String databaseName, double beginVersion, double endVersion)
+        protected void badVersion(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion)
         {
-            testRange(databaseName, beginVersion, endVersion, null, DatabaseNotSupportedException.class);
+            testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, null, DatabaseNotSupportedException.class);
         }
 
-        private void testRange(String databaseName, double beginVersion, double endVersion, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
+        private void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
         {
             int begin = (int)Math.round(beginVersion * 10);
             int end = (int)Math.round(endVersion * 10);
@@ -974,7 +998,7 @@ public abstract class SqlDialect
 
                 try
                 {
-                    SqlDialect dialect = getFromProductName(databaseName, majorVersion, minorVersion, false);
+                    SqlDialect dialect = getFromProductName(databaseName, majorVersion, minorVersion, jdbcDriverVersion, false);
                     assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
                     assertEquals(description + " returned " + dialect.getClass().getSimpleName() + "; expected " + expectedDialectClass.getSimpleName(), dialect.getClass(), expectedDialectClass);
                 }
