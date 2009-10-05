@@ -171,10 +171,10 @@ class SqlDialectPostgreSQL extends SqlDialect
 
     private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
     {
-        if (rowCount > 0)
+        if (rowCount != Table.ALL_ROWS)
         {
             frag.append("\nLIMIT ");
-            frag.append(Integer.toString(rowCount));
+            frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
 
             if (offset > 0)
             {

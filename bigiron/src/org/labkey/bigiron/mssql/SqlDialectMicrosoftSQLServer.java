@@ -154,7 +154,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     @Override
     public SQLFragment limitRows(SQLFragment frag, int rowCount)
     {
-        if (rowCount > 0)
+        if (rowCount != Table.ALL_ROWS)
         {
             String sql = frag.getSQL();
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
@@ -163,7 +163,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             int offset = 6;
             if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))
                 offset = 15;
-            frag.insert(offset, " TOP " + rowCount);
+            frag.insert(offset, " TOP " + (Table.NO_ROWS == rowCount ? 0 : rowCount));
         }
         return frag;
     }
