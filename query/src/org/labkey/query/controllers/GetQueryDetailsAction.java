@@ -24,6 +24,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.query.persist.QueryDef;
 import org.springframework.validation.BindException;
 
 import java.util.*;
@@ -78,6 +79,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null == tinfo)
             throw new IllegalArgumentException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
 
+        //8649: let the table provide the view data url
+        if (schema instanceof UserSchema)
+        {
+            UserSchema uschema = (UserSchema)schema;
+            QueryDefinition qdef = QueryService.get().createQueryDefForTable(uschema, form.getQueryName());
+            ActionURL viewDataUrl = qdef == null ? null : uschema.urlFor(QueryAction.executeQuery, qdef);
+            if (null != viewDataUrl)
+                resp.put("viewDataUrl", viewDataUrl);
+        }
+
         //if the caller asked us to chase a foreign key, do that
         FieldKey fk = null;
         if (null != form.getFk())
@@ -94,11 +105,6 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         
         if (null != tinfo.getDescription())
             resp.put("description", tinfo.getDescription());
-
-        //8649: let the table provide the view data url
-        ActionURL viewDataUrl = tinfo.getGridURL(container);
-        if (null != viewDataUrl)
-            resp.put("viewDataUrl", viewDataUrl);
 
         //now the native columns
         resp.put("columns", getNativeColProps(tinfo, fk));
