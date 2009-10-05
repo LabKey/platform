@@ -1421,7 +1421,7 @@ public class SecurityManager
 
 
     // TODO: Redundant with getProjectMembers() -- this approach should be more efficient for simple cases
-    // TODO: Also redundant with getProjectUserids()
+    // TODO: Also redundant with getFolderUserids()
     // TODO: Cache this set
     public static Set<Integer> getProjectMembersIds(Container c)
     {
@@ -1502,17 +1502,60 @@ public class SecurityManager
     }
 
 
-    public static List<Integer> getProjectUserids(Container c)
+    public static List<Integer> getFolderUserids(Container c)
     {
+        Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
         try
         {
-            Integer[] a =Table.executeArray(CoreSchema.getInstance().getSchema(),
-                    "SELECT U.userid\n" +
-                    "FROM core.principals U\n" +
-                    "WHERE U.type='u' AND U.userid IN \n" +
-                    "  (SELECT M.userid from core.members M INNER JOIN core.principals G ON M.groupid = G.userid WHERE G.type = 'g' AND G.container = ?)",
-                    new Object[] {c}, Integer.class);
-            return Arrays.asList(a);
+            //users "in the project" consists of:
+            // - users who are members of a project group
+            // - users who belong to a site group that has a role assignment in the policy for the specified folder
+            // - users who have a direct role assignment in the policy for the specified folder
+            //And if the All Site Users group is playing a role, then all users are "in the project"
+
+            SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
+            sql.append(core.getTableInfoPrincipals());
+            sql.append(" u WHERE u.type='u'");
+
+            //don't filter if all site users is playing a role
+            SecurityPolicy policy = c.getPolicy();
+            Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
+            if (policy.getAssignedRoles(allSiteUsers).size() == 0)
+            {
+                String resId = c.getPolicy().getResource().getResourceId();
+
+                sql.append(" AND (");
+
+                //all users who are members of a project group
+                sql.append("u.UserId IN (SELECT m.UserId FROM ");
+                sql.append(core.getTableInfoMembers());
+                sql.append(" m INNER JOIN ");
+                sql.append(core.getTableInfoPrincipals());
+                sql.append(" g on m.GroupId=g.UserId WHERE g.Type='g' AND g.Container=?)");
+                sql.add(project);
+
+                //all users who belong to a site group that has a role assignment in the policy for the specified folder
+                sql.append(" OR u.UserId IN (SELECT m.UserId FROM ");
+                sql.append(core.getTableInfoMembers());
+                sql.append(" m INNER JOIN ");
+                sql.append(core.getTableInfoPrincipals());
+                sql.append(" g on m.GroupId=g.UserId WHERE g.Type='g' AND g.Container IS NULL AND g.UserId IN (SELECT a.UserId FROM ");
+                sql.append(core.getTableInfoRoleAssignments());
+                sql.append(" a WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole'))");
+                sql.add(resId);
+
+                //users who have a direct role assignment in the policy for the specified folder
+                sql.append(" OR u.UserId IN (SELECT a.UserId FROM ");
+                sql.append(core.getTableInfoRoleAssignments());
+                sql.append(" a WHERE a.ResourceId=? AND a.role != 'org.labkey.api.security.roles.NoPermissionsRole')");
+                sql.add(resId);
+                
+                sql.append(")"); //close of "AND ("
+            }
+            
+
+            Integer[] userIds = Table.executeArray(core.getSchema(), sql, Integer.class);
+            return Arrays.asList(userIds);
         }
         catch (SQLException x)
         {
