@@ -63,4 +63,15 @@ public class SqlDialectSas92 extends SqlDialectSas
             return false;
         }
     }
+
+    public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
+    {
+        return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ") {
+            @Override
+            public String getName() throws SQLException
+            {
+                return super.getName().trim();
+            }
+        };
+    }
 }

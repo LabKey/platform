@@ -35,17 +35,6 @@ import java.util.Map;
  */
 public abstract class SqlDialectSas extends SqlDialect
 {
-    protected SqlDialectSas()
-    {
-        try
-        {
-            new ShareNetDriver();       // TODO: Remove this?
-        }
-        catch (SQLException e)
-        {
-        }
-    }
-
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -350,18 +339,6 @@ public abstract class SqlDialectSas extends SqlDialect
     {
         return false;
     }
-
-    public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
-    {
-        return new PkMetaDataReader(rs, "NAME", "SEQ") {
-            @Override
-            public String getName() throws SQLException
-            {
-                return super.getName().trim();
-            }
-        };
-    }
-
 
     public TestSuite getTestSuite()
     {
