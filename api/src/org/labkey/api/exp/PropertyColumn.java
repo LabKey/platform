@@ -61,6 +61,8 @@ public class PropertyColumn extends LookupColumn
         setInputType(pd.getPropertyType().getInputType());
         setInputLength(pd.getInputLength());
         setInputRows(pd.getInputRows());
+        setURL(pd.getURL());
+        setImportAliasesSet(pd.getImportAliasesSet());
 
         this.containerId = containerId;
 

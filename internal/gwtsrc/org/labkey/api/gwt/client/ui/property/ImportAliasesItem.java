@@ -56,9 +56,9 @@ public class ImportAliasesItem<DomainType extends GWTDomain<FieldType>, FieldTyp
     {
         if (_aliasesTextBox.isEnabled())
         {
-            String aliasString = _aliasesTextBox.getText();
+            String aliasString = _aliasesTextBox.getText().trim();
             boolean changed = aliasString.equals(field.getImportAliases());
-            field.setImportAliases(aliasString);
+            field.setImportAliases("".equals(aliasString) ? null : aliasString);
             return changed;
         }
         return false;

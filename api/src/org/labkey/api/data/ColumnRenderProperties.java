@@ -16,7 +16,11 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
+
+import java.util.Set;
+import java.util.LinkedHashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: matthewb
@@ -42,6 +46,7 @@ public class ColumnRenderProperties
     protected String description;
     protected boolean hidden;
     protected StringExpression url;
+    protected Set<String> importAliases = new LinkedHashSet<String>();
 
     public void copyTo(ColumnRenderProperties to)
     {
@@ -55,6 +60,8 @@ public class ColumnRenderProperties
         to.tsvFormatString = tsvFormatString;
         to.label = label;
         to.name = name;
+        to.url = url;
+        to.importAliases = new LinkedHashSet<String>(importAliases);
     }
 
     public Sort.SortDirection getSortDirection()
@@ -182,13 +189,65 @@ public class ColumnRenderProperties
         return this.url;
     }
 
-//    public void setURL(String url)
-//    {
-//        this.url = null == url ? null : StringExpressionFactory.createURL(url);
-//    }
-
     public void setURL(StringExpression url)
     {
         this.url = url;
+    }
+
+    public Set<String> getImportAliasesSet()
+    {
+        return importAliases;
+    }
+
+    public void setImportAliasesSet(Set<String> importAliases)
+    {
+        assert importAliases != null;
+        this.importAliases = importAliases;
+    }
+
+    public static String convertToString(Set<String> set)
+    {
+        StringBuilder sb = new StringBuilder();
+        String separator = "";
+        for (String alias : set)
+        {
+            sb.append(separator);
+            separator = ", ";
+            alias = alias.trim();
+            if (alias.indexOf(" ") != -1)
+            {
+                // Quote any values with spaces
+                sb.append("\"");
+                sb.append(alias);
+                sb.append("\"");
+            }
+            else
+            {
+                sb.append(alias);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static Pattern STRING_PATTERN = Pattern.compile("[^,; \\t\\n\\f\"]+|\"[^\"]*\"");
+
+    public static Set<String> convertToSet(String s)
+    {
+        Set<String> result = new LinkedHashSet<String>();
+        if (s != null)
+        {
+            Matcher m = STRING_PATTERN.matcher(s);
+            while (m.find())
+            {
+                String alias = m.group();
+                if (alias.startsWith("\"") && alias.endsWith("\""))
+                {
+                    // Strip off the leading and trailing quotes
+                    alias = alias.substring(1, alias.length() - 1);
+                }
+                result.add(alias);
+            }
+        }
+        return result;
     }
 }

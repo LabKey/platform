@@ -126,7 +126,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return c == ContainerManager.getForId(getId());
     }
 
-
+    /**
+     * @return the parent container, or the root container (with path "/") if called on the root
+     */
     public Container getParent()
     {
         Container parent = _parent == null ? null : _parent.get();

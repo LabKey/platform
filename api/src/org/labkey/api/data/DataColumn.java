@@ -67,7 +67,7 @@ public class DataColumn extends DisplayColumn
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
-        StringExpression url = _boundColumn.getURL();
+        StringExpression url = _boundColumn.getEffectiveURL();
         if (null != url)
             super.setURLExpression(url);
         setFormatString(_displayColumn.getFormatString());

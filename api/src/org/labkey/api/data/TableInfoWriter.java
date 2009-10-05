@@ -90,6 +90,18 @@ public class TableInfoWriter
         if (!column.isNullable())
             columnXml.setNullable(false);
 
+        if (null != column.getURL())
+            columnXml.setUrl(column.getURL().getSource());
+
+        if (!column.getImportAliasesSet().isEmpty())
+        {
+            ColumnType.ImportAliases importAliasesXml = columnXml.addNewImportAliases();
+            for (String importAlias : column.getImportAliasesSet())
+            {
+                importAliasesXml.addImportAlias(importAlias);
+            }
+        }
+
         String formatString = column.getFormatString();
 
         // Write only if it's non-null (and in the case of dates, different from the global default)

@@ -44,9 +44,19 @@ public class PropertyUtil
         return getServerProperty("container");
     }
 
-    public static String getPageFlow()
+    public static String getController()
     {
-        return getServerProperty("pageFlow");
+        return getServerProperty("controller");
+    }
+
+    public static String getAction()
+    {
+        return getServerProperty("action");
+    }
+
+    public static String getQueryString()
+    {
+        return getServerProperty("queryString");
     }
 
     public static String getContextPath()
@@ -59,7 +69,7 @@ public class PropertyUtil
 
     public static String getRelativeURL(String action)
     {
-        return getRelativeURL(action, getPageFlow());
+        return getRelativeURL(action, getController());
     }
 
     public static String getRelativeURL(String action, String pageFlow)

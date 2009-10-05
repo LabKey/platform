@@ -208,6 +208,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setPropertyURI(col.getPropertyURI());
         setIsUnselectable(col.isUnselectable());
         setDefaultValueType(col.getDefaultValueType());
+        setImportAliasesSet(col.getImportAliasesSet());
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // URL copy/rewrite is handled separately
@@ -608,8 +609,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         isReadOnly = readOnly;
     }
 
-    @Override
-    public StringExpression getURL()
+    public StringExpression getEffectiveURL()
     {
         StringExpression result = super.getURL();
         if (result != null)
@@ -747,18 +747,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             hidden = xmlCol.getIsHidden();
         if (xmlCol.isSetIsUnselectable())
             isUnselectable = xmlCol.getIsUnselectable();
-        // UNDONE: errors sometimes???
-        try
-        {
-            if (xmlCol.isSetDisplayWidth())
-                setDisplayWidth(xmlCol.getDisplayWidth());
-        }
-        catch (Throwable x)
-        {
-            x.printStackTrace();
-        }
+        if (xmlCol.isSetIsKeyField())
+            isKeyField = xmlCol.getIsKeyField();
+        if (xmlCol.isSetDisplayWidth())
+            setDisplayWidth(xmlCol.getDisplayWidth());
         if (xmlCol.isSetNullable())
             nullable = xmlCol.getNullable();
+
+        if (xmlCol.isSetImportAliases())
+            importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
     }
 
     public static String labelFromName(String name)

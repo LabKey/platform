@@ -1983,6 +1983,8 @@ public class OntologyManager
 
             String description = (String) m.get("description");
             String format = StringUtils.trimToNull((String)m.get("format"));
+            String url = (String) m.get("url");
+            String importAliases = (String) m.get("importAliases");
 
             // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
             String lookupContainerId = null;
@@ -2054,6 +2056,8 @@ public class OntologyManager
             pd.setRangeURI(rangeURI);
             pd.setContainer(container);
             pd.setDescription(description);
+            pd.setURL(StringExpressionFactory.createURL(url));
+            pd.setImportAliases(importAliases);
             pd.setRequired(required);
             pd.setHidden(hidden);
             pd.setFormat(format);

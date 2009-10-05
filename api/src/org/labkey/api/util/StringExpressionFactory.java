@@ -89,6 +89,11 @@ public class StringExpressionFactory
 
     public static StringExpression createURL(String str)
     {
+        if (str == null)
+        {
+            return null;
+        }
+        
         String key = "url:" + str;
 
         StringExpression expr = templates.get(key);
@@ -286,7 +291,7 @@ public class StringExpressionFactory
         @Override
         public String toString()
         {
-            return _source;
+            return getSource();
         }
 
         public void render(Writer out, Map context) throws IOException

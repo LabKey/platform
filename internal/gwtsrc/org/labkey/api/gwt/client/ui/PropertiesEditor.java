@@ -48,9 +48,10 @@ import java.util.Set;
 public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements LookupListener<FieldType>
 {
     public static final String currentFolder = "[current folder]";
-    private VerticalPanel _contentPanel;
+    protected VerticalPanel _contentPanel;
     private TabPanel _extraPropertiesTabPanel = new TabPanel();
     private Image _spacerImage;
+    private boolean _warnedAboutDelete = false;
 
     public enum FieldStatus
     {
@@ -531,7 +532,28 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                         }
                         else
                         {
-                            markDeleted(index);
+                            if (!_warnedAboutDelete)
+                            {
+                                // If we haven't already warned about the dangers of delete, do so now
+                                ImageButton okButton = new ImageButton("OK", new ClickHandler()
+                                {
+                                    public void onClick(ClickEvent e)
+                                    {
+                                        // Once they say yes, don't bother them again
+                                        _warnedAboutDelete = true;
+                                        markDeleted(index);
+                                    }
+                                });
+
+                                WindowUtil.showConfirmDialog("Confirm Field Deletion",
+                                        "Are you sure you want to remove this field? All of its data will be deleted as well.",
+                                        okButton);
+                            }
+                            else
+                            {
+                                // Otherwise, don't bother the user again
+                                markDeleted(index);
+                            }
                         }
                     }
                 });

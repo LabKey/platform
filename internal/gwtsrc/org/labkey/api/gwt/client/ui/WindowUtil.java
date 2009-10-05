@@ -18,9 +18,9 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.Widget;
-import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.*;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
 
 /**
  * Created by IntelliJ IDEA.
@@ -178,5 +178,49 @@ public class WindowUtil
     public static native String prompt(String prompt, String defaultValue) /*-{
         return $wnd.prompt(prompt, null == defaultValue ? "" : defaultValue);
     }-*/;
+
+    /**
+     * Shows a modal popup to ask for confirmation. Automatically adds a cancel button that just dismisses the dialog,
+     * as well as adding listeners to all the buttons that dismiss the dialog
+     */
+    public static void showConfirmDialog(String title, String message, ImageButton... buttons)
+    {
+        final DialogBox confirmDialog = new DialogBox(false, true);
+        for (ImageButton button : buttons)
+        {
+            button.addClickHandler(new ClickHandler()
+            {
+                public void onClick(ClickEvent event)
+                {
+                    confirmDialog.hide();
+                }
+            });
+        }
+        confirmDialog.setText(title);
+        VerticalPanel panel = new VerticalPanel();
+        panel.add(new Label(message));
+        HorizontalPanel buttonPanel = new HorizontalPanel();
+
+        for (ImageButton button : buttons)
+        {
+            buttonPanel.add(button);
+        }
+        ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
+        {
+            public void onClick(ClickEvent e)
+            {
+                confirmDialog.hide();
+            }
+        });
+        buttonPanel.add(cancelButton);
+        buttonPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+        panel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+
+        panel.add(buttonPanel);
+        confirmDialog.add(panel);
+        confirmDialog.show();
+        WindowUtil.centerDialog(confirmDialog);
+    }
+
 
 }

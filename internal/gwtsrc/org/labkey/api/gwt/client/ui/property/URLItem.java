@@ -43,10 +43,17 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
 
         FlowPanel labelPanel = new FlowPanel();
         labelPanel.add(new InlineLabel("URL"));
-        labelPanel.add(new HelpPopup("URL", "<p>A template for generating hyperlinks for this field.  Two formats are supported: </p>"+
-                "<span style='white-space:nowrap;'>Full URL</span><br><span style='white-space:nowrap;'>http://server/path/page.html?id=${Param}</span><br>" +
+        labelPanel.add(new HelpPopup("URL", "<p>A template for generating hyperlinks for this field. The <strong>${ }</strong> syntax " +
+                "may be used to substitute a fields's value into the URL. Two formats are supported:</p>"+
+                "<span style='white-space:nowrap;'><strong>Full URL</strong></span><br/>" +
+                "<span>Starts with http:// or https://</span><br/>" +
+                "<span style='white-space:nowrap;'><em>http://server/path/page.html?id=${Param}</em></span><br>" +
                 "&nbsp;<br>" +
-                "<span style='white-space:nowrap;'>Short LabKey URL (omit context path and folder path)</span><br><span style='white-space:nowrap;'>/wiki/page.view?name=${Name}</span>"
+                "<span style='white-space:nowrap;'><strong>Short LabKey URL</strong></span><br/>" +
+                "<span>Include controller and action name, omitting context path and folder path</span><br/>" +
+                "<span style='white-space:nowrap;'><em>/wiki/page.view?name=${Name}</em></span><br/>" +
+                "&nbsp;<br>" +
+                "<a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=propertyFields'>More information</a>"
                 ));
 
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);

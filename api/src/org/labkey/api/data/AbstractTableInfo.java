@@ -446,15 +446,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     protected void initColumnFromXml(QuerySchema schema, ColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
     {
-        column.setName(xbColumn.getColumnName());
-        if (xbColumn.getColumnTitle() != null)
-        {
-            column.setLabel(xbColumn.getColumnTitle());
-        }
-        if (xbColumn.isSetDescription())
-        {
-            column.setDescription(xbColumn.getDescription());
-        }
+        column.loadFromXml(xbColumn, true);
+        
         if (xbColumn.getFk() != null)
         {
             ForeignKey qfk = makeForeignKey(schema, xbColumn.getFk());
@@ -465,30 +458,6 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 return;
             }
             column.setFk(qfk);
-        }
-        if (xbColumn.getFormatString() != null)
-        {
-            column.setFormatString(xbColumn.getFormatString());
-        }
-        if (xbColumn.getDatatype() != null)
-        {
-            column.setSqlTypeName(xbColumn.getDatatype());
-        }
-        if (xbColumn.isSetIsHidden())
-        {
-            column.setHidden(xbColumn.getIsHidden());
-        }
-        if (xbColumn.isSetIsUnselectable())
-        {
-            column.setIsUnselectable(xbColumn.getIsUnselectable());
-        }
-        if (xbColumn.isSetIsKeyField())
-        {
-            column.setKeyField(xbColumn.getIsKeyField());
-        }
-        if (xbColumn.isSetUrl())
-        {
-            column.setURL(StringExpressionFactory.createURL(xbColumn.getUrl()));
         }
     }
 

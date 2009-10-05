@@ -251,7 +251,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
 
     @Override
-    public String toString()
+    public String getSource()
     {
         if (null != _urlSource)
             return _urlSource;

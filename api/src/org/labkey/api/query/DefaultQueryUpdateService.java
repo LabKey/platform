@@ -159,5 +159,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
      */
     protected void setSpecialColumns(User user, Container container, TableInfo table, Map<String,Object> row)
     {
+        if(null != container)
+            row.put("container", container.getId());
     }
 }
