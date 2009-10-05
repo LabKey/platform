@@ -20,6 +20,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -85,7 +86,7 @@ public class SchemaXmlReader implements SchemaReader
             _datasetInfoMap.put(tableProps.getId(), info);
 
             // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery");
+            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery", "URL", "ImportAliases");
 
             for (ColumnType columnXml : tableXml.getColumns().getColumnArray())
             {
@@ -106,6 +107,12 @@ public class SchemaXmlReader implements SchemaReader
 
                 boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
 
+                Set<String> importAliases = new LinkedHashSet<String>();
+                if (columnXml.isSetImportAliases())
+                {
+                    importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
+                }
+
                 ColumnType.Fk fk = columnXml.getFk();
 
                 Map<String, Object> map = mapFactory.getRowMap(new Object[]{
@@ -121,7 +128,9 @@ public class SchemaXmlReader implements SchemaReader
                     mvEnabled,
                     null != fk ? fk.getFkFolderPath() : null,
                     null != fk ? fk.getFkDbSchema() : null,
-                    null != fk ? fk.getFkTable() : null
+                    null != fk ? fk.getFkTable() : null,
+                    columnXml.getUrl(),
+                    ColumnRenderProperties.convertToString(importAliases)
                 });
 
                 _importMaps.add(map);

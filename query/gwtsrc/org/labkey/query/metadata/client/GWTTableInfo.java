@@ -27,6 +27,8 @@ import java.util.Map;
 public class GWTTableInfo extends GWTDomain<GWTColumnInfo>
 {
     private boolean _userDefinedQuery;
+    /** If metadata is not stored in the current container, the folder path where it is stored */
+    private String _definitionFolder;
 
     public boolean isEditable(GWTColumnInfo field)
     {
@@ -41,5 +43,15 @@ public class GWTTableInfo extends GWTDomain<GWTColumnInfo>
     public void setUserDefinedQuery(boolean userDefinedQuery)
     {
         _userDefinedQuery = userDefinedQuery;
+    }
+
+    public String getDefinitionFolder()
+    {
+        return _definitionFolder;
+    }
+
+    public void setDefinitionFolder(String definitionFolder)
+    {
+        _definitionFolder = definitionFolder;
     }
 }

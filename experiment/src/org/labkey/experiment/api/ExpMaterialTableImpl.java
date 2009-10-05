@@ -179,7 +179,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ExpSchema(_schema.getUser(), _schema.getContainer()).createSampleSetTable();
+                return new ExpSchema(_schema.getUser(), _schema.getContainer()).getTable(ExpSchema.TableType.SampleSets);
             }
         });
         addContainerColumn(ExpMaterialTable.Column.Folder, null);

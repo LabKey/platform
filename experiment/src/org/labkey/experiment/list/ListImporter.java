@@ -30,16 +30,14 @@ import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyContext;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /*
 * User: adam
@@ -147,7 +145,7 @@ public class ListImporter implements ExternalStudyImporter
         // TODO: This code is largely the same as SchemaXmlReader -- should consolidate
 
         // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-        RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery");
+        RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery", "URL", "ImportAliases");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
@@ -176,6 +174,12 @@ public class ListImporter implements ExternalStudyImporter
 
             boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
 
+            Set<String> importAliases = new LinkedHashSet<String>();
+            if (columnXml.isSetImportAliases())
+            {
+                importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
+            }
+
             ColumnType.Fk fk = columnXml.getFk();
 
             Map<String, Object> map = mapFactory.getRowMap(new Object[]{
@@ -191,7 +195,9 @@ public class ListImporter implements ExternalStudyImporter
                 mvEnabled,
                 null != fk ? fk.getFkFolderPath() : null,
                 null != fk ? fk.getFkDbSchema() : null,
-                null != fk ? fk.getFkTable() : null
+                null != fk ? fk.getFkTable() : null,
+                columnXml.getUrl(),
+                ColumnRenderProperties.convertToString(importAliases)
             });
 
             importMaps.add(map);

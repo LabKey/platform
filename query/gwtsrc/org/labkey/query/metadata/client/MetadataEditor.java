@@ -23,6 +23,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.Saveable;
@@ -41,7 +42,6 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     public static final String VIEW_DATA_URL = "viewDataURL";
     private TablePropertiesEditor _editor;
     private String _schemaName;
-    private DialogBox _confirmDialog;
     private ImageButton _saveButton;
     private Label _saveMessage = new Label();
 
@@ -81,6 +81,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         _editor.addButton(_saveButton);
         _saveButton.setEnabled(false);
         _editor.getContentPanel().add(_saveMessage);
+
         _editor.addChangeListener(new ChangeListener()
         {
             public void onChange(Widget sender)
@@ -112,7 +113,6 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                 {
                     public void onClick(ClickEvent e)
                     {
-                        _confirmDialog.hide();
                         _saveMessage.setText("");
                         getService().resetToDefault(_schemaName, _editor.getUpdates().getName(), new AsyncCallback<GWTTableInfo>()
                         {
@@ -130,7 +130,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                     }
                 });
                 
-                showConfirmDialog("Confirm Reset", "Are you sure you want to reset? You will lose any edits you made.", okButton);
+                WindowUtil.showConfirmDialog("Confirm Reset", "Are you sure you want to reset? You will lose any edits you made.", okButton);
             }
         }));
         panel.add(_editor.getWidget());
@@ -176,7 +176,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                         }
                     });
 
-                    showConfirmDialog("Save Changes?", "Do you want to save your changes?", saveButton, discardButton);
+                    WindowUtil.showConfirmDialog("Save Changes?", "Do you want to save your changes?", saveButton, discardButton);
                 }
                 else
                 {
@@ -184,47 +184,6 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                 }
             }
         });
-    }
-
-    public void hideConfirmDialog()
-    {
-        if (_confirmDialog != null)
-        {
-            _confirmDialog.hide();
-            _confirmDialog = null;
-        }
-    }
-
-    /**
-     * Shows a modal popup to ask for confirmation. Automatically adds a cancel button that just dismisses the dialog.
-     */
-    public void showConfirmDialog(String title, String message, ImageButton... buttons)
-    {
-        _confirmDialog = new DialogBox(false, true);
-        _confirmDialog.setText(title);
-        VerticalPanel panel = new VerticalPanel();
-        panel.add(new Label(message));
-        HorizontalPanel buttonPanel = new HorizontalPanel();
-
-        for (ImageButton button : buttons)
-        {
-            buttonPanel.add(button);
-        }
-        ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                _confirmDialog.hide();
-            }
-        });
-        buttonPanel.add(cancelButton);
-        buttonPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-        panel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-
-        panel.add(buttonPanel);
-        _confirmDialog.add(panel);
-        _confirmDialog.show();
-        WindowUtil.centerDialog(_confirmDialog);
     }
 
     public boolean isDirty()

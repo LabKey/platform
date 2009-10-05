@@ -24,6 +24,7 @@ import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.*;
@@ -447,9 +448,33 @@ public class XarExporter
         {
             xProp.setSearchTerms(prop.getSearchTerms());
         }
-        if(prop.getSemanticType() != null)
+        if (prop.getSemanticType() != null)
         {
             xProp.setSemanticType(prop.getSemanticType());
+        }
+        if (prop.getURL() != null)
+        {
+            xProp.setURL(prop.getURL().toString());
+        }
+        if (!prop.getImportAliasesSet().isEmpty())
+        {
+            PropertyDescriptorType.ImportAliases xImportAliases = xProp.addNewImportAliases();
+            for (String importAlias : prop.getImportAliasesSet())
+            {
+                xImportAliases.addImportAlias(importAlias);
+            }
+        }
+        Lookup lookup = domainProp.getLookup();
+        if (lookup != null)
+        {
+            PropertyDescriptorType.FK xFK = xProp.addNewFK();
+            xFK.setQuery(lookup.getQueryName());
+            xFK.setSchema(lookup.getSchemaName());
+            if (lookup.getContainer() != null && !lookup.getContainer().equals(prop.getContainer()))
+            {
+                // Export the lookup's target path if it's set and it's not the same as the property descriptor's container
+                xFK.setFolderPath(lookup.getContainer().getPath());
+            }
         }
 
         if (domainProp.getDefaultValueTypeEnum() != null)

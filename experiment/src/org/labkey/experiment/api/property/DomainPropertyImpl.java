@@ -16,10 +16,7 @@
 
 package org.labkey.experiment.api.property;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -32,11 +29,8 @@ import org.labkey.api.util.StringExpressionFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class DomainPropertyImpl implements DomainProperty
 {
@@ -180,11 +174,13 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setMvEnabled(mv);
     }
 
+    /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String aliases)
     {
         edit().setImportAliases(aliases);
     }
 
+    /** Need the string version of this method because it's called by reflection and must match by name */
     public String getImportAliases()
     {
         return _pd.getImportAliases();
@@ -192,49 +188,12 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setImportAliasSet(Set<String> aliases)
     {
-        StringBuilder sb = new StringBuilder();
-        String separator = "";
-        for (String alias : aliases)
-        {
-            sb.append(separator);
-            separator = ", ";
-            alias = alias.trim();
-            if (alias.indexOf(" ") != -1)
-            {
-                // Quote any aliases with spaces
-                sb.append("\"");
-                sb.append(alias);
-                sb.append("\"");
-            }
-            else
-            {
-                sb.append(alias);
-            }
-        }
-        setImportAliases(sb.toString());
+        edit().setImportAliasesSet(aliases);
     }
-
-    private static Pattern IMPORT_ALIASES_PATTERN = Pattern.compile("[^,; \\t\\n\\f\"]+|\"[^\"]*\"");
 
     public Set<String> getImportAliasSet()
     {
-        String s = _pd.getImportAliases();
-        Set<String> result = new LinkedHashSet<String>();
-        if (s != null)
-        {
-            Matcher m = IMPORT_ALIASES_PATTERN.matcher(s);
-            while (m.find())
-            {
-                String alias = m.group();
-                if (alias.startsWith("\"") && alias.endsWith("\""))
-                {
-                    // Strip off the leading and trailing quotes
-                    alias = alias.substring(1, alias.length() - 1);
-                }
-                result.add(alias);
-            }
-        }
-        return result;
+        return _pd.getImportAliasesSet();
     }
 
     public void setURL(String url)

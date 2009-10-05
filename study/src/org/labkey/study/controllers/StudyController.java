@@ -1794,7 +1794,7 @@ public class StudyController extends BaseStudyController
                 }
                 for (String error : errorList)
                 {
-                    errors.reject("showImportDataset", PageFlowUtil.filter(error));
+                    errors.reject("showImportDataset", error);
                 }
                 return errorList.isEmpty();
             }

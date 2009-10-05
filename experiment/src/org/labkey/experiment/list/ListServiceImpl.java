@@ -23,12 +23,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.experiment.controllers.list.ListController;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.Collections;
 import java.sql.SQLException;
 
 public class ListServiceImpl implements ListService.Interface
@@ -38,7 +37,7 @@ public class ListServiceImpl implements ListService.Interface
     {
         try
         {
-            Map<String, ListDefinition> ret = new TreeMap<String, ListDefinition>();
+            Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<ListDefinition>();
             for (ListDef def : ListManager.get().getLists(container))
             {
                 ListDefinition list = new ListDefinitionImpl(def);
@@ -48,8 +47,7 @@ public class ListServiceImpl implements ListService.Interface
         }
         catch (SQLException e)
         {
-            _log.error("Error", e);
-            return Collections.emptyMap();
+            throw new RuntimeSQLException(e);
         }
     }
 

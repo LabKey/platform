@@ -67,6 +67,11 @@ public class QueryServiceImpl extends QueryService
         return _moduleResourcesCache;
     }
 
+    static public QueryServiceImpl get()
+    {
+        return (QueryServiceImpl)QueryService.get();
+    }
+
     public UserSchema getUserSchema(User user, Container container, String schemaName)
     {
         QuerySchema ret = DefaultSchema.get(user, container).getSchema(schemaName);
@@ -417,7 +422,7 @@ public class QueryServiceImpl extends QueryService
             String name = key.getName();
             ColumnInfo ret = table.getColumn(name);
 
-            if (ret != null && key.getName().equals(table.getTitleColumn()) && ret.getURL() == null)
+            if (ret != null && key.getName().equals(table.getTitleColumn()) && ret.getEffectiveURL() == null)
             {
                 List<ColumnInfo> pkColumns = table.getPkColumns();
                 Set<String> pkColumnMap = new HashSet<String>();
@@ -642,9 +647,9 @@ public class QueryServiceImpl extends QueryService
     {
         if (tableInfo instanceof AbstractTableInfo && tableInfo.isMetadataOverrideable())
         {
-            QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, false);
+            QueryDef queryDef = findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
 
-            if (queryDef != null && queryDef.getMetaData() != null)
+            if (queryDef != null)
             {
                 try
                 {
@@ -665,8 +670,37 @@ public class QueryServiceImpl extends QueryService
         return tableInfo;
     }
 
+    /**
+     * Looks in the current folder, parent folders up to and including the project, and the shared
+     * container
+     */
+    public QueryDef findMetadataOverride(Container container, String schemaName, String tableName, boolean customQuery)
+    {
+        QueryDef queryDef;
+        do
+        {
+            // Look up the folder hierarchy to try to find an override
+            queryDef = QueryManager.get().getQueryDef(container, schemaName, tableName, customQuery);
+            if (queryDef != null && queryDef.getMetaData() != null)
+            {
+                return queryDef;
+            }
+            container = container.getParent();
+        }
+        while (!container.isRoot());
 
-	public ResultSet select(QuerySchema schema, String sql) throws SQLException
+        // Try the shared container too
+        queryDef = QueryManager.get().getQueryDef(ContainerManager.getSharedContainer(), schemaName, tableName, customQuery);
+        if (queryDef != null && queryDef.getMetaData() != null)
+        {
+            return queryDef;
+        }
+
+        return null;
+    }
+
+
+    public ResultSet select(QuerySchema schema, String sql) throws SQLException
 	{
 		Query q = new Query(schema);
 		q.parse(sql);

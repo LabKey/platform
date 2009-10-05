@@ -21,13 +21,11 @@ import org.labkey.query.metadata.client.GWTTableInfo;
 import org.labkey.query.metadata.client.GWTColumnInfo;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
@@ -99,10 +97,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             }
         }
 
-        QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, false);
+        QueryDef queryDef = QueryServiceImpl.get().findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
         if (queryDef == null)
         {
-            queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, true);
+            queryDef = QueryServiceImpl.get().findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, true);
             if (queryDef != null)
             {
                 gwtTableInfo.setUserDefinedQuery(true);
@@ -111,6 +109,14 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
         if (queryDef != null)
         {
+            if (!getContainer().getId().equals(queryDef.getContainerId()))
+            {
+                Container c = ContainerManager.getForId(queryDef.getContainerId());
+                if (c != null)
+                {
+                    gwtTableInfo.setDefinitionFolder(c.getPath());
+                }
+            }
             TableType tableType = getTableType(tableName, parseDocument(queryDef.getMetaData()));
             if (tableType != null)
             {
@@ -420,17 +426,27 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
     {
         validatePermissions();
 
-        QueryDef queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, false);
-        if (queryDef != null)
+        try
         {
-            try
+            QueryDef queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, false);
+            if (queryDef != null)
             {
+                // Delete the metadata override on a built-in table
                 QueryManager.get().delete(getViewContext().getUser(), queryDef);
             }
-            catch (SQLException e)
+            else
             {
-                throw new RuntimeSQLException(e);
+                queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, true);
+                if (queryDef != null)
+                {
+                    queryDef.setMetaData(null);
+                    QueryManager.get().update(getViewContext().getUser(), queryDef);
+                }
             }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         return getMetadata(schemaName, queryName);
     }

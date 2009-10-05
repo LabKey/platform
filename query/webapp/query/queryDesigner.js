@@ -209,8 +209,12 @@ function createColumnEditor(tab, dn, parent, insertBefore)
 
 
     td.appendChild(doc.createTextNode(tab.designer.getColumnLabel(dn)));
-    td.onmouseout = function() { return hideHelpDivDelay(); };
-    td.onmouseover = function()
+    var helpNode = doc.createElement('span');
+    helpNode.className = 'labkey-help-pop-up';
+    helpNode.appendChild(doc.createTextNode('?'));
+    td.appendChild(helpNode);
+    helpNode.onmouseout = function() { return hideHelpDivDelay(); };
+    helpNode.onmouseover = function()
     {
         var fieldKey = tab.designer.getFieldKeyString(dn);
         var field = designer.fieldInfo(fieldKey);

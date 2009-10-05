@@ -18,11 +18,13 @@ package org.labkey.query.metadata.client;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.gwt.client.ui.property.URLItem;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,10 +36,12 @@ import java.util.List;
 public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTColumnInfo>
 {
     private ImageButton _wrapFieldButton;
+    private HTML _otherContainerMessage = new HTML();
 
     public TablePropertiesEditor(Saveable parent, LookupServiceAsync service)
     {
         super(parent, service);
+        _contentPanel.insert(_otherContainerMessage, 0);
     }
 
     private ImageButton getWrapFieldButton()
@@ -108,10 +112,33 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     }
 
     @Override
-    public void init(GWTTableInfo domain)
+    public void init(GWTTableInfo tableInfo)
     {
-        super.init(domain);
-        getWrapFieldButton().setVisible(domain != null && !domain.isUserDefinedQuery());
+        super.init(tableInfo);
+
+        if (tableInfo.getDefinitionFolder() != null)
+        {
+            String url = PropertyUtil.getContextPath() + "/" + PropertyUtil.getController() + "/";
+            String[] pathParts = tableInfo.getDefinitionFolder().split("/");
+            for (String pathPart : pathParts)
+            {
+                if (pathPart.length() > 0)
+                {
+                    String part = URL.encodeComponent(pathPart);
+                    part = part.replaceAll("\\+", "%20");
+                    url += part + "/";
+                }
+            }
+            url += PropertyUtil.getAction() + ".view?" + PropertyUtil.getQueryString();
+            _otherContainerMessage.setHTML("This metadata is inherited from another folder. You may override it in " +
+                    "this folder or <a href=\"" + url + "\"> edit it in the " + tableInfo.getDefinitionFolder() + "</a> folder.");
+        }
+        else
+        {
+            _otherContainerMessage.setHTML("");
+        }
+
+        getWrapFieldButton().setVisible(tableInfo != null && !tableInfo.isUserDefinedQuery());
     }
 
     @Override

@@ -399,6 +399,8 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getRangeURI(), newProp.getPropertyDescriptor().getRangeURI(), key + " range URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getConceptURI(), newProp.getPropertyDescriptor().getConceptURI(), key + " concept URI", diffs);
                     IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " qc enabled", diffs);
+                    IdentifiableEntity.diff(oldProp.getURL(), newProp.getURL(), key + " url", diffs);
+                    IdentifiableEntity.diff(oldProp.getImportAliasSet(), newProp.getImportAliasSet(), key + " url", diffs);
                     IdentifiableEntity.diff(oldProp.getDefaultValueTypeEnum(), newProp.getDefaultValueTypeEnum(), key + " default value type", diffs);
                     IdentifiableEntity.diff(existingDefaultValues.get(oldProp), newDefaultValues.get(newProp), key + " default value", diffs);
                 }

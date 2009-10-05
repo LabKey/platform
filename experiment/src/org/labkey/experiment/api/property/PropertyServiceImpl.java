@@ -21,6 +21,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -28,10 +29,7 @@ import org.fhcrc.cpas.exp.xml.*;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.sql.SQLException;
 
 public class PropertyServiceImpl implements PropertyService.Interface
@@ -210,6 +208,24 @@ public class PropertyServiceImpl implements PropertyService.Interface
         }
         prop.getPropertyDescriptor().setSearchTerms(xProp.getSearchTerms());
         prop.getPropertyDescriptor().setSemanticType(xProp.getSemanticType());
+        prop.setURL(xProp.getURL());
+        Set<String> importAliases = new LinkedHashSet<String>();
+        if (xProp.isSetImportAliases())
+        {
+            importAliases.addAll(Arrays.asList(xProp.getImportAliases().getImportAliasArray()));
+        }
+        prop.setImportAliasSet(importAliases);
+        if (xProp.isSetFK())
+        {
+            PropertyDescriptorType.FK xFK = xProp.getFK();
+            Container c = null;
+            if (xFK.isSetFolderPath())
+            {
+                c = ContainerManager.getForPath(xFK.getFolderPath());
+            }
+            Lookup lookup = new Lookup(c, xFK.getSchema(), xFK.getQuery());
+            prop.setLookup(lookup);
+        }
         
         if (xProp.isSetMvEnabled())
             prop.getPropertyDescriptor().setMvEnabled(xProp.getMvEnabled());

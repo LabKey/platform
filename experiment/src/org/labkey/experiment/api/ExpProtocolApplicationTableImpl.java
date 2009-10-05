@@ -27,7 +27,6 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryService;
 
 import java.sql.Types;
 
@@ -105,8 +104,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpDataTable expDataTable = schema.createDatasTable();
-                QueryService.get().overlayMetadata(expDataTable, expDataTable.getName(), schema);
+                ExpDataTable expDataTable = (ExpDataTable)schema.getTable(ExpSchema.TableType.Datas.name(), true);
                 expDataTable.setContainerFilter(getContainerFilter());
                 return expDataTable;
             }
