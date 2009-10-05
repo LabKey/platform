@@ -23,6 +23,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 
 import java.util.*;
@@ -93,6 +94,11 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         
         if (null != tinfo.getDescription())
             resp.put("description", tinfo.getDescription());
+
+        //8649: let the table provide the view data url
+        ActionURL viewDataUrl = tinfo.getGridURL(container);
+        if (null != viewDataUrl)
+            resp.put("viewDataUrl", viewDataUrl);
 
         //now the native columns
         resp.put("columns", getNativeColProps(tinfo, fk));

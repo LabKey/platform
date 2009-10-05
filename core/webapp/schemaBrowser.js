@@ -187,7 +187,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         var params = {schemaName: queryDetails.schemaName};
         params["query.queryName"] = queryDetails.name;
 
-        container.children.push(this.formatQueryLink("executeQuery", params, "view data"));
+        container.children.push(this.formatQueryLink("executeQuery", params, "view data", undefined, queryDetails.viewDataUrl));
 
         if (queryDetails.isUserDefined && LABKEY.Security.currentUser.isAdmin)
         {
@@ -209,8 +209,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         return container;
     },
 
-    formatQueryLink : function(action, params, caption, target) {
-        var url = LABKEY.ActionURL.buildURL("query", action, undefined, params);
+    formatQueryLink : function(action, params, caption, target, url) {
+        url = url || LABKEY.ActionURL.buildURL("query", action, undefined, params);
         var link = {
             tag: 'a',
             href: url,
@@ -298,20 +298,6 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     ],
 
     formatQueryColumns : function(queryDetails) {
-        var headerRow = {
-            tag: 'tr',
-            children: []
-        };
-
-        for (var idxTable = 0; idxTable < this.tableCols.length; ++idxTable)
-        {
-            headerRow.children.push({
-                tag: 'th',
-                html: this.tableCols[idxTable].caption,
-                "ext:qtip": this.tableCols[idxTable].tip
-            });
-        }
-        
         var rows = [];
         rows.push(this.formatQueryColumnGroup(queryDetails.columns, "All columns in this table",
                 "When writing LabKey SQL, these columns are available from this query."));
@@ -326,10 +312,6 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             tag:'table',
             cls: 'lk-qd-coltable',
             children: [
-                {
-                    tag: 'thead',
-                    children: [headerRow]
-                },
                 {
                     tag: 'tbody',
                     children: rows
@@ -361,13 +343,25 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             });
         }
 
+        var headerRow = {tag: 'tr', children: []};
+        for (var idxTable = 0; idxTable < this.tableCols.length; ++idxTable)
+        {
+            headerRow.children.push({
+                tag: 'td',
+                cls: 'lk-qd-colheader',
+                html: this.tableCols[idxTable].caption,
+                "ext:qtip": this.tableCols[idxTable].tip
+            });
+        }
+        rows.push(headerRow);
+
         if (columns)
         {
             for (var idxCol = 0; idxCol < columns.length; ++idxCol)
             {
                 row = {tag: 'tr', children: []};
                 col = columns[idxCol];
-                for (var idxTable = 0; idxTable < this.tableCols.length; ++idxTable)
+                for (idxTable = 0; idxTable < this.tableCols.length; ++idxTable)
                 {
                     td = {tag: 'td'};
                     content = this.tableCols[idxTable].renderer.call(this, col);
@@ -1239,7 +1233,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             schemaNode.expand(false, false);
         }
         else
-            Ext.Msg.alert("Missing Schema", "The schema name " + schemaName + " was not found in the browser!");
+            Ext.Msg.alert("Missing Schema", "The schema '" + schemaName + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
 
     },
 
@@ -1249,7 +1243,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         var schemaNode = root.findChildBy(function(node){return node.attributes.schemaName.toLowerCase() == schemaName.toLowerCase();});
         if (!schemaNode)
         {
-            Ext.Msg.alert("Missing Schema", "The schema name " + schemaName + " was not found in the browser!");
+            Ext.Msg.alert("Missing Schema", "The schema '" + schemaName + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
             return;
         }
 
