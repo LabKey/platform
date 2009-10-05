@@ -30,6 +30,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -1015,6 +1016,16 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord)
             {
+                //add the owner contextual role to the edit button
+                for (DisplayElement btn : bb.getList())
+                {
+                    if (btn == ActionButton.BUTTON_SHOW_UPDATE)
+                    {
+                        btn.addContextualRole(OwnerRole.class);
+                        break;
+                    }
+                }
+
                 ActionButton doneButton;
 
                 if (null != form.getReturnUrl())
