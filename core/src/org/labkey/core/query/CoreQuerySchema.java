@@ -20,6 +20,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -189,11 +190,12 @@ public class CoreQuerySchema extends UserSchema
 
         ColumnInfo col = members.wrapColumn(membersBase.getColumn("UserId"));
         col.setKeyField(true);
-        col.setFk(new LookupForeignKey("UserId", "Name")
+        final boolean isSiteAdmin = getUser().isAdministrator();
+        col.setFk(new LookupForeignKey("UserId", "DisplayName")
         {
             public TableInfo getLookupTableInfo()
             {
-                return getUsers();
+                return isSiteAdmin ? getSiteUsers() : getUsers();
             }
         });
         members.addColumn(col);
@@ -216,10 +218,21 @@ public class CoreQuerySchema extends UserSchema
         {
             Container container = getContainer();
             Container project = container.isRoot() ? container : container.getProject();
+            CoreSchema coreSchema = CoreSchema.getInstance();
 
-            //filter for groups defined in this container or null container
-            members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + CoreSchema.getInstance().getTableInfoPrincipals()
-                    + " WHERE Container=? OR Container IS NULL)", project.getId()));
+            //site admins should see all memberships in the project container and the root container
+            //other users (non-guests) should only see those groups that are currently assigned a role in the policy
+            if (isSiteAdmin)
+            {
+                members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals()
+                        + " WHERE Container=? OR Container IS NULL)", project.getId()));
+            }
+            else
+            {
+                String resId = container.getPolicy().getResource().getResourceId();
+                members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoRoleAssignments()
+                        + " WHERE ResourceId=? AND Role != 'org.labkey.api.security.roles.NoPermissionsRole'", resId));
+            }
         }
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
@@ -247,8 +260,7 @@ public class CoreQuerySchema extends UserSchema
         {
             if (_projectUserIds == null)
             {
-                Container project = getContainer().getProject();
-                _projectUserIds = new HashSet<Integer>(org.labkey.api.security.SecurityManager.getProjectUserids(project));
+                _projectUserIds = new HashSet<Integer>(org.labkey.api.security.SecurityManager.getFolderUserids(getContainer()));
                 Group siteAdminGroup = org.labkey.api.security.SecurityManager.getGroup(Group.groupAdministrators);
                 try
                 {
