@@ -54,7 +54,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         insert(ACL.PERM_INSERT),
         update(ACL.PERM_UPDATE),
         delete(ACL.PERM_DELETE),
-        admin(ACL.PERM_ADMIN);
+        admin(ACL.PERM_ADMIN),
+        none(ACL.PERM_NONE);
 
         private int _value = 0;
 
