@@ -53,25 +53,25 @@ be created using a standard template.
 %>
 <p>For more information about exporting, importing, and reloading studies, see <a href="<%=new HelpTopic("importExportStudy", HelpTopic.Area.STUDY)%>">the study documentation</a>.</p>
 </td></tr>
-<tr><td class="labkey-announcement-title" align=left><span><%=initialCapVerb%> From Local Zip Archive</span></td></tr>
+<tr><td class="labkey-announcement-title" align=left><span><%=initialCapVerb%> Study From Local Zip Archive</span></td></tr>
 <tr><td class="labkey-title-area-line"><img height=1 width=1 src="/labkey/_.gif"></td></tr>
 <tr><td>To <%=lowerCaseVerb%> a study from a zip archive on your local machine (for example, a study that you have exported and saved
-        to your local hard drive), browse to a .study.zip file, open it, and click the "<%=initialCapVerb%> Local Zip Archive" button below.</td></tr>
+        to your local hard drive), browse to a .study.zip file, open it, and click the "<%=initialCapVerb%> Study From Local Zip Archive" button below.</td></tr>
 <tr><td><input type="file" name="studyZip" size="50"></td></tr>
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton(initialCapVerb + " Local Zip Archive")%></td>
+    <td><%=PageFlowUtil.generateSubmitButton(initialCapVerb + " Study From Local Zip Archive")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
-<tr><td class="labkey-announcement-title" align=left><span><%=initialCapVerb%> From Server-Accessible Archive</span></td></tr>
+<tr><td class="labkey-announcement-title" align=left><span><%=initialCapVerb%> Study From Server-Accessible Archive</span></td></tr>
 <tr><td class="labkey-title-area-line"><img height=1 width=1 src="/labkey/_.gif"></td></tr>
-    <tr><td>To <%=lowerCaseVerb%> a study from a server-accessible archive, click the "<%=initialCapVerb%> Server Archive Using Pipeline"
+    <tr><td>To <%=lowerCaseVerb%> a study from a server-accessible archive, click the "<%=initialCapVerb%> Study Using Pipeline"
             button below, navigate to a .study.zip archive or a study.xml file, and click the "<%=initialCapVerb%> Study" button.<%
 
             if (reload) { %> You can also reload study archives via the "Data Pipeline" link in the study overview.<% } %></td></tr>
 <tr>
-    <td><%=PageFlowUtil.generateButton(initialCapVerb + " Server Archive Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
+    <td><%=PageFlowUtil.generateButton(initialCapVerb + " Study Using Pipeline", urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline"))%></td>
 </tr>
 </table>
 </form>
