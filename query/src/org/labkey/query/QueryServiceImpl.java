@@ -767,7 +767,7 @@ public class QueryServiceImpl extends QueryService
 			filterFrag = filter.getSQLFragment(dialect, columnMap);
 		}
 
-		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0))
+		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount))
 		{
 			sort = createDefaultSort(selectColumns);
 		}
@@ -779,7 +779,7 @@ public class QueryServiceImpl extends QueryService
 			orderBy = sort.getOrderByClause(dialect, columnMap);
 		}
 
-		if ((filterFrag == null || filterFrag.getSQL().length()==0) && sort == null && rowCount == 0 && offset == 0)
+		if ((filterFrag == null || filterFrag.getSQL().length()==0) && sort == null && Table.ALL_ROWS == rowCount && offset == 0)
 		{
 			selectFrag.append("\n").append(fromFrag);
 			return selectFrag;
