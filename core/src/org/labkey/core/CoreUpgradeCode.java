@@ -169,6 +169,10 @@ public class CoreUpgradeCode implements UpgradeCode
     //invoked by core-9.13-9.14.sql
     public void migrateAcls(ModuleContext context)
     {
+        //8441: skip ACL migration if this is a brand-new install 
+        if (context.isNewInstall())
+            return;
+
         int numAcls = 0;
         _log.info("Migrating existing ACLs to RoleAssignments...");
 
