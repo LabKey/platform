@@ -18,6 +18,8 @@ package org.labkey.api.view;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpressionFactory;
@@ -31,6 +33,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 public abstract class DisplayElement implements View, Cloneable
 {
@@ -39,6 +43,7 @@ public abstract class DisplayElement implements View, Cloneable
     private int _displayModes = DataRegion.MODE_ALL;
     protected StringExpression _caption = null;
     protected boolean _locked = false;
+    private Set<Role> _contextualRoles = null;
 
     public DisplayElement()
     {
@@ -67,6 +72,13 @@ public abstract class DisplayElement implements View, Cloneable
         _displayPermission = perm;
     }
 
+    public void addContextualRole(Class<? extends Role> role)
+    {
+        if (null == _contextualRoles)
+            _contextualRoles = new HashSet<Role>();
+        _contextualRoles.add(RoleManager.getRole(role));
+    }
+
     public boolean isVisible(Map ctx)
     {
         return _visible;
@@ -81,7 +93,7 @@ public abstract class DisplayElement implements View, Cloneable
 
     public boolean shouldRender(RenderContext ctx)
     {
-        return isVisible(ctx) && (null == _displayPermission || ctx.getViewContext().getContainer().hasPermission(ctx.getViewContext().getUser(), _displayPermission));
+        return isVisible(ctx) && (null == _displayPermission || ctx.getViewContext().getContainer().hasPermission(ctx.getViewContext().getUser(), _displayPermission, _contextualRoles));
     }
 
     public String getOutput(RenderContext ctx)
