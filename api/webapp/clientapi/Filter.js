@@ -100,9 +100,6 @@ LABKEY.Filter = new function()
         * @param {LABKEY.Filter#Types} [filterType] Type of filter to apply to the 'column' using the 'value'
 		* @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
-&lt;script type="text/javascript"&gt;
 	function onFailure(errorInfo, options, responseObj)
 	{
 	    if(errorInfo && errorInfo.exception)

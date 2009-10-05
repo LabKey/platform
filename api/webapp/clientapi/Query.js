@@ -156,6 +156,7 @@ LABKEY.Query = new function()
          *        Use this along with the maxRows config property to request pages of data.
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
          */
         executeSql : function(config)
         {
@@ -293,10 +294,8 @@ LABKEY.Query = new function()
                   ExtendedSelectRowsResults format each column in each row
                   will be another object (not just a scalar value) with a "value" property as well as other
                   related properties (url, mvValue, mvIndicator, etc.)
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
         * @example Example: <pre name="code" class="xml">
-&lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
 &lt;script type="text/javascript"&gt;
 	function onFailure(errorInfo, options, responseObj)
 	{
@@ -412,6 +411,7 @@ LABKEY.Query = new function()
          *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -445,6 +445,7 @@ LABKEY.Query = new function()
          *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -476,6 +477,7 @@ LABKEY.Query = new function()
          *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -540,6 +542,7 @@ LABKEY.Query = new function()
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
          */
         getSchemas : function(config)
         {
@@ -593,6 +596,7 @@ LABKEY.Query = new function()
          * query will not be included in the results. Default is true.
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
          */
         getQueries : function(config)
         {
@@ -640,6 +644,7 @@ LABKEY.Query = new function()
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
          */
         getQueryViews : function(config)
         {
@@ -657,6 +662,24 @@ LABKEY.Query = new function()
             });
         },
 
+        /**
+         * Validates the specified query by ensuring that it parses and executes without an exception.
+         * @param config An object that contains the following configuration parameters
+         * @param {String} config.schemaName The name of the schema.
+         * @param {String config.queryName the name of the query.
+         * @param {Boolean} config.includeAllColumns If set to false, only the columns in the user's default view
+         * of the specific query will be tested (defaults to true).
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with a simple object with one property named "valid" set to true.
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
+         * the current container will be used.
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         */
         validateQuery : function(config)
         {
             var params = {};

@@ -83,9 +83,6 @@ LABKEY.Assay = new function()
 	* @example Example:
 <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
-&lt;script type="text/javascript"&gt;
 	function successHandler(assayArray) 
 	{ 
 		var html = ''; 

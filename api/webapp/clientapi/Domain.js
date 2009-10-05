@@ -65,9 +65,6 @@ LABKEY.Domain = new function()
 	* @example Example:
 <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
-&lt;script type="text/javascript"&gt;
 	function successHandler(domainDesign)
 	{
 		var html = '';
@@ -132,18 +129,17 @@ LABKEY.Domain.DomainDesign = new function() {};
 * @namespace
 * @description DomainFieldObject static class to describe a domain field for a domain.  See also {@link LABKEY.Domain} and
             {@link LABKEY.Domain.DomainDesign}.
-* @property {Integer} propertyId
-* @property {String} propertyURI
-* @property {String} ontologyURI
-* @property {String} name
-* @property {String} description
-* @property {String] rangeURI
-* @property {String} conceptURI
-* @property {String} label Human-readable label
-* @property {String} searchTerms
-* @property {String} semanticType
-* @property {String} format
-* @property {Boolean} required indicates if this field is required to have a value (i.e. cannot be null
+* @property {Integer} propertyId The unique id of this property.
+* @property {String} propertyURI The URI of this property.
+* @property {String} ontologyURI The URI of the ontology this property belongs to.
+* @property {String} name The name of this property.
+* @property {String} description The description of this property (may be blank).
+* @property {String] rangeURI The URI for this property's range definition.
+* @property {String} conceptURI The URI of this property's concept.
+* @property {String} label The friendly label for this property.
+* @property {String} searchTerms The search terms for this property.
+* @property {String} semanticType The semantic type of this property.
+* @property {String} format The format string defined for this property. * @property {Boolean} required indicates if this field is required to have a value (i.e. cannot be null
 * @property {String} lookupContainer If this domain field is a lookup, this holds the container in which to look
 * @property {String} lookupSchema If this domain field is a lookup, this holds the schema in which to look
 * @property {String} lookupQuery if this domain field is a lookup, this holds the query in which to look

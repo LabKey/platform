@@ -96,7 +96,7 @@ LABKEY.Message = new function()
          * @example Example:
          <pre name="code" class="xml">
          &lt;script type="text/javascript"&gt;
-         LABKEY.requiresClientAPI();
+         
          function errorHandler(errorInfo, responseObj)
          {
              LABKEY.Utils.displayAjaxErrorResponse(responseObj, errorInfo);

@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.security.ACL;
 import org.labkey.data.xml.view.PermissionType;
 import org.labkey.data.xml.view.PermissionsListType;
 import org.labkey.data.xml.view.ViewDocument;
@@ -51,7 +52,7 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
     private String _name;
     private String _html;
     private File _metadataFile;
-    private int _requiredPerms = 0;
+    private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
     private boolean _requiresLogin = false;
     private ViewType _viewDef = null;
 

@@ -43,9 +43,6 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
  * @param {string} [config.loadingCaption] The string to display in a cell when loading the lookup values (default is "[loading...]").
  * @param {string} [config.lookupNullCaption] The string to display for a null value in a lookup column (default is "[none]").
  * @example &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
-&lt;script type="text/javascript"&gt;
     var _grid;
 
     //use the Ext.onReady() function to define what code should

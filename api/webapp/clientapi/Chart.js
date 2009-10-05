@@ -70,9 +70,7 @@
   *                  the current container path will be used.
   * @example Example #1 uses the "Physical Exam" dataset in the <a href = "https://www.labkey.org/Project/home/Study/demo/start.view?">Demo Study</a>
   * to plot a simple chart with one y-value:
-<pre name="code" class="xml">&lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
+<pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
     var chartConfig = {
         schemaName: 'study',
@@ -90,9 +88,6 @@
 Example #2 demonstrates plotting of multiple y-values:
 
 &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
-&lt;script type="text/javascript"&gt;
     var chartConfig2 = {
         queryName: 'Physical Exam',
         schemaName: 'study',
@@ -109,7 +104,6 @@ Example #2 demonstrates plotting of multiple y-values:
 Example #3 demonstrates image map support:
 
 &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
 
     var chartConfig = {
         schemaName: 'study',

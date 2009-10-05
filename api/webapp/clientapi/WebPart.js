@@ -56,9 +56,6 @@
  *                  the current container path will be used.
  * @param {Object} [config.scope] An optional scope object to use when calling the successCallback or errorCallback functions (defaults to this).
  * @example Examples: <pre name="code" class="xml">For a Wiki Web Part:
- &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
- &lt;/script&gt;
  &lt;div id='wikiTestDiv'/&gt;
  &lt;script type="text/javascript"&gt;
 	var wikiWebPartRenderer = new LABKEY.WebPart({
@@ -70,9 +67,6 @@
  &lt;/script&gt;
  
  For a Query Web Part:
- &lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
- &lt;/script&gt;
  &lt;div id='queryTestDiv'/&gt;
  &lt;script type="text/javascript"&gt;
 	var queryWebPartRenderer = new LABKEY.WebPart({
