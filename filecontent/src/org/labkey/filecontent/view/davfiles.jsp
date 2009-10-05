@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0                                                   m
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="org.labkey.filecontent.FilesWebPart" %>
 <%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.attachments.AttachmentService" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -42,12 +44,11 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     String rootName = c.getName();
     String webdavPrefix = context.getContextPath() + "/" + WebdavService.getServletPath();
     String rootPath = webdavPrefix + c.getEncodedPath();
+    if (!rootPath.endsWith("/"))
+        rootPath += "/";
+    String startDir = "/";
     if (me.getFileSet() != null)
-    {
-        if (!rootPath.endsWith("/"))
-            rootPath += "/";
-        rootPath += PageFlowUtil.encode("@files") + "/" + PageFlowUtil.encode(me.getFileSet());
-    }
+        startDir += "/@files/" + me.getFileSet();
     //String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + rootPath;
 %>
 <script type="text/javascript" language="javascript">
@@ -69,11 +70,12 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 
 <script type="text/javascript">
 Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
+Ext.QuickTips.init();
 
 var fileBrowser = null;
 var fileSystem = null;
 
-Ext.onReady(function()
+function renderBrowser(rootPath, dir)
 {
     var configureAction = new Ext.Action({text: 'Configure', handler: function()
     {
@@ -85,10 +87,29 @@ Ext.onReady(function()
         window.open(dropUrl, '_blank', 'height=600,width=1000,resizable=yes');
     }});
 
-    Ext.QuickTips.init();
-    fileSystem = new LABKEY.WebdavFileSystem({
-        baseUrl:<%=PageFlowUtil.jsString(rootPath)%>,
-        rootName:<%=PageFlowUtil.jsString(rootName)%>});
+    // TODO even better just refresh/rerender the browser not the whole page
+    var combo = new Ext.form.ComboBox({
+        name: 'filesetComboBox',
+        store: fileSets,
+        typeAhead: true,
+        mode: 'local',
+        triggerAction: 'all',
+        selectOnFocus:true,
+        width:135,
+        value:selectedValue
+    });
+    combo.on("select",function(){
+        var value = combo.getValue();
+        if (value.indexOf("showAdmin.view") != -1)
+            window.location=value;
+        else
+            fileBrowser.changeDirectory(value);
+    });
+
+    if (!fileSystem)
+        fileSystem = new LABKEY.WebdavFileSystem({
+            baseUrl:rootPath,
+            rootName:'fileset'});
     fileBrowser = new LABKEY.FileBrowser({
         fileSystem:fileSystem
         ,helpEl:null
@@ -98,7 +119,12 @@ Ext.onReady(function()
         ,showDetails:true
         ,allowChangeDirectory:false
         ,actions:{drop:dropAction, configure:configureAction}
-        ,tbar:['download','deletePath','refresh'<%=c.hasPermission(context.getUser(),ACL.PERM_INSERT)?",'uploadTool'":""%><%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>]
+        ,tbar:['download','deletePath','refresh'
+        <%=c.hasPermission(context.getUser(),ACL.PERM_INSERT)?",'uploadTool'":""%>
+        ,'->'
+        , new Ext.form.Label({html:'File Set:&nbsp;'}), combo
+        <%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>
+        ]
     });
 
     fileBrowser.on("doubleclick", function(record){
@@ -113,6 +139,40 @@ Ext.onReady(function()
     fileBrowser.render('files');
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
     resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
-    fileBrowser.start();
+    fileBrowser.start(dir);
+}
+var fileSets = [
+<%
+    boolean navigate = false;
+    String selectedValue = null;
+    ActionURL url = new ActionURL(FileContentController.BeginAction.class, c);
+    AttachmentDirectory main = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+    if (null != main && null != main.getFileSystemDirectory())
+    {
+        String value = navigate ? url.getLocalURIString() : "/";
+        out.write("[" + q(value) + ",'Default']");
+        if (StringUtils.isEmpty(me.getFileSet()) || StringUtils.equals(me.getFileSet(),"Default"))
+            selectedValue = value;
+    }
+    for (AttachmentDirectory attDir : AttachmentService.get().getRegisteredDirectories(c))
+    {
+        String name = attDir.getLabel();
+        url.replaceParameter("fileSetName",name);
+        String value = navigate ? url.getLocalURIString() : "/@files/" + name;
+        out.write(",[" + q(value) + "," + q(name) + "]");
+        if (StringUtils.equals(me.getFileSet(),name))
+            selectedValue = value;
+    }
+    if (c.hasPermission(context.getUser(),ACL.PERM_ADMIN))
+    {
+//        out.write(",[" + q(new ActionURL(FileContentController.ShowAdminAction.class,c).getLocalURIString()) + ",'[configure]']");
+    }
+%>
+];
+var selectedValue = <%=q(selectedValue)%>;
+
+Ext.onReady(function(){
+    renderBrowser(<%=q(rootPath)%>, <%=q(startDir)%>);    
 });
-</script>
+
+</script>  

@@ -72,7 +72,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   // UNDONE: need better way to set right pane
+/*   // UNDONE: need better way to set right pane
    protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
    {
        ModelAndView t = super.getTemplate(context, mv, action, page);
@@ -83,7 +83,8 @@ public class FileContentController extends SpringActionController
        }
        return t;
    }
-
+*/
+    
     @RequiresPermission(ACL.PERM_READ)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
@@ -230,27 +231,27 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresPermission(ACL.PERM_READ)
-   public class BeginAction extends SimpleViewAction<FileContentForm>
-   {
-       public ModelAndView getView(FileContentForm form, BindException errors) throws Exception
-       {
-           FilesWebPart part;
-           if (null == form.getFileSetName())
-               part = new ManageWebPart(getContainer());
-           else
-               part = new ManageWebPart(getContainer(), form.getFileSetName());
-           part.setWide(true);
-           part.setShowAdmin(true);
-           return part;
-       }
+    @RequiresPermission(ACL.PERM_READ)
+    public class BeginAction extends SimpleViewAction<FileContentForm>
+    {
+        public ModelAndView getView(FileContentForm form, BindException errors) throws Exception
+        {
+            FilesWebPart part;
+            if (null == form.getFileSetName())
+                part = new ManageWebPart(getContainer());
+            else
+                part = new ManageWebPart(getContainer(), form.getFileSetName());
+            part.setFrame(WebPartView.FrameType.NONE);
+            part.setWide(true);
+            return part;
+        }
 
-       public NavTree appendNavTrail(NavTree root)
-       {
-           root.addChild("Manage Files", new ActionURL(BeginAction.class, getContainer()));
-           return root;
-       }
-   }
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Manage Files", new ActionURL(BeginAction.class, getContainer()));
+            return root;
+        }
+    }
 
    private static class FileSetsWebPart extends WebPartView
    {
