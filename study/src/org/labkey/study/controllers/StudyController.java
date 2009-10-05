@@ -3588,6 +3588,7 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
             Study study = StudyManager.getInstance().getStudy(c);
+            setHelpTopic(new HelpTopic("importExportStudy", HelpTopic.Area.STUDY));
             _reload = null != study;
 
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
