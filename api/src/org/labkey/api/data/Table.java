@@ -57,6 +57,7 @@ public class Table
 
     /** Return all rows instead of limiting to the top n */
     public static final int ALL_ROWS = 0;
+    public static final int NO_ROWS = -2;
 
     public static String SQLSTATE_TRANSACTION_STATE = "25000";
     public static final int ERROR_ROWVERSION = 10001;
@@ -1175,8 +1176,8 @@ public class Table
 
     static private int decideRowCount(int rowcount, Class clazz)
     {
-        if (rowcount == 0)
-            return 0;
+        if (Table.ALL_ROWS == rowcount || Table.NO_ROWS == rowcount)
+            return rowcount;
 
         // add 1 to count so we can set isComplete()
         if (null == clazz || java.sql.ResultSet.class.isAssignableFrom(clazz))
