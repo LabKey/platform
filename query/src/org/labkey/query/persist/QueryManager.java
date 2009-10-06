@@ -475,6 +475,5 @@ public class QueryManager
         {
             ResultSetUtil.close(results);
         }
-
     }
 }

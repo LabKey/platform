@@ -281,7 +281,7 @@ public class CohortController extends BaseStudyController
                 }
             }
 
-            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext());
+            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext(), errors);
 
             DataView view;
             if (isInsert())
@@ -323,8 +323,7 @@ public class CohortController extends BaseStudyController
 
         public boolean handlePost(EditCohortForm form, BindException errors) throws Exception
         {
-            QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext());
-            updateForm.populateValues(errors);
+            QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext(), errors);
 
             if (errors.getErrorCount() > 0)
                 return false;

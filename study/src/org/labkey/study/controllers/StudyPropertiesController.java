@@ -22,27 +22,25 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyPropertiesTable;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -70,14 +68,13 @@ public class StudyPropertiesController extends BaseStudyController
     {
         public ModelAndView getView(StudyProperties studyPropertiesForm, boolean reshow, BindException errors) throws Exception
         {
-
             StudyPropertiesTable table = getTableInfo();
+
+            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext(), errors);
 
             // In order to pull the data out for an edit, we need to explicitly add the container id to the parameters
             // that the query update form will use
-            Map<String,String> containerInfo = Collections.singletonMap("container", getContainer().getId());
-
-            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext(), containerInfo);
+            updateForm.set("container", getContainer().getId());
 
             UpdateView view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
@@ -92,7 +89,6 @@ public class StudyPropertiesController extends BaseStudyController
             dataRegion.setButtonBar(buttonBar);
 
             return view;
-            
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -106,13 +102,12 @@ public class StudyPropertiesController extends BaseStudyController
 
         public boolean handlePost(StudyProperties studyPropertiesForm, BindException errors) throws Exception
         {
-            QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext());
-            errors = updateForm.populateValues(errors);
+            QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext(), errors);
 
-            if (errors.getErrorCount() > 0)
+            if (errors.hasErrors())
                 return false;
 
-            Map<String,Object> dataMap = updateForm.getDataMap();
+            Map<String, Object> dataMap = updateForm.getDataMap();
 
             StudyImpl study = getStudy();
 
@@ -166,5 +161,4 @@ public class StudyPropertiesController extends BaseStudyController
             }
         }
     }
-
 }

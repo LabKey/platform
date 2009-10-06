@@ -443,7 +443,7 @@ public class ListItemImpl implements ListItem
                             if (rowMap == null)
                             {
                                 TableInfo table = _list.getTable(user);
-                                DetailsView details = new DetailsView(new QueryUpdateForm(table, HttpView.currentContext()));
+                                DetailsView details = new DetailsView(new QueryUpdateForm(table, HttpView.currentContext(), null));
                                 RenderContext ctx = details.getRenderContext();
 
                                 ctx.setMode(DataRegion.MODE_DETAILS);

@@ -91,17 +91,17 @@ public class QueryImporter implements ExternalStudyImporter
                 try
                 {
                     queryDoc = QueryDocument.Factory.parse(metaFile);
-                    //XmlBeansUtil.validateXmlDocument(queryDoc, ctx.getLogger());
+                    XmlBeansUtil.validateXmlDocument(queryDoc, ctx.getLogger());
                 }
                 catch (XmlException e)
                 {
                     throw new InvalidFileException(root, metaFile, e);
                 }
-/*                catch (XmlValidationException e)
+                catch (XmlValidationException e)
                 {
                     throw new InvalidFileException(root, metaFile, "File does not conform to query.xsd");
                 }
-*/
+
                 QueryType queryXml = queryDoc.getQuery();
 
                 // For now, just delete if a query by this name already exists.

@@ -66,9 +66,13 @@ public class QueryWriter implements ExternalStudyWriter
                 QueryDocument qDoc = QueryDocument.Factory.newInstance();
                 QueryType queryXml = qDoc.addNewQuery();
                 queryXml.setName(query.getName());
-                queryXml.setDescription(query.getDescription());
+
+                if (null != query.getDescription())
+                    queryXml.setDescription(query.getDescription());
+
                 if (query.isHidden())
                     queryXml.setHidden(true);
+
                 queryXml.setSchemaName(query.getSchemaName());
 
                 if (null != query.getMetadataXml())

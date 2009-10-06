@@ -385,18 +385,21 @@ public class ListController extends SpringActionController
         {
             _list = form.getList();
             TableInfo table = _list.getTable(getUser());
-            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list);
+            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list, errors);
 
             return getDataView(tableForm, form.getReturnActionURL(), errors);
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
+            if (errors.hasErrors())
+                return false;
+
             ListDefinition list = form.getList();
             _list = list;
             TableInfo table = list.getTable(getUser());
-            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), list);
-            tableForm.populateValues(errors);
+
+            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), list, errors);
 
             Map<String, MultipartFile> fileMap = getFileMap();
             if (null != fileMap)
@@ -643,7 +646,7 @@ public class ListController extends SpringActionController
             _list = form.getList();
             TableInfo table = _list.getTable(getUser());
 
-            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list);
+            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list, errors);
             DetailsView details = new DetailsView(tableForm);
 
             ButtonBar bb = new ButtonBar();
@@ -716,9 +719,9 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public ListQueryUpdateForm(TableInfo table, ViewContext ctx, ListDefinition list)
+        public ListQueryUpdateForm(TableInfo table, ViewContext ctx, ListDefinition list, BindException errors)
         {
-            super(table, ctx);
+            super(table, ctx, errors);
             _list = list;
         }
 

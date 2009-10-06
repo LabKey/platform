@@ -154,7 +154,7 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
          */
 
 
-        QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
+        QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext(), errors);
 
         DataView view = createNewView(form, updateForm, errors);
         if (isInsert())
@@ -251,7 +251,7 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
         }
 
         TableInfo datasetTable = ds.getTableInfo(getViewContext().getUser());
-        QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext());
+        QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext(), errors);
         //noinspection ThrowableResultOfMethodCallIgnored
         updateForm.populateValues(errors);
 

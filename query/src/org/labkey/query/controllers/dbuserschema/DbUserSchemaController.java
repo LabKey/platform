@@ -16,16 +16,19 @@
 
 package org.labkey.query.controllers.dbuserschema;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.view.*;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.util.StringExpression;
-import org.springframework.validation.BindException;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 
 
 public class DbUserSchemaController extends SpringActionController
@@ -86,9 +89,7 @@ public class DbUserSchemaController extends SpringActionController
     {
         ActionURL getRedirectURL(QueryForm form, UserSchema schema, TableInfo table)
         {
-            QueryUpdateForm command = new QueryUpdateForm(table, getViewContext());
-            BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
-            command.validateBind(errors);
+            QueryUpdateForm command = new QueryUpdateForm(table, getViewContext(), null);
 
             StringExpression expr = schema.urlExpr(QueryAction.updateQueryRow, form.getQueryDef());
             assert expr != null;

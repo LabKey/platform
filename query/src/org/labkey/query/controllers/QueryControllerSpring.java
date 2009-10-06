@@ -1221,7 +1221,7 @@ public class QueryControllerSpring extends SpringActionController
             if (returnURL != null)
                 forward = new ActionURL(returnURL);
             TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
-            QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext());
+            QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext(), errors);
             if (!table.hasPermission(getUser(), ACL.PERM_DELETE))
             {
                 HttpView.throwUnauthorized();
@@ -1271,7 +1271,7 @@ public class QueryControllerSpring extends SpringActionController
                 HttpView.throwNotFound("Query not found");
                 return null;
             }
-            QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext());
+            QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
             BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
             command.validateBind(errors);
             return errors;
