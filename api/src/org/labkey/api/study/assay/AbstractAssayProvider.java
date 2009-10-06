@@ -899,7 +899,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol)
     {
-        final ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).getRunsTable();
+        final ExpRunTable runTable = (ExpRunTable)ExpSchema.TableType.Runs.createTable(new ExpSchema(schema.getUser(), schema.getContainer()));
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
         dataLinkColumn.setLabel("Assay Id");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
