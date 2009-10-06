@@ -61,13 +61,16 @@ public class QueryLookupWrapper extends QueryRelation
         _source = relation;
         _tableType = md;
 
-        for (ColumnType col :  _tableType.getColumns().getColumnArray())
-        {
-            ColumnType.Fk colFK = col.getFk();
-            if (null == colFK || null == colFK.getFkTable() || null == colFK.getFkColumnName())
-                continue;
-            _fkMap.put(col.getColumnName(), colFK);
-        }
+
+        org.labkey.data.xml.TableType.Columns cols = _tableType.getColumns();
+        if (null != cols)
+            for (ColumnType col : cols.getColumnArray())
+            {
+                ColumnType.Fk colFK = col.getFk();
+                if (null == colFK || null == colFK.getFkTable() || null == colFK.getFkColumnName())
+                    continue;
+                _fkMap.put(col.getColumnName(), colFK);
+            }
     }
 
 

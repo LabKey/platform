@@ -353,6 +353,11 @@ loop:
                     }
                 }
             }
+            if (!(node instanceof QExpr))
+            {
+                parseError("Syntax error in JOIN clause", node);
+                return;
+            }
             QExpr expr = (QExpr) node;
             QExpr with = null;
             QIdentifier alias = null;
