@@ -44,7 +44,8 @@ Ext.onReady(function(){
         items:[
             {name:'newName', xtype:'textfield', fieldLabel:"New Name", allowBlank:false, validator:validGroupName},
             {name:'id', xtype:'hidden', value:<%=group.getUserId()%>}],
-        buttons:[{text:'Submit', handler:SubmitButton_onClick}]
+        buttons:[{text:'Submit', handler:SubmitButton_onClick}],
+        buttonAlign:'left'
     });
     renameForm.render('renameDiv');
     renameForm.items.itemAt(0).focus();
