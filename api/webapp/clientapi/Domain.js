@@ -139,7 +139,8 @@ LABKEY.Domain.DomainDesign = new function() {};
 * @property {String} label The friendly label for this property.
 * @property {String} searchTerms The search terms for this property.
 * @property {String} semanticType The semantic type of this property.
-* @property {String} format The format string defined for this property. * @property {Boolean} required indicates if this field is required to have a value (i.e. cannot be null
+* @property {String} format The format string defined for this property.
+* @property {Boolean} required indicates if this field is required to have a value (i.e. cannot be null)
 * @property {String} lookupContainer If this domain field is a lookup, this holds the container in which to look
 * @property {String} lookupSchema If this domain field is a lookup, this holds the schema in which to look
 * @property {String} lookupQuery if this domain field is a lookup, this holds the query in which to look
