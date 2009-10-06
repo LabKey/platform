@@ -1221,8 +1221,9 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             window.open(LABKEY.ActionURL.buildURL("query", "begin", containerPath, {schemaName: schemaName, queryName: queryName}));
         else
         {
-            this.selectQuery(schemaName, queryName);
-            this.showQueryDetails(schemaName, queryName);
+            this.selectQuery(schemaName, queryName, function(){
+                this.showQueryDetails(schemaName, queryName);
+            }, this);
         }
     },
 
@@ -1243,7 +1244,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     },
 
-    selectQuery : function(schemaName, queryName) {
+    selectQuery : function(schemaName, queryName, callback, scope) {
         var tree = this.getComponent("lk-sb-tree");
         var root = tree.getRootNode();
         var schemaNode = root.findChildBy(function(node){return node.attributes.schemaName.toLowerCase() == schemaName.toLowerCase();});
@@ -1263,12 +1264,13 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
             if (!queryNode)
             {
-                Ext.Msg.alert("Missing Query", "The query " + schemaName + "." + queryName + " was not found! It may not be publicly accessible." +
-                        " You can expand the field to see the columns in the related table.");
+                Ext.Msg.alert("Missing Query", "The query " + schemaName + "." + queryName + " was not found! It may not be publicly accessible.");
                 return;
             }
 
             tree.selectPath(queryNode.getPath());
+            if (callback)
+                callback.call((scope || this));
         });
     }
 });
