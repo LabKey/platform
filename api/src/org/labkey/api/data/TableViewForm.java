@@ -582,11 +582,31 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void setViewContext(ViewContext context)
     {
         super.setViewContext(context);
-        reset();
+
+        HttpServletRequest request = getRequest();
+
+        _selectedRows = request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
+
+        String pkString = request.getParameter("pk");
+        if (null != StringUtils.trimToNull(pkString))
+            setPkVals(pkString);
+
+        try
+        {
+            String oldVals = request.getParameter(".oldValues");
+            if (null != StringUtils.trimToNull(oldVals))
+            {
+                _oldValues = PageFlowUtil.decodeObject(oldVals);
+                _isDataLoaded = true;
+            }
+        }
+        catch (Exception x)
+        {
+        }
     }
 
 
-    public void reset()
+    public BindException bindParameters(PropertyValues params)
     {
         /*
          * Checkboxes are weird. If set to FALSE they don't post
@@ -613,29 +633,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 set(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
         }
 
-        _selectedRows = request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
-
-        String pkString = request.getParameter("pk");
-        if (null != StringUtils.trimToNull(pkString))
-            setPkVals(pkString);
-
-        try
-        {
-            String oldVals = request.getParameter(".oldValues");
-            if (null != StringUtils.trimToNull(oldVals))
-            {
-                _oldValues = PageFlowUtil.decodeObject(oldVals);
-                _isDataLoaded = true;
-            }
-        }
-        catch (Exception x)
-        {
-        }
-    }
-
-
-    public BindException bindParameters(PropertyValues params)
-    {
         BindException errors = new BindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
 
         for (PropertyValue pv : params.getPropertyValues())

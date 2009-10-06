@@ -29,6 +29,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.action.SpringActionController;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -425,15 +426,17 @@ public class DataColumn extends DisplayColumn
             outputName(ctx, out, formFieldName);
             out.write(" value='1'>");
             /*
-            * Checkboxes are weird. If set to FALSE they don't post
-            * at all. So impossible to tell difference between values
-            * that weren't on the html form at all and ones that were set to false
-            * by the user.
-            * To fix this each checkbox posts its name in a hidden field
-            */
-            out.write("<input type='hidden' name='~checkboxes' value=\"");
+             * Checkboxes are weird. If set to FALSE they don't post at all, so it's impossible to tell
+             * the difference between values that weren't on the html form at all and ones that were set
+             * to false by the user.
+             *
+             * To fix this, each checkbox posts a hidden field named @columnName.  Spring parameter
+             * binding uses these special fields to set all unposted checkbox values to false.
+             */
+            out.write("<input type=\"hidden\" name=\"");
+            out.write(SpringActionController.FIELD_MARKER);
             out.write(formFieldName);
-            out.write("\">");
+            out.write("\" value=\"1\">");
             // disabled inputs are not posted with the form, so we output a hidden form element:
             if (disabledInput)
                 renderHiddenFormInput(ctx, out, formFieldName, checked ? "1" : "");

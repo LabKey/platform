@@ -249,7 +249,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public BindException defaultBindParameters(FORM form, PropertyValues params)
     {
-        String command = getCommandName();
         return defaultBindParameters(form, getCommandName(), params);
     }
 

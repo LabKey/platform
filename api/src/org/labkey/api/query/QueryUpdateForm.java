@@ -20,10 +20,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,31 +39,27 @@ public class QueryUpdateForm extends TableViewForm
 
     public QueryUpdateForm(TableInfo table, ViewContext ctx)
     {
-        this(table, ctx, Collections.<String, String>emptyMap());
+        this(table, ctx, null);
     }
 
-    public QueryUpdateForm(TableInfo table, ViewContext ctx, Map<String, String> extraParameters)
+    public QueryUpdateForm(TableInfo table, ViewContext ctx, BindException errors)
     {
         _tinfo = table;
         _dynaClass = new QueryWrapperDynaClass(this);
-        HttpServletRequest request = ctx.getRequest();
-
-        for (Enumeration en = request.getParameterNames(); en.hasMoreElements();)
-        {
-            String key = (String) en.nextElement();
-
-            for (String value : request.getParameterValues(key))
-            {
-                set(key, value);
-            }
-        }
-
-        for (Map.Entry<String,String> entry : extraParameters.entrySet())
-        {
-            set(entry.getKey(), entry.getValue());
-        }
-
         setViewContext(ctx);
+
+        // TODO: Fix this hack.
+        // This should be a normal form that uses normal Spring parameter binding
+        BindException newErrors = bindParameters(ctx.getBindPropertyValues());
+
+        // More hackiness -- can only add more errors if object names match.  Blow up in dev mode, ignore in production.
+        if (newErrors.hasErrors() && null != errors)
+        {
+            assert newErrors.getObjectName().equals(errors.getObjectName());
+
+            if (newErrors.getObjectName().equals(errors.getObjectName()))
+                errors.addAllErrors(newErrors);
+        }
     }
 
     public ColumnInfo getColumnByFormFieldName(String name)
