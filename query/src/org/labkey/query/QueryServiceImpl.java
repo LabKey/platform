@@ -681,7 +681,7 @@ public class QueryServiceImpl extends QueryService
         {
             // Look up the folder hierarchy to try to find an override
             queryDef = QueryManager.get().getQueryDef(container, schemaName, tableName, customQuery);
-            if (queryDef != null && queryDef.getMetaData() != null)
+            if (queryDef != null && (customQuery || queryDef.getMetaData() != null))
             {
                 return queryDef;
             }
