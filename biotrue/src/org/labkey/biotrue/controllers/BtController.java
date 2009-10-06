@@ -406,7 +406,7 @@ public class BtController extends SpringActionController
             server.setSyncInterval(form.getServerSyncInterval());
             server.setNextSync(null);
             BtManager.get().updateServer(getUser(), server);
-            ScheduledTask.setTask(getUser(), server, null);
+            ScheduledTask.getInstance().setTask(getUser(), server, null);
 
             return true;
         }
