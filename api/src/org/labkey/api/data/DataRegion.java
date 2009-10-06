@@ -829,7 +829,7 @@ public class DataRegion extends DisplayElement
     protected void renderMessageBox(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<tr><td colspan=\"2\">");
-        out.write("<div class=\"labkey-status-info\" style=\"display:none;margin-bottom:2px;font-weight:normal;width:100%;background-color:whitesmoke\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
+        out.write("<div class=\"labkey-dataregion-msgbox\" style=\"display:none;\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
         out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
         out.write("<span></span>");
         out.write("</div>");
@@ -1703,7 +1703,7 @@ public class DataRegion extends DisplayElement
                         DisplayColumn col = group.getColumns().get(i);
                         if (!shouldRender(col, ctx))
                             continue;
-                            col.renderInputCell(ctx, out, 1);
+                        col.renderInputCell(ctx, out, 1);
                     }
                     out.write("\t</tr>");
                 }
