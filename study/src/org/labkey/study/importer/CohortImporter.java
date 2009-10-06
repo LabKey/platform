@@ -25,6 +25,8 @@ import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.CohortMode;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.InvalidFileException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -71,10 +73,15 @@ public class CohortImporter implements InternalStudyImporter
                 try
                 {
                     cohortAssignmentXml = CohortsDocument.Factory.parse(cohortFile);
+                    XmlBeansUtil.validateXmlDocument(cohortAssignmentXml, ctx.getLogger());
                 }
                 catch (XmlException e)
                 {
                     throw new InvalidFileException(root, cohortFile, e);
+                }
+                catch (XmlValidationException e)
+                {
+                    throw new InvalidFileException(root, cohortFile, "File does not conform to cohorts.xsd");
                 }
 
                 Map<String, Integer> p2c = new HashMap<String, Integer>();

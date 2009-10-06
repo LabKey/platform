@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.study.StudyImportException;
+import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -26,5 +27,5 @@ import java.util.List;
  */
 public interface VisitMapReader
 {
-    List<VisitMapRecord> getRecords(String content) throws StudyImportException;
+    List<VisitMapRecord> getRecords(String content, Logger logger) throws StudyImportException;
 }

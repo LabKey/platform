@@ -23,6 +23,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -83,7 +85,7 @@ public class DatasetImporter
                 {
                     File schemaXmlFile = ctx.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile());
                     ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaXmlFile));
-                    reader = new SchemaXmlReader(study, root, schemaXmlFile, extraProps);
+                    reader = new SchemaXmlReader(study, ctx, root, schemaXmlFile, extraProps);
                 }
             }
 
@@ -156,11 +158,17 @@ public class DatasetImporter
                     if (log)
                         ctx.getLogger().info("Loading datasets manifest from " + StudyImportException.getRelativePath(root, datasetsXmlFile));
 
-                    return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
+                    DatasetsDocument doc = DatasetsDocument.Factory.parse(datasetsXmlFile);
+                    XmlBeansUtil.validateXmlDocument(doc, ctx.getLogger());
+                    return doc.getDatasets();
                 }
                 catch (XmlException e)
                 {
                     throw new InvalidFileException(root, datasetsXmlFile, e);
+                }
+                catch (XmlValidationException e)
+                {
+                    throw new InvalidFileException(root, datasetsXmlFile, "File does not conform to datasets.xsd");
                 }
             }
         }

@@ -21,6 +21,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
 
@@ -97,7 +99,7 @@ public class ImportContext extends AbstractContext
         return dir;
     }
 
-    private static StudyDocument readStudyDocument(File studyXml) throws StudyImportException, IOException
+    private StudyDocument readStudyDocument(File studyXml) throws StudyImportException, IOException
     {
         if (!studyXml.exists())
             throw new StudyImportException(studyXml.getName() + " file does not exist.");
@@ -107,10 +109,15 @@ public class ImportContext extends AbstractContext
         try
         {
             studyDoc = StudyDocument.Factory.parse(studyXml);
+            XmlBeansUtil.validateXmlDocument(studyDoc, getLogger());
         }
         catch (XmlException e)
         {
             throw new InvalidFileException(studyXml.getParentFile(), studyXml, e);
+        }
+        catch (XmlValidationException e)
+        {
+            throw new InvalidFileException(studyXml.getParentFile(), studyXml, "File does not conform to study.xsd");
         }
 
         return studyDoc;

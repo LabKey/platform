@@ -59,7 +59,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
             VisitMapImporter.Format vmFormat = VisitMapImporter.Format.getFormat(visitMap);
             String contents = PageFlowUtil.getFileContentsAsString(visitMap);
-            List<VisitMapRecord> records = vmFormat.getReader().getRecords(contents);
+            List<VisitMapRecord> records = vmFormat.getReader().getRecords(contents, ctx.getLogger());
 
             for (VisitMapRecord record : records)
             {

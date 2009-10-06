@@ -48,7 +48,7 @@ class VisitImporter
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<String>();
 
-            if (!importer.process(ctx.getUser(), study, content, VisitMapImporter.Format.getFormat(visitMap), errorMsg))
+            if (!importer.process(ctx.getUser(), study, content, VisitMapImporter.Format.getFormat(visitMap), errorMsg, ctx.getLogger()))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);

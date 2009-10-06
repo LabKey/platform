@@ -22,6 +22,8 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.query.persist.QueryManager;
@@ -84,16 +86,23 @@ public class QueryImporter implements ExternalStudyImporter
 
                 String sql = PageFlowUtil.getFileContentsAsString(sqlFile);
 
-                QueryType queryXml;
+                QueryDocument queryDoc;
 
                 try
                 {
-                    queryXml = QueryDocument.Factory.parse(metaFile).getQuery();
+                    queryDoc = QueryDocument.Factory.parse(metaFile);
+                    //XmlBeansUtil.validateXmlDocument(queryDoc, ctx.getLogger());
                 }
                 catch (XmlException e)
                 {
                     throw new InvalidFileException(root, metaFile, e);
                 }
+/*                catch (XmlValidationException e)
+                {
+                    throw new InvalidFileException(root, metaFile, "File does not conform to query.xsd");
+                }
+*/
+                QueryType queryXml = queryDoc.getQuery();
 
                 // For now, just delete if a query by this name already exists.
                 QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());

@@ -921,7 +921,7 @@ public class StudyController extends BaseStudyController
         {
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<String>();
-            if (!importer.process(getUser(), getStudy(), form.getContent(), VisitMapImporter.Format.DataFax, errorMsg))
+            if (!importer.process(getUser(), getStudy(), form.getContent(), VisitMapImporter.Format.DataFax, errorMsg, _log))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);

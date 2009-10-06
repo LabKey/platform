@@ -17,6 +17,7 @@
 package org.labkey.experiment.list;
 
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
@@ -30,7 +31,8 @@ import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyContext;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -67,6 +69,11 @@ public class ListImporter implements ExternalStudyImporter
             try
             {
                 tablesDoc = TablesDocument.Factory.parse(schemaFile);
+                XmlBeansUtil.validateXmlDocument(tablesDoc, ctx.getLogger());
+            }
+            catch (XmlValidationException e)
+            {
+                throw new InvalidFileException(root, schemaFile, "File does not confirm to tableInfo.xsd");                
             }
             catch (Exception e)
             {

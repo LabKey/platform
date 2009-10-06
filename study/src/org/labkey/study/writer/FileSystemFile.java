@@ -61,7 +61,7 @@ public class FileSystemFile implements VirtualFile
 
     public void saveXmlBean(String filename, XmlTokenSource doc) throws IOException
     {
-        saveXmlBean(filename, doc, XmlBeansUtil.getDefaultOptions());
+        saveXmlBean(filename, doc, XmlBeansUtil.getDefaultSaveOptions());
     }
 
     // Expose this if/when some caller needs to customize the options
