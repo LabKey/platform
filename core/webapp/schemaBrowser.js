@@ -61,6 +61,11 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
 
 LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
     initComponent : function(){
+
+        Ext.EventManager.on(window, "beforeunload", function(evt){
+            this._unloading = true
+        }, this);
+
         this.dataUrl = LABKEY.ActionURL.buildURL("query", "getSchemaQueryTree.api");
         this.root = new Ext.tree.AsyncTreeNode({
             id: 'root',
@@ -83,7 +88,8 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
         LABKEY.ext.QueryTreePanel.superclass.initComponent.apply(this, arguments);
         this.addEvents("schemasloaded");
         this.getLoader().on("loadexception", function(loader, node, response){
-            LABKEY.Utils.displayAjaxErrorResponse(response);
+            if (!this._unloading)
+                LABKEY.Utils.displayAjaxErrorResponse(response);
         }, this);
     }
 });
