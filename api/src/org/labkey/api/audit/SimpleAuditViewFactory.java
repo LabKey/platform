@@ -36,10 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -148,6 +145,24 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
                 data = PageFlowUtil.toQueryString(properties.entrySet());
                 if (count++ > 4) 
                     break;
+            }
+
+            // if the overall size couldn't be reduced by truncating the largest entries, just
+            // start reducing the overall size of the map
+            if (validateSize && data.length() > MAX_FIELD_SIZE)
+            {
+                List<Map.Entry<String, String>> newProps = new ArrayList<Map.Entry<String, String>>();
+                newProps.addAll(properties.entrySet());
+                int newSize = Math.max(1, newProps.size());
+
+                while (data.length() > MAX_FIELD_SIZE)
+                {
+                    newSize = Math.max(1, newSize-10);
+                    if (newSize == 1)
+                        break;
+                    List<Map.Entry<String, String>> a = newProps.subList(0, newSize);
+                    data = PageFlowUtil.toQueryString(a);
+                }
             }
             return data;
         }

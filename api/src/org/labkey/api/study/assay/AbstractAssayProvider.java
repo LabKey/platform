@@ -1399,7 +1399,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     props.put(propertyURI, prop);
                 }
                 else
-                    throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered");
+                    throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered.\nFor documentation about how to configure a " +
+                            "scripting engine, paste this link into your browser: \"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\".");
             }
             else
                 throw new ExperimentException("The validation script is invalid or does not exist");

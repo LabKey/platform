@@ -33,6 +33,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.xml.ReportDescriptorDocument;
@@ -308,13 +309,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
      */
     private ReportDescriptorDocument getDescriptorDocument()
     {
-        XmlOptions opts = new XmlOptions();
-        opts.setSaveCDataEntityCountThreshold(0);
-        opts.setSaveCDataLengthThreshold(0);
-        opts.setSavePrettyPrint();
-        opts.setUseDefaultNamespace();
-
-        ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance(opts);
+        ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance();
         ReportDescriptorDocument.ReportDescriptor descriptor = doc.addNewReportDescriptor();
 
         descriptor.setDescriptorType(getDescriptorType());
@@ -354,17 +349,12 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     public String serialize() throws IOException
     {
-        XmlOptions opts = new XmlOptions();
-        opts.setSaveCDataEntityCountThreshold(0);
-        opts.setSaveCDataLengthThreshold(0);
-        opts.setSavePrettyPrint();
-        opts.setUseDefaultNamespace();
         ReportDescriptorDocument doc = getDescriptorDocument();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         try
         {
-            doc.save(output, opts);
+            doc.save(output, XmlBeansUtil.getDefaultOptions());
             return output.toString();
         }
         finally
@@ -383,7 +373,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         try
         {
-            XmlOptions options = new XmlOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(reader, options);
@@ -422,7 +412,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public static List<Pair<String, String>> createPropsFromXML(String xmlString) throws IOException
     {
         try {
-            XmlOptions options = new XmlOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
