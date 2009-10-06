@@ -141,7 +141,7 @@ the container "My Project/My Folder":
             {
                 newUrl += '?';
                 for (var parameter in parameters)
-                    newUrl += encodeURI(parameter) + '=' + encodeURI(parameters[parameter]) + '&';
+                    newUrl += encodeURIComponent(parameter) + '=' + encodeURIComponent(parameters[parameter]) + '&';
                 newUrl = newUrl.substring(0, newUrl.length - 1);
             }
             return newUrl;
