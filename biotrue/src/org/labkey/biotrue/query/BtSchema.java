@@ -86,6 +86,7 @@ public class BtSchema extends UserSchema
     public TableInfo createTasksTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoTask());
+        ret.setName(TableType.Tasks.name());
         SQLFragment containerCondition = new SQLFragment();
         containerCondition.append("(SELECT biotrue.server.container\n" +
                 "FROM biotrue.server\n" +
@@ -107,6 +108,7 @@ public class BtSchema extends UserSchema
     public TableInfo createServersTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoServer(), _container);
+        ret.setName(TableType.Servers.name());
         ret.addWrapColumn(ret.getRealTable().getColumn("RowId")).setHidden(true);
         ret.addWrapColumn(ret.getRealTable().getColumn("Name"));
         ret.setTitleColumn("Name");
@@ -120,6 +122,7 @@ public class BtSchema extends UserSchema
     public TableInfo createEntitiesTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoEntity());
+        ret.setName(TableType.Entities.name());
         SQLFragment containerCondition = new SQLFragment("(SELECT biotrue.server.container FROM biotrue.server WHERE biotrue.server.rowid = biotrue.entity.serverid) = ?");
         containerCondition.add(getContainer().getId());
         ret.addCondition(containerCondition);

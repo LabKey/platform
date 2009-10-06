@@ -16,7 +16,12 @@
 
 package org.labkey.biotrue.task;
 
-public class BtThreadPool
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.ContextListener;
+
+import javax.servlet.ServletContextEvent;
+
+public class BtThreadPool implements ShutdownListener
 {
     static private BtThreadPool instance = null;
     Thread _defaultThread;
@@ -25,6 +30,7 @@ public class BtThreadPool
         if (instance != null)
             return instance;
         instance = new BtThreadPool();
+        ContextListener.addShutdownListener(instance);
         return instance;
     }
 
@@ -32,5 +38,11 @@ public class BtThreadPool
     {
         _defaultThread = new Thread(new BtBackgroundTask(null), "Default BT Thread");
         _defaultThread.start();
+    }
+    
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
+        ContextListener.removeShutdownListener(this);
+        _defaultThread.interrupt();
     }
 }

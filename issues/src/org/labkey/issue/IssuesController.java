@@ -811,7 +811,7 @@ public class IssuesController extends SpringActionController
 
                 HString resolution = defaults.get(ISSUE_RESOLUTION);
 
-                if (!resolution.isEmpty())
+                if (resolution != null && !resolution.isEmpty())
                     _issue.setResolution(resolution);
             }
 

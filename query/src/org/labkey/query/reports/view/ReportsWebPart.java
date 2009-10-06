@@ -85,7 +85,7 @@ public class ReportsWebPart extends WebPartView
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdString);
 
             //allow bare report ids for backward compatibility
-            if (reportId == null)
+            if (reportId == null && NumberUtils.isDigits(reportIdString))
                 reportId = new DbReportIdentifier(Integer.parseInt(reportIdString));
 
             if (reportId != null)

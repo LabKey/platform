@@ -451,6 +451,8 @@ public class StudyServiceImpl implements StudyService.Service
 
     private String encodeAuditMap(Map<String,Object> data)
     {
+        if (data == null) return null;
+        
         // encoding requires all strings, so convert our map
         Map<String,String> stringMap = new HashMap<String,String>();
         for (Map.Entry<String,Object> entry :  data.entrySet())

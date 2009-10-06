@@ -181,10 +181,10 @@ public class ExternalReport extends AbstractReport
                 rs = ReportManager.get().getReportResultSet(viewContext, getDatasetId(), getVisitRowId());
             else
             {
-//                QueryDefinition def = QueryService.get().getQueryDef(viewContext.getContainer(), "study", queryName);
-//                QuerySchema schema = QueryService.get().getUserSchema(viewContext.getUser(), viewContext.getContainer(),  "study");
                 UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ACL.PERM_READ, viewContext);
                 TableInfo mainTable = schema.getTable(getQueryName());
+                if (mainTable == null)
+                    return new HtmlView("Unable to get TableInfo for query: " + getQueryName());
                 rs = Table.select(mainTable, mainTable.getColumns(), null, null);
             }
 

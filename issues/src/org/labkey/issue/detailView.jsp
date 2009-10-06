@@ -41,21 +41,30 @@
 <% if (!bean.isPrint())
 {
 %><form name="jumpToIssue" action="jumpToIssue.view" method="get">
-    <table><tr>
-    <td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "insert")))%></td>
-    <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "list")))%></td>
-    <td><%= textLink("update", IssuesController.issueURL(context.getContainer(), "update").addParameter("issueId", issueId))%></td><%
+    <table><tr><%
 
-    if (issue.getStatus().equals(Issue.statusOPEN))
+    if (bean.getHasUpdatePermissions())
+    {
+        %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "insert")))%></td><%
+    }%>
+
+    <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "list")))%></td><%
+
+    if (bean.getHasUpdatePermissions())
+    {
+        %><td><%= textLink("update", IssuesController.issueURL(context.getContainer(), "update").addParameter("issueId", issueId))%></td><%
+    }
+
+    if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions())
     {
         %><td><%= textLink("resolve", IssuesController.issueURL(context.getContainer(), "resolve").addParameter("issueId", issueId))%></td><%
     }
-    else if (issue.getStatus().equals(Issue.statusRESOLVED))
+    else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions())
     {
         %><td><%= textLink("close", IssuesController.issueURL(context.getContainer(), "close").addParameter("issueId", issueId))%></td>
         <td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), "reopen").addParameter("issueId", issueId))%></td><%
     }
-    else if (issue.getStatus().equals(Issue.statusCLOSED))
+    else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
     {
         %><td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), "reopen").addParameter("issueId", issueId))%></td><%
     }

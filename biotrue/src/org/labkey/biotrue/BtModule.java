@@ -29,10 +29,10 @@ import org.labkey.biotrue.query.BtSchema;
 import org.labkey.biotrue.task.BtThreadPool;
 import org.labkey.biotrue.task.ScheduledTask;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
-import java.util.Collection;
-import java.util.Arrays;
 
 public class BtModule extends DefaultModule
 {
@@ -75,6 +75,6 @@ public class BtModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
         BtThreadPool.get();
-        ScheduledTask.startTimer();
+        ScheduledTask.getInstance().startTimer();
     }
 }
