@@ -361,6 +361,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private static class MaterializedLockObject
     {
         Table.TempTableInfo tinfoMat = null;
+        String tempTableName = null;
+
         // for debugging
         TableInfo tinfoFrom = null;
         long lastVerify = 0;
@@ -372,6 +374,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 long now = System.currentTimeMillis();
                 if (null == tinfoMat || lastVerify + 5* Cache.MINUTE > now)
                     return;
+                tempTableName = tinfoMat.getTempTableName();
                 lastVerify = now;
                 boolean ok = tinfoMat.verify();
                 if (ok)
@@ -385,7 +388,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 materializedCache.clear();
             }
-            Logger.getInstance(DataSetDefinition.class).error("TempTable disappeared? " +  tinfoMat.getTempTableName());
+            Logger.getInstance(DataSetDefinition.class).error("TempTable disappeared? " +  tempTableName);
         }
     }
 
