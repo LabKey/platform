@@ -116,11 +116,14 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return expr;
     }
 
+    
     @Override
     public String getDescription()
     {
-        return getTable(getSchema(), new ArrayList<QueryException>(), true).getDescription();
+        TableInfo t = getTable(getSchema(), new ArrayList<QueryException>(), true);
+        return t == null ? null : t.getDescription();
     }
+
 
     public TableInfo getTable(QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
     {
