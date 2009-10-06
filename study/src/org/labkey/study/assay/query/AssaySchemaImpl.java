@@ -148,7 +148,10 @@ public class AssaySchemaImpl extends AssaySchema
                     }
                     if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
-                        return provider.createDataTable(this, protocol);
+                        TableInfo t = provider.createDataTable(this, protocol);
+                        if (null != t.getColumn("Properties"))
+                            fixupPropertyURLs(t.getColumn("Properties"));
+                        return t;
                     }
 
                     AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
@@ -207,6 +210,8 @@ public class AssaySchemaImpl extends AssaySchema
 
         result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
 
+        fixupPropertyURLs(propsCol);
+
         return result;
     }
 
@@ -261,6 +266,8 @@ public class AssaySchemaImpl extends AssaySchema
 
         runTable.setDescription("Contains a row per " + protocol.getName() + " run.");
 
+        fixupPropertyURLs(propsCol);
+
         return runTable;
     }
 
@@ -283,6 +290,44 @@ public class AssaySchemaImpl extends AssaySchema
         return super.createView(context, settings);
     }
 
+
+    /**
+     * in order to allow using short name for propeties in assay table we need
+     * to patch up the keys
+     *
+     * for instance ${myProp} instead of ${RunProperties/myProp}
+     *
+     * @param fk properties column (e.g. RunProperties)
+     * @param col
+     */
+    private static void fixupPropertyURL(ColumnInfo fk, ColumnInfo col)
+    {
+        if (null == fk || !(col.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression))
+            return;
+
+        TableInfo table = fk.getParentTable();
+        StringExpressionFactory.FieldKeyStringExpression fkse = (StringExpressionFactory.FieldKeyStringExpression)col.getURL();
+        // quick check
+        Set<FieldKey> keys = fkse.getFieldKeys();
+        Map<FieldKey,FieldKey> map = new HashMap<FieldKey, FieldKey>();
+        for (FieldKey key : keys)
+        {
+            if (null == key.getParent() && null == table.getColumn(key.getName()))
+                map.put(key, new FieldKey(fk.getFieldKey(), key.getName()));
+        }
+        if (map.isEmpty())
+            return;
+        col.setURL(fkse.addParent(null, map));
+    }
+
+
+    private static void fixupPropertyURLs(ColumnInfo fk)
+    {
+        for (ColumnInfo c : fk.getParentTable().getColumns())
+            fixupPropertyURL(fk, c);
+    }
+
+
     private class AssayPropertyForeignKey extends PropertyForeignKey
     {
         public AssayPropertyForeignKey(PropertyDescriptor[] pds)
@@ -294,6 +339,7 @@ public class AssaySchemaImpl extends AssaySchema
         protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, final PropertyDescriptor pd)
         {
             ColumnInfo result = super.constructColumnInfo(parent, name, pd);
+            fixupPropertyURL(parent, result);
             if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
             {
                 result.setFk(new LookupForeignKey("Folder", "Label")
