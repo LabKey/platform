@@ -354,7 +354,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
         try
         {
-            doc.save(output, XmlBeansUtil.getDefaultOptions());
+            doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
             return output.toString();
         }
         finally
@@ -373,7 +373,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         try
         {
-            XmlOptions options = XmlBeansUtil.getDefaultOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultSaveOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(reader, options);
@@ -412,7 +412,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public static List<Pair<String, String>> createPropsFromXML(String xmlString) throws IOException
     {
         try {
-            XmlOptions options = XmlBeansUtil.getDefaultOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultSaveOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);

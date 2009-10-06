@@ -843,6 +843,7 @@ api/src/org/labkey/api/util/UsageReportingLevel.java -text
 api/src/org/labkey/api/util/VersionNumber.java -text
 api/src/org/labkey/api/util/WebPartErrorRenderer.java -text
 api/src/org/labkey/api/util/XmlBeansUtil.java -text
+api/src/org/labkey/api/util/XmlValidationException.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/mime.txt -text

@@ -15,10 +15,13 @@
  */
 package org.labkey.api.util;
 
-import org.apache.xmlbeans.XmlTokenSource;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlError;
+import org.apache.log4j.Logger;
 
-import java.io.*;
+import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * User: adam
@@ -32,7 +35,7 @@ public class XmlBeansUtil
     }
 
     // Standard options used by study export.
-    public static XmlOptions getDefaultOptions()
+    public static XmlOptions getDefaultSaveOptions()
     {
         XmlOptions options = new XmlOptions();
         options.setSavePrettyPrint();
@@ -42,5 +45,29 @@ public class XmlBeansUtil
         options.setSaveCDataLengthThreshold(0);
 
         return options;
+    }
+
+    // Standard options used by study import.
+    public static XmlOptions getDefaultParseOptions()
+    {
+        XmlOptions options = new XmlOptions();
+        options.setLoadLineNumbers();
+
+        return options;
+    }
+
+    public static void validateXmlDocument(XmlObject doc, Logger logger) throws XmlValidationException
+    {
+        XmlOptions options = new XmlOptions();
+        Collection<XmlError> errorList = new LinkedList<XmlError>();
+        options.setErrorListener(errorList);
+
+        if (!doc.validate(options))
+        {
+            for (XmlError error : errorList)
+                logger.error("Line " + error.getLine() + ": " + error.getMessage());
+
+            throw new XmlValidationException();
+        }
     }
 }
