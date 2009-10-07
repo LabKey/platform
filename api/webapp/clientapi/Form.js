@@ -66,10 +66,20 @@ LABKEY.Form = function(config) {
 
     if(false !== config.showWarningMessage)
     {
-        Ext.EventManager.on(window, "beforeunload", function(evt){
-            if(this.isDirty())
-                evt.browserEvent.returnValue = this.warningMessage;
-        }, this);
+        if (!Ext.isIE && !Ext.isGecko)
+        {
+            window.onbeforeunload = function(){
+                if (this.isDirty())
+                    return this.warningMessage;
+            }.createDelegate(this);
+        }
+        else
+        {
+            Ext.EventManager.on(window, "beforeunload", function(evt){
+                if(this.isDirty())
+                    evt.browserEvent.returnValue = this.warningMessage;
+            }, this);
+        }
     }
 };
 
