@@ -619,6 +619,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          */
         HttpServletRequest request = getRequest();
 
+        // TODO: Remove all ~checkboxes handling -- I don't think we ever output this
         String[] checkboxes = request.getParameterValues("~checkboxes");
 
         if (null != checkboxes)
