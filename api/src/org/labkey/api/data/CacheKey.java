@@ -71,6 +71,14 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
         addCondition(column, null, CompareType.NONBLANK);
     }
 
+    public void addCaseInsensitive(C column, String value)
+    {
+        String selectName = column.name();
+        value = value.toLowerCase();
+        _filter.addWhereClause("lower(" + selectName + ") = lower(?)", new Object[] { value }, column.name());
+        addConditionToString(column.toString() + "~iequal", value);
+    }
+
     private void addCondition(C column, Object value, CompareType ct)
     {
         _filter.addCondition(column.toString(), value, ct);
