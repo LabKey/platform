@@ -29,16 +29,13 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
 import org.labkey.experiment.xar.AbstractXarImporter;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.*;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -173,7 +170,10 @@ public class XarReader extends AbstractXarImporter
             errorSB.append("Schema validation error: ");
             errorSB.append(error.getMessage());
             errorSB.append("\n");
-            errorSB.append("Location of invalid XML: ");
+            errorSB.append("Location of invalid XML: Line ");
+            errorSB.append(error.getLine());
+            errorSB.append("\n");
+            errorSB.append("Source of invalid XML: ");
             errorSB.append(error.getCursorLocation().xmlText());
             errorSB.append("\n");
         }

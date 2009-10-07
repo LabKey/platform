@@ -26,6 +26,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.DataURLRelativizer;
@@ -189,7 +190,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
         public ExperimentArchiveDocument getDocument() throws XmlException, IOException
         {
-            ExperimentArchiveDocument doc = ExperimentArchiveDocument.Factory.parse(_xml);
+            ExperimentArchiveDocument doc = ExperimentArchiveDocument.Factory.parse(_xml, XmlBeansUtil.getDefaultParseOptions());
             ExperimentArchiveType ea = doc.getExperimentArchive();
             if (ea != null)
             {
