@@ -1019,7 +1019,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 DomainProperty propCopy = domainCopy.addProperty();
                 copiedDefaults.put(propCopy, originalDefaults.get(propSrc));
                 propCopy.setDescription(propSrc.getDescription());
-                propCopy.setFormat(propSrc.getFormatString());
+                propCopy.setFormat(propSrc.getFormat());
                 propCopy.setLabel(propSrc.getLabel());
                 propCopy.setName(propSrc.getName());
                 propCopy.setDescription(propSrc.getDescription());

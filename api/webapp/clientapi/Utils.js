@@ -234,6 +234,33 @@ LABKEY.Utils = new function()
          * or DecimalFormat to control how the value is formatted</li>
          * <li><b>timeOnly:</b> for dates, whether the date part should be ignored and only the time value is important</li>
          * </ul>
+         * @example &lt;script language="javascript"&gt;
+LABKEY.Utils.convertToExcel(
+{
+	fileName: 'output.xls',
+	sheets:
+	[
+		{
+			name: 'FirstSheet',
+			data:
+			[
+				['Row1Col1', 'Row1Col2'],
+				['Row2Col1', 'Row2Col2']
+			]
+		},
+		{
+			name: 'SecondSheet',
+			data:
+			[
+				['Col1Header', 'Col2Header'],
+				[{value: 1000.5, formatString: '0,000.00'}, {value: '5 Mar 2009 05:14:17', formatString: 'yyyy MMM dd'}],
+				[{value: 2000.6, formatString: '0,000.00'}, {value: '6 Mar 2009 07:17:10', formatString: 'yyyy MMM dd'}]
+
+			]
+		}
+	]
+});
+&lt;/script&gt;
          */
         convertToExcel : function(spreadsheet) {
             // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response

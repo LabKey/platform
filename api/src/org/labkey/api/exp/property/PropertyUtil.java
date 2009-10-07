@@ -40,7 +40,7 @@ public class PropertyUtil
     {
         if (prop == null)
             return value;
-        return formatValue(prop.getPropertyDescriptor().getPropertyType(), prop.getFormatString(), value, defaultFormat);
+        return formatValue(prop.getPropertyDescriptor().getPropertyType(), prop.getFormat(), value, defaultFormat);
     }
 
     private static Object formatValue(PropertyType type, String formatString, Object value, String defaultFormat)

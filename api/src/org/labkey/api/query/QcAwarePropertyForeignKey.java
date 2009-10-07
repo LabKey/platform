@@ -100,7 +100,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         {
             ColumnInfo inRangeColumn = new InRangeExprColumn(_baseTable, name, group.getBaseName());
             inRangeColumn.setLabel(group.getInRangePd().getLabel());
-            inRangeColumn.setFormatString(group.getNumberPd().getFormat());
+            inRangeColumn.setFormat(group.getNumberPd().getFormat());
             return inRangeColumn;
         }
 

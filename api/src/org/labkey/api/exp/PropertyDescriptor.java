@@ -42,7 +42,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private PropertyType propertyType;
     private String searchTerms;
     private String semanticType;
-    private String format;
     private Container container;
     private Container project;
     private boolean required;
@@ -94,7 +93,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         setRequired(!col.isNullable());
         setHidden(col.isHidden());
         setLabel(col.getLabel());
-        setFormat(col.getFormatString());
+        setFormat(col.getFormat());
     }
 
     public PropertyDescriptor(String propertyURI, String rangeURI, String name, Container container)
@@ -246,24 +245,11 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         return propertyURI + " name=" + name + " project="+  (project == null ? "null" : project.getPath()) + " container="+  (container==null ? "null" : container.getPath()) + " label=" + label + " range=" + rangeURI + " concept=" + conceptURI;
     }
 
-    public String getFormat()
-    {
-        return format;
-    }
-
-    public void setFormat(String format)
-    {
-        this.format = format;
-    }
-
     public Container getContainer() {
         return container;
     }
 
     public void setContainer(Container container) {
-    //    if (container.equals(ContainerManager.getRoot()))
-    //        container=ContainerManager.getSharedContainer();
-
         this.container = container;
         if (null==project)
             project=container.getProject();
@@ -355,11 +341,11 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
 
     static
     {
-    ObjectFactory.Registry.register(PropertyDescriptor.class,
+        ObjectFactory.Registry.register(PropertyDescriptor.class,
             new BeanObjectFactory<PropertyDescriptor>(PropertyDescriptor.class)
             {
                 @Override
-                public Map toMap(PropertyDescriptor bean, Map m)
+                public Map<String, Object> toMap(PropertyDescriptor bean, Map<String, Object> m)
                 {
                     m = super.toMap(bean, m);
                     Object o = m.get("URL");

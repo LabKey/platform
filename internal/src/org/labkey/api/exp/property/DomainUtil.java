@@ -60,8 +60,8 @@ public class DomainUtil
         if (defaultValue instanceof Date)
         {
             Date defaultDate = (Date) defaultValue;
-            if (property.getFormatString() != null)
-                return DateUtil.formatDateTime(defaultDate, property.getFormatString());
+            if (property.getFormat() != null)
+                return DateUtil.formatDateTime(defaultDate, property.getFormat());
             else
                 return DateUtil.formatDate(defaultDate);
         }
@@ -172,7 +172,7 @@ public class DomainUtil
 
         gwtProp.setPropertyId(prop.getPropertyId());
         gwtProp.setDescription(prop.getDescription());
-        gwtProp.setFormat(prop.getFormatString());
+        gwtProp.setFormat(prop.getFormat());
         gwtProp.setLabel(prop.getLabel());
         gwtProp.setName(prop.getName());
         gwtProp.setPropertyURI(prop.getPropertyURI());

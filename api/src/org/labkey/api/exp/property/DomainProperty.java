@@ -33,7 +33,7 @@ public interface DomainProperty
     String getRangeURI();
     String getName();
     String getDescription();
-    String getFormatString();
+    String getFormat();
     String getLabel();
     
     Domain getDomain();

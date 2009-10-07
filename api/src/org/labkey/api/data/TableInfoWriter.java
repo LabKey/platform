@@ -102,7 +102,7 @@ public class TableInfoWriter
             }
         }
 
-        String formatString = column.getFormatString();
+        String formatString = column.getFormat();
 
         // Write only if it's non-null (and in the case of dates, different from the global default)
         if (null != formatString && (!Date.class.isAssignableFrom(column.getJavaClass()) || !formatString.equals(_defaultDateFormat)))

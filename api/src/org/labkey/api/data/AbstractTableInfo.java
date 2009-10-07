@@ -439,8 +439,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             if (fkSchema == null)
                 return null;
         }
-        QueryForeignKey qfk = new QueryForeignKey(fkSchema, fk.getFkTable(), fk.getFkColumnName(), null);
-        return qfk;
+        return new QueryForeignKey(fkSchema, fk.getFkTable(), fk.getFkColumnName(), null);
     }
 
 

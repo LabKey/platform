@@ -56,7 +56,7 @@ public class PropertyColumn extends LookupColumn
         setSqlTypeName(getPropertySqlType(OntologyManager.getSqlDialect()));
         String format = StringUtils.trimToNull(pd.getFormat());
         if (null != format)
-            setFormatString(format);
+            setFormat(format);
         
         setInputType(pd.getPropertyType().getInputType());
         setInputLength(pd.getInputLength());

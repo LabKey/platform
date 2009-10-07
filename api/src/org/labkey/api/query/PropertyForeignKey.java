@@ -217,7 +217,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         else
             column.setLabel(ColumnInfo.labelFromName(pd.getName()));
         if (pd.getFormat() != null)
-            column.setFormatString(pd.getFormat());
+            column.setFormat(pd.getFormat());
         column.setNullable(!pd.isRequired());
         column.setHidden(pd.isHidden());
         column.setURL(pd.getURL());

@@ -37,7 +37,7 @@ public class ColumnRenderProperties
     protected int inputLength = -1;
     protected int inputRows = -1;
     protected String displayWidth;
-    protected String formatString;
+    protected String format;
     protected String excelFormatString;
     protected String tsvFormatString;
 
@@ -55,7 +55,7 @@ public class ColumnRenderProperties
         to.inputLength = inputLength;
         to.inputRows = inputRows;
         to.displayWidth = displayWidth;
-        to.formatString = formatString;
+        to.format = format;
         to.excelFormatString = excelFormatString;
         to.tsvFormatString = tsvFormatString;
         to.label = label;
@@ -114,14 +114,14 @@ public class ColumnRenderProperties
         this.displayWidth = displayWidth;
     }
 
-    public String getFormatString()
+    public String getFormat()
     {
-        return formatString;
+        return format;
     }
 
-    public void setFormatString(String formatString)
+    public void setFormat(String format)
     {
-        this.formatString = formatString;
+        this.format = format;
     }
 
     public String getExcelFormatString()

@@ -56,7 +56,7 @@
             onclick="toggleBulkProperties()" name="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>">
         </td>
         <td>
-            Specify run properties for all runs at once with tab-separated values (TSV)<%= PageFlowUtil.helpPopup("Bulk Properties", "<p>You may use a set of TSV (tab-separated values) to specify run metadata.<p>The barcode column in the TSV is matched with the barcode value in the MageML file. The sample name columns, configured in the assay design, will be used to look for matching samples by name in all visible sample sets.</p><p>Any additional run level properties may be specified as separate columns.</p>", true)%>
+            Specify run properties for all runs at once with tab-separated values (TSV)<%= PageFlowUtil.helpPopup("Bulk Properties", form.getHelpPopupHTML(), true)%>
         </td>
     </tr>
     <tr>

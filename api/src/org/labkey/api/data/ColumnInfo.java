@@ -57,7 +57,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String autoFillValue = null;
     private int scale = 0;
     private int precision = 0;
-    private int colIndex = 0; //index of column in table. 1 based.
     private boolean nullable = false;
     private boolean isAutoIncrement = false;
     private boolean isKeyField = false;
@@ -97,7 +96,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
         this.fieldKey = new FieldKey(null, rsmd.getColumnName(col));
-        this.setColIndex(col);
         this.setSqlTypeName(rsmd.getColumnTypeName(col));
         this.sqlTypeInt = rsmd.getColumnType(col);
     }
@@ -188,7 +186,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setDefaultValue(col.getDefaultValue());
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
-            setFormatString(col.getFormatString());
+            setFormat(col.getFormat());
         // Don't call the getter, because if it hasn't been explicitly set we want to
         // fetch the value lazily so we don't have to traverse FKs to get the display
         // field at this point.
@@ -322,28 +320,28 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
     @Override
-    public String getFormatString()
+    public String getFormat()
     {
         if (isDateTimeType())
             return getDateFormatString();
         else
-            return formatString;
+            return format;
     }
 
     private String getDateFormatString()
     {
-        if (null == formatString || "Date".equalsIgnoreCase(formatString))
+        if (null == format || "Date".equalsIgnoreCase(format))
             return DateUtil.getStandardDateFormatString();
 
-        if ("DateTime".equalsIgnoreCase(formatString))
+        if ("DateTime".equalsIgnoreCase(format))
             return DateUtil.getStandardDateTimeFormatString();
 
-        return formatString;
+        return format;
     }
 
     public boolean isFormatStringSet()
     {
-        return (formatString != null);
+        return (format != null);
     }
 
     public String getTextAlign()
@@ -666,8 +664,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 xmlCol.setIsUnselectable(isUnselectable);
             if (null != label)
                 xmlCol.setColumnTitle(label);
-            if (colIndex != 0)
-                xmlCol.setColumnIndex(colIndex);
             if (nullable)
                 xmlCol.setNullable(nullable);
             if (null != sqlTypeName)
@@ -680,8 +676,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 xmlCol.setDefaultValue(defaultValue);
             if (null != getDisplayWidth())
                 xmlCol.setDisplayWidth(getDisplayWidth());
-            if (null != formatString)
-                xmlCol.setFormatString(formatString);
+            if (null != format)
+                xmlCol.setFormatString(format);
             if (null != textAlign)
                 xmlCol.setTextAlign(textAlign);
             if (null != description)
@@ -696,7 +692,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (! merge)
         {
             sqlTypeName = xmlCol.getDatatype();
-            colIndex = xmlCol.getColumnIndex();
         }
         if ((!merge || null == fk) && xmlCol.getFk() != null)
         {
@@ -730,7 +725,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (xmlCol.isSetDefaultValue())
             defaultValue = xmlCol.getDefaultValue();
         if (xmlCol.isSetFormatString())
-            formatString = xmlCol.getFormatString();
+            format = xmlCol.getFormatString();
         if (xmlCol.isSetTsvFormatString())
             tsvFormatString = xmlCol.getTsvFormatString();
         if (xmlCol.isSetExcelFormatString())
@@ -1049,7 +1044,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             col.isAutoIncrement = reader.isAutoIncrement();
             col.scale = reader.getScale();
             col.nullable = reader.isNullable();
-            col.colIndex = reader.getPosition();
 
             if (nonEditableColNames.contains(col.getPropertyName()))
                 col.setUserEditable(false);
@@ -1369,19 +1363,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         this.precision = precision;
     }
-
-
-    public int getColIndex()
-    {
-        return colIndex;
-    }
-
-
-    public void setColIndex(int colIndex)
-    {
-        this.colIndex = colIndex;
-    }
-
 
     public boolean isNullable()
     {

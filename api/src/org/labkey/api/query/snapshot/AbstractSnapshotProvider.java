@@ -142,7 +142,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         PropertyType type = PropertyType.getFromClass(clz);
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(column.getDescription());
-        prop.setFormat(column.getFormatString());
+        prop.setFormat(column.getFormat());
         prop.setPropertyURI(getPropertyURI(domain, column));
 
         if (pd != null && pd.getLookupQuery() != null)

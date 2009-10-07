@@ -71,7 +71,7 @@ public class DataColumn extends DisplayColumn
         StringExpression url = _boundColumn.getEffectiveURL();
         if (null != url)
             super.setURLExpression(url);
-        setFormatString(_displayColumn.getFormatString());
+        setFormatString(_displayColumn.getFormat());
         setTsvFormatString(_displayColumn.getTsvFormatString());
         setExcelFormatString(_displayColumn.getExcelFormatString());
         setDescription(_boundColumn.getDescription());

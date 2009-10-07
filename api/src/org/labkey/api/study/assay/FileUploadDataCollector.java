@@ -32,10 +32,11 @@ import java.util.Map;
 public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
 {
     private boolean _uploadComplete = false;
+    private static final String FORM_ELEMENT_NAME = "uploadedFile";
 
     public String getHTML(ContextType context)
     {
-        return "<input type=\"file\" size=\"40\" name=\"uploadedFile\" />";
+        return "<input type=\"file\" size=\"40\" name=\"" + FORM_ELEMENT_NAME + "\" />";
     }
 
     public String getShortName()
@@ -56,8 +57,8 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
         if (!(context.getRequest() instanceof MultipartHttpServletRequest))
             throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
         
-        Map<String, File> files = savePostedFiles(context, Collections.singleton("uploadedFile"));
-        if (files.isEmpty())
+        Map<String, File> files = savePostedFiles(context, Collections.singleton(FORM_ELEMENT_NAME));
+        if (!files.containsKey(FORM_ELEMENT_NAME))
             throw new FileNotFoundException("No data file was uploaded. Please enter a file name.");
         return files;
     }
