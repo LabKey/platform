@@ -56,7 +56,7 @@ public class QueryDef extends Entity implements Cloneable
 
         public void setQueryName(String queryName)
         {
-            addCondition(Column.name, queryName);
+            addCaseInsensitive(Column.name, queryName);
         }
 
         public void setQueryDefId(int id)
