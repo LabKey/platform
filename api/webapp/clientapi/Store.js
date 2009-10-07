@@ -310,7 +310,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             var config = {
                 schemaName: fieldMeta.lookup.schema,
                 queryName: fieldMeta.lookup.table,
-                containerPath: this.containerPath
+                containerPath: fieldMeta.lookup.containerPath || this.containerPath
             };
             if(includeNullRecord)
                 config.nullRecord = {

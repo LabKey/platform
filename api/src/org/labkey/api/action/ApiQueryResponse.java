@@ -217,7 +217,8 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         if(isLookup(dc))
         {
-            TableInfo lookupTable = dc.getColumnInfo().getFkTableInfo();
+            ForeignKey fk = dc.getColumnInfo().getFk();
+            TableInfo lookupTable = fk.getLookupTableInfo();
 
             if (null != lookupTable && lookupTable.getPkColumns().size() == 1)
             {
@@ -227,6 +228,15 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 lookupInfo.put("schema", lookupTable.getPublicSchemaName());
                 lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
                 lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
+
+                //return containerPath if non-null
+                String cid = fk.getLookupContainerId();
+                if (null != cid)
+                {
+                    Container lookupContainer = ContainerManager.getForId(cid);
+                    if (null != lookupContainer)
+                        lookupInfo.put("containerPath", lookupContainer.getPath());
+                }
 
                 fmdata.put("lookup", lookupInfo);
             }
