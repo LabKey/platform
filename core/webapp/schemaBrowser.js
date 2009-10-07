@@ -802,7 +802,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
 
     validateSchema : function() {
         var schemaName = this.schemaNames[this.curSchemaIdx];
-        this.setStatus("Validating queries in schema '" + schemaName + "'...");
+        this.setStatus("Validating queries in schema '" + Ext.util.Format.htmlEncode(schemaName) + "'...");
         LABKEY.Query.getQueries({
             schemaName: schemaName,
             successCallback: this.onQueries,
@@ -884,7 +884,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
     },
 
     getCurrentQueryLabel : function() {
-        return this.schemaNames[this.curSchemaIdx] + "." + this.queries[this.curQueryIdx].name;
+        return Ext.util.Format.htmlEncode(this.schemaNames[this.curSchemaIdx]) + "." + Ext.util.Format.htmlEncode(this.queries[this.curQueryIdx].name);
     },
 
     clearValidationErrors : function() {
@@ -915,14 +915,14 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
                         {
                             tag: 'span',
                             cls: 'labkey-link lk-vq-error-name',
-                            html: schemaName + "." + queryName
+                            html: Ext.util.Format.htmlEncode(schemaName) + "." + Ext.util.Format.htmlEncode(queryName)
                         }
                     ]
                 },
                 {
                     tag: 'div',
                     cls: 'lk-vq-error-message',
-                    html: errorInfo.exception
+                    html: Ext.util.Format.htmlEncode(errorInfo.exception)
                 }
             ]
         });
