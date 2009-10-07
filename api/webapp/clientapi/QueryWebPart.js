@@ -180,7 +180,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 {
                     targetElem.update(response.responseText, true); //execute scripts
                     if(this.successCallback)
-                        this.successCallback.call(this.scope || this);
+                        Ext.onReady(function(){this.successCallback.call(this.scope || this);}); //8721: need to use onReady()
                     this.fireEvent("render");
                 }
                 else
