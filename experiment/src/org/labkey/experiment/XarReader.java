@@ -390,7 +390,7 @@ public class XarReader extends AbstractXarImporter
                     DomainProperty newProp = newProps.get(key);
 
                     IdentifiableEntity.diff(oldProp.getDescription(), newProp.getDescription(), key + " description", diffs);
-                    IdentifiableEntity.diff(oldProp.getFormatString(), newProp.getFormatString(), key + " format string", diffs);
+                    IdentifiableEntity.diff(oldProp.getFormat(), newProp.getFormat(), key + " format string", diffs);
                     IdentifiableEntity.diff(oldProp.getLabel(), newProp.getLabel(), key + " label", diffs);
                     IdentifiableEntity.diff(oldProp.getName(), newProp.getName(), key + " name", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);

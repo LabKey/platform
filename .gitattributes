@@ -1488,6 +1488,7 @@ query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text
 query/gwtsrc/org/labkey/query/metadata/client/MetadataEditor.java -text
 query/gwtsrc/org/labkey/query/metadata/client/MetadataService.java -text
 query/gwtsrc/org/labkey/query/metadata/client/MetadataServiceAsync.java -text
+query/gwtsrc/org/labkey/query/metadata/client/MetadataUnavailableException.java -text
 query/gwtsrc/org/labkey/query/metadata/client/TablePropertiesEditor.java -text
 query/gwtsrc/org/labkey/query/metadata/client/WrappedColumnItem.java -text
 query/gwtsrc/org/labkey/reports/designer/ChartDesigner.gwt.xml -text

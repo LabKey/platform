@@ -23,7 +23,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.Saveable;
@@ -57,7 +56,20 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         {
             public void onFailure(Throwable caught)
             {
-                WindowUtil.reportException("Failed to get existing metadata from server", caught);
+                if (caught instanceof MetadataUnavailableException)
+                {
+                    rootPanel.clear();
+                    String s = "Failed to get metadata from server. ";
+                    if (caught.getMessage() != null)
+                    {
+                        s += caught.getMessage();
+                    }
+                    rootPanel.add(new Label(s));
+                }
+                else
+                {
+                    WindowUtil.reportException("Failed to get existing metadata from server", caught);
+                }
             }
 
             public void onSuccess(GWTTableInfo result)

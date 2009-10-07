@@ -69,7 +69,7 @@
             <td><%=h(col.getName())%></td>
             <td><%=h(col.getLabel())%></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
-            <td><%=h(col.getFormatString())%></td>
+            <td><%=h(col.getFormat())%></td>
             <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
             <td align="center"><input type=checkbox disabled <%=col.isMvEnabled() ? "checked" : ""%>></td>
             <td><%=h(col.getDescription())%></td>
@@ -86,7 +86,7 @@
             <td><%=isKeyColumn?"<b>":""%><%= col.getName()%><%=isKeyColumn?"</b>":""%></td>
             <td><%= col.getLabel() %></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
-            <td><%=h(col.getFormatString())%></td>
+            <td><%=h(col.getFormat())%></td>
             <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
             <td align="center"><input type=checkbox disabled <%=col.isMvEnabled() ? "checked" : ""%>></td>
             <td><%=h(col.getDescription())%></td>

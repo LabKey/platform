@@ -19,11 +19,13 @@ package org.labkey.query.metadata;
 import org.labkey.query.metadata.client.MetadataService;
 import org.labkey.query.metadata.client.GWTTableInfo;
 import org.labkey.query.metadata.client.GWTColumnInfo;
+import org.labkey.query.metadata.client.MetadataUnavailableException;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -49,7 +51,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         super(context);
     }
 
-    public GWTTableInfo getMetadata(String schemaName, String tableName)
+    public GWTTableInfo getMetadata(String schemaName, String tableName) throws MetadataUnavailableException
     {
         Map<String, GWTColumnInfo> columnInfos = new CaseInsensitiveHashMap<GWTColumnInfo>();
         List<GWTColumnInfo> orderedPDs = new ArrayList<GWTColumnInfo>();
@@ -62,7 +64,15 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         {
             return null;
         }
-        TableInfo table = schema.getTable(tableName);
+        TableInfo table;
+        try
+        {
+            table = schema.getTable(tableName);
+        }
+        catch (QueryParseException e)
+        {
+            throw new MetadataUnavailableException(e.getMessage());
+        }
         if (table == null)
         {
             return null;
@@ -78,7 +88,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
             gwtColumnInfo.setRequired(!columnInfo.isNullable());
             gwtColumnInfo.setLabel(columnInfo.getLabel());
-            gwtColumnInfo.setFormat(columnInfo.getFormatString());
+            gwtColumnInfo.setFormat(columnInfo.getFormat());
             gwtColumnInfo.setDescription(columnInfo.getDescription());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
@@ -215,7 +225,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         return doc;
     }
 
-    public GWTTableInfo saveMetadata(GWTTableInfo gwtTableInfo, String schemaName)
+    public GWTTableInfo saveMetadata(GWTTableInfo gwtTableInfo, String schemaName) throws MetadataUnavailableException
     {
         validatePermissions();
 
@@ -308,7 +318,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             }
 
             // Set the format
-            if (shouldStoreValue(gwtColumnInfo.getFormat(), rawColumnInfo.getFormatString()))
+            if (shouldStoreValue(gwtColumnInfo.getFormat(), rawColumnInfo.getFormat()))
             {
                 xmlColumn.setFormatString(gwtColumnInfo.getFormat());
             }
@@ -422,7 +432,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         }
     }
 
-    public GWTTableInfo resetToDefault(String schemaName, String queryName)
+    public GWTTableInfo resetToDefault(String schemaName, String queryName) throws MetadataUnavailableException
     {
         validatePermissions();
 

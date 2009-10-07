@@ -64,7 +64,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 sql.add(Boolean.TRUE);
                 sql.add(Boolean.FALSE);
                 ExprColumn result = new ExprColumn(this, "Active", sql, Types.BOOLEAN);
-                result.setFormatString("Yes;No");
+                result.setFormat("Yes;No");
                 return result;
             }
             case SampleCount:

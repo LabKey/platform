@@ -19,9 +19,9 @@ import org.labkey.api.gwt.client.ui.LookupService;
  */
 public interface MetadataService extends LookupService
 {
-    public GWTTableInfo getMetadata(String schema, String table);
+    public GWTTableInfo getMetadata(String schema, String table) throws MetadataUnavailableException;
 
-    public GWTTableInfo saveMetadata(GWTTableInfo domain, String schema);
+    public GWTTableInfo saveMetadata(GWTTableInfo domain, String schema) throws MetadataUnavailableException;
 
-    public GWTTableInfo resetToDefault(String schemaName, String queryName);
+    public GWTTableInfo resetToDefault(String schemaName, String queryName) throws MetadataUnavailableException;
 }

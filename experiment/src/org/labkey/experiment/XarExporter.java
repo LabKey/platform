@@ -24,7 +24,6 @@ import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.*;
@@ -428,9 +427,9 @@ public class XarExporter
         {
             xProp.setDescription(domainProp.getDescription());
         }
-        if (domainProp.getFormatString() != null)
+        if (domainProp.getFormat() != null)
         {
-            xProp.setFormat(domainProp.getFormatString());
+            xProp.setFormat(domainProp.getFormat());
         }
         if (domainProp.getLabel() != null)
         {

@@ -73,7 +73,7 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getDescription();
     }
 
-    public String getFormatString()
+    public String getFormat()
     {
         return _pd.getFormat();
     }

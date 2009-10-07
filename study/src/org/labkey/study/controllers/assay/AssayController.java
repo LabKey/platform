@@ -55,7 +55,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.apache.commons.beanutils.ConvertUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -65,7 +64,6 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import java.sql.ResultSet;
 
 /**
  * User: brittp
@@ -249,7 +247,7 @@ public class AssayController extends SpringActionController
             properties.put("typeURI", property.getType().getTypeURI());
             properties.put("label", property.getLabel());
             properties.put("description", property.getDescription());
-            properties.put("formatString", property.getFormatString());
+            properties.put("formatString", property.getFormat());
             properties.put("required", property.isRequired());
             if (property.getLookup() != null)
             {

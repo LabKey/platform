@@ -143,7 +143,7 @@ public class MothershipSchema extends UserSchema
         result.addColumn(durationCol);
 
         ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", new SQLFragment("(SELECT COUNT(*) FROM " + MothershipManager.get().getTableInfoExceptionReport() + " WHERE ServerSessionId = " + ExprColumn.STR_TABLE_ALIAS + ".ServerSessionId)"), Types.INTEGER);
-        exceptionCountCol.setFormatString("#.#");
+        exceptionCountCol.setFormat("#.#");
         result.addColumn(exceptionCountCol);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
@@ -197,7 +197,7 @@ public class MothershipSchema extends UserSchema
         exceptionCount.append(ExprColumn.STR_TABLE_ALIAS);
         exceptionCount.append(".ServerInstallationId AND ss.serversessionid = er.serversessionid)");
         ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", exceptionCount, Types.INTEGER);
-        exceptionCountCol.setFormatString("#.#");
+        exceptionCountCol.setFormat("#.#");
         result.addColumn(exceptionCountCol);
 
         SqlDialect dialect = MothershipManager.get().getSchema().getSqlDialect();
@@ -210,7 +210,7 @@ public class MothershipSchema extends UserSchema
         daysActive.append(ExprColumn.STR_TABLE_ALIAS);
         daysActive.append(".ServerInstallationId)");
         ExprColumn daysActiveColumn = new ExprColumn(result, "DaysActive", daysActive, Types.INTEGER);
-        daysActiveColumn.setFormatString("#.#");
+        daysActiveColumn.setFormat("#.#");
         result.addColumn(daysActiveColumn);
 
         SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT(softwarereleaseid)) FROM ");
@@ -299,7 +299,7 @@ public class MothershipSchema extends UserSchema
         stack.addParameter("exceptionStackTraceId","${ExceptionStackTraceId}");
         result.getColumn("ExceptionStackTraceId").setURL(StringExpressionFactory.createURL(stack));
         result.getColumn("ExceptionStackTraceId").setLabel("Exception");
-        result.getColumn("ExceptionStackTraceId").setFormatString("'#'0");
+        result.getColumn("ExceptionStackTraceId").setFormat("'#'0");
 
         result.setTitleColumn("ExceptionStackTraceId");
         result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));
@@ -374,7 +374,7 @@ public class MothershipSchema extends UserSchema
 
         result.getColumn("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
         result.getColumn("ServerSessionId").setLabel("Session");
-        result.getColumn("ServerSessionId").setFormatString("'#'0");
+        result.getColumn("ServerSessionId").setFormat("'#'0");
         LookupForeignKey fk = new LookupForeignKey("ServerSessionId")
         {
             public TableInfo getLookupTableInfo()

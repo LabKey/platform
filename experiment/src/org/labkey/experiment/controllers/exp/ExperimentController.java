@@ -17,12 +17,14 @@
 package org.labkey.experiment.controllers.exp;
 
 import jxl.*;
+import jxl.biff.DisplayFormat;
 import jxl.read.biff.BiffException;
 import jxl.write.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
@@ -1398,96 +1400,115 @@ public class ExperimentController extends SpringActionController
     {
         public void export(ConvertArraysToExcelForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            JSONObject rootObject = new JSONObject(form.getJson());
-            JSONArray sheetsArray = rootObject.getJSONArray("sheets");
-
-            String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
-
-            WorkbookSettings settings = new WorkbookSettings();
-            settings.setArrayGrowSize(300000);
-            WritableWorkbook workbook = Workbook.createWorkbook(response.getOutputStream(), settings);
-
-            SimpleDateFormat dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
-
-            for (int sheetIndex = 0; sheetIndex < sheetsArray.length(); sheetIndex++)
+            try
             {
-                JSONObject sheetObject = sheetsArray.getJSONObject(sheetIndex);
-                String sheetName = sheetObject.has("name") ? sheetObject.getString("name") : "Sheet" + sheetIndex;
-                sheetName = ExcelWriter.cleanSheetName(sheetName);
-                WritableSheet sheet = workbook.createSheet(sheetName, sheetIndex);
+                JSONObject rootObject = new JSONObject(form.getJson());
+                JSONArray sheetsArray = rootObject.getJSONArray("sheets");
 
-                WritableCellFormat defaultFormat = new WritableCellFormat();
-                WritableCellFormat defaultDateFormat = new WritableCellFormat(new DateFormat(DateUtil.getStandardDateFormatString()));
+                String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
 
-                JSONArray rowsArray = sheetObject.getJSONArray("data");
-                for (int rowIndex = 0; rowIndex < rowsArray.length(); rowIndex++)
+                WorkbookSettings settings = new WorkbookSettings();
+                settings.setArrayGrowSize(300000);
+                WritableWorkbook workbook = Workbook.createWorkbook(response.getOutputStream(), settings);
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
+
+                for (int sheetIndex = 0; sheetIndex < sheetsArray.length(); sheetIndex++)
                 {
-                    JSONArray rowArray = rowsArray.getJSONArray(rowIndex);
-                    for (int colIndex = 0; colIndex < rowArray.length(); colIndex++)
+                    JSONObject sheetObject = sheetsArray.getJSONObject(sheetIndex);
+                    String sheetName = sheetObject.has("name") ? sheetObject.getString("name") : "Sheet" + sheetIndex;
+                    sheetName = ExcelWriter.cleanSheetName(sheetName);
+                    WritableSheet sheet = workbook.createSheet(sheetName, sheetIndex);
+
+                    WritableCellFormat defaultFormat = new WritableCellFormat();
+                    WritableCellFormat defaultDateFormat = new WritableCellFormat(new DateFormat(DateUtil.getStandardDateFormatString()));
+                    WritableCellFormat errorFormat = new WritableCellFormat();
+                    errorFormat.setBackground(jxl.format.Colour.RED);
+
+                    JSONArray rowsArray = sheetObject.getJSONArray("data");
+                    for (int rowIndex = 0; rowIndex < rowsArray.length(); rowIndex++)
                     {
-                        Object value = rowArray.get(colIndex);
-                        WritableCell cell = null;
-                        JSONObject metadataObject = null;
-                        WritableCellFormat cellFormat = defaultFormat;
-                        if (value instanceof JSONObject)
+                        JSONArray rowArray = rowsArray.getJSONArray(rowIndex);
+                        for (int colIndex = 0; colIndex < rowArray.length(); colIndex++)
                         {
-                            metadataObject = (JSONObject)value;
-                            value = metadataObject.get("value");
-                        }
-                        if (value instanceof java.lang.Number)
-                        {
-                            cell = new jxl.write.Number(colIndex, rowIndex, ((java.lang.Number) value).doubleValue());
-                            if (metadataObject != null && metadataObject.has("formatString"))
+                            Object value = rowArray.get(colIndex);
+                            WritableCell cell = null;
+                            JSONObject metadataObject = null;
+                            WritableCellFormat cellFormat = defaultFormat;
+                            if (value instanceof JSONObject)
                             {
-                                cellFormat = new WritableCellFormat(new NumberFormat(metadataObject.getString("formatString")));
+                                metadataObject = (JSONObject)value;
+                                value = metadataObject.get("value");
                             }
-                        }
-                        else if (value instanceof Boolean)
-                        {
-                            cell = new jxl.write.Boolean(colIndex, rowIndex, ((Boolean) value).booleanValue());
-                        }
-                        else if (value instanceof String)
-                        {
-                            try
+                            if (value instanceof java.lang.Number)
                             {
-                                // JSON has no date literal syntax so try to parse all Strings as dates
-                                Date d = dateFormat.parse((String)value);
+                                cell = new jxl.write.Number(colIndex, rowIndex, ((java.lang.Number) value).doubleValue());
                                 if (metadataObject != null && metadataObject.has("formatString"))
                                 {
-                                    cellFormat = new WritableCellFormat(new DateFormat(metadataObject.getString("formatString")));
+                                    cellFormat = new WritableCellFormat(new NumberFormat(metadataObject.getString("formatString")));
                                 }
-                                else
-                                {
-                                    cellFormat = defaultDateFormat;
-                                }
-                                boolean timeOnly = metadataObject != null && metadataObject.has("timeOnly") && Boolean.TRUE.equals(metadataObject.get("timeOnly"));
-                                cell = new DateTime(colIndex, rowIndex, d, cellFormat, timeOnly);
                             }
-                            catch (ParseException e)
+                            else if (value instanceof Boolean)
                             {
-                                // Not a date
-                                cell = new Label(colIndex, rowIndex, (String)value);
+                                cell = new jxl.write.Boolean(colIndex, rowIndex, ((Boolean) value).booleanValue());
                             }
-                        }
-                        else if (value != null)
-                        {
-                            cell = new Label(colIndex, rowIndex, value.toString());
-                        }
-                        if (cell != null)
-                        {
-                            cell.setCellFormat(cellFormat);
-                            sheet.addCell(cell);
+                            else if (value instanceof String)
+                            {
+                                try
+                                {
+                                    // JSON has no date literal syntax so try to parse all Strings as dates
+                                    Date d = dateFormat.parse((String)value);
+                                    try
+                                    {
+                                        if (metadataObject != null && metadataObject.has("formatString"))
+                                        {
+                                            cellFormat = new WritableCellFormat(new DateFormat(metadataObject.getString("formatString")));
+                                        }
+                                        else
+                                        {
+                                            cellFormat = defaultDateFormat;
+                                        }
+                                        boolean timeOnly = metadataObject != null && metadataObject.has("timeOnly") && Boolean.TRUE.equals(metadataObject.get("timeOnly"));
+                                        cell = new DateTime(colIndex, rowIndex, d, cellFormat, timeOnly);
+                                    }
+                                    catch (IllegalArgumentException e)
+                                    {
+                                        // Invalid date format
+                                        cellFormat = errorFormat;
+                                        cell = new Label(colIndex, rowIndex, e.getMessage());
+                                    }
+                                }
+                                catch (ParseException e)
+                                {
+                                    // Not a date
+                                    cell = new Label(colIndex, rowIndex, (String)value);
+                                }
+                            }
+                            else if (value != null)
+                            {
+                                cell = new Label(colIndex, rowIndex, value.toString());
+                            }
+                            if (cell != null)
+                            {
+                                cell.setCellFormat(cellFormat);
+                                sheet.addCell(cell);
+                            }
                         }
                     }
                 }
-            }
 
-            response.setContentType("application/vnd.ms-excel");
-            response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
-            response.setHeader("Pragma", "private");
-            response.setHeader("Cache-Control", "private");
-            workbook.write();
-            workbook.close();
+                response.setContentType("application/vnd.ms-excel");
+                response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+                response.setHeader("Pragma", "private");
+                response.setHeader("Cache-Control", "private");
+                workbook.write();
+                workbook.close();
+            }
+            catch (JSONException e)
+            {
+                HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, getViewContext().getRequest(), false);
+                errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
+            }
         }
     }
 

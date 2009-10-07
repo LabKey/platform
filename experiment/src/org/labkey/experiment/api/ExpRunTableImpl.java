@@ -358,8 +358,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
      */
     public class RunGroupListDisplayColumn extends DataColumn
     {
-        private Set<ColumnInfo> _runGroupColumns;
-        private ExpExperiment[] _experiments;
         private final ExperimentsForeignKey _fk;
 
         public RunGroupListDisplayColumn(ColumnInfo col, ExpRunTableImpl.ExperimentsForeignKey fk)
@@ -384,40 +382,29 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             StringBuilder sb = new StringBuilder();
             String separator = "";
-            if (_experiments == null)
-            {
-                _experiments = ExperimentService.get().getExperiments(ctx.getContainer(), ctx.getViewContext().getUser(), true, false);
-            }
             Object oldExperimentId = ctx.get("experimentId");
-            for (ColumnInfo runGroupColumn : _runGroupColumns)
+
+            for (ExpExperiment exp : _fk.getExperiments())
             {
-                FieldKey key = FieldKey.fromString(runGroupColumn.getName());
-                if (Boolean.TRUE.equals(runGroupColumn.getValue(ctx)))
+                FieldKey key = new FieldKey(getBoundColumn().getFieldKey(), exp.getName());
+                ColumnInfo runGroupColumn = ctx.getFieldMap().get(key);
+                if (runGroupColumn != null && Boolean.TRUE.equals(runGroupColumn.getValue(ctx)))
                 {
                     sb.append(separator);
-                    ExpExperiment matchingRunGroup = null;
-                    for (ExpExperiment experiment : _experiments)
-                    {
-                        if (experiment.getName().equals(key.getName()))
-                        {
-                            matchingRunGroup = experiment;
-                            break;
-                        }
-                    }
-                    if (matchingRunGroup != null && addLinks)
+                    if (addLinks)
                     {
                         sb.append("<a href=\"");
-                        ctx.put("experimentId", matchingRunGroup.getRowId());
+                        ctx.put("experimentId", exp.getRowId());
                         String url = renderURL(ctx);
                         if (url == null)
                         {
-                            url = ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(matchingRunGroup.getContainer(), matchingRunGroup).getLocalURIString();
+                            url = ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(exp.getContainer(), exp).getLocalURIString();
                         }
                         sb.append(url);
                         sb.append("\">");
                     }
-                    PageFlowUtil.filter(sb.append(key.getName()));
-                    if (matchingRunGroup != null && addLinks)
+                    PageFlowUtil.filter(sb.append(exp.getName()));
+                    if (addLinks)
                     {
                         sb.append("</a>");
                     }
@@ -447,23 +434,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             out.write(buildString(ctx, true));
         }
 
-        public void addQueryColumns(Set<ColumnInfo> columns)
+        @Override
+        public void addQueryFieldKeys(Set<FieldKey> keys)
         {
-            FieldKey key = FieldKey.fromString(getBoundColumn().getName());
-            List<FieldKey> runGroupFieldKeys = new ArrayList<FieldKey>();
+            FieldKey key = getBoundColumn().getFieldKey();
             for (ExpExperiment exp : _fk.getExperiments())
             {
-                runGroupFieldKeys.add(new FieldKey(key, exp.getName()));
+                keys.add(new FieldKey(key, exp.getName()));
             }
-            Map<FieldKey, ColumnInfo> runGroupCols = QueryService.get().getColumns(getBoundColumn().getParentTable(), runGroupFieldKeys);
-            _runGroupColumns = new LinkedHashSet<ColumnInfo>();
-            for (FieldKey runGroupFieldKey : runGroupFieldKeys)
-            {
-                ColumnInfo col = runGroupCols.get(runGroupFieldKey);
-                assert col != null : "Could not find ColumnInfo for " + runGroupFieldKey;
-                _runGroupColumns.add(col);
-            }
-            columns.addAll(_runGroupColumns);
         }
     }
 
@@ -532,7 +510,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     FieldKey parentFieldKey = FieldKey.fromString(parent.getName());
                     result.setLabel(parent.getLabel() + " " + exp.getName());
                     result.setDisplayColumnFactory(new ExperimentMembershipDisplayColumnFactory(exp.getRowId(), parentFieldKey.getParent()));
-                    result.setFormatString("Y;N");
+                    result.setFormat("Y;N");
                     return result;
                 }
             }
