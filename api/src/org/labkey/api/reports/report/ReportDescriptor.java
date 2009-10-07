@@ -373,7 +373,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         try
         {
-            XmlOptions options = XmlBeansUtil.getDefaultSaveOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(reader, options);
@@ -413,7 +413,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         try
         {
-            XmlOptions options = XmlBeansUtil.getDefaultSaveOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);

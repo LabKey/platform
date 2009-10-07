@@ -19,6 +19,7 @@ package org.labkey.api.exp;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -54,7 +55,7 @@ public abstract class AbstractFileXarSource extends XarSource
         {
             NetworkDrive.exists(_xmlFile);
             fIn = new FileInputStream(_xmlFile);
-            return ExperimentArchiveDocument.Factory.parse(fIn);
+            return ExperimentArchiveDocument.Factory.parse(fIn, XmlBeansUtil.getDefaultParseOptions());
         }
         finally
         {
