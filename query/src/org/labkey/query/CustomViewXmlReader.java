@@ -16,19 +16,21 @@
 
 package org.labkey.query;
 
-import org.labkey.api.query.FieldKey;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.util.Pair;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.data.xml.queryCustomView.*;
-import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
  * User: adam
@@ -52,12 +54,15 @@ public class CustomViewXmlReader
     private List<String> _sorts;
     private String _customIconUrl;
 
-    protected File _sourceFile;
+    protected final File _sourceFile;
     protected String _name;
 
-    public CustomViewXmlReader(File sourceFile)
+    private final Logger _logger;
+
+    public CustomViewXmlReader(File sourceFile, @NotNull Logger logger)
     {
         _sourceFile = sourceFile;
+        _logger = logger;
 
         loadDefinition();
     }
@@ -159,7 +164,8 @@ public class CustomViewXmlReader
     {
         try
         {
-            CustomViewDocument doc = CustomViewDocument.Factory.parse(_sourceFile);
+            CustomViewDocument doc = CustomViewDocument.Factory.parse(_sourceFile, XmlBeansUtil.getDefaultParseOptions());
+            XmlBeansUtil.validateXmlDocument(doc, _logger);
             CustomViewType viewElement = doc.getCustomView();
 
             _name = viewElement.getName();
@@ -167,7 +173,6 @@ public class CustomViewXmlReader
             _query = viewElement.getQuery();
             _hidden = viewElement.isSetHidden() && viewElement.getHidden();
             _customIconUrl = viewElement.getCustomIconUrl();
-
 
             //load the columns
             _colList = loadColumns(viewElement.getColumns());
@@ -178,11 +183,10 @@ public class CustomViewXmlReader
             //load the sorts
             _sorts = loadSorts(viewElement.getSorts());
 
-        }
+        }  // TODO: Catch XMLValidationException and handle specially?
         catch(Exception e)
         {
-            Logger.getLogger(ModuleCustomView.class).warn("Unable to load custom view definition from file "
-                    + _sourceFile.getPath(), e);
+            _logger.warn("Unable to load custom view definition from file " + _sourceFile.getPath(), e);
         }
     }
 

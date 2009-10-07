@@ -68,7 +68,7 @@ public class ListImporter implements ExternalStudyImporter
 
             try
             {
-                tablesDoc = TablesDocument.Factory.parse(schemaFile);
+                tablesDoc = TablesDocument.Factory.parse(schemaFile, XmlBeansUtil.getDefaultParseOptions());
                 XmlBeansUtil.validateXmlDocument(tablesDoc, ctx.getLogger());
             }
             catch (XmlValidationException e)

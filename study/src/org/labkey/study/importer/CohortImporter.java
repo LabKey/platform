@@ -72,7 +72,7 @@ public class CohortImporter implements InternalStudyImporter
 
                 try
                 {
-                    cohortAssignmentXml = CohortsDocument.Factory.parse(cohortFile);
+                    cohortAssignmentXml = CohortsDocument.Factory.parse(cohortFile, XmlBeansUtil.getDefaultParseOptions());
                     XmlBeansUtil.validateXmlDocument(cohortAssignmentXml, ctx.getLogger());
                 }
                 catch (XmlException e)

@@ -166,7 +166,7 @@ public class CoreUpgradeCode implements UpgradeCode
         configProps.remove(propertyName);
     }
 
-    //invoked by core-9.13-9.14.sql
+    //invoked by core-9.10-9.20.sql
     public void migrateAcls(ModuleContext context)
     {
         //8441: skip ACL migration if this is a brand-new install 

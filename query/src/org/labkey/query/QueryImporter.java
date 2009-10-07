@@ -90,7 +90,7 @@ public class QueryImporter implements ExternalStudyImporter
 
                 try
                 {
-                    queryDoc = QueryDocument.Factory.parse(metaFile);
+                    queryDoc = QueryDocument.Factory.parse(metaFile, XmlBeansUtil.getDefaultParseOptions());
                     XmlBeansUtil.validateXmlDocument(queryDoc, ctx.getLogger());
                 }
                 catch (XmlException e)

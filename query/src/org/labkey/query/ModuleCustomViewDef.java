@@ -16,6 +16,8 @@
 
 package org.labkey.query;
 
+import org.apache.log4j.Logger;
+
 import java.io.File;
 
 /*
@@ -37,7 +39,7 @@ public class ModuleCustomViewDef extends CustomViewXmlReader
 
     public ModuleCustomViewDef(File sourceFile)
     {
-        super(sourceFile);
+        super(sourceFile, Logger.getLogger(ModuleCustomViewDef.class));
 
         _lastModified = sourceFile.lastModified();
 

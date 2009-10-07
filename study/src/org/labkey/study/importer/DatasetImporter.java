@@ -158,7 +158,7 @@ public class DatasetImporter
                     if (log)
                         ctx.getLogger().info("Loading datasets manifest from " + StudyImportException.getRelativePath(root, datasetsXmlFile));
 
-                    DatasetsDocument doc = DatasetsDocument.Factory.parse(datasetsXmlFile);
+                    DatasetsDocument doc = DatasetsDocument.Factory.parse(datasetsXmlFile, XmlBeansUtil.getDefaultParseOptions());
                     XmlBeansUtil.validateXmlDocument(doc, ctx.getLogger());
                     return doc.getDatasets();
                 }
