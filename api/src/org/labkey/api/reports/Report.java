@@ -101,7 +101,7 @@ public interface Report
     void serializeToFolder(VirtualFile directory) throws IOException;
 
     /**
-     * Optional method to perform report specific processing after file based deserialization
+     * Optional method to perform report-specific processing after file based deserialization
      * @param reportMetaFile - the original file containing the report meta-data
      */
     void afterDeserializeFromFile(File reportMetaFile) throws IOException;

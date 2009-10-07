@@ -47,7 +47,7 @@ public class XmlBeansUtil
         return options;
     }
 
-    // Standard options used by study import.
+    // Standard options used for parsing to enable validation.
     public static XmlOptions getDefaultParseOptions()
     {
         XmlOptions options = new XmlOptions();

@@ -411,7 +411,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     public static List<Pair<String, String>> createPropsFromXML(String xmlString) throws IOException
     {
-        try {
+        try
+        {
             XmlOptions options = XmlBeansUtil.getDefaultSaveOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
