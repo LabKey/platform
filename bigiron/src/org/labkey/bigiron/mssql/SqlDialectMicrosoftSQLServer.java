@@ -176,7 +176,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        if (rowCount == 0 || (rowCount > 0 && offset == 0))
+        if (rowCount == Table.ALL_ROWS || rowCount == Table.NO_ROWS || (rowCount > 0 && offset == 0))
         {
             SQLFragment sql = new SQLFragment();
             sql.append(select);
