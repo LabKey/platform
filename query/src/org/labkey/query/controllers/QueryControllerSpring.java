@@ -2943,6 +2943,8 @@ public class QueryControllerSpring extends SpringActionController
             Collection<String> qnames = form.isIncludeUserQueries() ? uschema.getTableAndQueryNames(true) : uschema.getVisibleTableNames();
             List<Map<String,Object>> qinfos = new ArrayList<Map<String,Object>>();
 
+            Map<String,QueryDefinition> userDefinedMap = QueryService.get().getQueryDefs(getContainer(), form.getSchemaName());
+
             for(String qname : qnames)
             {
                 TableInfo table = null;
@@ -2959,6 +2961,8 @@ public class QueryControllerSpring extends SpringActionController
                 qinfo.put("name", qname);
                 if (null != table && null != table.getDescription())
                     qinfo.put("description", table.getDescription());
+                if (userDefinedMap.containsKey(qname))
+                    qinfo.put("isUserDefined", true);
 
                 if(null != table && form.isIncludeColumns())
                 {

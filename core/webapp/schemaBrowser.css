@@ -37,7 +37,7 @@
     vertical-align: top;
 }
 
-.lk-qd-coltable td.lk-qd-colheader
+.lk-qd-coltable td.lk-qd-colheader, .lk-qd-coltable th
 {
     font-weight: bold;
     padding: 2px;

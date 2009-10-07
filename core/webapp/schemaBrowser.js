@@ -6,6 +6,76 @@
 
 Ext.namespace('LABKEY', 'LABKEY.ext');
 
+LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
+    constructor : function(config) {
+        LABKEY.ext.QueryCache.superclass.constructor.apply(this, arguments);
+    },
+
+    getSchemas : function(callback, scope) {
+        if (this.schemasMap)
+        {
+            if (callback)
+                callback.call(scope || this, this.schemasMap);
+            return;
+        }
+
+        LABKEY.Query.getSchemas({
+            apiVersion: 9.3,
+            successCallback: function(schemasMap) {
+                this.schemasMap = schemasMap;
+                this.getSchemas(callback, scope);
+            },
+            scope: this
+        });
+    },
+
+    getSchema : function(schemaName, callback, scope) {
+        if (!callback)
+            return this.schemasMap ? this.schemasMap[schemaName] : null;
+
+        this.getSchemas(function(schemasMap){
+            callback.call(scope || this, schemasMap[schemaName]);
+        }, this);
+    },
+
+    getQueries : function(schemaName, callback, scope) {
+        if (!this.schemasMap)
+        {
+            this.getSchemas(function(){
+                this.getQueries(schemaName, callback, scope);
+            }, this);
+        }
+
+        var schema = this.schemasMap[schemaName];
+        if (!schema)
+            throw "schema name '" + schemaName + "' does not exist!";
+
+        if (schema.queriesMap)
+        {
+            callback.call(scope || this, schema.queriesMap);
+            return;
+        }
+
+        LABKEY.Query.getQueries({
+            schemaName: schemaName,
+            includeColumns: false,
+            includeUserQueries: true,
+            successCallback: function(data){
+                var schema = this.schemasMap[schemaName];
+                schema.queriesMap = {};
+                var query;
+                for (var idx = 0; idx < data.queries.length; ++idx)
+                {
+                    query = data.queries[idx];
+                    schema.queriesMap[query.name] = query;
+                }
+                this.getQueries(schemaName, callback, scope);
+            },
+            scope: this
+        });
+    }
+});
+
 LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
     constructor : function(config) {
         this.addEvents("newdetails");
@@ -139,8 +209,9 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     },
 
     renderQueryDetails : function() {
+        var elemDef = this.formatQueryDetails(this.queryDetails);
         this.body.update("");
-        var container = this.body.createChild(this.formatQueryDetails(this.queryDetails));
+        var container = this.body.createChild(elemDef);
         this.registerEventHandlers(container);
     },
 
@@ -170,9 +241,10 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
     getLookupLinkClickFn : function(lookupLink) {
         return function() {
-            this.fireEvent("lookupclick", lookupLink.getAttributeNS('', this.domProps.schemaName),
-                    lookupLink.getAttributeNS('', this.domProps.queryName),
-                    lookupLink.getAttributeNS('', this.domProps.containerPath));
+            this.fireEvent("lookupclick",
+                    Ext.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.schemaName)),
+                    Ext.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.queryName)),
+                    Ext.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.containerPath)));
         };
     },
 
@@ -429,10 +501,10 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             span.cls = 'labkey-link';
 
         //add extra dom props for the event handler
-        span[this.domProps.schemaName] = col.lookup.schemaName;
-        span[this.domProps.queryName] = col.lookup.queryName;
+        span[this.domProps.schemaName] = schemaNameEncoded;
+        span[this.domProps.queryName] = queryNameEncoded;
         if (col.lookup.containerPath)
-            span[this.domProps.containerPath] = col.lookup.containerPath;
+            span[this.domProps.containerPath] = containerPathEncoded;
 
         return span;
     },
@@ -864,6 +936,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel, {
 LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
     initComponent : function() {
         this.bodyStyle = "padding: 5px";
+        this.addEvents("schemaclick");
         LABKEY.ext.SchemaBrowserHomePanel.superclass.initComponent.apply(this, arguments);
     },
 
@@ -875,11 +948,11 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
             cls: 'lk-qd-loading',
             html: 'loading...'
         });
+        this.queryCache.getSchemas(this.setSchemas, this);
     },
 
-    setSchemas : function(schemaNodes) {
-        this.schemas = schemaNodes;
-
+    setSchemas : function(schemasMap) {
+        //erase loading message
         this.body.update("");
 
         this.body.createChild({
@@ -888,14 +961,20 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
             html: 'Use the tree on the left to select a query, or select a schema below to expand that schema in the tree.'
         });
 
+        //create a sorted list of schema names
+        var sortedNames = [];
+        for (var schemaName in schemasMap)
+        {
+            sortedNames.push(schemaName);
+        }
+        sortedNames.sort(function(a,b){return a.localeCompare(b);});
+
         //IE won't let you create the table rows incrementally
         //so build the rows as a data structure first and then
         //do one createChild() for the whole table
         var rows = [];
-        for (var idx = 0; idx < schemaNodes.length; ++idx)
+        for (var idx = 0; idx < sortedNames.length; ++idx)
         {
-            var schemaNode = schemaNodes[idx];
-
             rows.push({
                 tag: 'tr',
                 children: [
@@ -905,13 +984,13 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
                             {
                                 tag: 'span',
                                 cls: 'labkey-link',
-                                html: schemaNode.attributes.schemaName
+                                html: Ext.util.Format.htmlEncode(sortedNames[idx])
                             }
                         ]
                     },
                     {
                         tag: 'td',
-                        html: schemaNode.attributes.description
+                        html: Ext.util.Format.htmlEncode(schemasMap[sortedNames[idx]].description)
                     }
                 ]
             });
@@ -951,8 +1030,7 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
         for (idx = 0; idx < nameLinks.length; ++idx)
         {
             Ext.get(nameLinks[idx]).on("click", function(evt,t){
-                if (this.schemaBrowser)
-                    this.schemaBrowser.selectSchema(t.innerHTML);
+                this.fireEvent("schemaclick", t.innerHTML);
             }, this);
         }
     }
@@ -960,11 +1038,140 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel, {
 
 Ext.reg('labkey-schema-browser-home-panel', LABKEY.ext.SchemaBrowserHomePanel);
 
+LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel, {
+    initComponent : function() {
+        this.bodyStyle = "padding: 5px";
+        this.addEvents("queryclick");
+        LABKEY.ext.SchemaSummaryPanel.superclass.initComponent.apply(this, arguments);
+    },
+
+    onRender : function() {
+        //call superclass to create basic elements
+        LABKEY.ext.SchemaSummaryPanel.superclass.onRender.apply(this, arguments);
+        this.body.createChild({
+            tag: 'div',
+            cls: 'lk-qd-loading',
+            html: 'loading...'
+        });
+        this.cache.getQueries(this.schemaName, this.onQueries, this);
+    },
+
+    onQueries : function(queriesMap) {
+        this.queries = queriesMap;
+        this.body.update("");
+        this.body.createChild({
+            tag: 'div',
+            cls: 'lk-qd-name',
+            html: this.schemaName + " Schema"
+        });
+        this.body.createChild({
+            tag: 'div',
+            cls: 'lk-qd-description',
+            html: this.cache.getSchema(this.schemaName).description
+        });
+
+        //create one list for user-defined and one for built-in
+        var userDefined = [];
+        var builtIn = [];
+        for (var queryName in queriesMap)
+        {
+            var query = queriesMap[queryName];
+            query.name = queryName;
+            if (query.isUserDefined)
+                userDefined.push(query);
+            else
+                builtIn.push(query);
+        }
+
+        if (userDefined.length > 0)
+            userDefined.sort(function(a,b){return a.name.localeCompare(b.name);});
+        if (builtIn.length > 0)
+            builtIn.sort(function(a,b){return a.name.localeCompare(b.name);});
+
+        var rows = [];
+        if (userDefined.length > 0)
+            rows.push(this.formatQueryList(userDefined, "User-Defined Queries"));
+        if (builtIn.length > 0)
+            rows.push(this.formatQueryList(builtIn, "Built-In Queries"));
+
+        var table = this.body.createChild({
+            tag: 'table',
+            cls: 'lk-qd-coltable',
+            children: [{tag: 'tbody', children: rows}]
+        });
+
+        var nameLinks = table.query("tbody tr td span");
+        for (var idx = 0; idx < nameLinks.length; ++idx)
+        {
+            Ext.get(nameLinks[idx]).on("click", function(evt,t){
+                this.fireEvent("queryclick", this.schemaName, Ext.util.Format.htmlDecode(t.innerHTML));
+            }, this);
+        }
+
+    },
+
+    formatQueryList : function(queries, title) {
+        var rows = [{
+                tag: 'tr',
+                children: [{
+                    tag: 'td',
+                    colspan: 2,
+                    cls: 'lk-qd-collist-title',
+                    html: title
+                }]
+            },{
+                tag: 'tr',
+                children: [{
+                    tag: 'td',
+                    cls: 'lk-qd-colheader',
+                    html: 'Name'
+                },{
+                    tag: 'td',
+                    cls: 'lk-qd-colheader',
+                    html: 'Description'
+                }]
+            }];
+
+        var query;
+        for (var idx = 0; idx < queries.length; ++idx)
+        {
+            query = queries[idx];
+            rows.push({
+                tag: 'tr',
+                children: [
+                    {
+                        tag: 'td',
+                        children: [
+                            {
+                                tag: 'span',
+                                cls: 'labkey-link',
+                                html: Ext.util.Format.htmlEncode(query.name)
+                            }
+                        ]
+                    },
+                    {
+                        tag: 'td',
+                        html: Ext.util.Format.htmlEncode(query.description)
+                    }
+                ]
+            });
+        }
+
+        return rows;
+    }
+});
+
+Ext.reg('labkey-schema-summary-panel', LABKEY.ext.SchemaSummaryPanel);
+
+
 LABKEY.requiresCss("_images/icons.css");
 
 LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     qdpPrefix: 'qdp-',
+    sspPrefix: 'ssp-',
+
+    _qcache: new LABKEY.ext.QueryCache(),
 
     initComponent : function(){
         var tbar = [
@@ -1022,7 +1229,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                         },
                         schemasloaded: {
                             fn: function(schemaNodes){
-                                this.getComponent('lk-sb-details').getComponent('lk-sb-panel-home').setSchemas(schemaNodes);
                                 this.fireEvent("schemasloaded", this);
                             },
                             scope: this
@@ -1038,8 +1244,17 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                         {
                             xtype: 'labkey-schema-browser-home-panel',
                             title: 'Home',
-                            schemaBrowser: this,
-                            id: 'lk-sb-panel-home'
+                            id: 'lk-sb-panel-home',
+                            queryCache: this._qcache,
+                            listeners: {
+                                schemaclick: {
+                                    fn: function(schemaName){
+                                        this.selectSchema(schemaName);
+                                        this.showPanel(this.sspPrefix + schemaName);
+                                    },
+                                    scope: this
+                                }
+                            }
                         }
                     ],
                     enableTabScroll:true,
@@ -1113,6 +1328,25 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     closable: true
                 });
             }
+            else if (this.sspPrefix == id.substring(0, this.sspPrefix.length))
+            {
+                var schemaName = id.substring(this.sspPrefix.length);
+                panel = new LABKEY.ext.SchemaSummaryPanel({
+                    cache: this._qcache,
+                    schemaName: schemaName,
+                    id: id,
+                    title: Ext.util.Format.htmlEncode(schemaName),
+                    autoScroll: true,
+                    listeners: {
+                        queryclick: {
+                            fn: function(schemaName, queryName){this.showQueryDetails(schemaName, queryName);},
+                            scope: this
+                        }
+                    },
+                    closable: true
+                });
+            }
+
 
             if (panel)
             {
@@ -1171,6 +1405,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     onTabChange : function(tabpanel, tab) {
         if (tab.schemaName && tab.queryName)
             this.selectQuery(tab.schemaName, tab.queryName);
+        else if (tab.schemaName)
+            this.selectSchema(tab.schemaName);
 
         //don't add any history the first time this is called.
         //the creation of the home tab causes this event to fire
@@ -1187,10 +1423,10 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     },
 
     onTreeClick : function(node, evt) {
-        if (!node.leaf)
-            return;
-
-        this.showQueryDetails(node.attributes.schemaName, node.attributes.queryName);
+        if (node.attributes.schemaName && !node.attributes.queryName)
+            this.showPanel(this.sspPrefix + node.attributes.schemaName);
+        else if (node.leaf)
+            this.showQueryDetails(node.attributes.schemaName, node.attributes.queryName);
     },
 
     showQueryDetails : function(schemaName, queryName) {
