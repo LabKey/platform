@@ -317,7 +317,7 @@ public class QueryServiceImpl extends QueryService
             views.put(cstmView.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, cstmView));
     }
 
-    public int importCustomViews(User user, Container container, File viewDir, Logger logger) throws XmlValidationException
+    public int importCustomViews(User user, Container container, File viewDir) throws XmlValidationException
     {
         File[] viewFiles = viewDir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name)
@@ -331,7 +331,7 @@ public class QueryServiceImpl extends QueryService
 
         for (File viewFile : viewFiles)
         {
-            CustomViewXmlReader reader = new CustomViewXmlReader(viewFile, logger);
+            CustomViewXmlReader reader = new CustomViewXmlReader(viewFile);
 
             QueryDefinition qd = QueryService.get().createQueryDef(container, reader.getSchema(), reader.getQuery());
             String viewName = reader.getName();

@@ -23,7 +23,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlError;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -35,14 +34,14 @@ import java.util.ArrayList;
  */
 public class XmlVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String xml, Logger logger) throws StudyImportException
+    public List<VisitMapRecord> getRecords(String xml) throws StudyImportException
     {
         VisitMapDocument doc;
 
         try
         {
             doc = VisitMapDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(doc, "visit map", logger);
+            XmlBeansUtil.validateXmlDocument(doc);
         }
         catch (XmlException x)
         {
@@ -52,7 +51,7 @@ public class XmlVisitMapReader implements VisitMapReader
         }
         catch (XmlValidationException e)
         {
-            throw new StudyImportException("visit map XML file is not valid: it does not conform to visitMap.xsd.");
+            throw new StudyImportException("visit map XML file is not valid: it does not conform to visitMap.xsd", e);
         }
 
         VisitMapDocument.VisitMap.Visit[] visitsXml = doc.getVisitMap().getVisitArray();

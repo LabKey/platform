@@ -20,7 +20,6 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.SecurityType;

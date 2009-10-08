@@ -15,7 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.util.FileUtil;
@@ -33,7 +32,6 @@ import java.io.*;
  */
 public class FileSystemFile implements VirtualFile
 {
-    private static final Logger LOG = Logger.getLogger(FileSystemFile.class);
     private final File _root;
 
     public FileSystemFile(File root)
@@ -66,7 +64,7 @@ public class FileSystemFile implements VirtualFile
     {
         try
         {
-            XmlBeansUtil.validateXmlDocument(doc, filename, LOG);
+            XmlBeansUtil.validateXmlDocument(doc);
         }
         catch (XmlValidationException e)
         {

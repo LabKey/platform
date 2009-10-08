@@ -106,7 +106,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         }
         catch (Throwable t)
         {
-            throw new PipelineJobException(t);
+            throw new PipelineJobException(t) {};
         }
 
         return new RecordedActionSet();

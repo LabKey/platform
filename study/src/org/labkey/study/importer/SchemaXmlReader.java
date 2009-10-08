@@ -47,18 +47,19 @@ public class SchemaXmlReader implements SchemaReader
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
 
-    public SchemaXmlReader(StudyImpl study, ImportContext ctx, File root, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImportException
+    public SchemaXmlReader(StudyImpl study, File root, File metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, StudyImportException
     {
         TablesDocument tablesDoc;
 
         try
         {
             tablesDoc = TablesDocument.Factory.parse(metaDataFile, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(tablesDoc, metaDataFile.getName(), ctx.getLogger());
+            XmlBeansUtil.validateXmlDocument(tablesDoc);
         }
-        catch (XmlValidationException e)
+        catch (XmlValidationException xve)
         {
-            throw new InvalidFileException(root, metaDataFile, "File does not conform to tableInfo.xsd");
+            // Note: different constructor than the one below
+            throw new InvalidFileException(root, metaDataFile, xve);
         }
         catch (Exception e)
         {

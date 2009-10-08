@@ -73,7 +73,7 @@ public class CohortImporter implements InternalStudyImporter
                 try
                 {
                     cohortAssignmentXml = CohortsDocument.Factory.parse(cohortFile, XmlBeansUtil.getDefaultParseOptions());
-                    XmlBeansUtil.validateXmlDocument(cohortAssignmentXml, cohortFile.getName(), ctx.getLogger());
+                    XmlBeansUtil.validateXmlDocument(cohortAssignmentXml);
                 }
                 catch (XmlException e)
                 {
@@ -81,7 +81,7 @@ public class CohortImporter implements InternalStudyImporter
                 }
                 catch (XmlValidationException e)
                 {
-                    throw new InvalidFileException(root, cohortFile, "File does not conform to cohorts.xsd");
+                    throw new InvalidFileException(root, cohortFile, e);
                 }
 
                 Map<String, Integer> p2c = new HashMap<String, Integer>();

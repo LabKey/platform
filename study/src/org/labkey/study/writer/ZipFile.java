@@ -15,7 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.util.XmlBeansUtil;
@@ -35,8 +34,6 @@ import java.util.zip.ZipOutputStream;
  */
 public class ZipFile implements Archive
 {
-    private static final Logger LOG = Logger.getLogger(ZipFile.class);
-
     private final ZipOutputStream _out;
     private final String _path;
     private final PrintWriter _pw;
@@ -108,7 +105,7 @@ public class ZipFile implements Archive
     {
         try
         {
-            XmlBeansUtil.validateXmlDocument(doc, filename, LOG);
+            XmlBeansUtil.validateXmlDocument(doc);
         }
         catch (XmlValidationException e)
         {

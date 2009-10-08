@@ -40,7 +40,7 @@ public class ModuleCustomViewDef extends CustomViewXmlReader
 
     public ModuleCustomViewDef(File sourceFile) throws XmlValidationException
     {
-        super(sourceFile, Logger.getLogger(ModuleCustomViewDef.class));
+        super(sourceFile);
 
         _lastModified = sourceFile.lastModified();
 

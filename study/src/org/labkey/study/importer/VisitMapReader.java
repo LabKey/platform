@@ -27,5 +27,5 @@ import java.util.List;
  */
 public interface VisitMapReader
 {
-    List<VisitMapRecord> getRecords(String content, Logger logger) throws StudyImportException;
+    List<VisitMapRecord> getRecords(String content) throws StudyImportException;
 }

@@ -49,7 +49,7 @@ public class CustomViewImporter implements ExternalStudyImporter
         {
             File viewDir = ctx.getStudyDir(root, viewsXml.getDir());
 
-            int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir, ctx.getLogger());
+            int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
 
             ctx.getLogger().info(count + " custom view" + (1 == count ? "" : "s") + " imported");
         }

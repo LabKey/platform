@@ -18,7 +18,6 @@ package org.labkey.study.importer;
 import org.labkey.api.reader.BeanTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.Filter;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,7 +30,7 @@ import java.util.Map;
  */
 public class DataFaxVisitMapReader implements VisitMapReader
 {
-    public List<VisitMapRecord> getRecords(String content, Logger logger)
+    public List<VisitMapRecord> getRecords(String content)
     {
         String tsv = content.replace('|','\t');
 

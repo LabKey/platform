@@ -85,7 +85,7 @@ public class DatasetImporter
                 {
                     File schemaXmlFile = ctx.getStudyFile(root, datasetDir, metaDataFilename, datasetsXml.getFile());
                     ctx.getLogger().info("Loading dataset schema from " + StudyImportException.getRelativePath(root, schemaXmlFile));
-                    reader = new SchemaXmlReader(study, ctx, root, schemaXmlFile, extraProps);
+                    reader = new SchemaXmlReader(study, root, schemaXmlFile, extraProps);
                 }
             }
 
@@ -159,7 +159,7 @@ public class DatasetImporter
                         ctx.getLogger().info("Loading datasets manifest from " + StudyImportException.getRelativePath(root, datasetsXmlFile));
 
                     DatasetsDocument doc = DatasetsDocument.Factory.parse(datasetsXmlFile, XmlBeansUtil.getDefaultParseOptions());
-                    XmlBeansUtil.validateXmlDocument(doc, datasetsXmlFile.getName(), ctx.getLogger());
+                    XmlBeansUtil.validateXmlDocument(doc);
                     return doc.getDatasets();
                 }
                 catch (XmlException e)
@@ -168,7 +168,7 @@ public class DatasetImporter
                 }
                 catch (XmlValidationException e)
                 {
-                    throw new InvalidFileException(root, datasetsXmlFile, "File does not conform to datasets.xsd");
+                    throw new InvalidFileException(root, datasetsXmlFile, e);
                 }
             }
         }

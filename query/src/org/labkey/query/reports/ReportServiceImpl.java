@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -492,9 +493,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         _uncacheDependent(view);
     }
 
-    public Report _deserialize(File file, Logger logger) throws IOException
+    public Report _deserialize(File file) throws IOException, XmlValidationException
     {
-        ReportDescriptor descriptor = ReportDescriptor.createFromXML(file, logger);
+        ReportDescriptor descriptor = ReportDescriptor.createFromXML(file);
 
         if (descriptor != null)
         {
@@ -513,11 +514,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
-    public Report deserialize(File reportFile, Logger logger) throws IOException
+    public Report deserialize(File reportFile) throws IOException, XmlValidationException
     {
         if (reportFile.exists())
         {
-            Report report = _deserialize(reportFile, logger);
+            Report report = _deserialize(reportFile);
 
             // reset any report identifier, we want to treat an imported report as a new
             // report instance
@@ -529,9 +530,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         throw new IllegalArgumentException("Specified file does not exist: " + reportFile.getAbsolutePath());
     }
 
-    public Report importReport(User user, Container container, File reportFile, Logger logger) throws IOException, SQLException
+    public Report importReport(User user, Container container, File reportFile) throws IOException, SQLException, XmlValidationException
     {
-        Report report = deserialize(reportFile, logger);
+        Report report = deserialize(reportFile);
         ReportDescriptor descriptor = report.getDescriptor();
 
         String key = descriptor.getReportKey();

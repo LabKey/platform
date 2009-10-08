@@ -69,11 +69,12 @@ public class ListImporter implements ExternalStudyImporter
             try
             {
                 tablesDoc = TablesDocument.Factory.parse(schemaFile, XmlBeansUtil.getDefaultParseOptions());
-                XmlBeansUtil.validateXmlDocument(tablesDoc, schemaFile.getName(), ctx.getLogger());
+                XmlBeansUtil.validateXmlDocument(tablesDoc);
             }
-            catch (XmlValidationException e)
+            catch (XmlValidationException xve)
             {
-                throw new InvalidFileException(root, schemaFile, "File does not confirm to tableInfo.xsd");                
+                // Note: different constructor than the one below
+                throw new InvalidFileException(root, schemaFile, xve);
             }
             catch (Exception e)
             {

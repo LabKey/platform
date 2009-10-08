@@ -16,11 +16,9 @@
 package org.labkey.query.reports;
 
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.study.StudyImportException;
-import org.labkey.api.study.ExternalStudyImporterFactory;
-import org.labkey.api.study.ExternalStudyImporter;
-import org.labkey.api.study.StudyContext;
+import org.labkey.api.study.*;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -57,7 +55,16 @@ public class ReportImporter implements ExternalStudyImporter
             });
 
             for (File reportFile : reportsFiles)
-                ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportFile, ctx.getLogger());
+            {
+                try
+                {
+                    ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportFile);
+                }
+                catch (XmlValidationException e)
+                {
+                    throw new InvalidFileException(root, reportFile, e);
+                }
+            }
 
             ctx.getLogger().info(reportsFiles.length + " report" + (1 == reportsFiles.length ? "" : "s") + " imported");
         }

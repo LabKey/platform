@@ -109,7 +109,7 @@ public class ImportContext extends AbstractContext
         try
         {
             studyDoc = StudyDocument.Factory.parse(studyXml, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(studyDoc, studyXml.getName(), getLogger());
+            XmlBeansUtil.validateXmlDocument(studyDoc);
         }
         catch (XmlException e)
         {
@@ -117,7 +117,7 @@ public class ImportContext extends AbstractContext
         }
         catch (XmlValidationException e)
         {
-            throw new InvalidFileException(studyXml.getParentFile(), studyXml, "File does not conform to study.xsd");
+            throw new InvalidFileException(studyXml.getParentFile(), studyXml, e);
         }
 
         return studyDoc;

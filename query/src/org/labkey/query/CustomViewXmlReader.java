@@ -17,7 +17,6 @@
 package org.labkey.query;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
@@ -45,6 +44,7 @@ import java.util.Map;
  */
 public class CustomViewXmlReader
 {
+    private static final Logger LOG = Logger.getLogger(CustomViewXmlReader.class);
     public static final String XML_FILE_EXTENSION = ".qview.xml";
 
     private String _schema;
@@ -58,12 +58,10 @@ public class CustomViewXmlReader
     protected final File _sourceFile;
     protected String _name;
 
-    private final Logger _logger;
 
-    public CustomViewXmlReader(File sourceFile, @NotNull Logger logger) throws XmlValidationException
+    public CustomViewXmlReader(File sourceFile) throws XmlValidationException
     {
         _sourceFile = sourceFile;
-        _logger = logger;
 
         loadDefinition();
     }
@@ -166,7 +164,7 @@ public class CustomViewXmlReader
         try
         {
             CustomViewDocument doc = CustomViewDocument.Factory.parse(_sourceFile, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(doc, _sourceFile.getName(), _logger);
+            XmlBeansUtil.validateXmlDocument(doc);
             CustomViewType viewElement = doc.getCustomView();
 
             _name = viewElement.getName();
@@ -189,9 +187,9 @@ public class CustomViewXmlReader
         {
             throw e;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
-            _logger.warn("Unable to load custom view definition from file " + _sourceFile.getPath(), e);
+            LOG.warn("Unable to load custom view definition from file " + _sourceFile.getPath(), e);
         }
     }
 

@@ -22,7 +22,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyImportException;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
@@ -90,7 +89,7 @@ public class VisitMapImporter
 
         try
         {
-            records = format.getReader().getRecords(content, logger);
+            records = format.getReader().getRecords(content);
         }
         catch (NumberFormatException x)
         {
