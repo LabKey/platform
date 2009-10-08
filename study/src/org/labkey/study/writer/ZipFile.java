@@ -15,11 +15,13 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Archive;
-import org.labkey.api.util.XmlBeansUtil;
-import org.apache.xmlbeans.XmlTokenSource;
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.Archive;
+import org.labkey.api.writer.VirtualFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -33,6 +35,8 @@ import java.util.zip.ZipOutputStream;
  */
 public class ZipFile implements Archive
 {
+    private static final Logger LOG = Logger.getLogger(ZipFile.class);
+
     private final ZipOutputStream _out;
     private final String _path;
     private final PrintWriter _pw;
@@ -100,13 +104,22 @@ public class ZipFile implements Archive
         return new NonCloseableZipOutputStream(_out);
     }
 
-    public void saveXmlBean(String filename, XmlTokenSource doc) throws IOException
+    public void saveXmlBean(String filename, XmlObject doc) throws IOException
     {
+        try
+        {
+            XmlBeansUtil.validateXmlDocument(doc, filename, LOG);
+        }
+        catch (XmlValidationException e)
+        {
+            throw new RuntimeException(e);
+        }
+
         saveXmlBean(filename, doc, XmlBeansUtil.getDefaultSaveOptions());
     }
 
     // Expose this if/when some caller needs to customize the options
-    private void saveXmlBean(String filename, XmlTokenSource doc, XmlOptions options) throws IOException
+    private void saveXmlBean(String filename, XmlObject doc, XmlOptions options) throws IOException
     {
         ZipEntry entry = new ZipEntry(_path + makeLegalName(filename));
         _out.putNextEntry(entry);

@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -153,8 +154,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                         ModuleCustomViewDef viewDef = (ModuleCustomViewDef)(QueryServiceImpl.getModuleResourcesCache().get(viewFile.getAbsolutePath()));
                         if(null == viewDef || viewDef.isStale())
                         {
-                            viewDef = new ModuleCustomViewDef(viewFile);
-                            QueryServiceImpl.getModuleResourcesCache().put(viewFile.getAbsolutePath(), viewDef);
+                            try
+                            {
+                                viewDef = new ModuleCustomViewDef(viewFile);
+                                QueryServiceImpl.getModuleResourcesCache().put(viewFile.getAbsolutePath(), viewDef);
+                            }
+                            catch (XmlValidationException e)
+                            {
+                                log.error("Invalid view definition file " + viewFile.getAbsolutePath(), e);
+                            }
                         }
                         ret.put(viewDef.getName(), new ModuleCustomView(this, viewDef));
                     }

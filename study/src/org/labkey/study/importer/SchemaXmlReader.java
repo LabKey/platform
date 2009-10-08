@@ -54,7 +54,7 @@ public class SchemaXmlReader implements SchemaReader
         try
         {
             tablesDoc = TablesDocument.Factory.parse(metaDataFile, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(tablesDoc, ctx.getLogger());
+            XmlBeansUtil.validateXmlDocument(tablesDoc, metaDataFile.getName(), ctx.getLogger());
         }
         catch (XmlValidationException e)
         {

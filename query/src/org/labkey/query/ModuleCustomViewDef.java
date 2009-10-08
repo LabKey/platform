@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.util.XmlValidationException;
 
 import java.io.File;
 
@@ -37,7 +38,7 @@ public class ModuleCustomViewDef extends CustomViewXmlReader
 {
     private long _lastModified;
 
-    public ModuleCustomViewDef(File sourceFile)
+    public ModuleCustomViewDef(File sourceFile) throws XmlValidationException
     {
         super(sourceFile, Logger.getLogger(ModuleCustomViewDef.class));
 

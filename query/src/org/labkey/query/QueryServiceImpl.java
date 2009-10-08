@@ -33,6 +33,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
@@ -316,7 +317,7 @@ public class QueryServiceImpl extends QueryService
             views.put(cstmView.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, cstmView));
     }
 
-    public int importCustomViews(User user, Container container, File viewDir, Logger logger)
+    public int importCustomViews(User user, Container container, File viewDir, Logger logger) throws XmlValidationException
     {
         File[] viewFiles = viewDir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name)

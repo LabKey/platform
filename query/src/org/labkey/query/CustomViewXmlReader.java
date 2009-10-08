@@ -24,6 +24,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.queryCustomView.*;
 
 import java.io.File;
@@ -59,7 +60,7 @@ public class CustomViewXmlReader
 
     private final Logger _logger;
 
-    public CustomViewXmlReader(File sourceFile, @NotNull Logger logger)
+    public CustomViewXmlReader(File sourceFile, @NotNull Logger logger) throws XmlValidationException
     {
         _sourceFile = sourceFile;
         _logger = logger;
@@ -160,12 +161,12 @@ public class CustomViewXmlReader
         return _customIconUrl;
     }
 
-    protected void loadDefinition()
+    protected void loadDefinition() throws XmlValidationException
     {
         try
         {
             CustomViewDocument doc = CustomViewDocument.Factory.parse(_sourceFile, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(doc, _logger);
+            XmlBeansUtil.validateXmlDocument(doc, _sourceFile.getName(), _logger);
             CustomViewType viewElement = doc.getCustomView();
 
             _name = viewElement.getName();
@@ -183,7 +184,11 @@ public class CustomViewXmlReader
             //load the sorts
             _sorts = loadSorts(viewElement.getSorts());
 
-        }  // TODO: Catch XMLValidationException and handle specially?
+        }
+        catch (XmlValidationException e)
+        {
+            throw e;
+        }
         catch(Exception e)
         {
             _logger.warn("Unable to load custom view definition from file " + _sourceFile.getPath(), e);

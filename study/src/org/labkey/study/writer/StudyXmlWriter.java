@@ -46,6 +46,8 @@ class StudyXmlWriter implements InternalStudyWriter
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
 
+        studyXml.newCursor().insertComment("I'm a stupid comment");  // TODO: Dispose of this cursor; add props
+
         // Study attributes
         studyXml.setLabel(study.getLabel());
         studyXml.setDateBased(study.isDateBased());

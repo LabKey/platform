@@ -42,7 +42,7 @@ public class XmlVisitMapReader implements VisitMapReader
         try
         {
             doc = VisitMapDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(doc, logger);
+            XmlBeansUtil.validateXmlDocument(doc, "visit map", logger);
         }
         catch (XmlException x)
         {

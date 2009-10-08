@@ -21,6 +21,7 @@ import org.labkey.api.study.ExternalStudyImporter;
 import org.labkey.api.study.StudyContext;
 import org.labkey.api.study.ExternalStudyImporterFactory;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -40,7 +41,7 @@ public class CustomViewImporter implements ExternalStudyImporter
         return "custom views";
     }
 
-    public void process(StudyContext ctx, File root) throws IOException, SQLException, StudyImportException
+    public void process(StudyContext ctx, File root) throws IOException, SQLException, StudyImportException, XmlValidationException
     {
         StudyDocument.Study.Views viewsXml = ctx.getStudyXml().getViews();
 

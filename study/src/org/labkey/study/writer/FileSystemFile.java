@@ -15,12 +15,14 @@
  */
 package org.labkey.study.writer;
 
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.Archive;
-import org.apache.xmlbeans.XmlTokenSource;
-import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.*;
 
@@ -31,6 +33,7 @@ import java.io.*;
  */
 public class FileSystemFile implements VirtualFile
 {
+    private static final Logger LOG = Logger.getLogger(FileSystemFile.class);
     private final File _root;
 
     public FileSystemFile(File root)
@@ -59,13 +62,22 @@ public class FileSystemFile implements VirtualFile
         return new FileOutputStream(file);
     }
 
-    public void saveXmlBean(String filename, XmlTokenSource doc) throws IOException
+    public void saveXmlBean(String filename, XmlObject doc) throws IOException
     {
+        try
+        {
+            XmlBeansUtil.validateXmlDocument(doc, filename, LOG);
+        }
+        catch (XmlValidationException e)
+        {
+            throw new RuntimeException(e);
+        }
+
         saveXmlBean(filename, doc, XmlBeansUtil.getDefaultSaveOptions());
     }
 
     // Expose this if/when some caller needs to customize the options
-    private void saveXmlBean(String filename, XmlTokenSource doc, XmlOptions options) throws IOException
+    private void saveXmlBean(String filename, XmlObject doc, XmlOptions options) throws IOException
     {
         File file = new File(_root, makeLegalName(filename));
         doc.save(file, options);
