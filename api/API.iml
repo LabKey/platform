@@ -73,7 +73,7 @@
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="/WEB-INF/lib" />
-            <url>jar://$CATALINA_HOME$/bin/bootstrap.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/bin/bootstrap.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
@@ -108,7 +108,7 @@
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="/WEB-INF/lib" />
-            <url>jar://$CATALINA_HOME$/common/lib/commons-el.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/commons-el.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
@@ -178,17 +178,17 @@
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="/WEB-INF/lib" />
-            <url>jar://$CATALINA_HOME$/common/lib/jasper-compiler-jdt.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-compiler-jdt.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="/WEB-INF/lib" />
-            <url>jar://$CATALINA_HOME$/common/lib/jasper-compiler.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-compiler.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="/WEB-INF/lib" />
-            <url>jar://$CATALINA_HOME$/common/lib/jasper-runtime.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-runtime.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
@@ -208,7 +208,7 @@
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="&lt;N/A&gt;" />
-            <url>jar://$CATALINA_HOME$/common/lib/jsp-api.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jsp-api.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
@@ -243,12 +243,12 @@
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="/WEB-INF/lib" />
-            <url>jar://$CATALINA_HOME$/common/lib/naming-factory.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/naming-factory.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="/WEB-INF/lib" />
-            <url>jar://$CATALINA_HOME$/common/lib/naming-resources.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/naming-resources.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
@@ -268,7 +268,7 @@
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
             <attribute name="URI" value="&lt;N/A&gt;" />
-            <url>jar://$CATALINA_HOME$/common/lib/servlet-api.jar!/</url>
+            <url>jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/servlet-api.jar!/</url>
           </containerElement>
           <containerElement type="library" level="module">
             <attribute name="method" value="0" />
@@ -593,7 +593,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-runtime.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-runtime.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -602,7 +602,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-compiler.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -611,7 +611,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/commons-el.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/commons-el.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -620,7 +620,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler-jdt.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-compiler-jdt.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -629,7 +629,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/naming-resources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/naming-resources.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -638,7 +638,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/servlet-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/servlet-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -647,7 +647,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/naming-factory.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/naming-factory.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -656,7 +656,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jsp-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jsp-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -665,7 +665,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/bin/bootstrap.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/bin/bootstrap.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
