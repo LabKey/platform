@@ -18,7 +18,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-runtime.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-runtime.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -27,7 +27,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/common/lib/jasper-compiler.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/common/lib/jasper-compiler.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -36,7 +36,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$CATALINA_HOME$/server/lib/catalina.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../&quot;Program Files&quot;/&quot;Apache Software Foundation&quot;/&quot;Tomcat 5.5&quot;/server/lib/catalina.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

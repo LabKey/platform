@@ -7,7 +7,7 @@
         <setting name="compilerMaxHeapSize" value="128" />
         <setting name="compilerOutputPath" value="" />
         <setting name="gwtScriptOutputStyle" value="DETAILED" />
-        <setting name="gwtSdkUrl" value="file://$GWT_HOME$" />
+        <setting name="gwtSdkUrl" value="file://$MODULE_DIR$/../../../../../gwt-windows-1.5.3" />
         <setting name="runGwtCompilerOnMake" value="false" />
         <packaging>
           <module name="org.labkey.experiment.property.Designer" path="/org.labkey.experiment.property.Designer" />
