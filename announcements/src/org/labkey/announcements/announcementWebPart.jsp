@@ -29,7 +29,7 @@
     Container c = me.getViewContext().getContainer();
 %>
 <!--ANNOUNCEMENTS-->
-<table width=100%>
+<table style="table-layout:fixed;width:100%">
     <tr>
         <td width="40%" align="left"><%
             if (null != bean.insertURL)
@@ -64,7 +64,7 @@
     for (Announcement a : bean.announcements)
     { %>
     <tr>
-        <td class="labkey-announcement-title" width="40%" align="left"><span><a href="<%=h(a.getThreadUrl(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%
+        <td class="labkey-announcement-title labkey-force-word-break" width="40%" align="left"><span><a href="<%=h(a.getThreadUrl(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%
         if (a.getResponseCount() > 0)
             out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
         %></td>
@@ -72,7 +72,7 @@
         <td class="labkey-announcement-title" width="40%" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
-    <tr><td colspan=3><%=a.translateBody(c)%></td></tr>
+    <tr><td colspan=3 class="labkey-force-word-break"><%=a.translateBody(c)%></td></tr>
 <%
     if (a.getAttachments().size() > 0)
         { %>

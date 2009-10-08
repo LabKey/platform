@@ -84,9 +84,9 @@ if (!bean.print && null != discussionSrc)
 }
 %>
 
-<table width=100%>
+<table style="table-layout:fixed;width:100%">
 <tr>
-    <td class="labkey-announcement-title" width="33%" align=left><span><%=h(announcement.getTitle())%></span></td>
+    <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcement.getTitle())%></span></td>
     <td class="labkey-announcement-title" width="33%" align=center><%=h(announcement.getCreatedByName(bean.includeGroups, context))%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
@@ -143,7 +143,7 @@ if (null != announcement.getBody())
 
 %>
 <tr>
-    <td colspan="3"><%=announcement.translateBody(c)%></td>
+    <td colspan="3" class="labkey-force-word-break"><%=announcement.translateBody(c)%></td>
 </tr><%
 
 if (0 < announcement.getAttachments().size())

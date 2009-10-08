@@ -2154,3 +2154,8 @@ div.yuimenu li.checked em.checkedindicator.disabled {
     font-family: monospace;
     padding: 5px;
 }
+
+.labkey-force-word-break
+{
+    word-wrap: break-word;
+}
