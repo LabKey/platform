@@ -59,7 +59,7 @@
     %>
     </table>
     <table class="labkey-button-bar"><tr>
-        <td><%=PageFlowUtil.generateSubmitButton("Submit", null, "name=\"" + bean.getAction() + "\"")%></td>
+        <td><%=PageFlowUtil.generateSubmitButton("Submit", null, "name=\"" + bean.getAction() + "\"", true, true)%></td>
         <td><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>
 

@@ -54,7 +54,7 @@ public class ScheduledTask extends TimerTask implements ShutdownListener
     {
         if (_timer == null)
         {
-            _timer = new Timer("ScheduledTaskTimer", true);
+            _timer = new Timer("BT ScheduledTaskTimer", true);
             ContextListener.addShutdownListener(this);
 
             try {
