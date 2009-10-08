@@ -1303,7 +1303,9 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     title: "Validate Queries",
                     listeners: {
                         queryclick: {
-                            fn: this.selectQuery,
+                            fn: function(schemaName, queryName){
+                                this.selectQuery(schemaName, queryName); this.showQueryDetails(schemaName, queryName);
+                            },
                             scope: this
                         }
                     }
