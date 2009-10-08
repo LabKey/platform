@@ -34,14 +34,15 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportPropertyList;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.*;
 
 /**
@@ -354,8 +355,14 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
         try
         {
+            XmlBeansUtil.validateXmlDocument(doc, getReportName(), _log);
             doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
             return output.toString();
+        }
+        catch (XmlValidationException e)
+        {
+            // This is likely a code problem -- propagate it up so we log to mothership
+            throw new RuntimeException(e);
         }
         finally
         {
@@ -369,14 +376,15 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return create(props);
     }
 
-    public static ReportDescriptor createFromXML(Reader reader) throws IOException
+    public static ReportDescriptor createFromXML(File file, Logger logger) throws IOException
     {
         try
         {
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
-            ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(reader, options);
+            ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(file, options);
+            XmlBeansUtil.validateXmlDocument(doc, file.getName(), logger);
             ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
 
             ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(d.getDescriptorType());
@@ -402,10 +410,9 @@ public class ReportDescriptor extends Entity implements SecurableResource
         {
             throw new IOException(e.getMessage());
         }
-        finally
+        catch (XmlValidationException e)
         {
-            if (reader != null)
-                reader.close();
+            throw new IOException(e.getMessage());
         }
     }
 

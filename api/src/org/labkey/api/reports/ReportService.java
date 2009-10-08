@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.query.QuerySettings;
@@ -29,7 +30,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -106,16 +106,17 @@ public class ReportService
          * Create a report instance from a previously serialized report. The report will exist in
          * memory only, the ReportService.I.save method can be used to save a report to a specific
          * container using a specific report key.
+         * @param file
+         * @param logger
          */
-        public Report deserialize(Reader reader) throws IOException;
-        public Report deserializeFromFile(File reportFile) throws IOException;
+        public Report deserialize(File file, Logger logger) throws IOException;
 
         /**
          * Imports a serialized report into the database using the specified user and container
          * parameters. Imported reports are always treated as new reports even if they were exported from
          * the same container.
          */
-        public Report importReport(User user, Container container, File reportFile) throws IOException, SQLException;
+        public Report importReport(User user, Container container, File reportFile, Logger logger) throws IOException, SQLException;
     }
 
     public interface ViewFactory

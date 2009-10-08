@@ -22,6 +22,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.util.XmlValidationException;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -59,7 +60,7 @@ abstract public class QueryService
     abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
     abstract public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
-    abstract public int importCustomViews(User user, Container container, File viewDir, Logger logger);
+    abstract public int importCustomViews(User user, Container container, File viewDir, Logger logger) throws XmlValidationException;
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table

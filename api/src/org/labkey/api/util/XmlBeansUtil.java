@@ -56,7 +56,7 @@ public class XmlBeansUtil
         return options;
     }
 
-    public static void validateXmlDocument(XmlObject doc, Logger logger) throws XmlValidationException
+    public static void validateXmlDocument(XmlObject doc, String name, Logger logger) throws XmlValidationException
     {
         XmlOptions options = new XmlOptions();
         Collection<XmlError> errorList = new LinkedList<XmlError>();
@@ -65,7 +65,7 @@ public class XmlBeansUtil
         if (!doc.validate(options))
         {
             for (XmlError error : errorList)
-                logger.error("Line " + error.getLine() + ": " + error.getMessage());
+                logger.error(name + ", line " + error.getLine() + ": " + error.getMessage());
 
             throw new XmlValidationException();
         }
