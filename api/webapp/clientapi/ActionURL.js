@@ -38,7 +38,19 @@ LABKEY.ActionURL = new function()
         {
             var nameValue = paramArray[i].split('=');
             if (nameValue.length == 2)
-                parameters[decodeURIComponent(nameValue[0])] = decodeURIComponent(nameValue[1]);
+            {
+                var name = decodeURIComponent(nameValue[0]);
+                if (undefined == parameters[name])
+                    parameters[name] = decodeURIComponent(nameValue[1]);
+                else
+                {
+                    var curValue = parameters[name];
+                    if (Ext.isArray(curValue))
+                        curValue.push(decodeURIComponent(nameValue[1]));
+                    else
+                        parameters[name] = [curValue, decodeURIComponent(nameValue[1])];
+                }
+            }
         }
         return parameters;
     }
