@@ -555,7 +555,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     file = entry.getValue();
                     if (runName == null)
                     {
-                        runName = entry.getKey();
+                        runName = file.getName();
                     }
                 }
             }
