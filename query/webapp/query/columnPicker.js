@@ -436,6 +436,9 @@ function ColumnPicker(tableInfoService)
                 td.style.fontWeight = 'bold';
             }
 
+            td.sourceColumn = column;
+            new Ext.ToolTip({target: td, html:getColumnHelpHtml(td.sourceColumn), trackMouse:true});
+
             if (!unselectable)
             {
                 td.onclick = onClickHandler(columnPicker, column.key);
@@ -463,19 +466,8 @@ function ColumnPicker(tableInfoService)
                 td.appendChild(doc.createTextNode('\240'));
             }
             td.appendChild(doc.createTextNode(column.caption));
-            var helpNode = doc.createElement('span');
-            helpNode.className = 'labkey-help-pop-up';
-            helpNode.appendChild(doc.createTextNode('?'));
-            td.appendChild(helpNode);
             tr.appendChild(td);
             tbody.appendChild(tr);
-
-            helpNode.sourceColumn = column;
-            helpNode.onmouseout = function() { return hideHelpDivDelay(); };
-            helpNode.onmouseover = function()
-            {
-                return showColumnHelpPopupDelay(this.sourceColumn, this);
-            };
         }
         elTable.appendChild(tbody);
         el.appendChild(elTable);
@@ -538,8 +530,8 @@ function ColumnPicker(tableInfoService)
     return columnPicker;
 }
 
-/** Show a help popup with information about the column after a delay */
-function showColumnHelpPopupDelay(field, element)
+
+function getColumnHelpHtml(field)
 {
     var body = "<table>";
     if (field.description)
@@ -554,5 +546,5 @@ function showColumnHelpPopupDelay(field, element)
     }
     body += "<tr><td valign='top'><strong>Hidden:</strong></td><td>" + field.hidden + "</td></tr>";
     body += "</table>";
-    return showHelpDivDelay(element, field.label, body);
+    return body;
 }

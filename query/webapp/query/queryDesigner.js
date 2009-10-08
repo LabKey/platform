@@ -209,17 +209,9 @@ function createColumnEditor(tab, dn, parent, insertBefore)
 
 
     td.appendChild(doc.createTextNode(tab.designer.getColumnLabel(dn)));
-    var helpNode = doc.createElement('span');
-    helpNode.className = 'labkey-help-pop-up';
-    helpNode.appendChild(doc.createTextNode('?'));
-    td.appendChild(helpNode);
-    helpNode.onmouseout = function() { return hideHelpDivDelay(); };
-    helpNode.onmouseover = function()
-    {
-        var fieldKey = tab.designer.getFieldKeyString(dn);
-        var field = designer.fieldInfo(fieldKey);
-        return showColumnHelpPopupDelay(field, td);
-    };
+    var fieldKey = tab.designer.getFieldKeyString(dn);
+    var field = designer.fieldInfo(fieldKey);
+    new Ext.ToolTip({target: td, html:getColumnHelpHtml(field), trackMouse:true});
 
     tr.appendChild(td);
     parent.insertBefore(tr, insertBefore);
