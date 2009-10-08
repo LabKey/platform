@@ -94,7 +94,11 @@ LABKEY.ActionURL = new function()
         },
 
         /**
-        * Gets a URL parameteter by name
+        * Gets a URL parameteter by name. Note that if the given parameter name is present more than once
+        * in the query string, the returned value will be an array strings instead of a single string.
+        * If you expect this to occur, use Ext.isArray() to detect this case and handle it appropriately.
+         * Alternatively, you can force the returned value into an array regardless of type with code like:
+         * [].concat(LABKEY.ActionURL.getParameter("myparameter")); 
         * @return {String} The value of the named parameter, or undefined of the parameter is not present.
         */
         getParameter : function(parameterName)
@@ -103,7 +107,8 @@ LABKEY.ActionURL = new function()
         },
 
         /**
-        * Returns an object mapping URL parameter names to parameter values.
+        * Returns an object mapping URL parameter names to parameter values. See getParameter() for information
+        * on the treatment of multiple parameters with the same name.
         * @return {Object} Map of parameter names to values.
         */
         getParameters : function()
