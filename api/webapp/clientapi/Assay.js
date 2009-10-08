@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 8.1
+ * @version 9.3
  * @license Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -296,8 +296,7 @@ LABKEY.Assay = new function()
 };
 
 /**
-* @namespace
-* @description AssayDesign static class to describe the shape and fields of an assay.  Each of the {@link LABKEY.Assay}
+* @namespace AssayDesign static class to describe the shape and fields of an assay.  Each of the {@link LABKEY.Assay}
             'get' methods passes its success callback function an array of AssayDesigns.
 * @property {String} name String name of the assay.
 * @property {Integer} id Unique integer ID for the assay.
@@ -312,8 +311,7 @@ LABKEY.Assay = new function()
 LABKEY.Assay.AssayDesign = new function() {};
 
 /**
- * @namespace
- * @description DomainFieldObject static class to describe a domain field for an assay.  See also {@link LABKEY.Assay} and
+ * @namespace DomainFieldObject static class to describe a domain field for an assay.  See also {@link LABKEY.Assay} and
              {@link LABKEY.Assay.AssayDesign}.
  * @property {String} name String name of the domain field.
  * @property {String} typeName String name of the type of the domain field. (Human readable.)

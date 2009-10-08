@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 8.3
+ * @version 9.3
  * @license Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,10 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  * Constructs a new LabKey Store using the supplied configuration.
  * @class LabKey extension to the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.data.Store">Ext.data.Store</a> class,
  * which can retrieve data from a LabKey server, track changes, and update the server upon demand. This is most typically
- * used with data-bound user interface widgets, such as the LABKEY.ext.Grid. 
+ * used with data-bound user interface widgets, such as the LABKEY.ext.Grid.
+ *
+ * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
+ * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  * @constructor
  * @augments Ext.data.Store
  * @param config Configuration properties.

@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 8.1
+ * @version 9.3
  * @license Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,7 @@
  */
 
  /**
- * @description Filter static class to describe and create filters.
- * @namespace
+ * @namespace  Filter static class to describe and create filters.
  * @property {Object} Types Types static class to describe different types of filters.
  * @property {LABKEY.Filter.FilterDefinition} Types.EQUAL Finds rows where the column value matches the given filter value. Case-sensitivity depends upon how your underlying relational database was configured.
  * @property {LABKEY.Filter.FilterDefinition} Types.DATE_EQUAL Finds rows where the date portion of a datetime column matches the filter value (ignoring the time portion).

@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 8.3
+ * @version 9.3
  * @license Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,9 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
  * which can provide editable grid views
  * of data in the LabKey server. If the current user has appropriate permissions, the user may edit
  * data, save changes, insert new rows, or delete rows.
+ *
+ * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
+ * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  * @constructor
  * @augments Ext.grid.EditorGridPanel
  * @param config Configuration properties. This may contain any of the configuration properties supported

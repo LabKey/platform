@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 8.1
+ * @version 9.3
  * @license Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -731,8 +731,7 @@ LABKEY.Query = new function()
 };
 
 /**
-* @namespace
-* @description SelectRowsResults static class to describe the first
+* @namespace SelectRowsResults static class to describe the first
             object passed to the successCallback function by
             {@link LABKEY.Query#selectRows}. This object's properties are useful for
             matching requests to responses, as HTTP requests are typically
@@ -773,8 +772,7 @@ LABKEY.Query = new function()
 */ LABKEY.Query.SelectRowsResults = new function() {};
 
 /**
-* @namespace
-* @description ExtendedSelectRowsResults static class to describe the first
+* @namespace ExtendedSelectRowsResults static class to describe the first
             object passed to the successCallback function by
             {@link LABKEY.Query#selectRows} if the includeExtendedColumnInfo
             configuration property was set to true.
@@ -820,8 +818,7 @@ LABKEY.Query = new function()
 */ LABKEY.Query.ExtendedSelectRowsResults = new function() {};
 
 /**
-* @namespace
-* @description SelectRowsOptions static class to describe
+* @namespace SelectRowsOptions static class to describe
             the second object passed to the successCallback function by
             {@link LABKEY.Query#selectRows}.  This object's properties are useful for
             matching requests to responses, as HTTP requests are typically
@@ -866,8 +863,7 @@ LABKEY.Query = new function()
 */ LABKEY.Query.SelectRowsOptions = new function() {};
 
 /**
-* @namespace
-* @description ModifyRowsResults static class to describe
+* @namespace ModifyRowsResults static class to describe
             the first object passed to the successCallback function
             by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
             {@link LABKEY.Query#deleteRows}. This object's properties are useful for
@@ -899,8 +895,7 @@ LABKEY.Query = new function()
 */ LABKEY.Query.ModifyRowsResults = new function() {};
 
 /**
-* @namespace
-* @description ModifyRowsOptions static class to describe
+* @namespace ModifyRowsOptions static class to describe
             the second object passed to the successCallback function
             by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
             {@link LABKEY.Query#deleteRows}. This object's properties are useful for

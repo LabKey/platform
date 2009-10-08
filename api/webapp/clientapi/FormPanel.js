@@ -1,7 +1,21 @@
-/*
- * Copyright (c) 2009 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+/**
+ * @fileOverview
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
+ * @version 9.3
+ * @license Copyright (c) 2008-2009 LabKey Corporation
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p/>
  */
 Ext.namespace("LABKEY","LABKEY.ext");
 
@@ -12,6 +26,9 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * which understands various labkey metadata formats and can simplify generating basic forms.
  * When a LABKEY.ext.FormPanel is created with additional metadata, it will try to intelligently construct fields
  * of the appropriate type.
+ * *
+ * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
+ * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  * @constructor
  * @augments Ext.form.FormPanel
  * @param config Configuration properties. This may contain any of the configuration properties supported

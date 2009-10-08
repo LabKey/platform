@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 8.1
+ * @version 9.3
  * @license Copyright (c) 2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -300,8 +300,7 @@ LABKEY.Specimen = new function()
 };
 
 /**
-* @namespace
-* @description Location static class to describe the shape and fields of a specimen location.
+* @namespace Location static class to describe the shape and fields of a specimen location.
 *
 * @property {Boolean} endpoint Whether this location is an endpoint lab.  May be null if unspecified.
 * @property {String} entityId An entity Id uniquely identifying this location.
@@ -318,8 +317,7 @@ LABKEY.Specimen = new function()
 LABKEY.Specimen.Location = new function() {};
 
 /**
-* @namespace
-* @description Request static class to describe the shape and fields of a specimen request.
+* @namespace Request static class to describe the shape and fields of a specimen request.
 * @see LABKEY.Specimen.Location
 * @see LABKEY.Specimen.Vial
 *
@@ -340,8 +338,7 @@ LABKEY.Specimen.Location = new function() {};
 LABKEY.Specimen.Request = new function() {};
 
 /**
-* @namespace
-* @description Vial static class to describe the shape and fields of a specimen vial.
+* @namespace Vial static class to describe the shape and fields of a specimen vial.
 * @see LABKEY.Specimen.Location
 *
 * @property {String} globalUniqueId The global unique ID of this vial

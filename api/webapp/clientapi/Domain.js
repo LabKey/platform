@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 8.1
+ * @version 9.3
  * @license Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -114,27 +114,25 @@ LABKEY.Domain = new function()
 };
 
 /**
-* @namespace
-* @description DomainDesign static class to describe the shape and fields of a domain.  The {@link LABKEY.Domain}
+* @namespace DomainDesign static class to describe the shape and fields of a domain.  The {@link LABKEY.Domain}
             'get' method passes its success callback function a DomainDesign.
-* @property {Integer} domainId
-* @property {String} name
-* @property {String} domainURI
-* @property {String} description
-* @property {Object[]} fields array of {@link LABKEY.Domain.DomainFieldObject}s.
+* @property {Integer} domainId The uinque ID of this domain.
+* @property {String} name  The name of this domain.
+* @property {String} domainURI The URI of this domain.
+* @property {String} description The description of this domain.
+* @property {Object[]} fields An array of {@link LABKEY.Domain.DomainFieldObject}s.
 */
 LABKEY.Domain.DomainDesign = new function() {};
 
 /**
-* @namespace
-* @description DomainFieldObject static class to describe a domain field for a domain.  See also {@link LABKEY.Domain} and
+* @namespace DomainFieldObject static class to describe a domain field for a domain.  See also {@link LABKEY.Domain} and
             {@link LABKEY.Domain.DomainDesign}.
-* @property {Integer} propertyId The unique id of this property.
+* @property {Integer} propertyId The unique ID of this property.
 * @property {String} propertyURI The URI of this property.
 * @property {String} ontologyURI The URI of the ontology this property belongs to.
 * @property {String} name The name of this property.
 * @property {String} description The description of this property (may be blank).
-* @property {String] rangeURI The URI for this property's range definition.
+* @property {String} rangeURI The URI for this property's range definition.
 * @property {String} conceptURI The URI of this property's concept.
 * @property {String} label The friendly label for this property.
 * @property {String} searchTerms The search terms for this property.

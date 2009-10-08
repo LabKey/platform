@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 9.1
+ * @version 9.3
  * @license Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -206,8 +206,8 @@ LABKEY.Experiment = new function()
          * Saves materials.
          *
          * @param config An object that contains the following configuration parameters
-         * @param name name of the sample set
-         * @param materials An array of LABKEY.Exp.Material objects to be saved.
+         * @param config.name name of the sample set
+         * @param config.materials An array of LABKEY.Exp.Material objects to be saved.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
@@ -481,6 +481,13 @@ Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] config.
+ * @param {int} config.materialLSIDPrefix Need documentation here. Please verify or update type.
+ * @param {String[]} config.propertiesForType Need documentation here.
+ * @param {Object[]} config.samples Need documentation here.
+ * @param {String} config.type Need doc here.
+ * @param {String} config.description
+ * @param {Bool} config.canImportMoreSamples
+ * @param {Bool} config.hasIdColumns
  */
 LABKEY.Exp.SampleSet = function (config) {
     LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
@@ -521,6 +528,8 @@ Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
 
  * @param {Object} [config] private constructor argument.
+  *
+ * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.ProtocolOutput = function (config) {
     LABKEY.Exp.ProtocolOutput.superclass.constructor.call(this, config);
@@ -541,6 +550,8 @@ Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] config.
+ * @param {Object} config.sampleSet Need documentation here.  Please verify or update type.
+ * @param {Double[]} [config.propertyValues] Need documentation here.  Please verify or update type.
  */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
