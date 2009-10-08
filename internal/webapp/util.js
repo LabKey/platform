@@ -310,16 +310,20 @@ function showHelpDiv(elem, titleText, bodyText, width)
     document.getElementById("helpDivBody").innerHTML = bodyText;
 
     var viewportWidth = YAHOO.util.Dom.getViewportWidth();
+    var viewportHeight = YAHOO.util.Dom.getViewportHeight();
     var leftScroll = YAHOO.util.DragDropMgr.getScrollLeft();
+    var topScroll = YAHOO.util.DragDropMgr.getScrollTop();
 
     div.style.top = posTop;
     div.style.display = "block";
     div.style.zIndex = "25";
 
+    var table = document.getElementById("helpDivTable");
+
     if (width)
-        document.getElementById("helpDivTable").style.width =  width;
+        table.style.width =  width;
     else
-        document.getElementById("helpDivTable").style.width =  "250px";
+        table.style.width =  "250px";
 
     var maxWidth = document.getElementById("helpDivTable").offsetWidth
 
@@ -329,6 +333,12 @@ function showHelpDiv(elem, titleText, bodyText, width)
         div.style.left = posLeft;
     }
 
+    var maxHeight = table.clientHeight;
+    if (maxHeight && (viewportHeight + topScroll < maxHeight + posTop))
+    {
+        posTop = viewportHeight + topScroll - maxHeight - 10;
+        div.style.top = posTop;
+    }
     div.style.left = posLeft;
 
     return false;

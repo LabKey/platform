@@ -349,7 +349,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 transformNamePanel.add(new InlineHTML("Data Transform"));
                 transformNamePanel.add(new HelpPopup("Data Transform", "The full path to the data transform script file. The extension of the script file " +
                         "identifies the script engine that will be used to run the transform script. For example: a script named test.pl will " +
-                        "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
+                        "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel. For additional information " +
+                        "refer to the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>."));
                 table.setWidget(row, 0, transformNamePanel);
                 table.setWidget(row++, 1, transformFile);
             }
@@ -388,7 +389,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             namePanel.add(new InlineHTML("QC Validation"));
             namePanel.add(new HelpPopup("QC Validation", "The full path to the validation script file. The extension of the script file " +
                     "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
-                    "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
+                    "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel. For additional information " +
+                    "refer to the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>."));
             table.setWidget(row, 0, namePanel);
             table.setWidget(row, 1, scriptFile);
 

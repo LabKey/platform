@@ -43,7 +43,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     private GWTDomain _domain;
     private HTML _setDefaultValueLink;
     private static final String SET_DEFAULT_DISABLED = "<span class='labkey-disabled'><i>Not supported for file/attachment fields.</i></span>";
-    private static final String SET_DEFAULT_ENABLED = "[<a href=\"#\">set&nbsp;value</a>]";
+    private static final String SET_DEFAULT_ENABLED = "[<a href=\"javascript:void(0)\">set&nbsp;value</a>]";
     private FlexTable _defaultTypeTable;
     private FlexTable _defaultValueTable;
     private InlineHTML _defaultTypeLabel;
