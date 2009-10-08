@@ -36,6 +36,8 @@
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.QueryReport" %>
 <%@ page import="org.labkey.api.study.reports.CrosstabReport" %>
+<%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
+<%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -219,6 +221,7 @@
                 id: 'create_gridView',
                 text:'Grid View',
                 disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                icon: '<%=ReportService.get().getReportIcon(getViewContext(), StudyQueryReport.TYPE)%>',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_crosstabView',
@@ -228,6 +231,7 @@
             },{
                 id: 'create_exportXlsView',
                 text:'Workbook (.xls)',
+                icon: '<%=ReportService.get().getReportIcon(getViewContext(), ExportExcelReport.TYPE)%>',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_staticView',

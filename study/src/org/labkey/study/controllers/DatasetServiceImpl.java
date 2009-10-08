@@ -101,6 +101,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                     continue;
                 if (col.getName().equalsIgnoreCase("modified"))
                     continue;
+                if (col.getName().equalsIgnoreCase("created"))
+                    continue;
                 if (visitDateMap.isEmpty())
                     visitDateMap.put("", "");
                 visitDateMap.put(col.getName(), col.getName());

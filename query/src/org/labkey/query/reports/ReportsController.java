@@ -1035,8 +1035,7 @@ public class ReportsController extends SpringActionController
                     return null;
                 }
             }
-            ReportUtil.renderErrorImage(getViewContext().getResponse().getOutputStream(), 450, 100, "Resource not found");
-            return null;
+            return new HtmlView("Requested Resource not found");
         }
 
         public NavTree appendNavTrail(NavTree root)

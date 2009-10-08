@@ -1700,6 +1700,7 @@ query/webapp/reports/grid.gif -text
 query/webapp/reports/grid_shared.gif -text
 query/webapp/reports/manageViews.js -text
 query/webapp/reports/r.gif -text
+query/webapp/reports/xls.gif -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text
 study/gwtsrc/org/labkey/assay/designer/client/AssayDesigner.java -text
 study/gwtsrc/org/labkey/assay/upload/ListChooser.gwt.xml -text
@@ -2070,6 +2071,7 @@ study/src/org/labkey/study/controllers/reports/ReportsController.java -text
 study/src/org/labkey/study/controllers/reports/StudyChartServiceImpl.java -text
 study/src/org/labkey/study/controllers/reports/StudyManageReportsBean.java -text
 study/src/org/labkey/study/controllers/samples/AutoCompleteAction.java -text
+study/src/org/labkey/study/controllers/samples/ParticipantCommentAction.java -text
 study/src/org/labkey/study/controllers/samples/ShowGroupMembersAction.java -text
 study/src/org/labkey/study/controllers/samples/ShowSearchAction.java -text
 study/src/org/labkey/study/controllers/samples/ShowUploadSpecimensAction.java -text

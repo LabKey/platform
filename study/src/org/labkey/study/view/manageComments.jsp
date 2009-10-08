@@ -68,16 +68,20 @@
     %>
     <table>
         <tr>
-            <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant basis.")%></th>
+            <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant basis. The dataset " +
+                    "selected must be a demographics dataset.")%></th>
             <td>
                 <select name="participantCommentDataSetId" onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : datasets)
                         {
-                            String selected = (bean.getParticipantCommentDataSetId() != null &&
-                                    dataset.getDataSetId() == bean.getParticipantCommentDataSetId().intValue() ? "selected" : "");
-                            %><option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %></option><%
+                            if (dataset.isDemographicData())
+                            {
+                                String selected = (bean.getParticipantCommentDataSetId() != null &&
+                                        dataset.getDataSetId() == bean.getParticipantCommentDataSetId().intValue() ? "selected" : "");
+                                %><option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %></option><%
+                            }
                         }
                     %>
                 </select>
@@ -111,16 +115,20 @@
     %>
     <table>
         <tr>
-            <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant/visit basis.")%></th>
+            <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant/visit basis. The dataset " +
+                    "selected cannot be a demographics dataset.")%></th>
             <td>
                 <select name="participantVisitCommentDataSetId" onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : datasets)
                         {
-                            String selected = (bean.getParticipantVisitCommentDataSetId() != null &&
-                                    dataset.getDataSetId() == bean.getParticipantVisitCommentDataSetId().intValue() ? "selected" : "");
-                            %><option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %></option><%
+                            if (!dataset.isDemographicData())
+                            {
+                                String selected = (bean.getParticipantVisitCommentDataSetId() != null &&
+                                        dataset.getDataSetId() == bean.getParticipantVisitCommentDataSetId().intValue() ? "selected" : "");
+                                %><option value="<%= dataset.getDataSetId() %>" <%= selected %>><%= h(dataset.getLabel()) %></option><%
+                            }
                         }
                     %>
                 </select>
