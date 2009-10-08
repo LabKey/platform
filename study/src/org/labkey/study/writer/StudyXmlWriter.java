@@ -15,13 +15,19 @@
  */
 package org.labkey.study.writer;
 
+import org.apache.xmlbeans.XmlCursor;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -46,7 +52,14 @@ class StudyXmlWriter implements InternalStudyWriter
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
 
-        studyXml.newCursor().insertComment("I'm a stupid comment");  // TODO: Dispose of this cursor; add props
+        // Insert a comment explaining where the data lives, who exported it, and when
+        XmlCursor cursor = studyXml.newCursor();
+        String url = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ctx.getContainer()).getURIString();
+        if (url.endsWith("?"))
+            url = url.substring(0, url.length() - 1);
+        String shortName = LookAndFeelProperties.getInstance(ctx.getContainer()).getShortName();
+        cursor.insertComment("Exported from " + shortName + " at " + url + " by " + ctx.getUser().getFriendlyName() + " on " + new Date());
+        cursor.dispose();
 
         // Study attributes
         studyXml.setLabel(study.getLabel());
