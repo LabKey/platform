@@ -1055,12 +1055,23 @@ public class PageFlowUtil
 
     public static String generateSubmitButton(String text, String onClick, String attributes, boolean enabled)
     {
+        return generateSubmitButton(text, onClick, attributes, enabled, false);
+    }
+
+    public static String generateSubmitButton(String text, String onClick, String attributes, boolean enabled, boolean disableOnClick)
+    {
         String guid = GUID.makeGUID();
         char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
 
         String submitCode = "submitForm(document.getElementById(" + quote + guid + quote + ").form); return false;";
 
         String onClickMethod;
+
+        if (disableOnClick)
+        {
+            onClick = onClick != null ? onClick + ";Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button')" :
+                    "Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button')";
+        }
 
         if (onClick == null || "".equals(onClick))
             onClickMethod = submitCode;

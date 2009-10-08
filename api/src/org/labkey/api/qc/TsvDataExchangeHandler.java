@@ -265,15 +265,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         Map<String, String> map = new HashMap<String, String>();
 
-        map.put(Props.assayId.name(), context.getName());
-        map.put(Props.runComments.name(), context.getComments());
+        map.put(Props.assayId.name(), StringUtils.defaultString(context.getName()));
+        map.put(Props.runComments.name(), StringUtils.defaultString(context.getComments()));
         map.put(Props.containerPath.name(), context.getContainer().getPath());
         map.put(Props.assayType.name(), context.getProvider().getName());
         map.put(Props.assayName.name(), context.getProtocol().getName());
-        map.put(Props.userName.name(), context.getUser().getEmail());
+        map.put(Props.userName.name(), StringUtils.defaultString(context.getUser().getEmail()));
         map.put(Props.workingDir.name(), scriptDir.getAbsolutePath());
         map.put(Props.protocolId.name(), String.valueOf(context.getProtocol().getRowId()));
-        map.put(Props.protocolDescription.name(), context.getProtocol().getDescription());
+        map.put(Props.protocolDescription.name(), StringUtils.defaultString(context.getProtocol().getDescription()));
         map.put(Props.protocolLsid.name(), context.getProtocol().getLSID());
 
         return map;
