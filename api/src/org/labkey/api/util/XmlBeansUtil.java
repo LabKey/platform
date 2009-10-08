@@ -56,18 +56,13 @@ public class XmlBeansUtil
         return options;
     }
 
-    public static void validateXmlDocument(XmlObject doc, String name, Logger logger) throws XmlValidationException
+    public static void validateXmlDocument(XmlObject doc) throws XmlValidationException
     {
         XmlOptions options = new XmlOptions();
         Collection<XmlError> errorList = new LinkedList<XmlError>();
         options.setErrorListener(errorList);
 
         if (!doc.validate(options))
-        {
-            for (XmlError error : errorList)
-                logger.error(name + ", line " + error.getLine() + ": " + error.getMessage());
-
-            throw new XmlValidationException();
-        }
+            throw new XmlValidationException(errorList);
     }
 }

@@ -16,8 +16,9 @@
 
 package org.labkey.api.study;
 
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
+import org.labkey.api.util.XmlValidationException;
 
 import java.io.File;
 
@@ -33,9 +34,9 @@ public class InvalidFileException extends StudyImportException
         super(getErrorString(root, file, e));
     }
 
-    public InvalidFileException(File root, File file, String message)
+    public InvalidFileException(File root, File file, XmlValidationException e)
     {
-        super(getErrorString(root, file, message));
+        super(getErrorString(root, file, (String)null), e);
     }
 
     // Special handling for XmlException: e.getMessage() includes absolute path to file, which we don't want to display
@@ -47,6 +48,6 @@ public class InvalidFileException extends StudyImportException
 
     private static String getErrorString(File root, File file, String message)
     {
-        return getRelativePath(root, file) + " is not valid: " + message;
+        return getRelativePath(root, file) + " is not valid" + (null != message ? ": " + message : "");
     }
 }

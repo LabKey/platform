@@ -27,7 +27,7 @@ public class StudyImportException extends Exception
 
     public StudyImportException(String message, Throwable t)
     {
-        super(message + ": " + t.getMessage());
+        super(message, t);
     }
 
 

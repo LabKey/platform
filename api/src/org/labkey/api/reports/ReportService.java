@@ -16,7 +16,6 @@
 
 package org.labkey.api.reports;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.query.QuerySettings;
@@ -27,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.XmlValidationException;
 
 import java.io.File;
 import java.io.IOException;
@@ -107,16 +107,15 @@ public class ReportService
          * memory only, the ReportService.I.save method can be used to save a report to a specific
          * container using a specific report key.
          * @param file
-         * @param logger
          */
-        public Report deserialize(File file, Logger logger) throws IOException;
+        public Report deserialize(File file) throws IOException, XmlValidationException;
 
         /**
          * Imports a serialized report into the database using the specified user and container
          * parameters. Imported reports are always treated as new reports even if they were exported from
          * the same container.
          */
-        public Report importReport(User user, Container container, File reportFile, Logger logger) throws IOException, SQLException;
+        public Report importReport(User user, Container container, File reportFile) throws IOException, SQLException, XmlValidationException;
     }
 
     public interface ViewFactory

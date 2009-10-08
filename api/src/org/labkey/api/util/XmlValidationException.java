@@ -16,6 +16,10 @@
 
 package org.labkey.api.util;
 
+import org.apache.xmlbeans.XmlError;
+
+import java.util.Collection;
+
 /*
 * User: adam
 * Date: Oct 5, 2009
@@ -23,4 +27,33 @@ package org.labkey.api.util;
 */
 public class XmlValidationException extends Exception
 {
+    private final Collection<XmlError> _errorList;
+
+    public XmlValidationException(Collection<XmlError> errorList)
+    {
+        // TODO: Provide a way to pass in the schema name and include in the message
+        super("Document does not conform to its XML schema");
+        _errorList = errorList;
+    }
+
+    public Collection<XmlError> getErrorList()
+    {
+        return _errorList;
+    }
+
+    public String getDetails()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (XmlError error : _errorList)
+            sb.append("line ").append(error.getLine()).append(": ").append(error.getMessage()).append('\n');
+
+        return sb.toString();
+    }
+
+    @Override
+    public String toString()
+    {
+        return super.toString() + "\n\n" + getDetails();
+    }
 }

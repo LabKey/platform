@@ -355,7 +355,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
         try
         {
-            XmlBeansUtil.validateXmlDocument(doc, getReportName(), _log);
+            XmlBeansUtil.validateXmlDocument(doc);
             doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
             return output.toString();
         }
@@ -376,7 +376,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return create(props);
     }
 
-    public static ReportDescriptor createFromXML(File file, Logger logger) throws IOException
+    public static ReportDescriptor createFromXML(File file) throws IOException, XmlValidationException
     {
         try
         {
@@ -384,7 +384,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(file, options);
-            XmlBeansUtil.validateXmlDocument(doc, file.getName(), logger);
+            XmlBeansUtil.validateXmlDocument(doc);
             ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
 
             ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(d.getDescriptorType());
@@ -407,10 +407,6 @@ public class ReportDescriptor extends Entity implements SecurableResource
             return null;
         }
         catch (XmlException e)
-        {
-            throw new IOException(e.getMessage());
-        }
-        catch (XmlValidationException e)
         {
             throw new IOException(e.getMessage());
         }
