@@ -1,16 +1,12 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.roles.FolderAdminRole" %>
 <%@ page import="org.labkey.api.security.*" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
-<%@ page import="org.labkey.api.view.menu.ProjectAdminMenu" %>
-<%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -47,24 +43,27 @@
 <script type="text/javascript">
 LABKEY.requiresCss("SecurityAdmin.css");
 LABKEY.requiresScript("SecurityAdmin.js", true);
-
+</script>
+<script type="text/javascript">
 var isFolderAdmin = <%=c.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
 var isProjectAdmin = <%=project != null && project.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
 var isSiteAdmin = <%= user.isAdministrator() ? "true" : "false" %>;
 var isRoot = <%= c.isRoot() ? "true" : "false" %>;
-</script>
-<script type="text/javascript">
+
 var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
 var $dom = Ext.DomHelper;
 
 //$('bodypanel').addClass('extContainer');
 
-var securityCache = new SecurityCache({
+var securityCache = null;
+
+Ext.onReady(function(){
+    securityCache = new SecurityCache({
     root:<%=PageFlowUtil.jsString(root.getId())%>,
     project:<%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
     folder:<%=PageFlowUtil.jsString(c.getId())%>
-});
+});});
 
 var policyEditor = null;
 </script>
