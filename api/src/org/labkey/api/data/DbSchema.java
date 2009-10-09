@@ -62,7 +62,7 @@ public class DbSchema
         return get(schemaName, DbScope.getLabkeyScope());
     }
 
-    protected static DbSchema get(String schemaName, DbScope scope)
+    public static DbSchema get(String schemaName, DbScope scope)
     {
         // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
         // load process directly or indirectly causing another call to this method.)
