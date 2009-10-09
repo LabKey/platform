@@ -46,7 +46,7 @@ public class DbUserSchema extends SimpleModuleUserSchema
         }
     }
 
-    private static DbSchema initDbSchema(DbUserSchemaDef def)
+    public static DbSchema initDbSchema(DbUserSchemaDef def)
     {
         DbSchema dbSchema;
 

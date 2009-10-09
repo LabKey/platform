@@ -2410,9 +2410,18 @@ public class QueryControllerSpring extends SpringActionController
         {
             form.refreshFromDb();
             DbUserSchemaDef def = form.getBean();
-            ActionURL url = new ActionURL(AdminAction.class, getContainer());
-            url.addParameter("reloadedSchema", def.getUserSchemaName());
-            QueryManager.get().reloadDbUserSchema(def);
+
+            try
+            {
+                QueryManager.get().reloadDbUserSchema(def);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "Could not reload schema " + def.getUserSchemaName() + ". The data source for the schema may be unreachable, or the schema may have been deleted.");
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                return new SimpleErrorView(errors);
+            }
+
             return HttpView.redirect(getSuccessURL(form));
         }
 

@@ -105,7 +105,7 @@ public class IssuesController extends SpringActionController
 
     private Issue getIssue(int issueId) throws SQLException
     {
-        return IssueManager.getIssue(openSession(), getContainer(), issueId);
+        return IssueManager.getIssue(getContainer(), issueId);
     }
 
 
@@ -432,15 +432,31 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ACL.PERM_INSERT)
     public class InsertAction extends FormViewAction<IssuesForm>
     {
-        Issue _issue = null;
+        private Issue _issue = null;
 
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
-            _issue = reshow ? form.getBean() : new Issue();
+            // if we have errors, then form.getBean() is likely to throw, but try anyway
+            if (errors.hasErrors())
+            {
+                try
+                {
+                    _issue = reshow ? form.getBean() : new Issue();
+                }
+                catch (Exception e)
+                {
+                    _issue = new Issue();
+                }
+            }
+            else
+            {
+                _issue = reshow ? form.getBean() : new Issue();
+            }
 
             if (_issue.getAssignedTo() != null)
             {
-                User user = UserManager.getUser(_issue.getAssignedTo());
+                User user = UserManager.getUser(_issue.getAssignedTo().intValue());
+
                 if (user != null)
                 {
                     _issue.setAssignedTo(user.getUserId());
@@ -500,7 +516,7 @@ public class IssuesController extends SpringActionController
                 orig.Open(getContainer(), getUser());
 
                 Issue.Comment comment = addComment(_issue, orig, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
-                IssueManager.saveIssue(openSession(), user, c, _issue);
+                IssueManager.saveIssue(user, c, _issue);
                 AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
                 if (ownsTransaction)
                     scope.commitTransaction();
@@ -604,7 +620,7 @@ public class IssuesController extends SpringActionController
                     issue.Change(user);
 
                 Issue.Comment comment = addComment(issue, prevIssue, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
-                IssueManager.saveIssue(openSession(), user, c, issue);
+                IssueManager.saveIssue(user, c, issue);
                 AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
                 if (ownsTransaction)
                     scope.commitTransaction();
@@ -1188,7 +1204,7 @@ public class IssuesController extends SpringActionController
                 HttpView.throwUnauthorized();
 
             int emailPrefs = IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId());
-            int issueId = form.getIssueId() == null ? 0 : form.getIssueId();
+            int issueId = form.getIssueId() == null ? 0 : form.getIssueId().intValue();
             JspView v = new JspView<EmailPrefsBean>(IssuesController.class, "emailPreferences.jsp",
                 new EmailPrefsBean(emailPrefs, errors, _message, issueId));
             return v;
@@ -1279,7 +1295,23 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            IssueManager.addKeyword(getContainer(), form.getType(), form.getKeyword());
+            int type = form.getType();
+            HString keyword = form.getKeyword();
+
+            if (ISSUE_PRIORITY == type)
+            {
+                try
+                {
+                    Integer.parseInt(keyword.getSource());
+                }
+                catch (NumberFormatException e)
+                {
+                    errors.reject(ERROR_MSG, "Priority must be an integer");
+                    return false;
+                }
+            }
+
+            IssueManager.addKeyword(getContainer(), type, keyword);
             return true;
         }
     }
@@ -1739,7 +1771,7 @@ public class IssuesController extends SpringActionController
 
         public int getIssueId()
         {
-            return _issueId;
+            return _issueId.intValue();
         }
     }
 
@@ -1938,27 +1970,9 @@ public class IssuesController extends SpringActionController
     }
 
 
-    Object openSession()
-    {
-//        if (null == _s)
-//            _s = IssueManager.openSession();
-//        return _s;
-        return null;
-    }
-
-
-    void closeSession()
-    {
-//        if (null != _s)
-//            _s.close();
-//        _s = null;
-    }
-
-
     protected synchronized void afterAction(Throwable t)
     {
         super.afterAction(t);
-        closeSession();
     }
 
     /**

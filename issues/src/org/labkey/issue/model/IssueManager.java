@@ -66,7 +66,7 @@ public class IssueManager
     {
     }
 
-    public static Issue getIssue(Object s, Container c, int issueId) throws SQLException
+    public static Issue getIssue(Container c, int issueId) throws SQLException
     {
         Issue[] issues = Table.selectForDisplay(
                 _issuesSchema.getTableInfoIssues(),
@@ -88,7 +88,7 @@ public class IssueManager
     }
 
 
-    public static void saveIssue(Object s, User user, Container c, Issue issue) throws SQLException
+    public static void saveIssue(User user, Container c, Issue issue) throws SQLException
     {
         if (issue.assignedTo == null)
             issue.assignedTo = new Integer(0);
@@ -114,7 +114,7 @@ public class IssueManager
             return;
         for (Issue.Comment comment : comments)
         {
-            HashMap<String, Object> m = new HashMap<String, Object>();
+            Map<String, Object> m = new HashMap<String, Object>();
             m.put("issueId", new Integer(issue.getIssueId()));
             m.put("comment", comment.getComment());
             m.put("entityId", comment.getEntityId());
@@ -615,13 +615,13 @@ public class IssueManager
                 issue.addComment(user, new HString("new issue",false));
                 issue.setPriority(3);
 
-                IssueManager.saveIssue(null, user, c, issue);
+                IssueManager.saveIssue(user, c, issue);
                 issueId = issue.getIssueId();
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(null, c, issueId);
+                Issue issue = IssueManager.getIssue(c, issueId);
                 assertEquals("This is a junit test bug", issue.getTitle().getSource());
                 assertEquals(user.getUserId(), issue.getCreatedBy());
                 assertTrue(issue.getCreated().getTime() != 0);
@@ -637,14 +637,14 @@ public class IssueManager
             // ADD COMMENT
             //
             {
-                Issue issue = IssueManager.getIssue(null, c, issueId);
+                Issue issue = IssueManager.getIssue(c, issueId);
                 issue.addComment(user, new HString("what was I thinking"));
-                IssueManager.saveIssue(null, user, c, issue);
+                IssueManager.saveIssue(user, c, issue);
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(null, c, issueId);
+                Issue issue = IssueManager.getIssue(c, issueId);
                 assertEquals(2, issue.getComments().size());
                 Iterator it = issue.getComments().iterator();
                 assertEquals("new issue", ((Issue.Comment) it.next()).getComment().getSource());
@@ -655,19 +655,19 @@ public class IssueManager
             // RESOLVE
             //
             {
-                Issue issue = IssueManager.getIssue(null, c, issueId);
+                Issue issue = IssueManager.getIssue(c, issueId);
                 assertNotNull("issue not found", issue);
                 issue.Resolve(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
                 copy.setResolution(new HString("fixed"));
                 copy.addComment(user, new HString("fixed it"));
-                IssueManager.saveIssue(null, user, c, copy);
+                IssueManager.saveIssue(user, c, copy);
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(null, c, issueId);
+                Issue issue = IssueManager.getIssue(c, issueId);
                 assertEquals(Issue.statusRESOLVED, issue.getStatus());
                 assertEquals(3, issue.getComments().size());
             }
@@ -676,18 +676,18 @@ public class IssueManager
             // CLOSE
             //
             {
-                Issue issue = getIssue(null, c, issueId);
+                Issue issue = getIssue(c, issueId);
                 assertNotNull("issue not found", issue);
                 issue.Close(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
                 copy.addComment(user, new HString("closed"));
-                IssueManager.saveIssue(null, user, c, copy);
+                IssueManager.saveIssue(user, c, copy);
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(null, c, issueId);
+                Issue issue = IssueManager.getIssue(c, issueId);
                 assertEquals(Issue.statusCLOSED, issue.getStatus());
                 assertEquals(4, issue.getComments().size());
             }

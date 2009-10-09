@@ -301,6 +301,7 @@ public class QueryManager
     public void reloadDbUserSchema(DbUserSchemaDef def)
     {
         DbUserSchema.uncache(def);
+        DbUserSchema.initDbSchema(def);
     }
 
 
