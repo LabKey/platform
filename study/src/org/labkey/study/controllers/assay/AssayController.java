@@ -371,30 +371,39 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(DesignAssayPermission.class)
-    public class ChooseAssayTypeAction extends FormViewAction<ProtocolIdForm>
+    public static class CreateAssayForm extends ProtocolIdForm
     {
-        public void validateCommand(ProtocolIdForm form, Errors errors)
+        private boolean createInProject;
+        private String returnURL;
+
+        public CreateAssayForm() { }
+
+        public boolean isCreateInProject()
         {
+            return createInProject;
         }
 
-        public boolean handlePost(ProtocolIdForm form, BindException errors) throws Exception
+        public void setCreateInProject(boolean createInProject)
         {
-            if (PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
-            {
-                errors.addError(new LabkeyError("Please select an assay type."));
-                return false;
-            }
-
-            return true;
+            this.createInProject = createInProject;
         }
 
-        public ActionURL getSuccessURL(ProtocolIdForm form)
+        public String getReturnURL()
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null);
+            return returnURL;
         }
 
-        public ModelAndView getView(ProtocolIdForm protocolIdForm, boolean reshow, BindException errors) throws Exception
+        public void setReturnURL(String returnURL)
+        {
+            this.returnURL = returnURL;
+        }
+    }
+
+    public static class ChooseAssayBean
+    {
+        ActionURL returnURL;
+
+        public List<AssayProvider> getProviders()
         {
             List<AssayProvider> providers = new ArrayList<AssayProvider>(AssayManager.get().getAssayProviders());
             Collections.sort(providers, new Comparator<AssayProvider>()
@@ -404,7 +413,57 @@ public class AssayController extends SpringActionController
                     return o1.getName().compareTo(o2.getName());
                 }
             });
-            return new JspView<List<AssayProvider>>("/org/labkey/study/assay/view/chooseAssayType.jsp", providers, errors);
+            return providers;
+        }
+
+        public ActionURL getReturnURL()
+        {
+            return returnURL;
+        }
+    }
+
+    @RequiresPermissionClass(DesignAssayPermission.class)
+    public class ChooseAssayTypeAction extends FormViewAction<CreateAssayForm>
+    {
+        Container createIn;
+
+        public void validateCommand(CreateAssayForm form, Errors errors)
+        {
+        }
+
+        public boolean handlePost(CreateAssayForm form, BindException errors) throws Exception
+        {
+            if (PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
+            {
+                errors.addError(new LabkeyError("Please select an assay type."));
+                return false;
+            }
+
+            Container createIn = form.isCreateInProject() ? getContainer().getProject() : getContainer();
+            if (!createIn.hasPermission(getUser(), DesignAssayPermission.class))
+            {
+                errors.addError(new LabkeyError("You don't have permission to create assay designs in folder '" + createIn.getName() + "'."));
+                return false;
+            }
+            this.createIn = createIn;
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(CreateAssayForm form)
+        {
+            ActionURL returnURL = new ActionURL(form.getReturnURL());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(createIn, form.getProviderName(), returnURL);
+        }
+
+        public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors) throws Exception
+        {
+            ChooseAssayBean bean = new ChooseAssayBean();
+            if (form.getReturnURL() != null)
+                bean.returnURL = new ActionURL(form.getReturnURL());
+            else
+                bean.returnURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer());
+            return new JspView<ChooseAssayBean>("/org/labkey/study/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -53,6 +53,7 @@ public class AssayListQueryView extends QueryView
         if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
+            insertURL.addParameter("returnURL", getViewContext().getActionURL().getLocalURIString());
             ActionButton insert = new ActionButton("New Assay Design", insertURL);
             insert.setActionType(ActionButton.Action.LINK);
             insert.setDisplayPermission(DesignAssayPermission.class);

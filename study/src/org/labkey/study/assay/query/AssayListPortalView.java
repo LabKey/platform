@@ -22,6 +22,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.SimpleTextDisplayElement;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.study.controllers.assay.AssayController;
 
 import java.util.List;
@@ -71,6 +72,13 @@ public class AssayListPortalView extends AssayListQueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
+        if (getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class))
+        {
+            ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
+            insertURL.addParameter("returnURL", getViewContext().getActionURL().getLocalURIString());
+            bar.add(new SimpleTextDisplayElement(textLink("New Assay Design", insertURL), true));
+        }
+
         bar.add(new SimpleTextDisplayElement(textLink("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())), true));
     }
 }

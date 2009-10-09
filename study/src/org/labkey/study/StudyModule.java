@@ -268,6 +268,7 @@ public class StudyModule extends SpringModule
     private void registerFolderType()
     {
         ModuleLoader.getInstance().registerFolderType(new StudyFolderType(this));
+        ModuleLoader.getInstance().registerFolderType(new AssayFolderType(this));
     }
 
     private static class ReportsWebPartFactory extends BaseWebPartFactory

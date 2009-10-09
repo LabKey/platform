@@ -24,11 +24,13 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<List<org.labkey.api.study.assay.AssayProvider>> me = (JspView<List<AssayProvider>>) HttpView.currentView();
-    List<AssayProvider> providers = me.getModelBean();
+    AssayController.ChooseAssayBean bean = (AssayController.ChooseAssayBean)getModelBean();
+    List<AssayProvider> providers = bean.getProviders();
 %>
 <p>
     Each assay is a customized version of a particular assay type. 
@@ -36,14 +38,15 @@
 </p>
 <p>If you have an existing assay design to import in the XAR file format (a .xar or .xar.xml file), you can place
     the file in this folder's pipeline directory and upload using the
-    <a href="<%= PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(me.getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>
-    or <a href="<%= PageFlowUtil.urlProvider(ExperimentUrls.class).getUploadXARURL(me.getViewContext().getContainer()) %>">upload XAR the file directly</a>.
+    <a href="<%= PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer(), getViewContext().getActionURL().toString()) %>">Data Pipeline</a>
+    or <a href="<%= PageFlowUtil.urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload XAR the file directly</a>.
 </p>
 <p>
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.
 </p>
 <labkey:errors />
 <form method="POST">
+    <input type="hidden" name="returnURL" value="<%=h(bean.getReturnURL())%>">
     <table>
         <% for (AssayProvider provider : providers) { %>
         <tr>
@@ -55,6 +58,26 @@
             <td><%= provider.getDescription() %></td>
         </tr>
         <% } %>
+        <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <%
+            Container project = getViewContext().getContainer().getProject();
+            if (!getViewContext().getContainer().equals(project))
+            {
+                boolean canCreateInProject = project.hasPermission(getViewContext().getUser(), DesignAssayPermission.class);
+        %>
+        <tr>
+            <td><input name="createInProject" type="checkbox" value="true" <%=canCreateInProject ? "checked" : ""%> <%=canCreateInProject ? "" : "disabled"%>></td>
+            <td><span class="<%=canCreateInProject ? "" : "labkey-disabled"%>">
+                Create assay in project folder so it can be shared in sub-folders?
+                </span>
+                <% if (!canCreateInProject) { %>
+                    <br><em>Requires project administrator permission.</em>
+                <% } %>
+            </td>
+        </tr>
+        <%
+            }
+        %>
         <tr>
             <td />
             <td><%= generateSubmitButton("Next" )%><%= generateButton("Cancel", new ActionURL(AssayController.BeginAction.class, getViewContext().getContainer())) %></td>
