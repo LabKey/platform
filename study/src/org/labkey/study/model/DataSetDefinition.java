@@ -38,6 +38,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.SpecimenService;
@@ -567,7 +568,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         //users that have read permission on the study can read all datasets
         //users that have read-some permission on the study must also have read permission on this dataset
         return studyPolicy.hasPermission(user, ReadPermission.class) ||
-                SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class);
+                (studyPolicy.hasPermission(user, ReadSomePermission.class) && SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class));
     }
 
     public boolean canWrite(User user)
