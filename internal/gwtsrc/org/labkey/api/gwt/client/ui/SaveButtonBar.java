@@ -68,7 +68,8 @@ public class SaveButtonBar extends HorizontalPanel
 
     public void setAllowSave(boolean dirty)
     {
-        saveButton.setEnabled(dirty);
+        if (saveButton.isEnabled() != dirty)
+            saveButton.setEnabled(dirty);
     }
 
 }
