@@ -121,7 +121,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         {
             id:'UserId',
             schemaName:'core',
-            queryName:'Principals'
+            queryName:'Principals',
+            columns:'*'
         });
         this.principalsStore.on("loadexception", this._onLoadException, this);
         this.principalsStore.on("metachange", function(store,meta)
@@ -135,7 +136,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         this.membershipStore = new SecurityCacheStore(
         {
             schemaName:'core',
-            queryName:'Members'
+            queryName:'Members',
+            columns:'*'
         });
         this.membershipStore.on("loadexception", this._onLoadException, this);
 
@@ -505,7 +507,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     {
         var data = item.data;
         var major = data.Type == 'u' ? '3' : data.Container ? '2' : '1';
-        var minor = data.Name.toLowerCase();
+        var minor = (data.Name||'').toLowerCase();
         data.sortOrder = major + "." + minor;
     },
                               
