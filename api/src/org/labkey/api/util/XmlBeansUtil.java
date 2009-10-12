@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
@@ -64,5 +65,26 @@ public class XmlBeansUtil
 
         if (!doc.validate(options))
             throw new XmlValidationException(errorList);
+    }
+
+    public static String getErrorMessage(XmlException ex)
+    {
+        if (ex.getError() != null)
+            return getErrorMessage(ex.getError());
+        return ex.getMessage();
+    }
+
+    public static String getErrorMessage(XmlError error)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(error.toString());
+        if (error.getLine() > 0)
+        {
+            sb.append(" (line ").append(error.getLine());
+            if (error.getColumn() > 0)
+                sb.append(", column ").append(error.getColumn());
+            sb.append(")");
+        }
+        return sb.toString();
     }
 }
