@@ -56,7 +56,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     // data
     Map<String, Object>[] _maps;
     ArrayListMap<String, Object>[] _arrayListMaps;
-    boolean _isComplete = true;
+    private boolean _isComplete = true;
     private boolean _debug = AppProps.getInstance().isDevMode();
     private boolean _wasClosed = false;
 
@@ -93,32 +93,16 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
 
         ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
-        while (rs.next() && list.size() < maxRows)
+        // Note: we check in this order to avoid consuming the "extra" row used to detect complete vs. not
+        while (list.size() < maxRows && rs.next())
         {
             Map<String, Object> m = factory.getRowMap(rs);
             if (null == pred || pred.evaluate(m))
                 list.add(m);
         }
 
-        boolean isComplete;
-
-        try
-        {
-            assert !rs.isAfterLast() || rs.getRow() == 0;
-            isComplete = rs.getRow() == 0;
-        }
-        catch (SQLException e)
-        {
-            // Fallback approach for databases that don't support rs.getRow() (e.g., SAS/SHARE)
-            try
-            {
-                isComplete = rs.next();
-            }
-            catch (SQLException e1)
-            {
-                isComplete = true;
-            }
-        }
+        // If we have another row, then we're not complete
+        boolean isComplete = !rs.next();
 
         init(rs.getMetaData(), list, isComplete);
     }
