@@ -228,7 +228,7 @@ public class StudyQuerySchema extends UserSchema
         }
         if ("ParticipantVisit".equalsIgnoreCase(name))
         {
-            ParticipantVisitTable ret = new ParticipantVisitTable(this, null);
+            ParticipantVisitTable ret = new ParticipantVisitTable(this);
             return ret;
         }
         if ("SpecimenRequest".equalsIgnoreCase(name))

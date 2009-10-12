@@ -129,7 +129,7 @@ public class SequenceVisitManager extends VisitManager
             ResultSetUtil.close(rows);
         }
     }
-    
+
     protected void updateParticipantVisitTable(User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -144,8 +144,9 @@ public class SequenceVisitManager extends VisitManager
             //
             // populate ParticipantVisit
             //
-            String sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit + " (Container, ParticipantId, SequenceNum)\n" +
-                    "SELECT DISTINCT Container, ParticipantId, SequenceNum\n" +
+            String sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit + " (Container, ParticipantId, SequenceNum, ParticipantSequenceKey)\n" +
+                    "SELECT DISTINCT Container, ParticipantId, SequenceNum,\n(" +
+                    getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + ") AS ParticipantSequenceKey\n" +
                     "FROM " + tableStudyData + " SD\n" +
                     "WHERE Container = ? AND NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
@@ -163,8 +164,9 @@ public class SequenceVisitManager extends VisitManager
             // after assigning visit dates to all study data-generated visits, we insert any extra ptid/sequencenum/date combinations
             // that are found in the specimen archives.  We simply trust the specimen draw date in this case, rather than relying on the
             // visit table to tell us which date corresponds to which visit:
-            sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit + " (Container, ParticipantId, SequenceNum)\n" +
-                    "SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum\n" +
+            sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit + " (Container, ParticipantId, SequenceNum, ParticipantSequenceKey)\n" +
+                    "SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n(" +
+                    getParticipantSequenceKeyExpr(schema, "Ptid", "VisitValue") + ") AS ParticipantSequenceKey\n" +
                     "FROM " + tableSpecimen + " Specimen\n" +
                     "WHERE Container = ? AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +

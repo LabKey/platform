@@ -205,8 +205,7 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
         buttonBar.add(btnCancel);
 
         dataRegion.setButtonBar(buttonBar);
-
-        return view;
+        return new VBox(new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript(\"completion.js\");</script>"), view);
     }
 
     public NavTree appendNavTrail(NavTree root)

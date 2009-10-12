@@ -47,18 +47,6 @@ public class DataSetTable extends FilteredTable
         super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), false));
         _schema = schema;
         _dsd = dsd;
-        ColumnInfo pvColumn = new ParticipantVisitColumn(
-                "ParticipantVisit",
-                new AliasedColumn(this, "PVParticipant", getRealTable().getColumn("ParticipantId")),
-                new AliasedColumn(this, "PVVisit", getRealTable().getColumn("SequenceNum")));
-        addColumn(pvColumn);
-        pvColumn.setFk(new LookupForeignKey("ParticipantVisit")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new ParticipantVisitTable(_schema, null);
-            }
-        });
 
         List<FieldKey> defaultVisibleCols = new ArrayList<FieldKey>();
 
@@ -128,6 +116,21 @@ public class DataSetTable extends FilteredTable
                     defaultVisibleCols.add(FieldKey.fromParts(baseColumn.getName()));
                 else
                     qcStateColumn.setHidden(true);
+            }
+            else if ("ParticipantSequenceKey".equalsIgnoreCase(name))
+            {
+                // Add a copy of the sequence key column without the FK so we can get the value easily when materializing to temp tables:
+                addWrapColumn(baseColumn).setHidden(true);
+                ColumnInfo pvColumn = new AliasedColumn(this, "ParticipantVisit", baseColumn);//addWrapColumn(baseColumn);
+                pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
+                {
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return new ParticipantVisitTable(_schema);
+                    }
+                });
+                pvColumn.setIsUnselectable(true);
+                addColumn(pvColumn);
             }
             else
             {

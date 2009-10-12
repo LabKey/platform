@@ -250,6 +250,7 @@
   <ns:table tableName="studydata" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="container"/>
+      <ns:column columnName="ParticipantSequenceKey"/>
       <ns:column columnName="participantid">
         <ns:columnTitle>Participant ID</ns:columnTitle>
         <ns:description>Participant identifier</ns:description>
@@ -334,6 +335,7 @@
   <ns:table tableName="Specimen" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="RowId"/>
+      <ns:column columnName="ParticipantSequenceKey"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="Ptid"/>
       <ns:column columnName="DrawTimestamp">
@@ -373,76 +375,168 @@
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:datatype>int</ns:datatype>
-      </ns:column>        
-      <ns:column columnName="SpecimenId"/>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="GlobalUniqueId"/>
-      <ns:column columnName="Ptid"/>
+      </ns:column>
+      <ns:column columnName="SpecimenId">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="Container">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="GlobalUniqueId">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="Ptid">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ParticipantSequenceKey">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
       <ns:column columnName="DrawTimestamp">
+        <ns:datatype>date</ns:datatype>
         <ns:formatString>DateTime</ns:formatString>
       </ns:column>
-      <ns:column columnName="SalReceiptDate"/>
-      <ns:column columnName="SpecimenHash"/>
-      <ns:column columnName="ClassId"/>
+      <ns:column columnName="SalReceiptDate">
+          <ns:datatype>date</ns:datatype>
+      </ns:column>
+      <ns:column columnName="SpecimenHash">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ClassId">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
       <ns:column columnName="VisitValue">
+        <ns:datatype>float</ns:datatype>
         <ns:formatString>0.####</ns:formatString>
       </ns:column>
-      <ns:column columnName="ProtocolNumber"/>
-      <ns:column columnName="VisitDescription"/>
-      <ns:column columnName="VolumeUnits"/>
-      <ns:column columnName="SubAdditiveDerivative"/>
-      <ns:column columnName="PrimaryTypeId"/>
-      <ns:column columnName="DerivativeTypeId"/>
-      <ns:column columnName="AdditiveTypeId"/>
-      <ns:column columnName="originatinglocationid"/>
+      <ns:column columnName="ProtocolNumber">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="VisitDescription">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="VolumeUnits">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="SubAdditiveDerivative">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="PrimaryTypeId">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="DerivativeTypeId">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AdditiveTypeId">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="originatinglocationid">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
       <ns:column columnName="DerivativeTypeId2">
+        <ns:datatype>int</ns:datatype>
         <ns:fk>
           <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenDerivative</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="PrimaryVolume"/>
-      <ns:column columnName="PrimaryVolumeUnits"/>
-      <ns:column columnName="AtRepositoryCount"/>
-      <ns:column columnName="AvailableCount"/>
-      <ns:column columnName="AvailableVolume"/>
-      <ns:column columnName="ExpectedAvailableCount"/>
-      <ns:column columnName="LockedInRequestCount"/>
-      <ns:column columnName="TotalVolume"/>
-      <ns:column columnName="VialCount"/>
+      <ns:column columnName="PrimaryVolume">
+          <ns:datatype>float</ns:datatype>
+      </ns:column>
+      <ns:column columnName="PrimaryVolumeUnits">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AtRepositoryCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AvailableCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AvailableVolume">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ExpectedAvailableCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="LockedInRequestCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="TotalVolume">
+          <ns:datatype>float</ns:datatype>
+      </ns:column>
+      <ns:column columnName="VialCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
       <ns:column columnName="Volume">
+        <ns:datatype>int</ns:datatype>
         <ns:formatString>#,###.0#</ns:formatString>
       </ns:column>
-      <ns:column columnName="requestable"/>
-      <ns:column columnName="CurrentLocation" />
-      <ns:column columnName="AtRepository"/>
-      <ns:column columnName="LockedInRequest"/>
-      <ns:column columnName="Available"/>
-      <ns:column columnName="ProcessingLocation"/>
+      <ns:column columnName="requestable">
+          <ns:datatype>boolean</ns:datatype>
+      </ns:column>
+      <ns:column columnName="CurrentLocation">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AtRepository">
+          <ns:datatype>boolean</ns:datatype>
+      </ns:column>
+      <ns:column columnName="LockedInRequest">
+          <ns:datatype>boolean</ns:datatype>
+      </ns:column>
+      <ns:column columnName="Available">
+          <ns:datatype>boolean</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ProcessingLocation">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
     <ns:columns>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="Ptid"/>
+      <ns:column columnName="Container">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="RowId">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="Ptid">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ParticipantSequenceKey">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
       <ns:column columnName="DrawTimestamp">
+        <ns:datatype>date</ns:datatype>
         <ns:formatString>DateTime</ns:formatString>
       </ns:column>
-      <ns:column columnName="SalReceiptDate"/>
-      <ns:column columnName="SpecimenHash"/>
-      <ns:column columnName="ProtocolNumber"/>
-      <ns:column columnName="ClassId"/>
+      <ns:column columnName="SalReceiptDate">
+          <ns:datatype>date</ns:datatype>
+      </ns:column>
+      <ns:column columnName="SpecimenHash">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ProtocolNumber">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ClassId">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
       <ns:column columnName="VisitValue">
+        <ns:datatype>float</ns:datatype>
         <ns:formatString>0.####</ns:formatString>
       </ns:column>
-      <ns:column columnName="VisitDescription"/>
+      <ns:column columnName="VisitDescription">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
       <ns:column columnName="TotalVolume">
+        <ns:datatype>float</ns:datatype>
         <ns:formatString>#,###.0#</ns:formatString>
       </ns:column>
-      <ns:column columnName="VolumeUnits"/>
+      <ns:column columnName="VolumeUnits">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
       <ns:column columnName="PrimaryTypeId">
+        <ns:datatype>int</ns:datatype>
         <ns:fk>
           <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
@@ -450,6 +544,7 @@
         </ns:fk>
       </ns:column>
       <ns:column columnName="DerivativeTypeId">
+        <ns:datatype>int</ns:datatype>
         <ns:fk>
           <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenDerivative</ns:fkTable>
@@ -457,23 +552,40 @@
         </ns:fk>
       </ns:column>
       <ns:column columnName="AdditiveTypeId">
+        <ns:datatype>int</ns:datatype>
         <ns:fk>
           <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenAdditive</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="SubAdditiveDerivative"/>
-      <ns:column columnName="LockedInRequestCount"/>
-      <ns:column columnName="AtRepositoryCount"/>
-      <ns:column columnName="AvailableCount"/>
-      <ns:column columnName="ExpectedAvailableCount"/>
-      <ns:column columnName="VialCount"/>
+      <ns:column columnName="SubAdditiveDerivative">
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="LockedInRequestCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AtRepositoryCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AvailableCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="ExpectedAvailableCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="VialCount">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
       <ns:column columnName="AvailableVolume">
+        <ns:datatype>float</ns:datatype>
         <ns:formatString>#,##0.0#</ns:formatString>
       </ns:column>
-      <ns:column columnName="originatinglocationid"/>
+      <ns:column columnName="originatinglocationid">
+          <ns:datatype>int</ns:datatype>
+      </ns:column>
       <ns:column columnName="DerivativeTypeId2">
+        <ns:datatype>int</ns:datatype>
         <ns:fk>
           <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenDerivative</ns:fkTable>
@@ -601,6 +713,7 @@
     <ns:columns>
       <ns:column columnName="ParticipantId"/>
       <ns:column columnName="VisitDate"/>
+      <ns:column columnName="ParticipantSequenceKey"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="visitrowid"/>
       <ns:column columnName="sequencenum"/>

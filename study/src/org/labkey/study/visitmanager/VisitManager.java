@@ -46,6 +46,7 @@ public abstract class VisitManager
     {
         boolean requiresUncache = updateParticipants(user);
         updateParticipantVisitTable(user);
+        updateParticipantSequenceKeys();
         updateVisitTable(user);
         StudyManager.getInstance().clearVisitCache(_study);
         if (requiresUncache)
@@ -55,6 +56,37 @@ public abstract class VisitManager
     public String getLabel()
     {
         return "Visit";
+    }
+
+    protected String getParticipantSequenceKeyExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
+    {
+        StringBuilder participantSequenceKey = new StringBuilder("(");
+        participantSequenceKey.append(ptidColumnName);
+        participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
+        participantSequenceKey.append("'|'");
+        participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
+        participantSequenceKey.append("CAST(").append(sequenceNumColumnName).append(" AS VARCHAR))");
+        return participantSequenceKey.toString();
+    }
+
+    protected void updateParticipantSequenceKeys()
+    {
+        try
+        {
+            DbSchema schema = StudySchema.getInstance().getSchema();
+
+            String sqlStudyData= "UPDATE " + StudySchema.getInstance().getTableInfoStudyData() + " SET ParticipantSequenceKey = " +
+                    getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
+            Table.execute(schema, sqlStudyData, new Object[] {_study.getContainer()});
+
+            String sqlSpecimen= "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() + " SET ParticipantSequenceKey = " +
+                    getParticipantSequenceKeyExpr(schema, "PTID", "VisitValue") + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
+            Table.execute(schema, sqlSpecimen, new Object[] {_study.getContainer()});
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public String getPluralLabel()

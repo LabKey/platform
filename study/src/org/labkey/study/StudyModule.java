@@ -108,7 +108,7 @@ public class StudyModule extends SpringModule
 
     public double getVersion()
     {
-        return 9.22;
+        return 9.23;
     }
 
     protected void init()

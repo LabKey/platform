@@ -20,8 +20,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.DataSetDefinition;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -36,18 +34,16 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
         
-        ColumnInfo pvColumn = new ParticipantVisitColumn(
-                "ParticipantVisit",
-                new AliasedColumn(this, "PVParticipant", getRealTable().getColumn("PTID")),
-                new AliasedColumn(this, "PVVisit", getRealTable().getColumn("VisitValue")));
-        addColumn(pvColumn);
-        pvColumn.setFk(new LookupForeignKey("ParticipantVisit")
+        ColumnInfo pvColumn = new AliasedColumn(this, "ParticipantVisit", _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
+        pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_schema, null);
+                return new ParticipantVisitTable(_schema);
             }
         });
+        pvColumn.setIsUnselectable(true);
+        addColumn(pvColumn);
 
         addSpecimenVisitColumn(_schema.getStudy().isDateBased());
         addWrapColumn(_rootTable.getColumn("Volume"));
@@ -149,6 +145,44 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         }
     }
 
+    public static class ParticipantVisitColumn extends ExprColumn
+    {
+        protected static final String PARTICIPANT_VISIT_JOIN = "ParticipantVisitJoin$";
+
+        public ParticipantVisitColumn(final StudyQuerySchema schema, TableInfo parent)
+        {
+            super(parent, "ParticipantVisit",
+                    new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_VISIT_JOIN + ".ParticipantSequenceKey"),
+                    Types.INTEGER);
+
+            setFk(new LookupForeignKey("ParticipantSequenceKey")
+            {
+                public TableInfo getLookupTableInfo()
+                {
+                    return new ParticipantVisitTable(schema);
+                }
+            });
+        }
+
+        @Override
+        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+        {
+            super.declareJoins(parentAlias, map);
+
+            String tableAlias = parentAlias + "$" + PARTICIPANT_VISIT_JOIN;
+            if (map.containsKey(tableAlias))
+                return;
+
+            SQLFragment joinSql = new SQLFragment();
+            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit()).append(" AS ");
+            joinSql.append(tableAlias).append(" ON ");
+            joinSql.append(parentAlias).append(".ParticipantSequenceKey = ").append(tableAlias).append(".ParticipantSequenceKey");
+            joinSql.append(" AND ").append(parentAlias).append(".Container = ").append(tableAlias).append(".Container");
+
+            map.put(tableAlias, joinSql);
+        }
+    }
+
     public static class CollectionCohortColumn extends ExprColumn
     {
         protected static final String COLLECTION_COHORT_JOIN = "CollectionCohortJoin$";
@@ -180,9 +214,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             SQLFragment joinSql = new SQLFragment();
             joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit()).append(" AS ");
             joinSql.append(tableAlias).append(" ON ");
-            joinSql.append(parentAlias).append(".PTID = ").append(tableAlias).append(".ParticipantId AND ");
-            joinSql.append(parentAlias).append(".VisitValue = ").append(tableAlias).append(".SequenceNum AND ");
-            joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");
+            joinSql.append(parentAlias).append(".ParticipantSequenceKey = ").append(tableAlias).append(".ParticipantSequenceKey");
+            joinSql.append(" AND ").append(parentAlias).append(".Container = ").append(tableAlias).append(".Container");
 
             map.put(tableAlias, joinSql);
         }

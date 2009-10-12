@@ -39,18 +39,16 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         addSpecimenVisitColumn(_schema.getStudy().isDateBased());
 
-        ColumnInfo pvColumn = new ParticipantVisitColumn(
-                "ParticipantVisit",
-                new AliasedColumn(this, "PVParticipant", getRealTable().getColumn("PTID")),
-                new AliasedColumn(this, "PVVisit", getRealTable().getColumn("VisitValue")));
-        addColumn(pvColumn);
-        pvColumn.setFk(new LookupForeignKey("ParticipantVisit")
+        ColumnInfo pvColumn = new AliasedColumn(this, "ParticipantVisit", _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
+        pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_schema, null);
+                return new ParticipantVisitTable(_schema);
             }
         });
+        pvColumn.setIsUnselectable(true);
+        addColumn(pvColumn);
 
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume"));

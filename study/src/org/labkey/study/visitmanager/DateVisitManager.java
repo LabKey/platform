@@ -141,8 +141,10 @@ public class DateVisitManager extends VisitManager
             //
             // populate ParticipantVisit
             //
-            String sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit + " (Container, ParticipantId, SequenceNum, VisitDate)\n" +
+            String sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit +
+                    " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
                     "SELECT DISTINCT Container, ParticipantId, SequenceNum, _VisitDate\n" +
+                    getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + ") AS ParticipantSequenceKey\n" +
                     "FROM " + tableStudyData + " SD\n" +
                     "WHERE Container = ? AND NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
@@ -150,9 +152,11 @@ public class DateVisitManager extends VisitManager
             Table.execute(schema, sqlInsertParticipantVisit,
                     new Object[] {_study.getContainer(), _study.getContainer()});
 
-            sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit + " (Container, ParticipantId, SequenceNum, VisitDate)\n" +
+            sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit +
+                    " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
                     "SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, " +
                     schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") + " AS VisitDate\n" +
+                    getParticipantSequenceKeyExpr(schema, "Ptid", "VisitValue") + ") AS ParticipantSequenceKey\n" +
                     "FROM " + tableSpecimen + " AS Specimen\n" +
                     "WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
@@ -169,6 +173,16 @@ public class DateVisitManager extends VisitManager
             String sqlStartDate = "(SELECT StartDate FROM " + tableParticipant + " WHERE " + tableParticipant + ".ParticipantId=" + tableParticipantVisit + ".ParticipantId AND " + tableParticipant + ".Container=" + tableParticipantVisit + ".Container)";
             String sqlUpdateDays = "UPDATE " + tableParticipantVisit + " SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE " + schema.getSqlDialect().getDateDiff(Calendar.DATE, "VisitDate", sqlStartDate) + " END WHERE Container=? AND NOT VisitDate IS NULL";
             Table.execute(schema, sqlUpdateDays, new Object[] {VisitImpl.DEMOGRAPHICS_VISIT, _study.getContainer()});
+
+            StringBuilder participantSequenceKey = new StringBuilder("(ParticipantId");
+            participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
+            participantSequenceKey.append("'|'");
+            participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
+            participantSequenceKey.append("CAST(SequenceNum AS VARCHAR))");
+
+            String sqlUpdateParticipantSeqKey = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceKey = " +
+                    participantSequenceKey + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
+            Table.execute(schema, sqlUpdateParticipantSeqKey, new Object[] {_study.getContainer()});
 
             _updateVisitRowId();
 

@@ -32,20 +32,19 @@ public class ParticipantVisitTable extends FilteredTable
     StudyQuerySchema _schema;
     SqlDialect _dialect;
 
-    // NOTE: _pvForeign is so we can 'skip' this table when joining from one dataset to another
-    ColumnInfo _pvForeign;
-
-    public ParticipantVisitTable(StudyQuerySchema schema, ColumnInfo pv)
+    public ParticipantVisitTable(StudyQuerySchema schema)
     {
         super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema.getContainer());
         _schema = schema;
         _dialect = _schema.getDbSchema().getSqlDialect();
-        _pvForeign = pv;
 
+        /*
         ColumnInfo keyPV = new ParticipantVisitColumn("ParticipantVisit", this, _rootTable.getColumn("ParticipantId"), _rootTable.getColumn("SequenceNum"));
         keyPV.setHidden(true);
         keyPV.setIsUnselectable(true);
         addColumn(keyPV);
+        */
+        ColumnInfo participantSequenceKeyColumn = null;
         for (ColumnInfo col : _rootTable.getColumns())
         {
             if ("Container".equalsIgnoreCase(col.getName()))
@@ -77,22 +76,13 @@ public class ParticipantVisitTable extends FilteredTable
                     addColumn(cohortColumn);
                 }
             }
-            else  if (_pvForeign == null)
-                addWrapColumn(col);
-            else
+            else if ("ParticipantSequenceKey".equalsIgnoreCase(col.getName()))
             {
-                ColumnInfo lookupCol = new LookupColumn(pv, keyPV, col);
-                lookupCol.setName(col.getName());
-                addColumn(lookupCol);
+                participantSequenceKeyColumn = addWrapColumn(col);
+                participantSequenceKeyColumn.setHidden(true);
             }
-        }
-
-        if (null == _pvForeign)
-        {
-            _pvForeign = new ParticipantVisitColumn(
-                    "ParticipantVisit",
-                    new AliasedColumn("ParticipantId",getColumn("ParticipantId")),
-                    new AliasedColumn("SequenceNum",getColumn("SequenceNum")));
+            else
+                addWrapColumn(col);
         }
 
 // it would be nice to avoid lookup back to source table
@@ -119,15 +109,15 @@ public class ParticipantVisitTable extends FilteredTable
             if (dataset.getKeyPropertyName() != null)
                 continue;
 
-            ColumnInfo datasetColumn = createDataSetColumn(name, dataset);
+            ColumnInfo datasetColumn = createDataSetColumn(name, dataset, participantSequenceKeyColumn);
             addColumn(datasetColumn);
         }
     }
 
 
-    protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd)
+    protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd, ColumnInfo participantSequenceKeyColumn)
     {
-        ColumnInfo ret = new AliasedColumn(name, AliasManager.makeLegalName(name, _dialect), _pvForeign);
+        ColumnInfo ret = new AliasedColumn(name, AliasManager.makeLegalName(name, _dialect), participantSequenceKeyColumn);
         ret.setFk(new PVForeignKey(dsd));
         ret.setLabel(dsd.getLabel());
         ret.setIsUnselectable(true);
@@ -135,31 +125,16 @@ public class ParticipantVisitTable extends FilteredTable
     }
 
 
-    private class PVForeignKey extends AbstractForeignKey
+    private class PVForeignKey extends LookupForeignKey
     {
         private final DataSetDefinition dsd;
 
         public PVForeignKey(DataSetDefinition dsd)
         {
+            super("ParticipantVisit");
             this.dsd = dsd;
         }
-
-        public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
-        {
-            DataSetTable table = getLookupTableInfo();
-            if (table == null)
-                return null;
-            if (displayField == null)
-                return null;
-
-            ParticipantVisitColumn lookupKey = new ParticipantVisitColumn("ParticipantVisit", table.getColumn("ParticipantId"), table.getColumn("SequenceNum"));
-            ColumnInfo lookupColumn = table.getColumn(displayField);
-            if (lookupColumn == null)
-                return null;
-            LookupColumn look = new PVLookupColumn(foreignKey, lookupKey, lookupColumn);
-            return look;
-        }
-
+        
         public DataSetTable getLookupTableInfo()
         {
             try
@@ -177,47 +152,6 @@ public class ParticipantVisitTable extends FilteredTable
         public StringExpression getURL(ColumnInfo parent)
         {
             return null;
-        }
-    }
-
-    
-    private class PVLookupColumn extends LookupColumn
-    {
-        public PVLookupColumn(ColumnInfo foreignKey, ParticipantVisitColumn lookupKey, ColumnInfo lookupColumn)
-        {
-            super(foreignKey, lookupKey, lookupColumn);
-            copyAttributesFrom(lookupColumn);
-            copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
-            setLabel(foreignKey.getLabel() + " " + lookupColumn.getLabel());
-        }
-
-        @Override
-        public SQLFragment getJoinCondition(String tableAliasName)
-        {
-            ColumnInfo fk = foreignKey;
-            if (fk instanceof AliasedColumn)
-                fk = ((AliasedColumn)fk).getColumn();
-            ColumnInfo lk = lookupKey;
-            if (lk instanceof AliasedColumn)
-                lk = ((AliasedColumn)lk).getColumn();
-
-            if (!(fk instanceof ParticipantVisitColumn) || !(lk instanceof ParticipantVisitColumn))
-                return super.getJoinCondition(tableAliasName);
-
-            ParticipantVisitColumn pvForeign = (ParticipantVisitColumn) fk;
-            ParticipantVisitColumn pvLookup = (ParticipantVisitColumn) lk;
-
-            SQLFragment condition = new SQLFragment();
-            condition.append("(");
-            condition.append(pvForeign._participantColumn.getValueSql(getTableAlias()));
-            condition.append(" = ");
-            condition.append(pvLookup._participantColumn.getValueSql(tableAliasName));
-            condition.append(" AND " );
-            condition.append(pvForeign._visitColumn.getValueSql(getTableAlias()));
-            condition.append(" = ");
-            condition.append(pvLookup._visitColumn.getValueSql(tableAliasName));
-            condition.append(")");
-            return condition;
         }
     }
 }

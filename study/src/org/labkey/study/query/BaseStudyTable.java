@@ -132,9 +132,7 @@ public abstract class BaseStudyTable extends FilteredTable
             String dateVisitJoinAlias = parentAlias + "$" + DATE_VISIT_JOIN_ALIAS;
             SQLFragment join = new SQLFragment();
             join.append(" LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoParticipantVisit() + " " + pvAlias + " ON\n" +
-                    parentAlias + ".Ptid = " + pvAlias + ".ParticipantId AND " +
-                    parentAlias + ".VisitValue = " + pvAlias + ".SequenceNum AND " +
-                    parentAlias + ".Container = " + pvAlias + ".Container\n");
+                    parentAlias + ".ParticipantSequenceKey = " + pvAlias + ".ParticipantSequenceKey\n");
             join.append("LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " " + dateVisitJoinAlias +
                     " ON " + dateVisitJoinAlias + ".RowId = " + pvAlias + ".VisitRowId");
             map.put(DATE_VISIT_JOIN_ALIAS, join);
@@ -278,8 +276,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
                 joinSql.append(" LEFT OUTER JOIN ").append(_ptidVisitCommentTable.getSelectName()).append(" AS ");
                 joinSql.append(ptidTableAlias).append(" ON ");
-                joinSql.append(parentAlias).append(".Ptid = ").append(ptidTableAlias).append(".ParticipantId AND ");
-                joinSql.append(parentAlias).append(".VisitValue = ").append(ptidTableAlias).append(".SequenceNum\n");
+                joinSql.append(parentAlias).append(".ParticipantSequenceKey = ").append(ptidTableAlias).append(".ParticipantSequenceKey");
             }
             map.put(tableAlias, joinSql);
         }
@@ -334,19 +331,23 @@ public abstract class BaseStudyTable extends FilteredTable
 
         if (vialComment instanceof String)
         {
-            sb.append("<i>vial:&nbsp;</i>");
+            sb.append("<i>Vial:&nbsp;</i>");
             sb.append(vialComment);
             sb.append(lineSeparator);
         }
         if (participantComment instanceof String)
         {
-            sb.append("<i>participant:&nbsp;</i>");
+            if (sb.length() > 0)
+                sb.append(lineSeparator);
+            sb.append("<i>Participant:&nbsp;</i>");
             sb.append(participantComment);
             sb.append(lineSeparator);
         }
         if (participantVisitComment instanceof String)
         {
-            sb.append("<i>participant/visit:&nbsp;</i>");
+            if (sb.length() > 0)
+                sb.append(lineSeparator);
+            sb.append("<i>Participant/Visit:&nbsp;</i>");
             sb.append(participantVisitComment);
             sb.append(lineSeparator);
         }

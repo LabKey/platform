@@ -474,7 +474,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         String fullName = tinfoMat.getTempTableName();
         String shortName = fullName.substring(1+fullName.lastIndexOf('.'));
         Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_seq ON " + fullName + "(SequenceNum)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptid ON " + fullName + "(ParticipantId)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptidsequencekey ON " + fullName + "(ParticipantSequenceKey)", null);
         Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptid_seq ON " + fullName + "(ParticipantId,SequenceNum)", null);
 
         //noinspection ConstantConditions
@@ -697,7 +697,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             final TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
             // StudyData columns
-            List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","sourcelsid", "created","modified");
+            List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","ParticipantSequenceKey","sourcelsid", "created","modified");
             for (ColumnInfo col : columnsBase)
             {
                 boolean ptid = "participantid".equals(col.getColumnName());
@@ -792,7 +792,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 //          <UNDONE> just add a lookup column to the columnlist for VisitDate
             _fromSql = new SQLFragment(
-                    "SELECT SD.container, SD.lsid, SD.ParticipantId, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
+                    "SELECT SD.container, SD.lsid, SD.ParticipantId, SD.ParticipantSequenceKey, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
                     "  FROM " + studyData.getSelectName() + " SD LEFT OUTER JOIN " + participantVisit.getSelectName() + " PV ON SD.Container=PV.Container AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum \n"+
                     "  WHERE SD.container=? AND SD.datasetid=?");
             _fromSql.add(c);
