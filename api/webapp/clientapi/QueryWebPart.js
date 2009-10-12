@@ -105,6 +105,12 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
         this.filters = this.filters || this.filterArray;
 
+        /**
+         * @memberOf LABKEY.QueryWebPart
+         * @name render
+         * @event
+         * @description Fired after the web part html is rendered into the page.
+         */
         this.addEvents({
             "render": true
         });

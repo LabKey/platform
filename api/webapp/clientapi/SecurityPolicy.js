@@ -63,6 +63,12 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
         this.policy = config;
         this._dirty = false;
 
+        /**
+         * @memberOf LABKEY.SecurityPolicy
+         * @name change
+         * @event
+         * @description Fired after the policy has been changed in some way.
+         */
         this.addEvents({
             "change": true
         });

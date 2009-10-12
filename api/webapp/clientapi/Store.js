@@ -122,6 +122,29 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             }
         });
 
+        /**
+         * @memberOf LABKEY.ext.Store
+         * @name beforecommit
+         * @event
+         * @description Fired just before the store sends updated records to the server for saving. Return
+         * false from this event to stop the save operation.
+         * @param {array} records An array of Ext.data.Record objects that will be saved.
+         * @param {array} rows An array of simple row-data objects from those records. These are the actual
+         * data objects that will be sent to the server.
+         */
+        /**
+         * @memberOf LABKEY.ext.Store
+         * @name commitcomplete
+         * @event
+         * @description Fired after all modified records have been saved on the server.
+         */
+        /**
+         * @memberOf LABKEY.ext.Store
+         * @name commitexception
+         * @event
+         * @description Fired if there was an exception during the save process.
+         * @param {String} message The exception message.
+         */
         this.addEvents("beforecommit", "commitcomplete", "commitexception");
 
         //subscribe to the proxy's beforeload event so that we can map parameter names
