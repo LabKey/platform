@@ -22,6 +22,7 @@ import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 
 import java.util.*;
 
@@ -411,7 +412,8 @@ public class SimpleFilter implements Filter
         for (Iterator<SimpleFilter.FilterClause> it = _clauses.iterator() ; it.hasNext(); )
         {
             SimpleFilter.FilterClause clause = it.next();
-            if (clause.getColumnNames().contains(colName))
+            CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(clause.getColumnNames());
+            if (names.contains(colName))
                 it.remove();
         }
         return this;
