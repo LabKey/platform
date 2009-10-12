@@ -45,7 +45,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
 
     public String getTypeURI()
     {
-        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + GWTPropertyValidator.TYPE_REGEX).toString();
+        return createValidatorURI(GWTPropertyValidator.TYPE_REGEX).toString();
     }
 
     public String getDescription()
