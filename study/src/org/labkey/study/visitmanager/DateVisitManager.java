@@ -143,7 +143,7 @@ public class DateVisitManager extends VisitManager
             //
             String sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit +
                     " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
-                    "SELECT DISTINCT Container, ParticipantId, SequenceNum, _VisitDate\n" +
+                    "SELECT DISTINCT Container, ParticipantId, SequenceNum, _VisitDate, \n(" +
                     getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + ") AS ParticipantSequenceKey\n" +
                     "FROM " + tableStudyData + " SD\n" +
                     "WHERE Container = ? AND NOT EXISTS (" +
@@ -155,7 +155,7 @@ public class DateVisitManager extends VisitManager
             sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit +
                     " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
                     "SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, " +
-                    schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") + " AS VisitDate\n" +
+                    schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") + " AS VisitDate, \n(" +
                     getParticipantSequenceKeyExpr(schema, "Ptid", "VisitValue") + ") AS ParticipantSequenceKey\n" +
                     "FROM " + tableSpecimen + " AS Specimen\n" +
                     "WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (" +
