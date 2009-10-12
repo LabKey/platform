@@ -467,8 +467,8 @@ public class DomainUtil
                 newProps.put(v.getRowId(), v);
             else
             {
-                String typeURI = new Lsid(ValidatorKind.NAMESPACE, v.getType()).toString();
-                IPropertyValidator pv = PropertyService.get().createValidator(typeURI);
+                Lsid lsid = DefaultPropertyValidator.createValidatorURI(v.getType());
+                IPropertyValidator pv = PropertyService.get().createValidator(lsid.toString());
 
                 _copyValidator(pv, v);
                 dp.addValidator(pv);

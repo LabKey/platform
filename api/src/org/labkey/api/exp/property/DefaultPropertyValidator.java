@@ -15,9 +15,9 @@
  */
 package org.labkey.api.exp.property;
 
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
 
@@ -28,6 +28,11 @@ import java.util.List;
 */
 public abstract class DefaultPropertyValidator implements ValidatorKind
 {
+    public static Lsid createValidatorURI(String type)
+    {
+        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + type);
+    }
+
     protected void createErrorMessage(IPropertyValidator validator, String field, Object value, List<ValidationError> errors)
     {
         StringBuffer sb = new StringBuffer();
