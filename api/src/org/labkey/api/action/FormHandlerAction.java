@@ -38,6 +38,8 @@ public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
         if (!errors.hasErrors())
             errors.addError(new LabkeyError("This action does not support HTTP GET"));
 
+        // TODO: use dialog template in this case?
+
         return new SimpleErrorView(errors);
     }
 

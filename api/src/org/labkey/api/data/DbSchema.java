@@ -413,6 +413,12 @@ public class DbSchema
     }
 
 
+    @Override
+    public String toString()
+    {
+        return "DbSchema " + getName();
+    }
+
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()

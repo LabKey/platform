@@ -18,9 +18,9 @@ package org.labkey.api.util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConvertUtils;
-import static org.apache.commons.collections.IteratorUtils.filteredIterator;
-import static org.apache.commons.collections.IteratorUtils.toList;
-import org.apache.commons.collections.Predicate;
+import static org.apache.commons.collections15.IteratorUtils.filteredIterator;
+import static org.apache.commons.collections15.IteratorUtils.toList;
+import org.apache.commons.collections15.Predicate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -81,9 +81,9 @@ public class ResultSetUtil
     }
     
 
-    public static ResultSet filter(ResultSet in, Predicate pred)
+    public static ResultSet filter(ResultSet in, Predicate<Map<String, Object>> pred)
     {
-        Iterator<Map> it;
+        Iterator<Map<String, Object>> it;
         boolean isComplete = true;
 
         if (in instanceof Table.TableResultSet)
@@ -96,8 +96,7 @@ public class ResultSetUtil
             it = new ResultSetIterator(in);
         }
 
-        //noinspection unchecked
-        List<Map<String,Object>> accepted = toList(filteredIterator(it, pred));
+        List<Map<String, Object>> accepted = toList(filteredIterator(it, pred));
 
         try
         {
@@ -112,11 +111,11 @@ public class ResultSetUtil
 
     public static ResultSet filter(ResultSet in, final User u, final PermissionsMap<Map> fn, final int required)
     {
-        Predicate pred = new Predicate()
+        Predicate<Map<String, Object>> pred = new Predicate<Map<String, Object>>()
         {
-            public boolean evaluate(Object object)
+            public boolean evaluate(Map<String, Object> map)
             {
-                int perm = fn.getPermissions(u, (Map)object);
+                int perm = fn.getPermissions(u, map);
                 return (perm & required) == required;
             }
         };

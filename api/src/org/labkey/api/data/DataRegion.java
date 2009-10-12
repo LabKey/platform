@@ -38,9 +38,6 @@ import java.text.Format;
 import java.util.*;
 
 
-/**
-
- */
 public class DataRegion extends DisplayElement
 {
     private static final Logger _log = Logger.getLogger(DataRegion.class);

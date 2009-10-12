@@ -379,6 +379,8 @@ public abstract class SqlDialect
 
     public abstract void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName);
 
+    public abstract boolean requiresStatementMaxRows();
+
     /**
      * Limit a SELECT query to the specified number of rows (0 == no limit).
      * @param sql a SELECT query

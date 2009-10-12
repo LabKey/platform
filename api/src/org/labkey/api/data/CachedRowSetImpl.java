@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections15.IteratorUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ArrayListMap;
@@ -104,20 +104,27 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
 
         try
         {
-            // TODO: make this work for SAS 
             assert !rs.isAfterLast() || rs.getRow() == 0;
             isComplete = rs.getRow() == 0;
         }
         catch (SQLException e)
         {
-            isComplete = true;
+            // Fallback approach for databases that don't support rs.getRow() (e.g., SAS/SHARE)
+            try
+            {
+                isComplete = rs.next();
+            }
+            catch (SQLException e1)
+            {
+                isComplete = true;
+            }
         }
 
         init(rs.getMetaData(), list, isComplete);
     }
 
 
-    public CachedRowSetImpl(ResultSetMetaData md, List<Map<String,Object>> maps, boolean isComplete)
+    public CachedRowSetImpl(ResultSetMetaData md, List<Map<String, Object>> maps, boolean isComplete)
     {
         this();
         init(md, maps, isComplete);
@@ -1122,11 +1129,10 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     }
 
 
-    public Iterator<Map> iterator()
+    public Iterator<Map<String, Object>> iterator()
     {
         Iterator it = IteratorUtils.arrayIterator(_maps);
-        //noinspection unchecked
-        return (Iterator<Map>)IteratorUtils.unmodifiableIterator(it);
+        return (Iterator<Map<String, Object>>)IteratorUtils.unmodifiableIterator(it);
     }
 
     public int getSize()

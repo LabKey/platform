@@ -23,7 +23,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 
-public class ResultSetIterator implements Iterator<Map>
+public class ResultSetIterator implements Iterator<Map<String, Object>>
 {
     private final ResultSet _rs;
     private ResultSetRowMapFactory _factory;
@@ -62,7 +62,7 @@ public class ResultSetIterator implements Iterator<Map>
         }
     }
 
-    public Map next()
+    public Map<String, Object> next()
     {
         try
         {

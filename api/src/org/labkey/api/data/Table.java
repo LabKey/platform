@@ -87,10 +87,10 @@ public class Table
 
     private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters) throws SQLException
     {
-        return _executeQuery(conn, sql, parameters, null, false);
+        return _executeQuery(conn, sql, parameters, null, false, null);
     }
 
-    private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, AsyncQueryRequest asyncRequest, boolean scrollable)
+    private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, AsyncQueryRequest asyncRequest, boolean scrollable, Integer statementRowCount)
             throws SQLException
     {
         _logDebug(sql, parameters, conn);
@@ -99,6 +99,10 @@ public class Table
         if (null == parameters || 0 == parameters.length)
         {
             Statement statement = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            if (null != statementRowCount)
+            {
+                statement.setMaxRows(statementRowCount.intValue());
+            }
             if (asyncRequest != null)
             {
                 asyncRequest.setStatement(statement);
@@ -108,6 +112,10 @@ public class Table
         else
         {
             PreparedStatement stmt = conn.prepareStatement(sql, scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            if (null != statementRowCount)
+            {
+                stmt.setMaxRows(statementRowCount.intValue());
+            }
             if (asyncRequest != null)
             {
                 asyncRequest.setStatement(stmt);
@@ -168,7 +176,7 @@ public class Table
         }
     }
 
-    public static void setParameters(PreparedStatement stmt, Object[] parameters) throws SQLException
+    private static void setParameters(PreparedStatement stmt, Object[] parameters) throws SQLException
     {
         setParameters(stmt, Arrays.asList(parameters));
     }
@@ -198,7 +206,7 @@ public class Table
                 {
                     isInvalid = p.equals(Double.NaN);
                     if (!isInvalid)
-                        p = ResultSetUtil.mapJavaDoubleToDatabaseDouble((Double) p);
+                        p = ResultSetUtil.mapJavaDoubleToDatabaseDouble(((Double) p).doubleValue());
                 }
 
                 if (isInvalid)
@@ -276,7 +284,8 @@ public class Table
         try
         {
             conn = schema.getScope().getConnection(log);
-            rs = _executeQuery(conn, sql, parameters, asyncRequest, scrollable);
+            Integer statementRowCount = (schema.getSqlDialect().requiresStatementMaxRows() ? decideRowCount((int)scrollOffset + rowCount, null) : null);  // TODO: need to refactor and harmonize with ecideRowCount()
+            rs = _executeQuery(conn, sql, parameters, asyncRequest, scrollable, statementRowCount);
 
             while (scrollOffset > 0 && rs.next())
                 scrollOffset--;
@@ -447,6 +456,7 @@ public class Table
      * return a result from a one row one column resultset or null.
      * K should be a string or number type.
      */
+    // TODO: why is there a sort parameter here?
     public static <K> K executeSingleton(TableInfo table, ColumnInfo column, Filter filter, Sort sort, Class<K> c)
     {
         try
@@ -932,6 +942,7 @@ public class Table
 
             stmt = prepareStatement(conn, insertSQL.toString(), parameters.toArray());
             stmt.execute();
+
             if (null != autoIncColumn)
                 if (stmt.getMoreResults())
                 {
@@ -1259,7 +1270,7 @@ public class Table
             queryRowCount = rowCount + (int)offset;
         }
 
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort, queryRowCount, queryOffset);
+        SQLFragment sql = getSelectSQL(table, columns, filter, sort, queryRowCount, queryOffset);   // TODO: Use decideRowCount() here?
         return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, scrollOffset);
     }
 
@@ -1619,7 +1630,7 @@ public class Table
 
         public Map<String, Object> getRowMap() throws SQLException;
 
-        public Iterator<Map> iterator();
+        public Iterator<Map<String, Object>> iterator();
 
         String getTruncationMessage(int maxRows);
     }
@@ -1713,7 +1724,7 @@ public class Table
         }
 
 
-        public Iterator<Map> iterator()
+        public Iterator<Map<String, Object>> iterator()
         {
             return new ResultSetIterator(this);
         }
