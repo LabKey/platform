@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,18 +33,7 @@
     SpringSpecimenController.UpdateSpecimenCommentsBean bean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
 
-
-    NavTree migrateButton = new NavTree("Migrate Comment");
-
-    NavTree participantItem = new NavTree("To Participant", "#");
-    participantItem.setScript("document.updateComments.migrateToParticipant.value='true'; document.updateComments.submit()");
-    NavTree participantVisitItem = new NavTree("To Participant/Visit", "#");
-    participantVisitItem.setScript("document.updateComments.migrateToParticipantVisit.value='true'; document.updateComments.submit()");
-
-    migrateButton.addChild(participantItem);
-    migrateButton.addChild(participantVisitItem);
-
-    NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container));
+    NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container), getViewContext().getUser());
 %>
 <form action="updateComments.post" name="updateComments" id="updateCommentForm" method="POST">
     <input type="hidden" name="copyToParticipant" value="false">
@@ -143,10 +134,22 @@
 %>
 
 <%!
-    private NavTree createCopyCommentButton(Map<String, Map<String, Integer>> pvMap, StudyImpl study)
+    private NavTree createCopyCommentButton(Map<String, Map<String, Integer>> pvMap, StudyImpl study, User user)
     {
         boolean hasParticipantMenu = study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1;
         boolean hasParticipantVisitMenu = study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1;
+
+        if (hasParticipantMenu)
+        {
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+            hasParticipantMenu = def != null && def.canWrite(user);
+        }
+
+        if (hasParticipantVisitMenu)
+        {
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
+            hasParticipantVisitMenu = def != null && def.canWrite(user);
+        }
 
         if (hasParticipantMenu || hasParticipantVisitMenu)
         {

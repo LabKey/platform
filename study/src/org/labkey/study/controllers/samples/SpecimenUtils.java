@@ -217,26 +217,34 @@ public class SpecimenUtils
                 boolean addSep = true;
                 if (study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1)
                 {
-                    if (addSep)
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+                    if (def != null && def.canWrite(getUser()))
                     {
-                        commentsMenuButton.addSeparator();
-                        addSep = false;
+                        if (addSep)
+                        {
+                            commentsMenuButton.addSeparator();
+                            addSep = false;
+                        }
+                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage participant comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                                addParameter("datasetId", study.getParticipantCommentDataSetId()));
+                        ptidComments.setId("Comments:SetParticipant");
                     }
-                    NavTree ptidComments = commentsMenuButton.addMenuItem("Manage participant comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                            addParameter("datasetId", study.getParticipantCommentDataSetId()));
-                    ptidComments.setId("Comments:SetParticipant");
                 }
 
                 if (study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1)
                 {
-                    if (addSep)
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
+                    if (def != null && def.canWrite(getUser()))
                     {
-                        commentsMenuButton.addSeparator();
-                        addSep = false;
+                        if (addSep)
+                        {
+                            commentsMenuButton.addSeparator();
+                            addSep = false;
+                        }
+                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage participant/visit comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                                addParameter("datasetId", study.getParticipantVisitCommentDataSetId()));
+                        ptidComments.setId("Comments:SetParticipantVisit");
                     }
-                    NavTree ptidComments = commentsMenuButton.addMenuItem("Manage participant/visit comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                            addParameter("datasetId", study.getParticipantVisitCommentDataSetId()));
-                    ptidComments.setId("Comments:SetParticipantVisit");
                 }
                 buttons.add(commentsMenuButton);
             }

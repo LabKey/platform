@@ -42,7 +42,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
 
     public String getTypeURI()
     {
-        return new Lsid(NAMESPACE, GWTPropertyValidator.TYPE_RANGE).toString();
+        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + GWTPropertyValidator.TYPE_RANGE).toString();
     }
 
     public String getDescription()

@@ -4454,6 +4454,11 @@ public class SpringSpecimenController extends BaseStudyController
         public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors) throws Exception
         {
             StudyImpl study = getStudy();
+            SecurityType securityType = study.getSecurityType();
+
+            if (securityType == SecurityType.ADVANCED_READ || securityType == SecurityType.BASIC_READ)
+                return new HtmlView("Comments can only be configured for studies with editable datasets.");
+
             if (!form.isReshow())
             {
                 form.setParticipantCommentDataSetId(study.getParticipantCommentDataSetId());
