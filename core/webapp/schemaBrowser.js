@@ -1092,7 +1092,7 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(Ext.Panel, {
         if (userDefined.length > 0)
             rows.push(this.formatQueryList(userDefined, "User-Defined Queries"));
         if (builtIn.length > 0)
-            rows.push(this.formatQueryList(builtIn, "Built-In Queries"));
+            rows.push(this.formatQueryList(builtIn, "Built-In Queries and Tables"));
 
         var table = this.body.createChild({
             tag: 'table',
@@ -1394,14 +1394,17 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         var tree = this.getComponent("lk-sb-tree");
         var node = tree.getSelectionModel().getSelectedNode();
         if (node && node.attributes.schemaName)
-            window.location = this.getCreateQueryUrl(node.attributes.schemaName), "createQuery";
+            window.location = this.getCreateQueryUrl(node.attributes.schemaName, node.attributes.queryName), "createQuery";
         else
             Ext.Msg.alert("Which Schema?", "Please select the schema in which you want to create the new query.");
 
     },
 
-    getCreateQueryUrl : function(schemaName) {
-        return LABKEY.ActionURL.buildURL("query", "newQuery", undefined, {schemaName: schemaName});
+    getCreateQueryUrl : function(schemaName, queryName) {
+        var params = {schemaName: schemaName};
+        if (queryName)
+            params.ff_baseTableName = queryName;
+        return LABKEY.ActionURL.buildURL("query", "newQuery", undefined, params);
     },
 
     onTabChange : function(tabpanel, tab) {
