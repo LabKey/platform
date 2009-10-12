@@ -260,16 +260,16 @@ Ext.namespace('LABKEY', 'LABKEY.Exp');
  *
  * @param {Object} [config] private constructor argument.
  *
- * @property {String} lsid The LSID of the object.
- * @property {String} name The name of the object.
- * @property {number} id The id of this object.
- * @property {number} rowId The id of this object.
- * @property {String} comment User editable comment.
- * @property {Date} created When the ExpObject was created.
- * @property {String} createdBy Who created the ExpObject.
- * @property {Date} modified When the ExpObject was last modified.
- * @property {String} modifiedBy Who last modified the ExpObject.
- * @property {Object} properties Map of property descriptor names to values.
+ * @param {String} config.lsid The LSID of the object.
+ * @param {String} config.name The name of the object.
+ * @param {number} config.id The id of this object.
+ * @param {number} config.rowId The id of this object (alias of id property)
+ * @param {String} config.comment User editable comment.
+ * @param {Date} config.created When the ExpObject was created.
+ * @param {String} config.createdBy Who created the ExpObject.
+ * @param {Date} config.modified When the ExpObject was last modified.
+ * @param {String} config.modifiedBy Who last modified the ExpObject.
+ * @param {Object} config.properties Map of property descriptor names to values.
  */
 LABKEY.Exp.ExpObject = function (config) {
     config = config || {};
@@ -292,6 +292,9 @@ LABKEY.Exp.ExpObject = function (config) {
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] private constructor argument.
+ * @param {Object[]} config.dataInputs Array of {@link LABKEY.Exp.Data} config objects.
+ * @param {Object[]} config.dataRows Array of Objects where each Object corresponds to a row in the results domain.
+ * @param {Object[]} config.materialInputs Array of {@link LABKEY.Exp.Material} config objects.
  *
  * @property {LABKEY.Exp.Data[]} dataInputs Array of {@link LABKEY.Exp.Data} input files.
  * @property {Object[]} dataRows Array of Objects where each Object corresponds to a row in the results domain.
@@ -437,6 +440,7 @@ Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] private constructor argument.
+ * @param {Object[]} config.runs Array of {@link LABKEY.Exp.Run} config objects.
  *
  * @property {LABKEY.Exp.Run[]} runs Array of {@link LABKEY.Exp.Run} in this run group.
  * @property {Boolean} hidden Determines whether the RunGroup is hidden.
@@ -481,25 +485,18 @@ Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] config.
- * @param {int} config.materialLSIDPrefix Need documentation here. Please verify or update type.
- * @param {String[]} config.propertiesForType Need documentation here.
- * @param {Object[]} config.samples Need documentation here.
- * @param {String} config.type Need doc here.
+ * @param {Object[]} config.samples Array of {@link LABKEY.Exp.Material} config objects.
  * @param {String} config.description
- * @param {Bool} config.canImportMoreSamples
- * @param {Bool} config.hasIdColumns
+ *
+ * @property {LABKEY.Exp.Material[]} config.samples {@link LABKEY.Exp.Material} samples in the SampleSet.
+ * @property {String} description
  */
 LABKEY.Exp.SampleSet = function (config) {
     LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
     config = config || {};
 
-    this.materialLSIDPrefix = config.materialLSIDPrefix;
-    this.propertiesForType = config.propertiesForType;
     this.samples = config.samples;
-    this.type = config.type;
     this.description = config.description;
-    this.canImportMoreSamples = config.canImportMoreSamples;
-    this.hasIdColumns = config.hasIdColumns;
 };
 Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
 
@@ -550,15 +547,10 @@ Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] config.
- * @param {Object} config.sampleSet Need documentation here.  Please verify or update type.
- * @param {Double[]} [config.propertyValues] Need documentation here.  Please verify or update type.
  */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
     config = config || {};
-
-    this.sampleSet = config.sampleSet;
-    this.propertyValues = config.propertyValues || {};
 };
 Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
 
@@ -728,8 +720,5 @@ LABKEY.Exp.Data = function (config) {
         });
 
     };
-
-    //this.isInlineImage
-    //this.isFileOnDisk
 };
 Ext.extend(LABKEY.Exp.Data, LABKEY.Exp.ProtocolOutput);
