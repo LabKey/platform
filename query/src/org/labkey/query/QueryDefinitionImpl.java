@@ -27,10 +27,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -209,7 +206,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         String metadata = StringUtils.trimToNull(getMetadataXml());
         if (metadata != null)
         {
-            XmlOptions options = new XmlOptions();
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             List<XmlError> errors = new ArrayList<XmlError>();
             options.setErrorListener(errors);
             try
@@ -219,11 +216,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             catch (XmlException xmle)
             {
-                ret.add(new MetadataException(xmle.getMessage()));
+                ret.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
             }
             for (XmlError xmle : errors)
             {
-                ret.add(new MetadataException(xmle.getMessage()));
+                ret.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
             }
         }
         return ret;
