@@ -181,9 +181,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 Table.TableResultSet tableRs = (Table.TableResultSet) rs;
                 Set<String> hashes = new HashSet<String>();
                 Map<String, List<SpecimenComment>> hashToComments = new HashMap<String, List<SpecimenComment>>();
-                for (Iterator<Map> it = tableRs.iterator(); it.hasNext(); )
+                for (Iterator<Map<String, Object>> it = tableRs.iterator(); it.hasNext(); )
                 {
-                    Map<String, Object> row = (Map<String, Object>) it.next();
+                    Map<String, Object> row = it.next();
                     String maxPossibleCount = (String) row.get("Comments");
                     if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
                         hashes.add((String) row.get("SpecimenHash"));

@@ -1258,14 +1258,17 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
     }
+
     private String sqlRootDocument()
     {
         return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent IS NULL AND DocumentName = ?";
     }
+
     private String sqlCascadeDelete()
     {
         return "DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ?";
     }
+
     private String sqlDelete()
     {
         return "DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";

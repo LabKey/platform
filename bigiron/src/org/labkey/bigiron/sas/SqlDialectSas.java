@@ -23,8 +23,8 @@ import org.labkey.api.module.ModuleContext;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.Map;
 
@@ -42,7 +42,9 @@ public abstract class SqlDialectSas extends SqlDialect
 
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        sqlTypeIntMap.put(Types.VARCHAR, "VARCHAR");
+        sqlTypeIntMap.put(Types.DATE, "DATE");
+        sqlTypeIntMap.put(Types.DOUBLE, "DOUBLE");
     }
 
     protected boolean claimsDriverClassName(String driverClassName)
@@ -75,12 +77,16 @@ public abstract class SqlDialectSas extends SqlDialect
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public SQLFragment limitRows(SQLFragment sql, int rowCount)
+    public boolean requiresStatementMaxRows()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return true;
     }
 
-    // TODO: Implement
+    public SQLFragment limitRows(SQLFragment frag, int rowCount)
+    {
+        return frag;
+    }
+
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
     {
         if (select == null)
@@ -99,7 +105,7 @@ public abstract class SqlDialectSas extends SqlDialect
 
     public boolean supportsOffset()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public boolean supportsComments()
@@ -114,7 +120,7 @@ public abstract class SqlDialectSas extends SqlDialect
 
     public String getConcatenationOperator()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return "!!";
     }
 
     public String getCharClassLikeOperator()
@@ -124,7 +130,7 @@ public abstract class SqlDialectSas extends SqlDialect
 
     public String getCaseInsensitiveLikeOperator()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return "LIKE";
     }
 
     public String getVarcharLengthFunction()

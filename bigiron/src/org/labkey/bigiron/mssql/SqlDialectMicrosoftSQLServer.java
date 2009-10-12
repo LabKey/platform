@@ -151,6 +151,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
 
+    public boolean requiresStatementMaxRows()
+    {
+        return false;
+    }
+
     @Override
     public SQLFragment limitRows(SQLFragment frag, int rowCount)
     {

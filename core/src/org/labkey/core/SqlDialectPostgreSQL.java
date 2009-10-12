@@ -163,6 +163,11 @@ class SqlDialectPostgreSQL extends SqlDialect
             appendStatement(sql, "SELECT CURRVAL('" + table.getSequence() + "')");
     }
 
+    public boolean requiresStatementMaxRows()
+    {
+        return false;
+    }
+
     @Override
     public SQLFragment limitRows(SQLFragment frag, int rowCount)
     {

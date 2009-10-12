@@ -742,7 +742,7 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
-            int issueId = form.getBean().getIssueId();
+            int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             if (_issue == null)
                 HttpView.throwNotFound();
@@ -861,7 +861,7 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
-            int issueId = form.getBean().getIssueId();
+            int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             if (null == _issue)
                 HttpView.throwNotFound();
@@ -902,7 +902,7 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
-            int issueId = form.getBean().getIssueId();
+            int issueId = form.getIssueId();
             _issue = getIssue(issueId);
             Issue prevIssue = (Issue)_issue.clone();
 
