@@ -30,4 +30,10 @@ public class VirtualTable extends AbstractTableInfo
     {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean isPublic()
+    {
+        return false;
+    }
 }
