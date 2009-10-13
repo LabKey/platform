@@ -129,7 +129,8 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         if (schema == getSchema())
         {
-            _table = schema.getTable(getName());
+            if (_table == null)
+                _table = schema.getTable(getName());
             if (_table != null)
             {
                 return _table;
