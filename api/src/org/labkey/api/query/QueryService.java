@@ -86,7 +86,7 @@ abstract public class QueryService
 
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 
-    abstract public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema);
+    abstract public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema, Collection<QueryException> errors);
 
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
 	abstract public ResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;

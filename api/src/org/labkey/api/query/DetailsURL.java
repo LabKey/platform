@@ -29,6 +29,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Collection;
 import java.util.regex.Pattern;
 
 
@@ -71,6 +72,21 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         return ret;
     }
 
+    public static DetailsURL fromString(Container c, String str, Collection<QueryException> qpe)
+    {
+        try
+        {
+            return fromString(c, str);
+        }
+        catch (IllegalArgumentException iae)
+        {
+            if (qpe != null)
+                qpe.add(new MetadataException(iae.getMessage(), iae));
+            else
+                throw iae;
+        }
+        return null;
+    }
 
     public static DetailsURL fromString(Container c, String str)
     {
@@ -113,7 +129,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
             else if (v instanceof ColumnInfo)
                 strValue = ((ColumnInfo)v).getFieldKey().encode();
             else
-                throw new IllegalArgumentException(String.valueOf(v));
+                throw new IllegalArgumentException("Column param not supported: " + String.valueOf(v));
             url.addParameter(e.getKey(), "${" + strValue + "}");
         }
         _url = url;
@@ -124,7 +140,6 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     {
         this(baseURL, Collections.singletonMap(param,subst));
     }
-
 
     @Override
     protected void parse()
@@ -142,7 +157,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
             String protocol = (i != -1 && expr.charAt(i) == ':') ? expr.substring(0,i) : "";
 
             if (protocol.contains("script"))
-                throw new IllegalArgumentException(expr);
+                throw new IllegalArgumentException("Script not allowed in urls: " + expr);
 
             if (actionPattern.matcher(expr).matches())
             {
@@ -153,12 +168,16 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
             {
                 String className = expr.substring(0,expr.indexOf(".class?"));
                 Class<Controller> cls;
-                try { cls = (Class<Controller>)Class.forName(className); } catch (Exception x) {throw new IllegalArgumentException(expr);}
+                try { cls = (Class<Controller>)Class.forName(className); } catch (Exception x) {throw new IllegalArgumentException("action class '" + className + "' not found: " + expr);}
                 _parsedUrl = new ActionURL(cls, null);
                 _parsedUrl.setRawQuery(expr.substring(expr.indexOf('?')+1));
             }
             else
-                throw new IllegalArgumentException(_urlSource);
+                throw new IllegalArgumentException(
+                        "Failed to parse url '" + _urlSource + "'.\n" +
+                        "Supported url formats:\n" +
+                        "\t/controller/action.view?id=${RowId}\n" +
+                        "\torg.labkey.package.MyController$ActionAction.class?id=${RowId}");
         }
         else
             throw new IllegalStateException();

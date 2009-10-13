@@ -66,14 +66,14 @@ abstract public class UserSchema extends AbstractSchema
 
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
-        Object o = _getTableOrQuery(name, includeExtraMetadata);
+        ArrayList<QueryException> errors = new ArrayList<QueryException>();
+        Object o = _getTableOrQuery(name, includeExtraMetadata, errors);
         if (o instanceof TableInfo)
         {
             return (TableInfo)o;
         }
         if (o instanceof QueryDefinition)
         {
-            ArrayList<QueryException> errors = new ArrayList<QueryException>();
             TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
             if (!errors.isEmpty())
                 throw errors.get(0);
@@ -83,7 +83,7 @@ abstract public class UserSchema extends AbstractSchema
     }
 
 
-    public Object _getTableOrQuery(String name, boolean includeExtraMetadata)
+    public Object _getTableOrQuery(String name, boolean includeExtraMetadata, Collection<QueryException> errors)
     {
         if (name == null)
             return null;
@@ -95,7 +95,7 @@ abstract public class UserSchema extends AbstractSchema
         if (table != null)
         {
             if (includeExtraMetadata)
-                table =  QueryService.get().overlayMetadata(table, name, this);
+                table =  QueryService.get().overlayMetadata(table, name, this, errors);
             afterConstruct(table);
             return table;
         }

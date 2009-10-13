@@ -97,7 +97,7 @@ public class SamplesSchema extends AbstractExpSchema
         if (_containerFilter != null)
             ret.setContainerFilter(_containerFilter);
         ret.populate(ss, true);
-        QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this);
+        QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this, null);
         return ret;
     }
 
@@ -109,7 +109,7 @@ public class SamplesSchema extends AbstractExpSchema
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
                 ret.populate(ss, false);
-                QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this);
+                QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this, null);
                 return ret;
             }
         };

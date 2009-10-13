@@ -69,7 +69,7 @@ public class ErrorsTag extends TagSupport
                                 if (m instanceof FormattedError)
                                     out.print(context.getMessage(m));
                                 else
-                                    out.print(PageFlowUtil.filter(context.getMessage(m)));
+                                    out.print(PageFlowUtil.filter(context.getMessage(m), true));
                             }
                             catch (NoSuchMessageException nsme)
                             {

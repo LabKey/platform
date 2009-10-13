@@ -460,7 +460,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         }
     }
 
-    public void loadFromXML(QuerySchema schema, TableType xbTable, Collection<QueryException> qpe)
+    public void loadFromXML(QuerySchema schema, TableType xbTable, Collection<QueryException> errors)
     {
         if (xbTable.getTitleColumn() != null)
         {
@@ -468,27 +468,19 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         }
         if (xbTable.getGridUrl() != null)
         {
-            _gridURL = DetailsURL.fromString(schema.getContainer(), xbTable.getGridUrl());
+            _gridURL = DetailsURL.fromString(schema.getContainer(), xbTable.getGridUrl(), errors);
         }
         if (xbTable.getInsertUrl() != null)
         {
-            _insertURL = DetailsURL.fromString(schema.getContainer(), xbTable.getInsertUrl());
+            _insertURL = DetailsURL.fromString(schema.getContainer(), xbTable.getInsertUrl(), errors);
         }
         if (xbTable.getUpdateUrl() != null)
         {
-            _updateURL = DetailsURL.fromString(schema.getContainer(), xbTable.getUpdateUrl());
+            _updateURL = DetailsURL.fromString(schema.getContainer(), xbTable.getUpdateUrl(), errors);
         }
         if (xbTable.getTableUrl() != null)
         {
-            try
-            {
-                setDetailsURL(DetailsURL.fromString(schema.getContainer(), xbTable.getTableUrl()));
-            }
-            catch (MetadataException me)
-            {
-                if (qpe != null)
-                    qpe.add(me);
-            }
+            setDetailsURL(DetailsURL.fromString(schema.getContainer(), xbTable.getTableUrl(), errors));
         }
         if (xbTable.isSetCacheSize())
             _cacheSize = xbTable.getCacheSize();
@@ -506,7 +498,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                     ColumnInfo column = getColumn(xbColumn.getColumnName());
                     if (column != null)
                     {
-                        initColumnFromXml(schema, column, xbColumn, qpe);
+                        initColumnFromXml(schema, column, xbColumn, errors);
                     }
                 }
             }
@@ -516,7 +508,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 if (column != null && getColumn(wrappedColumnXb.getColumnName()) == null)
                 {
                     ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXb.getColumnName());
-                    initColumnFromXml(schema, wrappedColumn, wrappedColumnXb, qpe);
+                    initColumnFromXml(schema, wrappedColumn, wrappedColumnXb, errors);
                     addColumn(wrappedColumn);
                 }
             }
