@@ -253,7 +253,7 @@ public class Table
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount)
             throws SQLException
     {
-        return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, 0, true, false, null, null);
+        return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, 0, true, false, null, null, null);
     }
 
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount, boolean cache, boolean scrollable) throws SQLException
@@ -264,16 +264,16 @@ public class Table
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache)
             throws SQLException
     {
-        return executeQuery(schema, sql, parameters, rowCount, 0, cache, false, null, null);
+        return executeQuery(schema, sql, parameters, rowCount, 0, cache, false, null, null, null);
     }
 
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache, boolean scrollable)
             throws SQLException
     {
-        return executeQuery(schema, sql, parameters, rowCount, 0, cache, scrollable, null, null);
+        return executeQuery(schema, sql, parameters, rowCount, 0, cache, scrollable, null, null, null);
     }
 
-    private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, long scrollOffset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log)
+    private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, long scrollOffset, boolean cache, boolean scrollable, AsyncQueryRequest asyncRequest, Logger log, Integer statementRowCount)
             throws SQLException
     {
         if (log == null) log = _log;
@@ -284,7 +284,6 @@ public class Table
         try
         {
             conn = schema.getScope().getConnection(log);
-            Integer statementRowCount = (schema.getSqlDialect().requiresStatementMaxRows() ? decideRowCount((int)scrollOffset + rowCount, null) : null);  // TODO: need to refactor and harmonize with ecideRowCount()
             rs = _executeQuery(conn, sql, parameters, asyncRequest, scrollable, statementRowCount);
 
             while (scrollOffset > 0 && rs.next())
@@ -1325,7 +1324,7 @@ public class Table
         Table.TableResultSet rs = null;
         try
         {
-            rs = (Table.TableResultSet) executeQuery(table.getSchema(), sql.toString(), innerSql.getParams().toArray(), 0, 0, cache, false, asyncRequest, null);
+            rs = (Table.TableResultSet) executeQuery(table.getSchema(), sql.toString(), innerSql.getParams().toArray(), 0, 0, cache, false, asyncRequest, null, null);
             boolean next = rs.next();
             if (!next)
                 throw new IllegalStateException("Expected a non-empty resultset from aggregate query.");
@@ -1374,8 +1373,10 @@ public class Table
             queryRowCount = rowCount + (int)offset;
         }
 
-        SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount(queryRowCount, null), queryOffset);
-        return (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, !cache, asyncRequest, log);
+        int decideRowCount = decideRowCount(queryRowCount, null);
+        SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount, queryOffset);
+        Integer statementRowCount = (table.getSqlDialect().requiresStatementMaxRows() ? decideRowCount : null);  // TODO: clean this all up
+        return (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, !cache, asyncRequest, log, statementRowCount);
     }
 
 
