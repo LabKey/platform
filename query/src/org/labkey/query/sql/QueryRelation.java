@@ -17,7 +17,7 @@ package org.labkey.query.sql;
 
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.data.*;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
@@ -83,7 +83,7 @@ public abstract class QueryRelation
         return _schema;
     }
 
-    public List<QueryParseException> getParseErrors()
+    public List<QueryException> getParseErrors()
     {
         return _query.getParseErrors();
     }

@@ -20,9 +20,13 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Filter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -30,10 +34,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
@@ -644,7 +645,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema)
+    public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema, Collection<QueryException> errors)
     {
         if (tableInfo instanceof AbstractTableInfo && tableInfo.isMetadataOverrideable())
         {
@@ -652,18 +653,23 @@ public class QueryServiceImpl extends QueryService
 
             if (queryDef != null)
             {
+                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+                List<XmlError> xmlErrors = new ArrayList<XmlError>();
+                options.setErrorListener(xmlErrors);
                 try
                 {
-                    TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetaData());
-
-                    List<QueryException> errors = new ArrayList<QueryException>();
+                    TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetaData(), options);
                     TablesDocument.Tables tables = doc.getTables();
                     if (tables != null && tables.sizeOfTableArray() > 0)
                         ((AbstractTableInfo)tableInfo).loadFromXML(schema, tables.getTableArray(0), errors);
                 }
-                catch (org.apache.xmlbeans.XmlException e)
+                catch (XmlException e)
                 {
-                    // throw new RuntimeException(e);
+                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(e)));
+                }
+                for (XmlError xmle : xmlErrors)
+                {
+                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
                 }
             }
         }

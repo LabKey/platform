@@ -57,7 +57,7 @@ public class Query
     String _name = null;
     private QuerySchema _schema;
 	String _querySource;
-	private ArrayList<QueryParseException> _parseErrors = new ArrayList<QueryParseException>();
+	private ArrayList<QueryException> _parseErrors = new ArrayList<QueryException>();
 
     private TablesDocument _metadata = null;
     private QueryRelation _queryRoot;
@@ -259,7 +259,7 @@ public class Query
     }
 
 
-    public List<QueryParseException> getParseErrors()
+    public List<QueryException> getParseErrors()
     {
         return _parseErrors;
     }
@@ -341,7 +341,7 @@ public class Query
 	//
 
 
-	static void parseError(List<QueryParseException> errors, String message, QNode node)
+	static void parseError(List<QueryException> errors, String message, QNode node)
 	{
 		int line = 0;
 		int column = 0;
@@ -385,7 +385,7 @@ public class Query
         try
         {
             if (schema instanceof UserSchema)
-                t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true);
+                t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true, _parseErrors);
             else
                 t = schema.getTable(key.getName());
         }
