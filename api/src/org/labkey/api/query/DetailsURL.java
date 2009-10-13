@@ -54,7 +54,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         if (DetailsURL.actionPattern.matcher(str).matches() || DetailsURL.classPattern.matcher(str).matches())
             return null;
 
-        return "invalid url pattern " + str;
+        return "Invalid url pattern: " + str;
     }
 
 
