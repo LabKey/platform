@@ -452,7 +452,9 @@ public class AssayController extends SpringActionController
 
         public ActionURL getSuccessURL(CreateAssayForm form)
         {
-            ActionURL returnURL = new ActionURL(form.getReturnURL());
+            ActionURL returnURL = null;
+            if (form.getReturnURL() != null)
+                returnURL = new ActionURL(form.getReturnURL());
             return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(createIn, form.getProviderName(), returnURL);
         }
 
@@ -461,8 +463,6 @@ public class AssayController extends SpringActionController
             ChooseAssayBean bean = new ChooseAssayBean();
             if (form.getReturnURL() != null)
                 bean.returnURL = new ActionURL(form.getReturnURL());
-            else
-                bean.returnURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer());
             return new JspView<ChooseAssayBean>("/org/labkey/study/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
