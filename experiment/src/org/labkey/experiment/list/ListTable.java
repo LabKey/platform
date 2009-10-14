@@ -149,7 +149,7 @@ public class ListTable extends FilteredTable
 
 
     @Override
-    public StringExpression getDetailsURL(Set<String> columns, Container container)
+    public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
         return super.getDetailsURL(columns, container);
     }

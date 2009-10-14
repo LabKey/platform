@@ -48,7 +48,7 @@ public abstract class BasePlateTable extends FilteredTable
     protected abstract String getPlateIdColumnName();
 
     @Override
-    public StringExpression getDetailsURL(Set<String> columns, Container c)
+    public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
     {
         if (!columns.contains(getPlateIdColumnName()))
             return null;

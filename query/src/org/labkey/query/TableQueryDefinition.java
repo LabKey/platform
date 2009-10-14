@@ -85,11 +85,11 @@ public class TableQueryDefinition extends QueryDefinitionImpl
             switch (action)
             {
                 case detailsQueryRow:
-                    expr = table.getDetailsURL(table.getColumnNameSet(), container);
+                    expr = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), container);
                     break;
                 
                 case updateQueryRow:
-                    expr = table.getUpdateURL(table.getColumnNameSet(), container);
+                    expr = table.getUpdateURL(Table.createFieldKeyMap(table).keySet(), container);
                     break;
             }
         }

@@ -45,7 +45,7 @@ public class AssayListTable extends FilteredTable
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));
-        nameCol.setURL(getDetailsURL(Collections.singleton("RowId"), null));
+        nameCol.setURL(getDetailsURL(Collections.singleton(new FieldKey(null,"RowId")), null));
         ColumnInfo desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
         addColumn(desc);
         addWrapColumn(_rootTable.getColumn("Created"));
@@ -82,9 +82,9 @@ public class AssayListTable extends FilteredTable
     }
 
     @Override
-    public StringExpression getDetailsURL(Set<String> columns, Container c)
+    public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
     {
-        if (!columns.contains("RowId"))
+        if (!columns.contains(FieldKey.fromParts("RowId")))
             return null;
         ActionURL url = new ActionURL(AssayController.SummaryRedirectAction.class, _schema.getContainer());
         return new DetailsURL(url, "rowId", new FieldKey(null,"RowId"));

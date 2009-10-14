@@ -24,8 +24,6 @@ import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 public class ParticipantTable extends FilteredTable
@@ -106,9 +104,9 @@ public class ParticipantTable extends FilteredTable
     }
 
     @Override
-    public StringExpression getDetailsURL(Set<String> columns, Container c)
+    public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
     {
-        if (!columns.contains("ParticipantId"))
+        if (!columns.contains(FieldKey.fromParts("ParticipantId")))
             return null;
         return new DetailsURL(getBaseDetailsURL(), "participantId", new FieldKey(null,"ParticipantId"));
     }
