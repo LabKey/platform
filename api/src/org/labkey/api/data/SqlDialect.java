@@ -924,6 +924,20 @@ public abstract class SqlDialect
     }
 
 
+    // All statement creation passes through these two methods.  We return our standard statement wrappers in most
+    // cases, but dialects can return their own subclasses of StatementWrapper to work around JDBC driver bugs.
+    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
+    {
+        return new StatementWrapper(conn, stmt);
+    }
+
+
+    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    {
+        return new StatementWrapper(conn, stmt, sql);
+    }
+
+
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
     public abstract boolean isCaseSensitive();

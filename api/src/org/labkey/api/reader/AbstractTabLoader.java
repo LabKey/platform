@@ -242,7 +242,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
     protected CloseableIterator<Map<String, Object>> mapIterator()
     {
-        TabLoaderIterator iter = null;
+        TabLoaderIterator iter;
         try
         {
             ensureInitialized();
