@@ -339,6 +339,24 @@ public class DataColumn extends DisplayColumn
     {
         boolean disabledInput = isDisabledInput();
         String formFieldName = ctx.getForm().getFormFieldName(_boundColumn);
+
+        String strVal = "";
+        //UNDONE: Should use output format here.
+        if (null != value)
+        {
+            if (null != _format)
+                try
+                {
+                    strVal = _format.format(value);
+                }
+                catch (IllegalArgumentException x)
+                {
+                    strVal = ConvertUtils.convert(value);
+                }
+            else
+                strVal = ConvertUtils.convert(value);
+        }
+
         if (_boundColumn.isVersionColumn())
         {
             //should be in hidden field.
@@ -348,17 +366,7 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(ctx, out, formFieldName, value);
             if (null != value)
             {
-                if (null != _format)
-                    try
-                    {
-                        out.write(_format.format(value));
-                    }
-                    catch (IllegalArgumentException x)
-                    {
-                        out.write(ConvertUtils.convert(value));
-                    }
-                else
-                    out.write(PageFlowUtil.filter(ConvertUtils.convert(value)));
+                out.write(PageFlowUtil.filter(strVal));
             }
         }
         else if (_inputType.equalsIgnoreCase("select"))
@@ -401,7 +409,7 @@ public class DataColumn extends DisplayColumn
             if (disabledInput)
                 out.write(" DISABLED");
             out.write(">");
-            out.write(null == value ? "" : PageFlowUtil.filter(value.toString()));
+            out.write(PageFlowUtil.filter(strVal));
             out.write("</textarea>\n");
             // disabled inputs are not posted with the form, so we output a hidden form element:
             if (disabledInput)
@@ -452,23 +460,7 @@ public class DataColumn extends DisplayColumn
             if (disabledInput)
                 out.write(" DISABLED");
             out.write(" value=\"");
-            String strVal = "";
-            //UNDONE: Should use output format here.
-            if (null != value)
-            {
-                if (null != _format)
-                    try
-                    {
-                        strVal = _format.format(value);
-                    }
-                    catch (IllegalArgumentException x)
-                    {
-                        strVal = ConvertUtils.convert(value);
-                    }
-                else
-                    strVal = ConvertUtils.convert(value);
-            }
-            out.write(value == null ? "" : PageFlowUtil.filter(strVal));
+            out.write(PageFlowUtil.filter(strVal));
             out.write("\"");
             String autoCompletePrefix = getAutoCompleteURLPrefix();
             if (autoCompletePrefix != null)
