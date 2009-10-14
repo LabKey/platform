@@ -1189,7 +1189,7 @@ if (LABKEY.Applet)
             var config =
             {
                 id: params.id,
-                archive: LABKEY.contextPath + '/_applets/applets-9.2.jar',
+                archive: LABKEY.contextPath + '/_applets/applets-' + LABKEY.versionString + '.jar',
                 code: 'org.labkey.applets.drop.DropApplet',
                 width: params.width,
                 height: params.height,
