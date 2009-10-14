@@ -1170,6 +1170,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     qdpPrefix: 'qdp-',
     sspPrefix: 'ssp-',
+    historyPrefix: 'sbh-',
 
     _qcache: new LABKEY.ext.QueryCache(),
 
@@ -1373,6 +1374,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     onHistoryChange : function(token) {
         if (!token)
             token = "lk-sb-panel-home"; //back to home panel
+        else
+            token = token.substring(this.historyPrefix.length);
 
         this.showPanel(token);
     },
@@ -1422,7 +1425,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             if (tab.id == 'lk-sb-panel-home')
                 Ext.History.add("#");
             else
-                Ext.History.add(tab.id);
+                Ext.History.add(this.historyPrefix + tab.id);
         }
         this._addHistory = true;
     },
