@@ -47,14 +47,14 @@ Ext.namespace("LABKEY","LABKEY.ext");
 &lt;script type="text/javascript"&gt;
     function onSuccess(data) // e.g. callback from Query.selectRows
     {
-        var form = new LABKEY.form.FormPanel(
+        var form = new LABKEY.ext.FormPanel(
         {
             selectRowsResults:data,
             addAllFields:true,
             buttons:["submit"],
-            items:[{name:myField, fieldLabel:'My Field', helpPopup:{title:'help', html:'read the manual'}}]
+            items:[{name:'myField', fieldLabel:'My Field', helpPopup:{title:'help', html:'read the manual'}}]
         });
-        form.render('formDiv);
+        form.render('formDiv');
     }
 &lt;/script&gt;
 &lt;div id='formDiv'/&gt;
@@ -132,6 +132,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     onRender : function(ct, position)
     {
         LABKEY.ext.FormPanel.superclass.onRender.call(this, ct, position);
+        this.el.addClass('extContainer');
 //        new Ext.KeyMap(
 //            this.el,
 //            [{
@@ -427,7 +428,19 @@ LABKEY.ext.Checkbox = Ext.extend(Ext.form.Checkbox,
 });
 
 
+LABKEY.ext.DateField = Ext.extend(Ext.form.DateField,
+{
+    onTriggerClick : function()
+    {
+        LABKEY.ext.DateField.superclass.onTriggerClick.call(this);
+        if (this.menu)
+            this.menu.el.addClass('extContainer');
+    }
+});
+
+
 Ext.reg('checkbox', LABKEY.ext.Checkbox);
+Ext.reg('datefield',  LABKEY.ext.DateField);
 Ext.reg('labkey-form', LABKEY.ext.FormPanel);
 
 
