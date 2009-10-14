@@ -103,6 +103,18 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                         + topic.getHelpTopicLink() + "\">upgrade to version 8.3 or later</a>.");
             }
         }
+
+        //FIX: 8853
+        //show admins deprecated warning for sql server 2000
+        if(null != user && user.isAdministrator() && "Microsoft SQL Server".equalsIgnoreCase(coreScope.getDatabaseProductName()))
+        {
+            VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
+            if(dbVersion.getMajor() < 9)
+            {
+                _warningMessages.add("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later</a>.");
+            }
+        }
+
     }
 
     public List<String> getWarningMessages()
