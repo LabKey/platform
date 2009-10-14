@@ -179,11 +179,12 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             props.put("caption", dc.getCaption());
         }
 
+        ForeignKey fk = cinfo.getFk();
         //lookup info
-        if (null != cinfo.getFk()
-                && null != cinfo.getFkTableInfo())
+        if (null != fk
+                && null != cinfo.getFkTableInfo()
+                && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(cinfo))))
         {
-            ForeignKey fk = cinfo.getFk();
             TableInfo lookupTable = cinfo.getFkTableInfo();
 
             Map<String,Object> lookupInfo = new HashMap<String,Object>();
