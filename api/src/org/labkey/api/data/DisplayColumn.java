@@ -756,7 +756,7 @@ public abstract class DisplayColumn extends RenderColumn
         {
             String formFieldName = ctx.getForm().getFormFieldName(col);
             if (null != viewForm && viewForm.getStrings().containsKey(formFieldName))
-                val = viewForm.get(formFieldName);
+                val = viewForm.getTypedValue(formFieldName);
             else if (ctx.getRow() != null)
                 val = col.getValue(ctx);
         }
