@@ -210,9 +210,12 @@ function createColumnEditor(tab, dn, parent, insertBefore)
 
     td.appendChild(doc.createTextNode(tab.designer.getColumnLabel(dn)));
     var fieldKey = tab.designer.getFieldKeyString(dn);
-    var field = designer.fieldInfo(fieldKey);
-    new Ext.ToolTip({target: td, html:getColumnHelpHtml(field), trackMouse:true});
-
+    if (fieldKey)
+    {
+        var field = designer.fieldInfo(fieldKey);
+        if (field)
+            new Ext.ToolTip({target: td, html:getColumnHelpHtml(field), trackMouse:true});
+    }
     tr.appendChild(td);
     parent.insertBefore(tr, insertBefore);
     return ret;
@@ -1287,13 +1290,19 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
     ret.columnPicker.setShowHiddenFields(true);
     ret.getColumnLabel = getColumnAlias;
     ret.getColumnTitle = function()
-            {
-                return null;
-            }
-    ret.getFieldKeyString = function()
-            {
-                return null;
-            }
+    {
+        return null;
+    }
+    ret.fieldInfo = function(field)
+    {
+        return tableInfoService.getOutputColumnInfos([field])[field];
+    }
+    ret.getFieldKeyString = function(dn)
+    {
+        var dnValue = XMLUtil.getChildWithTagName(dn, 'value', nsQuery);
+        var dnField = XMLUtil.getChildWithTagName(dnValue, 'field', nsQuery);
+        return XMLUtil.getInnerText(dnField);
+    };
     ret.allowDuplicateColumns = true;
     return ret;
 }
