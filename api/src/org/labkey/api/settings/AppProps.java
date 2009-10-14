@@ -505,4 +505,9 @@ public class AppProps extends AbstractWriteableSettingsGroup
     {
         return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true);
     }
+
+    public String getLabkeyVersionString()
+    {
+        return ModuleLoader.getLabkeyVersionString();
+    }
 }

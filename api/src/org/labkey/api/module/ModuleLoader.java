@@ -1060,4 +1060,29 @@ public class ModuleLoader implements Filter
             throw new RuntimeSQLException(x);
         }
     }
+
+
+    // from version.properties
+    static String labkeyVersion = null;
+
+    
+    public static String getLabkeyVersionString()
+    {
+        if (null == labkeyVersion)
+        {
+            try
+            {
+                Properties p = new Properties();
+                p.load(ModuleLoader.class.getClassLoader().getResourceAsStream("version.properties"));
+                Object v = p.get("product.version");
+                labkeyVersion = v == null ? null : String.valueOf(v);
+            }
+            catch (Exception x)
+            {
+                _log.error("Couldn't load version.properties");
+                return "9.3";
+            }
+        }
+        return labkeyVersion;
+    }
 }

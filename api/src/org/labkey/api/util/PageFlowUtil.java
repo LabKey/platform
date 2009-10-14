@@ -1641,7 +1641,8 @@ public class PageFlowUtil
 
     public static String jsInitObject()
     {
-        String contextPath = AppProps.getInstance().getContextPath();
+        AppProps props = AppProps.getInstance();
+        String contextPath = props.getContextPath();
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         sb.append("contextPath:'").append(contextPath).append("'");
@@ -1650,10 +1651,10 @@ public class PageFlowUtil
         sb.append(",");
         sb.append("extJsRoot:'").append(extJsRoot).append("'");
         sb.append(",");
-        sb.append("devMode:").append(AppProps.getInstance().isDevMode()?"true":"false");
+        sb.append("devMode:").append(props.isDevMode()?"true":"false");
         sb.append(",");
         if (null == serverHash)
-            serverHash = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();
+            serverHash = 0x7fffffff & props.getServerSessionGUID().hashCode();
         sb.append("hash:'").append(serverHash).append("'");
         sb.append(",");
 
@@ -1678,7 +1679,8 @@ public class PageFlowUtil
         sb.append(",path:").append(jsString(container.getPath()));
         sb.append("}"); //end container object
 
-        sb.append(",serverName:(").append(PageFlowUtil.jsString(AppProps.getInstance().getServerName())).append(" || 'LabKey Server')");
+        sb.append(",serverName:(").append(PageFlowUtil.jsString(props.getServerName())).append(" || 'LabKey Server')");
+        sb.append(",versionString:").append(PageFlowUtil.jsString(props.getLabkeyVersionString()));
         sb.append("}"); //end config
         return sb.toString();
     }
