@@ -20,8 +20,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Collections;
 
@@ -144,15 +142,17 @@ abstract public class LookupForeignKey extends AbstractForeignKey
     
     public static StringExpression getDetailsURL(ColumnInfo parent, TableInfo lookupTable, String columnName)
     {
-        StringExpression expr = lookupTable.getDetailsURL(PageFlowUtil.insensitiveSet(columnName), null);
+        FieldKey columnKey = new FieldKey(null,columnName);
+
+        StringExpression expr = lookupTable.getDetailsURL(Collections.singleton(columnKey), null);
         if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
             StringExpressionFactory.FieldKeyStringExpression f = (StringExpressionFactory.FieldKeyStringExpression)expr;
             StringExpressionFactory.FieldKeyStringExpression rewrite;
 
             // if the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
-            if (f.validateColumns(Collections.singleton(columnName)))
-                rewrite = f.addParent(null, Collections.singletonMap(new FieldKey(null,columnName), parent.getFieldKey()));
+            if (f.validateFieldKeys(Collections.singleton(columnKey)))
+                rewrite = f.addParent(null, Collections.singletonMap(columnKey, parent.getFieldKey()));
             else
                 rewrite = f.addParent(parent.getFieldKey(), null);
             return rewrite;

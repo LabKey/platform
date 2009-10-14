@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.BoundMap;
@@ -2114,6 +2115,18 @@ public class Table
             return new TestSuite(TestCase.class);
         }
     }
+
+
+    static public LinkedHashMap<FieldKey,ColumnInfo> createFieldKeyMap(TableInfo table)
+    {
+        LinkedHashMap ret = new LinkedHashMap<FieldKey,ColumnInfo>();
+        for (ColumnInfo column : table.getColumns())
+        {
+            ret.put(column.getFieldKey(), column);
+        }
+        return ret;
+    }
+    
 
     static public Map<String, ColumnInfo> createColumnMap(TableInfo table, Collection<ColumnInfo> columns)
     {

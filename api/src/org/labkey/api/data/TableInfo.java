@@ -125,7 +125,7 @@ public interface TableInfo
      * {@link QueryView#urlExpr(QueryAction)} or
      * {@link UserSchema#urlExpr(QueryAction, Container)}.
      */
-    StringExpression getUpdateURL(Set<String> columns, Container container);
+    StringExpression getUpdateURL(Set<FieldKey> columns, Container container);
 
     /**
      * Return the details URL expression for a particular record or null.
@@ -134,7 +134,7 @@ public interface TableInfo
      * statement.  (e.g. if this is the Protocol table, the column "LSID" might
      * actually be represented by the "ProtocolLSID" column from the ProtocolApplication table).
      */
-    StringExpression getDetailsURL(Set<String> columns, Container container);
+    StringExpression getDetailsURL(Set<FieldKey> columns, Container container);
 
     boolean hasPermission(User user, int perm);
 

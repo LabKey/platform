@@ -1442,7 +1442,7 @@ public class QueryView extends WebPartView<Object>
             return Collections.emptyList();
         if (_showDetailsColumn && !isPrintView() && !isExportView())
         {
-            StringExpression urlDetails = table.getDetailsURL(table.getColumnNameSet(), getContainer());
+            StringExpression urlDetails = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), getContainer());
             if (urlDetails != null)
             {
                 ret.add(new DetailsColumn(urlDetails));

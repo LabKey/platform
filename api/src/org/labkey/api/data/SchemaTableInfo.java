@@ -675,21 +675,21 @@ public class SchemaTableInfo implements TableInfo
         return null;
     }
 
-    public StringExpression getUpdateURL(Set<String> columns, Container container)
+    public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
     {
         if (_updateURL != null)
         {
-            if (_updateURL.validateColumns(columns))
+            if (_updateURL.validateFieldKeys(columns))
                 return _updateURL.copy(container);
         }
         return null;
     }
     
-    public StringExpression getDetailsURL(Set<String> columns, Container container)
+    public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
         if (_detailsURL != null)
         {
-            if (_detailsURL.validateColumns(columns))
+            if (_detailsURL.validateFieldKeys(columns))
                 return _detailsURL.copy(container);
         }
         return null;

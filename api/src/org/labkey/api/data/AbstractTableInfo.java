@@ -340,21 +340,21 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
-    public StringExpression getUpdateURL(Set<String> columns, Container container)
+    public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
     {
         if (_updateURL != null)
         {
-            if (_updateURL.validateColumns(columns))
+            if (_updateURL.validateFieldKeys(columns))
                 return _updateURL.copy(container);
         }
         return null;
     }
 
-    public StringExpression getDetailsURL(Set<String> columns, Container container)
+    public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
         for (DetailsURL dUrl : _detailsURLs)
         {
-            if (dUrl.validateColumns(columns))
+            if (dUrl.validateFieldKeys(columns))
                 return dUrl.copy(container);
         }
         return null;

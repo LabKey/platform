@@ -460,23 +460,6 @@ public class StringExpressionFactory
             return set.containsAll(keys);
         }
 
-        /**
-         * @param set set of column names
-         * @return true if set contains all substitutions in this string expression
-         */
-        public boolean validateColumns(Set<String> set)
-        {
-            Set<FieldKey> keys = getFieldKeys();
-            for (FieldKey key : keys)
-            {
-                if (key.getParent() != null)
-                    return false;
-                if (!set.contains(key.getName()))
-                    return false;
-            }
-            return true;
-        }
-
         public Set<FieldKey> getFieldKeys()
         {
             Set<FieldKey> set = new HashSet<FieldKey>();
