@@ -200,13 +200,14 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    // Check if a query or table exists with the same name
+                    // Check if a dataset, query or table exists with the same name
                     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
                     StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
-                    if (studySchema.getTableNames().contains(form.getTypeName()) ||
-                        QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
+                    if (null != studySchema.getDataSetDefinitionByName(form.getTypeName())
+                            || studySchema.getTableNames().contains(form.getTypeName())
+                            || QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
                     {
-                        errors.reject("defineDatasetType", "There is a query named " + form.getTypeName() + " already defined in this folder.");
+                        errors.reject("defineDatasetType", "There is a dataset or query named " + form.getTypeName() + " already defined in this folder.");
                     }
                 }
             }
