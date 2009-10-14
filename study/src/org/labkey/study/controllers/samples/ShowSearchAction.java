@@ -83,7 +83,6 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     public NavTree appendNavTrail(NavTree root)
     {
         root.addChild(_study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getViewContext().getContainer()));
-        root.addChild("Manage Study", new ActionURL(SpringSpecimenController.SamplesAction.class, getViewContext().getContainer()));
         root.addChild(_title);
 
         return root;

@@ -207,7 +207,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         Study s = StudyManager.getInstance().getStudy(c);
 
         root.addChild(s.getLabel(), new ActionURL(StudyController.OverviewAction.class, c));
-        root.addChild("Specimens", new ActionURL(SpringSpecimenController.BeginAction.class, c));
+        root.addChild("Specimens", new ActionURL(ShowSearchAction.class, c));
         root.addChild("Upload Specimens");
 
         return root;
@@ -226,7 +226,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
 
             root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getViewContext().getContainer()));
-            root.addChild("Specimens", new ActionURL(SpringSpecimenController.BeginAction.class, getViewContext().getContainer()));
+            root.addChild("Specimens", new ActionURL(ShowSearchAction.class, getViewContext().getContainer()));
             root.addChild("Sample Import Complete");
 
             return root;

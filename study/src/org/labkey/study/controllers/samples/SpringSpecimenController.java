@@ -121,8 +121,7 @@ public class SpringSpecimenController extends BaseStudyController
     private NavTree appendBaseSpecimenNavTrail(NavTree root, boolean vialView)
     {
         root = _appendNavTrail(root);
-        ActionURL specimenURL = new ActionURL(SamplesAction.class,  getContainer());
-        specimenURL.addParameter(SampleViewTypeForm.PARAMS.showVials, Boolean.toString(vialView));
+        ActionURL specimenURL = new ActionURL(ShowSearchAction.class,  getContainer());
         root.addChild(vialView ? "Vials" : "Specimens", specimenURL);
         return root;
     }
@@ -543,7 +542,7 @@ public class SpringSpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             root = _appendNavTrail(root);
-            root.addChild("Specimens", new ActionURL(SamplesAction.class,
+            root.addChild("Specimens", new ActionURL(ShowSearchAction.class,
                     getContainer()).addParameter(SampleViewTypeForm.PARAMS.showVials, "true"));
             if (_showingSelectedSamples)
                 root.addChild("Selected Specimens", new ActionURL(SelectedSamplesAction.class,
