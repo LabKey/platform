@@ -22,11 +22,10 @@ import org.labkey.api.module.ModuleContext;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Calendar;
 
 /**
  * User: adam
@@ -349,5 +348,99 @@ public abstract class SqlDialectSas extends SqlDialect
     public TestSuite getTestSuite()
     {
         return new TestSuite();
+    }
+
+    @Override
+    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
+    {
+        return new SasStatementWrapper(conn, stmt);
+    }
+
+    @Override
+    protected StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    {
+        return new SasStatementWrapper(conn, stmt, sql);
+    }
+
+    // SAS driver doesn't support setting java.sql.Timestamp paramters, so convert to java.sql.Date
+    private static class SasStatementWrapper extends StatementWrapper
+    {
+        protected SasStatementWrapper(ConnectionWrapper conn, Statement stmt)
+        {
+            super(conn, stmt);
+        }
+
+        protected SasStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+        {
+            super(conn, stmt, sql);
+        }
+
+        @Override
+        public void setObject(int parameterIndex, Object x) throws SQLException
+        {
+            super.setObject(parameterIndex, convertParameter(x));
+        }
+
+        @Override
+        public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException
+        {
+            super.setObject(parameterIndex, convertParameter(x), targetSqlType);
+        }
+
+        @Override
+        public void setObject(int parameterIndex, Object x, int targetSqlType, int scale) throws SQLException
+        {
+            super.setObject(parameterIndex, convertParameter(x), targetSqlType, scale);
+        }
+
+        @Override
+        public void setObject(String parameterName, Object x) throws SQLException
+        {
+            super.setObject(parameterName, convertParameter(x));
+        }
+
+        @Override
+        public void setObject(String parameterName, Object x, int targetSqlType) throws SQLException
+        {
+            super.setObject(parameterName, convertParameter(x), targetSqlType);
+        }
+
+        @Override
+        public void setObject(String parameterName, Object x, int targetSqlType, int scale) throws SQLException
+        {
+            super.setObject(parameterName, convertParameter(x), targetSqlType, scale);
+        }
+
+        @Override
+        public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException
+        {
+            super.setDate(parameterIndex, new Date(x.getTime()));
+        }
+
+        @Override
+        public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException
+        {
+            super.setDate(parameterIndex, new Date(x.getTime()), cal);
+        }
+
+        @Override
+        public void setTimestamp(String parameterName, Timestamp x) throws SQLException
+        {
+            super.setDate(parameterName, new Date(x.getTime()));
+        }
+
+        @Override
+        public void setTimestamp(String parameterName, Timestamp x, Calendar cal) throws SQLException
+        {
+            super.setDate(parameterName, new Date(x.getTime()), cal);
+        }
+
+        private Object convertParameter(Object x)
+        {
+            if (x instanceof Timestamp)
+                return new Date(((Timestamp)x).getTime());
+            else
+                return x;
+        }
     }
 }
