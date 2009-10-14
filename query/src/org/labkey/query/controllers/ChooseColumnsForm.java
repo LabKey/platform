@@ -18,6 +18,7 @@ package org.labkey.query.controllers;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
@@ -291,12 +292,18 @@ public class ChooseColumnsForm extends DesignForm
                 url.addParameter(newKey, value);
             }
         }
+
+        Sort sort = new Sort();
+        sort.applyURLSort(url, dataRegionName);
+        url.replaceParameter(dataRegionName+".sort",sort.getURLParamValue());
     }
     
+
     public ActionURL getSourceURL()
     {
         return _sourceURL;        
     }
+
 
     public void setFf_saveFilter(boolean b)
     {

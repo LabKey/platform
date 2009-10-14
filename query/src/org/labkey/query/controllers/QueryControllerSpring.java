@@ -67,10 +67,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.sql.SQLException;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
@@ -992,7 +992,7 @@ public class QueryControllerSpring extends SpringActionController
             {
                 if (!getContainer().getId().equals(view.getContainer().getId()))
                 {
-                    errors.reject(ERROR_MSG, "Inherited view '" + view.getName() + "' can only edited from the folder it was created in");
+                    errors.reject(ERROR_MSG, "Inherited view '" + view.getName() + "' can only be edited from the folder it was created in");
                     return false;
                 }
             }
