@@ -17,6 +17,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
@@ -26,8 +28,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -334,7 +334,7 @@ public class SchemaTableInfo implements TableInfo
         columns.add(column);
         assert !column.isAliasSet();
         assert null == column.getFieldKey().getParent();
-        column.setAlias(column.getFieldKey().getName());
+        //column.setAlias(column.getFieldKey().getName());
     }
 
     public List<ColumnInfo> getColumns()
