@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -164,17 +165,31 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
+    // use only for debugging, will change after call to getAlias()
+    public boolean isAliasSet()
+    {
+        return null != this.alias;
+    }
+
+
     public String getAlias()
     {
         if (alias == null)
-            return getName();
+        {
+            if (getFieldKey().getParent() == null)
+                alias = getFieldKey().getName();
+            else
+                alias = AliasManager.makeLegalName(getFieldKey(),getSqlDialect());
+        }
         return alias;
     }
+
 
     protected void setAlias(String alias)
     {
         this.alias = alias;
     }
+
 
     public void copyAttributesFrom(ColumnInfo col)
     {

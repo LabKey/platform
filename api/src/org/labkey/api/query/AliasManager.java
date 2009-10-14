@@ -16,24 +16,28 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public class AliasManager
 {
     SqlDialect _dialect;
     Map<String, String> _aliases = new CaseInsensitiveHashMap<String>();
+    Map<FieldKey, String> _keys = new HashMap<FieldKey,String>();
+
 
     public AliasManager(DbSchema schema)
     {
         _dialect = schema.getSqlDialect();
     }
+
 
     public AliasManager(TableInfo table, Collection<ColumnInfo> columns)
     {
@@ -42,6 +46,7 @@ public class AliasManager
         if (columns != null)
             claimAliases(columns);
     }
+
 
     private static boolean isLegalNameChar(char ch, boolean first)
     {
@@ -98,9 +103,33 @@ public class AliasManager
             ret = "_" + ret;
         if (ret.length() == 0)
             return "_";
-        if (ret.length() > 40)
-            return ret.substring(0, 40);
-        return ret;
+        return truncate(ret, 40);
+    }
+
+
+    public static String makeLegalName(FieldKey key, SqlDialect dialect)
+    {
+        if (key.getParent() == null)
+            return makeLegalName(key.getName(), dialect);
+        StringBuilder sb = new StringBuilder();
+        String connector = "";
+        for (String part : key.getParts())
+        {
+            sb.append(connector);
+            sb.append(legalNameFromName(part));
+            connector = "_";
+        }
+        return truncate(sb.toString(), 40);
+    }
+
+
+    private static String truncate(String str, int to)
+    {
+        int len = str.length();
+        if (len <= to)
+            return str;
+        String n = String.valueOf((str.hashCode()&0x7fffffff));
+        return str.charAt(0) + n + str.substring(len-(to-n.length()-1));
     }
 
 
@@ -115,12 +144,41 @@ public class AliasManager
         return ret;
     }
 
+
     public String decideAlias(String name)
     {
         String ret = findUniqueName(name);
         _aliases.put(ret, name);
         return ret;
     }
+
+
+/*
+    public String decideAlias(FieldKey key)
+    {
+        String alias = _keys.get(key);
+        if (null != alias)
+            return alias;
+        String name = null == key.getParent() ? key.getName() : key.toString();
+        alias = decideAlias(name);
+        _keys.put(key,alias);
+        return alias;
+    }
+
+
+    // only for ColumnInfo.setAlias()
+    public void claimAlias(FieldKey key, String proposed)
+    {
+        String alias = _keys.get(key);
+        assert null == alias || alias.equals(proposed);
+        if (null != alias)
+            return;
+        assert null == _aliases.get(proposed) : "duplicate alias";
+        String name = null == key.getParent() ? key.getName() : key.toString();
+        _aliases.put(proposed,name);
+        _keys.put(key,proposed);
+    }
+*/
 
     public void claimAlias(String alias, String name)
     {

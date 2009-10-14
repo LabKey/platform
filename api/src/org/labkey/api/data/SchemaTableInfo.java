@@ -64,6 +64,7 @@ public class SchemaTableInfo implements TableInfo
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
 
+
     protected SchemaTableInfo(DbSchema parentSchema)
     {
         this.parentSchema = parentSchema;
@@ -331,6 +332,9 @@ public class SchemaTableInfo implements TableInfo
     public void addColumn(ColumnInfo column)
     {
         columns.add(column);
+        assert !column.isAliasSet();
+        assert null == column.getFieldKey().getParent();
+        column.setAlias(column.getFieldKey().getName());
     }
 
     public List<ColumnInfo> getColumns()
@@ -420,7 +424,9 @@ public class SchemaTableInfo implements TableInfo
 
     private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName) throws SQLException
     {
-        columns = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, this);
+        List<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, this);
+        for (ColumnInfo c : meta)
+            addColumn(c);
     }
 
 
@@ -522,7 +528,7 @@ public class SchemaTableInfo implements TableInfo
 
             if (null == colInfo) {
                 colInfo = new ColumnInfo(xmlColumn.getColumnName(), this);
-                columns.add(colInfo);
+                addColumn(colInfo);
                 colInfo.loadFromXml(xmlColumn, false);
             }
         }
