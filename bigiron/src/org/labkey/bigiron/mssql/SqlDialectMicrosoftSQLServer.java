@@ -97,7 +97,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
     protected boolean claimsProductNameAndVersion(String dataBaseProductName, int databaseMajorVersion, int databaseMinorVersion, String jdbcDriverVersion, boolean logWarnings)
     {
-        return dataBaseProductName.equals("Microsoft SQL Server") && (databaseMajorVersion < 9);
+        boolean ret = dataBaseProductName.equals("Microsoft SQL Server") && (databaseMajorVersion < 9);
+        if (ret && logWarnings)
+            _log.warn("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
+
+        return ret;
     }
 
     public boolean isSqlServer()
