@@ -383,6 +383,42 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         return store;
     },
 
+    exportData : function(format) {
+        format = format || "excel";
+        if (this.sql)
+        {
+            LABKEY.Query.exportSql({
+                schemaName: this.schemaName,
+                sql: this.sql,
+                format: format,
+                containerPath: this.containerPath,
+                containerFilter: this.containerFilter
+            });
+        }
+        else
+        {
+            var params = {schemaName: this.schemaName, "query.queryName": this.queryName};
+
+            if(this.sortInfo)
+                params['query.sort'] = "DESC" == this.sortInfo.direction
+                        ? "-" + this.sortInfo.field
+                        : this.sortInfo.field;
+
+            var userFilters = this.getUserFilters();
+            if (userFilters)
+            {
+                for (var i = 0; i < userFilters.length; i++)
+                {
+                    var filter = userFilters[i];
+                    params[filter.getURLParameterName()] = filter.getURLParameterValue();
+                }
+            }
+
+            var action = ("tsv" == format) ? "exportRowsTsv" : "exportRowsExcel";
+            window.location = LABKEY.ActionURL.buildURL("query", action, this.containerPath, params);
+        }
+    },
+
     /*-- Private Methods --*/
 
     onCommitSuccess : function(response, options) {

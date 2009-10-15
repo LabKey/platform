@@ -45,6 +45,7 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
  * @param {boolean} [config.enableFilters] True to enable user-filtering of columns (default is false)
  * @param {string} [config.loadingCaption] The string to display in a cell when loading the lookup values (default is "[loading...]").
  * @param {string} [config.lookupNullCaption] The string to display for a null value in a lookup column (default is "[none]").
+ * @param {boolean} [config.showExportButton] Set to false to hide the Export button in the toolbar. True by default.
  * @example &lt;script type="text/javascript"&gt;
     var _grid;
 
@@ -82,7 +83,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             id: Ext.id(undefined, "labkey-ext-grid"),
             loadMask: true,
             colModel: new Ext.grid.ColumnModel([]),
-            selModel: new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false})
+            selModel: new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false}),
+            showExportButton: true
         });
         this.setupDefaultPanelConfig();
 
@@ -203,6 +205,21 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                     tooltip: 'Click to delete selected row(s)',
                     id: 'delete-records-button',
                     handler: this.onDeleteRecords,
+                    scope: this
+                });
+            }
+
+            if (this.showExportButton)
+            {
+                this.tbar.push("-");
+                this.tbar.push({
+                    text: 'Export',
+                    tooltip: 'Click to Export the data to Excel',
+                    id: 'export-records-button',
+                    handler: function(){
+                        if (this.store)
+                            this.store.exportData("excel");
+                    },
                     scope: this
                 });
             }
