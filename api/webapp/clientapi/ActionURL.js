@@ -41,15 +41,9 @@ LABKEY.ActionURL = new function()
             {
                 var name = decodeURIComponent(nameValue[0]);
                 if (undefined == parameters[name])
-                    parameters[name] = decodeURIComponent(nameValue[1]);
+                    parameters[name] = [decodeURIComponent(nameValue[1])];
                 else
-                {
-                    var curValue = parameters[name];
-                    if (Ext.isArray(curValue))
-                        curValue.push(decodeURIComponent(nameValue[1]));
-                    else
-                        parameters[name] = [curValue, decodeURIComponent(nameValue[1])];
-                }
+                    parameters[name].push(decodeURIComponent(nameValue[1]));
             }
         }
         return parameters;
@@ -95,13 +89,23 @@ LABKEY.ActionURL = new function()
 
         /**
         * Gets a URL parameteter by name. Note that if the given parameter name is present more than once
-        * in the query string, the returned value will be an array strings instead of a single string.
-        * If you expect this to occur, use Ext.isArray() to detect this case and handle it appropriately.
-         * Alternatively, you can force the returned value into an array regardless of type with code like:
-         * [].concat(LABKEY.ActionURL.getParameter("myparameter")); 
+        * in the query string, the returned value will be the first occurance of that parameter name. To get all
+        * instances of the parameter, use getParameterArray().
         * @return {String} The value of the named parameter, or undefined of the parameter is not present.
         */
         getParameter : function(parameterName)
+        {
+            var valArray = buildParameterMap()[parameterName];
+            return (valArray && valArray.length && valArray.length > 0) ? valArray[0] : undefined;
+        },
+
+        /**
+         * Gets a URL parameter by name. This method will always return an array of values, one for
+         * each instance of the parameter name in the query string. If the parameter name appears only once
+         * this method will return a one-element array.
+         * @param parameterName
+         */
+        getParameterArray : function(parameterName)
         {
             return buildParameterMap()[parameterName];
         },
