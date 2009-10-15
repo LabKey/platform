@@ -16,12 +16,9 @@
 
 package org.labkey.core.junit;
 
-import junit.framework.TestCase;
-import junit.framework.TestFailure;
-import junit.framework.TestResult;
+import junit.framework.*;
 import org.apache.commons.lang.time.FastDateFormat;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -34,6 +31,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -136,6 +134,98 @@ public class JunitController extends SpringActionController
         }
     }
 
+    @RequiresSiteAdmin
+    public static class Testlist extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
+
+            Map<String, Object> values = new HashMap<String, Object>();
+            for (String module : testCases.keySet())
+            {
+                List<String> tests = new ArrayList<String>();
+                values.put("Remote " + module, tests);
+                for (Class<? extends TestCase> clazz : testCases.get(module))
+                {
+                    tests.add(clazz.getName());
+                }
+            }
+
+            return new ApiSimpleResponse(values);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public static class Go extends SimpleViewAction<TestForm>
+    {
+        public ModelAndView getView(TestForm form, BindException errors) throws Exception
+        {
+            TestContext.setTestContext(getViewContext().getRequest(), getViewContext().getUser());
+
+            String testCase = form.getTestCase();
+            if (testCase == null)
+                throw new RuntimeException("testCase parameter required");
+
+            Class clazz = Class.forName(testCase);
+            TestResult result = new TestResult();
+            JunitRunner.run(clazz, result);
+
+            int status = HttpServletResponse.SC_OK;
+            if (!result.wasSuccessful())
+                status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("runCount", result.runCount());
+            map.put("errorCount", result.errorCount());
+            map.put("failureCount", result.failureCount());
+            map.put("wasSuccessful", result.wasSuccessful());
+            map.put("errors", toList(result.errors()));
+            map.put("failures", toList(result.failures()));
+            JSONObject json = new JSONObject(map);
+
+            HttpServletResponse response = getViewContext().getResponse();
+            response.reset();
+            response.setStatus(status);
+
+            PrintWriter out = response.getWriter();
+            response.setContentType("text/plain");
+            response.setCharacterEncoding("utf-8");
+
+            out.append(json.toString(4));
+            response.flushBuffer();
+
+            return null;
+        }
+
+        private static List<Map<String, Object>> toList(Enumeration<TestFailure> tests)
+        {
+            List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+            while (tests.hasMoreElements())
+            {
+                TestFailure failure = tests.nextElement();
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("failedTest", getTestName(failure.failedTest()));
+                map.put("isFailure", failure.isFailure());
+                map.put("exceptionMessage", failure.exceptionMessage());
+                map.put("trace", failure.trace());
+                list.add(map);
+            }
+            return list;
+        }
+
+        private static String getTestName(junit.framework.Test test)
+        {
+            return test instanceof TestCase ? ((TestCase)test).getName() :
+                   test instanceof TestSuite ? ((TestSuite)test).getName() :
+                   test.toString();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
 
     public static class TestForm
     {
