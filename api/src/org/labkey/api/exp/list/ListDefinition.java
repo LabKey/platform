@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface ListDefinition
+public interface ListDefinition extends Comparable<ListDefinition>
 {
     enum KeyType
     {

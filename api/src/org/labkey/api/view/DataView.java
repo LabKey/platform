@@ -26,6 +26,8 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public abstract class DataView extends WebPartView<RenderContext>
@@ -91,12 +93,23 @@ public abstract class DataView extends WebPartView<RenderContext>
         {
             DataRegion dr = new DataRegion();
             dr.setTable(form.getTable());
-            dr.setColumns(form.getTable().getUserEditableColumns());
+            List<ColumnInfo> allCols = form.getTable().getUserEditableColumns();
+            List<ColumnInfo> includedCols = new ArrayList<ColumnInfo>();
+            for (ColumnInfo col : allCols)
+            {
+                if (isColumnIncluded(col))
+                {
+                    includedCols.add(col);
+                }
+            }
+            dr.setColumns(includedCols);
             _dataRegion = dr;
         }
 
         return _dataRegion;
     }
+
+    protected abstract boolean isColumnIncluded(ColumnInfo col);
 
     public void setContainer(Container c)
     {

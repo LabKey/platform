@@ -92,6 +92,9 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         setDescription(col.getDescription());
         setRequired(!col.isNullable());
         setHidden(col.isHidden());
+        setShownInDetailsView(col.isShownInDetailsView());
+        setShownInInsertView(col.isShownInInsertView());
+        setShownInUpdateView(col.isShownInUpdateView());
         setLabel(col.getLabel());
         setFormat(col.getFormat());
     }

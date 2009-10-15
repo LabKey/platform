@@ -83,7 +83,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
             for (PropertyPaneItem<DomainType, FieldType> item : _items)
             {
-                if (item.copyValuesToPropertyDescriptor(_currentPD))
+                if (item.isEnabled() && item.copyValuesToPropertyDescriptor(_currentPD))
                     changed = true;
             }
 

@@ -64,13 +64,9 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
-        if (checkbox.isEnabled())
-        {
-            boolean changed = !getFieldValue(field) == checkbox.isChecked();
-            setFieldValue(field, checkbox.isChecked());
-            return changed;
-        }
-        return false;
+        boolean changed = !getFieldValue(field) == checkbox.isChecked();
+        setFieldValue(field, checkbox.isChecked());
+        return changed;
     }
 
     protected abstract boolean getFieldValue(FieldType field);

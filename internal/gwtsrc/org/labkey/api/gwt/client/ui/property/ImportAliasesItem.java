@@ -54,14 +54,10 @@ public class ImportAliasesItem<DomainType extends GWTDomain<FieldType>, FieldTyp
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
-        if (_aliasesTextBox.isEnabled())
-        {
-            String aliasString = _aliasesTextBox.getText().trim();
-            boolean changed = aliasString.equals(field.getImportAliases());
-            field.setImportAliases("".equals(aliasString) ? null : aliasString);
-            return changed;
-        }
-        return false;
+        String aliasString = _aliasesTextBox.getText().trim();
+        boolean changed = aliasString.equals(field.getImportAliases());
+        field.setImportAliases("".equals(aliasString) ? null : aliasString);
+        return changed;
     }
 
     public void enabledChanged()

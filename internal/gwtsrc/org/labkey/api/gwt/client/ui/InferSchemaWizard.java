@@ -147,7 +147,7 @@ public class InferSchemaWizard extends DialogBox
             String result = event.getResults();
             if (result.startsWith("Success:"))
             {
-                result = result.substring(8); // trim the "Success:" prefix
+                result = result.substring("Success:".length()); // trim the "Success:" prefix
                 GWTTabLoader loader = new GWTTabLoader(result);
                 if (loader.processTsv(propertiesEditor))
                 {

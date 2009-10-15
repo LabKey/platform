@@ -65,13 +65,9 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
 
     public boolean copyValuesToPropertyDescriptor(FieldType pd)
     {
-        if (_textBox.isEnabled())
-        {
-            boolean changed = !nullSafeEquals(pd.getURL(), trimValue(_textBox.getText()));
-            pd.setURL(trimValue(_textBox.getText()));
-            return changed;
-        }
-        return false;
+        boolean changed = !nullSafeEquals(pd.getURL(), trimValue(_textBox.getText()));
+        pd.setURL(trimValue(_textBox.getText()));
+        return changed;
     }
 
     public void enabledChanged()

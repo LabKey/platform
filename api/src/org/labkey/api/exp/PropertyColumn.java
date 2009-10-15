@@ -43,6 +43,9 @@ public class PropertyColumn extends LookupColumn
         setAlias(ColumnInfo.legalNameFromName(pd.getName()));
         setNullable(!pd.isRequired());
         setHidden(pd.isHidden());
+        setShownInDetailsView(pd.isShownInDetailsView());
+        setShownInInsertView(pd.isShownInInsertView());
+        setShownInUpdateView(pd.isShownInUpdateView());
         String description = pd.getDescription();
         if (null == description && null != pd.getConceptURI())
         {

@@ -51,13 +51,9 @@ public class DescriptionItem<DomainType extends GWTDomain<FieldType>, FieldType 
 
     public boolean copyValuesToPropertyDescriptor(FieldType pd)
     {
-        if (_descriptionTextArea.isEnabled())
-        {
-            boolean changed = !nullSafeEquals(pd.getDescription(), trimValue(_descriptionTextArea.getText()));
-            pd.setDescription(trimValue(_descriptionTextArea.getText()));
-            return changed;
-        }
-        return false;
+        boolean changed = !nullSafeEquals(pd.getDescription(), trimValue(_descriptionTextArea.getText()));
+        pd.setDescription(trimValue(_descriptionTextArea.getText()));
+        return changed;
     }
 
     public void enabledChanged()

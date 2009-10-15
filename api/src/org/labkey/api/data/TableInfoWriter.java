@@ -90,6 +90,15 @@ public class TableInfoWriter
         if (!column.isNullable())
             columnXml.setNullable(false);
 
+        if (column.isHidden())
+            columnXml.setIsHidden(true);
+        if (!column.isShownInInsertView())
+            columnXml.setShownInInsertView(false);
+        if (!column.isShownInUpdateView())
+            columnXml.setShownInUpdateView(false);
+        if (!column.isShownInDetailsView())
+            columnXml.setShownInDetailsView(false);
+
         if (null != column.getURL())
             columnXml.setUrl(column.getURL().getSource());
 

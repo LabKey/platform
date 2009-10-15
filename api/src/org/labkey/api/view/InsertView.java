@@ -60,9 +60,14 @@ public class InsertView extends DataView
         getDataRegion().setColumns(cols);
     }
 
+    protected boolean isColumnIncluded(ColumnInfo col)
+    {
+        return col.isShownInInsertView();
+    }
+
     public void setInitialValues(Map initialValues)
     {
-        _initialValues = new HashMap(initialValues);
+        _initialValues = new HashMap<String, Object>(initialValues);
     }
 
     public Map getInitialValues()

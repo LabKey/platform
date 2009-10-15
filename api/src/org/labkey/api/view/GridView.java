@@ -34,6 +34,11 @@ public class GridView extends DataView
         setupSelectionKey(dataRegion);
     }
 
+    protected boolean isColumnIncluded(ColumnInfo col)
+    {
+        return !col.isHidden();
+    }
+
     private void setupSelectionKey(DataRegion dataRegion)
     {
         if (dataRegion != null &&
@@ -72,4 +77,4 @@ public class GridView extends DataView
 
         getDataRegion().renderTable(ctx, out);
     }
-} 
+}

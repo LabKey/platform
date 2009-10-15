@@ -226,6 +226,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setIsUnselectable(col.isUnselectable());
         setDefaultValueType(col.getDefaultValueType());
         setImportAliasesSet(col.getImportAliasesSet());
+        setShownInDetailsView(col.isShownInDetailsView());
+        setShownInInsertView(col.isShownInInsertView());
+        setShownInUpdateView(col.isShownInUpdateView());
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // URL copy/rewrite is handled separately
@@ -759,6 +762,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             description = xmlCol.getDescription();
         if (xmlCol.isSetIsHidden())
             hidden = xmlCol.getIsHidden();
+        if (xmlCol.isSetShownInInsertView())
+            shownInInsertView = xmlCol.getShownInInsertView();
+        if (xmlCol.isSetShownInUpdateView())
+            shownInUpdateView = xmlCol.getShownInUpdateView();
+        if (xmlCol.isSetShownInDetailsView())
+            shownInDetailsView = xmlCol.getShownInDetailsView();
         if (xmlCol.isSetIsUnselectable())
             isUnselectable = xmlCol.getIsUnselectable();
         if (xmlCol.isSetIsKeyField())

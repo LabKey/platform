@@ -40,6 +40,9 @@ public interface DomainProperty
     IPropertyType getType();
     boolean isRequired();
     boolean isHidden();
+    boolean isShownInInsertView();
+    boolean isShownInUpdateView();
+    boolean isShownInDetailsView();
     boolean isMvEnabled();
 
     void delete();
@@ -53,6 +56,9 @@ public interface DomainProperty
     void setFormat(String s);
     void setRequired(boolean b);
     void setHidden(boolean hidden);
+    void setShownInInsertView(boolean shown);
+    void setShownInUpdateView(boolean shown);
+    void setShownInDetailsView(boolean shown);
     void setMvEnabled(boolean mv);
 
     void setImportAliasSet(Set<String> aliases);

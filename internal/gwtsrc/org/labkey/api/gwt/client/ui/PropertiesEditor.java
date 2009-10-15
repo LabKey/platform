@@ -163,9 +163,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             public void onClick(ClickEvent e)
             {
-                final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
-                popup.setText("Infer Schema");
-                popup.center();
+                ImageButton confirmButton = new ImageButton("OK", new ClickHandler()
+                {
+                    public void onClick(ClickEvent event)
+                    {
+                        final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
+                        popup.setText("Infer Schema");
+                        popup.center();
+                    }
+                });
+                WindowUtil.showConfirmDialog("Infer Schema From File", "This will delete all existing fields and data. Are you sure you wish to proceed?", confirmButton);
             }
         };
 
@@ -263,22 +270,24 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         PropertyPane<DomainType, FieldType> basicPropertyPane = new PropertyPane<DomainType, FieldType>(this, "Additional Properties");
         basicPropertyPane.addItem(new DescriptionItem<DomainType, FieldType>(basicPropertyPane));
-        basicPropertyPane.addItem(new FormatItem<DomainType, FieldType>(basicPropertyPane));
         RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(basicPropertyPane);
         basicPropertyPane.addItem(requiredItem);
-        // 7441 : de-clutter PropertyDescriptor editor, remove Hidden checkbox
-        //propertyPane.addItem(new HiddenItem<DomainType, FieldType>(propertyPane));
         basicPropertyPane.addItem(new MvEnabledItem<DomainType, FieldType>(basicPropertyPane));
         _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, basicPropertyPane);
         basicPropertyPane.addItem(_defaultValueSelector);
         basicPropertyPane.addItem(new ImportAliasesItem<DomainType, FieldType>(basicPropertyPane));
-        basicPropertyPane.addItem(new URLItem<DomainType, FieldType>(basicPropertyPane));
 
         PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
         validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(basicPropertyPane));
 
+        PropertyPane<DomainType, FieldType> displayPane = new PropertyPane<DomainType, FieldType>(this, "Display");
+        displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
+        displayPane.addItem(new FormatItem<DomainType, FieldType>(displayPane));
+        displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
+
         List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
         result.add(basicPropertyPane);
+        result.add(displayPane);
         result.add(validatorPane);
         return result;
     }

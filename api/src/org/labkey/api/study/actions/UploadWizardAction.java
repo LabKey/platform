@@ -171,7 +171,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             domain = domains.iterator().next();
         }
 
-        InsertView view = new UploadWizardInsertView(createDataRegion(baseTable, lsidCol, properties, null), getViewContext(), errors);
+        InsertView view = new UploadWizardInsertView(createDataRegionForInsert(baseTable, lsidCol, properties, null), getViewContext(), errors);
         if (errorReshow)
             view.setInitialValues(getViewContext().getRequest().getParameterMap());
         else if (domain != null)

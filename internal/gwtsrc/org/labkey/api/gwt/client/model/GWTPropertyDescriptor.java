@@ -57,6 +57,9 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty mvEnabled = new BooleanProperty(false);
     private StringProperty importAliases = new StringProperty();
     private StringProperty url = new StringProperty();
+    private BooleanProperty shownInInsertView = new BooleanProperty(true);
+    private BooleanProperty shownInUpdateView = new BooleanProperty(true);
+    private BooleanProperty shownInDetailsView = new BooleanProperty(true); 
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
 
@@ -79,6 +82,9 @@ public class GWTPropertyDescriptor implements IsSerializable
         setFormat(s.getFormat());
         setRequired(s.isRequired());
         setHidden(s.isHidden());
+        setShownInDetailsView(s.isShownInDetailsView());
+        setShownInInsertView(s.isShownInInsertView());
+        setShownInUpdateView(s.isShownInUpdateView());
         setMvEnabled(s.getMvEnabled());
         setLookupContainer(s.getLookupContainer());
         setLookupSchema(s.getLookupSchema());
@@ -260,6 +266,36 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.hidden.setBool(hidden);
     }
 
+    public boolean isShownInInsertView()
+    {
+        return shownInInsertView.getBool();
+    }
+
+    public void setShownInInsertView(boolean shown)
+    {
+        shownInInsertView.setBool(shown);
+    }
+
+    public boolean isShownInUpdateView()
+    {
+        return shownInUpdateView.getBool();
+    }
+
+    public void setShownInUpdateView(boolean shown)
+    {
+        shownInUpdateView.setBool(shown);
+    }
+
+    public boolean isShownInDetailsView()
+    {
+        return shownInDetailsView.getBool();
+    }
+
+    public void setShownInDetailsView(boolean shown)
+    {
+        shownInDetailsView.setBool(shown);
+    }
+
     public boolean getMvEnabled()
     {
         return mvEnabled.getBool();
@@ -338,6 +374,9 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getDefaultDisplayValue() != null ? !getDefaultDisplayValue().equals(that.getDefaultDisplayValue()) : that.getDefaultDisplayValue() != null) return false;
         if (getImportAliases() != null ? !getImportAliases().equals(that.getImportAliases()) : that.getImportAliases() != null) return false;
         if (getURL() != null ? !getURL().equals(that.getURL()) : that.getURL() != null) return false;
+        if (isShownInDetailsView() != that.isShownInDetailsView()) return false;
+        if (isShownInInsertView() != that.isShownInInsertView()) return false;
+        if (isShownInUpdateView() != that.isShownInUpdateView()) return false;
 
         if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
         GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
@@ -373,6 +412,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (defaultValueType != null ? defaultValueType.hashCode() : 0);
         result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
         result = 31 * result + (defaultDisplayValue != null ? defaultDisplayValue.hashCode() : 0);
+        result = 31 * result + (url != null ? url.hashCode() : 0);
+        result = 31 * result + (importAliases != null ? importAliases.hashCode() : 0);
+        result = 31 * result + (shownInDetailsView.getBoolean() != null ? shownInDetailsView.getBoolean().hashCode() : 0);
+        result = 31 * result + (shownInInsertView.getBoolean() != null ? shownInInsertView.getBoolean().hashCode() : 0);
+        result = 31 * result + (shownInUpdateView.getBoolean() != null ? shownInUpdateView.getBoolean().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -400,6 +444,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("lookupSchema".equals(prop)) return lookupSchema;
         if ("lookupQuery".equals(prop)) return lookupQuery;
         if ("mvEnabled".equals(prop)) return mvEnabled;
+        if ("url".equals(prop)) return url;
+        if ("importAliases".equals(prop)) return importAliases;
+        if ("shownInInsertView".equals(prop)) return shownInInsertView;
+        if ("shownInUpdateView".equals(prop)) return shownInUpdateView;
+        if ("shownInDetailsView".equals(prop)) return shownInDetailsView;
         if ("defaultValueType".equals(prop)) throw new IllegalStateException("defaultValueType cannot be bound.");
         if ("defaultValue".equals(prop)) throw new IllegalStateException("defaultValue cannot be bound.");
         if ("defaultDisplayValue".equals(prop)) throw new IllegalStateException("defaultDisplayValue cannot be bound.");

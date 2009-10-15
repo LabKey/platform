@@ -96,16 +96,19 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return getViewContext().getContainer();
     }
 
-    protected DataRegion createDataRegion(TableInfo baseTable, String lsidCol, DomainProperty[] domainProperties, Map<String, String> columnNameToPropertyName)
+    protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, DomainProperty[] domainProperties, Map<String, String> columnNameToPropertyName)
     {
         DataRegion rgn = new DataRegion();
         rgn.setTable(baseTable);
         for (DomainProperty dp : domainProperties)
         {
-            ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getViewContext().getUser());
-            rgn.addColumn(info);
-            if (columnNameToPropertyName != null)
-                columnNameToPropertyName.put(info.getName(), dp.getName());
+            if (dp.isShownInInsertView())
+            {
+                ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getViewContext().getUser());
+                rgn.addColumn(info);
+                if (columnNameToPropertyName != null)
+                    columnNameToPropertyName.put(info.getName(), dp.getName());
+            }
         }
         return rgn;
     }

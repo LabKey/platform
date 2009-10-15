@@ -45,6 +45,9 @@ public class ColumnRenderProperties
     protected String name;
     protected String description;
     protected boolean hidden;
+    protected boolean shownInInsertView = true;
+    protected boolean shownInUpdateView = true;
+    protected boolean shownInDetailsView = true;
     protected StringExpression url;
     protected Set<String> importAliases = new LinkedHashSet<String>();
 
@@ -59,6 +62,10 @@ public class ColumnRenderProperties
         to.excelFormatString = excelFormatString;
         to.tsvFormatString = tsvFormatString;
         to.label = label;
+        to.hidden = hidden;
+        to.shownInInsertView = shownInInsertView;
+        to.shownInUpdateView = shownInUpdateView;
+        to.shownInDetailsView = shownInDetailsView;
         to.name = name;
         to.url = url;
         to.importAliases = new LinkedHashSet<String>(importAliases);
@@ -182,6 +189,36 @@ public class ColumnRenderProperties
     public void setHidden(boolean hidden)
     {
         this.hidden = hidden;
+    }
+
+    public boolean isShownInDetailsView()
+    {
+        return shownInDetailsView;
+    }
+
+    public void setShownInDetailsView(boolean shownInDetailsView)
+    {
+        this.shownInDetailsView = shownInDetailsView;
+    }
+
+    public boolean isShownInInsertView()
+    {
+        return shownInInsertView;
+    }
+
+    public void setShownInInsertView(boolean shownInInsertView)
+    {
+        this.shownInInsertView = shownInInsertView;
+    }
+
+    public boolean isShownInUpdateView()
+    {
+        return shownInUpdateView;
+    }
+
+    public void setShownInUpdateView(boolean shownInUpdateView)
+    {
+        this.shownInUpdateView = shownInUpdateView;
     }
 
     public StringExpression getURL()

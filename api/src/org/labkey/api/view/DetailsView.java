@@ -50,6 +50,11 @@ public class DetailsView extends DataView
         _pk = pk;
     }
 
+    protected boolean isColumnIncluded(ColumnInfo col)
+    {
+        return col.isShownInDetailsView();
+    }
+
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
     {
         //UNDONE String err = PageFlowUtil.getStrutsError(ctx.getRequest(), "dataregion_" + getDataRegion().getName());
@@ -69,4 +74,4 @@ public class DetailsView extends DataView
         else
             getDataRegion().renderDetails(ctx, out);
     }
-} 
+}

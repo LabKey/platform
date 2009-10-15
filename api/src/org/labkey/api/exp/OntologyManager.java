@@ -1997,6 +1997,10 @@ public class OntologyManager
             String lookupSchema = (String) m.get("LookupSchema");
             String lookupQuery = (String) m.get("LookupQuery");
 
+            boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean)m.get("ShownInInsertView")).booleanValue();
+            boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue(); 
+            boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
+
             PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
             if (null == pt)
             {
@@ -2060,6 +2064,9 @@ public class OntologyManager
             pd.setImportAliases(importAliases);
             pd.setRequired(required);
             pd.setHidden(hidden);
+            pd.setShownInInsertView(shownInInsertView);
+            pd.setShownInUpdateView(shownInUpdateView);
+            pd.setShownInDetailsView(shownInDetailsView);
             pd.setFormat(format);
             pd.setMvEnabled(mvEnabled);
             pd.setLookupContainer(lookupContainerId);

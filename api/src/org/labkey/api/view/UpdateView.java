@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
+import org.labkey.api.data.ColumnInfo;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -38,6 +39,12 @@ public class UpdateView extends DataView
     {
         super(form, errors);
     }
+
+    protected boolean isColumnIncluded(ColumnInfo col)
+    {
+        return col.isShownInUpdateView();
+    }
+
 
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
     {

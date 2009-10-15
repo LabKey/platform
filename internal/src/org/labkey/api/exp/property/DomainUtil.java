@@ -179,6 +179,9 @@ public class DomainUtil
         gwtProp.setRangeURI(prop.getType().getTypeURI());
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setHidden(prop.isHidden());
+        gwtProp.setShownInInsertView(prop.isShownInInsertView());
+        gwtProp.setShownInUpdateView(prop.isShownInUpdateView());
+        gwtProp.setShownInDetailsView(prop.isShownInDetailsView());
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());

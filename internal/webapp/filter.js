@@ -397,7 +397,10 @@ function getParamValPairs(skipPrefixes)
                 }
             }
             if (paramPair.length > 1)
-                paramPair[1] = unescape(paramPair[1]);
+            {
+                // unescape doesn't handle '+' correctly, so swap them with ' ' first
+                paramPair[1] = unescape(paramPair[1].replace(/\+/g, " "));
+            }
             newParamValPairs[iNew] = paramPair;
             iNew++;
         }
