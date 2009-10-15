@@ -51,9 +51,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
 
-        //boolean joinCommentsToSpecimens = true;
-        //addVialCommentsColumn(joinCommentsToSpecimens);
-
         ColumnInfo specimenComment = createSpecimenCommentColumn(_schema, true);
         specimenComment.setName("Comments");
         specimenComment.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -115,6 +112,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount"));
 
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
+
+        // the old vial comments column
+        boolean joinCommentsToSpecimens = true;
+        addVialCommentsColumn(joinCommentsToSpecimens);
     }
 
     public static class QualityControlColumn extends ExprColumn

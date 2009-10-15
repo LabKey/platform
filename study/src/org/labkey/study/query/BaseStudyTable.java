@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.Types;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -141,7 +143,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
     {
-        ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
+        ColumnInfo commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
         LookupForeignKey commentsFK = new LookupForeignKey("GlobalUniqueId")
         {
             public TableInfo getLookupTableInfo()
@@ -204,36 +206,57 @@ public abstract class BaseStudyTable extends FilteredTable
             _ptidCommentTable = ptidCommentTable;
             _ptidVisitCommentTable = ptidVisitCommentTable;
             _includeVialComments = includeVialComments;
-
             SQLFragment sql = new SQLFragment();
-            String concatOperator = parent.getSchema().getSqlDialect().getConcatenationOperator();
+            String ptidCommentAlias = ptidCommentProperty != null ? ColumnInfo.legalNameFromName(ptidCommentProperty) : null;
+            String ptidVisitCommentAlias = ptidVisitCommentProperty != null ? ColumnInfo.legalNameFromName(ptidVisitCommentProperty) : null;
+
+            List<String> commentFields = new ArrayList();
 
             if (_includeVialComments)
-                sql.append(ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment AS " + VIAL_COMMENT_ALIAS + ",\n");
-            if (ptidCommentTable != null && ptidCommentProperty != null)
-                sql.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentProperty + " AS " + PARTICIPANT_COMMENT_ALIAS + ",\n");
-            if (ptidVisitCommentTable != null && ptidVisitCommentProperty != null)
-                sql.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentProperty + " AS " + PARTICIPANTVISIT_COMMENT_ALIAS + ",\n");
+            {
+                String field = ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment";
 
-            String concat = "";
+                sql.append(field).append(" AS " + VIAL_COMMENT_ALIAS + ",\n");
+                commentFields.add(field);
+            }
+            if (ptidCommentTable != null && ptidCommentAlias != null)
+            {
+                String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentAlias;
+
+                sql.append(field).append(" AS " + PARTICIPANT_COMMENT_ALIAS + ",\n");
+                commentFields.add(field);
+            }
+            if (ptidVisitCommentTable != null && ptidVisitCommentAlias != null)
+            {
+                String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentAlias;
+
+                sql.append(field).append(" AS " + PARTICIPANTVISIT_COMMENT_ALIAS + ",\n");
+                commentFields.add(field);
+            }
+
             StringBuilder sb = new StringBuilder();
-            if (_includeVialComments)
+            if (!commentFields.isEmpty())
             {
-                sb.append(ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment");
-                concat = concatOperator;
+                switch (commentFields.size())
+                {
+                    case 1:
+                        sb.append(commentFields.get(0));
+                        break;
+                    case 2:
+                        sb.append("CASE");
+                        appendCommentCaseSQL(sb, commentFields.get(0), commentFields.get(1));
+                        sb.append(" ELSE COALESCE(").append(commentFields.get(0)).append(',').append(commentFields.get(1)).append(") END");
+                        break;
+                    case 3:
+                        sb.append("CASE");
+                        appendCommentCaseSQL(sb, commentFields.get(0), commentFields.get(1), commentFields.get(2));
+                        appendCommentCaseSQL(sb, commentFields.get(0), commentFields.get(1));
+                        appendCommentCaseSQL(sb, commentFields.get(0), commentFields.get(2));
+                        appendCommentCaseSQL(sb, commentFields.get(1), commentFields.get(2));
+                        sb.append(" ELSE COALESCE(").append(commentFields.get(0)).append(',').append(commentFields.get(1)).append(',').append(commentFields.get(2)).append(") END");
+                        break;
+                }
             }
-            if (ptidCommentTable != null && ptidCommentProperty != null)
-            {
-                sb.append(concat);
-                sb.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentProperty);
-                concat = concatOperator;
-            }
-            if (ptidVisitCommentTable != null && ptidVisitCommentProperty != null)
-            {
-                sb.append(concat);
-                sb.append(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentProperty);
-            }
-
             sql.append("(");
             if (sb.length() > 0)
                 sql.append(sb.toString());
@@ -241,6 +264,27 @@ public abstract class BaseStudyTable extends FilteredTable
                 sql.append("' '");
             sql.append(")");
             setValueSQL(sql);
+        }
+
+        private void appendCommentCaseSQL(StringBuilder sb, String ... fields)
+        {
+            String concatOperator = getSqlDialect().getConcatenationOperator();
+            String concat = "";
+
+            sb.append(" WHEN ");
+            for (String field : fields)
+            {
+                sb.append(concat).append(field).append(" IS NOT NULL ");
+                concat = "AND ";
+            }
+
+            concat = "";
+            sb.append("THEN ");
+            for (String field : fields)
+            {
+                sb.append(concat).append(" CAST((").append(field).append(") AS VARCHAR)");
+                concat = concatOperator;
+            }
         }
 
         @Override

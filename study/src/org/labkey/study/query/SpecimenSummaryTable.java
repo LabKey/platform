@@ -93,6 +93,13 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         ColumnInfo specimenComment = createSpecimenCommentColumn(_schema, false);
         specimenComment.setHidden(true);
+        specimenComment.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new SpecimenCommentDisplayColumn(colInfo);
+            }
+        });
         addColumn(specimenComment);
         
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:

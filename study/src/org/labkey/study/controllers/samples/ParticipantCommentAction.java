@@ -25,6 +25,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.study.controllers.InsertUpdateAction;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.Specimen;
@@ -80,14 +81,16 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
     @RequiresPermissionClass(InsertPermission.class)
     public static class SpecimenCommentInsertAction extends ParticipantCommentAction
     {
+        private DataView _dataView;
+
         @Override
         public ModelAndView getView(final SpringSpecimenController.ParticipantCommentForm form, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = super.getView(form, reshow, errors);
-            if (!reshow && view instanceof InsertView)
+           ModelAndView view = super.getView(form, reshow, errors);
+            if (!reshow && _dataView instanceof InsertView)
             {
-                ((InsertView)view).setInitialValue("ParticipantId", form.getParticipantId());
-                ((InsertView)view).setInitialValue("SequenceNum", form.getVisitId());
+                ((InsertView)_dataView).setInitialValue("ParticipantId", form.getParticipantId());
+                ((InsertView)_dataView).setInitialValue("SequenceNum", form.getVisitId());
 
                 if (!StringUtils.isBlank(form.getComment()))
                 {
@@ -95,12 +98,19 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
                     String commentProperty = form.getVisitId() != 0 ? study.getParticipantVisitCommentProperty() :
                             study.getParticipantCommentProperty();
 
-                    ((InsertView)view).setInitialValue(commentProperty, form.getComment());
+                    ((InsertView)_dataView).setInitialValue(ColumnInfo.legalNameFromName(commentProperty), form.getComment());
                 }
                 for (int rowId : form.getVialCommentsToClear())
-                    ((InsertView)view).getDataRegion().addHiddenFormField(SpringSpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
+                    _dataView.getDataRegion().addHiddenFormField(SpringSpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
             }
             return view;
+        }
+
+        @Override
+        protected DataView createNewView(SpringSpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
+        {
+            _dataView = super.createNewView(form, updateForm, errors);
+            return _dataView;
         }
 
         protected boolean isInsert()
@@ -123,6 +133,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
                     StudyImpl study = getStudy();
                     String commentProperty = form.getVisitId() != 0 ? study.getParticipantVisitCommentProperty() :
                             study.getParticipantCommentProperty();
+                    commentProperty = ColumnInfo.legalNameFromName(commentProperty);
 
                     Object values = updateForm.getOldValues();
                     if (values instanceof Map)
