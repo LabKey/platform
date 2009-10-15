@@ -166,7 +166,7 @@ public class SimpleModuleUserSchema extends UserSchema
             // UNDONE: add an 'isUserEditable' bit to the schema and table?
             TableInfo table = getRealTable();
             if (table != null && table.getTableType() == TableInfo.TABLE_TYPE_TABLE)
-                return new DefaultQueryUpdateService(table);
+                return new DefaultQueryUpdateService(this, table);
             return null;
         }
     }

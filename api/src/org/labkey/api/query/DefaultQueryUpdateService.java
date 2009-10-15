@@ -16,11 +16,13 @@
 package org.labkey.api.query;
 
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.view.UnauthorizedException;
 import org.apache.commons.beanutils.ConvertUtils;
 
 import java.util.Map;
@@ -35,22 +37,36 @@ import java.sql.SQLException;
 */
 public class DefaultQueryUpdateService implements QueryUpdateService
 {
-    public TableInfo _table = null;
+    private TableInfo _queryTable = null;
+    private TableInfo _dbTable = null;
 
-    public DefaultQueryUpdateService(TableInfo table)
+    public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
     {
-        _table = table;
+        _queryTable = queryTable;
+        _dbTable = dbTable;
     }
 
-    protected TableInfo getTable()
+    protected TableInfo getQueryTable()
     {
-        return _table;
+        return _queryTable;
+    }
+
+    protected TableInfo getDbTable()
+    {
+        return _dbTable;
+    }
+
+    protected boolean hasPermission(User user, int acl)
+    {
+        return getQueryTable().hasPermission(user, acl);
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Map<String,Object> row = ((Map<String,Object>)Table.selectObject(_table, getKeys(keys), Map.class));
+        if (!hasPermission(user, ACL.PERM_READ))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+        Map<String,Object> row = ((Map<String,Object>)Table.selectObject(getDbTable(), getKeys(keys), Map.class));
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
         //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -62,13 +78,17 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        if (!hasPermission(user, ACL.PERM_INSERT))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
         convertTypes(row);
-        setSpecialColumns(user, container, getTable(), row);
-        return Table.insert(user, getTable(), row);
+        setSpecialColumns(user, container, getDbTable(), row);
+        return Table.insert(user, getDbTable(), row);
     }
 
     public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        if (!hasPermission(user, ACL.PERM_UPDATE))
+            throw new UnauthorizedException("You do not have permission to update data in this table.");
         //when updating a row, we should strip the following fields, as they are
         //automagically maintained by the table layer, and should not be allowed
         //to change once the record exists.
@@ -86,7 +106,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
         }
 
         convertTypes(rowStripped);
-        setSpecialColumns(user, container, getTable(), row);
+        setSpecialColumns(user, container, getDbTable(), row);
 
         Object rowContainer = row.get("container");
         if (rowContainer != null)
@@ -100,7 +120,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
                 throw new QueryUpdateServiceException("The row is from the wrong container.");
         }
 
-        Map<String,Object> updatedRow = Table.update(user, getTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys));
+        Map<String,Object> updatedRow = Table.update(user, getDbTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys));
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes
         //the primary key columns as well as those marked read-only. So we can't simply return the map returned
@@ -111,14 +131,16 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Table.delete(getTable(), getKeys(keys));
+        if (!hasPermission(user, ACL.PERM_DELETE))
+            throw new UnauthorizedException("You do not have permission to delete data from this table.");
+        Table.delete(getDbTable(), getKeys(keys));
         return keys;
     }
 
     protected Object[] getKeys(Map<String, Object> map) throws InvalidKeyException
     {
         //build an array of pk values based on the table info
-        TableInfo table = getTable();
+        TableInfo table = getDbTable();
         List<ColumnInfo> pks = table.getPkColumns();
         Object[] pkVals = new Object[pks.size()];
         for(int idx = 0; idx < pks.size(); ++idx)
@@ -133,7 +155,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     protected void convertTypes(Map<String,Object> row)
     {
-        for(ColumnInfo col : getTable().getColumns())
+        for(ColumnInfo col : getDbTable().getColumns())
         {
             Object value = row.get(col.getName());
             if(null != value)
@@ -159,7 +181,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
      */
     protected void setSpecialColumns(User user, Container container, TableInfo table, Map<String,Object> row)
     {
-        if(null != container)
+        if (null != container)
             row.put("container", container.getId());
     }
 }
