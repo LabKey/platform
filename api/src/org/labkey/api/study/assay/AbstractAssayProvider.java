@@ -16,6 +16,8 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
@@ -724,13 +726,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (saveBatchProps)
             {
                 if (!transformResult.getBatchProperties().isEmpty())
-                    savePropertyObject(batch.getLSID(), transformResult.getBatchProperties(), context.getContainer());
+                {
+                    Map<DomainProperty, String> props = transformResult.getBatchProperties();
+                    List<ValidationError> errors = validateProperties(props);
+                    if (!errors.isEmpty())
+                        throw new ValidationException(errors);
+                    savePropertyObject(batch.getLSID(), props, context.getContainer());
+                }
                 else
                     savePropertyObject(batch.getLSID(), batchProperties, context.getContainer());
             }
 
             if (!transformResult.getRunProperties().isEmpty())
-                savePropertyObject(run.getLSID(), transformResult.getRunProperties(), context.getContainer());
+            {
+                Map<DomainProperty, String> props = transformResult.getRunProperties();
+                List<ValidationError> errors = validateProperties(props);
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
+                savePropertyObject(run.getLSID(), props, context.getContainer());
+            }
             else
                 savePropertyObject(run.getLSID(), runProperties, context.getContainer());
 
@@ -754,6 +768,43 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (transactionOwner)
                 scope.closeConnection();
         }
+    }
+
+    public static List<ValidationError> validateProperties(Map<DomainProperty, String> properties)
+    {
+        List<ValidationError> errors = new ArrayList<ValidationError>();
+
+        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
+        {
+            DomainProperty dp = entry.getKey();
+            String value = entry.getValue();
+            String label = dp.getPropertyDescriptor().getNonBlankCaption();
+            PropertyType type = dp.getPropertyDescriptor().getPropertyType();
+            boolean missing = (value == null || value.length() == 0);
+            if (dp.isRequired() && missing)
+            {
+                errors.add(new SimpleValidationError(label + " is required and must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + "."));
+            }
+            else if (!missing)
+            {
+                try
+                {
+                    ConvertUtils.convert(value, type.getJavaType());
+                }
+                catch (ConversionException e)
+                {
+                    String message = label + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".";
+                    message +=  "  Value \"" + value + "\" could not be converted";
+                    if (e.getCause() instanceof ArithmeticException)
+                        message +=  ": " + e.getCause().getLocalizedMessage();
+                    else
+                        message += ".";
+
+                    errors.add(new SimpleValidationError(message));
+                }
+            }
+        }
+        return errors;
     }
 
     protected PropertyDescriptor[] getPropertyDescriptors(Domain domain)
