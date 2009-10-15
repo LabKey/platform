@@ -16,16 +16,17 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.StudySchema;
 
 public class ParticipantVisitTable extends FilteredTable
 {
@@ -117,7 +118,7 @@ public class ParticipantVisitTable extends FilteredTable
 
     protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd, ColumnInfo participantSequenceKeyColumn)
     {
-        ColumnInfo ret = new AliasedColumn(name, AliasManager.makeLegalName(name, _dialect), participantSequenceKeyColumn);
+        ColumnInfo ret = new AliasedColumn(name, participantSequenceKeyColumn);
         ret.setFk(new PVForeignKey(dsd));
         ret.setLabel(dsd.getLabel());
         ret.setIsUnselectable(true);

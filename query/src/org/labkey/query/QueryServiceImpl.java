@@ -20,9 +20,9 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.data.*;
@@ -439,7 +439,7 @@ public class QueryServiceImpl extends QueryService
             }
 
             if (ret != null && !AliasManager.isLegalName(ret.getName()))
-                ret = new AliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
+                ret = new QAliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
 
             return ret;
         }
@@ -457,7 +457,7 @@ public class QueryServiceImpl extends QueryService
         if (lookup == null)
             return null;
 
-        AliasedColumn ret = new AliasedColumn(key, manager.decideAlias(key.toString()), lookup, true);
+        AliasedColumn ret = new QAliasedColumn(key, manager.decideAlias(key.toString()), lookup, true);
         columnMap.put(key, ret);
 
         return ret;
@@ -763,7 +763,7 @@ public class QueryServiceImpl extends QueryService
             selectFrag.append(strComma);
             selectFrag.append(column.getValueSql(tableAlias));
             selectFrag.append(" AS " );
-            selectFrag.append(dialect.getColumnSelectName(column.getAlias()));
+            selectFrag.append(dialect.quoteColumnIdentifier(column.getAlias()));
             strComma = ",\n";
         }
 
@@ -903,6 +903,22 @@ public class QueryServiceImpl extends QueryService
         }
 
         return sb.toString();
+    }
+
+
+    static private class QAliasedColumn extends AliasedColumn
+    {
+        public QAliasedColumn(FieldKey key, String alias, ColumnInfo column, boolean forceKeepLabel)
+        {
+            super(column.getParentTable(), key, column, forceKeepLabel);
+            setAlias(alias);
+        }
+
+        public QAliasedColumn(String name, String alias, ColumnInfo column)
+        {
+            super(column.getParentTable(), name, column);
+            setAlias(alias);
+        }
     }
 
 
