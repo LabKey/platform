@@ -1680,6 +1680,16 @@ public class QueryControllerSpring extends SpringActionController
         {
             _containerFilter = containerFilter;
         }
+
+        public void setLimit(Integer limit)
+        {
+            _maxRows = limit;
+        }
+
+        public void setStart(Integer start)
+        {
+            _offset = start;
+        }
     }
 
     @RequiresPermission(ACL.PERM_READ)
