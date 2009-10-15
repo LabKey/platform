@@ -99,6 +99,14 @@ LABKEY.Domain = new function()
 
         /**
          * Saves the provided domain design
+         * @param {Function} successCallback Required. Function called if this
+                  function executes successfully. No parameters will be passed to the success callback.
+         * @param {Function} [failureCallback] Function called if execution of this function fails.
+         * @param {Object} domainDesign The domain design to save. This must be an object of type {@link LABKEY.Domain.DomainDesign}
+         * @param {String} schemaName Name of the schema
+         * @param {String} queryName Name of the query
+         * @param {String} [containerPath] The container path in which the requested Domain is defined.
+         *       If not supplied, the current container path will be used.
          */
         save : function(successCallback, failureCallback, domainDesign, schemaName, queryName, containerPath)
         {
