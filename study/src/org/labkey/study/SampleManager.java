@@ -136,7 +136,7 @@ public class SampleManager
         }, SampleRequestStatus.class);
     }
 
-    public static synchronized SampleManager getInstance()
+    public static synchronized SampleManager  getInstance()
     {
         if (_instance == null)
             _instance = new SampleManager();

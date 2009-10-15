@@ -91,7 +91,7 @@ function setDefaults()
 }
 </script>
 <form name="CreateSampleRequest" action="handleCreateSampleRequest.post" method="POST">
-    <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl() %>">
+    <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <%
         if (specimens != null)
         {

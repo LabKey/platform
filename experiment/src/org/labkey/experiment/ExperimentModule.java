@@ -218,6 +218,7 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerDataType(new LogDataType());
         AuditLogService.get().addAuditViewFactory(ListAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(DomainAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(ExperimentAuditViewFactory.getInstance());
 
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {

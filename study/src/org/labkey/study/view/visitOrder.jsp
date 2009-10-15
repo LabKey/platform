@@ -115,9 +115,7 @@ function orderModule(listName, hiddenElName, down)
                     {
                         orderedList.append(first ? "" : ",").append(visit.getRowId());
                         StringBuilder desc = new StringBuilder();
-                        desc.append(visit.getRowId());
-                        if (visit.getLabel() != null)
-                            desc.append(": ").append(h(visit.getLabel()));
+                        desc.append(visit.getDisplayString());
                         if (first)
                         {
                             // we'll pad the first entry to give our select box reasonable width
@@ -149,9 +147,7 @@ function orderModule(listName, hiddenElName, down)
                     {
                         orderedList.append(first ? "" : ",").append(visit.getRowId());
                         StringBuilder desc = new StringBuilder();
-                        desc.append(visit.getRowId());
-                        if (visit.getLabel() != null)
-                            desc.append(": ").append(h(visit.getLabel()));
+                        desc.append(visit.getDisplayString());
                         if (first)
                         {
                             // we'll pad the first entry to give our select box reasonable width

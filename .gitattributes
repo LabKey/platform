@@ -725,6 +725,7 @@ experiment/src/org/labkey/experiment/DataURLRelativizer.java -text
 experiment/src/org/labkey/experiment/DefaultCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/DerivedSamplePropertyHelper.java -text
 experiment/src/org/labkey/experiment/DotGraph.java -text
+experiment/src/org/labkey/experiment/ExperimentAuditViewFactory.java -text
 experiment/src/org/labkey/experiment/ExperimentModule.java -text
 experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text
 experiment/src/org/labkey/experiment/ExperimentRunDisplayColumn.java -text
@@ -1895,6 +1896,7 @@ study/resources/schemas/dbscripts/postgresql/study-9.194-9.195.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.201-9.21.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.21-9.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.22-9.23.sql -text
+study/resources/schemas/dbscripts/postgresql/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2013,6 +2015,7 @@ study/resources/schemas/dbscripts/sqlserver/study-9.194-9.195.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.201-9.21.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.21-9.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.22-9.23.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -2230,7 +2233,6 @@ study/src/org/labkey/study/query/ParticipantVisitTable.java -text
 study/src/org/labkey/study/query/PrimaryTypeTable.java -text
 study/src/org/labkey/study/query/PublishedRecordQueryView.java -text
 study/src/org/labkey/study/query/QCStateTable.java -text
-study/src/org/labkey/study/query/RequestStatusTable.java -text
 study/src/org/labkey/study/query/SimpleSpecimenTable.java -text
 study/src/org/labkey/study/query/SiteTable.java -text
 study/src/org/labkey/study/query/SpecimenCommentTable.java -text
@@ -2240,6 +2242,7 @@ study/src/org/labkey/study/query/SpecimenEventTable.java -text
 study/src/org/labkey/study/query/SpecimenQueryView.java -text
 study/src/org/labkey/study/query/SpecimenRequestDisplayColumn.java -text
 study/src/org/labkey/study/query/SpecimenRequestQueryView.java -text
+study/src/org/labkey/study/query/SpecimenRequestStatusTable.java -text
 study/src/org/labkey/study/query/SpecimenRequestTable.java -text
 study/src/org/labkey/study/query/SpecimenSummaryTable.java -text
 study/src/org/labkey/study/query/SpecimenVialCountTable.java -text

@@ -89,7 +89,9 @@ public class DataSetTable extends FilteredTable
             }
             else if (baseColumn.getName().equalsIgnoreCase("SequenceNum") && _schema.getStudy().isDateBased())
             {
-                addWrapColumn(baseColumn);
+                // wrap the sequencenum column and set a format to prevent scientific notation, since the sequencenum values
+                // for date-based studies can be quite large (e.g., 20091014).
+                addWrapColumn(baseColumn).setFormat("#");
                 //Don't add to visible cols...
             }
             else if (baseColumn.getName().equalsIgnoreCase(QCSTATE_ID_COLNAME))

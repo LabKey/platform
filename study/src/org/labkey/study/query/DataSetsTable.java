@@ -27,6 +27,7 @@ public class DataSetsTable extends FilteredTable
     public DataSetsTable(StudyQuerySchema schema)
     {
         super(StudySchema.getInstance().getTableInfoDataSet(), schema.getContainer());
+        setName("Datasets");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

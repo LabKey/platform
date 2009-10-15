@@ -27,7 +27,6 @@
 <%
     StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
-    String confirmChangeMessage = "Changing between simple and advanced cohort assignment requires updating cohort assignments for all participants.  Update cohort assignments now?";
 %>
 <labkey:errors/>
 
@@ -36,28 +35,56 @@
     <input type="hidden" name="clearParticipants" value="false">
     <input type="hidden" name="updateParticipants" value="false">
 <%
-    WebPartView.startTitleFrame(out, "Assignment Type");
+    WebPartView.startTitleFrame(out, "Assignment Type", null, "100%", null);
 %>
-    <input type="radio" onclick="if (confirm('<%= h(confirmChangeMessage) %>')) document.manageCohorts.submit(); else return false;" name="advancedCohortSupport"
+    <script type="text/javascript">
+        function setAdvanced(advanced)
+        {
+            var manualEl = document.getElementById('manualCohortAssignmentEnabled');
+            var manual = manualEl && manualEl.checked;
+            if (advanced && manual)
+            {
+                 if (confirm('Enabling advanced cohort tracking will enable automatic assignment.  ' +
+                                        'Any manual cohort assignments will be cleared, and you must ' +
+                                        'select a study dataset containing cohort assignments.  Continue?'))
+                {
+                    document.getElementById('manualCohortAssignmentEnabled').checked = false;
+                    document.getElementById('manualCohortAssignmentDisabled').checked = true;
+                    document.manageCohorts.submit();
+                    return true;
+                }
+            }
+            else if (confirm('Changing between simple and advanced cohort assignment requires updating cohort ' +
+                               'assignments for all participants.  Update cohort assignments now?'))
+            {
+                document.manageCohorts.submit();
+                return true;
+            }
+            return false;
+        }
+    </script>
+    <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport"
            value="false" <%=study.isAdvancedCohorts() ? "" : "checked"%>>Simple: Participants are assigned to a single cohort throughout the study.<br>
-    <input type="radio" onclick="if (confirm('<%= h(confirmChangeMessage) %>')) document.manageCohorts.submit(); else return false;" name="advancedCohortSupport"
+    <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport"
            value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: Participants may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
-
 <%
+    WebPartView.endTitleFrame(out);
+
     if (!study.isAdvancedCohorts())
     {
-    WebPartView.startTitleFrame(out, "Assignment Method");
+        WebPartView.startTitleFrame(out, "Assignment Method", null, "100%", null);
 %>
-    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment" id="manualCohortAssignmentDisabled"
            value="false" <%=study.isManualCohortAssignment() ? "" : "checked"%>>Automatic: cohort assignments will be read from an existing study dataset.<br>
-    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment" id="manualCohortAssignmentEnabled"
            value="true" <%=study.isManualCohortAssignment() ? "checked" : ""%>>Manual: cohort assignments will be made by hand.
 
     <%
+        WebPartView.endTitleFrame(out);
     }
     if (!study.isManualCohortAssignment())
     { // If it's automatic, we need to include the dataset selection widgets
-        WebPartView.startTitleFrame(out, "Automatic Participant/Cohort Assignment");
+        WebPartView.startTitleFrame(out, "Automatic Participant/Cohort Assignment", null, "100%", null);
     %>
     <b>Note:</b> Only users with read access to the selected dataset will be able to view Cohort information.
 <table>
@@ -114,7 +141,7 @@
             <td>&nbsp;</td>
             <td>
                 <%= buttonImg("Update Assignments", "document.manageCohorts.updateParticipants.value='true'; return true;")%>
-                <%= buttonImg("Clear Assignments", "if (confirm('Refreshing will clear cohort information for all participants.  Continue?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
+                <%= buttonImg("Clear Assignments", "if (confirm('Are you sure you want to clear cohort information for all participants?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
             </td>
         </tr>
         </table>

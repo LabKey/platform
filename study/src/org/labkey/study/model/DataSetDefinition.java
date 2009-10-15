@@ -689,7 +689,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         StudyDataTableInfo(DataSetDefinition def, final User user)
         {
-            super("StudyData_" + def.getDataSetId(), StudySchema.getInstance().getSchema());
+            super(def.getLabel(), StudySchema.getInstance().getSchema());
             final Container c = def.getContainer();
             Study study = StudyManager.getInstance().getStudy(c);
             _datasetId = def.getDataSetId();

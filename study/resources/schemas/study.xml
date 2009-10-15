@@ -734,11 +734,14 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="Plate" tableDbType="TABLE">
+    <ns:description>Contains one row per defined plate template or uploaded plate instance.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="LSID"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="Name">
+        <ns:description>The unique admin-provided name of this plate template (""NAb: 5 specimens in duplicate", for example).</ns:description>
+      </ns:column>
       <ns:column columnName="CreatedBy">
         <ns:datatype>int</ns:datatype>
         <ns:columnTitle>Created By</ns:columnTitle>
@@ -758,34 +761,64 @@
         <ns:inputLength>23</ns:inputLength>
         <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
-      <ns:column columnName="Template"/>
-      <ns:column columnName="Rows"/>
-      <ns:column columnName="Columns"/>
-      <ns:column columnName="DataFileId"/>
-      <ns:column columnName="Type"/>
+      <ns:column columnName="Template">
+        <ns:description>Boolean indicating whether this plate is a template versus an uploaded instance of a plate template.</ns:description>
+      </ns:column>
+      <ns:column columnName="Rows">
+        <ns:description>The number of rows in this plate.</ns:description>
+      </ns:column>
+      <ns:column columnName="Columns">
+        <ns:description>The number of columns in this plate.</ns:description>
+      </ns:column>
+      <ns:column columnName="DataFileId">
+        <ns:description>A unique text identifier (a GUID) for the data file associated with this plate.</ns:description>
+      </ns:column>
+      <ns:column columnName="Type">
+        <ns:description>A text label of the plate type ("NAb", for example).</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Well" tableDbType="TABLE">
+    <ns:description>Contains one row per uploaded well data or defined plate template well.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="LSID"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="Value"/>
-      <ns:column columnName="Dilution"/>
-      <ns:column columnName="PlateId"/>
-      <ns:column columnName="Row"/>
-      <ns:column columnName="Col"/>
+      <ns:column columnName="Value">
+        <ns:description>The data value associated with this well.</ns:description>
+      </ns:column>
+      <ns:column columnName="Dilution">
+        <ns:description>This well's dilution/concentration value.</ns:description>
+      </ns:column>
+      <ns:column columnName="PlateId">
+        <ns:description>The row ID of the plate with which this well is associated.</ns:description>
+      </ns:column>
+      <ns:column columnName="Row">
+        <ns:description>The zero-based row index of this well.</ns:description>
+      </ns:column>
+      <ns:column columnName="Col">
+        <ns:description>The zero-based column index of this well.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="WellGroup" tableDbType="TABLE">
+    <ns:description>Contains one row per well group in uploaded plate data or plate templates.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
-      <ns:column columnName="PlateId"/>
+      <ns:column columnName="PlateId">
+        <ns:description>The row ID of the plate with which this well group is associated.</ns:description>
+      </ns:column>
       <ns:column columnName="LSID"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="Name"/>
-      <ns:column columnName="TypeName"/>
-      <ns:column columnName="Template"/>
+      <ns:column columnName="Name">
+        <ns:description>The name of this well group.</ns:description>
+      </ns:column>
+      <ns:column columnName="TypeName">
+        <ns:description>The type of this well group.  For example, "CONTROL", "REPLICATE", or "SPECIMEN".</ns:description>
+      </ns:column>
+      <ns:column columnName="Template">
+        <ns:description>Boolean indicating whether this well gruop is part of a plate template (versus a plate instance).</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="StudyDesign" tableDbType="TABLE">

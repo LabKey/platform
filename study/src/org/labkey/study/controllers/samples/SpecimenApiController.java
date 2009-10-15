@@ -541,9 +541,12 @@ public class SpecimenApiController extends BaseStudyController
             Set<String> hashes = new HashSet<String>();
             Collections.addAll(hashes, addSampleToRequestForm.getSpecimenHashes());
             SpecimenUtils.RequestedSpecimens requested = getUtils().getRequestableBySampleHash(hashes, addSampleToRequestForm.getPreferredLocation());
-            List<Specimen> specimens = new ArrayList<Specimen>(requested.getSpecimens().length);
-            Collections.addAll(specimens, requested.getSpecimens());
-            SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimens, true, true);
+            if (requested.getSpecimens().length > 0)
+            {
+                List<Specimen> specimens = new ArrayList<Specimen>(requested.getSpecimens().length);
+                Collections.addAll(specimens, requested.getSpecimens());
+                SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimens, true, true);
+            }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
             {

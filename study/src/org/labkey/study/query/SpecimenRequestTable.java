@@ -45,14 +45,13 @@ public class SpecimenRequestTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new RequestStatusTable(_schema);
+                return new SpecimenRequestStatusTable(_schema);
             }
         });
         statusColumn.setKeyField(true);
         addColumn(statusColumn);
 
         addWrapLocationColumn("Destination", "DestinationSiteId").setKeyField(true);
-        addWrapColumn(_rootTable.getColumn("StatusId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("Comments"));
         // there are links to filter by 'createdby' in the UI; it's necessary that this column always
         // be available, so we set it as a key field.

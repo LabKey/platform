@@ -3192,7 +3192,8 @@ public class SpringSpecimenController extends BaseStudyController
             {
                 // are the vial IDs on the URL?
                 int[] rowId = specimenCommentsForm.getRowId();
-                selectedVials = SampleManager.getInstance().getSpecimens(getContainer(), rowId);
+                if (rowId != null && rowId.length > 0)
+                    selectedVials = SampleManager.getInstance().getSpecimens(getContainer(), rowId);
                 if (selectedVials == null || selectedVials.length == 0)
                     return new HtmlView("No vials selected.  [<a href=\"javascript:back()\">back</a>]");
             }

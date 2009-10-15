@@ -24,11 +24,12 @@ import org.labkey.study.StudySchema;
  * Date: Apr 20, 2007
  * Time: 3:18:58 PM
  */
-public class RequestStatusTable extends BaseStudyTable
+public class SpecimenRequestStatusTable extends BaseStudyTable
 {
-    public RequestStatusTable(StudyQuerySchema schema)
+    public SpecimenRequestStatusTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSampleRequestStatus());
+        setName("SpecimenRequestStatus");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

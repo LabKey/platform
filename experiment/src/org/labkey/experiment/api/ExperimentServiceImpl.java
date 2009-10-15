@@ -45,7 +45,11 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.ExperimentAuditViewFactory;
+import org.labkey.experiment.list.DomainAuditViewFactory;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
@@ -103,6 +107,26 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public Object getImportLock()
     {
         return XAR_IMPORT_LOCK;
+    }
+
+    public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, String comment)
+    {
+        AuditLogEvent event = new AuditLogEvent();
+
+        event.setCreatedBy(user);
+        event.setComment(comment);
+
+        Container c = run != null ? run.getContainer() : protocol.getContainer();
+        event.setContainerId(c.getId());
+        event.setProjectId(c.getProject().getId());
+
+        event.setKey1(protocol.getLSID());
+        if (run != null)
+            event.setKey2(run.getLSID());
+        event.setKey3(ExperimentAuditViewFactory.getKey3(protocol, run));
+        event.setEventType(ExperimentAuditViewFactory.EXPERIMENT_AUDIT_EVENT);
+
+        AuditLogService.get().addEvent(event);
     }
 
     public ExpRunImpl getExpRun(String lsid)
@@ -893,6 +917,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql += "DELETE FROM exp.ExperimentRun WHERE RowId = " + runId + ";\n";
 
         Table.execute(getExpSchema(), sql, new Object[]{});
+
+        auditRunEvent(user, run.getProtocol(), run, "Run deleted");
     }
 
 

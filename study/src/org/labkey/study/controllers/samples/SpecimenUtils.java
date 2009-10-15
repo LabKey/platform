@@ -749,6 +749,10 @@ public class SpecimenUtils
     public RequestedSpecimens getRequestableBySampleHash(Set<String> formValues, Integer preferredLocation) throws SQLException, AmbiguousLocationException
     {
         Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, true);
+
+        if (vialsByHash == null || vialsByHash.isEmpty())
+            return new RequestedSpecimens(new Specimen[0]);
+
         if (preferredLocation == null)
         {
             Collection<Integer> preferredLocations = getPreferredProvidingLocations(vialsByHash.values());
