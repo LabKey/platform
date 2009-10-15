@@ -17,6 +17,7 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
@@ -33,6 +34,8 @@ public class QueryUnion extends QueryRelation
 {
 	QUnion _qunion;
 	QOrder _qorderBy;
+    QLimit _limit;
+
 
     List<QueryRelation> _termList = new ArrayList<QueryRelation>();
     Map<String, UnionColumn> _unionColumns = new LinkedHashMap<String, UnionColumn>();
@@ -77,8 +80,7 @@ public class QueryUnion extends QueryRelation
 
 			if (n instanceof QLimit)
 			{
-                //noinspection ThrowableInstanceNeverThrown
-                _query.getParseErrors().add(new QueryParseException("LIMIT not supported with UNION", null, n.getLine(), n.getColumn()));
+                _limit = (QLimit)n;
 			}
             else if (n instanceof QQuery)
             {
@@ -145,13 +147,14 @@ public class QueryUnion extends QueryRelation
 
     public QueryTableInfo getTableInfo()
     {
+        SqlDialect dialect = _schema.getDbSchema().getSqlDialect();
         initColumns();
         if (_query.getParseErrors().size() > 0)
             return null;
 
 		String unionOperator = "";
         SQLFragment unionSql = new SQLFragment();
-        assert unionSql.appendComment("<QueryUnion@" + System.identityHashCode(this) + ">", _schema.getDbSchema().getSqlDialect());
+        assert unionSql.appendComment("<QueryUnion@" + System.identityHashCode(this) + ">", dialect);
 
 		for (QueryRelation term : _termList)
 		{
@@ -180,12 +183,22 @@ public class QueryUnion extends QueryRelation
 			unionOperator = _qunion.getTokenType() == UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
 		}
 
-		if (null != _qorderBy)
+        List<Map.Entry<QExpr,Boolean>> sort = null == _qorderBy ? null : _qorderBy.getSort();
+        
+        if (null != sort && sort.size() > 0 || null != _limit)
+        {
+            SQLFragment wrap = new SQLFragment();
+            wrap.append("SELECT * FROM (");
+            wrap.append(unionSql);
+            wrap.append(") u" + (unionSql.hashCode()&0x7fffffff));
+            unionSql = wrap;
+        }
+
+		if (null != sort && sort.size() > 0)
 		{
-			List<Map.Entry<QExpr,Boolean>> sort = _qorderBy.getSort();
 			if (sort.size() > 0)
 			{
-				unionSql.append("\n\nORDER BY ");
+				unionSql.append("\nORDER BY ");
 				String comma = "";
 				for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
 				{
@@ -198,6 +211,11 @@ public class QueryUnion extends QueryRelation
 				}
 			}
 		}
+        if (null != _limit)
+        {
+            dialect.limitRows(unionSql, _limit.getLimit());
+        }
+
 
         SQLTableInfo sti = new SQLTableInfo(_schema.getDbSchema());
         sti.setName("_union");

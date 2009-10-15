@@ -660,6 +660,8 @@ public class Query
         // LIMIT
         new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
         new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 10", 3, 10),
+        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
+        new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5)
     };
 
 	static SqlTest[] postgres = new SqlTest[]
@@ -675,8 +677,6 @@ public class Query
 		new SqlTest("SELECT S.d, S.seven FROM Folder.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
-		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5"),
-		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5"),
         new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5"),
         new SqlTest("SELECT * FROM R"),
         new SqlTest("SELECT SUM(*) FROM R")
