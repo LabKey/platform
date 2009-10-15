@@ -486,7 +486,7 @@ Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
  *
  * @param {Object} [config] config.
  * @param {Object[]} config.samples Array of {@link LABKEY.Exp.Material} config objects.
- * @param {String} config.description
+ * @param {String} config.description Description of SampleSet
  *
  * @property {LABKEY.Exp.Material[]} config.samples {@link LABKEY.Exp.Material} samples in the SampleSet.
  * @property {String} description
