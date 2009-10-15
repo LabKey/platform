@@ -41,9 +41,15 @@ LABKEY.ActionURL = new function()
             {
                 var name = decodeURIComponent(nameValue[0]);
                 if (undefined == parameters[name])
-                    parameters[name] = [decodeURIComponent(nameValue[1])];
+                    parameters[name] = decodeURIComponent(nameValue[1]);
                 else
-                    parameters[name].push(decodeURIComponent(nameValue[1]));
+                {
+                    var curValue = parameters[name];
+                    if (Ext.isArray(curValue))
+                        curValue.push(decodeURIComponent(nameValue[1]));
+                    else
+                        parameters[name] = [curValue, decodeURIComponent(nameValue[1])];
+                }
             }
         }
         return parameters;
@@ -95,8 +101,8 @@ LABKEY.ActionURL = new function()
         */
         getParameter : function(parameterName)
         {
-            var valArray = buildParameterMap()[parameterName];
-            return (valArray && valArray.length && valArray.length > 0) ? valArray[0] : undefined;
+            var val = buildParameterMap()[parameterName];
+            return (val && Ext.isArray(val) && val.length > 0) ? val[0] : val;
         },
 
         /**
@@ -107,12 +113,16 @@ LABKEY.ActionURL = new function()
          */
         getParameterArray : function(parameterName)
         {
-            return buildParameterMap()[parameterName];
+            var val = buildParameterMap()[parameterName];
+            return (val && !Ext.isArray(val)) ? [val] : val;
         },
 
         /**
-        * Returns an object mapping URL parameter names to parameter values. See getParameter() for information
-        * on the treatment of multiple parameters with the same name.
+        * Returns an object mapping URL parameter names to parameter values. If a given parameter
+        * appears more than once on the query string, the value in the map will be an array instead
+        * of a single value. Use Ext.isArray() to determine if the value is an array or not, or use
+        * getParameter() or getParameterArray() to retrieve a specific parameter name as a single value
+        * or array respectively.
         * @return {Object} Map of parameter names to values.
         */
         getParameters : function()
