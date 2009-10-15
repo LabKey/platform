@@ -1196,7 +1196,7 @@ if (LABKEY.Applet)
                 params:
                 {
                     url : params.url || (window.location.protocol + "//" + window.location.host + LABKEY.contextPath + '/_webdav/'),
-                    events : "this.",
+                    events : "window._evalContext.",
                     webdavPrefix: LABKEY.contextPath+'/_webdav/',
                     user: LABKEY.user.email,
                     password: LABKEY.user.sessionid,
@@ -1227,7 +1227,7 @@ if (LABKEY.Applet)
             this.transfers.on("add", function(store, records)
             {
                 for (var i=0 ; i<records.length ; i++)
-                    console.debug('add: ' + records[i].get('uri') + ' ' + records[i].get('status'));
+                    console.debug('TransferApplet.add: ' + records[i].get('uri') + ' ' + records[i].get('status'));
             });
         },
 
@@ -1250,7 +1250,8 @@ if (LABKEY.Applet)
             var event;
             while (event = a.getEvent())
             {
-                eval(event);
+                window._evalContext = this;
+                window.eval("" + event);
             }
         },
 
