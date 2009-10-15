@@ -50,7 +50,7 @@ public abstract class BasePlateTable extends FilteredTable
     @Override
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
     {
-        if (!columns.contains(getPlateIdColumnName()))
+        if (!columns.contains(new FieldKey(null,getPlateIdColumnName())))
             return null;
         ActionURL url = PageFlowUtil.urlProvider(PlateUrls.class).getPlateDetailsURL(_schema.getContainer());
         return new DetailsURL(url, "rowId", new FieldKey(null,getPlateIdColumnName()));
