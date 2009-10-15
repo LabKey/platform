@@ -79,6 +79,9 @@ public class ListTable extends FilteredTable
             ColumnInfo column = new ExprColumn(this, property.getName(),
                     PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getValueSQL(), property.getPropertyId(), false), property.getSqlType());
             column.setScale(property.getScale());
+            column.setShownInInsertView(property.isShownInInsertView());
+            column.setShownInUpdateView(property.isShownInUpdateView());
+            column.setShownInDetailsView(property.isShownInDetailsView());
             column.setInputType(property.getInputType());
             column.setDescription(property.getDescription());
             column.setDefaultValueType(property.getDefaultValueTypeEnum());
@@ -88,7 +91,10 @@ public class ListTable extends FilteredTable
             {
                 MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId);
             }
-            defaultVisible.add(FieldKey.fromParts(column.getName()));
+            if (!property.isHidden())
+            {
+                defaultVisible.add(FieldKey.fromParts(column.getName()));
+            }
 
             if (property.getPropertyDescriptor().getPropertyType() == PropertyType.MULTI_LINE)
             {

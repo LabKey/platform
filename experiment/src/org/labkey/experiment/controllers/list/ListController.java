@@ -624,7 +624,10 @@ public class ListController extends SpringActionController
             if (dc instanceof UrlColumn)
                 continue;
 
-            displayColumns.add(dc);
+            if (dc.getColumnInfo() != null && dc.getColumnInfo().isShownInDetailsView())
+            {
+                displayColumns.add(dc);
+            }
         }
 
         rgn.setDisplayColumns(displayColumns);

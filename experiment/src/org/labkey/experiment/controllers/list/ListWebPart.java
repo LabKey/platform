@@ -26,6 +26,7 @@ import org.labkey.api.lists.permissions.DesignListPermission;
 
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.TreeSet;
 
 public class ListWebPart extends WebPartView<ViewContext>
 {
@@ -56,7 +57,7 @@ public class ListWebPart extends WebPartView<ViewContext>
         }
         else
         {
-            for (ListDefinition list : lists.values())
+            for (ListDefinition list : new TreeSet<ListDefinition>(lists.values()))
             {
                 out.write("<tr><td><a href=\"");
                 out.write(PageFlowUtil.filter(list.urlShowData()));

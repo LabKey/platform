@@ -94,7 +94,10 @@ public class SchemaXmlReader implements SchemaReader
             _datasetInfoMap.put(tableProps.getId(), info);
 
             // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery", "URL", "ImportAliases");
+            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description",
+                    "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath",
+                    "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
+                    "ShownInDetailsView");
 
             for (ColumnType columnXml : tableXml.getColumns().getColumnArray())
             {
@@ -114,6 +117,11 @@ public class SchemaXmlReader implements SchemaReader
                 boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
 
                 boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
+
+                // These default to being visible if nothing's specified in the XML
+                boolean shownInInsertView = !columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView();
+                boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
+                boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
 
                 Set<String> importAliases = new LinkedHashSet<String>();
                 if (columnXml.isSetImportAliases())
@@ -138,7 +146,10 @@ public class SchemaXmlReader implements SchemaReader
                     null != fk ? fk.getFkDbSchema() : null,
                     null != fk ? fk.getFkTable() : null,
                     columnXml.getUrl(),
-                    ColumnRenderProperties.convertToString(importAliases)
+                    ColumnRenderProperties.convertToString(importAliases),
+                    shownInInsertView,
+                    shownInUpdateView,
+                    shownInDetailsView
                 });
 
                 _importMaps.add(map);

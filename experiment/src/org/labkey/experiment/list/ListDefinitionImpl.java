@@ -689,4 +689,9 @@ public class ListDefinitionImpl implements ListDefinition
     {
         return getName() + ", id: " + getListId();
     }
+
+    public int compareTo(ListDefinition l)
+    {
+        return getName().compareToIgnoreCase(l.getName());
+    }
 }

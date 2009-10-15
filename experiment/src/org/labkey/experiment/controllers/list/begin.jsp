@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.security.SecurityPolicy" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.experiment.controllers.list.ListController" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -39,7 +39,7 @@
         <tr>
             <th colspan="4">User defined lists in this folder.</th>
         </tr>
-   <% for (ListDefinition def : map.values()) { %>
+   <% for (ListDefinition def : new TreeSet<ListDefinition>(map.values())) { %>
         <tr>
         <td>
             <%=h(def.getName())%>

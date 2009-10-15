@@ -155,6 +155,22 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         {
                             gwtColumnInfo.setFormat(column.getFormatString());
                         }
+                        if (column.isSetShownInDetailsView())
+                        {
+                            gwtColumnInfo.setShownInDetailsView(column.getShownInDetailsView());
+                        }
+                        if (column.isSetIsHidden())
+                        {
+                            gwtColumnInfo.setHidden(column.getIsHidden());
+                        }
+                        if (column.isSetShownInInsertView())
+                        {
+                            gwtColumnInfo.setShownInInsertView(column.getShownInInsertView());
+                        }
+                        if (column.isSetShownInUpdateView())
+                        {
+                            gwtColumnInfo.setShownInUpdateView(column.getShownInUpdateView());
+                        }
                         if (column.getFk() != null)
                         {
                             gwtColumnInfo.setLookupQuery(column.getFk().getFkTable());
@@ -325,6 +341,40 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             else if (xmlColumn.isSetFormatString())
             {
                 xmlColumn.unsetFormatString();
+            }
+
+            // Set visibility info
+            if (gwtColumnInfo.isHidden() != rawColumnInfo.isHidden())
+            {
+                xmlColumn.setIsHidden(gwtColumnInfo.isHidden());
+            }
+            else if (xmlColumn.isSetIsHidden())
+            {
+                xmlColumn.unsetIsHidden();
+            }
+            if (gwtColumnInfo.isShownInInsertView() != rawColumnInfo.isShownInInsertView())
+            {
+                xmlColumn.setShownInInsertView(gwtColumnInfo.isShownInInsertView());
+            }
+            else if (xmlColumn.isSetShownInInsertView())
+            {
+                xmlColumn.unsetShownInInsertView();
+            }
+            if (gwtColumnInfo.isShownInUpdateView() != rawColumnInfo.isShownInUpdateView())
+            {
+                xmlColumn.setShownInUpdateView(gwtColumnInfo.isShownInUpdateView());
+            }
+            else if (xmlColumn.isSetShownInUpdateView())
+            {
+                xmlColumn.unsetShownInUpdateView();
+            }
+            if (gwtColumnInfo.isShownInDetailsView() != rawColumnInfo.isShownInDetailsView())
+            {
+                xmlColumn.setShownInDetailsView(gwtColumnInfo.isShownInDetailsView());
+            }
+            else if (xmlColumn.isSetShownInDetailsView())
+            {
+                xmlColumn.unsetShownInDetailsView();
             }
 
             // Set the label

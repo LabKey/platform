@@ -103,6 +103,21 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isHidden();
     }
 
+    public boolean isShownInInsertView()
+    {
+        return _pd.isShownInInsertView();
+    }
+
+    public boolean isShownInDetailsView()
+    {
+        return _pd.isShownInDetailsView();
+    }
+
+    public boolean isShownInUpdateView()
+    {
+        return _pd.isShownInUpdateView();
+    }
+
     public boolean isMvEnabled()
     {
         return _pd.isMvEnabled();
@@ -166,6 +181,29 @@ public class DomainPropertyImpl implements DomainProperty
             return;
         edit().setHidden(hidden);
     }
+
+    public void setShownInDetailsView(boolean shown)
+    {
+        if (shown == isShownInDetailsView())
+            return;
+        edit().setShownInDetailsView(shown);
+    }
+
+    public void setShownInInsertView(boolean shown)
+    {
+        if (shown == isShownInInsertView())
+            return;
+        edit().setShownInInsertView(shown);
+    }
+
+    public void setShownInUpdateView(boolean shown)
+    {
+        if (shown == isShownInUpdateView())
+            return;
+        edit().setShownInUpdateView(shown);
+    }
+
+
 
     public void setMvEnabled(boolean mv)
     {
