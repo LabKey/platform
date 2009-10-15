@@ -33,11 +33,14 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  * @param config Configuration properties.
  * @param {String} config.schemaName The LabKey schema to query.
  * @param {String} config.queryName The query name within the schema to fetch.
+ * @param {String} [config.sql] A LabKey SQL statement to execute to fetch the data. You may specify either a queryName or sql,
+ * but not both. Note that when using sql, the store becomes read-only, as it has no way to know how to update/insert/delete the rows.
  * @param {String} [config.viewName] A saved custom view of the specified query to use if desired.
  * @param {String} [config.columns] A comma-delimeted list of column names to fetch from the specified query. Note
  *  that the names may refer to columns in related tables using the form 'column/column/column' (e.g., 'RelatedPeptide/TrimmedPeptide').
  * @param {String} [config.sort] A base sort specification in the form of '[-]column,[-]column' ('-' is used for descending sort).
  * @param {Array} [config.filterArray] An array of LABKEY.Filter.FilterDefinition objects to use as the base filters.
+ * @param {Boolean} [config.updatable] Defaults to true. Set to false to prohibit updates to this store.
  * @param {String} [config.containerPath] The container path from which to get the data. If not specified, the current container is used.
  * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
  *      Supported values include:
@@ -76,24 +79,40 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     constructor: function(config) {
 
         var baseParams = {schemaName: config.schemaName};
-        baseParams['query.queryName'] = config.queryName;
+        var qsParams = {};
+
+        if (config.queryName && !config.sql)
+            baseParams['query.queryName'] = config.queryName;
+        if (config.sql)
+        {
+            baseParams.sql = config.sql;
+            config.updatable = false;
+        }
         if (config.sort)
-            baseParams['query.sort'] = config.sort;
-        delete config.sort;
+        {
+            if (config.sql)
+                qsParams['query.sort'] = config.sort;
+            else
+                baseParams['query.sort'] = config.sort;
+        }
+        delete config.sort; //important...otherwise the base Ext.data.Store interprets it
 
         if (config.filterArray)
         {
             for (var i = 0; i < config.filterArray.length; i++)
             {
                 var filter = config.filterArray[i];
-                baseParams[filter.getURLParameterName()] = filter.getURLParameterValue();
+                if (config.sql)
+                    qsParams[filter.getURLParameterName()] = filter.getURLParameterValue();
+                else
+                    baseParams[filter.getURLParameterName()] = filter.getURLParameterValue();
             }
         }
 
-        if(config.viewName)
+        if(config.viewName && !config.sql)
             baseParams['query.viewName'] = config.viewName;
 
-        if(config.columns)
+        if(config.columns && !config.sql)
             baseParams['query.columns'] = config.columns;
 
         if(config.containerFilter)
@@ -102,7 +121,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         baseParams.apiVersion = 9.1;
 
         Ext.apply(this, config, {
-            remoteSort: true
+            remoteSort: true,
+            updatable: true
         });
 
         this.isLoading = false;
@@ -110,8 +130,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         LABKEY.ext.Store.superclass.constructor.call(this, {
             reader: new LABKEY.ext.ExtendedJsonReader(),
             proxy : new Ext.data.HttpProxy(new Ext.data.Connection({
-                method: 'GET',
-                url: LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)
+                method: (config.sql ? 'POST' : 'GET'),
+                url: (config.sql ? LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams)
+                        : LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)),
+                listeners: {
+                    beforerequest: {fn: this.onBeforeRequest, scope: this}
+                }
             })),
             baseParams: baseParams,
             listeners: {
@@ -162,6 +186,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * @returns {Ext.data.Record} The new Ext.data.Record object.
      */
     addRecord : function(data, index) {
+        if (!this.updatable)
+            throw "this LABKEY.ext.Store is not updatable!";
+
         if(undefined == index)
             index = this.getCount();
 
@@ -200,6 +227,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * @param {Array of Ext.data.Record objects} records The records to delete.
      */
     deleteRecords : function(records) {
+        if (!this.updatable)
+            throw "this LABKEY.ext.Store is not updatable!";
+
         if(!records || records.length == 0)
             return;
 
@@ -253,6 +283,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         var records = this.getModifiedRecords();
         if(!records || records.length == 0)
             return;
+
+        if (!this.updatable)
+            throw "this LABKEY.ext.Store is not updatable!";
 
         //build the json to send to the server
         var record;
@@ -438,11 +471,22 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         return null;
     },
 
+    onBeforeRequest : function(connection, options) {
+        if (this.sql)
+        {
+            //need to adjust url
+            var qsParams = {};
+            if (options.params['query.sort'])
+                qsParams['query.sort'] = options.params['query.sort'];
+            options.url = LABKEY.ActionURL.buildURL("query", "executeSql.api", this.containerPath, qsParams);
+        }
+    },
+
     onBeforeProxyLoad: function(proxy, options) {
         //the selectRows.api can't handle the 'sort' and 'dir' params
         //sent by Ext, so translate them into the expected form
         if(options.sort)
-            options['query.sort'] = "DESC" == options.dir 
+            options['query.sort'] = "DESC" == options.dir
                     ? "-" + options.sort
                     : options.sort;
 
@@ -455,8 +499,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 options[filter.getURLParameterName()] = filter.getURLParameterValue();
             }
         }
-        //delete options.dir;
-        //delete options.sort;
+        delete options.dir;
+        delete options.sort;
     },
 
     onBeforeLoad : function() {
