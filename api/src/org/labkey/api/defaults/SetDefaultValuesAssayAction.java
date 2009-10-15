@@ -29,6 +29,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.view.HttpView;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -152,6 +153,8 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
     public ModelAndView getView(AssayDomainIdForm domainIdForm, boolean reshow, BindException errors) throws Exception
     {
         _provider = AssayService.get().getProvider(domainIdForm.getProviderName());
+        if (_provider == null)
+            HttpView.throwNotFound("Could not find assay provider with name " + domainIdForm.getProviderName());
         return super.getView(domainIdForm, reshow, errors);
 
     }

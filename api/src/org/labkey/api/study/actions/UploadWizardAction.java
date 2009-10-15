@@ -556,8 +556,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 }
                 catch (ConversionException e)
                 {
-                    errors.reject(SpringActionController.ERROR_MSG,
-                            label + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".");
+                    String message = label + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".";
+                    message +=  "  Value \"" + value + "\" could not be converted";
+                    if (e.getCause() instanceof ArithmeticException)
+                        message +=  ": " + e.getCause().getLocalizedMessage();
+                    else
+                        message += ".";
+
+                    errors.reject(SpringActionController.ERROR_MSG, message);
                 }
             }
             List<ValidationError> validationErrors = new ArrayList<ValidationError>();

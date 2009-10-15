@@ -658,6 +658,45 @@ public class DataRegion extends DisplayElement
         render(ctx, out);
     }
 
+    private SimpleFilter getValidFilter(RenderContext ctx)
+    {
+        SimpleFilter urlFilter = new SimpleFilter(ctx.getViewContext().getActionURL(), getName());
+        for (FieldKey fk : ctx.getIgnoredFilterColumns())
+            urlFilter.deleteConditions(fk.toString());
+        if (urlFilter.getClauses().isEmpty())
+            return null;
+        return urlFilter;
+    }
+
+    protected String getFilterErrorMessage(RenderContext ctx) throws IOException
+    {
+        StringBuilder buf = new StringBuilder();
+        Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
+        if (!ignoredColumns.isEmpty())
+        {
+            if (ignoredColumns.size() == 1)
+            {
+                FieldKey field = ignoredColumns.iterator().next();
+                buf.append("Ignoring filter/sort on column '").append(field.getDisplayString()).append("' because it does not exist.");
+            }
+            else
+            {
+                String comma = "";
+                buf.append("Ignoring filter/sort on columns ");
+                for (FieldKey field : ignoredColumns)
+                {
+                    buf.append(comma);
+                    comma = ", ";
+                    buf.append("'");
+                    buf.append(field.getDisplayString());
+                    buf.append("'");
+                }
+                buf.append(" because they do not exist.");
+            }
+        }
+        return buf.toString();
+    }
+
 
     protected void _renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
@@ -684,44 +723,23 @@ public class DataRegion extends DisplayElement
             // If button bar is not visible, don't render form.  Important for nested regions (forms can't be nested)
             //TODO: Fix this so form is rendered AFTER all rows. (Does this change layoout?)
             boolean renderButtons = _gridButtonBar.shouldRender(ctx);
-            String headerMessage = null;
-            if (isShowFilterDescription())
-            {
-                String filterDescription = getFilterDescription(ctx);
-                if (filterDescription != null)
-                {
-                    headerMessage = PageFlowUtil.filter(filterDescription) +
-                        " <a href=\"#\" onClick=\"javascript:LABKEY.DataRegions['" +
-                            PageFlowUtil.filter(getName()) + "'].clearAllFilters(); return false;\">Clear all filters</a>";
-                }
-            }
-            renderHeader(ctx, out, renderButtons, headerMessage);
+            String filterErrorMsg = getFilterErrorMessage(ctx);
+            String filterDescription =  isShowFilterDescription() ? getFilterDescription(ctx) : null;
+            StringBuilder headerMessage = new StringBuilder();
+            if (filterErrorMsg != null && filterErrorMsg.length() > 0)
+                headerMessage.append("<span class=\"error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
 
-            Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
-            if (!ignoredColumns.isEmpty())
+            if (filterDescription != null)
             {
-                out.write("<span class=\"error\">");
-                if (ignoredColumns.size() == 1)
-                {
-                    FieldKey field = ignoredColumns.iterator().next();
-                    out.write("Ignoring filter/sort on column '" + PageFlowUtil.filter(field.getDisplayString()) + "' because it does not exist.");
-                }
-                else
-                {
-                    String comma = "";
-                    out.write("Ignoring filter/sort on columns ");
-                    for (FieldKey field : ignoredColumns)
-                    {
-                        out.write(comma);
-                        comma = ", ";
-                        out.write("'");
-                        out.write(PageFlowUtil.filter(field.getDisplayString()));
-                        out.write("'");
-                    }
-                    out.write(" because they do not exist.");
-                }
-                out.write("</span><br>");
+                if (headerMessage.length() > 0)
+                    headerMessage.append("<br>");
+                headerMessage.append(PageFlowUtil.filter(filterDescription));
+                headerMessage.append(" <a href=\"#\" onClick=\"javascript:LABKEY.DataRegions['");
+                headerMessage.append(PageFlowUtil.filter(getName()));
+                headerMessage.append("'].clearAllFilters(); return false;\">Clear all filters</a>");
             }
+
+            renderHeader(ctx, out, renderButtons, headerMessage.length() > 0 ? headerMessage.toString() : null);
 
             if (!_showPagination && rs instanceof Table.TableResultSet)
             {
@@ -960,8 +978,8 @@ public class DataRegion extends DisplayElement
     private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = { "RowId", "DisplayName", "Description", "Label", "Caption", "Value" };
     protected String getFilterDescription(RenderContext ctx) throws IOException
     {
-        SimpleFilter urlFilter = new SimpleFilter(ctx.getViewContext().getActionURL(), getName());
-        if (!urlFilter.getWhereParamNames().isEmpty())
+        SimpleFilter urlFilter = getValidFilter(ctx);
+        if (urlFilter != null && !urlFilter.getWhereParamNames().isEmpty())
         {
             StringBuilder filterDesc = new StringBuilder();
             if (ctx.getViewName() != null)

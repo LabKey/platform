@@ -33,6 +33,7 @@ LABKEY.Specimen = new function()
     /** @scope LABKEY.Specimen.prototype */
     return {
         /**
+         * Retrieves an array of locations that are identified as specimen repositories.
          * @param {Function} successCallback Required. Function called when the
                  "getAll" function executes successfully.  Will be called with the argument:
                  {@link LABKEY.Specimen.Location[]}.
@@ -58,6 +59,7 @@ LABKEY.Specimen = new function()
 
         // GetVialsByRowIdAction
         /**
+         * Retrieves an array of vials that correspond to an array of unique vial row ids.
          * @param {Function} successCallback Required. Function called when the
                  "getVialsByRowId" function executes successfully.  Will be called with the argument:
                  {@link LABKEY.Specimen.Vial[]}.
@@ -85,6 +87,8 @@ LABKEY.Specimen = new function()
 
         // GetOpenRequestsAction
         /**
+         * Retrieves an array of open (non-final) specimen requests, including all requests that are in "shopping cart"
+         * status as well as those that have been submitted for processing but are not yet complete.
          * @param {Function} successCallback Required. Function called when the
                  "getOpenRequests" function executes successfully.  Will be called with the argument:
                  {@link LABKEY.Specimen.Request[]}.
@@ -114,13 +118,14 @@ LABKEY.Specimen = new function()
 
         // GetProvidingLocationsAction
         /**
+         * Retrieves an array of locations that could provide vials from all identified primary specimens.
          * @param {Function} successCallback Required. Function called when the
                  "getProvidingLocations" function executes successfully.  Will be called with the argument:
                  {@link LABKEY.Specimen.Location[]}..
+         * @param specimenHashArray {String[]} An array of hash codes identifying the primary specimens to be provided.
          * @param {Function} [failureCallback] Function called when execution of the "getProvidingLocations" function fails.
          * @param {String} [containerPath] The container path in which the relevant study is defined.
          *       If not supplied, the current container path will be used.
-        * Retrieves an array of open requests within the specified study.
         */
           getProvidingLocations : function(successCallback, specimenHashArray, failureCallback, containerPath)
           {
@@ -140,14 +145,14 @@ LABKEY.Specimen = new function()
 
         // GetRequestAction
         /**
+         * Retrieves a specimen request for a given specimen request.
          * @param {Function} successCallback Required. Function called when the
                  "getRequest" function executes successfully.  Will be called with the argument:
                  {@link LABKEY.Specimen.Request}.
-         * @param {int} requestId The integer ID of
+         * @param {int} requestId The integer ID of the desired specimen request
          * @param {Function} [failureCallback] Function called when execution of the "getOpenRequests" function fails.
          * @param {String} [containerPath] The container path in which the relevant study is defined.
          *       If not supplied, the current container path will be used.
-        * Retrieves an array of open requests within the specified study.
         */
           getRequest : function(successCallback, requestId, failureCallback, containerPath)
           {
@@ -196,7 +201,7 @@ LABKEY.Specimen = new function()
 
         // AddVialToRequestAction
         /**
-         * Adds a single vial to a request.  If called by a non-administrator, the target request must be owned by the
+         * Adds multiple vials to a request based on an array of unique unique vial IDs.  If called by a non-administrator, the target request must be owned by the
          * calling user, and the request must be in an open (not yet submitted) state.  Administrators may add vials
          * to any request at any time.
          * @param {Function} successCallback Required. Function called when the
@@ -230,7 +235,7 @@ LABKEY.Specimen = new function()
 
         // AddSampleToRequestAction
         /**
-         * Adds a single vial to a request based on a hash code uniquely identifying the primary specimen.  The vial will
+         * Adds multiple vials to a request based on an array of hash codes uniquely identifying the primary specimens.  The vials will
          * be selected based on availability and current location.  If called by a non-administrator, the target request must be owned by the
          * calling user, and the request must be in an open (not yet submitted) state.  Administrators may add vials
          * to any request at any time.
@@ -265,7 +270,7 @@ LABKEY.Specimen = new function()
 
         // RemoveVialFromRequestAction
         /**
-         * Removes a single vial from a request.  If called by a non-administrator, the target request must be owned by the
+         * Removes multiple vials from a request based on an array of vial row IDs.  If called by a non-administrator, the target request must be owned by the
          * calling user, and the request must be in an open (not yet submitted) state.  Administrators may remove vials
          * from any request at any time.
          * @param {Function} successCallback Required. Function called when the
