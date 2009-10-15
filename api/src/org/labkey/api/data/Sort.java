@@ -137,7 +137,7 @@ public class Sort
         sortKeys = sortParam.split(",");
         for (String sortKey : sortKeys)
         {
-            if (sortKey.isEmpty())
+            if (StringUtils.isEmpty(sortKey))
                 continue;
             SortField sf = new SortField(sortKey);
             sf._urlClause = urlClause;
