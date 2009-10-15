@@ -254,7 +254,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public ColumnInfo addWrapColumn(ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable();
-        ColumnInfo ret = new AliasedColumn(this, column.getAlias(), column);
+        ColumnInfo ret = new AliasedColumn(this, column.getName(), column);
         if (column.isKeyField() && getColumn(column.getName()) != null)
         {
             ret.setKeyField(false);

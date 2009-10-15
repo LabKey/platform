@@ -329,18 +329,24 @@ public class SchemaTableInfo implements TableInfo
         return colMap.get(colName);
     }
 
+
     public void addColumn(ColumnInfo column)
     {
         columns.add(column);
         assert !column.isAliasSet();
         assert null == column.getFieldKey().getParent();
-        //column.setAlias(column.getFieldKey().getName());
+        assert column.getName().equals(column.getFieldKey().getName());
+        assert column.lockName();
+        // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
+        column.setAlias(column.getName());
     }
+
 
     public List<ColumnInfo> getColumns()
     {
         return Collections.unmodifiableList(columns);
     }
+
 
     public List<ColumnInfo> getUserEditableColumns()
     {

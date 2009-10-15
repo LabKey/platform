@@ -20,8 +20,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
-import java.util.Map;
 import java.util.Collections;
+import java.util.Map;
 
 public class AliasedColumn extends ColumnInfo
 {
@@ -47,17 +47,6 @@ public class AliasedColumn extends ColumnInfo
         this(column.getParentTable(), name, column);
     }
 
-    public AliasedColumn(FieldKey key, String alias, ColumnInfo column, boolean forceKeepLabel)
-    {
-        this(column.getParentTable(), key, column, forceKeepLabel);
-        setAlias(alias);
-    }
-
-    public AliasedColumn(String name, String alias, ColumnInfo column)
-    {
-        this(column.getParentTable(), name, column);
-        setAlias(alias);
-    }
 
     public SQLFragment getValueSql()
     {
@@ -97,6 +86,5 @@ public class AliasedColumn extends ColumnInfo
     public String getTableAlias()
     {
         return _column.getTableAlias();
-//        return super.getTableAlias();
     }
 }

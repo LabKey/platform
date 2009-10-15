@@ -16,19 +16,18 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -294,6 +293,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             throw new IllegalArgumentException("Column " + column.getName() + " already exists.");
         }
         _columnMap.put(column.getName(), column);
+        assert column.lockName();
         return column;
     }
 

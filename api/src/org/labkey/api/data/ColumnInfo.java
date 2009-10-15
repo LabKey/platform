@@ -21,8 +21,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -73,6 +73,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private DefaultValueType _defaultValueType = null;
+    private boolean _lockName = false;
 
     // Only set if we have an associated mv column for this column
     private String mvColumnName = null;
@@ -129,11 +130,19 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
+    /* used by TableInfo.addColumn */
+    public boolean lockName()
+    {
+        _lockName = true;
+        return true;
+    }
+    
+    
     /** use setFieldKey() avoid ambiguity when columns have "/" */
     @Override
     public void setName(String name)
     {
-//        assert -1 == name.indexOf('/');
+        assert !_lockName;
         this.fieldKey = new FieldKey(null, name);
         this.name = null;
     }
@@ -175,12 +184,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getAlias()
     {
         if (alias == null)
-        {
-            if (getFieldKey().getParent() == null)
-                alias = getFieldKey().getName();
-            else
-                alias = AliasManager.makeLegalName(getFieldKey(),getSqlDialect());
-        }
+            alias = AliasManager.makeLegalName(getFieldKey(),getSqlDialect());
         return alias;
     }
 
