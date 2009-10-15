@@ -154,6 +154,10 @@ LABKEY.Query = new function()
          * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning all rows).
          * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
          *        Use this along with the maxRows config property to request pages of data.
+         * @param {String} [config.sort] A sort specification to apply over the rows returned by the SQL. In general,
+         * you should either include an ORDER BY clause in your SQL, or specific a sort specification in this config property,
+         * but not both. The value of this property should be a comma-delimited list of column names you want to sort by. Use
+         * a - prefix to sort a column in descending order (e.g., 'LastName,-Age' to sort first by LastName, then by Age descending).
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
@@ -177,6 +181,10 @@ LABKEY.Query = new function()
             if(config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
 
+            var qsParams;
+            if (config.sort)
+                qsParams = {"query.sort": config.sort};
+            
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
                 method : 'POST',
