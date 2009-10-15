@@ -126,6 +126,6 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
         if (null == table.getPkColumnNames() || table.getPkColumnNames().size() == 0)
             throw new RuntimeException("The table '" + getName() + "' does not have a primary key defined, and thus cannot be updated reliably. Please define a primary key for this table before attempting an update.");
 
-        return new DbUserQueryUpdateService(table, getUserSchema().getDbContainer());
+        return new DbUserQueryUpdateService(this, getUserSchema().getDbContainer());
     }
 }

@@ -35,9 +35,9 @@ public class DbUserQueryUpdateService extends DefaultQueryUpdateService
 {
     private Container _dbContainer;
 
-    public DbUserQueryUpdateService(TableInfo table, Container dbContainer)
+    public DbUserQueryUpdateService(DbUserSchemaTable table, Container dbContainer)
     {
-        super(table);
+        super(table, table.getRealTable());
         _dbContainer = dbContainer;
     }
 

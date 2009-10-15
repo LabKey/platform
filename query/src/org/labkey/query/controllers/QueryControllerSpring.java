@@ -1921,6 +1921,7 @@ public class QueryControllerSpring extends SpringActionController
             if (table == null)
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
 
+            checkTablePermission(user, table);
             QueryUpdateService qus = table.getUpdateService();
             if (null == qus)
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' is not updateable via the HTTP-based APIs.");
@@ -1952,7 +1953,7 @@ public class QueryControllerSpring extends SpringActionController
                     if(null != jsonObj)
                     {
                         CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<Object>(jsonObj);
-                        saveRow(qus, rowMap, responseRows);
+                        saveRow(table, qus, rowMap, responseRows);
                         ++rowsAffected;
                     }
                 }
@@ -1971,8 +1972,11 @@ public class QueryControllerSpring extends SpringActionController
             return response;
         }
 
+        protected abstract void checkTablePermission(User user, TableInfo table);
+
         /**
          * Dervied classes should implement this method to do the actual save operation (insert, update or delete)
+         * @param table The table
          * @param qus The QueryUpdateService
          * @param row The row map
          * @param responseRows The array of response row maps to append to
@@ -1983,7 +1987,7 @@ public class QueryControllerSpring extends SpringActionController
          * @throws SQLException Thrown if there was a problem communicating with the database
          * @throws UnauthorizedException Thrown if the user does not have permissions to save the row
          */
-        protected abstract void saveRow(QueryUpdateService qus, Map<String,Object> row, ArrayList<Object> responseRows)
+        protected abstract void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
                 throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException;
 
         /**
@@ -2004,7 +2008,13 @@ public class QueryControllerSpring extends SpringActionController
             return "update";
         }
 
-        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
+        protected void checkTablePermission(User user, TableInfo table)
+        {
+            if (!table.hasPermission(user, ACL.PERM_UPDATE))
+                HttpView.throwUnauthorized();
+        }
+
+        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
                 throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             Map<String,Object> updatedRow = qus.updateRow(getViewContext().getUser(), getViewContext().getContainer(),
@@ -2026,7 +2036,13 @@ public class QueryControllerSpring extends SpringActionController
             return "insert";
         }
 
-        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
+        protected void checkTablePermission(User user, TableInfo table)
+        {
+            if (!table.hasPermission(user, ACL.PERM_INSERT))
+                HttpView.throwUnauthorized();
+        }
+
+        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
                 throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             Map<String,Object> insertedRow = qus.insertRow(getViewContext().getUser(), getViewContext().getContainer(),
@@ -2049,7 +2065,13 @@ public class QueryControllerSpring extends SpringActionController
             return "delete";
         }
 
-        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
+        protected void checkTablePermission(User user, TableInfo table)
+        {
+            if (!table.hasPermission(user, ACL.PERM_DELETE))
+                HttpView.throwUnauthorized();
+        }
+
+        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             Map<String,Object> deletedRow = qus.deleteRow(getViewContext().getUser(), getViewContext().getContainer(),
                                                             row);
@@ -2065,7 +2087,12 @@ public class QueryControllerSpring extends SpringActionController
         private static final String PROP_OLD_KEYS = "oldKeys";
         private static final String PROP_COMMAND = "command";
 
-        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
+        protected void checkTablePermission(User user, TableInfo table)
+        {
+            // will check below
+        }
+
+        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             User user = getViewContext().getUser();
             Container container = getViewContext().getContainer();
@@ -2085,6 +2112,8 @@ public class QueryControllerSpring extends SpringActionController
             {
                 if(!container.hasPermission(user, ACL.PERM_INSERT))
                     throw new UnauthorizedException("You do not have permissions to insert data into this folder.");
+                if (!table.hasPermission(user, ACL.PERM_INSERT))
+                    throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
                 Map<String,Object> insertedRow = qus.insertRow(user, container, values);
                 if(null != insertedRow)
@@ -2096,6 +2125,8 @@ public class QueryControllerSpring extends SpringActionController
             {
                 if(!container.hasPermission(user, ACL.PERM_UPDATE))
                     throw new UnauthorizedException("You do not have permissions to update data into this folder.");
+                if (!table.hasPermission(user, ACL.PERM_UPDATE))
+                    throw new UnauthorizedException("You do not have permission to update data into this table.");
 
                 Map<String,Object> updatedRow = qus.updateRow(user, container, values, oldKeys);
                 if(null != updatedRow)
@@ -2107,6 +2138,8 @@ public class QueryControllerSpring extends SpringActionController
             {
                 if(!container.hasPermission(user, ACL.PERM_DELETE))
                     throw new UnauthorizedException("You do not have permissions to delete data into this folder.");
+                if (!table.hasPermission(user, ACL.PERM_DELETE))
+                    throw new UnauthorizedException("You do not have permission to delete data into this table.");
 
                 qus.deleteRow(user, container, values);
             }
