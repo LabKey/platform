@@ -869,9 +869,13 @@ public class SpecimenImporter
             List<List<?>> vialPropertiesParams = new ArrayList<List<?>>();
             List<List<?>> commentParams = new ArrayList<List<?>>();
 
-            for (Specimen specimen : specimens)
+            Map<Specimen, List<SpecimenEvent>> specimenToOrderedEvents = SampleManager.getInstance().getDateOrderedEventLists(specimens);
+            Map<Specimen, SpecimenComment> specimenComments = SampleManager.getInstance().getSpecimenComments(specimens);
+
+            for (Map.Entry<Specimen, List<SpecimenEvent>> entry : specimenToOrderedEvents.entrySet())
             {
-                List<SpecimenEvent> dateOrderedEvents = SampleManager.getInstance().getDateOrderedEventList(specimen);
+                Specimen specimen = entry.getKey();
+                List<SpecimenEvent> dateOrderedEvents = entry.getValue();
                 Integer processingLocation = SampleManager.getInstance().getProcessingSiteId(dateOrderedEvents);
                 Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(dateOrderedEvents);
                 boolean atRepository = false;
@@ -905,7 +909,7 @@ public class SpecimenImporter
                             atRepository, available, specimen.getRowId()));
                 }
 
-                SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
+                SpecimenComment comment = specimenComments.get(specimen);
                 if (comment != null)
                 {
                     // if we have a comment, it may be because we're in a bad QC state.  If so, we should update

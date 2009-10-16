@@ -37,7 +37,7 @@ public class DataSetColumnsTable extends FilteredTable
     public DataSetColumnsTable(final StudyQuerySchema schema)
     {
         super(ExperimentService.get().getTinfoPropertyDescriptor(), schema.getContainer());
-
+        setDescription("Metadata table containing one row of metadata for each column in all study datasets.");
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
         ColumnInfo datasetLookupCol = new ExprColumn(this, "DataSet", sql, Types.INTEGER);

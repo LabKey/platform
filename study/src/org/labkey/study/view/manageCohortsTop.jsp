@@ -35,7 +35,7 @@
     <input type="hidden" name="clearParticipants" value="false">
     <input type="hidden" name="updateParticipants" value="false">
 <%
-    WebPartView.startTitleFrame(out, "Assignment Type", null, "100%", null);
+    WebPartView.startTitleFrame(out, "Assignment Mode", null, "100%", null);
 %>
     <script type="text/javascript">
         function setAdvanced(advanced)
@@ -44,7 +44,7 @@
             var manual = manualEl && manualEl.checked;
             if (advanced && manual)
             {
-                 if (confirm('Enabling advanced cohort tracking will enable automatic assignment.  ' +
+                 if (confirm('Enabling advanced cohort mode will enable automatic assignment.  ' +
                                         'Any manual cohort assignments will be cleared, and you must ' +
                                         'select a study dataset containing cohort assignments.  Continue?'))
                 {
@@ -54,7 +54,7 @@
                     return true;
                 }
             }
-            else if (confirm('Changing between simple and advanced cohort assignment requires updating cohort ' +
+            else if (confirm('Changing between simple and advanced modes requires updating cohort ' +
                                'assignments for all participants.  Update cohort assignments now?'))
             {
                 document.manageCohorts.submit();
@@ -72,7 +72,7 @@
 
     if (!study.isAdvancedCohorts())
     {
-        WebPartView.startTitleFrame(out, "Assignment Method", null, "100%", null);
+        WebPartView.startTitleFrame(out, "Assignment Type", null, "100%", null);
 %>
     <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment" id="manualCohortAssignmentDisabled"
            value="false" <%=study.isManualCohortAssignment() ? "" : "checked"%>>Automatic: cohort assignments will be read from an existing study dataset.<br>

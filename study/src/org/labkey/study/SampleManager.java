@@ -203,6 +203,25 @@ public class SampleManager
         return _specimenEventHelper.get(sample.getContainer(), filter);
     }
 
+    public SpecimenEvent[] getSpecimenEvents(Specimen[] samples) throws SQLException
+    {
+        if (samples == null || samples.length == 0)
+            return new SpecimenEvent[0];
+        Collection<Integer> vialIds = new HashSet<Integer>();
+        Container container = null;
+        for (Specimen sample : samples)
+        {
+            vialIds.add(sample.getRowId());
+            if (container == null)
+                container = sample.getContainer();
+            else if (!container.equals(sample.getContainer()))
+                throw new IllegalArgumentException("All specimens must be from the same container");
+        }
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause("VialId", vialIds);
+        return _specimenEventHelper.get(container, filter);
+    }
+
     private static class SpecimenEventDateComparator implements Comparator<SpecimenEvent>
     {
         private Date convertToDate(String dateString)
@@ -279,6 +298,33 @@ public class SampleManager
         Collections.sort(eventList, new SpecimenEventDateComparator());
         return eventList;
     }
+
+    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(Specimen[] specimens) throws SQLException
+    {
+        SpecimenEvent[] allEvents = getSpecimenEvents(specimens);
+        Map<Integer, List<SpecimenEvent>> vialIdToEvents = new HashMap<Integer, List<SpecimenEvent>>(); 
+        for (SpecimenEvent event : allEvents)
+        {
+            List<SpecimenEvent> vialEvents = vialIdToEvents.get(event.getVialId());
+            if (vialEvents == null)
+            {
+                vialEvents = new ArrayList<SpecimenEvent>();
+                vialIdToEvents.put(event.getVialId(), vialEvents);
+            }
+            vialEvents.add(event);
+        }
+
+        Map<Specimen, List<SpecimenEvent>> results = new HashMap<Specimen, List<SpecimenEvent>>();
+        for (Specimen specimen : specimens)
+        {
+            List<SpecimenEvent> events = vialIdToEvents.get(specimen.getRowId());
+            if (events != null && events.size() > 0)
+                Collections.sort(events, new SpecimenEventDateComparator());
+            results.put(specimen, events);
+        }
+        return results;
+    }
+
 
     public SiteImpl getCurrentSite(Specimen specimen) throws SQLException
     {
@@ -2353,15 +2399,38 @@ public class SampleManager
         return summaries;
     }
 
+    private static final int GET_COMMENT_BATCH_SIZE = 1000;
     public Map<Specimen, SpecimenComment> getSpecimenComments(Specimen[] vials) throws SQLException
     {
-        Map<Specimen, SpecimenComment> comments = new HashMap<Specimen, SpecimenComment>();
-        for (Specimen vial : vials)
+        if (vials == null || vials.length == 0)
+            return Collections.emptyMap();
+
+        Container container = vials[0].getContainer();
+        Map<Specimen, SpecimenComment> result = new HashMap<Specimen, SpecimenComment>();
+        int offset = 0;
+        while (offset < vials.length)
         {
-            SpecimenComment comment = getSpecimenCommentForVial(vial);
-            comments.put(vial, comment);
+            Map<String, Specimen> idToVial = new HashMap<String, Specimen>();
+            for (int current = offset; current < offset + GET_COMMENT_BATCH_SIZE && current < vials.length; current++)
+            {
+                Specimen vial = vials[current];
+                idToVial.put(vial.getGlobalUniqueId(), vial);
+                if (!container.equals(vial.getContainer()))
+                    throw new IllegalArgumentException("All specimens must be from the same container");
+            }
+
+            SimpleFilter filter = new SimpleFilter("Container", container.getId());
+            filter.addInClause("GlobalUniqueId", idToVial.keySet());
+            SpecimenComment[]  comments = Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(), Table.ALL_COLUMNS, filter, null, SpecimenComment.class);
+
+            for (SpecimenComment comment : comments)
+            {
+                Specimen vial = idToVial.get(comment.getGlobalUniqueId());
+                result.put(vial, comment);
+            }
+            offset += GET_COMMENT_BATCH_SIZE;
         }
-        return comments;
+        return result;
     }
 
     public SpecimenComment getSpecimenCommentForVial(Container container, String globalUniqueId) throws SQLException

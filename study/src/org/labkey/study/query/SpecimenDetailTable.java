@@ -201,6 +201,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                     return new CohortTable(schema);
                 }
             });
+            setDescription("The cohort of the participant at the time of specimen collection.");
         }
 
         @Override
@@ -230,6 +231,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                     "QualityControlFlag",
                     new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlFlag = ? THEN ? ELSE ? END)", Boolean.TRUE, Boolean.TRUE, Boolean.FALSE),
                     Types.BOOLEAN);
+            // our column wrapping is too complex for the description to propagate through- set it here:
+            setDescription("Whether this comment is associated with a quality control alert.");
         }
     }
 
@@ -241,6 +244,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                     "QualityControlComments",
                     new SQLFragment("(" + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlComments)"),
                     Types.VARCHAR);
+            // our column wrapping is too complex for the description to propagate through- set it here:
+            setDescription("Quality control-associated comments.  Set by the system to indicate which fields are causing quality control alerts.");
         }
     }
 

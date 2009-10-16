@@ -45,6 +45,8 @@ public class DataSetTable extends FilteredTable
     public DataSetTable(StudyQuerySchema schema, DataSetDefinition dsd)
     {
         super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), false));
+        setDescription("Contains up to one row of " + dsd.getLabel() + " data for each participant" + (!dsd.isDemographicData() ? "/visit" : "") +
+            (dsd.getKeyPropertyName() != null ? "/" + dsd.getKeyPropertyName() : "") + " combination.");
         _schema = schema;
         _dsd = dsd;
 

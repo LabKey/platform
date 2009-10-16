@@ -18,61 +18,150 @@
  -->
 <ns:tables xsi:schemaLocation="http://cpas.fhcrc.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ns:table tableName="Study" tableDbType="TABLE">
+    <ns:description>Contains one row per study, describing basic study properties.</ns:description>
     <ns:columns>
-      <ns:column columnName="Label"/>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="entityid"/>
-      <ns:column columnName="DateBased"/>
-      <ns:column columnName="StartDate"/>
-      <ns:column columnName="SecurityType"/>
-      <ns:column columnName="participantcohortdatasetid"/>
-      <ns:column columnName="participantcohortproperty"/>
-      <ns:column columnName="manualCohortAssignment"/>
+      <ns:column columnName="Label">
+        <ns:description>The long/friendly name of each study.</ns:description>
+      </ns:column>
+      <ns:column columnName="Container">
+        <ns:description>The container of each study.</ns:description>
+      </ns:column>
+      <ns:column columnName="entityid">
+        <ns:description>A unique string ID for each study.</ns:description>
+      </ns:column>
+      <ns:column columnName="DateBased">
+        <ns:description>Whether each study is date based (versus visit based).</ns:description>
+      </ns:column>
+      <ns:column columnName="StartDate">
+        <ns:description>The start date of each study.  Note that participants can also have start dates.</ns:description>
+      </ns:column>
+      <ns:column columnName="SecurityType">
+        <ns:description>Security type for each study, indicating how dataset read/write access is determined.</ns:description>
+      </ns:column>
+      <ns:column columnName="participantcohortdatasetid">
+        <ns:description>The ID of the study dataset that contains data for automatic participant cohort assignment.</ns:description>
+      </ns:column>
+      <ns:column columnName="participantcohortproperty">
+        <ns:description>The name of the property/field in the participant cohort dataset that contains the participant's cohort name.</ns:description>
+      </ns:column>
+      <ns:column columnName="manualCohortAssignment">
+        <ns:description>Whether each study uses manual (versus automatic) cohort assignment.</ns:description>
+      </ns:column>
       <ns:column columnName="LSID"/>
-      <ns:column columnName="DefaultPipelineQCState"/>
-      <ns:column columnName="DefaultAssayQCState"/>
-      <ns:column columnName="DefaultDirectEntryQCState"/>
-      <ns:column columnName="ShowPrivateDataByDefault"/>
-      <ns:column columnName="AllowReload"/>
-      <ns:column columnName="ReloadInterval"/>
-      <ns:column columnName="LastReload"/>
-      <ns:column columnName="ReloadUser"/>
-      <ns:column columnName="AdvancedCohorts"/>
-      <ns:column columnName="ParticipantCommentDatasetId"/>
-      <ns:column columnName="ParticipantCommentProperty"/>
-      <ns:column columnName="ParticipantVisitCommentDatasetId"/>
-      <ns:column columnName="ParticipantVisitCommentProperty"/>
+      <ns:column columnName="DefaultPipelineQCState">
+        <ns:description>The default quality control state to be applied to data imported via the pipeline.</ns:description>
+      </ns:column>
+      <ns:column columnName="DefaultAssayQCState">
+        <ns:description>The default quality control state to be applied to assay data copied to each study.</ns:description>
+      </ns:column>
+      <ns:column columnName="DefaultDirectEntryQCState">
+        <ns:description>The default quality control state to be applied to data manually edited within the study.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShowPrivateDataByDefault">
+        <ns:description>Whether private data (as indicated by the data's quality control state) is visible by default.</ns:description>
+      </ns:column>
+      <ns:column columnName="AllowReload">
+        <ns:description>Whether each study can be reloaded from disk-based files.</ns:description>
+      </ns:column>
+      <ns:column columnName="ReloadInterval">
+        <ns:description>How frequently automatic reloads of each study should take place.</ns:description>
+      </ns:column>
+      <ns:column columnName="LastReload">
+        <ns:description>The timestamp of the most recent study reload.</ns:description>
+      </ns:column>
+      <ns:column columnName="ReloadUser">
+        <ns:description>The user who initiated automatic reload.</ns:description>
+      </ns:column>
+      <ns:column columnName="AdvancedCohorts">
+        <ns:description>Whether advanced cohort assignment is enabled.  Advanced cohort support allows participants to change cohorts over time.</ns:description>
+      </ns:column>
+      <ns:column columnName="ParticipantCommentDatasetId">
+        <ns:description>The ID of the study dataset that contains data for participant-level comments.</ns:description>
+      </ns:column>
+      <ns:column columnName="ParticipantCommentProperty">
+        <ns:description>The default property/field within the Participant Comment dataset that should be displayed in specimen and dataset views.</ns:description>
+      </ns:column>
+      <ns:column columnName="ParticipantVisitCommentDatasetId">
+        <ns:description>The ID of the study dataset that contains data for participant/visit-level comments</ns:description>
+      </ns:column>
+      <ns:column columnName="ParticipantVisitCommentProperty">
+        <ns:description>The default property/field within the Participant/Visit Comment dataset that should be displayed in specimen and dataset views.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
+    <ns:description>Contains one row per study-affiliated location.  Locations can include labs, clinics, and repositories.</ns:description>
     <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="ExternalId"/>
-      <ns:column columnName="LdmsLabCode"/>
-      <ns:column columnName="LabwareLabCode"/>
-      <ns:column columnName="LabUploadCode"/>
-      <ns:column columnName="Sal"/>
-      <ns:column columnName="Repository"/>
-      <ns:column columnName="Endpoint"/>
-      <ns:column columnName="Clinic"/>
-      <ns:column columnName="Label"/>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="EntityId"/>
+      <ns:column columnName="RowId">
+        <ns:description>The unique identifier for each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="ExternalId">
+        <ns:description>The external identifier for each location, if imported from an external data source.</ns:description>
+      </ns:column>
+      <ns:column columnName="LdmsLabCode">
+        <ns:description>The unique LDMS identifier assigned to each location, if imported from an LDMS system.</ns:description>
+      </ns:column>
+      <ns:column columnName="LabwareLabCode">
+        <ns:description>The unique Labware identifier assigned to each location, if imported from a Labware system.</ns:description>
+      </ns:column>
+      <ns:column columnName="LabUploadCode">
+        <ns:description>The upload code for each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="Sal">
+        <ns:description>Whether each location is a site-affiliated laboratory.</ns:description>
+      </ns:column>
+      <ns:column columnName="Repository">
+        <ns:description>Whether each location is a repository.</ns:description>
+      </ns:column>
+      <ns:column columnName="Endpoint">
+        <ns:description>Whether each location is an endpoint laboratory.</ns:description>
+      </ns:column>
+      <ns:column columnName="Clinic">
+        <ns:description>Whether each location is a clinic.</ns:description>
+      </ns:column>
+      <ns:column columnName="Label">
+        <ns:description>The long/friendly name of each location.</ns:description>
+      </ns:column>
+      <ns:column columnName="Container" />
+      <ns:column columnName="EntityId">
+        <ns:description>A unique string identifier for each location.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Visit" tableDbType="TABLE">
+    <ns:description>Contains one row per defined visit in a study.</ns:description>
     <ns:columns>
-      <ns:column columnName="TypeCode"/>
-      <ns:column columnName="Label"/>
+      <ns:column columnName="TypeCode">
+        <ns:description>A string type code for each visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="Label">
+        <ns:description>The long/friendly name of each visit.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="DisplayOrder"/>
-      <ns:column columnName="ShowByDefault"/>
-      <ns:column columnName="VisitDateDatasetId"/>
-      <ns:column columnName="rowid"/>
-      <ns:column columnName="SequenceNumMax"/>
-      <ns:column columnName="SequenceNumMin"/>
-      <ns:column columnName="cohortid"/>
-      <ns:column columnName="ChronologicalOrder"/>
+      <ns:column columnName="DisplayOrder">
+        <ns:description>An integer value used to sort visits in display order.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShowByDefault">
+        <ns:description>Whether each visit should be displayed by default in study views and reports.</ns:description>
+      </ns:column>
+      <ns:column columnName="VisitDateDatasetId">
+        <ns:description>The ID of the study dataset that maps from study dates to study visit IDs.</ns:description>
+      </ns:column>
+      <ns:column columnName="rowid">
+        <ns:description>The unique integer row ID of each visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="SequenceNumMax">
+        <ns:description>The maximum sequence number associated with each visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="SequenceNumMin">
+        <ns:description>The minim sequence number associated with each visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="cohortid">
+        <ns:description>The ID of each visit's cohort, if it is cohort specific.</ns:description>
+      </ns:column>
+      <ns:column columnName="ChronologicalOrder">
+        <ns:description>An integer value used to sort visits chronologically.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="VisitMap" tableDbType="TABLE">
@@ -86,31 +175,62 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="DataSet" tableDbType="TABLE">
+    <ns:description>Contains one row of metadata per study dataset.</ns:description>
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="DataSetId">
         <ns:propertyURI>http://cpas.labkey.com/Study#DatasetId</ns:propertyURI>
       </ns:column>
-      <ns:column columnName="TypeURI"/>
-      <ns:column columnName="Label"/>
-      <ns:column columnName="Category"/>
-      <ns:column columnName="DisplayOrder"/>
-      <ns:column columnName="ShowByDefault"/>
-      <ns:column columnName="entityid"/>
-      <ns:column columnName="VisitDatePropertyName"/>
-      <ns:column columnName="KeyPropertyName"/>
-      <ns:column columnName="KeyPropertyManaged"/>
-      <ns:column columnName="name"/>
-      <ns:column columnName="description"/>
-      <ns:column columnName="DemographicData"/>
-      <ns:column columnName="cohortid"/>
-      <ns:column columnName="ProtocolId"/>
+      <ns:column columnName="TypeURI">
+        <ns:description>A URI/LSID uniquely identifying each dataset's type.</ns:description>
+      </ns:column>
+      <ns:column columnName="Label">
+        <ns:description>The long/friendly name of each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="Category">
+        <ns:description>The category of each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="DisplayOrder">
+        <ns:description>The display order of each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShowByDefault">
+        <ns:description>Whether each dataset should be displayed by default in study reports.</ns:description>
+      </ns:column>
+      <ns:column columnName="entityid">
+        <ns:description>A unique string identifier for each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="VisitDatePropertyName">
+        <ns:description>The name of the property/field identifying the visit date in each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="KeyPropertyName">
+        <ns:description>The name of the property/field identifying the additional key column of each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="KeyPropertyManaged">
+        <ns:description>Whether the additional key column of each dataset is managed by the server (versus provided during import).</ns:description>
+      </ns:column>
+      <ns:column columnName="name">
+        <ns:description>The long/friendly name of each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="description">
+        <ns:description>The description of each dataset.</ns:description>
+      </ns:column>
+      <ns:column columnName="DemographicData">
+        <ns:description>Whether each dataset contains demographic data, which is keyed only on participant ID (versus non-demographic data keyed on Participant ID and visit).</ns:description>
+      </ns:column>
+      <ns:column columnName="cohortid">
+        <ns:description>The ID of each dataset's cohort, if it is cohort specific.</ns:description>
+      </ns:column>
+      <ns:column columnName="ProtocolId">
+        <ns:description>The unique ID of the assay design associated with each dataset, if the data is assay-associated.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequest" tableDbType="TABLE">
+    <ns:description>Contains one row per speicmen request.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="CreatedBy">
+        <ns:description>The user who created each request.</ns:description>
         <ns:datatype>int</ns:datatype>
         <ns:columnTitle>Created By</ns:columnTitle>
         <ns:inputType>text</ns:inputType>
@@ -123,6 +243,7 @@
         </ns:fk>
       </ns:column>
       <ns:column columnName="Created">
+        <ns:description>The timestamp of request creation.</ns:description>
         <ns:columnTitle>Created</ns:columnTitle>
         <ns:inputType>text</ns:inputType>
         <ns:formatString>DateTime</ns:formatString>
@@ -130,6 +251,7 @@
         <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="ModifiedBy">
+        <ns:description>The user who last modified each specimen request.</ns:description>
         <ns:datatype>int</ns:datatype>
         <ns:columnTitle>Modified By</ns:columnTitle>
         <ns:inputType>text</ns:inputType>
@@ -142,6 +264,7 @@
         </ns:fk>
       </ns:column>
       <ns:column columnName="Modified">
+       <ns:description>The timestamp of the last modification of each specimen request.</ns:description>
         <ns:columnTitle>Last Modified</ns:columnTitle>
         <ns:inputType>text</ns:inputType>
         <ns:formatString>DateTime</ns:formatString>
@@ -150,13 +273,22 @@
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="StatusId">
+        <ns:description>The ID of the current status of each request.</ns:description>
         <ns:columnTitle>Status</ns:columnTitle>
       </ns:column>
-      <ns:column columnName="Comments"/>
-      <ns:column columnName="DestinationSiteId"/>
+      <ns:column columnName="Comments">
+        <ns:description>All comments associated with each request.  These comments include all initial values from the new request form.</ns:description>
+      </ns:column>
+      <ns:column columnName="DestinationSiteId">
+        <ns:description>The ID of the selected destination location for each request.</ns:description>
+      </ns:column>
       <ns:column columnName="_ts"/>
-      <ns:column columnName="Hidden"/>
-      <ns:column columnName="EntityId"/>
+      <ns:column columnName="Hidden">
+        <ns:description>Whether each request is for system use only.</ns:description>
+      </ns:column>
+      <ns:column columnName="EntityId">
+        <ns:description>A unique string identifier for each request.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Report" tableDbType="TABLE">
@@ -204,16 +336,28 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="Participant" tableDbType="TABLE">
+    <ns:description>Contains one row per participant.</ns:description>
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="ParticipantId">
+        <ns:description>Participant identifier</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
       </ns:column>
-      <ns:column columnName="EnrollmentSiteId"/>
-      <ns:column columnName="CurrentSiteId"/>
-      <ns:column columnName="StartDate"/>
-      <ns:column columnName="CurrentCohortId"/>
-      <ns:column columnName="InitialCohortId"/>
+      <ns:column columnName="EnrollmentSiteId">
+        <ns:description>The enrollment site of each participant.</ns:description>
+      </ns:column>
+      <ns:column columnName="CurrentSiteId">
+        <ns:description>The current site of each participant.</ns:description>
+      </ns:column>
+      <ns:column columnName="StartDate">
+        <ns:description>The start date for each participant.</ns:description>
+      </ns:column>
+      <ns:column columnName="CurrentCohortId">
+        <ns:description>The current cohort assignment of each participant.  For studies with advanced cohort support enabled, this corresponds to the cohort assignment from the last chronological visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="InitialCohortId">
+        <ns:description>The initial cohort assignment of each participant.  For studies with advanced cohort support enabled, this corresponds to the cohort assignment from the first chronological visit.  For studies without advanced cohort support, this will be equal to the current cohort assignment.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequestActor" tableDbType="TABLE">
@@ -238,19 +382,32 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequestStatus" tableDbType="TABLE">
+    <ns:description>Contains one row per possible sample request status.</ns:description>
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:description>The unique ID of each status.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="SortOrder"/>
-      <ns:column columnName="Label"/>
-      <ns:column columnName="FinalState"/>
-      <ns:column columnName="SpecimensLocked"/>
+      <ns:column columnName="SortOrder">
+        <ns:description>The sort order of each status, when displayed in drop-downs in the UI.</ns:description>
+      </ns:column>
+      <ns:column columnName="Label">
+        <ns:description>The label of each status.</ns:description>
+      </ns:column>
+      <ns:column columnName="FinalState">
+        <ns:description>Whether each status is a final state.  Final states indicate that no further processing is expected.</ns:description>
+      </ns:column>
+      <ns:column columnName="SpecimensLocked">
+        <ns:description>Whether specimens in requests in each status are locked.  Locked specimens cannot be requested by other users.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="studydata" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="container"/>
-      <ns:column columnName="ParticipantSequenceKey"/>
+      <ns:column columnName="ParticipantSequenceKey">
+        <ns:description>A string value uniquely identfying the participant/visit combination for each dataset row.</ns:description>
+      </ns:column>
       <ns:column columnName="participantid">
         <ns:columnTitle>Participant ID</ns:columnTitle>
         <ns:description>Participant identifier</ns:description>
@@ -295,400 +452,681 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="QCState" tableDbType="TABLE">
+    <ns:description>Contains one row per study quality control state.</ns:description>
       <ns:columns>
         <ns:column columnName="RowId"/>
-        <ns:column columnName="Label"/>
-        <ns:column columnName="Description"/>
+        <ns:column columnName="Label">
+        <ns:description>The short label of each quality control state.</ns:description>
+      </ns:column>
+        <ns:column columnName="Description">
+        <ns:description>The full description of each quality control state.</ns:description>
+      </ns:column>
         <ns:column columnName="Container"/>
-        <ns:column columnName="PublicData"/>
+        <ns:column columnName="PublicData">
+        <ns:description>Whether data in each quality control state is considered public.  Public data is displayed by default to all users with read permissions to the study.  Non-public states can be used to hide suspect or pre-QC data from some users.</ns:description>
+      </ns:column>
       </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequestSpecimen" tableDbType="TABLE">
+    <ns:description>Contains one row per specimen request/vial combination, used for mapping vials to requests.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="SampleRequestId"/>
-      <ns:column columnName="specimenglobaluniqueid"/>
-      <ns:column columnName="orphaned"/>
+      <ns:column columnName="SampleRequestId">
+        <ns:description>The ID of the specimen request.</ns:description>
+      </ns:column>
+      <ns:column columnName="specimenglobaluniqueid">
+        <ns:description>The global unique ID of the vial.</ns:description>
+      </ns:column>
+      <ns:column columnName="orphaned">
+        <ns:description>Whether the vial identified in each mapping has been removed from the specimen/vial tables.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
     <ns:table tableName="Vial" tableDbType="TABLE">
+      <ns:description>One row per vial in the specimen tracking system.</ns:description>
       <ns:columns>
-          <ns:column columnName="RowId"/>
-          <ns:column columnName="Container"/>
-          <ns:column columnName="SpecimenHash"/>
-          <ns:column columnName="SpecimenId"/>
-          <ns:column columnName="GlobalUniqueId"/>
-          <ns:column columnName="Volume">
-            <ns:formatString>#,###.0#</ns:formatString>
-          </ns:column>
-          <ns:column columnName="PrimaryVolume"/>
-          <ns:column columnName="PrimaryVolumeUnits"/>
-          <ns:column columnName="requestable"/>
-          <ns:column columnName="CurrentLocation" />
-        <ns:column columnName="AtRepository"/>
-        <ns:column columnName="LockedInRequest"/>
-        <ns:column columnName="Available"/>
-        <ns:column columnName="ProcessingLocation"/>
+        <ns:column columnName="RowId"/>
+        <ns:column columnName="Container"/>
+        <ns:column columnName="SpecimenHash">
+          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+        </ns:column>
+        <ns:column columnName="SpecimenId">
+          <ns:description>The ID of the primary specimen associated with each vial.</ns:description>
+        </ns:column>
+        <ns:column columnName="GlobalUniqueId">
+          <ns:description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</ns:description>
+        </ns:column>
+        <ns:column columnName="Volume">
+          <ns:description>The volume of each vial.</ns:description>
+          <ns:formatString>#,###.0#</ns:formatString>
+        </ns:column>
+        <ns:column columnName="PrimaryVolume">
+          <ns:description>The primary/original volume of each vial. This value is passed through from the specimen data feed, so the provided data determines whether this is primary volume per vial or primary volume per collection/draw.</ns:description>
+        </ns:column>
+        <ns:column columnName="PrimaryVolumeUnits">
+          <ns:description>The units of the primary volume value of each vial.  For example, cells or milliliters.</ns:description>
+        </ns:column>
+        <ns:column columnName="requestable">
+          <ns:description>Whether or not each vial should be requestable.  If null, requestability will be determined by whether the vial is at a repository or locked in another request.  If true/false, repository calculation is overridden, and only locked status will be considered.</ns:description>
+        </ns:column>
+        <ns:column columnName="CurrentLocation" >
+          <ns:description>The ID of the current location of the vial.  Current location is determined by the most recent event for each vial, and may be null if the most recent specimen event indicates that the vial has been shipped.</ns:description>
+        </ns:column>
+        <ns:column columnName="AtRepository">
+          <ns:description>Whether each vial is currently at a repository.</ns:description>
+        </ns:column>
+        <ns:column columnName="LockedInRequest">
+          <ns:description>Whether each vial is currently locked in a specimen request.</ns:description>
+        </ns:column>
+        <ns:column columnName="Available">
+          <ns:description>Whether each vial is currently available for request.  Calculated from the Requestable, AtRepository, and LockedInRequest columns.</ns:description>
+        </ns:column>
+        <ns:column columnName="ProcessingLocation">
+          <ns:description>The ID of the processing location of each vial.</ns:description>
+        </ns:column>
       </ns:columns>
     </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
+    <ns:description>Contains one row per primary specimen collection/draw.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
-      <ns:column columnName="ParticipantSequenceKey"/>
+      <ns:column columnName="ParticipantSequenceKey">
+        <ns:description>A string value uniquely identfying the participant/visit combination for each specimen row.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="Ptid"/>
+      <ns:column columnName="Ptid">
+        <ns:description>The ID of the participant providing each specimen.</ns:description>
+      </ns:column>
       <ns:column columnName="DrawTimestamp">
+        <ns:description>The timestamp of specimen collection.</ns:description>
         <ns:formatString>DateTime</ns:formatString>
       </ns:column>
-      <ns:column columnName="SalReceiptDate"/>
-      <ns:column columnName="SpecimenHash"/>
-      <ns:column columnName="ClassId"/>
+      <ns:column columnName="SalReceiptDate">
+        <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
+      </ns:column>
+      <ns:column columnName="SpecimenHash">
+        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the specimen, including participant, visit, and specimen type.</ns:description>
+      </ns:column>
+      <ns:column columnName="ClassId">
+        <ns:description>The class, network, or study associated with each specimen.</ns:description>
+      </ns:column>
       <ns:column columnName="VisitValue">
+        <ns:description>The visit value (sequence num) of specimen collection.</ns:description>
         <ns:formatString>0.####</ns:formatString>
       </ns:column>
-      <ns:column columnName="ProtocolNumber"/>
-      <ns:column columnName="VisitDescription"/>
-      <ns:column columnName="VolumeUnits"/>
-      <ns:column columnName="SubAdditiveDerivative"/>
-      <ns:column columnName="PrimaryTypeId"/>
-      <ns:column columnName="DerivativeTypeId"/>
-      <ns:column columnName="AdditiveTypeId"/>
-      <ns:column columnName="originatinglocationid"/>
+      <ns:column columnName="ProtocolNumber">
+        <ns:description>The protocol associated with each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="VisitDescription">
+        <ns:description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</ns:description>
+      </ns:column>
+      <ns:column columnName="VolumeUnits">
+        <ns:description>The units of volume for each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="SubAdditiveDerivative">
+        <ns:description>The sub-additive/derivative type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="PrimaryTypeId">
+        <ns:description>The ID of the primary type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="DerivativeTypeId">
+        <ns:description>The ID of the derivative type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="AdditiveTypeId">
+        <ns:description>The ID of the additive type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="originatinglocationid">
+        <ns:description>The ID of the originating (collection) location of each specimen.</ns:description>
+      </ns:column>
       <ns:column columnName="DerivativeTypeId2">
+        <ns:description>The ID of the second derivative type of each specimen.</ns:description>
         <ns:fk>
           <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenDerivative</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="AtRepositoryCount"/>
-      <ns:column columnName="AvailableCount"/>
-      <ns:column columnName="AvailableVolume"/>
-      <ns:column columnName="ExpectedAvailableCount"/>
-      <ns:column columnName="LockedInRequestCount"/>
-      <ns:column columnName="TotalVolume"/>
-      <ns:column columnName="VialCount"/>
+      <ns:column columnName="AtRepositoryCount">
+        <ns:description>The number of vials from each specimen that are currently at a repository.</ns:description>
+      </ns:column>
+      <ns:column columnName="AvailableCount">
+        <ns:description>The number of vials from each specimen that are currently available for request.</ns:description>
+      </ns:column>
+      <ns:column columnName="AvailableVolume">
+        <ns:description>The total volume of all vials from each specimen that are currently available for request.</ns:description>
+      </ns:column>
+      <ns:column columnName="ExpectedAvailableCount">
+        <ns:description>The total volume of all vials from each specimen that are expected to become available for request.  This includes vials currently available as well as those not available but not yet requested.</ns:description>
+      </ns:column>
+      <ns:column columnName="LockedInRequestCount">
+        <ns:description>The number of vials from each specimen that are currently locked in requests.</ns:description>
+      </ns:column>
+      <ns:column columnName="TotalVolume">
+        <ns:description>The total volume of all vials from each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="VialCount">
+        <ns:description>The total number of vials from each specimen.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
+    <ns:description>Contains one row per vial in the specimen tracking system.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId">
+        <ns:description>A unique ID of each vial.</ns:description>
         <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="SpecimenId">
+          <ns:description>The ID of the specimen/collection/draw for each vial.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="Container">
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="GlobalUniqueId">
+          <ns:description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="Ptid">
+          <ns:description>The ID of the participant providing each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ParticipantSequenceKey">
+          <ns:description>A string value uniquely identfying the participant/visit combination for each specimendetail row.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
-        <ns:datatype>date</ns:datatype>
-        <ns:formatString>DateTime</ns:formatString>
+          <ns:description>The timestamp of specimen collection.</ns:description>
+          <ns:datatype>date</ns:datatype>
+          <ns:formatString>DateTime</ns:formatString>
       </ns:column>
       <ns:column columnName="SalReceiptDate">
+          <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
           <ns:datatype>date</ns:datatype>
       </ns:column>
       <ns:column columnName="SpecimenHash">
+          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ClassId">
+          <ns:description>The class, network, or study associated with each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="VisitValue">
-        <ns:datatype>float</ns:datatype>
-        <ns:formatString>0.####</ns:formatString>
+          <ns:description>The visit value (sequence num) of specimen collection.</ns:description>
+          <ns:datatype>float</ns:datatype>
+          <ns:formatString>0.####</ns:formatString>
       </ns:column>
       <ns:column columnName="ProtocolNumber">
+          <ns:description>The protocol associated with each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="VisitDescription">
+          <ns:description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="VolumeUnits">
+          <ns:description>The units of volume for each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="SubAdditiveDerivative">
+          <ns:description>The sub-additive/derivative type of each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="PrimaryTypeId">
+          <ns:description>The ID of the primary type of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="DerivativeTypeId">
+          <ns:description>The ID of the derivative type of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="AdditiveTypeId">
+          <ns:description>The ID of the additive type of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="originatinglocationid">
+          <ns:description>The ID of the originating (collection) location of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="DerivativeTypeId2">
-        <ns:datatype>int</ns:datatype>
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenDerivative</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
+          <ns:description>The ID of the second derivative type of each specimen.</ns:description>
+          <ns:datatype>int</ns:datatype>
+          <ns:fk>
+            <ns:fkColumnName>RowId</ns:fkColumnName>
+            <ns:fkTable>SpecimenDerivative</ns:fkTable>
+            <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="PrimaryVolume">
+          <ns:description>The primary/original volume of each vial. This value is passed through from the specimen data feed, so the provided data determines whether this is primary volume per vial or primary volume per collection/draw.</ns:description>
           <ns:datatype>float</ns:datatype>
       </ns:column>
       <ns:column columnName="PrimaryVolumeUnits">
+          <ns:description>The units of the primary volume value of each vial.  For example, cells or milliliters.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="AtRepositoryCount">
+          <ns:description>The number of vials from each specimen that are currently at a repository.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="AvailableCount">
+          <ns:description>The number of vials from each specimen that are currently available for request.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="AvailableVolume">
+          <ns:description>The total volume of all vials from each specimen that are currently available for request.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="ExpectedAvailableCount">
+          <ns:description>The total volume of all vials from each specimen that are expected to become available for request.  This includes vials currently available as well as those not available but not yet requested.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="LockedInRequestCount">
+          <ns:description>The number of vials from each specimen that are currently locked in requests.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="TotalVolume">
+          <ns:description>The total volume of all vials from each specimen.</ns:description>
           <ns:datatype>float</ns:datatype>
       </ns:column>
       <ns:column columnName="VialCount">
+          <ns:description>The total number of vials from each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="Volume">
-        <ns:datatype>int</ns:datatype>
-        <ns:formatString>#,###.0#</ns:formatString>
+          <ns:description>The volume of each vial.</ns:description>
+          <ns:datatype>int</ns:datatype>
+          <ns:formatString>#,###.0#</ns:formatString>
       </ns:column>
       <ns:column columnName="requestable">
+          <ns:description>Whether or not each vial should be requestable.  If null, requestability will be determined by whether the vial is at a repository or locked in another request.  If true/false, repository calculation is overridden, and only locked status will be considered.</ns:description>
           <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="CurrentLocation">
+          <ns:description>The ID of the current location of the vial.  Current location is determined by the most recent event for each vial, and may be null if the most recent specimen event indicates that the vial has been shipped.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="AtRepository">
+          <ns:description>Whether each vial is currently at a repository.</ns:description>
           <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="LockedInRequest">
+          <ns:description>Whether each vial is currently locked in a specimen request.</ns:description>
           <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="Available">
+          <ns:description>Whether each vial is currently available for request.  Calculated from the Requestable, AtRepository, and LockedInRequest columns.</ns:description>
           <ns:datatype>boolean</ns:datatype>
       </ns:column>
       <ns:column columnName="ProcessingLocation">
+          <ns:description>The ID of the processing location of each vial.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
+    <ns:description>Contains one row per primary specimen collection/draw.</ns:description>
     <ns:columns>
       <ns:column columnName="Container">
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="RowId">
+          <ns:description>The unique identifier of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="Ptid">
+          <ns:description>The ID of the participant providing each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ParticipantSequenceKey">
+          <ns:description>A string value uniquely identfying the participant/visit combination for each specimensummary row.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
-        <ns:datatype>date</ns:datatype>
-        <ns:formatString>DateTime</ns:formatString>
+          <ns:description>The timestamp of specimen collection.</ns:description>
+          <ns:datatype>date</ns:datatype>
+          <ns:formatString>DateTime</ns:formatString>
       </ns:column>
       <ns:column columnName="SalReceiptDate">
+          <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
           <ns:datatype>date</ns:datatype>
       </ns:column>
       <ns:column columnName="SpecimenHash">
+          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ProtocolNumber">
+          <ns:description>The protocol associated with each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ClassId">
+          <ns:description>The class, network, or study associated with each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="VisitValue">
-        <ns:datatype>float</ns:datatype>
-        <ns:formatString>0.####</ns:formatString>
+          <ns:description>The visit value (sequence num) of specimen collection.</ns:description>
+          <ns:datatype>float</ns:datatype>
+          <ns:formatString>0.####</ns:formatString>
       </ns:column>
       <ns:column columnName="VisitDescription">
+          <ns:description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="TotalVolume">
-        <ns:datatype>float</ns:datatype>
-        <ns:formatString>#,###.0#</ns:formatString>
+          <ns:description>The total volume of all vials from each specimen.</ns:description>
+          <ns:datatype>float</ns:datatype>
+          <ns:formatString>#,###.0#</ns:formatString>
       </ns:column>
       <ns:column columnName="VolumeUnits">
+          <ns:description>The units of volume for each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="PrimaryTypeId">
-        <ns:datatype>int</ns:datatype>
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
+          <ns:description>The ID of the primary type of each specimen.</ns:description>
+          <ns:datatype>int</ns:datatype>
+          <ns:fk>
+            <ns:fkColumnName>RowId</ns:fkColumnName>
+            <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
+            <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="DerivativeTypeId">
-        <ns:datatype>int</ns:datatype>
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenDerivative</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
+          <ns:description>The ID of the derivative type of each specimen.</ns:description>
+          <ns:datatype>int</ns:datatype>
+          <ns:fk>
+            <ns:fkColumnName>RowId</ns:fkColumnName>
+            <ns:fkTable>SpecimenDerivative</ns:fkTable>
+            <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="AdditiveTypeId">
-        <ns:datatype>int</ns:datatype>
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenAdditive</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
+          <ns:description>The ID of the additive type of each specimen.</ns:description>
+          <ns:datatype>int</ns:datatype>
+          <ns:fk>
+            <ns:fkColumnName>RowId</ns:fkColumnName>
+            <ns:fkTable>SpecimenAdditive</ns:fkTable>
+            <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="SubAdditiveDerivative">
+          <ns:description>The sub-additive/derivative type of each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="LockedInRequestCount">
+          <ns:description>The number of vials from each specimen that are currently locked in requests.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="AtRepositoryCount">
+          <ns:description>The number of vials from each specimen that are currently at a repository.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="AvailableCount">
+          <ns:description>The number of vials from each specimen that are currently available for request.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="ExpectedAvailableCount">
+          <ns:description>The total volume of all vials from each specimen that are expected to become available for request.  This includes vials currently available as well as those not available but not yet requested.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="VialCount">
+          <ns:description>The total number of vials from each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="AvailableVolume">
-        <ns:datatype>float</ns:datatype>
-        <ns:formatString>#,##0.0#</ns:formatString>
+          <ns:description>The total volume of all vials from each specimen that are currently available for request.</ns:description>
+          <ns:datatype>float</ns:datatype>
+          <ns:formatString>#,##0.0#</ns:formatString>
       </ns:column>
       <ns:column columnName="originatinglocationid">
+          <ns:description>The ID of the originating (collection) location of each specimen.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="DerivativeTypeId2">
-        <ns:datatype>int</ns:datatype>
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenDerivative</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
+          <ns:description>The ID of the second derivative type of each specimen.</ns:description>
+          <ns:datatype>int</ns:datatype>
+          <ns:fk>
+            <ns:fkColumnName>RowId</ns:fkColumnName>
+            <ns:fkTable>SpecimenDerivative</ns:fkTable>
+            <ns:fkDbSchema>study</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenAdditive" tableDbType="TABLE">
+    <ns:description>Contains one row per specimen additive.</ns:description>
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:description>The unique ID of each specimen additive.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ExternalId"/>
-      <ns:column columnName="LdmsAdditiveCode"/>
-      <ns:column columnName="LabwareAdditiveCode"/>
-      <ns:column columnName="Additive"/>
+      <ns:column columnName="ExternalId">
+          <ns:description>The external identifier for each additive, if imported from an external data source.</ns:description>
+      </ns:column>
+      <ns:column columnName="LdmsAdditiveCode">
+        <ns:description>The LDMS additive code.</ns:description>
+      </ns:column>
+      <ns:column columnName="LabwareAdditiveCode">
+        <ns:description>The Labware additive code.</ns:description>
+      </ns:column>
+      <ns:column columnName="Additive">
+        <ns:description>The name/label of each additive.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenDerivative" tableDbType="TABLE">
+    <ns:description>Contains one row per specimen derivative.</ns:description>
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:description>The unique ID of each derivative.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ExternalId"/>
-      <ns:column columnName="LdmsDerivativeCode"/>
-      <ns:column columnName="LabwareDerivativeCode"/>
-      <ns:column columnName="Derivative"/>
+      <ns:column columnName="ExternalId">
+          <ns:description>The external identifier for each derivative, if imported from an external data source.</ns:description>
+      </ns:column>
+      <ns:column columnName="LdmsDerivativeCode">
+        <ns:description>The LDMS derivative code.</ns:description>
+      </ns:column>
+      <ns:column columnName="LabwareDerivativeCode">
+        <ns:description>The Labware derivative code.</ns:description>
+      </ns:column>
+      <ns:column columnName="Derivative">
+        <ns:description>The name/label of each additive.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenEvent" tableDbType="TABLE">
+    <ns:description>Contains one row per specimen event.  An event is a logged storage location for a vial, generally corresponding to one event per clinic, repository, and/or laboratory.</ns:description>
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:description>The unique ID of each event.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ExternalId"/>
-      <ns:column columnName="VialId"/>
-      <ns:column columnName="LabId"/>
-      <ns:column columnName="UniqueSpecimenId"/>
-      <ns:column columnName="ParentSpecimenId"/>
-      <ns:column columnName="Stored"/>
-      <ns:column columnName="StorageFlag"/>
-      <ns:column columnName="StorageDate"/>
-      <ns:column columnName="ShipFlag"/>
-      <ns:column columnName="ShipBatchNumber"/>
-      <ns:column columnName="ShipDate"/>
-      <ns:column columnName="ImportedBatchNumber"/>
-      <ns:column columnName="LabReceiptDate"/>
-      <ns:column columnName="Comments"/>
-      <ns:column columnName="SpecimenCondition"/>
-      <ns:column columnName="SampleNumber"/>
-      <ns:column columnName="XSampleOrigin"/>
-      <ns:column columnName="ExternalLocation"/>
+      <ns:column columnName="ExternalId">
+          <ns:description>The external identifier for each event, if imported from an external data source.</ns:description>
+      </ns:column>
+      <ns:column columnName="VialId">
+        <ns:description>The ID of the vial.</ns:description>
+      </ns:column>
+      <ns:column columnName="LabId">
+        <ns:description>The ID of the location associated with each event.</ns:description>
+      </ns:column>
+      <ns:column columnName="UniqueSpecimenId">
+        <ns:description>The unique specimen ID provided by the LIMS at the storage location.</ns:description>
+      </ns:column>
+      <ns:column columnName="ParentSpecimenId">
+        <ns:description>The parent specimen ID provided by the LIMS at the storage location.</ns:description>
+      </ns:column>
+      <ns:column columnName="Stored">
+        <ns:description>The location-specific storage code.</ns:description>
+      </ns:column>
+      <ns:column columnName="StorageFlag">
+        <ns:description>The location-specific storage flag.</ns:description>
+      </ns:column>
+      <ns:column columnName="StorageDate">
+        <ns:description>The date/time of vial storage.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShipFlag">
+        <ns:description>The location-specific shipment flag.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShipBatchNumber">
+        <ns:description>The shipment batch number, if the vial/specimen has left this location.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShipDate">
+        <ns:description>The date/time of shipment, if the vial has left this location.</ns:description>
+      </ns:column>
+      <ns:column columnName="ImportedBatchNumber">
+        <ns:description>The ID of the import batch that included this vial/specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="LabReceiptDate">
+        <ns:description>The date/time of vial receipt.</ns:description>
+      </ns:column>
+      <ns:column columnName="Comments">
+        <ns:description>Location-specific comments associated with each vial.</ns:description>
+      </ns:column>
+      <ns:column columnName="SpecimenCondition">
+        <ns:description>The condition code for the vial.</ns:description>
+      </ns:column>
+      <ns:column columnName="SampleNumber">
+        <ns:description>A text identifier of the collection/draw.  This value may vary by location/LIMS, so it should not be used to group events cross-location.</ns:description>
+      </ns:column>
+      <ns:column columnName="XSampleOrigin">
+        <ns:description>The LIMS-provided sample origin.</ns:description>
+      </ns:column>
+      <ns:column columnName="ExternalLocation">
+        <ns:description>The LIMS-provided external location.</ns:description>
+      </ns:column>
       <ns:column columnName="UpdateTimestamp">
+        <ns:description>The date/time of last record modification in the external LIMS.</ns:description>
         <ns:formatString>DateTime</ns:formatString>
       </ns:column>
-      <ns:column columnName="OtherSpecimenId"/>
-      <ns:column columnName="ExpectedTimeValue"/>
-      <ns:column columnName="ExpectedTimeUnit"/>
-      <ns:column columnName="GroupProtocol"/>
-      <ns:column columnName="RecordSource"/>
-      <ns:column columnName="fr_container"/>
-      <ns:column columnName="fr_level1"/>
-      <ns:column columnName="fr_level2"/>
-      <ns:column columnName="fr_position"/>
-      <ns:column columnName="freezer"/>
-      <ns:column columnName="SpecimenNumber"/>
-      <ns:column columnName="ShippedFromLab"/>
-      <ns:column columnName="ShippedToLab"/>
-      <ns:column columnName="Ptid"/>
+      <ns:column columnName="OtherSpecimenId">
+        <ns:description>Alternate specimen ID, if needed.</ns:description>
+      </ns:column>
+      <ns:column columnName="ExpectedTimeValue">
+        <ns:description>The LIMS-provided expected time value.</ns:description>
+      </ns:column>
+      <ns:column columnName="ExpectedTimeUnit">
+        <ns:description>The LIMS-provided expected time units.</ns:description>
+      </ns:column>
+      <ns:column columnName="GroupProtocol">
+        <ns:description>The group/protocol of each vial.</ns:description>
+      </ns:column>
+      <ns:column columnName="RecordSource">
+        <ns:description>The LIMS system responsible for each event.  Generally used when multiple LIMS (LDMS and Labware, for example) are providing loading data into a single repository.</ns:description>
+      </ns:column>
+      <ns:column columnName="fr_container">
+        <ns:description>The container location within the storage freezer.</ns:description>
+      </ns:column>
+      <ns:column columnName="fr_level1">
+        <ns:description>The level 1 location within the storage freezer.</ns:description>
+      </ns:column>
+      <ns:column columnName="fr_level2">
+        <ns:description>The level 2 location within the storage freezer.</ns:description>
+      </ns:column>
+      <ns:column columnName="fr_position">
+        <ns:description>The storage position within the storage freezer.</ns:description>
+      </ns:column>
+      <ns:column columnName="freezer">
+        <ns:description>The ID of the storage freezer.</ns:description>
+      </ns:column>
+      <ns:column columnName="SpecimenNumber">
+          <ns:description>A text identifier of the collection/draw.  This value may vary by location/LIMS, so it should not be used to group events cross-location.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShippedFromLab">
+        <ns:description>The date/time each vial was shipped from the lab.</ns:description>
+      </ns:column>
+      <ns:column columnName="ShippedToLab">
+        <ns:description>The date/time each vial was shipped to the lab.</ns:description>
+      </ns:column>
+      <ns:column columnName="Ptid">
+          <ns:description>The ID of the participant providing each specimen.</ns:description>
+      </ns:column>
       <ns:column columnName="DrawTimestamp">
+          <ns:description>The timestamp of specimen collection.</ns:description>
           <ns:formatString>DateTime</ns:formatString>
       </ns:column>
-      <ns:column columnName="SalReceiptDate"/>
-      <ns:column columnName="ClassId"/>
-      <ns:column columnName="VisitValue"/>
-      <ns:column columnName="ProtocolNumber"/>
-      <ns:column columnName="VisitDescription"/>
-      <ns:column columnName="Volume"/>
-      <ns:column columnName="VolumeUnits"/>
-      <ns:column columnName="SubAdditiveDerivative"/>
-      <ns:column columnName="PrimaryTypeId"/>
-      <ns:column columnName="DerivativeTypeId"/>
-      <ns:column columnName="AdditiveTypeId"/>
-      <ns:column columnName="DerivativeTypeId2"/>
-      <ns:column columnName="OriginatingLocationId"/>
+      <ns:column columnName="SalReceiptDate">
+          <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
+      </ns:column>
+      <ns:column columnName="ClassId">
+          <ns:description>The class, network, or study associated with each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="VisitValue">
+          <ns:description>The visit value (sequence num) of specimen collection.</ns:description>
+      </ns:column>
+      <ns:column columnName="ProtocolNumber">
+          <ns:description>The protocol associated with each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="VisitDescription">
+          <ns:description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</ns:description>
+      </ns:column>
+      <ns:column columnName="Volume">
+          <ns:description>The volume of each vial.</ns:description>
+      </ns:column>
+      <ns:column columnName="VolumeUnits">
+          <ns:description>The units of volume for each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="SubAdditiveDerivative">
+          <ns:description>The sub-additive/derivative type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="PrimaryTypeId">
+          <ns:description>The ID of the primary type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="DerivativeTypeId">
+          <ns:description>The ID of the derivative type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="AdditiveTypeId">
+          <ns:description>The ID of the additive type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="DerivativeTypeId2">
+          <ns:description>The ID of the second derivative type of each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="OriginatingLocationId">
+          <ns:description>The ID of the originating (collection) location of each specimen.</ns:description>
+      </ns:column>
       <ns:column columnName="FrozenTime">
+        <ns:description>The duration of the freezing process.</ns:description>
         <ns:formatString>H:mm:ss</ns:formatString>
       </ns:column>
       <ns:column columnName="ProcessingTime">
+        <ns:description>The duration of the processing process.</ns:description>
         <ns:formatString>H:mm:ss</ns:formatString>
       </ns:column>
-      <ns:column columnName="PrimaryVolume"/>
-      <ns:column columnName="PrimaryVolumeUnits"/>
-      <ns:column columnName="ProcessedByInitials"/>
-      <ns:column columnName="ProcessingDate"/>
+      <ns:column columnName="PrimaryVolume">
+          <ns:description>The primary/original volume of each vial. This value is passed through from the specimen data feed, so the provided data determines whether this is primary volume per vial or primary volume per collection/draw.</ns:description>
+      </ns:column>
+      <ns:column columnName="PrimaryVolumeUnits">
+          <ns:description>The units of the primary volume value of each vial.  For example, cells or milliliters.</ns:description>
+      </ns:column>
+      <ns:column columnName="ProcessedByInitials">
+        <ns:description>The initials of the vial's processor.</ns:description>
+      </ns:column>
+      <ns:column columnName="ProcessingDate">
+        <ns:description>The date/time of vial processing.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">
+    <ns:description>Contains one row per primary specimen type.</ns:description>
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:description>The unique ID of each primary type.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ExternalId"/>
-      <ns:column columnName="PrimaryTypeLdmsCode"/>
-      <ns:column columnName="PrimaryTypeLabwareCode"/>
-      <ns:column columnName="PrimaryType"/>
+      <ns:column columnName="ExternalId">
+          <ns:description>The external identifier for each primary type, if imported from an external data source.</ns:description>
+      </ns:column>
+      <ns:column columnName="PrimaryTypeLdmsCode">
+        <ns:description>The LDMS code for each primary type.</ns:description>
+      </ns:column>
+      <ns:column columnName="PrimaryTypeLabwareCode">
+        <ns:description>The Labware code for each primary type.</ns:description>
+      </ns:column>
+      <ns:column columnName="PrimaryType">
+        <ns:description>The name/label of each primary type.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="LockedSpecimens" tableDbType="VIEW">
@@ -710,15 +1148,30 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="ParticipantVisit" tableDbType="TABLE">
+    <ns:description>Contains one row per participant/visit combination in the study.  Note that this table is populated dynamically as specimen, assay, and dataset data are loaded, and is guaranteed to always be complete.</ns:description>
     <ns:columns>
-      <ns:column columnName="ParticipantId"/>
-      <ns:column columnName="VisitDate"/>
-      <ns:column columnName="ParticipantSequenceKey"/>
+      <ns:column columnName="ParticipantId">
+          <ns:description>Participant identifier</ns:description>
+      </ns:column>
+      <ns:column columnName="VisitDate">
+        <ns:description>The date of the visit.  Primarily used in date-based studies.</ns:description>
+      </ns:column>
+      <ns:column columnName="ParticipantSequenceKey">
+        <ns:description>A string value uniquely identfying the participant/visit combination for each participant/visit row.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="visitrowid"/>
-      <ns:column columnName="sequencenum"/>
-      <ns:column columnName="Day"/>
-      <ns:column columnName="CohortID"/>
+      <ns:column columnName="visitrowid">
+        <ns:description>The ID of the visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="sequencenum">
+        <ns:description>The sequence number of the visit.  Primarily used in visit-based studies.</ns:description>
+      </ns:column>
+      <ns:column columnName="Day">
+        <ns:description>The day of the visit.  Primarily used in date-based studies.</ns:description>
+      </ns:column>
+      <ns:column columnName="CohortID">
+        <ns:description>The ID of the participant's cohort during each visit.  Useful only when advanced cohort assignment is enabled.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="participantview" tableDbType="TABLE">
@@ -740,7 +1193,7 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="Name">
-        <ns:description>The unique admin-provided name of this plate template (""NAb: 5 specimens in duplicate", for example).</ns:description>
+        <ns:description>The unique admin-provided name of each plate template (""NAb: 5 specimens in duplicate", for example).</ns:description>
       </ns:column>
       <ns:column columnName="CreatedBy">
         <ns:datatype>int</ns:datatype>
@@ -762,16 +1215,16 @@
         <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="Template">
-        <ns:description>Boolean indicating whether this plate is a template versus an uploaded instance of a plate template.</ns:description>
+        <ns:description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</ns:description>
       </ns:column>
       <ns:column columnName="Rows">
-        <ns:description>The number of rows in this plate.</ns:description>
+        <ns:description>The number of rows in each plate.</ns:description>
       </ns:column>
       <ns:column columnName="Columns">
-        <ns:description>The number of columns in this plate.</ns:description>
+        <ns:description>The number of columns in each plate.</ns:description>
       </ns:column>
       <ns:column columnName="DataFileId">
-        <ns:description>A unique text identifier (a GUID) for the data file associated with this plate.</ns:description>
+        <ns:description>A unique text identifier (a GUID) for the data file associated with each plate.</ns:description>
       </ns:column>
       <ns:column columnName="Type">
         <ns:description>A text label of the plate type ("NAb", for example).</ns:description>
@@ -785,19 +1238,19 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="Value">
-        <ns:description>The data value associated with this well.</ns:description>
+        <ns:description>The data value associated with each well.</ns:description>
       </ns:column>
       <ns:column columnName="Dilution">
         <ns:description>This well's dilution/concentration value.</ns:description>
       </ns:column>
       <ns:column columnName="PlateId">
-        <ns:description>The row ID of the plate with which this well is associated.</ns:description>
+        <ns:description>The row ID of the plate with which each well is associated.</ns:description>
       </ns:column>
       <ns:column columnName="Row">
-        <ns:description>The zero-based row index of this well.</ns:description>
+        <ns:description>The zero-based row index of each well.</ns:description>
       </ns:column>
       <ns:column columnName="Col">
-        <ns:description>The zero-based column index of this well.</ns:description>
+        <ns:description>The zero-based column index of each well.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -806,18 +1259,18 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="PlateId">
-        <ns:description>The row ID of the plate with which this well group is associated.</ns:description>
+        <ns:description>The row ID of the plate with which each well group is associated.</ns:description>
       </ns:column>
       <ns:column columnName="LSID"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="Name">
-        <ns:description>The name of this well group.</ns:description>
+        <ns:description>The name of each well group.</ns:description>
       </ns:column>
       <ns:column columnName="TypeName">
-        <ns:description>The type of this well group.  For example, "CONTROL", "REPLICATE", or "SPECIMEN".</ns:description>
+        <ns:description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SPECIMEN".</ns:description>
       </ns:column>
       <ns:column columnName="Template">
-        <ns:description>Boolean indicating whether this well gruop is part of a plate template (versus a plate instance).</ns:description>
+        <ns:description>Boolean indicating whether each well group is part of a plate template (versus a plate instance).</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -853,21 +1306,36 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="cohort" tableDbType="TABLE">
+    <ns:description>Contains one row per defined cohort.</ns:description>
     <ns:columns>
-      <ns:column columnName="rowid"/>
-      <ns:column columnName="label"/>
+      <ns:column columnName="rowid">
+        <ns:description>The unique ID of the cohort.</ns:description>
+      </ns:column>
+      <ns:column columnName="label">
+        <ns:description>The friendly name/label of the cohort.</ns:description>
+      </ns:column>
       <ns:column columnName="container"/>
       <ns:column columnName="LSID"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenComment" tableDbType="TABLE">
+    <ns:description>Contains one row per vial-level specimen comment.</ns:description>
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:description>The unique ID of the specimen comment.</ns:description>
+      </ns:column>
       <ns:column columnName="Container"/>
-      <ns:column columnName="SpecimenHash"/>
-      <ns:column columnName="GlobalUniqueId"/>
-      <ns:column columnName="Created"/>
+      <ns:column columnName="SpecimenHash">
+        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+      </ns:column>
+      <ns:column columnName="GlobalUniqueId">
+        <ns:description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</ns:description>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:description>The date/time of comment creation.</ns:description>
+      </ns:column>
       <ns:column columnName="CreatedBy">
+        <ns:description>The ID of the user who created each comment.</ns:description>
         <ns:datatype>int</ns:datatype>
         <ns:columnTitle>Modified By</ns:columnTitle>
         <ns:inputType>text</ns:inputType>
@@ -879,8 +1347,11 @@
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="Modified"/>
+      <ns:column columnName="Modified">
+        <ns:description>The date/time of the most recent comment modification.</ns:description>
+      </ns:column>
       <ns:column columnName="ModifiedBy">
+          <ns:description>The ID of the user who last modified each comment.</ns:description>
           <ns:datatype>int</ns:datatype>
           <ns:columnTitle>Modified By</ns:columnTitle>
           <ns:inputType>text</ns:inputType>
@@ -892,23 +1363,48 @@
             <ns:fkDbSchema>core</ns:fkDbSchema>
           </ns:fk>
       </ns:column>
-      <ns:column columnName="Comment"/>
-      <ns:column columnName="QualityControlFlag"/>
-      <ns:column columnName="QualityControlFlagForced"/>
-      <ns:column columnName="QualityControlComments"/>
+      <ns:column columnName="Comment">
+        <ns:description>The text of each comment.</ns:description>
+      </ns:column>
+      <ns:column columnName="QualityControlFlag">
+        <ns:description>Whether this comment is associated with a quality control alert.</ns:description>
+      </ns:column>
+      <ns:column columnName="QualityControlFlagForced">
+        <ns:description>Whether the quality control flag of this comment was forced by a specimen administrator.  Forced comments will not be changed during specimen import, even if quality control issues come or go.</ns:description>
+      </ns:column>
+      <ns:column columnName="QualityControlComments">
+        <ns:description>Quality control-associated comments.  Set by the system to indicate which fields are causing quality control alerts.</ns:description>
+      </ns:column>
       </ns:columns>
   </ns:table>
   <ns:table tableName="VialCounts" tableDbType="VIEW">
+    <ns:description>Contains one row per primary specimen, allowing dynamic (non-cached) calculation of typical vial counts.</ns:description>
     <ns:columns>
       <ns:column columnName="Container"/>
-      <ns:column columnName="SpecimenHash"/>
-      <ns:column columnName="AvailableVolume"/>
-      <ns:column columnName="TotalVolume"/>
-      <ns:column columnName="LockedInRequestCount"/>
-      <ns:column columnName="AtRepositoryCount"/>
-      <ns:column columnName="AvailableCount"/>
-      <ns:column columnName="VialCount"/>
-      <ns:column columnName="ExpectedAvailableCount"/>
+      <ns:column columnName="SpecimenHash">
+        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+      </ns:column>
+      <ns:column columnName="AvailableVolume">
+          <ns:description>The total volume of all vials from each specimen that are currently available for request.</ns:description>
+      </ns:column>
+      <ns:column columnName="TotalVolume">
+          <ns:description>The total volume of all vials from each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="LockedInRequestCount">
+          <ns:description>The number of vials from each specimen that are currently locked in requests.</ns:description>
+      </ns:column>
+      <ns:column columnName="AtRepositoryCount">
+          <ns:description>The number of vials from each specimen that are currently at a repository.</ns:description>
+      </ns:column>
+      <ns:column columnName="AvailableCount">
+          <ns:description>The number of vials from each specimen that are currently available for request.</ns:description>
+      </ns:column>
+      <ns:column columnName="VialCount">
+          <ns:description>The total number of vials from each specimen.</ns:description>
+      </ns:column>
+      <ns:column columnName="ExpectedAvailableCount">
+          <ns:description>The total volume of all vials from each specimen that are expected to become available for request.  This includes vials currently available as well as those not available but not yet requested.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
 </ns:tables>
