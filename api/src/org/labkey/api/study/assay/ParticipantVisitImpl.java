@@ -39,6 +39,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
     private Container _container;
     private ExpMaterial _material;
     private Date _date;
+    private static final Object CREATE_MATERIAL_SYNC_OBJ = new Object();
 
     /** Used for completely unspecified participant visit information */
     public ParticipantVisitImpl(Container runContainer)
@@ -115,11 +116,15 @@ public class ParticipantVisitImpl implements ParticipantVisit
 
             // the study couldn't find a good material, so we'll have to mock one up
             String lsid = new Lsid(ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _container.getRowId(), name.toString()).toString();
-            _material = ExperimentService.get().getExpMaterial(lsid);
-            if (_material == null)
+            // synchronized to prevent duplicate 'save' calls with the same LSID.  (See bug 8685)
+            synchronized (CREATE_MATERIAL_SYNC_OBJ)
             {
-                _material = ExperimentService.get().createExpMaterial(_container, lsid, name.toString());
-                _material.save(null);
+                _material = ExperimentService.get().getExpMaterial(lsid);
+                if (_material == null)
+                {
+                    _material = ExperimentService.get().createExpMaterial(_container, lsid, name.toString());
+                    _material.save(null);
+                }
             }
         }
         return _material;

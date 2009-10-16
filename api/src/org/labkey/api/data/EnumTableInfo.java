@@ -44,8 +44,9 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      * Exposes an enum as a one-column virtual table, using its toString() as the value
      * @param e class of the enum
      * @param schema parent DBSchema
+     * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, DbSchema schema)
+    public EnumTableInfo(Class<EnumType> e, DbSchema schema, String description)
     {
         this(e, schema, new EnumValueGetter<EnumType>()
         {
@@ -53,7 +54,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
             {
                 return e.toString();
             }
-        });
+        }, description);
     }
 
     /**
@@ -61,10 +62,12 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      * @param e class of the enum
      * @param schema parent DBSchema
      * @param getter callback to determine the String value of each item in the enum
+     * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, DbSchema schema, EnumValueGetter<EnumType> getter)
+    public EnumTableInfo(Class<EnumType> e, DbSchema schema, EnumValueGetter<EnumType> getter, String description)
     {
         super(schema);
+        setDescription(description);
         _enum = e;
         _getter = getter;
 

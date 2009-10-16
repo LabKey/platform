@@ -593,6 +593,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return run;
     }
 
+    private static final Object BATCH_CREATION_SYNC = new Object();
+
     /**
      * @param batch if not null, the run group that's already created for this batch. If null, a new one needs to be created
      * @return the run and batch that were inserted
@@ -674,9 +676,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
             // Save the batch first
             if (batch == null)
             {
-                // Make sure that we have a batch to associate with this run
-                batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
-                batch.save(context.getUser());
+                // synchronize to prevent two uploads from grabbing the same batch ID (see bug 8685)
+                synchronized (BATCH_CREATION_SYNC)
+                {
+                    // Make sure that we have a batch to associate with this run
+                    batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
+                    batch.save(context.getUser());
+                }
                 saveBatchProps = true;
             }
             run.save(context.getUser());
