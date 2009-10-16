@@ -37,8 +37,8 @@
   * <li>If you specify a value for the renderTo config property, there is no need to call the
   * render() method as there was when using the old LABKEY.GridView.</li>
   * </ul>
-  * @description NOTE: This class is now deprecated in favor of the LABKEY.ext.EditorGridPanel class.
-  * @class NOTE: This class is now deprecated in favor of the {@link LABKEY.ext.EditorGridPanel} class.
+  * @description <font color="red">NOTE: This class is now DEPRECATED in favor of the {@link LABKEY.ext.EditorGridPanel}  class. </font>
+  * @class <font color="red">NOTE: This class is now DEPRECATED in favor of the {@link LABKEY.ext.EditorGridPanel} class.</font>
   * @constructor
   * @param {Object} config Describes the GridView's properties.
   * @param {Object} config.schemaName Name of a schema defined within the current

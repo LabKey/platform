@@ -147,7 +147,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         });
 
         /**
-         * @memberOf LABKEY.ext.Store
+         * @memberOf LABKEY.ext.Store#
          * @name beforecommit
          * @event
          * @description Fired just before the store sends updated records to the server for saving. Return
@@ -157,13 +157,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
          * data objects that will be sent to the server.
          */
         /**
-         * @memberOf LABKEY.ext.Store
+         * @memberOf LABKEY.ext.Store#
          * @name commitcomplete
          * @event
          * @description Fired after all modified records have been saved on the server.
          */
         /**
-         * @memberOf LABKEY.ext.Store
+         * @memberOf LABKEY.ext.Store#
          * @name commitexception
          * @event
          * @description Fired if there was an exception during the save process.
@@ -179,7 +179,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * Adds a new record to the store based upon a raw data object.
      * @name addRecord
      * @function
-     * @memberOf LABKEY.ext.Store
+     * @memberOf LABKEY.ext.Store#
      * @param {Object} data The raw data object containing a properties for each field.
      * @param {integer} [index] The index at which to insert the record. If not supplied, the new
      * record will be added to the end of the store.
@@ -223,7 +223,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * Deletes a set of records from the store as well as the server. This cannot be undone.
      * @name deleteRecords
      * @function
-     * @memberOf LABKEY.ext.Store
+     * @memberOf LABKEY.ext.Store#
      * @param {Array of Ext.data.Record objects} records The records to delete.
      */
     deleteRecords : function(records) {
@@ -277,7 +277,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * <a href="http://extjs.com/deploy/dev/docs/?class=Ext.util.Observable">Ext API documentation</a>.
      * @name commitChanges
      * @function
-     * @memberOf LABKEY.ext.Store
+     * @memberOf LABKEY.ext.Store#
      */
     commitChanges : function() {
         var records = this.getModifiedRecords();
@@ -336,7 +336,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * @returns {boolea} true if the record is currently being updated, false if not.
      * @name isUpdateInProgress
      * @function
-     * @memberOf LABKEY.ext.Store
+     * @memberOf LABKEY.ext.Store#
      */
     isUpdateInProgress : function(record) {
         return record.saveOperationInProgress;

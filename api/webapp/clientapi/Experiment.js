@@ -484,17 +484,14 @@ Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] config.
+ * @param {Object} [config] Describes the SampleSet's properties.
  * @param {Object[]} config.samples Array of {@link LABKEY.Exp.Material} config objects.
- * @param {String} config.description Description of SampleSet
- *
- * @property {LABKEY.Exp.Material[]} config.samples {@link LABKEY.Exp.Material} samples in the SampleSet.
- * @property {String} description
+ * @param {String} config.description Description of the SampleSet
  */
+
 LABKEY.Exp.SampleSet = function (config) {
     LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
     config = config || {};
-
     this.samples = config.samples;
     this.description = config.description;
 };

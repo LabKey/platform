@@ -19,9 +19,9 @@
  */
 
 /**
- * @namespace LabKey Email Notification Helper class.
+ * @namespace <font color="black">LabKey Email Notification Helper class.
  * This class provides static methods to generate an email notification message that gets sent from the
- * LabKey SMTP server.
+ * LabKey SMTP server.</font>
  */
 LABKEY.Message = new function()
 {

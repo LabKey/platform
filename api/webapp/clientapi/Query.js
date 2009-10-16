@@ -250,9 +250,11 @@ LABKEY.Query = new function()
 				Function called when the "selectRows" function executes successfully.
 				This function will be called with the following arguments:
 				<ul>
-				    <li>data: an instance of {@link LABKEY.Query.SelectRowsResults}</li>
-				    <li>options: the options used for the AJAX request</li>
-				    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
+				    <li><b>data:</b> Typically, an instance of {@link LABKEY.Query.SelectRowsResults}.  Alternatively, an instance of
+                        {@link LABKEY.Query.ExtendedSelectRowsResults} if config.requiredVersion
+                        is set to "9.1".</li>
+				    <li><b>options:</b> The options used for the AJAX request</li>
+				    <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
 				</ul>
         * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
         *       This function will be called with the following arguments:
@@ -297,7 +299,7 @@ LABKEY.Query = new function()
         *        Use this along with the maxRows config property to request pages of data.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
-        * @param {Double} [config.requiredVersion] Set to 9.1 to receive the ExtendedSelectRowsResults format
+        * @param {Double} [config.requiredVersion] Set this field to "9.1" to receive the {@link LABKEY.Query.ExtendedSelectRowsResults} format
                   instead of the SelectRowsResults format. The main difference is that in the
                   ExtendedSelectRowsResults format each column in each row
                   will be another object (not just a scalar value) with a "value" property as well as other
@@ -623,7 +625,7 @@ LABKEY.Query = new function()
          * Returns the set of views available for a given query in a given schema.
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
-         * @param {String config.queryName the name of the query.
+         * @param {String} config.queryName the name of the query.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -674,7 +676,7 @@ LABKEY.Query = new function()
          * Validates the specified query by ensuring that it parses and executes without an exception.
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
-         * @param {String config.queryName the name of the query.
+         * @param {String} config.queryName the name of the query.
          * @param {Boolean} config.includeAllColumns If set to false, only the columns in the user's default view
          * of the specific query will be tested (defaults to true).
          * @param {function} config.successCallback The function to call when the function finishes successfully.
@@ -738,180 +740,46 @@ LABKEY.Query = new function()
     };
 };
 
-/**
-* @namespace SelectRowsResults static class to describe the first
-            object passed to the successCallback function by
-            {@link LABKEY.Query#selectRows}. This object's properties are useful for
-            matching requests to responses, as HTTP requests are typically
-            processed asynchronously.
-* @property {Object} metaData Contains type and lookup information about the
-            columns in the resultset.
- * @property {String} metaData.root	Name of the property containing rows
-            ("rows"). This is mainly for the Ext grid component.
-* @property {String} metaData.totalProperty	Name of the top-level property
-            containing the row count ("rowCount") in our case. This is mainly
-            for the Ext grid component.
-* @property {Object} metaData.sortInfo	Sort specification in Ext grid terms.
-            This contains two sub-properties, field and direction, which indicate
-            the sort field and direction ("ASC" or "DESC") respectively.
-* @property {String} metaData.id	Name of the primary key column.
-* @property {Object[]} metaData.fields	Array of field information.
-* @property {Object[]} metaData.fields	Array of field information.
-            Each field has the following properties:
-            <ul><li>name -- The name of the field</li>
-            <li>type -- JavaScript type name of the field</li>
-            <li>lookup -- If the field is a lookup, there will
-                be three sub-properties listed under this property:
-                schema, table, and column, which describe the schema, table, and
-                display column of the lookup table (query).</li></ul>
-* @property {String} columnModel Contains information about how one may interact
-            with the columns within a user interface. This format is generated
-            to match the requirements of the Ext grid component. See
-            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
-            Ext.grid.ColumnModel</a> for further information.
-* @property {Object[]} rows An array of rows, each of which is a
-            sub-element/object containing a property per column.
-* @property {Integer} rowCount Indicates the number of total rows that could be
-            returned by the query, which may be more than the number of objects
-            in the rows array if the client supplied a value for the query.maxRows
-            or query.offset parameters. This value is useful for clients that wish
-            to display paging UI, such as the Ext grid.
-* @see LABKEY.Query#selectRows
-*/ LABKEY.Query.SelectRowsResults = new function() {};
+
+
+
 
 /**
-* @namespace ExtendedSelectRowsResults static class to describe the first
-            object passed to the successCallback function by
-            {@link LABKEY.Query#selectRows} if the includeExtendedColumnInfo
-            configuration property was set to true.
-* @property {Object} metaData Contains type and lookup information about the
-            columns in the resultset.
- * @property {String} metaData.root	Name of the property containing rows
-            ("rows"). This is mainly for the Ext grid component.
-* @property {String} metaData.totalProperty	Name of the top-level property
-            containing the row count ("rowCount") in our case. This is mainly
-            for the Ext grid component.
-* @property {Object} metaData.sortInfo	Sort specification in Ext grid terms.
-            This contains two sub-properties, field and direction, which indicate
-            the sort field and direction ("ASC" or "DESC") respectively.
-* @property {String} metaData.id	Name of the primary key column.
-* @property {Object[]} metaData.fields	Array of field information.
-* @property {Object[]} metaData.fields	Array of field information.
-            Each field has the following properties:
-            <ul><li>name -- The name of the field</li>
-            <li>type -- JavaScript type name of the field</li>
-            <li>lookup -- If the field is a lookup, there will
-                be three sub-properties listed under this property:
-                schema, table, and column, which describe the schema, table, and
-                display column of the lookup table (query).</li></ul>
-* @property {String} columnModel Contains information about how one may interact
-            with the columns within a user interface. This format is generated
-            to match the requirements of the Ext grid component. See
-            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
-            Ext.grid.ColumnModel</a> for further information.
-* @property {Object[]} rows An array of rows, each of which is a
-            sub-element/object containing an object per column. The
-            object will always contain a property named "value" that is the
-            column's value, but it may also contain other properties about
-            that column's value. For example, if the column was setup to track
-            missing value information, it will also contain a property named mvValue (which
-            is the raw value that is considered suspect), and a property named
-            mvIndicator, which will be the string MV indicator (e.g., "Q").
-* @property {Integer} rowCount Indicates the number of total rows that could be
-            returned by the query, which may be more than the number of objects
-            in the rows array if the client supplied a value for the query.maxRows
-            or query.offset parameters. This value is useful for clients that wish
-            to display paging UI, such as the Ext grid.
-* @see LABKEY.Query#selectRows
-*/ LABKEY.Query.ExtendedSelectRowsResults = new function() {};
-
-/**
-* @namespace SelectRowsOptions static class to describe
-            the second object passed to the successCallback function by
-            {@link LABKEY.Query#selectRows}.  This object's properties are useful for
-            matching requests to responses, as HTTP requests are typically
-            processed asynchronously.
-* @property {String} schemaName Contains the same schemaName the client passed to the
-            calling function. See <a class="link"
-            href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-            How To Find schemaName, queryName &amp; viewName</a>.
-* @property {String} query.queryName Contains the same queryName the client passed
-            to the calling function. See
-            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-            How To Find schemaName, queryName &amp; viewName</a>.
-* @property {String} query.viewName	Name of a valid custom view for the chosen queryName. See
-            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-            How To Find schemaName, queryName &amp; viewName</a>.
-* @property {Integer} query.offset Row number at which results should begin.
-            Use this with maxRows to get pages of results.
-* @property {String} query.sort	Sort specification. This can be a comma-delimited list of
-            column names, where each column may have an optional dash (-) before the name
-            to indicate a descending sort.
-* @property {Integer} maxRows Maximum number of rows to return
-* @property {String} filters &lt;column-name&gt;~&lt;oper&gt;=&lt;value&gt;
-            Filter specifications, one for each filter you supplied. All filters are combined
-            using AND logic. The list of valid operators:
-            <ul><li>eq = equals</li>
-            <li>neq = not equals</li>
-            <li>gt = greater-than</li>
-            <li>gte = greater-than or equal-to</li>
-            <li>lt = less-than</li>
-            <li>lte = less-than or equal-to</li>
-            <li>dateeq = date equal</li>
-            <li>dateneq = date not equal</li>
-            <li>neqornull = not equal or null</li>
-            <li>isblank = is null</li>
-            <li>isnonblank = is not null</li>
-            <li>contains = contains</li>
-            <li>doesnotcontain = does not contain</li>
-            <li>startswith = starts with</li>
-            <li>doesnotstartwith = does not start with</li>
-            <li>in = equals one of</li></ul>
-* @see LABKEY.Query#selectRows
-*/ LABKEY.Query.SelectRowsOptions = new function() {};
-
-/**
-* @namespace ModifyRowsResults static class to describe
-            the first object passed to the successCallback function
-            by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
-            {@link LABKEY.Query#deleteRows}. This object's properties are useful for
-            matching requests to responses, as HTTP requests are typically
-            processed asynchronously.
-* @property {String} schemaName Contains the same schemaName the client passed to the calling function.
-* @property {String} queryName Contains the same queryName the client passed to the calling function.
-* @property {String} command Will be "update", "insert", or "delete" depending on the API called.
-* @property {Integer} rowsAffected Indicates the number of rows affected by the API action.
-            This will typically be the same number of rows passed in to the calling function.
-* @property {Object[]} rows Array of rows with field values for the rows updated, inserted,
-            or deleted, in the same order as the rows supplied in the request. For insert, the
-            new key value for an auto-increment key will be in the returned row's field values.
-            For insert or update, the other field values may also be different than those supplied
-            as a result of database default expressions, triggers, or LabKey's automatic tracking
-            feature, which automatically adjusts columns of certain names (e.g., Created, CreatedBy,
-            Modified, ModifiedBy, etc.).
-* @example For example:
-<pre name="code" class="xml">
-{  "schemaName": "lists",
-   "queryName": "API Test List"
-   "rowsAffected": 1,
-   "command": "insert",
-   "keys": [3],
-} </pre></code>
-* @see LABKEY.Query#updateRows
-* @see LABKEY.Query#insertRows
-* @see LABKEY.Query#deleteRows
-*/ LABKEY.Query.ModifyRowsResults = new function() {};
-
-/**
-* @namespace ModifyRowsOptions static class to describe
+* @name LABKEY.Query.ModifyRowsOptions
+* @class   ModifyRowsOptions class to describe
             the second object passed to the successCallback function
             by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
             {@link LABKEY.Query#deleteRows}. This object's properties are useful for
             matching requests to responses, as HTTP requests are typically
             processed asynchronously.
-* @property {String} schemaName Contains the same schemaName the client passed to the calling function.
-* @property {String} queryName Contains the same queryName the client passed to the calling function.
-* @property {Object[]} rows Array of row objects that map the names of the row fields to their values.
+  * @see LABKEY.Query#updateRows
+  * @see LABKEY.Query#insertRows
+  * @see LABKEY.Query#deleteRows
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.ModifyRowsOptions#
+* @field
+*/
+
+/**
+* @name   schemaName
+* @description    Contains the same schemaName the client passed to the calling function.
+* @memberOf LABKEY.Query.ModifyRowsOptions#
+* @type         String
+*/
+
+/**
+* @name    queryName
+* @description   Contains the same queryName the client passed to the calling function.
+* @memberOf LABKEY.Query.ModifyRowsOptions#
+* @type     String
+*/
+
+/**
+* @name   LABKEY.Query.ModifyRowsOptions#rows
+* @memberOf LABKEY.Query.ModifyRowsOptions#
+* @description Array of row objects that map the names of the row fields to their values.
             The fields required for inclusion for each row depend on the which LABKEY.Query method you are
             using (updateRows, insertRows or deleteRows).
             <p/>
@@ -958,8 +826,352 @@ LABKEY.Query = new function()
  "rows": [
        {"Key": 3}]
 } </pre></code>
+* @type Object[]
+*/
+
+/**#@-*/
+
+ /**
+* @name LABKEY.Query.ModifyRowsResults
+* @class  ModifyRowsResults class to describe
+            the first object passed to the successCallback function
+            by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
+            {@link LABKEY.Query#deleteRows}. This object's properties are useful for
+            matching requests to responses, as HTTP requests are typically
+            processed asynchronously.
+* @example For example:
+        <pre name="code" class="xml">
+        {  "schemaName": "lists",
+           "queryName": "API Test List"
+           "rowsAffected": 1,
+           "command": "insert",
+           "keys": [3],
+        } </pre></code>
 * @see LABKEY.Query#updateRows
 * @see LABKEY.Query#insertRows
 * @see LABKEY.Query#deleteRows
-*/ LABKEY.Query.ModifyRowsOptions = new function() {};
+*/
 
+/**#@+
+* @memberOf LABKEY.Query.ModifyRowsResults#
+* @field
+*/
+
+/**
+* @name LABKEY.Query.ModifyRowsResults#schemaName
+* @description  Contains the same schemaName the client passed to the calling function.
+* @type  String
+*/
+
+/**
+* @name     LABKEY.Query.ModifyRowsResults#queryName
+* @description  Contains the same queryName the client passed to the calling function.
+* @type     String
+*/
+
+/**
+* @name    command
+* @description   Will be "update", "insert", or "delete" depending on the API called.
+* @type    String
+*/
+
+/**
+* @name  keys
+* @description  The primary keys of the rows that are modified.
+* @type  Integer[]
+*/
+
+/**
+* @name  rowsAffected
+* @description  Indicates the number of rows affected by the API action.
+            This will typically be the same number of rows passed in to the calling function.
+* @type        Integer
+*/
+
+/**
+* @name LABKEY.Query.ModifyRowsResults#rows
+* @description   Array of rows with field values for the rows updated, inserted,
+            or deleted, in the same order as the rows supplied in the request. For insert, the
+            new key value for an auto-increment key will be in the returned row's field values.
+            For insert or update, the other field values may also be different than those supplied
+            as a result of database default expressions, triggers, or LabKey's automatic tracking
+            feature, which automatically adjusts columns of certain names (e.g., Created, CreatedBy,
+            Modified, ModifiedBy, etc.).
+* @type    Object[]
+*/
+
+/**#@-*/
+
+/**
+* @name LABKEY.Query.SelectRowsOptions
+* @class  SelectRowsOptions class to describe
+           the second object passed to the successCallback function by
+           {@link LABKEY.Query#selectRows}.  This object's properties are useful for
+           matching requests to responses, as HTTP requests are typically
+           processed asynchronously.
+* @see LABKEY.Query#selectRows
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.SelectRowsOptions#
+* @field
+*/
+
+/**
+* @name   query.schemaName
+* @description   Contains the same schemaName the client passed to the
+            calling function. See <a class="link"
+            href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            How To Find schemaName, queryName &amp; viewName</a>.
+* @type   String
+*/
+
+/**
+* @name   query.queryName
+* @description   Contains the same queryName the client passed
+            to the calling function. See
+            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            How To Find schemaName, queryName &amp; viewName</a>.
+* @type   String
+*/
+
+/**
+* @name    query.viewName
+* @description 	Name of a valid custom view for the chosen queryName. See
+            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            How To Find schemaName, queryName &amp; viewName</a>.
+* @type    String
+*/
+
+/**
+* @name    query.offset
+* @description  Row number at which results should begin.
+            Use this with maxRows to get pages of results.
+* @type   Integer
+*/
+
+/**
+* @name   query.sort
+* @description	Sort specification. This can be a comma-delimited list of
+            column names, where each column may have an optional dash (-) before the name
+            to indicate a descending sort.
+* @type  String
+*/
+
+/**
+* @name   maxRows
+* @description   Maximum number of rows to return
+* @type     Integer
+*/
+
+/**
+* @name   filters
+* @description   An object whose properties are filter specifications, one for each filter you supplied.
+ *          All filters are combined using AND logic. Each one is of type {@link LABKEY.Filter.FilterDefinition}.
+ *          The list of valid operators:
+            <ul><li><b>eq</b> = equals</li>
+            <li><b>neq</b> = not equals</li>
+            <li><b>gt</b> = greater-than</li>
+            <li><b>gte</b> = greater-than or equal-to</li>
+            <li><b>lt</b> = less-than</li>
+            <li><b>lte</b> = less-than or equal-to</li>
+            <li><b>dateeq</b> = date equal</li>
+            <li><b>dateneq</b> = date not equal</li>
+            <li><b>neqornull</b> = not equal or null</li>
+            <li><b>isblank</b> = is null</li>
+            <li><b>isnonblank</b> = is not null</li>
+            <li><b>contains</b> = contains</li>
+            <li><b>doesnotcontain</b> = does not contain</li>
+            <li><b>startswith</b> = starts with</li>
+            <li><b>doesnotstartwith</b> = does not start with</li>
+            <li><b>in</b> = equals one of</li></ul>
+* @type    Object
+*/
+
+/**#@-*/
+
+/**
+* @name LABKEY.Query.SelectRowsResults
+* @class  SelectRowsResults class to describe the first
+            object passed to the successCallback function by
+            {@link LABKEY.Query#selectRows}. This object's properties are useful for
+            matching requests to responses, as HTTP requests are typically
+            processed asynchronously.
+* @see LABKEY.Query#selectRows
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.SelectRowsResults#
+* @field
+*/
+
+/**
+* @name    metaData
+* @description Contains type and lookup information about the columns in the resultset.
+* @type    Object
+*/
+
+/**
+* @name    metaData.root
+* @description 	Name of the property containing rows ("rows"). This is mainly for the Ext grid component.
+* @type     String
+*/
+
+/**
+* @name    metaData.totalProperty
+* @description 	Name of the top-level property
+            containing the row count ("rowCount") in our case. This is mainly
+            for the Ext grid component.
+* @type   String
+*/
+
+/**
+* @name   metaData.sortInfo
+* @description  Sort specification in Ext grid terms.
+            This contains two sub-properties, field and direction, which indicate
+            the sort field and direction ("ASC" or "DESC") respectively.
+* @type   Object
+*/
+
+/**
+* @name    metaData.id
+* @description  Name of the primary key column.
+* @type     String
+*/
+
+/**
+* @name    metaData.fields
+* @description	Array of field information.
+            Each field has the following properties:
+            <ul><li>name -- The name of the field</li>
+            <li>type -- JavaScript type name of the field</li>
+            <li>lookup -- If the field is a lookup, there will
+                be three sub-properties listed under this property:
+                schema, table, and column, which describe the schema, table, and
+                display column of the lookup table (query).</li></ul>
+* @type    Object[]
+*/
+
+/**
+* @name    columnModel
+* @description   Contains information about how one may interact
+            with the columns within a user interface. This format is generated
+            to match the requirements of the Ext grid component. See
+            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
+            Ext.grid.ColumnModel</a> for further information.
+* @type  String
+*/
+
+/**
+* @name   rows
+* @description    An array of rows, each of which is a
+            sub-element/object containing a property per column.
+* @type   Object[]
+*/
+
+/**
+* @name rowCount
+* @description Indicates the number of total rows that could be
+            returned by the query, which may be more than the number of objects
+            in the rows array if the client supplied a value for the query.maxRows
+            or query.offset parameters. This value is useful for clients that wish
+            to display paging UI, such as the Ext grid.
+* @type   Integer
+*/
+
+/**#@-*/
+
+ /**
+* @name LABKEY.Query.ExtendedSelectRowsResults
+* @class  ExtendedSelectRowsResults class to describe the first
+            object passed to the successCallback function by
+            {@link LABKEY.Query#selectRows} if config.requiredVersion is set to "9.1".
+* @see LABKEY.Query#selectRows
+ */
+
+/**#@+
+* @memberOf LABKEY.Query.ExtendedSelectRowsResults#
+* @field
+*/
+
+/**
+* @name    LABKEY.Query.ExtendedSelectRowsResults#metaData
+* @description Contains type and lookup information about the columns in the resultset.
+* @type    Object
+*/
+
+/**
+* @name    LABKEY.Query.ExtendedSelectRowsResults#metaData.root
+* @description 	Name of the property containing rows ("rows"). This is mainly for the Ext grid component.
+* @type     String
+*/
+
+/**
+* @name    LABKEY.Query.ExtendedSelectRowsResults#metaData.totalProperty
+* @description 	Name of the top-level property
+            containing the row count ("rowCount") in our case. This is mainly
+            for the Ext grid component.
+* @type   String
+*/
+
+/**
+* @name   LABKEY.Query.ExtendedSelectRowsResults#metaData.sortInfo
+* @description  Sort specification in Ext grid terms.
+            This contains two sub-properties, field and direction, which indicate
+            the sort field and direction ("ASC" or "DESC") respectively.
+* @type   Object
+*/
+
+/**
+* @name    LABKEY.Query.ExtendedSelectRowsResults#metaData.id
+* @description  Name of the primary key column.
+* @type     String
+*/
+
+/**
+* @name    LABKEY.Query.ExtendedSelectRowsResults#metaData.fields
+* @description	Array of field information.
+            Each field has the following properties:
+            <ul><li>name -- The name of the field</li>
+            <li>type -- JavaScript type name of the field</li>
+            <li>lookup -- If the field is a lookup, there will
+                be three sub-properties listed under this property:
+                schema, table, and column, which describe the schema, table, and
+                display column of the lookup table (query).</li></ul>
+* @type    Object[]
+*/
+
+/**
+* @name    LABKEY.Query.ExtendedSelectRowsResults#columnModel
+* @description   Contains information about how one may interact
+            with the columns within a user interface. This format is generated
+            to match the requirements of the Ext grid component. See
+            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
+            Ext.grid.ColumnModel</a> for further information.
+* @type  String
+*/
+
+/**
+* @name   LABKEY.Query.ExtendedSelectRowsResults#rows
+* @description    An array of rows, each of which is a
+            sub-element/object containing an object per column. The
+            object will always contain a property named "value" that is the
+            column's value, but it may also contain other properties about
+            that column's value. For example, if the column was setup to track
+            missing value information, it will also contain a property named mvValue (which
+            is the raw value that is considered suspect), and a property named
+            mvIndicator, which will be the string MV indicator (e.g., "Q").
+* @type   Object[]
+*/
+
+/**
+* @name LABKEY.Query.ExtendedSelectRowsResults#rowCount
+* @description Indicates the number of total rows that could be
+            returned by the query, which may be more than the number of objects
+            in the rows array if the client supplied a value for the query.maxRows
+            or query.offset parameters. This value is useful for clients who wish
+            to display paging UI, such as the Ext grid.
+* @type   Integer
+*/
+
+/**#@-*/

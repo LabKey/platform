@@ -295,42 +295,78 @@ LABKEY.Assay = new function()
     };
 };
 
-/**
-* @namespace AssayDesign static class to describe the shape and fields of an assay.  Each of the {@link LABKEY.Assay}
-            'get' methods passes its success callback function an array of AssayDesigns.
-* @property {String} name String name of the assay.
-* @property {Integer} id Unique integer ID for the assay.
-* @property {String} type String name of the assay type.  Example:  "ELISpot"
-* @property {Bool} projectLevel Boolean indicating whether this is a project-level assay.
-* @property {String} description String containing the assay description.
-* @property {String} plateTemplate String containing the plate template name if the
-            assay is plate based.  Undefined otherwise.
-* @property {Object} domains Object mapping from String domain name to an array of
-       {@link LABKEY.Assay.DomainFieldObject}s.
-*/
-LABKEY.Assay.AssayDesign = new function() {};
 
 /**
- * @namespace DomainFieldObject static class to describe a domain field for an assay.  See also {@link LABKEY.Assay} and
-             {@link LABKEY.Assay.AssayDesign}.
- * @property {String} name String name of the domain field.
- * @property {String} typeName String name of the type of the domain field. (Human readable.)
- * @property {String} typeURI String URI uniquely identifying the domain field type.
-           (Not human readable.)
- * @property {String} label String domain field label.
- * @property {String} description String domain field description.
- * @property {String} formatString String format string applied to the domain field.
- * @property {Bool} required Boolean indicating whether a value is required for this domain field.
- *
- * @property {String} lookup.container If this domain field is a lookup, lookupContainer holds the
-            String path to the lookup container or null if the lookup in the
-            same container.  Undefined otherwise.
- * @property {String} lookup.schema If this domain field object is a lookup, lookupSchema holds the
-           String name of the lookup schema.  Undefined otherwise.
- * @property {String} lookup.table If this domain field object is a lookup, lookupQuery holds the String
-           name of the lookup query.  Undefined otherwise.
- * @property {String} lookup.keyColumn primary key field in target table
- * @property {String} lookup.displayColumn display column in target table
- */
-LABKEY.Assay.DomainFieldObject = new function() {};
+* @name LABKEY.Assay.AssayDesign
+* @class  Static class to describe the shape and fields of an assay.  Each of the {@link LABKEY.Assay}
+            'get' methods passes its success callback function an array of AssayDesigns.
+*/
+
+/**#@+
+* @memberOf LABKEY.Assay.AssayDesign#
+* @field
+*/
+
+/**
+* @name name
+* @description   The name of the assay.
+* @type String
+*/
+
+/**
+* @name id
+* @description The unique ID of the assay.
+* @type Integer
+*/
+
+/**
+* @name type
+* @description The name of the assay type.  Example:  "ELISpot"
+* @type String
+*/
+
+/**
+* @name projectLevel
+* @description  Indicates whether this is a project-level assay.
+* @type Boolean
+*/
+
+/**
+* @name description
+* @description  Contains the assay description.
+* @type String
+*/
+
+/**
+* @name plateTemplate
+* @description  Contains the plate template name if the assay is plate-based.  Undefined otherwise.
+* @type String
+*/
+
+/**
+* @name domains
+* @description Map containing name/value pairs.  Typically contains three entries (batch, run and results).
+  * Each one is associated with an array, where the elements in the array have the following properties
+  *        <ul>
+  *           <li><b>name: </b>The name of the domain field. (string)</li>
+  *           <li><b>typeName: </b> The name of the type of the domain field. (Human readable.) (string)</li>
+  *           <li><b>typeURI: </b> The URI that uniquely identifies the domain field type. (Not human readable.) (string)</li>
+  *           <li><b>label: </b> The domain field label. (string)</li>
+  *           <li><b>description: </b> The domain field description. (string)</li>
+  *           <li><b>formatString: </b> The format string applied to the domain field. (string)</li>
+  *           <li><b>required: </b> Indicates whether a value is required for this domain field. (boolean)</li>
+  *           <li><b>lookup.container: </b> If this domain field is a lookup, lookupContainer holds the
+             String path to the lookup container or null if the lookup in the
+             same container.  Undefined otherwise.(string)</li>
+  *           <li><b>lookup.schema: </b> If this domain field object is a lookup, lookupSchema holds the
+            String name of the lookup schema.  Undefined otherwise.(string)</li>
+  *           <li><b>lookup.table: </b> If this domain field object is a lookup, lookupTable holds the String
+            name of the lookup query.  Undefined otherwise. (string)</li>
+  *           <li><b>lookup.keyColumn: </b> The primary key field in target table (string)</li>
+  *           <li><b>lookup.displayColumn: </b>The display column in target table (string)</li>
+  *       </ul>
+* @type Object
+*/
+
+/**#@-*/
 

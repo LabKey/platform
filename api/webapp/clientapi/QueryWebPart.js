@@ -106,7 +106,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         this.filters = this.filters || this.filterArray;
 
         /**
-         * @memberOf LABKEY.QueryWebPart
+         * @memberOf LABKEY.QueryWebPart#
          * @name render
          * @event
          * @description Fired after the web part html is rendered into the page.
@@ -126,7 +126,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
      * passing the id of the element in which you want the part rendered
      * @name render
      * @function
-     * @memberOf LABKEY.QueryWebPart
+     * @memberOf LABKEY.QueryWebPart#
      * @param renderTo The id of the element in which you want the part rendered.
      */
     render : function(renderTo) {

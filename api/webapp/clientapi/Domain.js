@@ -55,8 +55,33 @@ LABKEY.Domain = new function()
 	/**
 	* Gets a domain design.
 	* @param {Function} successCallback Required. Function called if the
-			"get" function executes successfully.  Will be called with the argument:
-			{@link LABKEY.Domain.DomainDesign}.
+	*	"get" function executes successfully.  This function will be passed the following parameters,
+    *    which describe the shape and fields of a domain:
+    * <ul>
+    * <li><b>domainId:</b> The uinque ID of this domain. (integer)</li>
+    * <li><b>name:</b> The name of this domain. (string) </li>
+    * <li><b>domainURI:</b> The URI of this domain. (string)</li>
+    * <li><b>description:</b> The description of this domain. (string)</li>
+    * <li><b>fields:</b> An array of objects that each describe a domain field.  Each object has the following fields:
+    *      <ul>
+    *          <li><b>propertyId:</b> The unique ID of this property. (integer)</li>
+    *          <li><b>propertyURI:</b> The URI of this property. (string)</li>
+    *          <li><b>ontologyURI:</b> The URI of the ontology this property belongs to. (string)</li>
+    *          <li><b>name:</b> The name of this property. (string)</li>
+    *          <li><b>description:</b> The description of this property (may be blank). (string)</li>
+    *          <li><b>rangeURI:</b> The URI for this property's range definition. (string)</li>
+    *          <li><b>conceptURI:</b> The URI of this property's concept. (string)</li>
+    *          <li><b>label:</b> The friendly label for this property. (string)</li>
+    *          <li><b>searchTerms:</b> The search terms for this property. (string)</li>
+    *          <li><b>semanticType:</b> The semantic type of this property. (string)</li>
+    *          <li><b>format:</b> The format string defined for this property. (string)</li>
+    *          <li><b>required:</b> Indicates whether this field is required to have a value (i.e. cannot be null). (boolean)</li>
+    *          <li><b>lookupContainer:</b> If this domain field is a lookup, this holds the container in which to look. (string)</li>
+    *          <li><b>lookupSchema:</b> If this domain field is a lookup, this holds the schema in which to look. (string)</li>
+    *          <li><b>lookupQuery:</b> if this domain field is a lookup, this holds the query in which to look. (string)</li>
+    *      </ul>
+    * </li>
+    * </ul>
 	* @param {Function} [failureCallback] Function called if execution of the "get" function fails.
 	* @param {String} schemaName Name of the schema
 	* @param {String} queryName Name of the query
@@ -120,35 +145,3 @@ LABKEY.Domain = new function()
 
 
 };
-
-/**
-* @namespace DomainDesign static class to describe the shape and fields of a domain.  The {@link LABKEY.Domain}
-            'get' method passes its success callback function a DomainDesign.
-* @property {Integer} domainId The uinque ID of this domain.
-* @property {String} name  The name of this domain.
-* @property {String} domainURI The URI of this domain.
-* @property {String} description The description of this domain.
-* @property {Object[]} fields An array of {@link LABKEY.Domain.DomainFieldObject}s.
-*/
-LABKEY.Domain.DomainDesign = new function() {};
-
-/**
-* @namespace DomainFieldObject static class to describe a domain field for a domain.  See also {@link LABKEY.Domain} and
-            {@link LABKEY.Domain.DomainDesign}.
-* @property {Integer} propertyId The unique ID of this property.
-* @property {String} propertyURI The URI of this property.
-* @property {String} ontologyURI The URI of the ontology this property belongs to.
-* @property {String} name The name of this property.
-* @property {String} description The description of this property (may be blank).
-* @property {String} rangeURI The URI for this property's range definition.
-* @property {String} conceptURI The URI of this property's concept.
-* @property {String} label The friendly label for this property.
-* @property {String} searchTerms The search terms for this property.
-* @property {String} semanticType The semantic type of this property.
-* @property {String} format The format string defined for this property.
-* @property {Boolean} required indicates if this field is required to have a value (i.e. cannot be null)
-* @property {String} lookupContainer If this domain field is a lookup, this holds the container in which to look
-* @property {String} lookupSchema If this domain field is a lookup, this holds the schema in which to look
-* @property {String} lookupQuery if this domain field is a lookup, this holds the query in which to look
-*/
-LABKEY.Domain.DomainFieldObject = new function() {};

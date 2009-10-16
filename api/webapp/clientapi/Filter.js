@@ -135,28 +135,32 @@ LABKEY.Filter = new function()
 };
 
 /**
-* @namespace FilterDefinition static class to define the functions that describe how a particular
-            type of filter is identified and operates.  See {@link LABKEY.Filter}.
-*/ LABKEY.Filter.FilterDefinition = new function() {};
+* @name LABKEY.Filter.FilterDefinition
+* @description static class to define the functions that describe how a particular
+*            type of filter is identified and operates.  See {@link LABKEY.Filter}.
+* @class
+*/
+
+/**#@+
+ * @methodOf LABKEY.Filter.FilterDefinition#
+*/
 
 /**
 * Get the Boolean that indicates whether a data value is required.
 * @name getDisplayText
-* @methodOf LABKEY.Filter.FilterDefinition
 * @type String
 */
 
 /**
 * Get the string displayed for this filter.
 * @name getURLSuffix
-* @methodOf LABKEY.Filter.FilterDefinition
 * @type String
 */
 
 /**
 * Get the ULR suffix used to identify this filter.
 * @name isDataValueRequired
-* @methodOf LABKEY.Filter.FilterDefinition
 * @type Boolean
 */
 
+/**#@-*/

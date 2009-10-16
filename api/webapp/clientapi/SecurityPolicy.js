@@ -64,7 +64,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
         this._dirty = false;
 
         /**
-         * @memberOf LABKEY.SecurityPolicy
+         * @memberOf LABKEY.SecurityPolicy#
          * @name change
          * @event
          * @description Fired after the policy has been changed in some way.
@@ -81,7 +81,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * the ID of the nearest resource that has an policy associated with it.
      * @name getResourceId
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @returns The resource ID for this policy.
      */
     getResourceId : function()
@@ -93,7 +93,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Returns true if this policy is empty (i.e., has no role assignments).
      * @name isEmpty
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @returns true if this policy is empty, false otherwise.
      */
     isEmpty : function()
@@ -105,7 +105,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Returns true if this policy was inherited from an ancestor resource (see getResourceId())
      * @name isInherited
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @returns true if this policy was inherited, false otherwise.
      */
     isInherited : function()
@@ -117,7 +117,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Returns the array of roles to which the given principal is directly assigned.
      * @name getAssignedRoles
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The ID of the principal.
      * @returns An array of role unique names.
      */
@@ -138,7 +138,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Returns an array of principal IDs that are directly assigned to a given role.
      * @name getAssignedPrincipals
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param role The unique name of the role
      * @returns An array of principal IDs
      */
@@ -159,7 +159,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Adds a direct role assignment to the policy.
      * @name addRoleAssignment
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The principal ID
      * @param role The role unique name
      */
@@ -186,7 +186,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Removes a direct role assignment from the policy.
      * @name removeRoleAssignment
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The principal ID
      * @param role The role unique name
      */
@@ -211,7 +211,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Removes all direct role assignments for the given principal
      * @name clearRoleAssignments
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The principal ID
      */
     clearRoleAssignments : function(principalId)
@@ -243,7 +243,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * in the class description for the distinction between effective and direct assignment.
      * @name getEffectiveRoles
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The principal ID
      * @param membershipsTable The group memberships table. This is requried to determine the groups
      * the principal belongs to. You can obtain this table by requesting the 'Members' table from the 'Core'
@@ -263,7 +263,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Thus, the returned object is essentially a Set.
      * @name getEffectiveRolesForIds
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param ids An array of principal IDs
      * @returns An object with a property per unique role name the users are effectively playing.
      */
@@ -293,7 +293,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * that groups may contain other groups.
      * @name getGroupsForPrincipal
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param principalId The principal
      * @param membershipsTable The group memberships table. This is requried to determine the groups
      * the principal belongs to. You can obtain this table by requesting the 'Members' table from the 'Core'
@@ -322,7 +322,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * check and force the policy to save, even if another user modified it since it was selected.
      * @name setModified
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param modified New modified value, or null to override optimistic concurrency check.
      */
     setModified : function(modified)
@@ -336,7 +336,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Returns true if this policy has been modified.
      * @name isDirty
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @returns true if modified, false otherwise.
      */
     isDirty : function()
@@ -348,7 +348,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
      * Creates a new copy of this policy, optionally resetting the resource ID.
      * @name copy
      * @function
-     * @memberOf LABKEY.SecurityPolicy
+     * @memberOf LABKEY.SecurityPolicy#
      * @param resourceid A different resource ID to use. This is typically used when you
      * want to create a new policy for a resource using the policy from another resource as a template.
      * @returns A new instance of this class which is a deep copy of the current instance.

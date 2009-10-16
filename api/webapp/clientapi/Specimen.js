@@ -304,65 +304,258 @@ LABKEY.Specimen = new function()
     };
 };
 
-/**
-* @namespace Location static class to describe the shape and fields of a specimen location.
-*
-* @property {Boolean} endpoint Whether this location is an endpoint lab.  May be null if unspecified.
-* @property {String} entityId An entity Id uniquely identifying this location.
-* @property {String} label The display name for this location.
-* @property {String} labUploadCode The location upload code. May be null if unspecified.
-* @property {String} labwareLabCode The labware location code. May be null if unspecified.
-* @property {String} ldmsLabCode  The LDMS location code. May be null if unspecified.
-* @property {Boolean} repository Whether this location is a repository. May be null if unspecified.
-* @property {int} rowId An integer uniquely identifying this location.
-* @property {Boolean} SAL Whether this location is a Site Affiliated Laboratory.  May be null if unspecified.
-* @property {Boolean} clinic Whether this location is a clinic.  May be null if unspecified.
-* @property {int} externalId The unique identifier for locations imported from an external database of record.  May be null.
+ /**
+* @name LABKEY.Specimen.Location
+* @class   Location class to describe the shape and fields of a specimen location.
 */
-LABKEY.Specimen.Location = new function() {};
+
+/**#@+
+* @memberOf LABKEY.Specimen.Location#
+* @field
+*/
 
 /**
-* @namespace Request static class to describe the shape and fields of a specimen request.
+* @name    endpoint
+* @description   Whether this location is an endpoint lab.  May be null if unspecified.
+* @type       Boolean
+*/
+
+/**
+* @name        entityId
+* @description    An entity Id uniquely identifying this location.
+* @type        String
+*/
+
+/**
+* @name        label
+* @description   The display name for this location.
+* @type        String
+*/
+
+/**
+* @name          labUploadCode
+* @description    The location upload code. May be null if unspecified.
+* @type      String
+*/
+
+/**
+* @name    labwareLabCode
+* @description    The labware location code. May be null if unspecified.
+* @type       String
+*/
+
+/**
+* @name       ldmsLabCode
+* @description    The LDMS location code. May be null if unspecified.
+* @type         String
+*/
+
+/**
+* @name        repository
+* @description  Whether this location is a repository. May be null if unspecified.
+* @type       Boolean
+*/
+
+/**
+* @name      rowId
+* @description   An integer uniquely identifying this location.
+* @type   Integer
+*/
+
+/**
+* @name   SAL
+* @description  Whether this location is a Site Affiliated Laboratory.  May be null if unspecified.
+* @type     Boolean
+*/
+
+/**
+* @name   clinic
+* @description  Whether this location is a clinic.  May be null if unspecified.
+* @type    Boolean
+*/
+
+/**
+* @name     externalId
+* @description  The unique identifier for locations imported from an external database of record.  May be null.
+* @type    Integer
+*/
+
+/**#@-*/
+
+ /**
+* @name LABKEY.Specimen.Request
+* @class   Request class to describe the shape and fields of a specimen request.
 * @see LABKEY.Specimen.Location
 * @see LABKEY.Specimen.Vial
-*
-* @property {int} requestId The unique ID for this request.
-* @property {String} comments All comments associated with this request.
-* @property {Date} created The date and time that this request was created.
-* @property {int} createdBy The user Id of the user that created this request.
-* @property {Object} createdBy An object describing the user that created this request.  This object has two properties:
-*          <ul>
-*              <li>userId: the user's id</li>
-*              <li>displayName: the user's display name</li>
-*          </ul>
-* @property {Object} destination An object of type Location indicating which location that will receive the requested vials.
-* @property {int} statusId The unique identifier of the request's current status.
-* @property {String} status  The string label of the request's current status.
-* @property {Object} vials An array of objects of type Vial, indicating which vials are part of this request.
 */
-LABKEY.Specimen.Request = new function() {};
+
+/**#@+
+* @memberOf LABKEY.Specimen.Request#
+* @field
+*/
 
 /**
-* @namespace Vial static class to describe the shape and fields of a specimen vial.
+* @name      requestId
+* @description   The unique ID for this request.
+* @type            Integer
+*/
+
+/**
+* @name      comments
+* @description    All comments associated with this request.
+* @type       String
+*/
+
+/**
+* @name            created
+* @description   The date and time that this request was created.
+* @type        Date
+*/
+
+/**
+* @name  createdBy
+* @description  An object describing the user that created this request.  This object has two properties:
+*          <ul>
+*              <li><b>userId:</b> The user's ID</li>
+*              <li><b>displayName:</b> The user's display name</li>
+*          </ul>
+* @type      Object
+*/
+
+/**
+* @name         destination
+* @description   Indicates which location that will receive the requested vials.
+* @type         LABKEY.Specimen.Location
+*/
+
+/**
+* @name       statusId
+* @description   The unique identifier of the request's current status.
+* @type        Integer
+*/
+
+/**
+* @name          status
+* @description   The string label of the request's current status.
+* @type      String
+*/
+
+/**
+* @name  vials
+* @description  An array of objects of type {@link LABKEY.Specimen.Vial}, indicating which vials are part of this request.
+* @type     Object
+*/
+
+/**#@-*/
+
+
+
+ /**
+* @name LABKEY.Specimen.Vial
+* @class  Vial class to describe the shape and fields of a specimen vial.
 * @see LABKEY.Specimen.Location
-*
-* @property {String} globalUniqueId The global unique ID of this vial
- * @property {int} rowId The unique database Row ID of this vial
-* @property {String} ptid The ID of the participant providing this vial.
-* @property {Double} visitValue The visit value at which this specimen was collected.
-* @property {int} primaryTypeId The unique integer identifier of this vial's primary specimen type.
-* @property {String} primaryType The string label of this vial's primary specimen type.
-* @property {int} derivativeTypeId The unique integer identifier of this vial's derivative type.
-* @property {String} derivativeType The string label of this vial's derivative type.
-* @property {int} additiveTypeId The unique integer identifier of this vial's additive type.
-* @property {String} additiveType The string label of this vial's additive type.
-* @property {Object} currentLocation A Location object indicating this vial's current location.
-* @property {Object} originatingLocation A Location object indicating this vial's originating location.
- * @property {String} subAdditiveDerivative A string label of this vial's sub-additive/derivative type.
- * @property {String} specimenHash A string hash code uniquely identifying this vial's ptid, visit, and type information.
- * This value can be used to group vials into primary specimen draws.
-* @property {Double} volume The volume of this vial.
-* @property {String} volumeUnits The volume units for this vial.
- *
- */
-LABKEY.Specimen.Vial = new function() {};
+*/
+
+/**#@+
+* @memberOf LABKEY.Specimen.Vial#
+* @field
+*/
+
+/**
+* @name  globalUniqueId
+* @description  The global unique ID of this vial
+* @type  String
+*/
+
+/**
+* @name rowId
+* @description  The unique database Row ID of this vial
+* @type Integer
+*/
+
+/**
+* @name ptid
+* @description  The ID of the participant providing this vial.
+* @type String
+*/
+
+/**
+* @name visitValue
+* @description  The visit value at which this specimen was collected.
+* @type Double
+*/
+
+/**
+* @name primaryTypeId
+* @description  The unique identifier of this vial's primary specimen type.
+* @type Integer
+*/
+
+/**
+* @name primaryType
+* @description   The label of this vial's primary specimen type.
+* @type  String
+*/
+
+/**
+* @name        derivativeTypeId
+* @description  The unique identifier of this vial's derivative type.
+* @type      Integer
+*/
+
+/**
+* @name  derivativeType
+* @description   The label of this vial's derivative type.
+* @type     String
+*/
+
+/**
+* @name        additiveTypeId
+* @description     The unique identifier of this vial's additive type.
+* @type       Integer
+*/
+
+/**
+* @name   additiveType
+* @description   The label of this vial's additive type.
+* @type      String
+*/
+
+/**
+* @name currentLocation
+* @description  A {@link LABKEY.Specimen.Location} object indicating this vial's current location.
+* @type    LABKEY.Specimen.Location
+*/
+
+/**
+* @name     originatingLocation
+* @description   A {@link LABKEY.Specimen.Location} object indicating this vial's originating location.
+* @type         LABKEY.Specimen.Location
+*/
+
+/**
+* @name        subAdditiveDerivative
+* @description    A label of this vial's sub-additive/derivative type.
+* @type         String
+*/
+
+/**
+* @name       specimenHash
+* @description    A  hash code uniquely identifying this vial's ptid, visit, and type information.
+*                 This value can be used to group vials into primary specimen draws.
+* @type         String
+*/
+
+/**
+* @name         volume
+* @description    The volume of this vial.
+* @type       Double
+*/
+
+/**
+* @name      volumeUnits
+* @description   The volume units for this vial.
+* @type      String
+*/
+
+/**#@-*/
