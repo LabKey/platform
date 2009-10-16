@@ -746,6 +746,7 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
+    /** Get typed value or string value if form type conversion failed. */
     protected Object getInputValue(RenderContext ctx)
     {
         ColumnInfo col = getColumnInfo();
@@ -754,9 +755,14 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (col != null)
         {
-            String formFieldName = ctx.getForm().getFormFieldName(col);
-            if (null != viewForm && viewForm.getStrings().containsKey(formFieldName))
-                val = viewForm.getTypedValue(formFieldName);
+            if (null != viewForm && viewForm.contains(col))
+            {
+                String formFieldName = viewForm.getFormFieldName(col);
+                if (viewForm.hasTypedValue(formFieldName))
+                    val = viewForm.getTypedValue(formFieldName);
+                else
+                    val = viewForm.get(formFieldName);
+            }
             else if (ctx.getRow() != null)
                 val = col.getValue(ctx);
         }

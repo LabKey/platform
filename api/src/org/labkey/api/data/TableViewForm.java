@@ -416,6 +416,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return getTypedValues().get(getFormFieldName(column));
     }
 
+    public boolean hasTypedValue(String propName)
+    {
+        return getTypedValues().containsKey(propName);
+    }
+
     public boolean hasTypedValue(ColumnInfo column)
     {
         return getTypedValues().containsKey(getFormFieldName(column));
@@ -494,6 +499,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _stringValues;
     }
 
+    public boolean contains(ColumnInfo col)
+    {
+        return _stringValues.containsKey(getFormFieldName(col));
+    }
 
     public Object get(String arg0)
     {
