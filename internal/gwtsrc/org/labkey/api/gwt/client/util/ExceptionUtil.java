@@ -17,6 +17,7 @@
 package org.labkey.api.gwt.client.util;
 
 import com.google.gwt.user.client.rpc.SerializableException;
+import com.google.gwt.user.client.rpc.StatusCodeException;
 import com.google.gwt.user.client.Window;
 
 /**
@@ -37,6 +38,16 @@ public class ExceptionUtil
 
     public static void showDialog(Throwable caught)
     {
+        if (caught instanceof StatusCodeException)
+        {
+            StatusCodeException sce = (StatusCodeException)caught;
+            if (sce.getStatusCode() == 401)
+            {
+                Window.alert("You do not have permission to perform this operation. Your session may have timed out.");
+                return;
+            }
+        }
+
         Window.alert("There was an error making a request from the server: " + caught);
     }
 }

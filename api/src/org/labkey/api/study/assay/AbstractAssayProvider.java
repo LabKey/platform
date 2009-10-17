@@ -124,7 +124,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         pd = addProperty(study, "RunCreatedOn", run.getCreated(), dataMap, types);
         setStandardPropertyAttributes(runTable.getColumn("Created"), pd);
         User createdBy = run.getCreatedBy();
-        pd = addProperty(study, "RunCreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, types);
+        pd = addProperty(study, "RunCreatedBy", createdBy == null ? null : createdBy.getUserId(), dataMap, types);
+        pd.setLookupQuery("users");
+        pd.setLookupSchema("core");
         setStandardPropertyAttributes(runTable.getColumn("CreatedBy"), pd);
 
         Map<String, Object> runProperties = context.getProperties(run);
