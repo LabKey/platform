@@ -102,6 +102,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "queries", new ActionURL(QueriesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
@@ -2020,6 +2021,40 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Spring Actions", this.getClass());
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class QueriesAction extends SimpleViewAction<QueriesForm>
+    {
+        public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
+        {
+            return QueryProfiler.getReportView(form.getStat(), new QueryProfiler.ActionURLFactory() {
+                public ActionURL getActionURL(String name)
+                {
+                    return new ActionURL(QueriesAction.class, getContainer()).addParameter("stat", name);
+                }
+            });
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Queries", this.getClass());
+        }
+    }
+
+    public static class QueriesForm
+    {
+        private String _stat = "Invocations";
+
+        public String getStat()
+        {
+            return _stat;
+        }
+
+        public void setStat(String stat)
+        {
+            _stat = stat;
         }
     }
 
