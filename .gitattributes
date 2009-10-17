@@ -168,6 +168,7 @@ api/src/org/labkey/api/data/Ownable.java -text
 api/src/org/labkey/api/data/Parameter.java -text
 api/src/org/labkey/api/data/PkFilter.java -text
 api/src/org/labkey/api/data/Project.java -text
+api/src/org/labkey/api/data/QueryProfiler.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/ResultSetMetaDataImpl.java -text
 api/src/org/labkey/api/data/RuntimeSQLException.java -text

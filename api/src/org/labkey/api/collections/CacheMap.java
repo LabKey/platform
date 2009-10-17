@@ -19,7 +19,7 @@ import java.util.*;
 
 
 /**
- * This is bascially like SequencedHashMap
+ * This is basically like SequencedHashMap
  * <p/>
  * It is designed to be efficient like LinkedHashMap, but subclassable like
  * SequencedHashMap.

@@ -875,7 +875,7 @@ public class Table
         StringBuilder valueSQL = new StringBuilder();
         ArrayList<Object> parameters = new ArrayList<Object>();
         ColumnInfo autoIncColumn = null;
-        char chComma = ' ';
+        String comma = "";
 
         //noinspection unchecked
         Map<String, Object> fields = fieldsIn instanceof Map ?
@@ -895,9 +895,9 @@ public class Table
                 continue;
 
             Object value = fields.get(column.getName());
-            columnSQL.append(chComma);
+            columnSQL.append(comma);
             columnSQL.append(column.getSelectName());
-            valueSQL.append(chComma);
+            valueSQL.append(comma);
             if (null == value || value instanceof String && 0 == ((String) value).length())
                 valueSQL.append("NULL");
             else
@@ -905,10 +905,10 @@ public class Table
                 valueSQL.append('?');
                 parameters.add(value);
             }
-            chComma = ',';
+            comma = ", ";
         }
 
-        if (chComma == ' ')
+        if (comma.length() == 0)
         {
             // NO COLUMNS TO INSERT
             throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + String.valueOf(fieldsIn));
@@ -988,7 +988,7 @@ public class Table
         StringBuilder whereSQL = new StringBuilder();
         ArrayList<Object> parametersSet = new ArrayList<Object>();
         ArrayList<Object> parametersWhere = new ArrayList<Object>();
-        char chComma = ' ';
+        String comma = "";
         String whereAND = "WHERE ";
 
         // NOTE: no multi-column primary keys?
@@ -1027,7 +1027,7 @@ public class Table
                 continue;
 
             Object value = fields.get(column.getName());
-            setSQL.append(chComma);
+            setSQL.append(comma);
             setSQL.append(column.getSelectName());
             if (null == value || value instanceof String && 0 == ((String) value).length())
                 setSQL.append("=NULL");
@@ -1036,7 +1036,7 @@ public class Table
                 parametersSet.add(value);
             }
 
-            chComma = ',';
+            comma = ", ";
         }
 
         // UNDONE: reselect

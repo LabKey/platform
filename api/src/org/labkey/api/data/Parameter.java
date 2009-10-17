@@ -45,9 +45,8 @@ import java.util.GregorianCalendar;
 
 public class Parameter
 {
-    final int _sqlType;
-    final Object _value;
-    SqlDialect _dialect = null;
+    private final int _sqlType;
+    private final Object _value;
 
     public Parameter(Object value)
     {

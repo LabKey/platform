@@ -1483,9 +1483,11 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     private void _logStatement(String sql, Exception x)
     {
+        long elapsed = System.currentTimeMillis() - _msStart;
+        assert QueryProfiler.track(sql, elapsed);
+
         if (!_log.isEnabledFor(Priority.DEBUG))
             return;
-        long ms = System.currentTimeMillis() - _msStart;
 
         StringBuilder logEntry = new StringBuilder(sql.length() * 2);
         logEntry.append("SQL ");
@@ -1494,7 +1496,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         if (sid != null)
             logEntry.append(" [").append(sid).append("]");
         if (_msStart != 0)
-            logEntry.append(" time ").append(DateUtil.formatDuration(ms));
+            logEntry.append(" time ").append(DateUtil.formatDuration(elapsed));
 
         logEntry.append("\n    ");
         logEntry.append(sql.trim().replace("\n", "\n    "));
