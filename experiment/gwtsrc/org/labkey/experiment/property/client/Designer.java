@@ -29,6 +29,7 @@ import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.util.ExceptionUtil;
 import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
@@ -195,7 +196,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         {
             public void onFailure(Throwable caught)
             {
-                Window.alert(caught.getMessage());
+                ExceptionUtil.showDialog(caught);
                 _submitButton.setEnabled(true);
             }
 
