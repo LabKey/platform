@@ -44,5 +44,3 @@ UPDATE exp.propertydescriptor SET lookupschema='core', lookupquery='users', rang
 (SELECT pd.propertyid FROM exp.propertydescriptor pd, exp.propertydomain pdlink, exp.domaindescriptor dd, study.dataset d
 WHERE pd.propertyid=pdlink.propertyid AND pdlink.domainid = dd.domainid
 AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string');
-
-select * from exp.propertydescriptor where 
