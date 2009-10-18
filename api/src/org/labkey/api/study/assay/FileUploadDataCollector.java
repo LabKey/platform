@@ -59,7 +59,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
         
         Map<String, File> files = savePostedFiles(context, Collections.singleton(FORM_ELEMENT_NAME));
         if (!files.containsKey(FORM_ELEMENT_NAME))
-            throw new FileNotFoundException("No data file was uploaded. Please enter a file name.");
+            throw new ExperimentException("No data file was uploaded. Please enter a file name.");
         return files;
     }
 
