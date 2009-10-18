@@ -253,7 +253,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return form;
     }
 
-    public ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
+    public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
     {
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
         if (def != null)
@@ -508,7 +508,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (schema.getScope().isTransactionActive())
             schema.getScope().addCommitTask(task);
         else
-            task.run();
+        {
+            new Thread(task, "QuerySnapshot Update Thread").start();
+        }
     }
 
     private void autoUpdateSnapshot(QuerySnapshotDefinition def, ActionURL url) throws Exception
@@ -527,7 +529,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 def.save(user, def.getContainer());
 
                 TimerTask task = new SnapshotUpdateTask(def, url);
-                Timer timer = new Timer("SnapshotUpdateTimer", true);
+                Timer timer = new Timer("QuerySnapshot Update Timer", true);
                 timer.schedule(task, startTime.getTime());
             }
         }

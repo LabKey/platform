@@ -206,8 +206,9 @@ public class PropertyController extends SpringActionController
                 TabLoader dataLoader = new TabLoader(inferForm.getTsvText(), true);
                 data = getData(dataLoader);
             }
-
             writer.write("Success:");
+            data = data.replaceAll("\r|\n", "<br>");
+            data = data.replaceAll("\t", "<tab>");
             writer.write(data);
 
             writer.flush();
