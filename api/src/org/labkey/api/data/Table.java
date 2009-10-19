@@ -1021,6 +1021,7 @@ public class Table
         _updateSpecialFields(user, table, fields, date);
 
         List<ColumnInfo> columns = table.getColumns();
+
         for (ColumnInfo column : columns)
         {
             if (!fields.containsKey(column.getName()))
@@ -1029,9 +1030,13 @@ public class Table
             Object value = fields.get(column.getName());
             setSQL.append(comma);
             setSQL.append(column.getSelectName());
+
             if (null == value || value instanceof String && 0 == ((String) value).length())
+            {
                 setSQL.append("=NULL");
-            else {
+            }
+            else
+            {
                 setSQL.append("=?");
                 parametersSet.add(value);
             }
