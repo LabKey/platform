@@ -1575,7 +1575,8 @@ public class Table
         ArrayList<ColumnInfo> cols = new ArrayList<ColumnInfo>();
         for (ColumnInfo col : tinfo.getColumns())
         {
-            ColumnInfo colDirect = new ColumnInfo(col.getAlias());
+            ColumnInfo colDirect = new ColumnInfo(col.getName());
+            colDirect.setAlias(col.getAlias());
             colDirect.copyAttributesFrom(col);
             colDirect.copyURLFrom(col, null, null);
             cols.add(colDirect);
