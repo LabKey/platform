@@ -54,6 +54,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             // Create the study if it doesn't exist... otherwise, modify the existing properties
             if (null == study)
             {
+                job.info("Loading study from " + support.getOriginalFilename());
                 job.info("Creating study");
 
                 // Create study
@@ -75,6 +76,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             }
             else
             {
+                job.info("Reloading study from " + support.getOriginalFilename());
                 job.info("Loading top-level study properties");
 
                 // TODO: Change these props and save only if values have changed

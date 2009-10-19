@@ -1563,20 +1563,28 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    // Special permission check below to support basic auth challenge
+    @RequiresPermissionClass(ReadPermission.class)
     public class RssAction extends SimpleViewAction
     {
+        // Special permission check to support basic auth challenge #8520
         @Override
         public void checkPermissions() throws UnauthorizedException
         {
-            Container c = getContainer();
-
-            if (!c.hasPermission(getUser(), ReadPermission.class))
+            try
             {
-                if (getUser().isGuest())
-                    throw new RequestBasicAuthException();
+                super.checkPermissions();
+            }
+            catch (TermsOfUseException e)
+            {
+                // We don't enforce terms of use in rss actions
+            }
+            catch (UnauthorizedException e)
+            {
+                // Force Basic authentication
+                if (!getViewContext().getUser().isGuest())
+                    throw e;
                 else
-                    throw new UnauthorizedException();
+                    throw new RequestBasicAuthException();
             }
         }
 

@@ -407,7 +407,9 @@ public class StudyReload
 
                     LOG.info("Handling " + c.getPath());
 
-                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, new File(root, "study.xml"), errors));
+                    File studyXml = new File(root, "study.xml");
+
+                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors));
                 }
                 catch (InterruptedException e)
                 {

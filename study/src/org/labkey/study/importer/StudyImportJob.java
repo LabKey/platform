@@ -45,13 +45,14 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     private final File _root;
     private final BindException _errors;
     private final boolean _reload;
+    private final String _originalFilename;
 
     // Handles all four study import tasks: initial task, dataset import, specimen import, and final task
-    public StudyImportJob(Container c, User user, ActionURL url, File studyXml, BindException errors)
+    public StudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors)
     {
         super(null, new ViewBackgroundInfo(c, user, url));
-
         _root = studyXml.getParentFile();
+        _originalFilename = originalFilename;
         setLogFile(StudyPipeline.logForInputFile(new File(_root, "study_load")));
         _errors = errors;
         _ctx = new ImportContext(user, c, studyXml, getLogger());
@@ -85,6 +86,11 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     public File getRoot()
     {
         return _root;
+    }
+
+    public String getOriginalFilename()
+    {
+        return _originalFilename;
     }
 
     @Deprecated

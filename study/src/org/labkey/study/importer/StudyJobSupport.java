@@ -36,6 +36,8 @@ public interface StudyJobSupport
 
     File getRoot();
 
+    String getOriginalFilename();
+
     @Deprecated
     BindException getSpringErrors();
 }

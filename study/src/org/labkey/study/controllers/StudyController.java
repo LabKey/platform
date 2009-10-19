@@ -3652,7 +3652,7 @@ public class StudyController extends BaseStudyController
                         try { fos.close(); } catch (IOException e) {  }
                     }
 
-                    importStudy(errors, zipFile);
+                    importStudy(errors, zipFile, file.getOriginalFilename());
                 }
             }
 
@@ -3688,7 +3688,7 @@ public class StudyController extends BaseStudyController
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             BindException errors = new BindException(c, "import");
 
-            boolean success = importStudy(errors, studyFile);
+            boolean success = importStudy(errors, studyFile, studyFile.getName());
 
             if (success && !errors.hasErrors())
             {
@@ -3744,7 +3744,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    public boolean importStudy(BindException errors, File studyFile) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
+    public boolean importStudy(BindException errors, File studyFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
     {
         Container c = getContainer();
         File pipelineRoot = StudyReload.getPipelineRoot(c);
@@ -3786,7 +3786,7 @@ public class StudyController extends BaseStudyController
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
 
-        PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, errors));
+        PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors));
 
         return !errors.hasErrors();
     }
