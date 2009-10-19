@@ -1058,7 +1058,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colList = new LinkedHashMap<String, ColumnInfo>();
         ResultSet rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);      // PostgreSQL change: query meta data with metaDataName
-        SqlDialect.ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols);
+        SqlDialect.ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema().getScope());
 
         while (rsCols.next())
         {

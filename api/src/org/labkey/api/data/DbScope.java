@@ -459,6 +459,7 @@ public class DbScope
                 try
                 {
                     DbScope scope = new DbScope(dsName, entry.getValue());
+                    scope.getSqlDialect().prepareNewDbScope(scope);
                     _scopes.put(dsName, scope);
                 }
                 catch (ConfigurationException ce)

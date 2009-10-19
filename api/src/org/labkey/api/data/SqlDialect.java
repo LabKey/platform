@@ -101,7 +101,6 @@ public abstract class SqlDialect
 
     public abstract String getBooleanLiteral(boolean b);
 
-
     static
     {
         SystemMaintenance.addTask(new DatabaseMaintenanceTask());
@@ -370,6 +369,11 @@ public abstract class SqlDialect
 
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);
+
+    // Do dialect-specific work for this data source (nothing by default)
+    public void prepareNewDbScope(DbScope scope) throws SQLException
+    {
+    }
 
     protected abstract String getProductName();
 
@@ -944,7 +948,7 @@ public abstract class SqlDialect
     public abstract boolean isEditable();
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
-    public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols);
+    public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
     public abstract TestSuite getTestSuite();
 
