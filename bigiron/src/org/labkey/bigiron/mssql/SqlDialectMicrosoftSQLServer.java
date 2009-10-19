@@ -585,7 +585,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return true;
     }
 
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
     {
         return new SqlServerColumnMetaDataReader(rsCols);
     }

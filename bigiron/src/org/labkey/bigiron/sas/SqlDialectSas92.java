@@ -16,6 +16,8 @@
 
 package org.labkey.bigiron.sas;
 
+import org.labkey.api.data.DbScope;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -34,7 +36,7 @@ public class SqlDialectSas92 extends SqlDialectSas
         return dataBaseProductName.equals(getProductName()) && jdbcDriverVersion.startsWith("9.2");
     }
 
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
     {
         return new Sas92ColumnMetaDataReader(rsCols);
     }

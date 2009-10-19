@@ -27,13 +27,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.ServletException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -45,6 +44,8 @@ import java.util.regex.Pattern;
 // Dialect specifics for PostgreSQL
 class SqlDialectPostgreSQL extends SqlDialect
 {
+    private static final Map<DbScope, Map<String, Integer>> DOMAIN_SCALES = new ConcurrentHashMap<DbScope, Map<String, Integer>>();
+
     SqlDialectPostgreSQL()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
@@ -450,6 +451,46 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
 
+    // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
+    // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
+    // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
+    @Override
+    public void prepareNewDbScope(DbScope scope) throws SQLException
+    {
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try
+        {
+            conn = scope.getConnection();
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery("SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
+
+            Map<String, Integer> scales = new HashMap<String, Integer>();
+
+            while (rs.next())
+            {
+                String domainName = rs.getString("domain_name");
+
+                if ("integer".equals(rs.getString("data_type")))
+                    scales.put(domainName, 4);
+                else
+                    scales.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
+            }
+            
+            DOMAIN_SCALES.put(scope, scales);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+            ResultSetUtil.close(stmt);
+
+            if (null != conn)
+                scope.releaseConnection(conn);
+        }
+    }
+
     // Do dialect-specific work after schema load, if necessary
     public void prepareNewDbSchema(DbSchema schema)
     {
@@ -728,17 +769,23 @@ class SqlDialectPostgreSQL extends SqlDialect
         return true;
     }
 
-    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
     {
-        return new PostgreSQLColumnMetaDataReader(rsCols);
+        // Retrieve and pass in the previously queried scale values for this scope.
+        return new PostgreSQLColumnMetaDataReader(rsCols, DOMAIN_SCALES.get(scope));
     }
 
 
     private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
     {
-        public PostgreSQLColumnMetaDataReader(ResultSet rsCols)
+        private final Map<String, Integer> _domainScales;
+
+        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, Map<String, Integer> domainScales)
         {
             super(rsCols);
+
+            assert null != domainScales;
+            _domainScales = domainScales;
 
             _nameKey = "COLUMN_NAME";
             _sqlTypeKey = "DATA_TYPE";
@@ -764,6 +811,24 @@ class SqlDialectPostgreSQL extends SqlDialect
                 return _rsCols.getInt("SOURCE_DATA_TYPE");
             else
                 return sqlType;
+        }
+
+        @Override
+        public int getScale() throws SQLException
+        {
+            int sqlType = super.getSqlType();
+
+            if (Types.DISTINCT == sqlType)
+            {
+                Integer scale = _domainScales.get(getSqlTypeName());
+
+                assert scale != null;
+
+                if (null != scale)
+                    return scale.intValue();
+            }
+
+            return super.getScale();
         }
     }
 
