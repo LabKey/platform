@@ -525,7 +525,7 @@ public class QueryView extends WebPartView<Object>
 
     public boolean showRecordSelectors()
     {
-        return _showRecordSelectors || showDeleteButton();
+        return _showRecordSelectors || (showDeleteButton() && canDelete());
     }
 
     public void setShowRecordSelectors(boolean showRecordSelectors)
