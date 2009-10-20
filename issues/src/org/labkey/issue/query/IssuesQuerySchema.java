@@ -73,10 +73,22 @@ public class IssuesQuerySchema extends UserSchema
         {
             try
             {
-                switch(TableType.valueOf(name))
+                TableType tableType = null;
+                for (TableType t : TableType.values())
                 {
-                    case Issues:
-                        return createIssuesTable();
+                    // Make the enum name lookup case insensitive
+                    if (t.name().toLowerCase().equals(name.toLowerCase()))
+                    {
+                        tableType = t;
+                    }
+                }
+                if (tableType != null)
+                {
+                    switch(tableType)
+                    {
+                        case Issues:
+                            return createIssuesTable();
+                    }
                 }
             }
             catch (IllegalArgumentException e){}
