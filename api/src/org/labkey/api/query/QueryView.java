@@ -236,7 +236,7 @@ public class QueryView extends WebPartView<Object>
     {
         String current = _queryDef != null ? _queryDef.getName() : null;
 
-        ActionURL target = urlRefreshQuery();
+        URLHelper target = urlRefreshQuery();
         NavTreeMenuButton button = new NavTreeMenuButton(label);
 
         if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
@@ -433,9 +433,11 @@ public class QueryView extends WebPartView<Object>
         return getDataRegionName() + "." + param;
     }
 
-    protected ActionURL urlRefreshQuery()
+    protected URLHelper urlRefreshQuery()
     {
-        ActionURL ret = getSettings().getSortFilterURL();
+        URLHelper ret = getSettings().getReturnURL();
+        if (null == ret)
+            ret = getSettings().getSortFilterURL();
         ret.deleteParameter(param(QueryParam.queryName));
         ret.deleteParameter(param(QueryParam.viewName));
         ret.deleteParameter(param(QueryParam.reportId));
@@ -461,9 +463,11 @@ public class QueryView extends WebPartView<Object>
         return ret;
     }
 
-    protected ActionURL urlChangeView()
+    protected URLHelper urlChangeView()
     {
-        ActionURL ret = getSettings().getSortFilterURL();
+        URLHelper ret = getSettings().getReturnURL();
+        if (null == ret)
+            ret = getSettings().getSortFilterURL();
         ret.deleteParameter(param(QueryParam.viewName));
         ret.deleteParameter(param(QueryParam.reportId));
         ret.deleteParameter("x");
@@ -726,7 +730,7 @@ public class QueryView extends WebPartView<Object>
         if (_report == null)
             current = (_customView != null) ? StringUtils.defaultString(_customView.getName(), "") : "";
 
-        ActionURL target = urlChangeView();
+        URLHelper target = urlChangeView();
         NavTreeMenuButton button = new NavTreeMenuButton("Views");
         NavTree menu = button.getNavTree();
 
@@ -880,7 +884,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected void addGridViews(MenuButton menu, ActionURL target, String currentView)
+    protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
         // default grid view stays at the top level
         NavTree item = new NavTree("default", target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString());
@@ -925,7 +929,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected void addReportViews(MenuButton menu, ActionURL target)
+    protected void addReportViews(MenuButton menu, URLHelper target)
     {
         String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
