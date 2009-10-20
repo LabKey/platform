@@ -1484,7 +1484,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private void _logStatement(String sql, Exception x)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
-        assert QueryProfiler.track(sql, elapsed);
+        QueryProfiler.track(sql, elapsed);
 
         if (!_log.isEnabledFor(Priority.DEBUG))
             return;

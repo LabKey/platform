@@ -18,19 +18,19 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.apache.commons.collections15.map.ReferenceMap;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Formats;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewServlet;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletContextEvent;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ManagementFactory;
 
 /*
 * User: adam
@@ -126,11 +126,10 @@ public class QueryProfiler
     {
     }
 
-    static boolean track(String sql, long elapsed)
+    static void track(String sql, long elapsed)
     {
         // Don't block if queue is full
         QUEUE.offer(new Query(sql, elapsed));
-        return true;
     }
 
     public static HttpView getReportView(String statName, ActionURLFactory factory)
@@ -148,14 +147,31 @@ public class QueryProfiler
                 // Don't update anything while we're rendering the report or vice versa
                 synchronized (LOCK)
                 {
-                    sb.append("  <tr><td>Total Query Invocation Count:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryCount)).append("</td></tr>\n");
-                    sb.append("  <tr><td>Total Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryTime)).append("</td></tr>\n");
-                    sb.append("  <tr><td>Total Unique Queries");
+                    int requests = ViewServlet.getRequestCount();
+                    sb.append("  <tr>");
+                    sb.append("<td>Total Query Invocation Count:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryCount)).append("</td>");
+                    sb.append("<td width=10>&nbsp;</td>");
+                    sb.append("<td>Server Requests:</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td>");
+                    sb.append("</tr>\n  <tr>");
+                    sb.append("<td>Total Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryTime)).append("</td>");
+                    sb.append("<td width=10>&nbsp;</td>");
+                    RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+                    if (runtimeBean != null)
+                    {
+                        long upTime = runtimeBean.getUptime(); // round to sec
+                        upTime = upTime - (upTime % 1000);
+                        sb.append("<td>Server Uptime:</td><td align=\"right\">").append(DateUtil.formatDuration(upTime)).append("</td>");
+                    }
+                    sb.append("</tr>\n  <tr>");
+                    sb.append("<td>Total Unique Queries");
 
                     if (_uniqueQueryCountEstimate > QueryTrackerSet.LIMIT)
                         sb.append(" (Estimate)");
 
-                    sb.append(":</td><td align=\"right\">").append(Formats.commaf0.format(_uniqueQueryCountEstimate)).append("</td></tr>\n");
+                    sb.append(":</td><td align=\"right\">").append(Formats.commaf0.format(_uniqueQueryCountEstimate)).append("</td>");
+                    sb.append("<td width=10>&nbsp;</td>");
+                    sb.append("<td>Queries per request:</td><td align=\"right\">").append(Formats.f1.format((double)_totalQueryCount / requests)).append("</td>");
+                    sb.append("</tr>\n");
                     sb.append("</table><br><br>\n");
 
                     sb.append("<table>\n");
@@ -390,7 +406,7 @@ public class QueryProfiler
 
     private static class QueryTrackerSet extends TreeSet<QueryTracker>
     {
-        private static final int LIMIT = 1000;     // Set to MAX_INT for no limit
+        private static final int LIMIT = 1000;     // Set to Integer.MAX_VALUE for effectively no limit
 
         private final String _caption;
         private final String _description;
@@ -470,10 +486,11 @@ public class QueryProfiler
     {
         public int compare(QueryTracker qt1, QueryTracker qt2)
         {
-            int ret = (int)(getPrimaryStatisticValue(qt1) - getPrimaryStatisticValue(qt2));
+            // Can use simple substraction here since we won't have MAX_VALUE, MIN_VALUE, etc. 
+            int ret = Long.signum(getPrimaryStatisticValue(qt1) - getPrimaryStatisticValue(qt2));
 
             if (0 == ret)
-                ret = (int)(getSecondaryStatisticValue(qt1) - getSecondaryStatisticValue(qt2));
+                ret = Long.signum(getSecondaryStatisticValue(qt1) - getSecondaryStatisticValue(qt2));
 
             if (0 == ret)
                 ret = qt1.getSql().compareTo(qt2.getSql());

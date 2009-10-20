@@ -458,32 +458,35 @@ public class OntologyManager
             {
                 int countBatches = objectIds.length/1000;
                 int lenBatch = 1+objectIds.length/(countBatches+1);
-                ArrayList<Integer> sub = new ArrayList<Integer>(lenBatch);
-                for (int s=0 ; s<objectIds.length; s+=lenBatch)
+                List<Integer> sub = new ArrayList<Integer>(lenBatch);
+
+                for (int s = 0; s < objectIds.length; s += lenBatch)
                 {
-                    int end = Math.min(s+lenBatch,objectIds.length);
+                    int end = Math.min(s + lenBatch, objectIds.length);
                     System.err.println("delete " + s + "-" + end);
                     sub.clear();
-                    for (int i=s ; i<end ; i++)
-                        sub.add(objectIds[i]);
+                    sub.addAll(Arrays.asList(objectIds).subList(s, end));
                     deleteOntologyObjects(sub.toArray(new Integer[sub.size()]), c, deleteOwnedObjects);
                 }
+
                 return;
             }
 
             StringBuilder in = new StringBuilder();
-            for (Integer objectId: objectIds)
+
+            for (Integer objectId : objectIds)
             {
                 in.append(objectId);
                 in.append(",");
             }
+
             in.setLength(in.length()-1);
 
             if (deleteOwnedObjects)
             {
                 // NOTE: owned objects should never be in a different container than the owner, that would be a problem
                 StringBuilder sqlDeleteOwnedProperties = new StringBuilder();
-                sqlDeleteOwnedProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
+                sqlDeleteOwnedProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedProperties.append(in);
                 sqlDeleteOwnedProperties.append("))");
                 Table.execute(getExpSchema(), sqlDeleteOwnedProperties.toString(), null);
@@ -513,9 +516,9 @@ public class OntologyManager
 
     public static void deleteOntologyObject(String objectURI, Container container, boolean deleteOwnedObjects) throws SQLException
 	{
-
         OntologyObject ontologyObject = getOntologyObject(container, objectURI);
-        if (null!=ontologyObject)
+
+        if (null != ontologyObject)
         {
             Integer objid = ontologyObject.getObjectId();
             deleteOntologyObjects(new Integer[]{objid}, container, deleteOwnedObjects);
@@ -639,7 +642,8 @@ public class OntologyManager
         boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
         DomainDescriptor dd = getDomainDescriptor(domainURI, container);
         String msg;
-        if (null==dd)
+
+        if (null == dd)
             throw new DomainNotFoundException(domainURI);
         
         if (!dd.getContainer().getId().equals(container.getId()))
@@ -647,8 +651,8 @@ public class OntologyManager
             // this domain was not created in this folder. Allow if in the project-level root
             if (!dd.getProject().getId().equals(container.getId()))
             {
-                msg = "DeleteDomain:  Domain can only be deleted in original container or from the project root "
-                        + "\nDomain:  " + domainURI + " project "+ dd.getProject().getName() + " original container " + dd.getContainer().getPath();
+                msg = "DeleteDomain: Domain can only be deleted in original container or from the project root "
+                        + "\nDomain: " + domainURI + " project "+ dd.getProject().getName() + " original container " + dd.getContainer().getPath();
                 _log.error(msg);
                 throw new RuntimeException(msg);
             }
@@ -673,7 +677,7 @@ public class OntologyManager
 
             if (pdIdsToDelete.length > 0)
             {
-                String sep="";
+                String sep = "";
                 StringBuilder sqlIN = new StringBuilder();
                 for (Integer id : pdIdsToDelete)
                 {
@@ -686,23 +690,24 @@ public class OntologyManager
 
                 String deletePDs = "DELETE FROM " + getTinfoPropertyDescriptor() +
                             " WHERE PropertyId IN ( " + sqlIN.toString() + " ) " +
-                            " AND Container = ? " +
-                            " AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
-                                " WHERE  OP.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId) " +
-                            " AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
-                                " WHERE  PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId) ";
+                            "AND Container = ? " +
+                            "AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
+                                "WHERE OP.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId) " +
+                            "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
+                                "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)";
 
                 Table.execute(getExpSchema(), deletePDs, new Object[]{dd.getContainer().getId()});
             }
 
             String deleteDD = "DELETE FROM " + getTinfoDomainDescriptor() +
                         " WHERE DomainId = ? " +
-                        " AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
-                            " WHERE  PDM.DomainId = " + getTinfoDomainDescriptor() + ".DomainId) ";
+                        "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
+                            "WHERE PDM.DomainId = " + getTinfoDomainDescriptor() + ".DomainId)";
 
             Table.execute(getExpSchema(), deleteDD, new Object[]{dd.getDomainId()});
 
             clearCaches();
+
             if (ownTransaction)
             {
                 getExpSchema().getScope().commitTransaction();

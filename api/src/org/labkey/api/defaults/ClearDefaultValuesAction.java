@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.defaults;
 
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

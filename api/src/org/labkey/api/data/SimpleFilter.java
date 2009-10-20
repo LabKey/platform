@@ -285,8 +285,8 @@ public class SimpleFilter implements Filter
 
             if (params.length > 0)
             {
-                String questionMarks = StringUtils.repeat("?,", params.length);
-                in.append(questionMarks.substring(0, questionMarks.length() - 1));
+                String questionMarks = StringUtils.repeat("?, ", params.length);
+                in.append(questionMarks.substring(0, questionMarks.length() - 2));
             }
             else
             {

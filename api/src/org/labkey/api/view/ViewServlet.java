@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -63,7 +64,7 @@ public class ViewServlet extends HttpServlet
 
     private static ServletContext _servletContext = null;
 
-    private static int _requestNumber = 0;
+    private static final AtomicInteger _requestCount = new AtomicInteger();
 
 //    static AtomicBoolean init = new AtomicBoolean(false);
     private static Map<Class, String> _pageFlowClassToName = null;
@@ -77,6 +78,11 @@ public class ViewServlet extends HttpServlet
     public static String getPageFlowName(Class controllerClass)
     {
         return _pageFlowClassToName.get(controllerClass);
+    }
+
+    public static int getRequestCount()
+    {
+        return _requestCount.get();
     }
 
     /**
@@ -100,7 +106,7 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> " + description);
         }
 
-        MemTracker.logMemoryUsage(++_requestNumber);
+        MemTracker.logMemoryUsage(_requestCount.incrementAndGet());
 
         SessionAppender.initThread(request);
 
