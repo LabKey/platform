@@ -42,6 +42,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     private boolean _isPrepared = false;
     private boolean _isEmbedded = false;
     private String _helpPopup;
+    private FrameType _frame = FrameType.PORTAL;
 
     public static enum FrameType
     {
@@ -81,12 +82,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     
     public void setFrame(FrameType type)
     {
-        addObject("WebPartView.frame", type);
+        _frame = type;
     }
 
     public FrameType getFrame()
     {
-        return (FrameType)getViewContext().get("WebPartView.frame");
+        return _frame;
     }
 
     public void setBodyClass(String className)
@@ -277,7 +278,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     {
         ViewContext context = getViewContext();
         String contextPath = context.getContextPath();
-        FrameType frameType = (FrameType) context.get("WebPartView.frame");
+        FrameType frameType = getFrame();
 
         String title = (String) context.get("title");
         String href = (String) context.get("href");
@@ -286,7 +287,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         if (null == title && frameType==FrameType.PORTAL)
         {
             frameType = FrameType.DIV;
-            context.put("WebPartView.frame", frameType);
+            setFrame(frameType);
         }
 
         String className = getBodyClass();
@@ -525,7 +526,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
     public void doEndTag(Map context, PrintWriter out)
     {
-        FrameType frameType = (FrameType) context.get("WebPartView.frame");
+        FrameType frameType = getFrame();
 
         switch (frameType)
         {
