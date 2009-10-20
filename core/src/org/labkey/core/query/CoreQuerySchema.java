@@ -220,19 +220,8 @@ public class CoreQuerySchema extends UserSchema
             Container project = container.isRoot() ? container : container.getProject();
             CoreSchema coreSchema = CoreSchema.getInstance();
 
-            //site admins should see all memberships in the project container and the root container
-            //other users (non-guests) should only see those groups that are currently assigned a role in the policy
-            if (isSiteAdmin)
-            {
-                members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals()
-                        + " WHERE Container=? OR Container IS NULL)", project.getId()));
-            }
-            else
-            {
-                String resId = container.getPolicy().getResource().getResourceId();
-                members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoRoleAssignments()
-                        + " WHERE ResourceId=? AND Role != 'org.labkey.api.security.roles.NoPermissionsRole')", resId));
-            }
+            members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals()
+                    + " WHERE Container=? OR Container IS NULL)", project.getId()));
         }
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
