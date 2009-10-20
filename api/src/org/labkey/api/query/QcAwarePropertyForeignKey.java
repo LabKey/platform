@@ -206,8 +206,16 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
             ColumnInfo indicatorCol = getIndicatorColumn(_baseName, this);
+            if (indicatorCol == null)
+            {
+                throw new IllegalStateException("Could not find " + _baseName + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX + " column");
+            }
             indicatorCol.declareJoins(parentAlias, map);
             ColumnInfo numberCol = getNumberColumn(_baseName, this);
+            if (numberCol == null)
+            {
+                throw new IllegalStateException("Could not find " + _baseName + OORDisplayColumnFactory.NUMBER_COLUMN_SUFFIX + " column");
+            }
             numberCol.declareJoins(parentAlias, map);
         }
     }
