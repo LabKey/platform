@@ -1045,10 +1045,14 @@ LABKEY.Query = new function()
             Each field has the following properties:
             <ul><li>name -- The name of the field</li>
             <li>type -- JavaScript type name of the field</li>
+            <li>shownInInsertView -- whether this field is intended to be shown in insert views</li>
+            <li>shownInUpdateView -- whether this field is intended to be shown in update views</li>
+            <li>shownInDetailsView -- whether this field is intended to be shown in details views</li>
+            <li>hidden -- whether this field is hidden and not normally shown in grid views</li>
             <li>lookup -- If the field is a lookup, there will
-                be three sub-properties listed under this property:
-                schema, table, and column, which describe the schema, table, and
-                display column of the lookup table (query).</li></ul>
+                 be four sub-properties listed under this property:
+                 schema, table, displayColumn, and keyColumn, which describe the schema, table, and
+                 display column, and key column of the lookup table (query).</li></ul>
 * @type    Object[]
 */
 
@@ -1134,10 +1138,14 @@ LABKEY.Query = new function()
             Each field has the following properties:
             <ul><li>name -- The name of the field</li>
             <li>type -- JavaScript type name of the field</li>
+            <li>shownInInsertView -- whether this field is intended to be shown in insert views</li>
+            <li>shownInUpdateView -- whether this field is intended to be shown in update views</li>
+            <li>shownInDetailsView -- whether this field is intended to be shown in details views</li>
+            <li>hidden -- whether this field is hidden and not normally shown in grid views</li>
             <li>lookup -- If the field is a lookup, there will
-                be three sub-properties listed under this property:
-                schema, table, and column, which describe the schema, table, and
-                display column of the lookup table (query).</li></ul>
+                be four sub-properties listed under this property:
+                schema, table, displayColumn, and keyColumn, which describe the schema, table, and
+                display column, and key column of the lookup table (query).</li></ul>
 * @type    Object[]
 */
 

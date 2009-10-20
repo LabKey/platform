@@ -214,6 +214,10 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         fmdata.put("name", dc.getColumnInfo().getName());
         fmdata.put("type", dc.getJsonTypeName());
         fmdata.put("mvEnabled", dc.getColumnInfo().isMvEnabled());
+        fmdata.put("shownInInsertView", dc.getColumnInfo().isShownInInsertView());
+        fmdata.put("shownInUpdateView", dc.getColumnInfo().isShownInUpdateView());
+        fmdata.put("shownInDetailsView", dc.getColumnInfo().isShownInDetailsView());
+        fmdata.put("hidden", dc.getColumnInfo().isHidden());
 
         if(isLookup(dc))
         {
