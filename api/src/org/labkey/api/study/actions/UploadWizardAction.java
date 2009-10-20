@@ -796,9 +796,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
                 if (list.size() > MAX_ERRORS)
                 {
-                    sb.append("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'All Errors', '");
-                    sb.append(PageFlowUtil.encodeJavascriptStringLiteral(msgBox.toString()));
-                    sb.append("');return false;\">Too many errors to display (click to show all).<a><br>");
+                    sb.append("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'All Errors', ");
+                    sb.append(PageFlowUtil.jsString(msgBox.toString()));
+                    sb.append(");return false;\">Too many errors to display (click to show all).<a><br>");
                 }
                 return sb.toString();
             }

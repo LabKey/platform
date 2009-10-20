@@ -270,15 +270,6 @@ public class PageFlowUtil
     }
 
 
-    public static String encodeJavascriptStringLiteral(Object value)
-    {
-        if (value == null)
-            return "null";
-        String ret = PageFlowUtil.groovyString(value.toString());
-        ret = StringUtils.replace(ret, "'", "\\'");
-        return ret;
-    }
-
     /**
      * put quotes around a JavaScript string, and HTML encode that.
      */

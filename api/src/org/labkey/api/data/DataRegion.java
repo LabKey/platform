@@ -709,7 +709,19 @@ public class DataRegion extends DisplayElement
         ResultSet rs = null;
         try
         {
-            rs = getResultSet(ctx);
+            StringBuilder headerMessage = new StringBuilder();
+            SQLException sqlx = null;
+
+            try
+            {
+                rs = getResultSet(ctx);
+            }
+            catch (SQLException x)
+            {
+                sqlx = x;
+                headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
+            }
+
             writeFilterHtml(ctx, out);
             List<DisplayColumn> renderers = getDisplayColumns();
 
@@ -725,7 +737,6 @@ public class DataRegion extends DisplayElement
             boolean renderButtons = _gridButtonBar.shouldRender(ctx);
             String filterErrorMsg = getFilterErrorMessage(ctx);
             String filterDescription =  isShowFilterDescription() ? getFilterDescription(ctx) : null;
-            StringBuilder headerMessage = new StringBuilder();
             if (filterErrorMsg != null && filterErrorMsg.length() > 0)
                 headerMessage.append("<span class=\"error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
 
@@ -752,24 +763,27 @@ public class DataRegion extends DisplayElement
                 }
             }
 
-            renderGridStart(ctx, out, renderers);
-
-            renderGridHeaders(ctx, out, renderers);
-
-            if (_aggregateRowFirst)
-                renderAggregatesTableRow(ctx, out, renderers, false, true);
-
-            int rows = renderTableContents(ctx, out, renderers);
-            //assert _rowCount != null && rows == _rowCount : "Row size mismatch: NYI";
-            if (rows == 0)
+            if (null == sqlx)
             {
-                renderNoRowsMessage(ctx, out, renderers);
+                renderGridStart(ctx, out, renderers);
+
+                renderGridHeaders(ctx, out, renderers);
+
+                if (_aggregateRowFirst)
+                    renderAggregatesTableRow(ctx, out, renderers, false, true);
+
+                int rows = renderTableContents(ctx, out, renderers);
+                //assert _rowCount != null && rows == _rowCount : "Row size mismatch: NYI";
+                if (rows == 0)
+                {
+                    renderNoRowsMessage(ctx, out, renderers);
+                }
+
+                if (_aggregateRowLast)
+                    renderAggregatesTableRow(ctx, out, renderers, true, false);
+
+                renderGridEnd(ctx, out);
             }
-
-            if (_aggregateRowLast)
-                renderAggregatesTableRow(ctx, out, renderers, true, false);
-
-            renderGridEnd(ctx, out);
 
             renderFooter(ctx, out, renderButtons);
         }
@@ -779,6 +793,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
+    
     protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, String headerMessage) throws IOException
     {
         renderHeaderScript(ctx, out, headerMessage);
@@ -805,6 +820,7 @@ public class DataRegion extends DisplayElement
         renderMessageBox(ctx, out);
         out.write("</table>");
     }
+    
 
     protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage) throws IOException
     {
@@ -834,8 +850,8 @@ public class DataRegion extends DisplayElement
         out.write("});\n");
         if (headerMessage != null)
         {
-            out.write("LABKEY.DataRegions['" + PageFlowUtil.filter(getName()) + "'].showMessage('" +
-                    PageFlowUtil.encodeJavascriptStringLiteral(headerMessage) + "');\n");
+            out.write("LABKEY.DataRegions['" + PageFlowUtil.filter(getName()) + "'].showMessage(" +
+                    PageFlowUtil.jsString(headerMessage) + ");\n");
         }
         out.write("});\n");
         out.write("</script>\n");
