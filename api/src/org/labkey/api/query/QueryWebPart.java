@@ -48,15 +48,15 @@ public class QueryWebPart extends WebPartView
         if (_schema != null)
         {
             _settings = _schema.getSettings(part, context);
+            String queryName = _settings.getQueryName();
 
-            if (_settings.getQueryName() == null)
+            if (null == queryName)
             {
                 url = _schema.urlSchemaDesigner();
             }
             else
             {
-                url = context.cloneActionURL();
-                url.deleteParameters();
+                url = QueryService.get().urlFor(context.getUser(), context.getContainer(), QueryAction.executeQuery, _schemaName, queryName);
             }
 
             setTitleHref(url);
