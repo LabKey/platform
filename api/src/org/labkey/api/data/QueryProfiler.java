@@ -378,7 +378,7 @@ public class QueryProfiler
             }
             catch (InterruptedException e)
             {
-                LOG.info(getClass().getSimpleName() + " is terminating due to interruption");
+                LOG.debug(getClass().getSimpleName() + " is terminating due to interruption");
             }
         }
 
