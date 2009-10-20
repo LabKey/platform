@@ -1177,6 +1177,8 @@ public class SecurityApiActions
             ValidEmail email = new ValidEmail(form.getEmail().getSource().trim());
             String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
             User user = UserManager.getUser(email);
+            if (null == user)
+                throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("userId", user.getUserId());
