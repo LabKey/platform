@@ -776,7 +776,7 @@ public class QueryServiceImpl extends QueryService
             {
                 outerSelect.append(strComma);
                 outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
-                strComma = ",";
+                strComma = ", ";
             }
         }
 
