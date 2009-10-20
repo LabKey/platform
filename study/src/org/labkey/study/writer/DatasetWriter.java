@@ -176,7 +176,7 @@ class DatasetWriter implements InternalStudyWriter
     public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData)
     {
         List<ColumnInfo> inColumns = tinfo.getColumns();
-        List<ColumnInfo> outColumns = new ArrayList<ColumnInfo>(inColumns.size());
+        Collection<ColumnInfo> outColumns = new LinkedHashSet<ColumnInfo>(inColumns.size());
 
         ColumnInfo ptidColumn = null; String ptidURI = DataSetDefinition.getParticipantIdURI();
         ColumnInfo sequenceColumn = null; String sequenceURI = DataSetDefinition.getSequenceNumURI();
@@ -230,6 +230,10 @@ class DatasetWriter implements InternalStudyWriter
                 else
                 {
                     outColumns.add(in);
+
+                    // If the column is MV enabled, export the data in the indicator column as well
+                    if (!metaData && in.isMvEnabled())
+                        outColumns.add(tinfo.getColumn(in.getMvColumnName()));
                 }
             }
         }

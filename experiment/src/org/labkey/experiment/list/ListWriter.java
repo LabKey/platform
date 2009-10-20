@@ -182,13 +182,21 @@ public class ListWriter implements ExternalStudyWriter
         }
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metadata)
+    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData)
     {
-        Collection<ColumnInfo> columns = new LinkedList<ColumnInfo>();
+        Collection<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>();
 
         for (ColumnInfo column : tinfo.getColumns())
-            if (column.isUserEditable() || (metadata && column.isKeyField()))
+        {
+            if (column.isUserEditable() || (metaData && column.isKeyField()))
+            {
                 columns.add(column);
+
+                // If the column is MV enabled, export the data in the indicator column as well
+                if (!metaData && column.isMvEnabled())
+                    columns.add(tinfo.getColumn(column.getMvColumnName()));
+            }
+        }
 
         return columns;
     }
