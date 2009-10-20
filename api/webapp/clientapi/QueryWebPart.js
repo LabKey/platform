@@ -96,12 +96,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
     constructor : function(config)
     {
-        LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
         Ext.apply(this, config, {
             dataRegionName: Ext.id(undefined, "aqwp"),
             returnURL: encodeURI(window.location.href)
         });
+
+        LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
         this.filters = this.filters || this.filterArray;
 
@@ -111,9 +112,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
          * @event
          * @description Fired after the web part html is rendered into the page.
          */
-        this.addEvents({
-            "render": true
-        });
+        this.addEvents("render");
 
         if(this.renderTo)
             this.render();
@@ -186,7 +185,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 {
                     targetElem.update(response.responseText, true); //execute scripts
                     if(this.successCallback)
-                        Ext.onReady(function(){this.successCallback.call(this.scope || this);}); //8721: need to use onReady()
+                        Ext.onReady(function(){this.successCallback.call(this.scope || this);}, this, {delay: 100}); //8721: need to use onReady()
                     this.fireEvent("render");
                 }
                 else
