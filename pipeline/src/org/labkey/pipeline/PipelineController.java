@@ -134,7 +134,7 @@ public class PipelineController extends SpringActionController
         return url;
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresSiteAdmin
     public class SetupAction extends AbstractSetupAction<SetupForm>
     {
         protected SetupField getFormField()

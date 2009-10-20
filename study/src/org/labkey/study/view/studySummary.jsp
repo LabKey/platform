@@ -27,7 +27,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
-<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.study.Visit" %><%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
@@ -46,7 +46,7 @@ if (null == getStudy())
             ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
             out.println(generateButton("Import Study", importStudyURL));
         }
-        else
+        else if(PipelineService.get().canModifyPipelineRoot(user, c))
         {
             ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
             out.println(generateButton("Pipeline Setup", pipelineURL));

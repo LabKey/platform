@@ -523,6 +523,42 @@ public class StudyController extends BaseStudyController
             super(DatasetFilterForm.class);
         }
 
+        @Override
+        public ModelAndView getView(DatasetFilterForm form, BindException errors) throws Exception
+        {
+            ActionURL url = getViewContext().getActionURL();
+            String viewName = url.getParameter("Dataset.viewName");
+
+            Object datasetKeyObject = getViewContext().get(DataSetDefinition.DATASETKEY);
+            if (datasetKeyObject instanceof List)
+            {
+                // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
+                List<?> list = (List<?>)datasetKeyObject;
+                datasetKeyObject = list.get(0);
+            }
+            _datasetId = NumberUtils.toInt(datasetKeyObject.toString(), 0);
+
+            // if the view name refers to a report id (legacy style), redirect to use the newer report id parameter
+            if (NumberUtils.isDigits(viewName))
+            {
+                // one last check to see if there is a view with that name before trying to redirect to the report
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), _datasetId);
+
+                if (def != null &&
+                    QueryService.get().getCustomView(getUser(), getContainer(), StudyManager.getSchemaName(), def.getLabel(), viewName) == null)
+                {
+                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
+                    if (reportId != null && reportId.getReport() != null)
+                    {
+                        ActionURL newURL = url.clone().deleteParameter("Dataset.viewName").
+                                addParameter("Dataset.reportId", reportId.toString());
+                        return HttpView.redirect(newURL);
+                    }
+                }
+            }
+            return super.getView(form, errors);
+        }
+
         protected ModelAndView getHtmlView(DatasetFilterForm form, BindException errors) throws Exception
         {
             // the full resultset is a join of all datasets for each participant
@@ -537,17 +573,6 @@ public class StudyController extends BaseStudyController
             ViewContext context = getViewContext();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
-            
-            Object datasetKeyObject = context.get(DataSetDefinition.DATASETKEY);
-            if (datasetKeyObject instanceof List)
-            {
-                // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
-                List<?> list = (List<?>)datasetKeyObject;
-                datasetKeyObject = list.get(0);
-            }
-            else if (datasetKeyObject == null)
-                return null;
-            _datasetId = NumberUtils.toInt(datasetKeyObject.toString(), 0);
 
             String viewName = (String)context.get("Dataset.viewName");
             final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);

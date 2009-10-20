@@ -226,10 +226,8 @@ public class PipelineServiceImpl extends PipelineService
 
     public boolean canModifyPipelineRoot(User user, Container container)
     {
-        //user must have admin permission at project level as well as the particular container
-        //see issue 8322.
-        return container != null && !container.isRoot() && container.hasPermission(user, AdminPermission.class) 
-                && container.getProject().hasPermission(user, AdminPermission.class);
+        //per Britt--user must be site admin
+        return container != null && !container.isRoot() && user.isAdministrator();
     }
 
     @NotNull

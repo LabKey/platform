@@ -66,6 +66,21 @@
 
 <script type="text/javascript">
 
+    function setSelection(checked)
+    {
+        var form = document.getElementById("permissionsForm");
+        var inputs = form.getElementsByTagName("INPUT");
+        for (i=0 ; i<inputs.length ; i++)
+        {
+            var input = inputs[i];
+            // probably overkill, but double-check to ensure that the input is an enabled, visible checkbox:
+            if (input.type == "checkbox" && !input.disabled && input.style.display == "block")
+            {
+                input.checked = checked;
+            }
+        }
+    }
+
     function updateDisplay()
     {
         var form = document.getElementById("permissionsForm");
@@ -80,6 +95,9 @@
                 input.style.display = useExplicit ? "block" : "none";
             }
         }
+
+        var buttonDiv = document.getElementById("selectionButtons");
+        buttonDiv.style.display = useExplicit ? "inline" : "none";
     }
     YAHOO.util.Event.addListener(window, "load", updateDisplay);
 </script>
@@ -138,8 +156,12 @@
             %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
         }
         %>
-    </table>
-    <%=PageFlowUtil.generateSubmitButton("save")%>
+    </table
+    <%=PageFlowUtil.generateSubmitButton("Save")%>
+    <span id="selectionButtons">
+        <%=PageFlowUtil.generateButton("Select All", "#", "setSelection(true); return false;")%>
+        <%=PageFlowUtil.generateButton("Select None", "#", "setSelection(false); return false;")%>
+    </span>
 <%--
     <input type=hidden name=reportId value="<%=bean.getDescriptor().getReportId()%>">
 --%>
