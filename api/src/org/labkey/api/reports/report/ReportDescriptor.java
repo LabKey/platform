@@ -76,11 +76,17 @@ public class ReportDescriptor extends Entity implements SecurableResource
         dataRegionName,
         redirectUrl,
         cached,
+        version,
     }
 
     public ReportDescriptor()
     {
         setDescriptorType(TYPE);
+
+        // set the report version to the one that is stored in the query module
+        Module queryModule = ModuleLoader.getInstance().getModule("Query");
+        if (queryModule != null)
+            setProperty(Prop.version, String.valueOf(queryModule.getVersion()));
     }
 
     public interface ReportProperty
@@ -182,6 +188,11 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return getProperty(Prop.descriptorType);
     }
 
+    public String getVersionString()
+    {
+        return StringUtils.defaultIfEmpty(getProperty(Prop.version), "9.10");    
+    }
+
     public Integer getOwner(){return _owner;}
 
     public void setOwner(Integer owner){_owner = owner;}
@@ -210,6 +221,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     protected void init(Pair<String, String>[] params)
     {
+        _props.remove(Prop.version.name());
         Map<String, Object> m = mapFromQueryString(params);
 
         for (Map.Entry<String,Object> entry : m.entrySet())

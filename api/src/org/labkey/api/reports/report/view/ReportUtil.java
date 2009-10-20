@@ -380,6 +380,7 @@ public class ReportUtil
                 record.put("type", r.getTypeDescription());
                 record.put("editable", String.valueOf(descriptor.canEdit(context)));
                 record.put("inherited", String.valueOf(inherited));
+                record.put("version", descriptor.getVersionString());
 
                 /**
                  * shared reports are only available if there is a query/schema available in the container that matches
