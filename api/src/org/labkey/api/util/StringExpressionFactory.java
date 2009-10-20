@@ -41,6 +41,8 @@ import java.util.*;
 public class StringExpressionFactory
 {
     private static CacheMap<String, StringExpression> templates = new LimitedCacheMap<String, StringExpression>(1000, 1000);
+    private static CacheMap<String, StringExpression> templatesUrl = new LimitedCacheMap<String, StringExpression>(1000, 1000);
+
     public static final StringExpression NULL_STRING = new ConstantStringExpression(null);
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
@@ -90,19 +92,20 @@ public class StringExpressionFactory
     public static StringExpression createURL(String str)
     {
         if (str == null)
-        {
             return null;
-        }
-        
-        String key = "url:" + str;
 
-        StringExpression expr = templates.get(key);
+        StringExpression expr;
+
+        String key = "url:" + str;
+        expr = templatesUrl.get(key);
         if (null != expr)
             return expr.copy();
 
         try
         {
-            if (str.startsWith("http://") || str.startsWith("https://"))
+            if (str.startsWith("mailto:"))
+                expr = new FieldKeyStringExpression(str);
+            else if (str.startsWith("http://") || str.startsWith("https://") || str.startsWith("mailto:"))
                 expr = new URLStringExpression(str);
             else if (null == DetailsURL.validateURL(str))
                 expr = DetailsURL.fromString(str);
@@ -122,7 +125,7 @@ public class StringExpressionFactory
             return null;
         }
 
-        templates.put(key, expr);
+        templatesUrl.put(key, expr);
         return expr.copy();
     }
 
@@ -130,6 +133,9 @@ public class StringExpressionFactory
     /** somewhat stricter than createURL() to enforce doc'd syntax (above) */
     public static String validateURL(String str)
     {
+        if (str.startsWith("mailto:"))
+            return null;
+        
         if (str.startsWith("http://") || str.startsWith("http://"))
         {
             try
