@@ -231,7 +231,7 @@ public class CoreQuerySchema extends UserSchema
             {
                 String resId = container.getPolicy().getResource().getResourceId();
                 members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoRoleAssignments()
-                        + " WHERE ResourceId=? AND Role != 'org.labkey.api.security.roles.NoPermissionsRole'", resId));
+                        + " WHERE ResourceId=? AND Role != 'org.labkey.api.security.roles.NoPermissionsRole')", resId));
             }
         }
 
