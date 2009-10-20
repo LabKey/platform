@@ -1168,6 +1168,10 @@ public class ExperimentController extends SpringActionController
         protected ModelAndView getDataView(DataForm form, BindException errors) throws IOException
         {
             String dataURL = _data.getDataFileUrl();
+            if (dataURL == null)
+            {
+                HttpView.throwNotFound("Unable to find file for " + _data.getName());
+            }
             URI dataURI;
             try
             {

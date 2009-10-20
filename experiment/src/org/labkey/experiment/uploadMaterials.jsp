@@ -49,7 +49,7 @@
     <% if (form.isImportMoreSamples()) { %>
         <tr>
             <td class="labkey-form-label">Update Options</td>
-            <td>This dataset already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
+            <td>This sample set already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
                 <labkey:radio name="overwriteChoice" id="ignoreOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.ignore%>" currentValue="<%=form.getOverwriteChoice()%>" /> Skip new samples that already exist.<br>
                 <labkey:radio name="overwriteChoice" id="replaceOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.replace%>" currentValue="<%=form.getOverwriteChoice()%>" /> Replace existing samples with new ones.<br>
             </td>

@@ -190,9 +190,12 @@ public class ExperimentRunGraph
                     Map<ExpData, String> dataRoles = run.getDataInputs();
                     List<ExpData> inputDatas = new ArrayList<ExpData>(dataRoles.keySet());
                     Collections.sort(inputDatas, new RoleAndNameComparator<ExpData>(dataRoles));
-                    int groupId = run.getProtocolApplications()[0].getRowId();
-                    addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
-                    generateDetailGraph(run, dg, ctrlProps);
+                    if (run.getProtocolApplications().length > 0)
+                    {
+                        int groupId = run.getProtocolApplications()[0].getRowId();
+                        addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
+                        generateDetailGraph(run, dg, ctrlProps);
+                    }
                 }
                 dg.dispose();
                 out.close();

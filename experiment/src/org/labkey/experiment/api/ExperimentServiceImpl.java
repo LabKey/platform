@@ -2771,6 +2771,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new IllegalArgumentException("You must derive from at least one parent material");
         }
+        for (ExpMaterial expMaterial : inputMaterials.keySet())
+        {
+            if (outputMaterials.containsKey(expMaterial))
+            {
+                throw new ExperimentException("The material " + expMaterial.getName() + " cannot be an input to its own derivation.");
+            }
+        }
 
         StringBuilder name = new StringBuilder("Derive ");
         if (outputMaterials.size() == 1)
