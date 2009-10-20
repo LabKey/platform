@@ -1492,7 +1492,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
             if (this.saveButton) // check if caller want's to omit the button
             {
-                this.saveButton = new Ext.Button({text:'Save', handler:this.SaveButton_onClick, scope:this});
+                this.saveButton = new Ext.Button({text:'Save', handler:this.SaveButton_onClick, scope:this, style:{margin:'5px'}});
                 this.saveButton.render(this.body);
                 this.add(this.saveButton);
             }

@@ -202,26 +202,24 @@ public class SecurityController extends SpringActionController
             ActionURL doneURL = form.isWizard() ? getContainer().getFolderType().getStartURL(getContainer(), getUser()) : null;
 
             Container container = getViewContext().getContainer();
+
+            ContainersView cview = null;
+            if (!container.isRoot())
+            {
+                cview = new ContainersView(container.getProject(), "permissionsContainerTree", "x-hide-display");
+                cview.setFrame(WebPartView.FrameType.NONE);
+            }
+
+            // consider pass in cview as a parameter (or at least the id of the div)
             FolderPermissions permsView = new FolderPermissions(root, resource, doneURL);
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setTitle("Permissions for " + container.getPath());
 
-            if (container.isRoot())
+            if (null == cview)
                 return permsView;
-
-            ContainersView cview = new ContainersView(container.getProject());
-            cview.setTitle("Folders");
-
-            LookAndFeelProperties props = LookAndFeelProperties.getInstance(container);
-
-            HBox box = new HBox();
-            box.addView(cview, props.getNavigationBarWidth());
-            box.addView(permsView);
-
-            cview.setFrame(WebPartView.FrameType.TITLE);            
-
-            return box;
+            else
+                return new VBox(cview, permsView);
         }
 
         public NavTree appendNavTrail(NavTree root)

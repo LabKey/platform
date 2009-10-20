@@ -40,6 +40,9 @@ import java.io.IOException;
 public class ContainersView extends WebPartView
 {
     Container _c;
+    String _id = "permissionsContainerTree";
+    String _className = null;
+
 
     public ContainersView(Container c)
     {
@@ -47,6 +50,13 @@ public class ContainersView extends WebPartView
         _c = c;
     }
 
+    public ContainersView(Container c, String id, String className)
+    {
+        setTitle("Folders in project " + c.getName());
+        _id = id;
+        _className = className;
+        _c = c;
+    }
 
     public void renderView(Object model, PrintWriter out) throws IOException, ServletException
     {
@@ -54,10 +64,10 @@ public class ContainersView extends WebPartView
         PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), ACL.PERM_ADMIN, url);
         ct.setCurrent(getViewContext().getContainer());
         LookAndFeelProperties props = LookAndFeelProperties.getInstance(getViewContext().getContainer());
-        StringBuilder html = new StringBuilder("<table class=\"labkey-data-region\" style=\"" + props.getNavigationBarWidth() + "px\">");
+        StringBuilder html = new StringBuilder("<div id='" + _id + "' class='extContainer " + _className+ "'><table class=\"labkey-data-region\" style=\"" + props.getNavigationBarWidth() + "px\">");
         ct.render(html);
         html.append("</table><br>");
-        html.append("<span style=\"font-style:italic\">*Indicates permissions are inherited</span>");
+        html.append("<span style=\"font-style:italic\">*Indicates permissions are inherited</span></div>");
 
         out.println(html.toString());
     }

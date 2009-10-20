@@ -60,10 +60,11 @@ var securityCache = null;
 
 Ext.onReady(function(){
     securityCache = new SecurityCache({
-    root:<%=PageFlowUtil.jsString(root.getId())%>,
-    project:<%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
-    folder:<%=PageFlowUtil.jsString(c.getId())%>
-});});
+        root:<%=PageFlowUtil.jsString(root.getId())%>,
+        project:<%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
+        folder:<%=PageFlowUtil.jsString(c.getId())%>
+    });
+});
 
 var policyEditor = null;
 </script>
@@ -74,12 +75,13 @@ var policyEditor = null;
 <% if (!c.isRoot()) { %>
 <div id="titleDiv" class="labkey-nav-page-header" style="padding: 5px">Permissions for <%=h(c.getPath())%></div>
 <% } %>
-<div id="buttonDiv"></div>
+<div id="buttonDiv" style="padding:5px;"></div>
 <div id="tabBoxDiv" class="extContainer"><i>Loading...</i></div>
 <script type="text/javascript">
 
 var tabItems = [];
 var tabPanel = null;
+var borderPanel = null;
 var doneURL = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>;
 
 function done()
@@ -105,7 +107,7 @@ function cancel()
     window.location = doneURL;
 }
 
-var autoScroll = false;
+var autoScroll = true;
 
 Ext.onReady(function(){
 
@@ -125,41 +127,72 @@ Ext.onReady(function(){
     for (var i=0 ; i<tabItems.length ; i++)
         tabItems[i].contentEl = $(tabItems[i].contentEl);
 
-    tabPanel = new Ext.TabPanel({
-        autoScroll : autoScroll,
-        autoHeight : !autoScroll,
-        activeItem : 0,
-        border : false,
-        defaults: {style : {padding:'5px'}},
-        items : tabItems
+    var treeContentEl = $('permissionsContainerTree');
+
+    var items = [];
+    items.push(
+        {
+            activeItem : 0,
+            autoScroll : autoScroll,
+            autoHeight : !autoScroll,
+            border:true,
+            defaults: {style : {padding:'5px'}},
+            id : 'folderPermissionsTabPanel',
+            items : tabItems,
+            plain:true,
+            region:'center',
+            xtype:'tabpanel'
+        });
+    if (treeContentEl)
+    {
+        treeContentEl.setStyle('margin','5px');
+        items.push({
+            autoScroll : autoScroll,
+            autoHeight : !autoScroll,
+            border:true,
+            contentEl:treeContentEl,
+            maxSize:300,
+            region:'west',
+            split:true,
+            title:'Folders',
+            width:140
+        });
+    }
+    
+    borderPanel = new Ext.Panel({
+        layout:'border',
+        border:false,
+        items:items
     });
 
     $('tabBoxDiv').update('');
-    tabPanel.render('tabBoxDiv');
+    borderPanel.render('tabBoxDiv');
+
+    tabPanel = Ext.ComponentMgr.get('folderPermissionsTabPanel');
     tabPanel.strip.applyStyles({'background':'#ffffff'});
+    tabPanel.stripWrap.applyStyles({'background':'#ffffff'});
 
     Ext.EventManager.onWindowResize(function(w,h)
     {
-        if (!tabPanel.rendered || !tabPanel.el)
+        if (!borderPanel.rendered || !borderPanel.el)
             return;
-        var xy = tabPanel.el.getXY();
+        var xy = borderPanel.el.getXY();
         var size = {
-            width : Math.max(100,w-xy[0]-50),
-            height : Math.max(100,h-xy[1]-20)};
-        tabPanel.setSize(size.width, autoScroll ? size.height : undefined);
-        tabPanel.doLayout();
+            width : Math.max(400,w-xy[0]-60),
+            height : Math.max(300,h-xy[1]-80)};
+        borderPanel.setSize(size.width, autoScroll ? size.height : undefined);
+        borderPanel.doLayout();
     });
     Ext.EventManager.fireWindowResize();
 });
 </script>
 
-<div style="display:none;">
 <%--
     PERMISSIONS
 --%>
 <% if (!c.isRoot())
 {%>
-    <div id="permissionsFrame" class="extContainer"></div>
+    <div id="permissionsFrame" class="extContainer x-hide-display"></div>
     <script type="text/javascript">
     tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
     Ext.onReady(function()
@@ -175,8 +208,8 @@ Ext.onReady(function(){
     GROUPS
 --%>
 
-    <div id="groupsFrame"></div>
-    <div id="siteGroupsFrame"></div>
+    <div id="groupsFrame" class="x-hide-display"></div>
+    <div id="siteGroupsFrame" class="x-hide-display"></div>
     <script type="text/javascript">
     function showPopup(group, groupsList)
     {
@@ -213,7 +246,7 @@ Ext.onReady(function(){
             if (!this.autoHeight)
             {
                 var sz = tabPanel.body.getSize();
-                this.setSize(sz.width-10,sz.height-10);
+                this.setSize(sz.width-20,sz.height-20);
                 var btm = sz.height + tabPanel.body.getX();
                 groupsList.setSize(200,btm-groupsList.el.getX());
                 this.doLayout();
@@ -275,7 +308,7 @@ Ext.onReady(function(){
             %><script type="text/javascript">
             tabItems.push({contentEl:'impersonateFrame', title:'Impersonate', autoHeight:true});
             </script>
-            <div id="impersonateFrame"><%
+            <div id="impersonateFrame" class="x-hide-display"><%
             impersonateView.setFrame(WebPartView.FrameType.NONE);
             me.include(impersonateView,out);
             %></div><%
@@ -299,7 +332,7 @@ Ext.onReady(function(){
                 continue;
             counter++;
             String id = "moduleSecurityView" + counter;
-            %><div id=<%=id%>><%
+            %><div id='<%=id%>' class="x-hide-display"><%
             view.setFrame(WebPartView.FrameType.NONE);
             me.include(view,out);
             %></div>
@@ -309,4 +342,3 @@ Ext.onReady(function(){
             <%
         }
 %>
-</div>

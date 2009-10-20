@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -38,8 +37,7 @@
     boolean enableFTP = !policy.isEmpty();
 %>
 <b>Pipeline&nbsp;Files&nbsp;Permissions</b><br>
-These permissions control whether pipeline files can be downloaded and updated via the web server (broswer, WebDAV), or the
-Labkey FTP server if it is configured.
+These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
 <form id="permissionsForm" action="updateRootPermissions.post" method="POST">
 <input id="enabledCheckbox" type="checkbox" name="enable" <%=enableFTP?"checked":""%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> share files via web site or FTP server<br>
