@@ -30,7 +30,6 @@ import org.labkey.api.view.*;
  */
 public class ExperimentRunListView extends QueryView
 {
-    private boolean _showDeleteButton = false;
     private boolean _showAddToExperimentButton = false;
     private boolean _showRemoveFromExperimentButton = false;
     private boolean _showExportXARButton = false;
@@ -73,11 +72,6 @@ public class ExperimentRunListView extends QueryView
         return result;
     }
 
-    public void setShowDeleteButton(boolean showDelete)
-    {
-        _showDeleteButton = showDelete;
-    }
-    
     public void setShowAddToRunGroupButton(boolean showAddToExperimentButton)
     {
         _showAddToExperimentButton = showAddToExperimentButton;
@@ -120,7 +114,7 @@ public class ExperimentRunListView extends QueryView
             bar.add(removeRunAction);
         }
 
-        if (_showDeleteButton)
+        if (showDeleteButton())
         {
             ActionButton deleteButton = new ActionButton("button", "Delete");
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), getReturnURL());

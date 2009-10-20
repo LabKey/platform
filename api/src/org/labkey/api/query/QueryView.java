@@ -99,6 +99,8 @@ public class QueryView extends WebPartView<Object>
     private Report _report;
 
     private boolean _showExportButtons = true;
+    private boolean _showInsertNewButton = true;
+    private boolean _showDeleteButton = true;
     private boolean _allowExportExternalQuery = true;
     private List<ContainerFilter.Type> _allowableContainerFilterTypes = Arrays.asList(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders);
     private boolean _useQueryViewActionExportURLs = false;
@@ -501,9 +503,29 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasPermission(getUser(), ACL.PERM_UPDATE) && table.getUpdateService() != null;
     }
 
-    protected boolean showRecordSelectors()
+    public boolean showInsertNewButton()
     {
-        return _showRecordSelectors || canDelete() ;
+        return _showInsertNewButton;
+    }
+
+    public void setShowInsertNewButton(boolean showInsertNewButton)
+    {
+        _showInsertNewButton = showInsertNewButton;
+    }
+
+    public boolean showDeleteButton()
+    {
+        return _showDeleteButton;
+    }
+
+    public void setShowDeleteButton(boolean showDeleteButton)
+    {
+        _showDeleteButton = showDeleteButton;
+    }
+
+    public boolean showRecordSelectors()
+    {
+        return _showRecordSelectors || showDeleteButton();
     }
 
     public void setShowRecordSelectors(boolean showRecordSelectors)
@@ -546,19 +568,22 @@ public class QueryView extends WebPartView<Object>
             bar.add(createViewButton(_itemFilter));
         }
 
-        if (canInsert())
+        if (showInsertNewButton())
         {
-            ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
-            if (urlInsert != null)
+            if (canInsert())
             {
-                ActionButton btnInsert = new ActionButton("", "Insert New");
-                btnInsert.setURL(urlInsert);
-                btnInsert.setActionType(ActionButton.Action.LINK);
-                bar.add(btnInsert);
+                ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
+                if (urlInsert != null)
+                {
+                    ActionButton btnInsert = new ActionButton("", "Insert New");
+                    btnInsert.setURL(urlInsert);
+                    btnInsert.setActionType(ActionButton.Action.LINK);
+                    bar.add(btnInsert);
+                }
             }
         }
 
-        if (showRecordSelectors())
+        if (showDeleteButton())
         {
             if (canDelete())
             {
