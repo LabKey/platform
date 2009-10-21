@@ -20,10 +20,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.data.Container;
 
 import java.util.Map;
 import java.util.List;
 import java.util.Collection;
+import java.util.Set;
 
 public interface ExpProtocol extends ExpObject
 {
@@ -112,6 +114,8 @@ public interface ExpProtocol extends ExpObject
     public List<ExpProtocol> getParentProtocols();
     
     ExpRun[] getExpRuns();
+
+    Set<Container> getExpRunContainers();
 
     public void setApplicationType(ApplicationType type);
     public void setDescription(String description);
