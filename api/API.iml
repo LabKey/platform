@@ -345,7 +345,9 @@
   <component name="NewModuleRootManager" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../../intellijBuild/webapps/CPAS/WEB-INF/classes" />
     <content url="file://$MODULE_DIR$/../../build/gensrc">
+      <sourceFolder url="file://$MODULE_DIR$/../../build/gensrc/antlr" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../build/gensrc/server/xb" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../../build/gensrc/server/xb" />
     </content>
     <content url="file://$MODULE_DIR$/../../schemas" />
     <content url="file://$MODULE_DIR$">
@@ -875,6 +877,15 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="InternalGWT" exported="" />
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../build/staging/labkeyWebapp/WEB-INF/lib/schemas.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
 

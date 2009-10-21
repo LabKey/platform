@@ -19,6 +19,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="API" exported="" />
+    <orderEntry type="module" module-name="InternalGWT" />
   </component>
 </module>
 
