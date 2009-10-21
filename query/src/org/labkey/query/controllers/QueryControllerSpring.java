@@ -2992,55 +2992,70 @@ public class QueryControllerSpring extends SpringActionController
 
             response.put("schemaName", form.getSchemaName());
             UserSchema uschema = (UserSchema) qschema;
-            Collection<String> qnames = form.isIncludeUserQueries() ? uschema.getTableAndQueryNames(true) : uschema.getVisibleTableNames();
+
             List<Map<String,Object>> qinfos = new ArrayList<Map<String,Object>>();
 
-            Map<String,QueryDefinition> userDefinedMap = QueryService.get().getQueryDefs(getContainer(), form.getSchemaName());
-
-            for(String qname : qnames)
+            //user-defined queries
+            if (form.isIncludeUserQueries())
             {
-                TableInfo table = null;
-                try
+                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getContainer(), uschema.getSchemaName());
+                for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
                 {
-                    table = uschema.getTable(qname);
+                    if (!entry.getValue().isHidden())
+                        qinfos.add(getQueryProps(entry.getKey(), true, uschema, form.isIncludeColumns()));
                 }
-                catch(Exception e)
-                {
-                    //may happen due to query failing parse
-                }
+            }
 
-                Map<String,Object> qinfo = new HashMap<String,Object>();
-                qinfo.put("name", qname);
-                if (null != table && null != table.getDescription())
-                    qinfo.put("description", table.getDescription());
-                if (userDefinedMap.containsKey(qname))
-                    qinfo.put("isUserDefined", true);
+            //built-in tables
+            for(String qname : uschema.getTableNames())
+            {
+                qinfos.add(getQueryProps(qname, false, uschema, form.isIncludeColumns()));
+            }
 
-                if(null != table && form.isIncludeColumns())
-                {
-                    //enumerate the columns
-                    List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();
-                    for(ColumnInfo col : table.getColumns())
-                    {
-                        Map<String,Object> cinfo = new HashMap<String,Object>();
-                        cinfo.put("name", col.getName());
-                        if(null != col.getLabel())
-                            cinfo.put("caption", col.getLabel());
-                        if(null != col.getDescription())
-                            cinfo.put("description", col.getDescription());
-
-                        cinfos.add(cinfo);
-                    }
-                    if(cinfos.size() > 0)
-                        qinfo.put("columns", cinfos);
-                }
-
-                qinfos.add(qinfo);
-            } //for each query name
             
             response.put("queries", qinfos);
 
             return response;
+        }
+
+        protected Map<String,Object> getQueryProps(String name, boolean isUserDefined, UserSchema schema, boolean includeColumns)
+        {
+            Map<String,Object> qinfo = new HashMap<String,Object>();
+            qinfo.put("name", name);
+            qinfo.put("isUserDefined", isUserDefined);
+
+            TableInfo table = null;
+            try
+            {
+                table = schema.getTable(name);
+            }
+            catch(Exception e)
+            {
+                //may happen due to query failing parse
+            }
+
+            if (null != table && null != table.getDescription())
+                qinfo.put("description", table.getDescription());
+
+            if (null != table && includeColumns)
+            {
+                //enumerate the columns
+                List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();
+                for(ColumnInfo col : table.getColumns())
+                {
+                    Map<String,Object> cinfo = new HashMap<String,Object>();
+                    cinfo.put("name", col.getName());
+                    if(null != col.getLabel())
+                        cinfo.put("caption", col.getLabel());
+                    if(null != col.getDescription())
+                        cinfo.put("description", col.getDescription());
+
+                    cinfos.add(cinfo);
+                }
+                if(cinfos.size() > 0)
+                    qinfo.put("columns", cinfos);
+            }
+            return qinfo;
         }
     }
 

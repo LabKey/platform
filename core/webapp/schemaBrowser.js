@@ -46,6 +46,7 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
             this.getSchemas(function(){
                 this.getQueries(schemaName, callback, scope);
             }, this);
+            return;
         }
 
         var schema = this.schemasMap[schemaName];
@@ -75,6 +76,11 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
             },
             scope: this
         });
+    },
+
+    clearAll : function()
+    {
+        delete this.schemasMap;
     }
 });
 
@@ -1449,6 +1455,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     onRefresh : function() {
         //clear the query details cache
+        this._qcache.clearAll();
         this._qdcache.clearAll();
 
         //remove all tabs except for the first one (home)
