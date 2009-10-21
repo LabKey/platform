@@ -69,11 +69,11 @@
 <td>
 <table class="labkey-data-region">
     <tr><td colspan="2"><b>Core Database Configuration</b></td></tr>
-    <tr><td>Server URL</td><td><%=bean.scope.getURL() %></td></tr>
-    <tr><td>Product Name</td><td><%=bean.scope.getDatabaseProductName() %></td></tr>
-    <tr><td>Product Version</td><td><%=bean.scope.getDatabaseProductVersion() %></td></tr>
-    <tr><td>JDBC Driver Name</td><td><%=bean.scope.getDriverName() %></td></tr>
-    <tr><td>JDBC Driver Version</td><td><%=bean.scope.getDriverVersion() %></td></tr>
+    <tr><td>Server URL</td><td id="databaseServerURL"><%=bean.scope.getURL() %></td></tr>
+    <tr><td>Product Name</td><td id="databaseProductName"><%=bean.scope.getDatabaseProductName() %></td></tr>
+    <tr><td>Product Version</td><td id="databaseProductVersion"><%=bean.scope.getDatabaseProductVersion() %></td></tr>
+    <tr><td>JDBC Driver Name</td><td id="databaseDriverName"><%=bean.scope.getDriverName() %></td></tr>
+    <tr><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=bean.scope.getDriverVersion() %></td></tr>
 
     <tr><td>&nbsp;</td></tr>
 
