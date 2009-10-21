@@ -29,6 +29,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.list.FileNameUniquifier;
 import org.labkey.experiment.list.ListItemImpl;
 
@@ -101,7 +102,7 @@ public class ListImportHelper implements OntologyManager.ImportHelper
                         }
 
                         String filename = file.getName();
-                        File aFile = new File(new File(_attachmentDir, columnName), uniquifier.uniquify(filename));
+                        File aFile = new File(new File(_attachmentDir, FileUtil.makeLegalName(columnName)), uniquifier.uniquify(filename));
                         AttachmentFile attachmentFile = new FileAttachmentFile(aFile);
                         attachmentFile.setFilename(filename);
                         attachmentFiles.add(attachmentFile);

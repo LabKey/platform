@@ -33,6 +33,7 @@ import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyContext;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -114,11 +115,12 @@ public class ListImporter implements ExternalStudyImporter
 
                 if (null != def)
                 {
-                    File tsv = new File(listsDir, name + ".tsv");
+                    String legalName = FileUtil.makeLegalName(name);
+                    File tsv = new File(listsDir, legalName + ".tsv");
 
                     if (tsv.exists())
                     {
-                        List<String> errors = def.insertListItems(ctx.getUser(), DataLoader.getDataLoaderForFile(tsv), new File(listsDir, name));
+                        List<String> errors = def.insertListItems(ctx.getUser(), DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName));
 
                         for (String error : errors)
                             ctx.getLogger().error(error);

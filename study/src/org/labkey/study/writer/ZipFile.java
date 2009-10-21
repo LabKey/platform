@@ -126,7 +126,7 @@ public class ZipFile implements Archive
 
     public VirtualFile getDir(String path)
     {
-        return new ZipFile(_out, _pw, _path + path + "/", false);
+        return new ZipFile(_out, _pw, _path + makeLegalName(path) + "/", false);
     }
 
     public Archive createZipArchive(String name) throws IOException
