@@ -44,7 +44,7 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
         FlowPanel labelPanel = new FlowPanel();
         labelPanel.add(new InlineLabel("URL"));
         labelPanel.add(new HelpPopup("URL", "<p>A template for generating hyperlinks for this field. The <strong>${ }</strong> syntax " +
-                "may be used to substitute a fields's value into the URL. Two formats are supported:</p>"+
+                "may be used to substitute a field's value into the URL. Two formats are supported:</p>"+
                 "<span style='white-space:nowrap;'><strong>Full URL</strong></span><br/>" +
                 "<span>Starts with http:// or https://</span><br/>" +
                 "<span style='white-space:nowrap;'><em>http://server/path/page.html?id=${Param}</em></span><br>" +
