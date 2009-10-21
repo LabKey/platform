@@ -454,7 +454,6 @@ api/src/org/labkey/api/query/CustomViewInfo.java -text
 api/src/org/labkey/api/query/DefaultQueryUpdateService.java -text
 api/src/org/labkey/api/query/DefaultSchema.java -text
 api/src/org/labkey/api/query/DetailsURL.java -text
-api/src/org/labkey/api/query/DomainForeignKey.java -text
 api/src/org/labkey/api/query/DuplicateKeyException.java -text
 api/src/org/labkey/api/query/ExportRScriptModel.java -text
 api/src/org/labkey/api/query/ExportScriptFactory.java -text

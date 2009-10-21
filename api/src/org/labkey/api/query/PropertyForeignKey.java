@@ -21,6 +21,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
@@ -56,6 +58,24 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
             _pdMap.put(pd.getName(), pd);
         }
         _schema = schema;
+    }
+
+
+    public PropertyForeignKey(Domain domain, QuerySchema schema)
+    {
+        this(listProperties(domain), schema);
+    }
+
+    
+    private static PropertyDescriptor[] listProperties(Domain domain)
+    {
+        DomainProperty[] properties = domain.getProperties();
+        PropertyDescriptor[] result = new PropertyDescriptor[properties.length];
+        for (int i = 0; i < properties.length; i++)
+        {
+            result[i] = properties[i].getPropertyDescriptor();
+        }
+        return result;
     }
 
 
