@@ -102,9 +102,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public ColumnInfo createPropertyColumn(String name)
     {
-        String sql = "(SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
-        ColumnInfo ret = new ExprColumn(this, name, new SQLFragment(sql), Types.INTEGER);
-        ret.setIsUnselectable(true);
+        ColumnInfo ret = wrapColumn(name,getLSIDColumn());
         return ret;
     }
 
@@ -184,10 +182,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public ColumnInfo addPropertyColumns(String categoryDescription, PropertyDescriptor[] pds, QuerySchema schema)
     {
-        String sqlObjectId = "(SELECT objectid FROM " + OntologyManager.getTinfoObject() + " o WHERE o.objecturi = " +
-                ExprColumn.STR_TABLE_ALIAS + ".lsid)";
-
-        ColumnInfo colProperty = new ExprColumn(this, categoryDescription, new SQLFragment(sqlObjectId), Types.INTEGER);
+        ColumnInfo colProperty = wrapColumn(categoryDescription, getLSIDColumn()); 
         Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
         for(PropertyDescriptor pd : pds)
         {
@@ -216,4 +211,22 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     {
         return _schema.getSchemaName();
     }
+
+
+/*
+    @Override
+    public boolean hasContainerContext()
+    {
+        ContainerFilter cf = getContainerFilter();
+        return null == cf || ContainerFilter.CURRENT == cf;
+    }
+
+
+    @Override
+    public Container getContainer(Map context)
+    {
+        assert getContainer().equals(_schema.getContainer());
+        return getContainer();
+    }
+*/
 }
