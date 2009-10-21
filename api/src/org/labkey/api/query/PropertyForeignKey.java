@@ -166,7 +166,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         }
         else
         {
-            ret = new PropertyColumn(pd, parent, _schema.getContainer().getId(), _schema.getUser());
+            ret = new PropertyColumn(pd, parent, null, _schema.getUser());
             ret.setFieldKey(name);
         }
         decorateColumn(ret, pd);

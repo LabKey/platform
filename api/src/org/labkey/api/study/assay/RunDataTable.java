@@ -47,7 +47,7 @@ public class RunDataTable extends FilteredTable
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
         objectIdColumn.setKeyField(true);
-        ColumnInfo column = wrapColumn("Properties", _rootTable.getColumn("ObjectId"));
+        ColumnInfo column = wrapColumn("Properties", _rootTable.getColumn("ObjectUri"));
         column.setKeyField(false);
         column.setIsUnselectable(true);
         final AssayProvider provider = AssayService.get().getProvider(protocol);
