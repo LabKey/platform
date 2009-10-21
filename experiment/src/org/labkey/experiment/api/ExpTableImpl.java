@@ -142,6 +142,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
                 return new FlagColumnRenderer(colInfo);
             }
         });
+        ret.setDescription("A reference to a comment about this row");
         return ret;
     }
 

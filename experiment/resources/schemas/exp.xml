@@ -158,16 +158,31 @@
     </ns:table>
     <ns:table tableName="Material" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="LSID"/>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="RowId">
+          <ns:description>Contains the unique identifier for this sample</ns:description>
+      </ns:column>
+      <ns:column columnName="LSID">
+          <ns:description>Contains a life sciences identifier for this sample</ns:description>
+      </ns:column>
+      <ns:column columnName="Name">
+          <ns:description>Contains a short description for this sample</ns:description>
+      </ns:column>
       <ns:column columnName="CpasType">
           <ns:columnTitle>Sample Set</ns:columnTitle>
+          <ns:description>If this sample is a member of a sample set, contains a reference to the sample set</ns:description>
       </ns:column>
-      <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="RunId"/>
-      <ns:column columnName="Created"/>
-      <ns:column columnName="Container"/>
+      <ns:column columnName="SourceApplicationId">
+          <ns:description>Contains a reference to the protocol application that created this sample, if available</ns:description>
+      </ns:column>
+      <ns:column columnName="RunId">
+          <ns:description>Contains a reference to the experiment run that created this sample, if available</ns:description>
+      </ns:column>
+      <ns:column columnName="Created">
+          <ns:description>Contains the date and time that this sample was added to the system</ns:description>
+      </ns:column>
+      <ns:column columnName="Container">
+          <ns:description>Contains a reference to the folder that holds this sample</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per material or sample described in this folder.</ns:description>
   </ns:table>

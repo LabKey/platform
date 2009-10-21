@@ -85,6 +85,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), Types.VARCHAR);//, getColumn("SourceProtocolApplication"));
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                columnInfo.setDescription("Contains a reference to the protocol for the protocol application that created this sample");
                 return columnInfo;
             }
             case SourceProtocolApplication:
@@ -112,6 +113,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                         ret.setFk(new PropertyForeignKey(domain, _schema));
                     }
                 }
+                ret.setDescription("A holder for any custom fields associated with this sample");
                 return ret;
             case Flag:
                 return createFlagColumn(alias);
@@ -162,9 +164,20 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
     public void populate(ExpSampleSet ss, boolean filter)
     {
-        if (ss != null && !ss.getContainer().equals(getContainer()))
+        if (ss != null)
         {
-            setContainerFilter(new ContainerFilter.CurrentPlusExtras(_schema.getUser(), ss.getContainer()));
+            if (ss.getDescription() != null)
+            {
+                setDescription(ss.getDescription());
+            }
+            else
+            {
+                setDescription("Contains one row per sample in the " + ss.getName() + " sample set");
+            }
+            if (!ss.getContainer().equals(getContainer()))
+            {
+                setContainerFilter(new ContainerFilter.CurrentPlusExtras(_schema.getUser(), ss.getContainer()));
+            }
         }
 
         addColumn(ExpMaterialTable.Column.RowId).setHidden(true);
