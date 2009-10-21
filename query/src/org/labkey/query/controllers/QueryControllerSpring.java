@@ -3001,15 +3001,16 @@ public class QueryControllerSpring extends SpringActionController
                 Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getContainer(), uschema.getSchemaName());
                 for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
                 {
-                    if (!entry.getValue().isHidden())
-                        qinfos.add(getQueryProps(entry.getKey(), true, uschema, form.isIncludeColumns()));
+                    QueryDefinition qdef = entry.getValue();
+                    if (!qdef.isHidden())
+                        qinfos.add(getQueryProps(qdef.getName(), qdef.getDescription(), true, uschema, form.isIncludeColumns()));
                 }
             }
 
             //built-in tables
             for(String qname : uschema.getTableNames())
             {
-                qinfos.add(getQueryProps(qname, false, uschema, form.isIncludeColumns()));
+                qinfos.add(getQueryProps(qname, null, false, uschema, form.isIncludeColumns()));
             }
 
             
@@ -3018,24 +3019,30 @@ public class QueryControllerSpring extends SpringActionController
             return response;
         }
 
-        protected Map<String,Object> getQueryProps(String name, boolean isUserDefined, UserSchema schema, boolean includeColumns)
+        protected Map<String,Object> getQueryProps(String name, String description, boolean isUserDefined, UserSchema schema, boolean includeColumns)
         {
             Map<String,Object> qinfo = new HashMap<String,Object>();
             qinfo.put("name", name);
             qinfo.put("isUserDefined", isUserDefined);
+            if (null != description)
+                qinfo.put("description", description);
 
+            //get the table info if the user requested column info
+            //or if the description coming in was null (need to get form TableInfo)
             TableInfo table = null;
-            try
+            if (includeColumns || null == description)
             {
-                table = schema.getTable(name);
+                try
+                {
+                    table = schema.getTable(name);
+                }
+                catch(Exception e)
+                {
+                    //may happen due to query failing parse
+                }
+                if (null != table && null == description)
+                    qinfo.put("description", table.getDescription());
             }
-            catch(Exception e)
-            {
-                //may happen due to query failing parse
-            }
-
-            if (null != table && null != table.getDescription())
-                qinfo.put("description", table.getDescription());
 
             if (null != table && includeColumns)
             {
