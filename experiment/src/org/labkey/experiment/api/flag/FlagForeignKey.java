@@ -22,16 +22,20 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.security.User;
 
 public class FlagForeignKey extends AbstractForeignKey
 {
     public static final String DISPLAYFIELD_NAME = "Comment";
     String _urlFlagged;
     String _urlUnflagged;
-    public FlagForeignKey(String urlFlagged, String urlUnflagged)
+    User _user;
+    
+    public FlagForeignKey(String urlFlagged, String urlUnflagged, User user)
     {
         _urlFlagged = urlFlagged;
         _urlUnflagged = urlUnflagged;
+        _user = user;
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -42,7 +46,7 @@ public class FlagForeignKey extends AbstractForeignKey
         }
         if (!displayField.equalsIgnoreCase(DISPLAYFIELD_NAME))
             return null;
-        return new FlagColumn(parent, _urlFlagged, _urlUnflagged);
+        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _user);
     }
 
     public TableInfo getLookupTableInfo()

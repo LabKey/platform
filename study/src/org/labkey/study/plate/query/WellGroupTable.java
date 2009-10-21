@@ -67,7 +67,7 @@ public class WellGroupTable extends BasePlateTable
         try
         {
             //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
-            ColumnInfo colProperty = new AliasedColumn("property", getColumn("lsid"));
+            ColumnInfo colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
             String propPrefix = new Lsid("WellGroupInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);

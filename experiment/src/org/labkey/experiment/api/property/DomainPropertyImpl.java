@@ -259,16 +259,6 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd;
     }
 
-    public SQLFragment getValueSQL()
-    {
-        return PropertyForeignKey.getValueSql(_pd.getPropertyType());
-    }
-
-    public SQLFragment getMvIndicatorSQL()
-    {
-        return PropertyForeignKey.getMvIndicatorSQL();
-    }
-
     public int getSqlType()
     {
         return _pd.getPropertyType().getSqlType();
@@ -346,11 +336,6 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setLookupSchema(lookup.getSchemaName());
     }
 
-    public void initColumn(User user, ColumnInfo column)
-    {
-        PropertyForeignKey.initColumn(user, column, _pd);
-        column.setReadOnly(false);
-    }
 
     public PropertyDescriptor getPropertyDescriptor()
     {
@@ -485,5 +470,11 @@ public class DomainPropertyImpl implements DomainProperty
         if (_pdOld != null || ((DomainPropertyImpl) obj)._pdOld != null)
             return false;
         return (_pd.equals(((DomainPropertyImpl) obj)._pd));
+    }
+
+    @Override
+    public String toString()
+    {
+        return super.toString() + _pd.getPropertyURI();
     }
 }

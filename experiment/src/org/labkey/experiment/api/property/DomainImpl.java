@@ -469,19 +469,7 @@ public class DomainImpl implements Domain
         for (int i=0; i<domainProperties.length; i++)
         {
             DomainProperty property = domainProperties[i];
-            ColumnInfo column = new ExprColumn(sourceTable,
-                property.getName(),
-                PropertyForeignKey.getValueSql(
-                    lsidColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS),
-                    property.getValueSQL(),
-                    property.getPropertyId(),
-                    true),
-                property.getSqlType());
-
-            column.setScale(property.getScale());
-            column.setInputType(property.getInputType());
-            column.setDescription(property.getDescription());
-            property.initColumn(user, column);
+            ColumnInfo column = new PropertyColumn(property.getPropertyDescriptor(), lsidColumn, null, user);
             columns[i] = column;
         }
         return columns;

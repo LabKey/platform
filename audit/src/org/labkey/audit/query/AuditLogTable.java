@@ -102,7 +102,7 @@ public class AuditLogTable extends FilteredTable
                 if (pds.length > 0)
                 {
                     //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
-                    ColumnInfo colProperty = new AliasedColumn("property", getColumn("lsid"));
+                    ColumnInfo colProperty = wrapColumn("property", getRealTable().getColumn("Lsid"));
                     Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
                     for (PropertyDescriptor pd : pds)
                     {

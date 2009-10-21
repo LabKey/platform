@@ -19,27 +19,26 @@ package org.labkey.experiment.api.flag;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.security.User;
 
 import java.sql.Types;
 
-public class FlagColumn extends ExprColumn
+public class FlagColumn extends PropertyColumn
 {
     String _urlFlagged;
     String _urlUnflagged;
 
-    public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged)
+    public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged, User user)
     {
-        super(parent.getParentTable(), new FieldKey(parent.getFieldKey(),"$"), null, Types.VARCHAR, parent);
+        super(ExperimentProperty.COMMENT.getPropertyDescriptor(), parent, null, user);
+        setFieldKey(new FieldKey(parent.getFieldKey(),"$"));
         setAlias(parent.getAlias() + "$");
-        PropertyDescriptor pd = ExperimentProperty.COMMENT.getPropertyDescriptor();
-        SQLFragment sql = PropertyForeignKey.getValueSql(parent,
-                PropertyForeignKey.getValueSql(pd.getPropertyType()),
-                pd.getPropertyId(), true);
-        setValueSQL(sql);
         _urlFlagged = urlFlagged;
         _urlUnflagged = urlUnflagged;
     }

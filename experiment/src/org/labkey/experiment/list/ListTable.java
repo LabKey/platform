@@ -18,6 +18,7 @@ package org.labkey.experiment.list;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
@@ -76,17 +77,10 @@ public class ListTable extends FilteredTable
         ColumnInfo colObjectId = wrapColumn(getRealTable().getColumn("ObjectId"));
         for (DomainProperty property : listDef.getDomain().getProperties())
         {
-            ColumnInfo column = new ExprColumn(this, property.getName(),
-                    PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getValueSQL(), property.getPropertyId(), false), property.getSqlType());
-            column.setScale(property.getScale());
-            column.setShownInInsertView(property.isShownInInsertView());
-            column.setShownInUpdateView(property.isShownInUpdateView());
-            column.setShownInDetailsView(property.isShownInDetailsView());
-            column.setInputType(property.getInputType());
-            column.setDescription(property.getDescription());
-            column.setDefaultValueType(property.getDefaultValueTypeEnum());
+            PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, user);
+            column.setParentIsObjectId(true);
+            column.setReadOnly(false);
             safeAddColumn(column);
-            property.initColumn(user, column);
             if (property.isMvEnabled())
             {
                 MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId);

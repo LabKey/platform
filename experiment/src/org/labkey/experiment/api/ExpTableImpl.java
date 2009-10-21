@@ -106,14 +106,6 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         return ret;
     }
 
-    public ColumnInfo createPropertyValueColumn(String name, PropertyDescriptor pd)
-    {
-        SQLFragment sqlLSID = wrapColumn("~~createPropertyValueColumn~~", getLSIDColumn()).getValueSql(ExprColumn.STR_TABLE_ALIAS);
-        SQLFragment sqlValue = PropertyForeignKey.getValueSql(pd.getPropertyType());
-        SQLFragment sql = PropertyForeignKey.getValueSql(sqlLSID, sqlValue, pd.getPropertyId(), true);
-        return new ExprColumn(this, name, sql, pd.getPropertyType().getSqlType());
-    }
-
     public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         ColumnInfo ret = wrapColumn(name, userIdColumn);
@@ -134,7 +126,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected ColumnInfo createFlagColumn(String alias)
     {
         ColumnInfo ret = wrapColumn(alias, getLSIDColumn());
-        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false)));
+        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _schema.getUser()));
         ret.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
