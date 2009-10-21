@@ -122,7 +122,7 @@
         %></td></tr>
         <tr><td colspan=2><input id=useExplicit name=permissionType type=radio value="<%=SecurityController.PermissionType.explicitPermission%>" <%= getPermissionType(bean) == SecurityController.PermissionType.explicitPermission ? "checked" : ""%> onclick="updateDisplay()"></td><td><b>Explicit</b> : set permissions per group
     <%
-        if (isOwner(bean)) {
+        if (isOwner(bean, context)) {
     %>
         <tr><td colspan=2><input id=usePrivate name=permissionType type=radio value="<%=SecurityController.PermissionType.privatePermission%>" <%= getPermissionType(bean) == SecurityController.PermissionType.privatePermission ? "checked" : ""%> onclick="updateDisplay()"></td><td><b>Private</b> : this view is only visible to you
     <%
@@ -188,8 +188,8 @@
         return SecurityController.PermissionType.defaultPermission;
     }
 
-    boolean isOwner(Report report)
+    boolean isOwner(Report report, ViewContext context)
     {
-        return report.getDescriptor().canEdit(HttpView.currentContext());
+        return report.getDescriptor().canEdit(context.getUser(), context.getContainer());
     }
 %>

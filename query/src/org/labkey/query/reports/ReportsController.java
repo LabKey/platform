@@ -296,7 +296,7 @@ public class ReportsController extends SpringActionController
 
             if (report != null)
             {
-                if (!report.getDescriptor().canEdit(getViewContext()))
+                if (!report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                     return HttpView.throwUnauthorized();
                 ReportService.get().deleteReport(getViewContext(), report);
             }
@@ -1262,7 +1262,8 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse("views", ReportUtil.getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), true));
+            return new ApiSimpleResponse("views", ReportUtil.getViews(getViewContext(), form.getSchemaName(), form.getQueryName(),
+                    getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)));
         }
     }
 
@@ -1277,7 +1278,7 @@ public class ReportsController extends SpringActionController
 
                 if (report != null)
                 {
-                    if (!report.getDescriptor().canEdit(getViewContext()))
+                    if (!report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                         HttpView.throwUnauthorized();
                     ReportService.get().deleteReport(getViewContext(), report);
                 }
@@ -1313,7 +1314,7 @@ public class ReportsController extends SpringActionController
 
                 if (_report != null)
                 {
-                    if (!_report.getDescriptor().canEdit(getViewContext()))
+                    if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                         errors.rejectValue("viewName", ERROR_MSG, "You are not allowed to edit this view.");
 
                     if (!StringUtils.equals(_report.getDescriptor().getReportName(), form.getViewName()))
@@ -1456,7 +1457,7 @@ public class ReportsController extends SpringActionController
                         _report = reportId.getReport();
                     if (_report != null)
                     {
-                        if (!_report.getDescriptor().canEdit(getViewContext()))
+                        if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                         {
                             errors.reject("renameReportAction", "Unauthorized operation");
                             return;
@@ -1532,7 +1533,7 @@ public class ReportsController extends SpringActionController
                     _report = reportId.getReport();
                 if (_report != null)
                 {
-                    if (!_report.getDescriptor().canEdit(getViewContext()))
+                    if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                         errors.reject("reportDescription", "Unauthorized operation");
                 }
             }

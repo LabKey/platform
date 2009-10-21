@@ -41,7 +41,7 @@
     User user = context.getUser();
 
     // group by query name
-    List<Map<String, String>> allViews = ReportManager.get().getViews(context, null, null, true);
+    List<Map<String, String>> allViews = ReportManager.get().getViews(context, null, null, true, false);
     Map<String, List<Map<String, String>>> groups = new TreeMap<String, List<Map<String, String>>>();
     for (Map<String, String> view : allViews)
     {

@@ -72,7 +72,7 @@ public class StudyRReport extends RReport
 
     public ActionURL getEditReportURL(ViewContext context)
     {
-        if (getDescriptor().canEdit(context))
+        if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
         {
             return getRunReportURL(context).
                     addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE).

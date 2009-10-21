@@ -40,6 +40,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 
@@ -230,7 +231,8 @@ public class ReportsController extends BaseStudyController
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse("views", ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), true));
+            boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
+            return new ApiSimpleResponse("views", ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), isAdmin, true));
         }
     }
 

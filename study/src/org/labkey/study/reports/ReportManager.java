@@ -29,6 +29,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -327,18 +328,26 @@ public class ReportManager implements StudyManager.UnmaterializeListener
     /**
      * Returns the list of views available and additionally checks study security.
      */
-    public List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries)
+    public List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, boolean editOnly)
     {
-        return ReportUtil.getViews(context, schemaName, queryName, includeQueries, new StudyReportFilter());
+        return ReportUtil.getViews(context, schemaName, queryName, includeQueries, new StudyReportFilter(editOnly));
     }
 
     public static class StudyReportFilter extends ReportUtil.DefaultReportFilter
     {
         Map<String, DataSetDefinition> _datasets;
+        boolean _editOnly;
+
+        public StudyReportFilter(boolean editOnly)
+        {
+            _editOnly = editOnly;
+        }
 
         @Override
         public boolean accept(Report report, Container c, User user)
         {
+            if (_editOnly && !report.getDescriptor().canEdit(user, c))
+                return false;
             return ReportManager.get().canReadReport(user, c, report);
         }
 
