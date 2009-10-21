@@ -195,24 +195,31 @@ public class PropertyController extends SpringActionController
 
             String data;
 
-            if ("file".equals(inferForm.getSource()))
+            try
             {
-                data = getDataFromFile(writer);
-                if (data == null)
-                    return; // We'll already have written out the error
-            }
-            else // tsv
-            {
-                TabLoader dataLoader = new TabLoader(inferForm.getTsvText(), true);
-                data = getData(dataLoader);
-            }
-            writer.write("Success:");
-            data = data.replaceAll("\r|\n", "<br>");
-            data = data.replaceAll("\t", "<tab>");
-            writer.write(data);
+                if ("file".equals(inferForm.getSource()))
+                {
+                    data = getDataFromFile(writer);
+                    if (data == null)
+                        return; // We'll already have written out the error
+                }
+                else // tsv
+                {
+                    TabLoader dataLoader = new TabLoader(inferForm.getTsvText(), true);
+                    data = getData(dataLoader);
+                }
+                writer.write("Success:");
+                data = data.replaceAll("\r|\n", "<br>");
+                data = data.replaceAll("\t", "<tab>");
+                writer.write(data);
 
-            writer.flush();
-            writer.close();
+                writer.flush();
+                writer.close();
+            }
+            catch (Exception e)
+            {
+                error(writer, e.getMessage());
+            }
         }
 
         private String getDataFromFile(Writer writer) throws IOException

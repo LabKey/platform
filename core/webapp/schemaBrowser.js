@@ -6,6 +6,8 @@
 
 Ext.namespace('LABKEY', 'LABKEY.ext');
 
+Ext.Ajax.timeout = 60000;
+
 LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable, {
     constructor : function(config) {
         LABKEY.ext.QueryCache.superclass.constructor.apply(this, arguments);
