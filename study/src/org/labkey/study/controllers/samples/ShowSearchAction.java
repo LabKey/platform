@@ -160,6 +160,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             private boolean _displayByDefault;
             private boolean _displayAsPickList;
             private boolean _forceDistinctQuery;
+            private String _orderBy;
 
             public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList)
             {
@@ -187,6 +188,16 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             {
                 return _forceDistinctQuery;
             }
+
+            public String getOrderBy()
+            {
+                return _orderBy;
+            }
+
+            public void setOrderBy(String orderBy)
+            {
+                _orderBy = orderBy;
+            }
         }
 
 
@@ -204,7 +215,9 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultDetailCols.put("PrimaryType", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("AdditiveType", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("SiteName", new DisplayColumnInfo(true, true, true));
-            _defaultDetailCols.put("Visit", new DisplayColumnInfo(true, true));
+            DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
+            visitInfo.setOrderBy("DisplayOrder");
+            _defaultDetailCols.put("Visit", visitInfo);
             _defaultDetailCols.put("ParticipantId", new DisplayColumnInfo(true, true, true));
             _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(false, true));
@@ -218,7 +231,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultSummaryCols.put("AdditiveType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("DerivativeType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("SiteName", new DisplayColumnInfo(true, true, true));
-            _defaultSummaryCols.put("Visit", new DisplayColumnInfo(true, true));
+            _defaultSummaryCols.put("Visit", visitInfo);
             _defaultSummaryCols.put("ParticipantId", new DisplayColumnInfo(true, true, true));
             _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
             _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true));
@@ -264,7 +277,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
             DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
             assert colInfo != null : info.getName() + " is not a picklist column.";
-            return SampleManager.getInstance().getDistinctColumnValues(_container, info, colInfo.isForceDistinctQuery());
+            return SampleManager.getInstance().getDistinctColumnValues(_container, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy());
         }
     }
 

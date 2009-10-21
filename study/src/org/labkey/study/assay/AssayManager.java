@@ -165,12 +165,9 @@ public class AssayManager implements AssayService.Interface
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         assert provider != null : "Could not find a provider for protocol: " + protocol;
-        Set<Container> containers = new TreeSet<Container>();
 
         // First find all the containers that have contributed data to this protocol
-        ExpRun[] runs = protocol.getExpRuns();
-        for (ExpRun run : runs)
-            containers.add(run.getContainer());
+        Set<Container> containers = protocol.getExpRunContainers();
 
         Container protocolContainer = protocol.getContainer();
 

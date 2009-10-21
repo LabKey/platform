@@ -1408,7 +1408,7 @@ public class SampleManager
         }
     }
 
-    public List<String> getDistinctColumnValues(Container container, ColumnInfo col, boolean forceDistinctQuery) throws SQLException
+    public List<String> getDistinctColumnValues(Container container, ColumnInfo col, boolean forceDistinctQuery, String orderBy) throws SQLException
     {
         String cacheKey = "DistinctColumnValues." + col.getColumnName();
         boolean isLookup = col.getFk() != null && !forceDistinctQuery;
@@ -1434,7 +1434,7 @@ public class SampleManager
                             ((ContainerFilterable)tinfo).setContainerFilter(new ContainerFilter.SimpleContainerFilter(Collections.singleton(container)));
                         }
                         rs = Table.select(tinfo, Arrays.asList(tinfo.getColumn(tinfo.getTitleColumn())), null,
-                                new Sort(tinfo.getTitleColumn()));
+                                new Sort(orderBy != null ? orderBy : tinfo.getTitleColumn()));
                     }
                     else
                     {
@@ -1442,6 +1442,8 @@ public class SampleManager
                         SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct").getSQL() + " FROM (");
                         sql.append(fromSQL);
                         sql.append(") _distinct");
+                        if (orderBy != null)
+                            sql.append(" ORDER BY " + orderBy);
                         rs = Table.executeQuery(tinfo.getSchema(), sql);
                     }
                     while (rs.next())

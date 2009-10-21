@@ -27,6 +27,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.util.*;
 
 public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
@@ -289,6 +290,39 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+    }
+
+    public Set<Container> getExpRunContainers()
+    {
+        ResultSet rs = null;
+        try
+        {
+            SQLFragment sql = new SQLFragment(" SELECT DISTINCT Container "
+                        + " FROM exp.ExperimentRun ER "
+                        + " WHERE ER.ProtocolLSID = ?");
+            sql.add(getLSID());
+
+            rs = Table.executeQuery(ExperimentService.get().getSchema(), sql);
+
+            Set<Container> containers = new TreeSet<Container>();
+            while (rs.next())
+            {
+                String containerId = rs.getString("Container");
+                Container container = ContainerManager.getForId(containerId);
+                assert container != null : "All runs should have a valid container.  Couldn't find container for ID " + containerId;
+                containers.add(container);
+            }
+            return containers;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) {}
         }
     }
 

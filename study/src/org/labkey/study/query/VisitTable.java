@@ -34,7 +34,8 @@ public class VisitTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "SequenceNumMax", _rootTable.getColumn("SequenceNumMax")));
         addColumn(new AliasedColumn(this, "Label", _rootTable.getColumn("Label")));
         addColumn(new AliasedColumn(this, "ShowByDefault", _rootTable.getColumn("ShowByDefault")));
-
+        addWrapColumn(_rootTable.getColumn("DisplayOrder"));
+        addWrapColumn(_rootTable.getColumn("ChronologicalOrder"));
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {
             ColumnInfo cohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));

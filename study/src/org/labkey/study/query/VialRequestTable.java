@@ -3,8 +3,7 @@ package org.labkey.study.query;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.study.StudySchema;
 
 /**
@@ -46,6 +45,18 @@ public class VialRequestTable extends FilteredTable
                 fk.setPrefixColumnCaption(false);
                 globalUniqueIdColumn.setFk(fk);
                 globalUniqueIdColumn.setKeyField(true);
+                globalUniqueIdColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        // return the column itself, rather than a lookup from the remote table.
+                        // this is because our vialrequest key value is the same as our specimendetail display value,
+                        // so we can skip the join entirely:
+                        colInfo.setFk(null);
+                        return new DataColumn(colInfo);
+                    }
+                });
+
                 addColumn(globalUniqueIdColumn);
             }
             else if ("SampleRequestId".equalsIgnoreCase(name))
