@@ -216,11 +216,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             catch (XmlException xmle)
             {
-                ret.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
+                ret.add(new MetadataException("Metadata XML " + XmlBeansUtil.getErrorMessage(xmle)));
             }
             for (XmlError xmle : errors)
             {
-                ret.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
+                ret.add(new MetadataException("Metadata XML " + XmlBeansUtil.getErrorMessage(xmle)));
             }
         }
         return ret;
