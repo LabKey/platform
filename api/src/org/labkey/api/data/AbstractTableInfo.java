@@ -87,6 +87,14 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                  if (c.getURL() instanceof DetailsURL)
                      ((DetailsURL)c.getURL()).setContainer(this);
              }
+             if (null != _detailsURLs)
+             {
+                 for (StringExpression se : _detailsURLs)
+                 {
+                    if (se instanceof DetailsURL)
+                         ((DetailsURL)se).setContainer(this);
+                 }
+             }
          }
      }
 
