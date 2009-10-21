@@ -35,7 +35,16 @@
  * @param {boolean} [config.allowChooseQuery] If the button bar is showing, whether or not it should be include a button
  * to let the user choose a different query.
  * @param {boolean} [config.allowChooseView] If the button bar is showing, whether or not it should be include a button
- * to let the user choose a different view. 
+ * to let the user choose a different view.
+ * @param {boolean} [config.showDetailsColumn] If the underlying table has a details URL, show a column that renders a [details] link (default true).
+ * @param {boolean} [config.showUpdateColumn] If the underlying table has an update URL, show a column that renders an [edit] link (default true).
+ * @param {boolean} [config.showInsertNewButton] If the underlying table has an insert URL, show a "Insert New" button in the button bar (default true).
+ * @param {boolean} [config.showDeleteButton] Show a "Delete" button in the button bar (default true).
+ * @param {boolean} [config.showExportButtons] Show the export button menu in the button bar (default true).
+ * @param {boolean} [config.showBorders] Render the table with borders (default true).
+ * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default true).  If 'config.showDeleteButton' is true, the checkboxes will be shown.
+ * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
+ * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
  * @param {String} [config.sort] A base sort order to use. This may be a comma-separated list of column names, each of
  * which may have a - prefix to indicate a descending sort.
  * @param {Array} [config.filters] A base set of filters to apply. This should be an array of LABKEY.Filter objects
