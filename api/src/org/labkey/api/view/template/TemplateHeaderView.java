@@ -111,7 +111,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
             if(dbVersion.getMajor() < 9)
             {
-                _warningMessages.add("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later</a>.");
+                _warningMessages.add("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
             }
         }
 
