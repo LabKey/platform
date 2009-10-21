@@ -52,11 +52,12 @@ public class PlateTable extends BasePlateTable
         addWrapColumn(_rootTable.getColumn("CreatedBy"));
         visibleColumns.add(FieldKey.fromParts("CreatedBy"));
 
-        String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
+        //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
 
         try
         {
-            ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
+            //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
+            ColumnInfo colProperty = new AliasedColumn("property", getColumn("lsid"));
             String propPrefix = new Lsid("PlateInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);

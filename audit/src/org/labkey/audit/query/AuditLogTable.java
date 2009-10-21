@@ -91,7 +91,7 @@ public class AuditLogTable extends FilteredTable
         // in addition to the hard table columns, join in any ontology table columns associated with this query view
         if (_viewFactoryName != null)
         {
-            String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
+            //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
             try
             {
                 String parentLsid = AuditLogService.get().getDomainURI(_viewFactoryName);
@@ -101,9 +101,10 @@ public class AuditLogTable extends FilteredTable
 
                 if (pds.length > 0)
                 {
-                    ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
+                    //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
+                    ColumnInfo colProperty = new AliasedColumn("property", getColumn("lsid"));
                     Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
-                    for(PropertyDescriptor pd : pds)
+                    for (PropertyDescriptor pd : pds)
                     {
                         if (pd.getPropertyType() == PropertyType.DOUBLE)
                             pd.setFormat("0.##");
