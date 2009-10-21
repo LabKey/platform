@@ -109,7 +109,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                     Domain domain = _ss.getType();
                     if (domain != null)
                     {
-                        ret.setFk(new DomainForeignKey(domain, _schema));
+                        ret.setFk(new PropertyForeignKey(domain, _schema));
                     }
                 }
                 return ret;
