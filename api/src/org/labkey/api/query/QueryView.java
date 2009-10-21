@@ -780,11 +780,9 @@ public class QueryView extends WebPartView<Object>
             }
         }
         addCustomizeViewItems(button);
-        //FIX: 8153 -- user must have admin perm to see manage views item
-        if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
-            addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
-                    "schemaName", getSchema().getSchemaName(),
-                    "queryName", getSettings().getQueryName()));
+        addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
+                "schemaName", getSchema().getSchemaName(),
+                "queryName", getSettings().getQueryName()));
         addFilterItems(button);
 
         return button;

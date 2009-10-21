@@ -70,7 +70,7 @@ public class RReportDescriptor extends ReportDescriptor
     {
         if (RReport.canCreateScript(context))
         {
-            return super.canEdit(context);
+            return super.canEdit(context.getUser(), context.getContainer());
         }
         return false;
     }

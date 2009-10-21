@@ -33,10 +33,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.Pair;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -317,7 +317,7 @@ public class ReportUtil
     {
         public boolean accept(Report report, Container c, User user)
         {
-            return true;
+            return report.getDescriptor().canEdit(user, c);
         }
 
         public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
@@ -378,7 +378,7 @@ public class ReportUtil
                 record.put("modifiedBy", modifiedBy != null ? modifiedBy.getDisplayName(context) : String.valueOf(descriptor.getModifiedBy()));
                 record.put("modified", DateUtil.formatDate(descriptor.getModified()));
                 record.put("type", r.getTypeDescription());
-                record.put("editable", String.valueOf(descriptor.canEdit(context)));
+                record.put("editable", String.valueOf(descriptor.canEdit(context.getUser(), context.getContainer())));
                 record.put("inherited", String.valueOf(inherited));
                 record.put("version", descriptor.getVersionString());
 

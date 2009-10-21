@@ -225,7 +225,7 @@ public class RunScriptReportView extends RunReportView
             if (getRenderAction() != null)
                 designer.addObject("renderAction", getRenderAction().getLocalURIString());
 
-            boolean isReadOnly = !_report.getDescriptor().canEdit(getViewContext());
+            boolean isReadOnly = !_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer());
             designer.addObject("readOnly", isReadOnly);
 
             view.addView(designer);

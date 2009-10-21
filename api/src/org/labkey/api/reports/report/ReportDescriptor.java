@@ -30,6 +30,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -457,16 +458,16 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return org.labkey.api.security.SecurityManager.getPolicy(this).hasPermission(u, ReadPermission.class);
     }
 
-    public boolean canEdit(ViewContext context)
+    public boolean canEdit(User user, Container container)
     {
-        if (isInherited(context.getContainer()))
+        if (isInherited(container))
             return false;
-        if (getOwner() != null && !getOwner().equals(context.getUser().getUserId()))
+        if (getOwner() != null && !getOwner().equals(user.getUserId()))
             return false;
-        if (context.hasPermission(ACL.PERM_ADMIN))
+        if (container.hasPermission(user, AdminPermission.class))
             return true;
         if (getCreatedBy() != 0)
-            return (getCreatedBy() == context.getUser().getUserId());
+            return (getCreatedBy() == user.getUserId());
         return false;
     }
 
