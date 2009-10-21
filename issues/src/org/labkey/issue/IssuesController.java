@@ -1026,18 +1026,6 @@ public class IssuesController extends SpringActionController
                 errors.rejectValue("notifyList","Error",new Object[] {message.toString()}, message.toString());
             }
         }
-
-        if (!emails.isEmpty())
-        {
-            HStringBuilder notify = new HStringBuilder();
-            for (int i=0; i < emails.size(); i++)
-            {
-                notify.append(emails.get(i));
-                if (i < emails.size()-1)
-                    notify.append(';');
-            }
-            issue.setNotifyList(notify.toHString());
-        }
     }
 
     public static class CompleteUserForm
