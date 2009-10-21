@@ -1128,6 +1128,7 @@ public class QueryControllerSpring extends SpringActionController
     public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
     {
         PropertiesForm _form = null;
+        private String _queryName;
         
         public void validateCommand(PropertiesForm target, Errors errors)
         {
@@ -1148,6 +1149,7 @@ public class QueryControllerSpring extends SpringActionController
             _form.setInheritable(queryDef.canInherit());
             _form.setHidden(queryDef.isHidden());
             setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
+            _queryName = form.getQueryName();
             
             return new JspView<PropertiesForm>(QueryControllerSpring.class, "propertiesQuery.jsp", form, errors);
         }
@@ -1159,6 +1161,7 @@ public class QueryControllerSpring extends SpringActionController
             if (!form.canEdit())
                 HttpView.throwUnauthorized();
             QueryDefinition queryDef = form.getQueryDef();
+            _queryName = form.getQueryName();
             if (queryDef == null || !queryDef.getContainer().getId().equals(getContainer().getId()))
                 HttpView.throwNotFound("Query not found");
 
@@ -1178,6 +1181,7 @@ public class QueryControllerSpring extends SpringActionController
 				// update form so getSuccessURL() works
 				_form = new PropertiesForm(form.getSchemaName().toString(), form.rename);
 				_form.setViewContext(form.getViewContext());
+                _queryName = form.rename;
 				return true;
 			}
 
@@ -1192,7 +1196,8 @@ public class QueryControllerSpring extends SpringActionController
         {
             ActionURL url = new ActionURL(BeginAction.class, propertiesForm.getViewContext().getContainer());
             url.addParameter("schemaName", propertiesForm.getSchemaName());
-            url.addParameter("queryName", propertiesForm.getQueryName());
+            if (null != _queryName)
+                url.addParameter("queryName", _queryName);
             return url;
         }
 
