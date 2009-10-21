@@ -477,10 +477,10 @@ public class OntologyManager
             for (Integer objectId : objectIds)
             {
                 in.append(objectId);
-                in.append(",");
+                in.append(", ");
             }
 
-            in.setLength(in.length()-1);
+            in.setLength(in.length() - 2);
 
             if (deleteOwnedObjects)
             {
