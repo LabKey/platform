@@ -70,10 +70,6 @@ public interface DomainProperty
 
     void setDefaultValueTypeEnum(DefaultValueType defaultValueType);
 
-    void initColumn(User user, ColumnInfo column);
-
-    SQLFragment getValueSQL();
-    SQLFragment getMvIndicatorSQL();
     int getSqlType();
     int getScale();
     String getInputType();

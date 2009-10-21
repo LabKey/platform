@@ -47,13 +47,14 @@ public class RunDataTable extends FilteredTable
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
         objectIdColumn.setKeyField(true);
-        ColumnInfo column = wrapColumn("Properties", _rootTable.getColumn("ObjectUri"));
+        ColumnInfo column = wrapColumn("Properties", _rootTable.getColumn("ObjectId"));
         column.setKeyField(false);
         column.setIsUnselectable(true);
         final AssayProvider provider = AssayService.get().getProvider(protocol);
         Domain resultsDomain = provider.getResultsDomain(protocol);
         DomainProperty[] resultsDPs = resultsDomain.getProperties();
         QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(resultsDPs, this, schema);
+        fk.setParentIsObjectId(true);
         fk.addDecorator(new SpecimenPropertyColumnDecorator(provider, protocol, schema));
 
         Set<String> hiddenCols = new HashSet<String>();

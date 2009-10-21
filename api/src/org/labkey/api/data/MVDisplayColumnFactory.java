@@ -19,11 +19,9 @@ package org.labkey.api.data;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.RawValueColumn;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.query.*;
 
 import java.sql.Types;
 import java.util.Collections;
@@ -66,20 +64,15 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
 
         return result;
     }
+    
 
     private static ColumnInfo[] createMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
     {
+        QuerySchema schema = ((QuerySchema)colObjectId.getParentTable().getSchema());
         String mvColumnName = property.getName() + MvColumn.MV_INDICATOR_SUFFIX;
-        ColumnInfo mvColumn = new ExprColumn(table,
-                mvColumnName,
-                PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getMvIndicatorSQL(), property.getPropertyId(), false),
-                Types.VARCHAR);
-
-        mvColumn.setLabel(mvColumnName);
-        mvColumn.setNullable(true);
-        mvColumn.setUserEditable(false);
-        mvColumn.setHidden(true);
-
+        PropertyColumn mvColumn = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, schema.getUser());
+        mvColumn.setName(mvColumnName);
+        mvColumn.setParentIsObjectId(true);
         valueColumn.setMvColumnName(mvColumn.getName());
 
         ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
@@ -92,6 +85,7 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
 
         return result;
     }
+
 
     public static void addMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
     {

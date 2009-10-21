@@ -37,6 +37,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 {
     Map<String, PropertyDescriptor> _pdMap;
     protected QuerySchema _schema;
+    protected boolean _parentIsObjectId = false;
 
     private List<PropertyColumnDecorator> _decorators = new ArrayList<PropertyColumnDecorator>();
 
@@ -79,14 +80,21 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
+    public void setParentIsObjectId(boolean id)
+    {
+        _parentIsObjectId = id;
+    }
+
+
+
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         // make sure this FK is attached to an lsid not an objectid
         String parentName = null, valueSql = null;
         assert null != (parentName = parent.getFieldKey().getName().toLowerCase());
         assert null != (valueSql = parent.getValueSql("X").getSQL().toLowerCase());
-        assert parentName.contains("uri") || parentName.contains("lsid") || valueSql.contains("lsid") || valueSql.contains("uri");
-        assert parent.getSqlTypeInt() == Types.VARCHAR || parent.getSqlTypeInt() == -9; // NVARCHAR
+        assert _parentIsObjectId || parentName.contains("uri") || parentName.contains("lsid") || valueSql.contains("lsid") || valueSql.contains("uri");
+        assert _parentIsObjectId || parent.getSqlTypeInt() == Types.VARCHAR || parent.getSqlTypeInt() == -9; // NVARCHAR
 
         if (displayField == null)
             return null;
@@ -108,70 +116,9 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    static public SQLFragment getValueSql(PropertyType type)
-    {
-        switch (type)
-        {
-        case INTEGER:
-            return new SQLFragment("CAST(exp.ObjectProperty.FloatValue AS INTEGER)");
-        case BOOLEAN:
-            return new SQLFragment("CAST((CASE exp.ObjectProperty.FloatValue WHEN 1.0 THEN 1 ELSE 0 END) AS " + ExperimentService.get().getSchema().getSqlDialect().getBooleanDatatype() + ")");
-        case DOUBLE:
-            return new SQLFragment("exp.ObjectProperty.FloatValue");
-        case DATE_TIME:
-            return new SQLFragment("exp.ObjectProperty.DateTimeValue");
-        case ATTACHMENT:
-        case FILE_LINK:
-        case RESOURCE:
-        case STRING:
-        case MULTI_LINE:
-        case XML_TEXT:
-            return new SQLFragment("exp.ObjectProperty.StringValue");
-        }
-        return new SQLFragment("exp.ObjectProperty.StringValue");
-    }
-
-
     static public SQLFragment getMvIndicatorSQL()
     {
         return new SQLFragment("exp.ObjectProperty.MvIndicator");
-    }
-
-
-    static public SQLFragment getValueSql(ColumnInfo parent, SQLFragment value, int propertyId, boolean parentIsLSID)
-    {
-        return getValueSql(parent.getValueSql(ExprColumn.STR_TABLE_ALIAS), value, propertyId, parentIsLSID);
-    }
-
-
-    static public SQLFragment getValueSql(SQLFragment sqlParentColumn, SQLFragment value, int propertyId, boolean parentIsLSID)
-    {
-        SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT ");
-        sql.append(value);
-        sql.append(" FROM exp.ObjectProperty ");
-        if (parentIsLSID)
-        {
-            sql.append("\nINNER JOIN exp.Object ON exp.Object.ObjectId = exp.ObjectProperty.ObjectId");
-            sql.append("\nWHERE exp.Object.ObjectURI = ");
-            sql.append(sqlParentColumn);
-            sql.append("\nAND exp.ObjectProperty.PropertyId = " + propertyId);
-            sql.append(")");
-        }
-        else
-        {
-            sql.append("WHERE PropertyId = " + propertyId + " AND ObjectId = ");
-            sql.append(sqlParentColumn);
-            sql.append(")");
-        }
-        return sql;
-
-    }
-
-
-    protected SQLFragment getValueSql(ColumnInfo parent, PropertyDescriptor pd)
-    {
-        return getValueSql(parent, getValueSql(pd.getPropertyType()), pd.getPropertyId(), false);
     }
 
 
@@ -187,6 +134,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         else
         {
             ret = new PropertyColumn(pd, parent, null, _schema.getUser());
+            ((PropertyColumn)ret).setParentIsObjectId(_parentIsObjectId);
             ret.setFieldKey(name);
         }
         decorateColumn(ret, pd);
@@ -241,7 +189,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    static public void initColumn(User user, ColumnInfo column, PropertyDescriptor pd)
+    private void initColumn(User user, ColumnInfo column, PropertyDescriptor pd)
     {
         if (pd.getLabel() != null)
             column.setLabel(pd.getLabel());

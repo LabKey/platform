@@ -20,6 +20,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
 
+import java.util.Map;
+
 
 /**
  * User: migra
@@ -31,16 +33,18 @@ public class PropertyColumn extends LookupColumn
     protected PropertyDescriptor pd;
     protected String containerId;
     protected boolean _mvIndicator = false;
+    protected boolean _parentIsObjectId = false;
 
     public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, String containerId, User user)
     {
         this(pd, tinfoParent.getColumn(parentLsidColumn), containerId, user);
     }
 
+
     public PropertyColumn(PropertyDescriptor pd, ColumnInfo lsidColumn, String containerId, User user)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)), false);
-        setName(ColumnInfo.legalNameFromName(pd.getName()));
+        setName(pd.getName());
         setAlias(ColumnInfo.legalNameFromName(pd.getName()));
         setNullable(!pd.isRequired());
         setHidden(pd.isHidden());
@@ -55,7 +59,7 @@ public class PropertyColumn extends LookupColumn
                 description = concept.getDescription();
         }
         setDescription(description);
-        setLabel(pd.getLabel() == null ? getName() : pd.getLabel());
+        setLabel(pd.getLabel() == null ? ColumnInfo.labelFromName(pd.getName()) : pd.getLabel());
         this.pd = pd;
         setSqlTypeName(getPropertySqlType(OntologyManager.getSqlDialect()));
         String format = StringUtils.trimToNull(pd.getFormat());
@@ -70,7 +74,8 @@ public class PropertyColumn extends LookupColumn
 
         this.containerId = containerId;
 
-        setFk(new PdLookupForeignKey(user, pd));
+        if (pd.getLookupSchema() != null && pd.getLookupQuery() != null && user != null)
+            setFk(new PdLookupForeignKey(user, pd));
 
         setDefaultValueType(pd.getDefaultValueTypeEnum());
     }
@@ -82,12 +87,24 @@ public class PropertyColumn extends LookupColumn
         _mvIndicator = mv;
         this.setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(PropertyType.STRING.getSqlType()));
     }
+
+
+    public void setParentIsObjectId(boolean id)
+    {
+        _parentIsObjectId = id;
+    }
     
 
     public SQLFragment getValueSql()
     {
+        return getValueSql(getTableAlias());
+    }
+
+    
+    public SQLFragment getValueSql(String tableAlias)
+    {
         String cast = getPropertySqlCastType();
-        SQLFragment sql = new SQLFragment("\n(SELECT ");
+        SQLFragment sql = new SQLFragment("(SELECT ");
         if (_mvIndicator)
         {
             sql.append("MvIndicator");
@@ -101,7 +118,12 @@ public class PropertyColumn extends LookupColumn
             sql.append(getPropertyCol(pd));
         }
         sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + pd.getPropertyId());
-        sql.append(" AND exp.ObjectProperty.ObjectId = " + getTableAlias() + ".ObjectId)");
+        sql.append(" AND exp.ObjectProperty.ObjectId = ");
+        if (_parentIsObjectId)
+            sql.append(foreignKey.getValueSql(tableAlias));
+        else
+            sql.append(getTableAlias() + ".ObjectId");
+        sql.append(")");
         if (null != cast)
         {
             sql.insert(0, "CAST(");
@@ -111,12 +133,13 @@ public class PropertyColumn extends LookupColumn
         return sql;
     }
 
-
-    public SQLFragment getValueSql(String tableAlias)
+    @Override
+    public void declareJoins(String baseAlias, Map<String, SQLFragment> map)
     {
-        return getValueSql();
+        if (!_parentIsObjectId)
+            super.declareJoins(baseAlias, map);
     }
-
+    
 
     private String getPropertySqlType(SqlDialect dialect)
     {

@@ -21,6 +21,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.exp.PropertyColumn;
 
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
@@ -348,7 +349,11 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected boolean isEditable(DisplayColumn dc)
     {
-        return _schemaEditable && dc.isEditable() && !(dc.getColumnInfo() instanceof LookupColumn);
+        if (!_schemaEditable || !dc.isEditable())
+            return false;
+        // UNDONE: make the schema set isEditable() correctly and remove this hack
+        ColumnInfo col = dc.getColumnInfo();
+        return (!(col instanceof LookupColumn) || col instanceof PropertyColumn);
     }
 
     protected boolean isLookup(DisplayColumn dc)

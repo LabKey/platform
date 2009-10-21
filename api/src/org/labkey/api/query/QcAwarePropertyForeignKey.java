@@ -36,6 +36,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     private final TableInfo _baseTable;
     private final QcMetadata _metadata;
 
+    
     public QcAwarePropertyForeignKey(PropertyDescriptor[] pds, TableInfo baseTable, QuerySchema schema)
     {
         super(getDisplayPds(pds).getDisplayProperties(), schema);
@@ -118,6 +119,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
                 return new ColumnInfo(pd.getName());
             }
             PropertyColumn qcColumn = new PropertyColumn(pd, parent, null, _schema.getUser());
+            qcColumn.setParentIsObjectId(_parentIsObjectId);
             qcColumn.setMvIndicator(true);
             qcColumn.setNullable(true);
             qcColumn.setUserEditable(false);
