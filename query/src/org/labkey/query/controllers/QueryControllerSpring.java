@@ -3030,7 +3030,7 @@ public class QueryControllerSpring extends SpringActionController
             //get the table info if the user requested column info
             //or if the description coming in was null (need to get form TableInfo)
             TableInfo table = null;
-            if (includeColumns || null == description)
+            if (includeColumns || !isUserDefined)
             {
                 try
                 {
