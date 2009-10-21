@@ -73,7 +73,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
             objectIdColumn.setKeyField(true);
 
             // add object ID again, this time as a lookup to a virtual property table that contains our selected NAB properties:
-            ColumnInfo propertyLookupColumn = wrapColumn("Properties", _rootTable.getColumn("ObjectId"));
+            ColumnInfo propertyLookupColumn = wrapColumn("Properties", _rootTable.getColumn("ObjectUri"));
             propertyLookupColumn.setKeyField(false);
             propertyLookupColumn.setIsUnselectable(true);
             QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(pds, this, schema)

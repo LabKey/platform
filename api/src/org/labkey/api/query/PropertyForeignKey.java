@@ -20,6 +20,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.sql.Types;
 
 public class PropertyForeignKey extends AbstractForeignKey implements PropertyColumnDecorator
 {
@@ -59,6 +61,13 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
+        // make sure this FK is attached to an lsid not an objectid
+        String parentName = null, valueSql = null;
+        assert null != (parentName = parent.getFieldKey().getName().toLowerCase());
+        assert null != (valueSql = parent.getValueSql("X").getSQL().toLowerCase());
+        assert parentName.contains("uri") || parentName.contains("lsid") || valueSql.contains("lsid") || valueSql.contains("uri");
+        assert parent.getSqlTypeInt() == Types.VARCHAR || parent.getSqlTypeInt() == -9; // NVARCHAR
+
         if (displayField == null)
             return null;
         PropertyDescriptor pd = new CaseInsensitiveHashMap<PropertyDescriptor>(_pdMap).get(displayField);
@@ -78,7 +87,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         return new FieldKey(parent.getFieldKey(), "$P" + pd.getPropertyId());
     }
 
-    
+
     static public SQLFragment getValueSql(PropertyType type)
     {
         switch (type)
@@ -151,13 +160,15 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         ColumnInfo ret;
         if (parent == null)
         {
-            ret = new ColumnInfo(name);
+            // this happens from getLookupTableInfo()
+            ret = new ColumnInfo(pd.getName());
+            initColumn(_schema.getUser(), ret, pd);
         }
         else
         {
-            ret = new ExprColumn(parent.getParentTable(), name, getValueSql(parent, pd), pd.getPropertyType().getSqlType(), parent);
+            ret = new PropertyColumn(pd, parent, _schema.getContainer().getId(), _schema.getUser());
+            ret.setFieldKey(name);
         }
-        initColumn(_schema.getUser(), ret, pd);
         decorateColumn(ret, pd);
         return ret;
     }
