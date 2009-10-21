@@ -36,7 +36,7 @@ import java.sql.Types;
 public class PropertyForeignKey extends AbstractForeignKey implements PropertyColumnDecorator
 {
     Map<String, PropertyDescriptor> _pdMap;
-    private QuerySchema _schema;
+    protected QuerySchema _schema;
 
     private List<PropertyColumnDecorator> _decorators = new ArrayList<PropertyColumnDecorator>();
 

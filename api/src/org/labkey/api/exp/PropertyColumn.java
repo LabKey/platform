@@ -30,6 +30,7 @@ public class PropertyColumn extends LookupColumn
 {
     protected PropertyDescriptor pd;
     protected String containerId;
+    protected boolean _mvIndicator = false;
 
     public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, String containerId, User user)
     {
@@ -75,11 +76,23 @@ public class PropertyColumn extends LookupColumn
     }
 
 
+    // select the mv column instead
+    public void setMvIndicator(boolean mv)
+    {
+        _mvIndicator = mv;
+        this.setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(PropertyType.STRING.getSqlType()));
+    }
+    
+
     public SQLFragment getValueSql()
     {
         String cast = getPropertySqlCastType();
         SQLFragment sql = new SQLFragment("\n(SELECT ");
-        if (pd.getPropertyType() == PropertyType.BOOLEAN)
+        if (_mvIndicator)
+        {
+            sql.append("MvIndicator");
+        }
+        else if (pd.getPropertyType() == PropertyType.BOOLEAN)
         {
             sql.append("CASE FloatValue WHEN 1.0 THEN 1 ELSE 0 END");
         }
@@ -87,8 +100,8 @@ public class PropertyColumn extends LookupColumn
         {
             sql.append(getPropertyCol(pd));
         }
-        sql.append("\nFROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + pd.getPropertyId());
-        sql.append("\nAND exp.ObjectProperty.ObjectId = " + getTableAlias() + ".ObjectId)");
+        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + pd.getPropertyId());
+        sql.append(" AND exp.ObjectProperty.ObjectId = " + getTableAlias() + ".ObjectId)");
         if (null != cast)
         {
             sql.insert(0, "CAST(");

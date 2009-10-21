@@ -17,10 +17,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.RawValueColumn;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.DomainProperty;
 
 import java.sql.Types;
@@ -120,15 +117,8 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             {
                 return new ColumnInfo(pd.getName());
             }
-            ColumnInfo qcColumn = new ExprColumn(parent.getParentTable(),
-                pd.getName(),
-                PropertyForeignKey.getValueSql(
-                        parent.getValueSql(ExprColumn.STR_TABLE_ALIAS),
-                        PropertyForeignKey.getMvIndicatorSQL(),
-                        pd.getPropertyId(), 
-                        false),
-                PropertyType.STRING.getSqlType());
-
+            PropertyColumn qcColumn = new PropertyColumn(pd, parent, null, _schema.getUser());
+            qcColumn.setMvIndicator(true);
             qcColumn.setNullable(true);
             qcColumn.setUserEditable(false);
             return qcColumn;
