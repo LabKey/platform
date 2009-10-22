@@ -399,6 +399,9 @@ core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/CoreUpgradeCode.java -text
 core/src/org/labkey/core/SqlDialectPostgreSQL.java -text
+core/src/org/labkey/core/admin/ActionsHelper.java -text
+core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
+core/src/org/labkey/core/admin/ActionsView.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/admin.jsp -text

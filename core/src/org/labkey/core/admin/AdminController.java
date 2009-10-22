@@ -2024,6 +2024,39 @@ public class AdminController extends SpringActionController
         }
     }
 
+
+    private static class ActionsTabStrip extends TabStripView
+    {
+        public List<NavTree> getTabList()
+        {
+            List<NavTree> tabs = new ArrayList<NavTree>(2);
+
+            tabs.add(new TabInfo("Summary", "summary", getActionsURL()));
+            tabs.add(new TabInfo("Details", "details", getActionsURL()));
+
+            return tabs;
+        }
+
+        public HttpView getTabView(String tabId) throws Exception
+        {
+            ActionsView view = new ActionsView();
+            view.setSummary("summary".equals(tabId));
+            return view;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ExportActionsAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            ActionsTsvWriter writer = new ActionsTsvWriter();
+            writer.write(response);
+        }
+    }
+
+
     @RequiresSiteAdmin
     public class QueriesAction extends SimpleViewAction<QueriesForm>
     {
@@ -2083,169 +2116,6 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "System Properties", this.getClass());
-        }
-    }
-
-    private static class ActionsTabStrip extends TabStripView
-    {
-        public List<NavTree> getTabList()
-        {
-            List<NavTree> tabs = new ArrayList<NavTree>(2);
-
-            tabs.add(new TabInfo("Summary", "summary", getActionsURL()));
-            tabs.add(new TabInfo("Details", "details", getActionsURL()));
-
-            return tabs;
-        }
-
-        public HttpView getTabView(String tabId) throws Exception
-        {
-            ActionsView view = new ActionsView();
-            view.setSummary("summary".equals(tabId));
-            return view;
-        }
-    }
-
-
-    private static class ActionsView extends HttpView
-    {
-        private boolean _summary = false;
-
-        public boolean isSummary()
-        {
-            return _summary;
-        }
-
-        public void setSummary(boolean summary)
-        {
-            _summary = summary;
-        }
-
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-
-            out.print("<table>");
-
-            if (_summary)
-                out.print("<tr align=left><th>Spring Controller</th><th>Actions</th><th>Invoked</th><th>Coverage</th></tr>");
-            else
-                out.print("<tr align=left><th>Spring Controller</th><th>Action</th><th>Invocations</th><th>Cumulative Time</th><th>Average Time</th><th>Max Time</th></tr>");
-
-            int totalActions = 0;
-            int totalInvoked = 0;
-
-            for (Module module : modules)
-            {
-                Map<String, Class<? extends Controller>> pageFlows = module.getPageFlowNameToClass();
-                Set<Class> controllerClasses = new HashSet<Class>(pageFlows.values());
-
-                for (Class controllerClass : controllerClasses)
-                {
-                    if (SpringActionController.class.isAssignableFrom(controllerClass))
-                    {
-                        SpringActionController controller = (SpringActionController)ViewServlet.getController(module, controllerClass);
-                        ActionResolver ar = controller.getActionResolver();
-                        Comparator<ActionDescriptor> comp = new Comparator<ActionDescriptor>(){
-                            public int compare(ActionDescriptor ad1, ActionDescriptor ad2)
-                            {
-                                return ad1.getActionClass().getSimpleName().compareTo(ad2.getActionClass().getSimpleName());
-                            }
-                        };
-                        Set<ActionDescriptor> set = new TreeSet<ActionDescriptor>(comp);
-                        set.addAll(ar.getActionDescriptors());
-
-                        String controllerTd = "<td>" + controller.getClass().getSimpleName() + "</td>";
-
-                        if (_summary)
-                        {
-                            out.print("<tr>");
-                            out.print(controllerTd);
-                        }
-
-                        int invokedCount = 0;
-
-                        for (ActionDescriptor ad : set)
-                        {
-                            if (!_summary)
-                            {
-                                out.print("<tr>");
-                                out.print(controllerTd);
-                                controllerTd = "<td>&nbsp;</td>";
-                                out.print("<td>");
-                                out.print(ad.getActionClass().getSimpleName());
-                                out.print("</td>");
-                            }
-
-                            ActionStats stats = ad.getStats();
-
-                            if (stats.getCount() > 0)
-                                invokedCount++;
-
-                            if (_summary)
-                                continue;
-
-                            renderTd(out, stats.getCount());
-                            renderTd(out, stats.getElapsedTime());
-                            renderTd(out, 0 == stats.getCount() ? 0 : stats.getElapsedTime() / stats.getCount());
-                            renderTd(out, stats.getMaxTime());
-
-                            out.print("</tr>");
-                        }
-
-                        totalActions += set.size();
-                        totalInvoked += invokedCount;
-
-                        double coverage = set.isEmpty() ? 0 : invokedCount / (double)set.size();
-
-                        if (!_summary)
-                            out.print("<tr><td>&nbsp;</td><td>Action Coverage</td>");
-                        else
-                        {
-                            out.print("<td>");
-                            out.print(set.size());
-                            out.print("</td><td>");
-                            out.print(invokedCount);
-                            out.print("</td>");
-                        }
-
-                        out.print("<td>");
-                        out.print(Formats.percent1.format(coverage));
-                        out.print("</td></tr>");
-
-                        if (!_summary)
-                            out.print("<tr><td colspan=6>&nbsp;</td></tr>");
-                    }
-                }
-            }
-
-            double totalCoverage = (0 == totalActions ? 0 : totalInvoked / (double)totalActions);
-
-            if (_summary)
-            {
-                out.print("<tr><td colspan=4>&nbsp;</td></tr><tr><td>Total</td><td>");
-                out.print(totalActions);
-                out.print("</td><td>");
-                out.print(totalInvoked);
-                out.print("</td>");
-            }
-            else
-            {
-                out.print("<tr><td colspan=2>Total Action Coverage</td>");
-            }
-
-            out.print("<td>");
-            out.print(Formats.percent1.format(totalCoverage));
-            out.print("</td></tr>");
-            out.print("</table>");
-        }
-
-
-        private void renderTd(PrintWriter out, Number d)
-        {
-            out.print("<td>");
-            out.print(_formatInteger.format(d));
-            out.print("</td>");
         }
     }
 
