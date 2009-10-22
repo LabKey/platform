@@ -28,20 +28,16 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssaySchema;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.*;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
-import org.labkey.study.assay.query.AssaySchemaImpl;
 
 import java.util.*;
 
@@ -127,6 +123,23 @@ public class AssayManager implements AssayService.Interface
         return AssaySchemaImpl.getResultsTableName(protocol);
     }
 
+    public boolean hasAssayProtocols(Container container)
+    {
+        ExpProtocol[] containerProtocols = ExperimentService.get().getExpProtocols(container);
+        if (containerProtocols != null && containerProtocols.length > 0)
+            return true;
+
+        Container project = container.getProject();
+        if (project != null && !container.equals(project))
+        {
+            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(container.getProject());
+            if (projectProtocols != null && projectProtocols.length > 0)
+                return true;
+        }
+
+        return false;
+    }
+
     public List<ExpProtocol> getAssayProtocols(Container container)
     {
         List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
@@ -150,15 +163,24 @@ public class AssayManager implements AssayService.Interface
         }
     }
 
-    public QueryView createAssayListView(ViewContext context, boolean portalView)
+    public WebPartView createAssayListView(ViewContext context, boolean portalView)
     {
         String name = "AssayList";
         QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(AssaySchema.NAME);
         settings.setQueryName(name);
+        QueryView queryView;
         if (portalView)
-            return new AssayListPortalView(context, settings);
-        return new AssayListQueryView(context, settings);
+            queryView = new AssayListPortalView(context, settings);
+        else
+            queryView = new AssayListQueryView(context, settings);
+
+        VBox vbox = new VBox();
+        if (portalView)
+            vbox.setFrame(WebPartView.FrameType.PORTAL);
+        vbox.addView(new JspView("/org/labkey/study/assay/view/assaySetup.jsp"));
+        vbox.addView(queryView);
+        return vbox;
     }
 
     public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
