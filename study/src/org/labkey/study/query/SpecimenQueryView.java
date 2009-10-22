@@ -558,7 +558,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, int siteId, boolean completedRequestsOnly)
     {
-        String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.Specimen AS Specimen,\n" +
+        String sql = "GlobalUniqueId IN (SELECT Specimen.GlobalUniqueId FROM study.SpecimenDetail AS Specimen,\n" +
                         "study.SampleRequestSpecimen AS RequestSpecimen,\n" +
                         "study.SampleRequest AS Request, study.SampleRequestStatus AS Status,\n" +
                         "study.Participant AS Participant\n" +

@@ -30,6 +30,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ReportConfigurationBean> me = (JspView<SpringSpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -42,6 +43,7 @@
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
     String optionLabelStyle = "text-align:right";
+    Map<String, CustomView> views = bean.getCustomViews(getViewContext());
 %>
 <script type="text/javascript">
     function showOrHide(suffix)
@@ -189,7 +191,7 @@
                     }
                     if (factory.allowsCustomViewFilter())
                     {
-                        String viewPickerHtml = factory.getCustomViewPicker();
+                        String viewPickerHtml = factory.getCustomViewPicker(views);
                 %>
                     <tr>
                         <td style="<%= optionLabelStyle %>">Base view</td>

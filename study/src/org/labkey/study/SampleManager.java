@@ -2179,6 +2179,7 @@ public class SampleManager
                 "\tRequestSpecimen.Container = Request.Container AND\n" +
                 "\tSpecimen.Container = RequestSpecimen.Container AND\n" +
                 "\tSpecimen.GlobalUniqueId = RequestSpecimen.SpecimenGlobalUniqueId AND\n" +
+                "\tParticipant.EnrollmentSiteId IS NOT NULL AND\n" +
                 "\tParticipant.Container = Specimen.Container AND\n" +
                 "\tParticipant.ParticipantId = Specimen.Ptid AND\n" +
                 "\tStatus.SpecimensLocked = ? AND\n" +
@@ -2191,6 +2192,7 @@ public class SampleManager
     {
         SQLFragment sql = new SQLFragment("SELECT EnrollmentSiteId FROM study.SpecimenDetail AS Specimen, study.Participant AS Participant\n" +
                 "WHERE Specimen.Ptid = Participant.ParticipantId AND\n" +
+                "\tParticipant.EnrollmentSiteId IS NOT NULL AND\n" +
                 "\tSpecimen.Container = Participant.Container AND\n" +
                 "\tSpecimen.Container = ?\n" +
                 "GROUP BY EnrollmentSiteId", container.getId());

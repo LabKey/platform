@@ -1439,7 +1439,8 @@ public class StudyManager
                 uncache(def);
         _dataSetHelper.clearCache(c);
 
-        StudyCache.clearCache(StudySchema.getInstance().getTableInfoParticipant(), c.getId());
+        DbCache.clear(StudySchema.getInstance().getTableInfoQCState());
+        DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
     }
 
     public void deleteAllStudyData(Container c) throws SQLException
@@ -3018,19 +3019,41 @@ public class StudyManager
         }
     }
 
+    private String getParticipantCacheName(Container container)
+    {
+        return container.getId() + "/" + Participant.class.toString();
+    }
+
+    private Map<String, Participant> getParticipantMap(Study study) throws SQLException
+    {
+        Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()));
+        if (participantMap == null)
+        {
+            SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
+            Participant[] participants = Table.select(StudySchema.getInstance().getTableInfoParticipant(), Table.ALL_COLUMNS,
+                    filter, new Sort("ParticipantId"), Participant.class);
+            participantMap = new LinkedHashMap<String, Participant>();
+            for (Participant participant : participants)
+                participantMap.put(participant.getParticipantId(), participant);
+            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()), participantMap, Cache.HOUR);
+        }
+        return participantMap;
+    }
+
     public Participant[] getParticipants(Study study) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
-        return Table.select(StudySchema.getInstance().getTableInfoParticipant(), Table.ALL_COLUMNS,
-                filter, new Sort("ParticipantId"), Participant.class);
+        Map<String, Participant> participantMap = getParticipantMap(study);
+        Participant[] participants = new Participant[participantMap.size()];
+        int i = 0;
+        for (Map.Entry<String, Participant> entry : participantMap.entrySet())
+            participants[i++] = entry.getValue();
+        return participants;
     }
 
     public Participant getParticipant(Study study, String participantId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
-        filter.addCondition("ParticipantId", participantId);
-        return Table.selectObject(StudySchema.getInstance().getTableInfoParticipant(), Table.ALL_COLUMNS,
-                filter, new Sort("ParticipantId"), Participant.class);
+        Map<String, Participant> participantMap = getParticipantMap(study);
+        return participantMap.get(participantId);
     }
 
     public CustomParticipantView getCustomParticipantView(Study study) throws SQLException

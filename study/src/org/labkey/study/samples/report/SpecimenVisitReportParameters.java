@@ -320,16 +320,13 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return new Pair<String, String>("Enrollment site", builder.toString());
     }
 
-    public String getCustomViewPicker()
+    public String getCustomViewPicker(Map<String, CustomView> specimenDetailViews)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"baseCustomViewName\">");
         builder.append("<option value=\"\">Base report on all vials</option>");
-        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(getContainer()), getUser(), true);
-        QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
-        Map<String, CustomView> views = def.getCustomViews(getUser(), getViewContext().getRequest());
 
-        for (Map.Entry<String, CustomView> viewEntry : views.entrySet())
+        for (Map.Entry<String, CustomView> viewEntry : specimenDetailViews.entrySet())
         {
             String name = viewEntry.getKey();
             CustomView view = viewEntry.getValue();

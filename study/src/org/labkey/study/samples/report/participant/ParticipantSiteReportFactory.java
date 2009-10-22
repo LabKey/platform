@@ -46,7 +46,11 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         List<ParticipantVisitReport> reports = new ArrayList<ParticipantVisitReport>();
         Set<SiteImpl> enrollmentSites;
         if (_enrollmentSiteId == null)
+        {
             enrollmentSites = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
+            // add null to the set so we can search for ptid without an enrollment site:
+            enrollmentSites.add(null);
+        }
         else if (_enrollmentSiteId == -1)
         {
             enrollmentSites = Collections.singleton(null);
@@ -92,6 +96,8 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
     {
         List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
         Set<SiteImpl> sites = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer());
+        // add null to the set so we can search for ptid without an enrollment site:
+        sites.add(null);
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", sites, _enrollmentSiteId));
         return inputs;
     }

@@ -75,7 +75,11 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
             if (getEnrollmentSiteId() != null)
                 sites = Collections.singleton(StudyManager.getInstance().getSite(getContainer(), getEnrollmentSiteId()));
             else
+            {
                 sites = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
+                // add null to the set so we can search for ptid without an enrollment site:
+                sites.add(null);
+            }
             if (sites == null)
                 return Collections.emptyList();
             List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
@@ -135,6 +139,8 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
     {
         List<Pair<String, String>> inputs = new ArrayList<Pair<String, String>>(super.getAdditionalFormInputHtml());
         Set<SiteImpl> sites = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer());
+        // add null to the set so we can search for ptid without an enrollment site:
+        sites.add(null);
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", sites, _enrollmentSiteId));
         return inputs;
     }

@@ -26,10 +26,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -2885,6 +2882,13 @@ public class SpringSpecimenController extends BaseStudyController
         public boolean isListView()
         {
             return _listView;
+        }
+
+        public Map<String, CustomView> getCustomViews(ViewContext context)
+        {
+            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(context.getContainer()), context.getUser(), true);
+            QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
+            return def.getCustomViews(context.getUser(), context.getRequest());
         }
     }
 
