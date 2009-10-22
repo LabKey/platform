@@ -287,7 +287,7 @@ LABKEY.Exp.ExpObject = function (config) {
 
 /**
  * Constructs a new experiment run object.
- * @class Experiment Run.
+ * @class Experiment run class defines an experiment run.
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
@@ -295,10 +295,6 @@ LABKEY.Exp.ExpObject = function (config) {
  * @param {Object[]} config.dataInputs Array of {@link LABKEY.Exp.Data} config objects.
  * @param {Object[]} config.dataRows Array of Objects where each Object corresponds to a row in the results domain.
  * @param {Object[]} config.materialInputs Array of {@link LABKEY.Exp.Material} config objects.
- *
- * @property {LABKEY.Exp.Data[]} dataInputs Array of {@link LABKEY.Exp.Data} input files.
- * @property {Object[]} dataRows Array of Objects where each Object corresponds to a row in the results domain.
- * @property {LABKEY.Exp.Material[]} materialInputs Array of {@link LABKEY.Exp.Material} input samples.
  *
  * @see LABKEY.Exp.Data#getContent
  *
@@ -440,10 +436,8 @@ Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] private constructor argument.
- * @param {Object[]} config.runs Array of {@link LABKEY.Exp.Run} config objects.
- *
- * @property {LABKEY.Exp.Run[]} runs Array of {@link LABKEY.Exp.Run} in this run group.
- * @property {Boolean} hidden Determines whether the RunGroup is hidden.
+ * @param {LABKEY.Exp.Run[]} config.runs Array of {@link LABKEY.Exp.Run}s in this run group.
+ * @param {Boolean} config.hidden Determines whether the RunGroup is hidden.
  */
 LABKEY.Exp.RunGroup = function (config) {
     LABKEY.Exp.RunGroup.superclass.constructor.call(this, config);
@@ -480,7 +474,7 @@ LABKEY.Exp.ProtocolApplication = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
 /**
- * @class Experiment Sample Set
+ * @class Sample set class to describe an experiment sample set
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
@@ -539,7 +533,7 @@ LABKEY.Exp.ProtocolOutput = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
 
 /**
- * @class Experiment Material.
+ * @class Experiment Material.   
  * @extends LABKEY.Exp.ProtocolOutput
  * @memberOf LABKEY.Exp
  *
@@ -568,8 +562,7 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] private constructor argument.
- *
- * @property dataFileURL The local file url of the uploaded file.
+ * @param {String} config.dataFileURL The local file url of the uploaded file.
  *
  * @example
  * &lt;form id="upload-run-form" enctype="multipart/form-data" method="POST">

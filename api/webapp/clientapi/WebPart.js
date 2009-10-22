@@ -55,7 +55,7 @@
  * @param {String} [config.containerPath] The container path in which this web part is defined. If not supplied,
  *                  the current container path will be used.
  * @param {Object} [config.scope] An optional scope object to use when calling the successCallback or errorCallback functions (defaults to this).
- * @example Examples: <pre name="code" class="xml">For a Wiki Web Part:
+ * @example Example for a Wiki web part:<pre name="code" class="xml">
  &lt;div id='wikiTestDiv'/&gt;
  &lt;script type="text/javascript"&gt;
 	var wikiWebPartRenderer = new LABKEY.WebPart({
@@ -64,9 +64,8 @@
 		partConfig: {name: 'home'}
 		})
 	wikiWebPartRenderer.render();
- &lt;/script&gt;
- 
- For a Query Web Part:
+ &lt;/script&gt;  </pre></code>
+ * @example Example for a Query web part:<pre name="code" class="xml">
  &lt;div id='queryTestDiv'/&gt;
  &lt;script type="text/javascript"&gt;
 	var queryWebPartRenderer = new LABKEY.WebPart({
@@ -78,7 +77,32 @@
 				queryName: 'People' 
 		}});
 	queryWebPartRenderer.render(); 
- &lt;/script&gt; </pre></code>
+  &lt;/script&gt; </pre></code>
+ * @example Example for a Report web part, from the Reagent Request <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
+  &lt;div id='reportDiv'&gt;Loading...&lt;/div&gt;
+  &lt;script type="text/javascript"&gt;
+     // This snippet draws a histogram of the current user's requests.
+     // A partConfig parameter identifies the R report ('db:151')
+     // used to draw the histogram.  partConfig also
+     // supplies a filter ('query.UerID~eq') to ensure that
+     // R uses data for only the current user.  Lastly, partConfig
+     // provides R with an arbitrary URL parameter ('displayName')
+     // to indicate the displayName of the user.
+
+     var reportWebPartRenderer = new LABKEY.WebPart({
+         partName: 'Report',
+         renderTo: 'reportDiv',
+         containerPath: '/home/Study/demo/guestaccess',
+         frame: 'title',
+         partConfig: {
+                     title: 'Reagent Request Histogram',
+                     reportId: 'db:151',
+                     showSection: 'histogram',
+                     'query.UserID~eq' : LABKEY.Security.currentUser.id,
+                     displayName: LABKEY.Security.currentUser.displayName
+     }});
+     reportWebPartRenderer.render();
+  &lt;/script&gt; </pre></code>
  */
 LABKEY.WebPart = function(config)
 {

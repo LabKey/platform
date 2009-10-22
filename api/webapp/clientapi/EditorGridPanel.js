@@ -46,10 +46,11 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
  * @param {string} [config.loadingCaption] The string to display in a cell when loading the lookup values (default is "[loading...]").
  * @param {string} [config.lookupNullCaption] The string to display for a null value in a lookup column (default is "[none]").
  * @param {boolean} [config.showExportButton] Set to false to hide the Export button in the toolbar. True by default.
- * @example &lt;script type="text/javascript"&gt;
+ * @example Basic Example: <pre name="code" class="xml">
+&lt;script type="text/javascript"&gt;
     var _grid;
 
-    //use the Ext.onReady() function to define what code should
+    //Use the Ext.onReady() function to define what code should
     //be executed once the page is fully loaded.
     //you must use this if you supply a renderTo config property
     Ext.onReady(function(){
@@ -66,7 +67,52 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
         });
     });
 &lt;/script&gt;
-&lt;div id='grid'/&gt;
+&lt;div id='grid'/&gt; </pre>
+ * @example Advanced Example:
+ *
+This snippet shows how to link a column in an EditorGridPanel to a details/update
+page.  It adds a custom column renderer to the grid column model by hooking
+the 'columnmodelcustomize' event.  Since the column is a lookup, it is helpful to
+chain the base renderer so that it does the lookup magic for you.  <pre name="code" class="xml">
+&lt;script type="text/javascript"&gt;
+var _materialTemplate;
+var _baseFormulationRenderer;
+
+ function formulationRenderer(data, cellMetaData, record, rowIndex, colIndex, store)
+{
+    return _materialTemplate.apply(record.data) + _baseFormulationRenderer(data,
+        cellMetaData, record, rowIndex, colIndex, store) + '&lt;/a&gt;';
+}
+
+function customizeColumnModel(colModel, index)
+{
+    if (colModel != undefined)
+    {
+        var col = index['Formulation'];
+        var url = LABKEY.ActionURL.buildURL("experiment", "showMaterial");
+
+        _materialTemplate = new Ext.XTemplate('&lt;a href="' + url +
+            '?rowId={Formulation}"&gt;').compile();
+        _baseFormulationRenderer = col.renderer;
+        col.renderer = formulationRenderer;
+    }
+}
+
+Ext.onReady(function(){
+    _grid = new LABKEY.ext.EditorGridPanel({
+        store: new LABKEY.ext.Store({
+            schemaName: 'lists',
+            queryName: 'FormulationExpMap'
+        }),
+        renderTo: 'gridDiv',
+        width: 600,
+        autoHeight: true,
+        title: 'Formulations to Experiments',
+        editable: true
+    });
+    _grid.on("columnmodelcustomize", customizeColumnModel);
+});
+&lt;/script&gt;</pre>
  */
 LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     initComponent : function() {

@@ -161,6 +161,22 @@ LABKEY.Query = new function()
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @example Example, from the Reagent Request Confirmation <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
+         // This snippet extracts a table of UserID, TotalRequests and
+         // TotalQuantity from the "Reagent Requests" list.
+         // Upon success, the writeTotals function (not included here) uses the
+         // returned data object to display total requests and total quantities.
+
+             LABKEY.Query.executeSql({
+                     containerPath: 'home/Study/demo/guestaccess',
+                     schemaName: 'lists',
+                     queryName: 'Reagent Requests',
+                     sql: 'SELECT "Reagent Requests".UserID AS UserID, \
+                         Count("Reagent Requests".UserID) AS TotalRequests, \
+                         Sum("Reagent Requests".Quantity) AS TotalQuantity \
+                         FROM "Reagent Requests" Group BY "Reagent Requests".UserID',
+                     successCallback: writeTotals
+             });  </pre>
          */
         executeSql : function(config)
         {
@@ -304,7 +320,7 @@ LABKEY.Query = new function()
                   ExtendedSelectRowsResults format each column in each row
                   will be another object (not just a scalar value) with a "value" property as well as other
                   related properties (url, mvValue, mvIndicator, etc.)
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
         * @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	function onFailure(errorInfo, options, responseObj)
@@ -452,10 +468,33 @@ LABKEY.Query = new function()
         *                  However, you will need to include the primary key column values if you defined
         *                  them yourself instead of relying on auto-number.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
-         *              If not supplied, the current container path will be used.
+        *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @example Example, from the Reagent Request <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestForm">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a>: <pre name="code" class="xml">
+         // This snippet inserts data from the ReagentReqForm into a list.
+         // Upon success, it moves the user to the confirmation page and
+         // passes the current user's ID to that page.
+         LABKEY.Query.insertRows({
+                 containerPath: '/home/Study/demo/guestaccess',
+                 schemaName: 'lists',
+                 queryName: 'Reagent Requests',
+             rowDataArray: [
+                {"Name":  ReagentReqForm.DisplayName.value,
+                "Email": ReagentReqForm.Email.value,
+                "UserID": ReagentReqForm.UserID.value,
+                "Reagent": ReagentReqForm.Reagent.value,
+                "Quantity": parseInt(ReagentReqForm.Quantity.value),
+                "Date": new Date(),
+                "Comments": ReagentReqForm.Comments.value,
+                "Fulfilled": 'false'}],
+             successCallback: function(data){
+                     window.location =
+                        '/wiki/home/Study/demo/page.view?name=confirmation&userid='
+                        + LABKEY.Security.currentUser.id;
+             },
+         });  </pre>
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
