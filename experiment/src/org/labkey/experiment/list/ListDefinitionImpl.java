@@ -322,7 +322,7 @@ public class ListDefinitionImpl implements ListDefinition
         Map<String, DomainProperty> foundProperties = new CaseInsensitiveHashMap<DomainProperty>();
         ColumnDescriptor cdKey = null;
 
-        Object errorValue = new Object();
+        Object errorValue = new Object(){@Override public String toString(){return "~ERROR VALUE~";}};
 
         ColumnDescriptor[] columns;
         try

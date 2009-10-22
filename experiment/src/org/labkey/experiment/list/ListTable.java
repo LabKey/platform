@@ -83,7 +83,7 @@ public class ListTable extends FilteredTable
             safeAddColumn(column);
             if (property.isMvEnabled())
             {
-                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId);
+                MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, user);
             }
             if (!property.isHidden())
             {
