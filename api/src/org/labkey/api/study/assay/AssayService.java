@@ -26,6 +26,7 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 import java.util.List;
 
@@ -57,7 +58,7 @@ public class AssayService
         public AssayProvider getProvider(String providerName);
         public AssayProvider getProvider(ExpProtocol protocol);
         public List<AssayProvider> getAssayProviders();
-        public QueryView createAssayListView(ViewContext context, boolean portalView);
+        public WebPartView createAssayListView(ViewContext context, boolean portalView);
 
         ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 
