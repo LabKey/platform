@@ -293,6 +293,16 @@ public class DataColumn extends DisplayColumn
             out.write("&nbsp;");
     }
 
+    
+    @Override
+    public String renderURL(RenderContext ctx)
+    {
+        if (null == _displayColumn.getValue(ctx))
+            return null;
+        return super.renderURL(ctx);
+    }
+    
+
     public String getFormattedValue(RenderContext ctx)
     {
         Object value = _displayColumn.getValue(ctx);
