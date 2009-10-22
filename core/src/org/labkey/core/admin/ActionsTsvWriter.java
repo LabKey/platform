@@ -28,7 +28,7 @@ import java.util.Map;
 */
 public class ActionsTsvWriter extends TSVWriter
 {
-    public void write()
+    protected void write()
     {
         try
         {
@@ -70,10 +70,6 @@ public class ActionsTsvWriter extends TSVWriter
         catch (Exception e)
         {
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            _pw.close();            
         }
     }
 }
