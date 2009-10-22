@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -25,6 +26,7 @@ import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.ArrayList;
 
 public class QueryWebPart extends WebPartView
 {
@@ -50,7 +52,16 @@ public class QueryWebPart extends WebPartView
             _settings = _schema.getSettings(part, context);
             String queryName = _settings.getQueryName();
 
-            if (null == queryName)
+            TableInfo td = null;
+            try {
+                ArrayList<QueryException> errors = new ArrayList<QueryException>();
+                QueryDefinition qd = _settings.getQueryDef(_schema);
+                if (null != qd)
+                    td = qd.getTable(_schema, errors, false);
+                if (!errors.isEmpty())
+                    td = null;
+            }catch(Exception x){}
+            if (null == td)
             {
                 url = _schema.urlSchemaDesigner();
             }
