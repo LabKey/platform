@@ -31,7 +31,6 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -451,12 +450,20 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
 
-    // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
-    // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
-    // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
     @Override
     public void prepareNewDbScope(DbScope scope) throws SQLException
     {
+        Map<String, Integer> scales = new ConcurrentHashMap<String, Integer>();
+        initializeUserDefinedTypes(scope, scales);
+        DOMAIN_SCALES.put(scope, scales);
+    }
+
+    // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
+    // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
+    // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
+    private void initializeUserDefinedTypes(DbScope scope, Map<String, Integer> scales) throws SQLException
+    {
+        // No synchronization on scales, but there's no harm if we execute this query twice.
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -467,8 +474,6 @@ class SqlDialectPostgreSQL extends SqlDialect
             stmt = conn.createStatement();
             rs = stmt.executeQuery("SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
 
-            Map<String, Integer> scales = new HashMap<String, Integer>();
-
             while (rs.next())
             {
                 String domainName = rs.getString("domain_name");
@@ -478,8 +483,6 @@ class SqlDialectPostgreSQL extends SqlDialect
                 else
                     scales.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
             }
-            
-            DOMAIN_SCALES.put(scope, scales);
         }
         finally
         {
@@ -772,20 +775,21 @@ class SqlDialectPostgreSQL extends SqlDialect
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope)
     {
         // Retrieve and pass in the previously queried scale values for this scope.
-        return new PostgreSQLColumnMetaDataReader(rsCols, DOMAIN_SCALES.get(scope));
+        return new PostgreSQLColumnMetaDataReader(rsCols, scope);
     }
 
 
     private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
     {
         private final Map<String, Integer> _domainScales;
+        private final DbScope _scope;
 
-        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, Map<String, Integer> domainScales)
+        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, DbScope scope)
         {
             super(rsCols);
-
-            assert null != domainScales;
-            _domainScales = domainScales;
+            _scope = scope;
+            _domainScales = DOMAIN_SCALES.get(_scope);
+            assert null != _domainScales;
 
             _nameKey = "COLUMN_NAME";
             _sqlTypeKey = "DATA_TYPE";
@@ -820,7 +824,15 @@ class SqlDialectPostgreSQL extends SqlDialect
 
             if (Types.DISTINCT == sqlType)
             {
-                Integer scale = _domainScales.get(getSqlTypeName());
+                String typeName = getSqlTypeName();
+                Integer scale = _domainScales.get(typeName);
+
+                if (null == scale)
+                {
+                    // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
+                    initializeUserDefinedTypes(_scope, _domainScales);
+                    scale = _domainScales.get(typeName);
+                }
 
                 assert scale != null;
 
