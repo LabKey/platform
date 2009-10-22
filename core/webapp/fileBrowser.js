@@ -1139,14 +1139,10 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         if (!dir || !dir.treeNode)
             return;
         var node = dir.treeNode;
-        if (!node.childNodes || node.childNodes.length < 1)
-            return;
-
         this.mergeRecords(node, records);
     },
 
 
-    // there is a problem with directories that only differ in case 8( on *nix
     mergeRecords : function(node, records)
     {
         records = records.sort(function(a,b)
@@ -1165,6 +1161,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             recordsMap[records[i].data.path] = n;
         }
 
+        var wasExpanded = node.isExpanded();
         var changed = false;
         var removes = false;
         var inserts = false;
@@ -1203,7 +1200,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
                 return A < B ? -1 : 1;
             });
         }
-        if (changed)
+        if (wasExpanded)
             node.expand(false, false);
     },
 
@@ -1218,22 +1215,9 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         }
         try
         {
-            var records = records.sort(function(a,b)
-            {
-                var A = a.data.name.toUpperCase(), B = b.data.name.toUpperCase();
-                return A < B ? -1 : 1;
-            });
-
             var node = args.node;
-            node.beginUpdate();
-            for (var i = 0; i < records.length; i++)
-            {
-                var record = records[i];
-                var n = this.createNodeFromRecord(record);
-                if (n)
-                    node.appendChild(n);
-            }
-            node.endUpdate();
+            this.mergeRecords(node, records);
+
             if (typeof args.callback == "function")
                 args.callback(this, node);
             if (node.childNodes.length == 1)
