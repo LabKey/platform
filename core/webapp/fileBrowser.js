@@ -491,7 +491,7 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
     _addFiles : function(path, records)
     {
         this.directoryMap[path] = records;
-        this.fireEvent(FILESYSTEM_EVENTS.listfiles, path, records);
+        this.fireEvent(FILESYSTEM_EVENTS.listfiles, this, path, records);
     },
 
     directoryFromCache : function(path)
@@ -1081,6 +1081,8 @@ var FileSystemTreeLoader = function (config)
     Ext.apply(this, config);
     this.addEvents("beforeload", "load", "loadexception");
     FileSystemTreeLoader.superclass.constructor.call(this);
+
+    this.fileSystem.on(FILESYSTEM_EVENTS.listfiles, this.onListfiles, this)
 };
 
 Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
@@ -1120,11 +1122,91 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         if (n)
         {
             n.record = record;
+            record.treeNode = n;
             if (record.data.iconHref)
                 n.attributes.icon = record.data.iconHref;
         }
         return n;
     },
+
+
+    // on refresh we want to keep the tree in sync
+    onListfiles : function(filesystem, path, records)
+    {
+        var dir = this.fileSystem.recordFromCache(path);
+
+        // just return for nodes we haven't loaded yet
+        if (!dir || !dir.treeNode)
+            return;
+        var node = dir.treeNode;
+        if (!node.childNodes || node.childNodes.length < 1)
+            return;
+
+        this.mergeRecords(node, records);
+    },
+
+
+    // there is a problem with directories that only differ in case 8( on *nix
+    mergeRecords : function(node, records)
+    {
+        records = records.sort(function(a,b)
+        {
+            var A = a.data.name.toUpperCase(), B = b.data.name.toUpperCase();
+            return A < B ? -1 : 1;
+        });
+
+        var i, p;
+        var nodesMap = {}, recordsMap = {};
+        node.eachChild(function(child){nodesMap[child.record.data.path]=child;});
+        for (i=0 ; i<records.length ; i++)
+        {
+            var n = this.createNodeFromRecord(records[i]);
+            if (n)
+            recordsMap[records[i].data.path] = n;
+        }
+
+        var changed = false;
+        var removes = false;
+        var inserts = false;
+        var change = function()
+        {
+            if (changed) return;
+            node.collapse(false,false);
+            changed = true;
+        };
+
+        for (p in nodesMap)
+        {
+            if (!(p in recordsMap))
+            {
+                change();
+                node.removeChild(nodesMap[p]);
+                removes = true;
+            }
+        }
+
+        for (p in recordsMap)
+        {
+            if (!(p in nodesMap))
+            {
+                change();
+                node.insertBefore(recordsMap[p], null);
+                inserts = true;
+            }
+        }
+
+        if (inserts)
+        {
+            node.sort(function(a,b)
+            {
+                var A = a.record.data.name.toUpperCase(), B = b.record.data.name.toUpperCase();
+                return A < B ? -1 : 1;
+            });
+        }
+        if (changed)
+            node.expand(false, false);
+    },
+
 
     listCallback : function (filesystem, success, path, records, args)
     {
@@ -1216,7 +1298,7 @@ if (LABKEY.Applet)
             TransferApplet.superclass.initComponent.call(this);
 
             this.addEvents([TRANSFER_EVENTS.update]);
-            
+
             this.transferReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records', id:'target'}, this.TransferRecord);
             this.transfers = new Ext.data.Store();
             this.consoleReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records'}, this.ConsoleRecord);
@@ -2481,7 +2563,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     initComponent : function()
     {
         LABKEY.FileBrowser.superclass.initComponent.call(this);
-        
+
         //
         // EVENTS (tie together components)
         //
