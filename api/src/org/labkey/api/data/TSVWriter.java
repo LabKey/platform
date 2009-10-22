@@ -25,12 +25,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.regex.Pattern;
 
+// TODO: Should be an abstract class
 public class TSVWriter
 {
     private static Logger _log = Logger.getLogger(TSVWriter.class);
 
     private String _filenamePrefix = "tsv";
-    private String _readFileName = null;
     private boolean _exportAsWebPage = false;
 
     // Stashing the OutputStream and the PrintWriter allows multiple writes (e.g., Export Runs to TSV)
@@ -40,14 +40,6 @@ public class TSVWriter
 
     public TSVWriter()
     {
-    }
-
-
-    // This takes a file accessible to the server and streams it back to the browser as a TSV file
-    // The file must be in TSV format already.
-    public TSVWriter(String readFileName)
-    {
-        _readFileName = readFileName;
     }
 
 
@@ -252,26 +244,5 @@ public class TSVWriter
 
     protected void write()
     {
-        try
-        {
-            FileReader fr = new FileReader(_readFileName);
-            BufferedReader br = new BufferedReader(fr);
-
-            while (true)
-            {
-                String line = br.readLine();
-                if (null != line)
-                    _pw.println(line);
-                else
-                    break;
-            }
-
-            br.close();
-            fr.close();
-        }
-        catch (IOException e)
-        {
-            _log.error("write", e);
-        }
     }
 }

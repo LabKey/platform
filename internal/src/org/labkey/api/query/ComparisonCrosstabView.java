@@ -108,5 +108,4 @@ public abstract class ComparisonCrosstabView extends CrosstabView
 
         return new GWTComparisonResult(gwtMembers, new GWTComparisonGroup[0], hits[0].length, table.getSettings().getColumnAxis().getCaption());
     }
-    
 }
