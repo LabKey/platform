@@ -171,6 +171,8 @@ public class PropertyColumn extends LookupColumn
 
     private String getPropertySqlCastType()
     {
+        if (_mvIndicator)
+            return null;
         PropertyType pt = pd.getPropertyType();
         if (PropertyType.DOUBLE == pt || PropertyType.DATE_TIME == pt)
             return null;

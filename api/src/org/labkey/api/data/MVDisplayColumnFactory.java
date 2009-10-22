@@ -22,6 +22,7 @@ import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
+import org.labkey.api.security.User;
 
 import java.sql.Types;
 import java.util.Collections;
@@ -66,13 +67,22 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
     }
     
 
-    private static ColumnInfo[] createMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
+    private static ColumnInfo[] createMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, User user)
     {
-        QuerySchema schema = ((QuerySchema)colObjectId.getParentTable().getSchema());
         String mvColumnName = property.getName() + MvColumn.MV_INDICATOR_SUFFIX;
-        PropertyColumn mvColumn = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, schema.getUser());
+
+        //CONSIDER new PropertyColumn constructor
+        PropertyColumn mvColumn = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, user);
+        mvColumn.setMvIndicator(true);
         mvColumn.setName(mvColumnName);
+        mvColumn.setAlias(ColumnInfo.legalNameFromName(mvColumnName));
+        mvColumn.setLabel(mvColumnName);
+        mvColumn.setNullable(true);
+        mvColumn.setUserEditable(false);
+        mvColumn.setHidden(true);
+
         mvColumn.setParentIsObjectId(true);
+        
         valueColumn.setMvColumnName(mvColumn.getName());
 
         ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
@@ -87,9 +97,9 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
     }
 
 
-    public static void addMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
+    public static void addMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, User user)
     {
-        ColumnInfo[] newColumns = createMvColumns(table, valueColumn, property, colObjectId);
+        ColumnInfo[] newColumns = createMvColumns(table, valueColumn, property, colObjectId, user);
         for (ColumnInfo column : newColumns)
         {
             table.addColumn(column);
