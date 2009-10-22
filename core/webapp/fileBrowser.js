@@ -1122,7 +1122,6 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         if (n)
         {
             n.record = record;
-            record.treeNode = n;
             if (record.data.iconHref)
                 n.attributes.icon = record.data.iconHref;
         }
@@ -1138,8 +1137,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         // just return for nodes we haven't loaded yet
         if (!dir || !dir.treeNode)
             return;
-        var node = dir.treeNode;
-        this.mergeRecords(node, records);
+        this.mergeRecords(dir.treeNode, records);
     },
 
 
@@ -1151,14 +1149,14 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             return A < B ? -1 : 1;
         });
 
-        var i, p;
+        var i, p, n;
         var nodesMap = {}, recordsMap = {};
         node.eachChild(function(child){nodesMap[child.record.data.path]=child;});
         for (i=0 ; i<records.length ; i++)
         {
-            var n = this.createNodeFromRecord(records[i]);
+            n = this.createNodeFromRecord(records[i]);
             if (n)
-            recordsMap[records[i].data.path] = n;
+                recordsMap[records[i].data.path] = n;
         }
 
         var wasExpanded = node.isExpanded();
@@ -1187,7 +1185,8 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             if (!(p in nodesMap))
             {
                 change();
-                node.insertBefore(recordsMap[p], null);
+                n = recordsMap[p];
+                n.record.treeNode = node.insertBefore(recordsMap[p], null);
                 inserts = true;
             }
         }
