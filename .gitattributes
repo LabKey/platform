@@ -1104,6 +1104,7 @@ pipeline/resources/schemas/dbscripts/postgresql/pipeline-2.30-8.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.20-8.30.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.20-9.21.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.21-9.22.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.64.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.63-0.64.sql -text
@@ -1137,6 +1138,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-2.30-8.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.20-8.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.21.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.21-9.22.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
@@ -1523,6 +1525,7 @@ query/resources/schemas/dbscripts/postgresql/query-8.20-8.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-8.30-9.10.sql -text
 query/resources/schemas/dbscripts/postgresql/query-9.20-9.21.sql -text
 query/resources/schemas/dbscripts/postgresql/query-9.21-9.22.sql -text
+query/resources/schemas/dbscripts/postgresql/query-9.22-9.23.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-1.50-1.60.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-1.51-1.52.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-1.60-1.61.sql -text
@@ -1544,6 +1547,7 @@ query/resources/schemas/dbscripts/sqlserver/query-8.20-8.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-8.30-9.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-9.20-9.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-9.21-9.22.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-9.22-9.23.sql -text
 query/resources/schemas/query.xml -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
@@ -1902,6 +1906,7 @@ study/resources/schemas/dbscripts/postgresql/study-9.21-9.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.22-9.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.24-9.25.sql -text
+study/resources/schemas/dbscripts/postgresql/study-9.25-9.26.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2022,6 +2027,7 @@ study/resources/schemas/dbscripts/sqlserver/study-9.21-9.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.22-9.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.24-9.25.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-9.25-9.26.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
