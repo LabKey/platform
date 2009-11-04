@@ -24,7 +24,6 @@ public class DbUserSchemaDef extends Entity
 {
     public enum Column
     {
-        container,
         userschemaname
     }
 
@@ -43,7 +42,6 @@ public class DbUserSchemaDef extends Entity
     private int _dbUserSchemaId;
     private String _userSchemaName;
     private String _dbSchemaName;
-    private String _dbContainer;
     private boolean _editable;
     private String _metaData;
     private String _dataSource;
@@ -78,16 +76,6 @@ public class DbUserSchemaDef extends Entity
         _dbSchemaName = name;
     }
 
-    public String getDbContainer()
-    {
-        return _dbContainer;
-    }
-
-    public void setDbContainer(String id)
-    {
-        _dbContainer = id;
-    }
-
     public String getMetaData()
     {
         return _metaData;
@@ -116,7 +104,6 @@ public class DbUserSchemaDef extends Entity
         DbUserSchemaDef that = (DbUserSchemaDef) o;
 
         if (_dbUserSchemaId != that._dbUserSchemaId) return false;
-        if (_dbContainer != null ? !_dbContainer.equals(that._dbContainer) : that._dbContainer != null) return false;
         if (_dbSchemaName != null ? !_dbSchemaName.equals(that._dbSchemaName) : that._dbSchemaName != null)
             return false;
         if (_metaData != null ? !_metaData.equals(that._metaData) : that._metaData != null) return false;
@@ -132,7 +119,6 @@ public class DbUserSchemaDef extends Entity
         result = _dbUserSchemaId;
         result = 31 * result + (_userSchemaName != null ? _userSchemaName.hashCode() : 0);
         result = 31 * result + (_dbSchemaName != null ? _dbSchemaName.hashCode() : 0);
-        result = 31 * result + (_dbContainer != null ? _dbContainer.hashCode() : 0);
         result = 31 * result + (_metaData != null ? _metaData.hashCode() : 0);
         return result;
     }

@@ -45,8 +45,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -137,17 +137,14 @@ public class FtpController extends SpringActionController
             if (null == c)
                 return null;
 
-            PipeRoot[] pipes = PipelineService.get().getAllPipelineRoots();
-            HashMap<String,PipeRoot> pipeMap = new HashMap<String, PipeRoot>();
-            for (PipeRoot pipe : pipes)
-                pipeMap.put(pipe.getContainer().getId(), pipe);
+            Map<Container, PipeRoot> pipeMap = PipelineService.get().getAllPipelineRoots();
 
             Container[] all = ContainerManager.getAllChildren(c);
             ArrayList<String> paths = new ArrayList<String>(all.length*2);
             for (Container container : all)
             {
                 paths.add(container.getPath());
-                PipeRoot pipe = pipeMap.get(container.getId());
+                PipeRoot pipe = pipeMap.get(container);
                 if (null != pipe)
                     paths.add(container.getPath() + "/" + PIPELINE_LINK);
             }

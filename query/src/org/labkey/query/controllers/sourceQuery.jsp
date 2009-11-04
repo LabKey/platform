@@ -64,12 +64,12 @@ if (!form.getQueryDef().isTableQueryDefinition())
 <script type="text/javascript">
 function _id(s) {return document.getElementById(s);}
 
-var origQueryText = _id("queryText").value;
+var origQueryText = _id("queryText") == null ? null : _id("queryText").value;
 var origMetadataText = _id("metadataText").value;
 
 function isDirty()
 {
-    return origQueryText != _id("queryText").value || origMetadataText != _id("metadataText").value;  
+    return (origQueryText != null && origQueryText != _id("queryText").value) || origMetadataText != _id("metadataText").value;  
 }
 window.onbeforeunload = LABKEY.beforeunload(isDirty);
 

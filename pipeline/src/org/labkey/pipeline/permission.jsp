@@ -40,12 +40,12 @@
 These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
 <form id="permissionsForm" action="updateRootPermissions.post" method="POST">
-<input id="enabledCheckbox" type="checkbox" name="enable" <%=enableFTP?"checked":""%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> share files via web site or FTP server<br>
+<input id="enabledCheckbox" type="checkbox" name="enable" <%=enableFTP?"checked":""%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> share files via web site<br>
     <%
     Group[] groups = org.labkey.api.security.SecurityManager.getGroups(c.getProject(), true);
     Pair[] optionsFull = new Pair[]
     {
-        new Pair<String,Role>("no ftp access", RoleManager.getRole(NoPermissionsRole.class)),
+        new Pair<String,Role>("no access", RoleManager.getRole(NoPermissionsRole.class)),
         new Pair<String,Role>("read files", RoleManager.getRole(ReaderRole.class)),
         new Pair<String,Role>("create files", RoleManager.getRole(AuthorRole.class)),
         new Pair<String, Role>("create and delete", RoleManager.getRole(EditorRole.class))

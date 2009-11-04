@@ -16,25 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.audit.AuditLogService"%>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Comparator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     String currentView = (String)request.getAttribute("currentView");
-    List<AuditLogService.AuditViewFactory> factories = Arrays.asList(AuditLogService.get().getAuditViewFactories());
+    AuditLogService.AuditViewFactory[] factories = AuditLogService.get().getAuditViewFactories();
 
-    Collections.sort(factories, new Comparator<AuditLogService.AuditViewFactory>(){
-        public int compare(AuditLogService.AuditViewFactory o1, AuditLogService.AuditViewFactory o2)
-        {
-            return (o1.getName().compareToIgnoreCase(o2.getName()));
-        }
-    });
-    
     if (currentView == null)
-        currentView = factories.get(0).getEventType();
+        currentView = factories[0].getEventType();
 
 %>
 <form action="" method="get">

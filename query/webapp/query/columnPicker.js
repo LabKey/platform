@@ -539,12 +539,18 @@ function getColumnHelpHtml(field)
         body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + field.description + "</td></tr>";
     }
     body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + field.key + "</td></tr>";
-    var datatype = _typeMap[field.datatype.toUpperCase()];
-    if (datatype)
+    if (field.datatype)
     {
-        body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + datatype.toLowerCase() + "</td></tr>";
+        var datatype = _typeMap[field.datatype.toUpperCase()];
+        if (datatype)
+        {
+            body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + datatype.toLowerCase() + "</td></tr>";
+        }
     }
-    body += "<tr><td valign='top'><strong>Hidden:</strong></td><td>" + field.hidden + "</td></tr>";
+    if (field.hidden)
+    {
+        body += "<tr><td valign='top'><strong>Hidden:</strong></td><td>" + field.hidden + "</td></tr>";
+    }
     body += "</table>";
     return body;
 }

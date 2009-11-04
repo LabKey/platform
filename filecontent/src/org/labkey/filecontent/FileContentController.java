@@ -17,6 +17,7 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.io.IOUtils;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -42,8 +43,8 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.PrintWriter;
+import javax.servlet.ServletOutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -166,16 +167,47 @@ public class FileContentController extends SpringActionController
                 case INCLUDE:
                 case INLINE:
                 {
-                    String fileContents = PageFlowUtil.getFileContentsAsString(file);
-                    HtmlView webPart = new HtmlView(file.getName(), fileContents);
+                    WebPartView webPart = new WebPartView()
+                    {
+                        @Override
+                        protected void renderView(Object model, PrintWriter out) throws Exception
+                        {
+                            FileInputStream fis = new FileInputStream(file);
+                            try
+                            {
+                                IOUtils.copy(new InputStreamReader(fis), out);
+                            }
+                            finally
+                            {
+                                IOUtils.closeQuietly(fis);
+                            }
+                        }
+                    };
+                    webPart.setTitle(file.getName());
                     webPart.setFrame(WebPartView.FrameType.DIV);
                     return webPart;
                 }
                 case TEXT:
                 {
-                    String fileContents = PageFlowUtil.getFileContentsAsString(file);
-                    String html = PageFlowUtil.filter(fileContents, true, true);
-                    HttpView webPart = new HtmlView(file.getName(), html);
+                    WebPartView webPart = new WebPartView()
+                    {
+                        @Override
+                        protected void renderView(Object model, PrintWriter out) throws Exception
+                        {
+                            try
+                            {
+                                // UNDONE stream html filter
+                                String fileContents = PageFlowUtil.getFileContentsAsString(file);
+                                String html = PageFlowUtil.filter(fileContents, true, true);
+                                out.write(html);
+                            }
+                            catch (OutOfMemoryError x)
+                            {
+                                out.write("<span class='labkey-error'>file is too long</span>");
+                            }
+                        }
+                    };
+                    webPart.setTitle(file.getName());
                     return webPart;
                 }
                 case IMAGE:
@@ -449,7 +481,7 @@ public class FileContentController extends SpringActionController
                {
                    logger.error("Could not get canonical path for " + attachmentServiceRoot.getPath() + ", using path as entered.", e);
                }
-               form.setPath(path);
+               form.setRootPath(path);
            }
            JspView adminView = new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form, errors);
            return adminView;
@@ -810,7 +842,7 @@ public class FileContentController extends SpringActionController
     }
 
     static MimeMap mimeMap = new MimeMap();
-    
+
     public static RenderStyle defaultRenderStyle(String name)
     {
         if (mimeMap.isInlineImageFor(name))

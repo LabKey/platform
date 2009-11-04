@@ -75,9 +75,6 @@
                 <ns:columnTitle>Database Schema Name</ns:columnTitle>
                 <ns:description>The name of the physical schema in the underlying database.</ns:description>
             </ns:column>
-            <ns:column columnName="DbContainer">
-                <ns:description>If specified and if tables have a container column, the table contents will be filtered automatically to show only the data in this container. If you leave this field blank, you see all the data in all containers.</ns:description> 
-            </ns:column>
             <ns:column columnName="Editable">
                 <ns:description>Allows insert/update/delete. Caveat: This setting only works if you have a single primary key in your table.</ns:description>
             </ns:column>

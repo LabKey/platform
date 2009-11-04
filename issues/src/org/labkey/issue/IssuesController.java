@@ -29,7 +29,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -737,7 +742,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_UPDATEOWN)
+    @RequiresPermissionClass(ReadPermission.class) //will check for update/update-own below
     public class UpdateAction extends IssueUpdateAction
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
@@ -1117,8 +1122,8 @@ public class IssuesController extends SpringActionController
     {
         final Set<String> emailAddresses = new HashSet<String>();
         final Container c = getContainer();
-        int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
-        int assignedToPrevPref = prevIssue != null ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
+        int assignedToPref = issue.getAssignedTo() != null ? IssueManager.getUserEmailPreferences(c, issue.getAssignedTo()) : 0;
+        int assignedToPrevPref = (prevIssue != null && prevIssue.getAssignedTo() != null) ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
         int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
 
 
@@ -1968,17 +1973,10 @@ public class IssuesController extends SpringActionController
      */
     private boolean hasUpdatePermission(User user, Issue issue)
     {
-        // If we have full Update rights on the container, continue
-        if (getViewContext().hasPermission(ACL.PERM_UPDATE))
-            return true;
-
-        // If UpdateOwn on the container AND we created this Issue, continue
-        //noinspection RedundantIfStatement
-        if (getViewContext().hasPermission(ACL.PERM_UPDATEOWN)
-                && issue.getCreatedBy() == user.getUserId())
-            return true;
-
-        return false;
+        return getContainer().hasPermission(user, UpdatePermission.class,
+                (issue.getCreatedBy() == user.getUserId()) ? 
+                        RoleManager.roleSet(OwnerRole.class) :
+                        null);
     }
 
 

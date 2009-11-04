@@ -19,6 +19,7 @@ package org.labkey.experiment.api.property;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
@@ -26,20 +27,20 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.list.DomainAuditViewFactory;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DomainImpl implements Domain
 {
@@ -234,6 +235,8 @@ public class DomainImpl implements Domain
             }
             boolean propChanged = false;
             int sortOrder = 0;
+
+            // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
             {
                 if (impl._deleted)
@@ -241,21 +244,30 @@ public class DomainImpl implements Domain
                     impl.delete(user);
                     propChanged = true;
                 }
-                else if (impl.isNew())
+            }
+
+            // Now add and update #8978
+            for (DomainPropertyImpl impl : _properties)
+            {
+                if (!impl._deleted)
                 {
-                    if (impl._pd.isRequired())
-                        keyColumnsChanged = true;
-                    impl.save(user, _dd, sortOrder++);
-                    propChanged = true;
-                }
-                else
-                {
-                    propChanged |= impl.isDirty();
-                    if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
-                        keyColumnsChanged = true;
-                    impl.save(user, _dd, sortOrder++);
+                    if (impl.isNew())
+                    {
+                        if (impl._pd.isRequired())
+                            keyColumnsChanged = true;
+                        impl.save(user, _dd, sortOrder++);
+                        propChanged = true;
+                    }
+                    else
+                    {
+                        propChanged |= impl.isDirty();
+                        if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
+                            keyColumnsChanged = true;
+                        impl.save(user, _dd, sortOrder++);
+                    }
                 }
             }
+
             _new = false;
             if (propChanged)
                 addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));

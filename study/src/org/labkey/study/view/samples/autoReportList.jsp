@@ -104,68 +104,61 @@
                 <%
                     if (showCohorts && factory.allowsCohortFilter())
                     {
-                        Map<String, CohortFilter> cohortOptions = new LinkedHashMap<String, CohortFilter>();
-                        if (study.isAdvancedCohorts())
+                        CohortFilter.Type selectedCohortType = CohortFilter.Type.PTID_CURRENT;
+                        int selectedCohortId = -1;
+                        if (factory.getCohortFilter() != null)
                         {
-                            for (CohortFilter.Type type : CohortFilter.Type.values())
-                            {
-                                for (CohortImpl cohort : cohorts)
-                                {
-                                    CohortFilter filter = new CohortFilter(type, cohort.getRowId());
-                                    cohortOptions.put(type.getTitle() + " is " + cohort.getLabel(), filter);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            for (CohortImpl cohort : cohorts)
-                            {
-                                CohortFilter filter = new CohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
-                                cohortOptions.put(cohort.getLabel(), filter);
-                            }
+                            selectedCohortType = factory.getCohortFilter().getType();
+                            selectedCohortId = factory.getCohortFilter().getCohortId();
                         }
                 %>
-                    <script type="text/javascript">
-                        var cohortOptions = {};
-                <%
-                        for (Map.Entry<String, CohortFilter> option : cohortOptions.entrySet())
-                        {
-                %>
-                        cohortOptions["<%= option.getKey() %>"] = { cohortId : <%= option.getValue().getCohortId() %>, cohortFilterType : '<%= option.getValue().getType().name() %>'};
-                <%
-                        }
-                %>
-                        function updateCohortInputs(selectedText)
-                        {
-                            var cohortId = cohortOptions[selectedText].cohortId;
-                            var cohortFilterType = cohortOptions[selectedText].cohortFilterType;
-                            document.forms['<%= formName %>']['<%= CohortFilter.Params.cohortId %>'].value = cohortId;
-                            document.forms['<%= formName %>']['<%= CohortFilter.Params.cohortFilterType %>'].value = cohortFilterType;
-                        }
-                    </script>
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter</td>
                         <td>
-                            <input type="hidden" name="<%= CohortFilter.Params.cohortId %>" value="">
-                            <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType %>" value="">
-                            <select onchange="updateCohortInputs(this.options[this.selectedIndex].text);">
+                            <select name="<%= CohortFilter.Params.cohortId %>">
                                 <option value="">All Cohorts</option>
-                                <%
-                                    for (Map.Entry<String, CohortFilter> option : cohortOptions.entrySet())
-                                    {
-                                        String label = option.getKey();
-                                        CohortFilter filter = option.getValue();
-                                %>
-                                    <option <%= factory.getCohortFilter() != null && factory.getCohortFilter().equals(filter) ? "SELECTED" : ""%>>
-                                        <%= h(label) %>
-                                    </option>
-                                    <%
-                                    }
-                                %>
+                            <%
+                                for (CohortImpl cohort : cohorts)
+                                {
+                            %>
+                                <option value="<%= cohort.getRowId() %>" <%= cohort.getRowId() == selectedCohortId ? "SELECTED" : ""%>>
+                                    <%= h(cohort.getLabel()) %>
+                                </option>
+                            <%
+                                }
+                            %>
+                            </select>
+                        </td>
+                    </tr>
+                    <%
+                        if (study.isAdvancedCohorts())
+                        {
+                    %>
+                    <tr>
+                        <td style="<%= optionLabelStyle %>">Cohort filter type</td>
+                        <td>
+                            <select name="<%= CohortFilter.Params.cohortFilterType %>">
+                            <%
+                                for (CohortFilter.Type type : CohortFilter.Type.values())
+                                {
+                            %>
+                                <option value="<%= type.name() %>"  <%= type == selectedCohortType ? "SELECTED" : ""%>>
+                                    <%= h(type.getTitle()) %>
+                                </option>
+                            <%
+                                }
+                            %>
                             </select>
                         </td>
                     </tr>
                 <%
+                        }
+                        else
+                        {
+                %>
+                        <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType %>" value="<%= CohortFilter.Type.PTID_CURRENT %>">
+                <%
+                        }
                     }
                     if (factory.allowsAvailabilityFilter())
                     {

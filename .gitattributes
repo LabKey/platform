@@ -1602,7 +1602,6 @@ query/src/org/labkey/query/controllers/manageViews.jsp -text
 query/src/org/labkey/query/controllers/newQuery.jsp -text
 query/src/org/labkey/query/controllers/propertiesQuery.jsp -text
 query/src/org/labkey/query/controllers/sourceQuery.jsp -text
-query/src/org/labkey/query/data/DbUserQueryUpdateService.java -text
 query/src/org/labkey/query/data/DbUserSchemaCache.java -text
 query/src/org/labkey/query/data/DbUserSchemaTable.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text

@@ -36,6 +36,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.URLHelper;
 import org.labkey.experiment.controllers.list.ListController;
 import org.labkey.experiment.controllers.list.ListImportHelper;
 
@@ -618,7 +619,7 @@ public class ListDefinitionImpl implements ListDefinition
         return urlFor(ListController.Action.grid);
     }
 
-    public ActionURL urlUpdate(Object pk, ActionURL returnUrl)
+    public ActionURL urlUpdate(Object pk, URLHelper returnUrl)
     {
         ActionURL url = urlFor(ListController.Action.update);
 

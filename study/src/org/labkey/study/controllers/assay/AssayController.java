@@ -730,7 +730,7 @@ public class AssayController extends SpringActionController
     }
 
     @Override
-    protected AppBar getAppBar(Controller action)
+    public AppBar getAppBar(Controller action)
     {
         if (action instanceof AppBarAction)
             return ((AppBarAction) action).getAppBar();
@@ -808,7 +808,7 @@ public class AssayController extends SpringActionController
                 result.addFilter(AssayService.get().getResultsTableName(protocol),
                         AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, batchIds[0]);
             }
-            if (containerFilter != null)
+            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
                 result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }
@@ -821,7 +821,7 @@ public class AssayController extends SpringActionController
         public ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
         {
             ActionURL url = getProtocolURL(container, protocol, AssayBatchesAction.class);
-            if (containerFilter != null)
+            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
             {
                 url.addParameter(protocol.getName() + " Batches." + QueryParam.containerFilterName, containerFilter.getType().name());
             }
@@ -854,7 +854,7 @@ public class AssayController extends SpringActionController
                 result.addFilter(AssayService.get().getResultsTableName(protocol),
                         provider.getTableMetadata().getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
-            if (containerFilter != null)
+            if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
                 result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }

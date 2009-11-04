@@ -49,6 +49,7 @@ public class StatusChangeRequest implements Serializable, StatusRequest
         {
             file.setStatus(_status);
             file.setInfo(_statusInfo);
+            file.beforeUpdate(null, file);
             PipelineStatusManager.updateStatusFile(file);
         }
     }

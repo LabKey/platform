@@ -319,14 +319,7 @@ public class SecurityController extends SpringActionController
 
         public ActionURL getSuccessURL(GroupForm form)
         {
-            if (getContainer().isRoot())
-            {
-                return new ActionURL(GroupsAction.class, getContainer());
-            }
-            else
-            {
-                return new ActionURL(ProjectAction.class, getContainer());
-            }
+            return new ActionURL(ProjectAction.class, getContainer());
         }
     }
 

@@ -147,7 +147,7 @@ public class ListWriter implements ExternalStudyWriter
                         if (null == filename)
                             continue;
 
-                        String columnName = attachmentColumn.getColumnName();
+                        String columnName = attachmentColumn.getName();
                         VirtualFile columnDir = listDir.getDir(columnName);
 
                         InputStream is = null;

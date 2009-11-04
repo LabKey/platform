@@ -134,8 +134,9 @@ function loadToc()
     //kick off a request to get the wiki toc
     Ext.Ajax.request({
         url: LABKEY.ActionURL.buildURL('wiki', 'getWikiToc'),
+        method: 'GET',
         success: onTocSuccess,
-        failure: LABKEY.Utils.getCallbackWrapper(onTocError, this, true),
+        failure: LABKEY.Utils.getCallbackWrapper(onTocError, undefined, true),
         params: {currentPage: _wikiProps.name}
     });
 }
@@ -220,7 +221,7 @@ function onSave()
         return;
     _doingSave = true;
 
-    if(!isDirty())
+    if(!isDirty() && _wikiProps.entityId)
     {
         onSaveComplete();
         return;

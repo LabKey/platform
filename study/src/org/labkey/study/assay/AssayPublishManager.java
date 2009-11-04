@@ -92,21 +92,16 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         TableInfo studyTable = StudySchema.getInstance().getTableInfoStudy();
 
-        List<String> ids = new ArrayList<String>(allowedContainers.size());
-        for (Container c : allowedContainers)
-            ids.add(c.getId());
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("container", ids));
-
         ResultSet rs = null;
         try
         {
-            rs = Table.select(studyTable, PageFlowUtil.set("container", "label"), filter, null);
+            rs = Table.select(studyTable, PageFlowUtil.set("container", "label"), null, null);
             while (rs.next())
             {
                 String containerId = rs.getString("container");
                 String label = rs.getString("label");
                 Container container = ContainerManager.getForId(containerId);
-                if (!"/".equals(container.getPath()))
+                if (!"/".equals(container.getPath()) && allowedContainers.contains(container))
                     result.put(container, label);
             }
         }

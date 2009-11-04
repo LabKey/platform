@@ -36,6 +36,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
@@ -81,7 +82,6 @@ public class DavController extends SpringActionController
     static Category _log = Logger.getInstance(DavController.class);
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
     static boolean _readOnly = false;
-    static boolean _listings = true;
     static boolean _locking = false;
     static boolean _requiresLogin = true;
     static boolean _overwriteCollection = true; // must be true to pass litmus
@@ -478,6 +478,8 @@ public class DavController extends SpringActionController
                 resource = resolvePath();
             if (null == resource)
                 return notFound();
+            if (resource.isCollection() && !allowHtmlListing(resource))
+                return notFound(resource.getPath());
             if (!(resource.isCollection() ? resource.canList(getUser()) : resource.canRead(getUser())))
                 return unauthorized(resource);
             if (!resource.exists())
@@ -2246,13 +2248,20 @@ public class DavController extends SpringActionController
     }
 
 
+    /** allow html listing of this resource */
+    private boolean allowHtmlListing(WebdavResolver.Resource resource)
+    {
+        return (resource.getPath() + "/").startsWith("/" + WebdavService.getServletPath() + "/");
+    }
+    
+
     private WebdavStatus serveCollection(WebdavResolver.Resource resource, boolean content)
             throws DavException
     {
         String contentType = resource.getContentType();
 
         // Skip directory listings if we have been configured to suppress them
-        if (!_listings)
+        if (!allowHtmlListing(resource))
             return notFound();
 
         // Set the appropriate output headers
@@ -2516,8 +2525,7 @@ public class DavController extends SpringActionController
                 methodsAllowed.append(", MOVE");
             if (_locking)
                 methodsAllowed.append(", LOCK, UNLOCK");
-            if (_listings)
-                methodsAllowed.append(", PROPFIND");
+            methodsAllowed.append(", PROPFIND");
 
             if (resource.isCollection())
             {

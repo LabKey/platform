@@ -60,7 +60,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public double getVersion()
     {
-        return 9.21;
+        return 9.22;
     }
 
     protected void init()
@@ -221,6 +221,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             {
                 incompleteFile.setStatus(PipelineJob.ERROR_STATUS);
                 incompleteFile.setInfo("type=Job restart");
+                incompleteFile.beforeUpdate(null, incompleteFile);
                 PipelineStatusManager.updateStatusFile(incompleteFile);
             }
             catch (SQLException e)

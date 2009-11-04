@@ -126,7 +126,7 @@ public class PipelineServiceImpl extends PipelineService
 
 
     @NotNull
-    public PipeRoot[] getAllPipelineRoots()
+    public Map<Container, PipeRoot> getAllPipelineRoots()
     {
         PipelineRoot[] pipelines;
         try
@@ -137,21 +137,21 @@ public class PipelineServiceImpl extends PipelineService
         {
             throw new RuntimeSQLException(x);
         }
-        ArrayList<PipeRoot> pipes = new ArrayList<PipeRoot>(pipelines.length);
+        Map<Container, PipeRoot> result = new HashMap<Container, PipeRoot>();
         for (PipelineRoot pipeline : pipelines)
         {
             try
             {
                 PipeRoot p = new PipeRootImpl(pipeline);
                 if (p.getContainer() != null)
-                    pipes.add(new PipeRootImpl(pipeline));
+                    result.put(p.getContainer(), p);
             }
             catch (URISyntaxException x)
             {
                 _log.error("unexpected error", x);
             }
         }
-        return pipes.toArray(new PipeRoot[pipes.size()]);
+        return result;
     }
 
 

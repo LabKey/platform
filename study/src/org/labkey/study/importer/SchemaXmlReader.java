@@ -95,7 +95,7 @@ public class SchemaXmlReader implements SchemaReader
 
             // Set up RowMap with all the keys that OntologyManager.importTypes() handles
             RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description",
-                    "RangeURI", "NotNull", "ConceptURI", "Format", "HiddenColumn", "MvEnabled", "LookupFolderPath",
+                    "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                     "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
                     "ShownInDetailsView");
 
@@ -140,6 +140,7 @@ public class SchemaXmlReader implements SchemaReader
                     notNull,
                     null,  // TODO: conceptURI
                     columnXml.getFormatString(),
+                    columnXml.isSetInputType() ? columnXml.getInputType() : null,
                     columnXml.getIsHidden(),
                     mvEnabled,
                     null != fk ? fk.getFkFolderPath() : null,

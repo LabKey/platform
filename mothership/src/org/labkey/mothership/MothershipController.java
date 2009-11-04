@@ -743,7 +743,7 @@ public class MothershipController extends SpringActionController
                     "and core.principals.userid = assignedto\n" +
                     "and core.principals.userid = core.usersdata.userid\n" +
                     "group by core.usersdata.displayname order by ExceptionCount DESC");
-            getDataRegion().getDisplayColumn("Owner").setURL("showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=${Owner}");
+            getDataRegion().getDisplayColumn("Owner").setURL("mothership/showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=${Owner}");
         }
     }
 
@@ -755,7 +755,7 @@ public class MothershipController extends SpringActionController
                     "SELECT COUNT(ExceptionStackTraceId) AS TotalCount\n" +
                             "FROM Mothership.ExceptionStackTrace AS Trace\n" +
                             "WHERE Trace.AssignedTo IS NULL AND Trace.BugNumber IS NULL");
-            getDataRegion().getDisplayColumn("TotalCount").setURL("showExceptions.view?ExceptionSummary.AssignedTo/DisplayName~isblank=&ExceptionSummary.BugNumber~isblank");
+            getDataRegion().getDisplayColumn("TotalCount").setURL("mothership/showExceptions.view?ExceptionSummary.AssignedTo/DisplayName~isblank&ExceptionSummary.BugNumber~isblank");
         }
     }
 

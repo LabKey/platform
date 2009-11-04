@@ -47,6 +47,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.list.ListAuditViewFactory;
@@ -374,7 +375,10 @@ public class ListController extends SpringActionController
 
     protected abstract class InsertUpdateAction extends FormViewAction<ListDefinitionForm>
     {
-        private ActionURL _returnURL;
+        private URLHelper _returnURL;
+        // We don't want to construct multiple forms in the reshow case, otherwise we'll double up all the error messages,
+        // so stash the form we create in the post handler here.  See #9031.  TODO: Fix this in 10.1, see #9033
+        private ListQueryUpdateForm _form;
         protected ListDefinition _list;
 
         public void validateCommand(ListDefinitionForm target, Errors errors)
@@ -385,9 +389,9 @@ public class ListController extends SpringActionController
         {
             _list = form.getList();
             TableInfo table = _list.getTable(getUser());
-            ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), _list, errors);
+            ListQueryUpdateForm tableForm = null != _form ? _form : new ListQueryUpdateForm(table, getViewContext(), _list, errors);
 
-            return getDataView(tableForm, form.getReturnActionURL(), errors);
+            return getDataView(tableForm, form.getReturnURLHelper(), errors);
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
@@ -400,6 +404,7 @@ public class ListController extends SpringActionController
             TableInfo table = list.getTable(getUser());
 
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext(), list, errors);
+            _form = tableForm;
 
             Map<String, MultipartFile> fileMap = getFileMap();
             if (null != fileMap)
@@ -472,7 +477,7 @@ public class ListController extends SpringActionController
                     transaction = false;
                 }
 
-                _returnURL = form.getReturnActionURL();
+                _returnURL = form.getReturnURLHelper();
 
                 // If user changed the PK then change returnURL to match
                 if (!PageFlowUtil.nullSafeEquals(oldKey, item.getKey()) && null != _returnURL.getParameter("pk"))
@@ -491,12 +496,17 @@ public class ListController extends SpringActionController
                     DefaultValueService.get().setDefaultValues(getContainer(), dataMap, getUser());
                 }
 
+                HttpView.throwRedirect(_returnURL.getLocalURIString());
                 return true;
             }
             catch (ValidationException ve)
             {
                 for (ValidationError error : ve.getErrors())
                     errors.reject(ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
+            }
+            catch (RedirectException e)  // Because of stupid catch (Exception e) below
+            {
+                throw e;
             }
             catch (Exception e)   // TODO: Check for specific errors and get rid of catch(Exception)
             {
@@ -515,10 +525,12 @@ public class ListController extends SpringActionController
 
         public ActionURL getSuccessURL(ListDefinitionForm listDefinitionForm)
         {
-            return _returnURL;
+            // Need to redirect to non-ActionURLs (e.g., HTML pages), so post handler does redirect
+            // TODO: In 10.1, should switch getSuccessURL() to return URLHelper
+            throw new IllegalStateException("Should not be calling getSuccessURL()");
         }
 
-        protected ButtonBar getButtonBar(ActionURL submitURL, ActionURL returnURL)
+        protected ButtonBar getButtonBar(ActionURL submitURL, URLHelper returnURL)
         {
             ButtonBar bb = new ButtonBar();
             ActionButton btnSubmit = new ActionButton(submitURL, "Submit");
@@ -529,7 +541,7 @@ public class ListController extends SpringActionController
             return bb;
         }
 
-        protected abstract DataView getDataView(ListQueryUpdateForm tableForm, ActionURL returnURL, BindException errors);
+        protected abstract DataView getDataView(ListQueryUpdateForm tableForm, URLHelper returnURL, BindException errors);
         protected abstract boolean isInsert();
     }
 
@@ -538,7 +550,7 @@ public class ListController extends SpringActionController
     public class InsertAction extends InsertUpdateAction
     {
         @Override
-        protected DataView getDataView(ListQueryUpdateForm tableForm, ActionURL returnURL, BindException errors)
+        protected DataView getDataView(ListQueryUpdateForm tableForm, URLHelper returnURL, BindException errors)
         {
             InsertView view = new InsertView(tableForm, errors);
             if (errors.getErrorCount() == 0)
@@ -576,7 +588,7 @@ public class ListController extends SpringActionController
     public class UpdateAction extends InsertUpdateAction
     {
         @Override
-        protected DataView getDataView(ListQueryUpdateForm tableForm, ActionURL returnURL, BindException errors)
+        protected DataView getDataView(ListQueryUpdateForm tableForm, URLHelper returnURL, BindException errors)
         {
             DataView view = new UpdateView(tableForm, errors);
             view.getDataRegion().setButtonBar(getButtonBar(_list.urlUpdate(tableForm.getPkVal(), returnURL), returnURL));

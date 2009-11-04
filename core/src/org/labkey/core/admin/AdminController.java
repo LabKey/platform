@@ -55,6 +55,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.jetbrains.annotations.Nullable;
 
 import javax.mail.MessagingException;
 import javax.net.ssl.HttpsURLConnection;
@@ -102,7 +103,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "queries", new ActionURL(QueriesAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
@@ -2057,15 +2058,26 @@ public class AdminController extends SpringActionController
     }
 
 
+    private static ActionURL getQueriesURL(@Nullable String statName)
+    {
+        ActionURL url = new ActionURL(QueriesAction.class, ContainerManager.getRoot());
+
+        if (null != statName)
+            url.addParameter("stat", statName);
+
+        return url;
+    }
+
+
     @RequiresSiteAdmin
     public class QueriesAction extends SimpleViewAction<QueriesForm>
     {
         public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
         {
-            return QueryProfiler.getReportView(form.getStat(), new QueryProfiler.ActionURLFactory() {
+            return QueryProfiler.getReportView(form.getStat(), getResetQueryStatisticssURL(), new QueryProfiler.ActionURLFactory() {
                 public ActionURL getActionURL(String name)
                 {
-                    return new ActionURL(QueriesAction.class, getContainer()).addParameter("stat", name);
+                    return getQueriesURL(name);
                 }
             });
         }
@@ -2090,6 +2102,24 @@ public class AdminController extends SpringActionController
             _stat = stat;
         }
     }
+
+
+    private static ActionURL getResetQueryStatisticssURL()
+    {
+        return new ActionURL(ResetQueryStatisticsAction.class, ContainerManager.getRoot());
+    }
+
+
+    @RequiresSiteAdmin
+    public class ResetQueryStatisticsAction extends SimpleRedirectAction<QueriesForm>
+    {
+        public ActionURL getRedirectURL(QueriesForm form) throws Exception
+        {
+            QueryProfiler.resetAllStatistics();
+            return getQueriesURL(form.getStat());
+        }
+    }
+
 
     @RequiresSiteAdmin
     public class EnvironmentVariablesAction extends SimpleViewAction

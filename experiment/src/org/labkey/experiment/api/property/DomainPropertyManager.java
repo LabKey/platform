@@ -66,18 +66,32 @@ public class DomainPropertyManager
         return _getValidators(property.getPropertyId());
     }
 
+    private String getCacheKey(int propertyId)
+    {
+        return String.valueOf(propertyId);
+    }
+
     private PropertyValidator[] _getValidators(int propertyId)
     {
         try
         {
             if (propertyId != 0)
             {
+                String cacheKey = getCacheKey(propertyId);
+                PropertyValidator[] validators = (PropertyValidator[])DbCache.get(getTinfoValidator(), cacheKey);
+
+                if (validators != null)
+                    return validators;
+
                 String sql = "SELECT PV.* " +
                         "FROM " + getTinfoValidator() + " PV " +
                         "INNER JOIN " + getTinfoValidatorReference() + " VR ON (PV.RowId = VR.ValidatorId) " +
                         "WHERE VR.PropertyId = ?\n";
 
-                return Table.executeQuery(getExpSchema(), sql, new Object[]{propertyId}, PropertyValidator.class);
+                validators = Table.executeQuery(getExpSchema(), sql, new Object[]{propertyId}, PropertyValidator.class);
+
+                DbCache.put(getTinfoValidator(), cacheKey, validators);
+                return validators;
             }
             return new PropertyValidator[0];
         }
@@ -104,6 +118,7 @@ public class DomainPropertyManager
                             " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
                                 " WHERE  VR.ValidatorId = ?)";
                 Table.execute(getExpSchema(), sql, new Object[]{validator.getRowId(), validator.getRowId()});
+                DbCache.remove(getTinfoValidator(), getCacheKey(property.getPropertyId()));
             }
         }
         catch (SQLException x)
@@ -125,6 +140,7 @@ public class DomainPropertyManager
                             " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
                                 " WHERE  VR.ValidatorId = ?)";
                 Table.execute(getExpSchema(), sql, new Object[]{validatorId, validatorId});
+                DbCache.remove(getTinfoValidator(), getCacheKey(propertyId));
             }
         }
         catch (SQLException x)
@@ -139,6 +155,7 @@ public class DomainPropertyManager
         {
             try {
                 addValidatorReference(property, validator.save(user, property.getContainer()));
+                DbCache.remove(getTinfoValidator(), getCacheKey(property.getPropertyId()));
             }
             catch (ValidationException e)
             {
@@ -210,5 +227,7 @@ public class DomainPropertyManager
 
         String deletePropValidatorSql = "DELETE FROM " + getTinfoValidator() + " WHERE Container = ?";
         Table.execute(getExpSchema(), deletePropValidatorSql, new Object[]{c.getId()});
+
+        DbCache.clear(getTinfoValidator());
     }
 }

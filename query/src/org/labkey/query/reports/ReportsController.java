@@ -145,6 +145,11 @@ public class ReportsController extends SpringActionController
         {
             return new ActionURL(CrosstabExportAction.class, c);
         }
+
+        public ActionURL urlCustomizeView(Container c)
+        {
+            return new ActionURL(CustomizeQueryAction.class, c);
+        }
     }
 
     public ReportsController() throws Exception
@@ -1660,6 +1665,61 @@ public class ReportsController extends SpringActionController
                 }
             }
             return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class CustomizeQueryForm
+    {
+        private String _schemaName;
+        private String _queryName;
+        private String _viewName;
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public String getViewName()
+        {
+            return _viewName;
+        }
+
+        public void setViewName(String viewName)
+        {
+            _viewName = viewName;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CustomizeQueryAction extends SimpleViewAction<CustomizeQueryForm>
+    {
+        public ModelAndView getView(CustomizeQueryForm form, BindException errors) throws Exception
+        {
+            ActionURL url = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.chooseColumns, form.getSchemaName().toString(), form.getQueryName()).
+                    addParameter(QueryParam.queryName.name(), form.getQueryName()).
+                    addParameter(QueryParam.viewName.name(), form.getViewName());
+
+            return HttpView.redirect(url);
         }
 
         public NavTree appendNavTrail(NavTree root)

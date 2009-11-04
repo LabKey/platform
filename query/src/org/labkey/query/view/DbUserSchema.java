@@ -84,7 +84,7 @@ public class DbUserSchema extends SimpleModuleUserSchema
     protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)
     {
         DbUserSchemaTable ret = new DbUserSchemaTable(this, schematable, getXbTable(name));
-        ret.setContainer(_def.getDbContainer());
+        ret.setContainer(_def.getContainerId());
         return ret;
     }
 
@@ -113,10 +113,5 @@ public class DbUserSchema extends SimpleModuleUserSchema
     public boolean areTablesEditable()
     {
         return _def.isEditable();
-    }
-
-    public Container getDbContainer()
-    {
-        return null == _def.getDbContainer() ? null : ContainerManager.getForId(_def.getDbContainer());
     }
 }

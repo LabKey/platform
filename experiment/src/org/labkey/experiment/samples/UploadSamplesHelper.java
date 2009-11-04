@@ -17,6 +17,7 @@
 package org.labkey.experiment.samples;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.beanutils.ConversionException;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -93,6 +94,7 @@ public class UploadSamplesHelper
         {
             String input = _form.getData();
             TabLoader tl = new TabLoader(input, true);
+            tl.setThrowOnErrors(true);
             tl.setScanAheadLineCount(200);
             String materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
             source = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
@@ -190,7 +192,7 @@ public class UploadSamplesHelper
                                 uri = uri.substring(uri.indexOf("#") + 1);
                             }
                             throw new ExperimentException("All rows must contain values for all Id columns:  Missing " + uri +
-                                " in row:  " + i);
+                                " in row:  " + (i + 1));
                         }
                     }
                 }
@@ -296,6 +298,10 @@ public class UploadSamplesHelper
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+        catch (ConversionException e)
+        {
+            throw new ExperimentException(e.getMessage(), e);
         }
         finally
         {

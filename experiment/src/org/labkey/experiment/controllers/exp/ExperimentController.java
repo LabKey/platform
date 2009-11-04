@@ -38,6 +38,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -3674,11 +3675,10 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(MoveRunsForm form, BindException errors) throws Exception
         {
             ActionURL moveURL = new ActionURL(MoveRunsAction.class, getContainer());
-            ContainerTree ct = new ContainerTree("/", getUser(), ACL.PERM_INSERT, moveURL)
+            PipelineRootContainerTree ct = new PipelineRootContainerTree(getUser(), moveURL)
             {
-                protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
+                protected void renderCellContents(StringBuilder html, Container c, ActionURL url, boolean hasRoot)
                 {
-                    boolean hasRoot = PipelineService.get().findPipelineRoot(c) != null;
                     if (hasRoot && !c.equals(getContainer()))
                     {
                         html.append("<a href=\"javascript:moveTo('");

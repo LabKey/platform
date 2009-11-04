@@ -20,6 +20,7 @@ import org.labkey.api.collections.Cache;
 import org.labkey.api.util.HString;
 import org.labkey.api.data.Container;
 import org.labkey.api.wiki.WikiRenderer;
+import org.labkey.api.view.NavTree;
 import org.labkey.wiki.model.Wiki;
 
 import java.util.Map;
@@ -37,6 +38,8 @@ public class WikiCache
     private static final String ORDERED_PAGE_LIST = "~~toc~~";
     private static final String PAGES_NAME = "~~pages~~";
     private static final String VERSIONS_NAME = "~~versions~~";
+    private static final String TOC_NAME = "~~nvtoc~~";
+    private static final String API_TOC_NAME = "~~apitoc~~";
     private static boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
     private static final Cache _pageCache = Cache.getShared();
 
@@ -58,6 +61,16 @@ public class WikiCache
     static void cache(Container c, WikiManager.WikiAndVersion wikipair)
     {
         _cache(c, wikipair.getWiki().getName().getSource(), wikipair);
+    }
+
+    static void cache(Container c, NavTree[] wikiToc)
+    {
+        _cache(c, TOC_NAME, wikiToc);
+    }
+
+    static void cache(Container c, List<Map<String,Object>> wikiToc)
+    {
+        _cache(c, API_TOC_NAME, wikiToc);
     }
 
     static void _cache(Container c, String name, Object o)
@@ -99,6 +112,16 @@ public class WikiCache
     static Map<HString, WikiRenderer.WikiLinkable> getCachedVersionMap(Container c)
     {
         return (Map<HString, WikiRenderer.WikiLinkable>) WikiCache.getCached(c, WikiCache.VERSIONS_NAME);
+    }
+
+    static NavTree[] getCachedNavTree(Container c)
+    {
+        return (NavTree[])getCached(c, TOC_NAME);
+    }
+
+    static List<Map<String,Object>> getCachedApiNavTree(Container c)
+    {
+        return (List<Map<String,Object>>)getCached(c, API_TOC_NAME);
     }
 
     // Not currently used -- only case where this would be the correct behavior is if we update the content of a wiki

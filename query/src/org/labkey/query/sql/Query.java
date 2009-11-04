@@ -62,6 +62,8 @@ public class Query
     private TablesDocument _metadata = null;
     private QueryRelation _queryRoot;
 
+    private Query _parent; // only used to avoid recursion for now
+
     private int _aliasCounter = 0;
 
 
@@ -71,6 +73,14 @@ public class Query
         assert MemTracker.put(this);
     }
 
+    public Query(QuerySchema schema, Query parent)
+    {
+        _schema = schema;
+        _parent = parent;
+        if (null != _parent)
+            _depth = _parent._depth + 1;
+        assert MemTracker.put(this);
+    }
 
     public Query(QuerySchema schema, String sql)
     {
@@ -355,11 +365,28 @@ public class Query
 	}
 
 
+
+    int _countResolvedTables = 0;
+    int _depth = 1;
+
+    private int getTotalCountResolved()
+    {
+        return _countResolvedTables + (null == _parent ? 0 : _parent.getTotalCountResolved());
+    }
+
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
 	QueryRelation resolveTable(QuerySchema schema, QNode node, FieldKey key, String alias)
 	{
+        ++_countResolvedTables;
+        if (getTotalCountResolved() > 200 || _depth > 20)
+        {
+            // recursive query?
+            parseError(_parseErrors, "Too many tables used in this query (recursive?)", null);
+            return null;
+        }
+
 		List<String> parts = key.getParts();
 		List<String> names = new ArrayList<String>(parts.size());
 		for (String part : parts)
@@ -410,7 +437,7 @@ public class Query
         {
             QueryDefinitionImpl def = (QueryDefinitionImpl)t;
             List<QueryException> tableErrors = new ArrayList<QueryException>();
-            Query query = def.getQuery(schema, tableErrors);
+            Query query = def.getQuery(schema, tableErrors, this);
             if (tableErrors.size() > 0)
             {
                 //noinspection ThrowableInstanceNeverThrown
@@ -502,7 +529,7 @@ public class Query
 
             public Map<String, Object> next()
             {
-                return new ArrayListMap<String, Object>(templateRow, Arrays.<Object>asList(data[i++]));
+                return new ArrayListMap<String, Object>(templateRow, Arrays.asList((Object[])data[i++]));
             }
 
             public void remove()

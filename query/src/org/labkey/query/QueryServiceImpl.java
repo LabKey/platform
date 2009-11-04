@@ -177,7 +177,7 @@ public class QueryServiceImpl extends QueryService
                 else
                 {
                     //in production, cache the set of query defs for each module on first request
-                    String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString();
+                    String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
                     fileSet = (File[])_moduleResourcesCache.get(fileSetCacheKey);
 
                     if (null == fileSet && schemaDir.exists())

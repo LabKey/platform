@@ -169,7 +169,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                             {
                                 public void onFailure(Throwable caught)
                                 {
-                                    WindowUtil.reportException("Failed to saveAsync", caught);
+                                    WindowUtil.reportException("Failed to save", caught);
                                 }
 
                                 public void onSuccess(GWTTableInfo result)

@@ -190,7 +190,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 {
                     ColumnInfo col = dc.getColumnInfo();
 
-                    if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                    if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
                     {
                         columnMap.put(col.getAlias(), getPropertyURI(d, col));
                     }
@@ -276,6 +276,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     view.getSettings().setAllowChooseQuery(false);
                     view.getSettings().setAllowChooseView(false);
                     view.setShowExportButtons(false);
+                    view.setShowInsertNewButton(false);
+                    view.setShowDeleteButton(false);
 
                     StringBuilder sb = new StringBuilder();
                     TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());

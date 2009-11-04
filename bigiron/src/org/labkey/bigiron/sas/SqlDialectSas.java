@@ -119,7 +119,7 @@ public abstract class SqlDialectSas extends SqlDialect
 
     public String getConcatenationOperator()
     {
-        return "!!";
+        return "||";
     }
 
     public String getCharClassLikeOperator()

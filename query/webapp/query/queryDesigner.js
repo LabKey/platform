@@ -212,9 +212,8 @@ function createColumnEditor(tab, dn, parent, insertBefore)
     var fieldKey = tab.designer.getFieldKeyString(dn);
     if (fieldKey)
     {
-        var field = designer.fieldInfo(fieldKey);
-        if (field)
-            new Ext.ToolTip({target: td, html:getColumnHelpHtml(field), trackMouse:true});
+        var field = { key : fieldKey };
+        new Ext.ToolTip({target: td, html:getColumnHelpHtml(field), trackMouse:true});
     }
     tr.appendChild(td);
     parent.insertBefore(tr, insertBefore);

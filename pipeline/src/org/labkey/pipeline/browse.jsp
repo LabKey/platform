@@ -143,15 +143,14 @@ function renderPipelineActions(actions)
         // UNDONE: some actions depend on this this parameter, why not append it themselves?
         var fileInputNames = "";
         for (var f=0; f < action.files.length; f++)
-            fileInputNames += "&fileInputNames=" + action.files[f];
-        var fileInputNamesParam = $h(fileInputNames);
+            fileInputNames += "&fileInputNames=" + encodeURIComponent(action.files[f]);
 
         // BUTTONS
         for (var lg=0; lg < action.linkgroups.length; lg++)
         {
             var linkgroup = action.linkgroups[lg];
             var link = linkgroup.links;
-            var a = {tag:'a', 'cls':'labkey-button', href:(link.href ? link.href + fileInputNamesParam : '#action'), children:['<span>',$h(link.text),'</span>']};
+            var a = {tag:'a', 'cls':'labkey-button', href:$h(link.href ? link.href + fileInputNames : '#action'), children:['<span>',$h(link.text),'</span>']};
             //var span = {tag:'span', 'cls':'labkey-button', children:[a]};
             if (link.items && link.items.length)
             {

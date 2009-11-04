@@ -4973,7 +4973,7 @@ public class StudyController extends BaseStudyController
                     for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form))
                     {
                         ColumnInfo col = dc.getColumnInfo();
-                        if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                        if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
                             DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
                     d.save(getUser());
@@ -5672,7 +5672,7 @@ public class StudyController extends BaseStudyController
             return def.getTableInfo(context.getUser());
         }
 
-        public ResultSet generateResultSet(ViewContext context) throws Exception
+        public Results generateResults(ViewContext context) throws Exception
         {
             ReportDescriptor descriptor = getDescriptor();
             final String participantId = descriptor.getProperty("participantId");
@@ -5687,7 +5687,9 @@ public class StudyController extends BaseStudyController
             ctx.setContainer(context.getContainer());
             ctx.setBaseFilter(filter);
 
-            return dr.getResultSet(ctx);
+            if (null == dr.getResultSet(ctx))
+                return null;
+            return new Results(ctx);
         }
 
         public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()

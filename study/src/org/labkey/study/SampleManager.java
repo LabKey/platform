@@ -1758,7 +1758,7 @@ public class SampleManager
         try
         {
             StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
-            TableInfo tinfo = schema.getTable("SpecimenDetail");
+            TableInfo tinfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
 
             FieldKey visitKey = FieldKey.fromParts("Visit");
             Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
@@ -1769,10 +1769,10 @@ public class SampleManager
             if (!unresolvedColumns.isEmpty())
                 throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
             // generate our select SQL:
-            SQLFragment specimenDetailSql = Table.getSelectSQL(tinfo, cols, null, null);
+            SQLFragment specimenSql = Table.getSelectSQL(tinfo, cols, null, null);
             
-            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenDetailSql.getSQL() + ") SpecimenDetailQuery");
-            visitIdSQL.addAll(specimenDetailSql.getParamsArray());
+            SQLFragment visitIdSQL = new SQLFragment("SELECT DISTINCT Visit from (" + specimenSql.getSQL() + ") SimpleSpecimenQuery");
+            visitIdSQL.addAll(specimenSql.getParamsArray());
             
             List<Double> visitIds = new ArrayList<Double>();
             ResultSet rs = null;
@@ -2023,17 +2023,17 @@ public class SampleManager
             ActionURL url = new ActionURL();
             baseView.applyFilterAndSortToURL(url, "mockDataRegion");
             specimenDetailFilter.addUrlFilters(url, "mockDataRegion");
-            columns.addAll(baseView.getColumns());
         }
-        else
-            columns.addAll(tinfo.getDefaultVisibleColumns());
 
         // Build a list fo FieldKeys for all the columns that we must select,
         // regardless of whether they're in the selected specimen view.  We need to ask the view which
         // columns are required in case there's a saved filter on a column outside the primary table:
         columns.add(FieldKey.fromParts("Container"));
         columns.add(FieldKey.fromParts("Visit"));
+        columns.add(FieldKey.fromParts("GlobalUniqueId"));
         columns.add(FieldKey.fromParts("ParticipantId"));
+        if (StudyManager.getInstance().showCohorts(container, schema.getUser()))
+            columns.add(FieldKey.fromParts("CollectionCohort"));
         columns.add(FieldKey.fromParts("Volume"));
         if (level != null)
         {

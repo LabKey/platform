@@ -18,10 +18,12 @@ package org.labkey.experiment.controllers.list;
 
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURLException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
+
+import java.net.URISyntaxException;
 
 public class ListDefinitionForm extends ViewForm
 {
@@ -63,13 +65,13 @@ public class ListDefinitionForm extends ViewForm
         _returnUrl = returnUrl;
     }
 
-    public ActionURL getReturnActionURL()
+    public URLHelper getReturnURLHelper()
     {
         try
         {
-            return new ActionURL(_returnUrl);
+            return new URLHelper(_returnUrl);
         }
-        catch(IllegalArgumentException e)
+        catch(URISyntaxException e)
         {
             throw new ActionURLException(_returnUrl, "returnUrl parameter", e);
         }

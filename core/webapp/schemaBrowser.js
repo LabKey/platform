@@ -275,21 +275,23 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
         container.children.push(this.formatQueryLink("executeQuery", params, "view data", undefined, queryDetails.viewDataUrl));
 
-        if (queryDetails.isUserDefined && LABKEY.Security.currentUser.isAdmin)
+        if (queryDetails.isUserDefined)
         {
-            container.children.push(this.formatQueryLink("designQuery", params, "edit design"));
-            container.children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
-            container.children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
-            container.children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
-        }
-        else
-        {
-            if (queryDetails.isUserDefined)
+            if (queryDetails.canEdit)
+            {
+                if (LABKEY.Security.currentUser.isAdmin)
+                {
+                    container.children.push(this.formatQueryLink("designQuery", params, "edit design"));
+                    container.children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
+                    container.children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
+                    container.children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
+                }
+                container.children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
+            }
+            else
                 container.children.push(this.formatQueryLink("viewQuerySource", params, "view source"));
-
         }
-        
-        if (queryDetails.isMetadataOverrideable)
+        else if(queryDetails.isMetadataOverrideable && LABKEY.Security.currentUser.isAdmin)
             container.children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
         
         return container;

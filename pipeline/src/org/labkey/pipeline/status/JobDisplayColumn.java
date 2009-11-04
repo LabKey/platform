@@ -53,7 +53,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             setCaption("Join job");
     }
 
-    public boolean isVisible(Map ctx)
+    public boolean isVisible(RenderContext ctx)
     {
         return getJobStatus(ctx).length > 0;
     }
@@ -98,7 +98,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
         }
     }
 
-    public PipelineStatusFile[] getJobStatus(Map ctx)
+    public PipelineStatusFile[] getJobStatus(RenderContext ctx)
     {
         if (_jobStatus == null)
         {
@@ -109,7 +109,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
                     String jobId = (String) ctx.get("Job");
                     if (jobId != null)
                     {
-                        _jobStatus = getSplitStatusFiles(jobId);
+                        _jobStatus = getSplitStatusFiles(jobId, ctx.getContainer());
                     }
                 }
                 else if (ctx.get("JobParent") != null)

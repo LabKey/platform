@@ -74,6 +74,9 @@ public class DataSetQueryView extends QueryView
         _qcStateSet = qcStateSet;
         getSettings().setAllowChooseQuery(false);
         getSettings().setAllowChooseView(false);
+
+        // dataset has it's own edit column
+        setShowUpdateColumn(false);
         _dataset = dataset;
         _visit = visit;
         _cohortFilter = cohortFilter;

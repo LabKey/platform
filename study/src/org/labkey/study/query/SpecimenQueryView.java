@@ -25,8 +25,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.reports.ReportService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -318,6 +320,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _viewType = viewType;
         _cohortFilter = cohortFilter;
         _participantVisitFiltered = participantVisitFiltered;
+
+        setViewItemFilter(new ReportService.ItemFilter() {
+            public boolean accept(String type, String label)
+            {
+                if (StudyCrosstabReport.TYPE.equals(type)) return true;
+                return DEFAULT_ITEM_FILTER.accept(type, label);
+            }
+        });
     }
 
     public static SpecimenQueryView createView(ViewContext context, ViewType viewType)

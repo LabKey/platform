@@ -330,7 +330,7 @@ public class ChartReportView extends AbstractReportView
             return def.getTableInfo(context.getUser());
         }
 
-        public ResultSet generateResultSet(ViewContext context) throws Exception
+        public Results generateResults(ViewContext context) throws Exception
         {
             ReportDescriptor descriptor = getDescriptor();
             final TableInfo tableInfo = getTable(context, descriptor);
@@ -350,7 +350,9 @@ public class ChartReportView extends AbstractReportView
                     ctx.setBaseFilter(filter);
                 }
             }
-            return dr.getResultSet(ctx);
+            if (null == dr.getResultSet(ctx))
+                return null;
+            return new Results(ctx);
         }
 
         public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()

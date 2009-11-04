@@ -33,6 +33,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.security.ACL;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.ColumnType;
@@ -391,6 +392,17 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             String originalURL = rawColumnInfo.getURL() == null ? null : rawColumnInfo.getURL().toString();
             if (shouldStoreValue(gwtColumnInfo.getURL(), originalURL))
             {
+                if (gwtColumnInfo.getURL() != null)
+                {
+                    try
+                    {
+                        StringExpressionFactory.createURL(gwtColumnInfo.getURL());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new MetadataUnavailableException(e.getMessage());
+                    }
+                }
                 xmlColumn.setUrl(gwtColumnInfo.getURL());
             }
             else if (xmlColumn.isSetUrl())

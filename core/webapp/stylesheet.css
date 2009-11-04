@@ -159,7 +159,7 @@ legend
 }
 
 /*  Used across the site whenever there is a label with a colored background */
-.labkey-form-label
+.labkey-form-label, tr td.labkey-form-label
 {
     background-color: #FFDF8C;
     padding-right:4px;
@@ -168,7 +168,7 @@ legend
     padding-bottom:1px;
 }
 
-.labkey-form-label-nowrap {
+.labkey-form-label-nowrap, tr td.labkey-form-label-nowrap {
 	background-color: #FFDF8C;
     padding: 4px;
     white-space: nowrap;

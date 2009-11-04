@@ -36,7 +36,7 @@ public class CohortFilter
 {
     public enum Type
     {
-        PTID_INITIAL("Participant's initial cohort")
+        PTID_INITIAL("Initial cohort")
         {
             public FieldKey getFilterColumn()
             {
@@ -44,14 +44,14 @@ public class CohortFilter
             }
         },
 
-        PTID_CURRENT("Participant's current cohort")
+        PTID_CURRENT("Current cohort")
         {
             public FieldKey getFilterColumn()
             {
                 return FieldKey.fromParts("ParticipantId", "Cohort", "rowid");
             }
         },
-        DATA_COLLECTION("Participant's cohort as of data collection")
+        DATA_COLLECTION("Cohort as of data collection")
         {
             public FieldKey getFilterColumn()
             {

@@ -35,7 +35,7 @@ import java.util.Set;
 public class DomainPropertyImpl implements DomainProperty
 {
     DomainImpl _domain;
-    boolean _new;
+    boolean _new;   // TODO: This is never set, though we check it in a couple places?!
     PropertyDescriptor _pdOld;
     PropertyDescriptor _pd;
     boolean _deleted;

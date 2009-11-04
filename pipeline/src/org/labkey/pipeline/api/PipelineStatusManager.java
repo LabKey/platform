@@ -24,10 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * <code>PipelineStatusManager</code> provides access to the StatusFiles table
@@ -138,7 +135,7 @@ public class PipelineStatusManager
         else
         {
             sfSet.beforeUpdate(user, sfExist);
-            Table.update(user, _schema.getTableInfoStatusFiles(), sfSet, sfExist.getRowId());
+            updateStatusFile(sfSet);
         }
 
         if (notifyOnError && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
@@ -201,8 +198,21 @@ public class PipelineStatusManager
      */
     public static void updateStatusFile(PipelineStatusFileImpl sf) throws SQLException
     {
-        sf.beforeUpdate(null, sf);
-        Table.update(null, _schema.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()));
+        DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
+        boolean active = scope.isTransactionActive();
+        try
+        {
+            beginTransaction(scope,active);
+            enforceLockOrder(sf.getJob(), active);
+
+            Table.update(null, _schema.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()));
+
+            commitTransaction(scope, active);
+        }
+        finally
+        {
+            closeTransaction(scope, active);
+        }
     }
 
     /**
@@ -211,34 +221,35 @@ public class PipelineStatusManager
      */
     public static void resetJobId(String path, String jobId)
     {
-        boolean transaction = !_schema.getSchema().getScope().isTransactionActive();
+        DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
+        boolean active = scope.isTransactionActive();
         try
         {
-            if (transaction)
-            {
-                _schema.getSchema().getScope().beginTransaction();
-            }
+            beginTransaction(scope, active);
+            enforceLockOrder(jobId, active);
+
             PipelineStatusFileImpl sfExist = getStatusFile(path);
             if (sfExist != null)
             {
-                PipelineStatusFileImpl[] children = getSplitStatusFiles(sfExist.getJobId());
+                PipelineStatusFileImpl[] children = getSplitStatusFiles(sfExist.getJobId(), ContainerManager.getForId(sfExist.getContainerId()));
                 for (PipelineStatusFileImpl child : children)
                 {
                     child.setJobParent(null);
+                    child.beforeUpdate(null, child);
+                    enforceLockOrder(child.getJobId(), active);
                     updateStatusFile(child);
                 }
                 sfExist.setJob(jobId);
+                sfExist.beforeUpdate(null, sfExist);
                 updateStatusFile(sfExist);
                 for (PipelineStatusFileImpl child : children)
                 {
                     child.setJobParent(jobId);
+                    child.beforeUpdate(null, child);
                     updateStatusFile(child);
                 }
             }
-            if (transaction)
-            {
-                _schema.getSchema().getScope().commitTransaction();
-            }
+            commitTransaction(scope, active);
         }
         catch (SQLException e)
         {
@@ -246,10 +257,7 @@ public class PipelineStatusManager
         }
         finally
         {
-            if (transaction)
-            {
-                _schema.getSchema().getScope().closeConnection();
-            }
+            closeTransaction(scope, active);
         }
     }
 
@@ -299,7 +307,7 @@ public class PipelineStatusManager
         return sfExist.getJobStore();
     }
 
-    public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId) throws SQLException
+    public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId, Container container) throws SQLException
     {
         if (parentId == null)
         {
@@ -307,8 +315,27 @@ public class PipelineStatusManager
         }
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("JobParent", parentId, CompareType.EQUAL);
+        if (null != container)
+            filter.addCondition("Container", container.getId(), CompareType.EQUAL);
 
         return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+    }
+
+    /**
+    * Returns a count of jobs not marked COMPLETE which were created by splitting another job.
+    *
+    * @param parentId the jobGUID for the joined task that created split tasks
+    * @param container the container where the joined task is defined
+    * @return int count of <code>PipelineStatusFiles<code> not marked COMPLETE
+    * @throws SQLException database error
+    */
+    public static int getIncompleteStatusFileCount(String parentId, Container container) throws SQLException
+    {
+        Integer count = Table.executeSingleton(_schema.getSchema(),
+        "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() +  " WHERE Container = ? AND JobParent = ? AND Status <> ? ",
+        new Object[]{container.getId(), parentId,PipelineJob.COMPLETE_STATUS }, Integer.class);
+
+        return count.intValue();
     }
 
     /**
@@ -467,7 +494,7 @@ public class PipelineStatusManager
             if (sf != null && !sf.isActive())
             {
                 // Check if the job has any children
-                PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId());
+                PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId(), ContainerManager.getForId(info.getContainerId()));
                 boolean hasActiveChildren = false;
                 for (PipelineStatusFileImpl child : children)
                 {
@@ -518,4 +545,77 @@ public class PipelineStatusManager
             deleteStatus(info, rowIds);
         }
     }
+    /**
+    * starts a transaction for a pipeline status job.
+    *
+    * @param scope the dbScope that has the transaction context
+    * @param active a boolean the caller tests that says whether a transaction is already active/
+    * @throws SQLException database error
+    */
+
+    protected static void beginTransaction(DbScope scope, boolean active) throws SQLException
+    {
+        if (!active)
+        {
+            scope.beginTransaction();
+        }
+    }
+
+    /**
+    * commits a transaction for a pipeline status job.
+    *
+    * @param scope the dbScope that has the transaction context
+    * @param active a boolean the caller tests that says whether a transaction is already active/
+    * @throws SQLException database error
+    */
+    protected static void commitTransaction(DbScope scope, boolean active) throws SQLException
+    {
+        if (!active)
+            scope.commitTransaction();
+    }
+
+    /**
+    * closes a transaction for a pipeline status job.  goes in the finally block
+     * of the caller.
+    *
+    * @param scope the dbScope that has the transaction context
+    * @param active a boolean the caller tests that says whether a transaction is already active/
+    * @throws SQLException database error
+    */
+    protected static void closeTransaction(DbScope scope, boolean active)
+    {
+        if (!active)
+        {
+            if(scope.isTransactionActive())
+               scope.rollbackTransaction();
+         }
+    }
+
+    /**
+    *  grabs shared locks on the index pages of the secondary indexes for the job about to be updated.
+     * NO-op if the database is not SQL Server.  In SQL Server 2000 and possibly later versions,
+     * the 3 different unique keys to a pipeline stastus file can cause reader - writer deadlocks when a
+     * writer's change causes an update to an index that a reader is accessing.  The SQL lock hints
+     * used here grab exclusive locks on these index keys at the start of the transaction, preventing
+     * readers from getting a share lock and ensuring the updater can update the index if necessary.
+    *
+    * @param jobId of the job that is going to be updated
+    * @throws SQLException database error
+    */
+    protected static void enforceLockOrder(String jobId, boolean active)
+            throws SQLException
+    {
+        if (active)
+            return;
+
+        if (!_schema.getSchema().getSqlDialect().isSqlServer())
+            return;
+
+        if (null != jobId)
+        {
+            String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() +  " WITH (HOLDLOCK,XLOCK) WHERE Job = ?;";
+            Table.execute(_schema.getSchema(), lockCmd, new Object[]{jobId}) ;
+        }
+    }
+
 }

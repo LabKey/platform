@@ -2070,7 +2070,13 @@ public class WikiController extends SpringActionController
         static private NavTree[] getNavTree(ViewContext context)
         {
             Container cToc = getTocContainer(context);
-            return createNavTree(WikiManager.getWikisByParentId(cToc.getId(), -1), getNavTreeId(context));
+            NavTree[] tree = WikiCache.getCachedNavTree(cToc);
+            if (null == tree)
+            {
+                tree = createNavTree(WikiManager.getWikisByParentId(cToc.getId(), -1), getNavTreeId(context));
+                WikiCache.cache(cToc, tree);
+            }
+            return tree;
         }
 
         static private NavTree[] createNavTree(List<Wiki> pageList, String rootId)
@@ -2908,7 +2914,7 @@ public class WikiController extends SpringActionController
         {
             User user = getViewContext().getUser();
             Container container = getViewContext().getContainer();
-            HString name = form.getName();
+            HString name = null != form.getName() ? form.getName().trim() : null;
 
             //must have a name
             //cannot start with _ if not admin
@@ -2920,9 +2926,12 @@ public class WikiController extends SpringActionController
 
             //check to ensure that there is not an existing wiki with the same name
             //but different entity id (works for both insert and update case)
-            Wiki existingWiki = WikiManager.getWiki(container, name);
-            if (null != existingWiki && !(HString.eq(existingWiki.getEntityId().toLowerCase(),form.getEntityId().toLowerCase())))
-                errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
+            if (null != name && name.length() > 0)
+            {
+                Wiki existingWiki = WikiManager.getWiki(container, name);
+                if (null != existingWiki && !(HString.eq(existingWiki.getEntityId().toLowerCase(),form.getEntityId().toLowerCase())))
+                    errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
+            }
 
             SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
             Set<Role> contextualRoles = new HashSet<Role>();
@@ -3267,11 +3276,18 @@ public class WikiController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             Container container = getViewContext().getContainer();
-            List<Wiki> pages = WikiManager.getWikisByParentId(container.getId(), -1);
-            response.put("pages", getChildrenProps(pages));
+
+            List<Map<String,Object>> pageProps = WikiCache.getCachedApiNavTree(container);
+            if (null == pageProps)
+            {
+                List<Wiki> pages = WikiManager.getWikisByParentId(container.getId(), -1);
+                pageProps = getChildrenProps(pages);
+                WikiCache.cache(container, pageProps);
+            }
+            response.put("pages", pageProps);
 
             Set<String> expandedPaths = NavTreeManager.getExpandedPaths(getViewContext(), WikiTOC.getNavTreeId(getViewContext()));
-            applyExpandedState(((List<Map<String,Object>>)response.get("pages")), expandedPaths, form.getCurrentPage());
+            applyExpandedState(pageProps, expandedPaths, form.getCurrentPage());
 
             //include info about the current container
             Map<String,Object> containerProps = new HashMap<String,Object>();
@@ -3295,7 +3311,10 @@ public class WikiController extends SpringActionController
             if (null != expandedPaths)
             {
                 for(String path : expandedPaths)
-                    expandPath(path.split("/"), 1, pages, false); //start at index 1 since these paths all start with /
+                {
+                    if (null != path)
+                        expandPath(path.split("/"), 1, pages, false); //start at index 1 since these paths all start with /
+                }
             }
 
             if (null != currentPage)
@@ -3307,7 +3326,7 @@ public class WikiController extends SpringActionController
                     Wiki parent = wiki.getParentWiki();
                     while (null != parent && null != parent.latestVersion())
                     {
-                        path.addFirst(parent.latestVersion().getTitle().getSource());
+                        path.addFirst(parent.getName().toString());
                         parent = parent.getParentWiki();
                     }
                     
@@ -3325,7 +3344,7 @@ public class WikiController extends SpringActionController
             path[idx] = PageFlowUtil.decode(path[idx]); //decode path part before comparing!
             for(Map<String,Object> pageProps : pages)
             {
-                if (path[idx].equals(pageProps.get("title")))
+                if (path[idx].equals(pageProps.get("name").toString()))
                 {
                     //add the expanded property
                     if (expandAncestors || idx == (path.length - 1))
@@ -3337,9 +3356,9 @@ public class WikiController extends SpringActionController
             }
         }
 
-        public List<Object> getChildrenProps(List<Wiki> pages)
+        public List<Map<String,Object>> getChildrenProps(List<Wiki> pages)
         {
-            List<Object> ret = new ArrayList<Object>();
+            List<Map<String,Object>> ret = new ArrayList<Map<String,Object>>();
             for(Wiki wiki : pages)
             {
                 Map<String,Object> props = new HashMap<String,Object>();

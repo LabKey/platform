@@ -112,6 +112,12 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         return _wrapFieldButton;
     }
 
+
+    protected boolean isReorderable()
+    {
+        return false;
+    }
+
     @Override
     public void init(GWTTableInfo tableInfo)
     {

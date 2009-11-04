@@ -74,7 +74,7 @@
     %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL)%><%
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Export Schema", exportSchemaURL)%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Export Fields", exportSchemaURL)%><%
 }
 if (permissions.contains(UpdatePermission.class))
 {
@@ -98,7 +98,7 @@ if (!pipelineSet)
 <tr>
 <td valign=top><%
     JspView typeSummary = new StudyController.StudyJspView<DataSetDefinition>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
-    typeSummary.setTitle("Dataset Schema");
+    typeSummary.setTitle("Dataset Fields");
     typeSummary.setFrame(WebPartView.FrameType.TITLE);
     me.include(typeSummary, out);
     %>

@@ -24,6 +24,7 @@
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ShowSearchAction.SearchBean> me = (JspView<ShowSearchAction.SearchBean>) HttpView.currentView();
@@ -103,13 +104,14 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
     %>
     <table id="<%= pass == 0 ? "specialColumnsTable" : "additionalColumnsTable" %>" style="display:<%= pass == 0 ? "block" : "none" %>">
     <%
+            RenderContext renderContext = new RenderContext(me.getViewContext());
             for (DisplayColumn col : bean.getDisplayColumns())
             {
                 boolean display;
                 if (pass == 0)
-                    display = col.isVisible(me.getViewContext()) && bean.isDefaultColumn(col.getColumnInfo());
+                    display = col.isVisible(renderContext) && bean.isDefaultColumn(col.getColumnInfo());
                 else
-                    display = col.isVisible(me.getViewContext()) && availableColumns.contains(col.getColumnInfo().getName());
+                    display = col.isVisible(renderContext) && availableColumns.contains(col.getColumnInfo().getName());
                 if (display)
                 {
                     String columnName = bean.getDataRegionName() + "." + (col instanceof DataColumn ?

@@ -92,7 +92,7 @@
     <%
         }
     %>
-    <input type="hidden" name="referrer" value="<%= bean.getReferrer() %>" />
+    <input type="hidden" name="referrer" value="<%= h(bean.getReferrer()) %>" />
     <input type="hidden" name="saveCommentsPost" value="<%= Boolean.TRUE.toString() %>" />
     <%
         for (Specimen vial : bean.getSamples())

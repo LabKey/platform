@@ -41,7 +41,7 @@
 <% if (!hasAssayProtocols) { %>
 <em>No assay designs are available in this folder.</em>
 <% if (canDesignAssays) { %>
-    <labkey:link href="<%=new ActionURL(AssayController.ChooseAssayTypeAction.class, c)%>" text="New Assay Design"/>
+    <labkey:link href="<%=new ActionURL(AssayController.ChooseAssayTypeAction.class, c).addParameter(\"returnURL\", getViewContext().getActionURL().getLocalURIString())%>" text="New Assay Design"/>
 <% } %>
 <p class="labkey-indented">
     Each assay type provides pages to load and process data for a particular assay.

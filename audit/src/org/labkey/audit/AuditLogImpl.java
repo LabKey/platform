@@ -364,7 +364,15 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public AuditLogService.AuditViewFactory[] getAuditViewFactories()
     {
-        return _auditViewFactories.values().toArray(new AuditLogService.AuditViewFactory[_auditViewFactories.values().size()]);
+        List<AuditLogService.AuditViewFactory> factories = new ArrayList<AuditLogService.AuditViewFactory>(_auditViewFactories.values());
+
+        Collections.sort(factories, new Comparator<AuditLogService.AuditViewFactory>(){
+            public int compare(AuditLogService.AuditViewFactory o1, AuditLogService.AuditViewFactory o2)
+            {
+                return (o1.getName().compareToIgnoreCase(o2.getName()));
+            }
+        });
+        return factories.toArray(new AuditLogService.AuditViewFactory[factories.size()]);
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)

@@ -608,6 +608,9 @@
       <ns:column columnName="VialCount">
         <ns:description>The total number of vials from each specimen.</ns:description>
       </ns:column>
+      <ns:column columnName="ProcessingLocation">
+        <ns:description>The ID of the processing location of each vial.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
@@ -891,6 +894,10 @@
             <ns:fkTable>SpecimenDerivative</ns:fkTable>
             <ns:fkDbSchema>study</ns:fkDbSchema>
           </ns:fk>
+      </ns:column>
+      <ns:column columnName="ProcessingLocation">
+        <ns:description>The ID of the processing location of each vial.</ns:description>
+        <ns:datatype>int</ns:datatype>
       </ns:column>
     </ns:columns>
   </ns:table>

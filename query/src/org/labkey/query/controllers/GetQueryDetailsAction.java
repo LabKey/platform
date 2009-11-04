@@ -55,20 +55,18 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         resp.put("name", form.getQueryName());
         resp.put("schemaName", form.getSchemaName());
         Map<String,QueryDefinition> queryDefs = QueryService.get().getQueryDefs(container, form.getSchemaName());
-        if (null != queryDefs && queryDefs.containsKey(form.getQueryName()))
-        {
-            resp.put("isUserDefined", true);
-            resp.put("isMetadataOverrideable", true);
-        }
+        boolean isUserDefined = (null != queryDefs && queryDefs.containsKey(form.getQueryName()));
+        resp.put("isUserDefined", isUserDefined);
+        boolean canEdit = (null != queryDefs && queryDefs.containsKey(form.getQueryName()) && queryDefs.get(form.getQueryName()).canEdit(user));
+        resp.put("canEdit", canEdit);
+        resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
 
         TableInfo tinfo;
         try
         {
             tinfo = schema.getTable(form.getQueryName());
-            if (tinfo.isMetadataOverrideable())
-            {
+            if (!isUserDefined && tinfo.isMetadataOverrideable())
                 resp.put("isMetadataOverrideable", true);
-            }
         }
         catch(Exception e)
         {

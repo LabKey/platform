@@ -24,6 +24,7 @@ import java.util.ArrayList;
 
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Container;
 import com.thoughtworks.xstream.converters.ConversionException;
 
 /**
@@ -111,7 +112,8 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             boolean active = scope.isTransactionActive();
             try
             {
-                beginTransaction(scope, active);
+                PipelineStatusManager.beginTransaction(scope, active);
+                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), active);
 
                 // Make sure the join job has an existing status record before creating
                 // the rows for the split jobs.  Just to ensure a consistent creation order.
@@ -128,16 +130,16 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
                 // If there were any split jobs left incomplete, then store the job, and
                 // wait for them to complete.
-                if (getIncompleteSplitCount(job.getJobGUID()) > 0)
+                if (getIncompleteSplitCount(job.getJobGUID(), job.getContainer()) > 0)
                 {
                     job.setStatus(PipelineJob.SPLIT_STATUS);
                 }
-                commitTransaction(scope, active);
+                PipelineStatusManager.commitTransaction(scope, active);
             }
             finally
             {
                 endSplit();
-                closeTransaction(scope, active);
+                PipelineStatusManager.closeTransaction(scope, active);
             }
         }
     }
@@ -152,11 +154,10 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             {
                 TaskId tid = job.getActiveTaskId();
 
-                // Avoid deadlock by doing this select first.
-                int count = getIncompleteSplitCount(job.getParentGUID());
+                PipelineStatusManager.beginTransaction(scope, active);
+                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), active);
 
-                beginTransaction(scope, active);
-
+                int count = getIncompleteSplitCount(job.getParentGUID(), job.getContainer());
                 setCompleteSplit(job);
 
                 PipelineJob jobJoin = getJoinJob(job.getParentGUID());
@@ -182,31 +183,13 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
                         storeJoinJob(jobJoin);
                     }
                 }
-                commitTransaction(scope, active);
+                PipelineStatusManager.commitTransaction(scope, active);
             }
             finally
             {
-                closeTransaction(scope, active);
+                PipelineStatusManager.closeTransaction(scope, active);
             }
         }
-    }
-
-    private void beginTransaction(DbScope scope, boolean active) throws SQLException
-    {
-        if (!active)
-            scope.beginTransaction();
-    }
-
-    private void commitTransaction(DbScope scope, boolean active) throws SQLException
-    {
-        if (!active)
-            scope.commitTransaction();
-    }
-
-    private void closeTransaction(DbScope scope, boolean active) throws SQLException
-    {
-        if (!active && scope.isTransactionActive())
-            scope.rollbackTransaction();
     }
 
     private static class SplitRecord
@@ -261,14 +244,14 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         return getJob(parentJobId);
     }
 
-    private int getIncompleteSplitCount(String parentJobId) throws SQLException
+    private int getIncompleteSplitCount(String parentJobId, Container container) throws SQLException
     {
         SplitRecord rec = _splitRecord.get();
         if (rec != null && rec.isJoinJob(parentJobId))
             return rec.getIncompleteCount();
 
         // Check the database.
-        return PipelineStatusManager.getIncompleteStatusFiles(parentJobId).length;
+        return PipelineStatusManager.getIncompleteStatusFileCount(parentJobId, container);
     }
 
     private void storeJoinJob(PipelineJob job) throws SQLException

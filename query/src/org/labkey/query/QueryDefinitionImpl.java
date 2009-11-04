@@ -242,7 +242,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public Query getQuery(QuerySchema schema, List<QueryException> errors)
     {
-        Query query = new Query(schema);
+        return getQuery(schema, errors, null);
+    }
+    
+    public Query getQuery(QuerySchema schema, List<QueryException> errors, Query parent)
+    {
+        Query query = new Query(schema, parent);
         String sql = getSql();
         if (sql != null)
         {

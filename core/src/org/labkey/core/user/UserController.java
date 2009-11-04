@@ -808,13 +808,15 @@ public class UserController extends SpringActionController
         public String[] getRequiredFields(){return _requiredFields;}
     }
 
-    private void buildAccessDetailList(MultiMap<Container, Container> containerTree, Container parent, List<AccessDetailRow> rows, User requestedUser, int depth)
+    private void buildAccessDetailList(MultiMap<Container, Container> containerTree, Container parent,
+                                       List<AccessDetailRow> rows, User requestedUser, int depth, Map<Container, Group[]> projectGroupCache)
     {
         if (requestedUser == null)
             return;
         Collection<Container> children = containerTree.get(parent);
         if (children == null || children.isEmpty())
             return;
+
         for (Container child : children)
         {
             String sep = "";
@@ -832,7 +834,13 @@ public class UserController extends SpringActionController
             List<Group> relevantGroups = new ArrayList<Group>();
             if (effectiveRoles.size() > 0)
             {
-                Group[] groups = SecurityManager.getGroups(child.getProject(), true);
+                Container project = child.getProject();
+                Group[] groups = projectGroupCache.get(project);
+                if (groups == null)
+                {
+                    groups = SecurityManager.getGroups(project, true);
+                    projectGroupCache.put(project, groups);
+                }
                 for (Group group : groups)
                 {
                     if (requestedUser.isInGroup(group.getUserId()))
@@ -847,7 +855,7 @@ public class UserController extends SpringActionController
                 }
             }
             rows.add(new AccessDetailRow(child, access.toString(), relevantGroups, depth));
-            buildAccessDetailList(containerTree, child, rows, requestedUser, depth + 1);
+            buildAccessDetailList(containerTree, child, rows, requestedUser, depth + 1, projectGroupCache);
         }
     }
 
@@ -889,8 +897,9 @@ public class UserController extends SpringActionController
             List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
 
             Container c = getContainer();
-            MultiMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.prune(ContainerManager.getContainerTree(), c.getProject());
-            buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, requestedUser, 0);
+            MultiMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
+            Map<Container, Group[]> projectGroupCache = new HashMap<Container, Group[]>();
+            buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, requestedUser, 0, projectGroupCache);
             AccessDetail details = new AccessDetail(rows);
             details.setActive(requestedUser.isActive());
             JspView<AccessDetail> accessView = new JspView<AccessDetail>("/org/labkey/core/user/userAccess.jsp", details);

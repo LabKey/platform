@@ -2212,8 +2212,6 @@ public class QueryControllerSpring extends SpringActionController
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
         {
-            form.setTypedValue("DbContainer", getContainer().getId());
-
             try
             {
                 form.doInsert();
@@ -2360,7 +2358,7 @@ public class QueryControllerSpring extends SpringActionController
         {
             form.refreshFromDb();
             DbUserSchemaDef def = form.getBean();
-            Container defContainer = ContainerManager.getForId(def.getContainerId());
+            Container defContainer = def.lookupContainer();
 
             if (!defContainer.equals(getContainer()))
                 throw new UnauthorizedException();
@@ -2372,14 +2370,12 @@ public class QueryControllerSpring extends SpringActionController
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
         {
             DbUserSchemaDef def = form.getBean();
-            String container = def.getDbContainer();
-            Container c = ContainerManager.getForId(container);
-            if (c == null)
-            {
-                c = ContainerManager.getForPath(container);
-                if (null != c)
-                    def.setDbContainer(c.getId());
-            }
+            DbUserSchemaDef fromDb = QueryManager.get().getDbUserSchemaDef(def.getDbUserSchemaId());
+
+            // Unauthorized if def in the database reports a different container
+            if (!fromDb.lookupContainer().equals(getContainer()))
+                throw new UnauthorizedException();
+
             try
             {
                 form.doUpdate();

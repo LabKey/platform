@@ -24,6 +24,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -92,9 +93,9 @@ public class IssuesQueryView extends QueryView
         }
     }
 
-    protected void addGridViews(MenuButton menu, ActionURL target, String currentView)
+    protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
-        ActionURL url = target.clone().deleteParameters();
+        URLHelper url = target.clone().deleteParameters();
         NavTree item = new NavTree("all", url);
         if (currentView == "")
             item.setHighlighted(target.toString().equals(url.toString()));

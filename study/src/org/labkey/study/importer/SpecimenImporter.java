@@ -839,6 +839,21 @@ public class SpecimenImporter
         logger.info("Complete.");
     }
 
+    private static void updateSpecimenProcessingLocations(Container container, Logger logger) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment("UPDATE study.Specimen SET ProcessingLocation = (\n" +
+                "\tSELECT MAX(ProcessingLocation) AS ProcessingLocation FROM \n" +
+                "\t\t(SELECT DISTINCT SpecimenId, ProcessingLocation FROM study.Vial WHERE SpecimenId = study.Specimen.RowId AND Container = ?) Locations\n" +
+                "\tGROUP BY SpecimenId\n" +
+                "\tHAVING COUNT(ProcessingLocation) = 1\n" +
+                ") WHERE Container = ?");
+        sql.add(container.getId());
+        sql.add(container.getId());
+        logger.info("Updating providing locations on the specimen table...");
+        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        logger.info("Complete.");
+    }
+
     private static void updateCalculatedSpecimenData(Container container, User user, Logger logger) throws SQLException
     {
         // delete unnecessary comments and create placeholders for newly discovered errors:
@@ -941,7 +956,9 @@ public class SpecimenImporter
         }
         while (specimens.length > 0);
 
-        // finally, after all other data has been updated, we can update our cached specimen counts:
+        // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
+        updateSpecimenProcessingLocations(container, logger);
+
         if (logger != null)
             logger.info("Updating cached vial counts...");
         SampleManager.getInstance().updateSpecimenCounts(container);

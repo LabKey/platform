@@ -21,9 +21,16 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.assay.AssayController;
 
 import java.util.Set;
 import java.util.Collections;
@@ -40,11 +47,20 @@ public class AssayFolderType extends DefaultFolderType
     AssayFolderType(StudyModule module)
     {
         super(NAME,
-                "Design and manage specialized assays.",
+                "Design and manage specialized assays." +
+                "Analyze, visualize and share results.",
                 Collections.<Portal.WebPart>emptyList(),
                 Arrays.asList(StudyModule.assayListWebPartFactory.createWebPart()),
                 getActiveModulesForOwnedFolder(module),
                 module);
+    }
+
+    @Override
+    public AppBar getAppBar(ViewContext context)
+    {
+        AssayController controller = new AssayController();
+        controller.setViewContext(context);
+        return controller.getAppBar(null);
     }
 
     protected static Set<Module> getActiveModulesForOwnedFolder(StudyModule module)
@@ -57,8 +73,4 @@ public class AssayFolderType extends DefaultFolderType
         return active;
     }
 
-    public void addManageLinks(NavTree adminNavTree, Container container)
-    {
-        adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
-    }
 }

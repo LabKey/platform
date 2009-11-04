@@ -30,6 +30,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
@@ -218,7 +219,12 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new HtmlView("Samples uploaded successfully.");
+            ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getViewContext().getContainer());
+            ActionURL samplesLink = new ActionURL(SpringSpecimenController.BeginAction.class, getViewContext().getContainer());
+            samplesLink.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+            return new HtmlView("Specimens uploaded successfully.<br><br>" +
+                    PageFlowUtil.textLink("study home", homeLink) + " " +
+                    PageFlowUtil.textLink("specimens", samplesLink));
         }
 
         public NavTree appendNavTrail(NavTree root)

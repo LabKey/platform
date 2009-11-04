@@ -4,6 +4,7 @@ import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
@@ -46,20 +47,24 @@ public class TypeCohortReportFactory extends TypeReportFactory
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         List<Pair<String, String>> inputs = super.getAdditionalFormInputHtml();
-        StringBuilder cohortTypeSelect = new StringBuilder();
-        CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-        
-        cohortTypeSelect.append("<input type=\"hidden\" name=\"").append(CohortFilter.Params.cohortId.name()).append("\" value=\"0\">\n");
-        cohortTypeSelect.append("<select name=\"").append(CohortFilter.Params.cohortFilterType.name()).append("\">\n");
-        for (CohortFilter.Type type : CohortFilter.Type.values())
+        StudyImpl study =  StudyManager.getInstance().getStudy(getContainer());
+        if (study.isAdvancedCohorts())
         {
-            cohortTypeSelect.append("\t<option value=\"").append(type.name()).append("\" ");
-            cohortTypeSelect.append(type == currentType ? "SELECTED" : "").append(">");
-            cohortTypeSelect.append(PageFlowUtil.filter(type.getTitle()));
-            cohortTypeSelect.append("</option>\n");
+            StringBuilder cohortTypeSelect = new StringBuilder();
+            CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
+
+            cohortTypeSelect.append("<input type=\"hidden\" name=\"").append(CohortFilter.Params.cohortId.name()).append("\" value=\"0\">\n");
+            cohortTypeSelect.append("<select name=\"").append(CohortFilter.Params.cohortFilterType.name()).append("\">\n");
+            for (CohortFilter.Type type : CohortFilter.Type.values())
+            {
+                cohortTypeSelect.append("\t<option value=\"").append(type.name()).append("\" ");
+                cohortTypeSelect.append(type == currentType ? "SELECTED" : "").append(">");
+                cohortTypeSelect.append(PageFlowUtil.filter(type.getTitle()));
+                cohortTypeSelect.append("</option>\n");
+            }
+            cohortTypeSelect.append("</select>\n");
+            inputs.add(new Pair<String, String>("Cohort Filter Type", cohortTypeSelect.toString()));
         }
-        cohortTypeSelect.append("</select>\n");
-        inputs.add(new Pair<String, String>("Cohort Filter Type", cohortTypeSelect.toString()));
         return inputs;
     }
 

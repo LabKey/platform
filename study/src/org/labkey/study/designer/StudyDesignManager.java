@@ -321,7 +321,7 @@ public class StudyDesignManager
         GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
         List<GWTTimepoint> timepoints = def.getAssaySchedule().getTimepoints();
         Collections.sort(timepoints);
-        if (timepoints.get(0).getDays() != 0)
+        if (timepoints.get(0).getDays() > 0)
             timepoints.add(0, new GWTTimepoint("Study Start", 0, GWTTimepoint.DAYS));
 
         //We try to create timepoints that make sense. A week is day-3 to day +3 unless that would overlap

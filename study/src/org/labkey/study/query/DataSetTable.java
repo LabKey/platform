@@ -27,6 +27,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -270,5 +271,16 @@ public class DataSetTable extends FilteredTable
         if (!def.canWrite(user))
             throw new RuntimeException("User is not allowed to update dataset: " + getName());
         return new DatasetUpdateService(def.getDataSetId());
+    }
+
+    @Override
+    public boolean hasPermission(User user, int perm)
+    {
+        DataSet def = getDatasetDefinition();
+        if (perm == (perm & ACL.PERM_READ))
+            return def.canRead(user);
+        if (perm == (perm & (ACL.PERM_INSERT | ACL.PERM_UPDATE | ACL.PERM_DELETE)))
+            return def.canWrite(user);
+        return false;
     }
 }

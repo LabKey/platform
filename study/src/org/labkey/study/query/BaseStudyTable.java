@@ -207,8 +207,20 @@ public abstract class BaseStudyTable extends FilteredTable
             _ptidVisitCommentTable = ptidVisitCommentTable;
             _includeVialComments = includeVialComments;
             SQLFragment sql = new SQLFragment();
-            String ptidCommentAlias = ptidCommentProperty != null ? ColumnInfo.legalNameFromName(ptidCommentProperty) : null;
-            String ptidVisitCommentAlias = ptidVisitCommentProperty != null ? ColumnInfo.legalNameFromName(ptidVisitCommentProperty) : null;
+            String ptidCommentAlias = null;
+            String ptidVisitCommentAlias = null;
+
+            if (ptidCommentProperty != null && _ptidCommentTable != null)
+            {
+                if (_ptidCommentTable.getColumn(ptidCommentProperty) != null)
+                    ptidCommentAlias = ColumnInfo.legalNameFromName(ptidCommentProperty);
+            }
+
+            if (ptidVisitCommentProperty != null && _ptidVisitCommentTable != null)
+            {
+                if (_ptidVisitCommentTable.getColumn(ptidVisitCommentProperty) != null)
+                    ptidVisitCommentAlias = ColumnInfo.legalNameFromName(ptidVisitCommentProperty);
+            }
 
             List<String> commentFields = new ArrayList();
 
@@ -245,7 +257,7 @@ public abstract class BaseStudyTable extends FilteredTable
                     case 2:
                         sb.append("CASE");
                         appendCommentCaseSQL(sb, commentFields.get(0), commentFields.get(1));
-                        sb.append(" ELSE COALESCE(").append(commentFields.get(0)).append(',').append(commentFields.get(1)).append(") END");
+                        sb.append(" ELSE CAST(COALESCE(").append(commentFields.get(0)).append(',').append(commentFields.get(1)).append(")AS VARCHAR) END");
                         break;
                     case 3:
                         sb.append("CASE");
@@ -253,7 +265,7 @@ public abstract class BaseStudyTable extends FilteredTable
                         appendCommentCaseSQL(sb, commentFields.get(0), commentFields.get(1));
                         appendCommentCaseSQL(sb, commentFields.get(0), commentFields.get(2));
                         appendCommentCaseSQL(sb, commentFields.get(1), commentFields.get(2));
-                        sb.append(" ELSE COALESCE(").append(commentFields.get(0)).append(',').append(commentFields.get(1)).append(',').append(commentFields.get(2)).append(") END");
+                        sb.append(" ELSE CAST(COALESCE(").append(commentFields.get(0)).append(',').append(commentFields.get(1)).append(',').append(commentFields.get(2)).append(")AS VARCHAR) END");
                         break;
                 }
             }
