@@ -190,6 +190,7 @@ api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/TransactedBlock.java -text
+api/src/org/labkey/api/data/Transaction.java -text
 api/src/org/labkey/api/data/UnionTableInfo.java -text
 api/src/org/labkey/api/data/UpgradeCode.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text
@@ -732,6 +733,7 @@ api/src/org/labkey/api/study/assay/AssayRunsView.java -text
 api/src/org/labkey/api/study/assay/AssaySchema.java -text
 api/src/org/labkey/api/study/assay/AssayService.java -text
 api/src/org/labkey/api/study/assay/AssayTableMetadata.java -text
+api/src/org/labkey/api/study/assay/AssayUploadXarContext.java -text
 api/src/org/labkey/api/study/assay/AssayUrls.java -text
 api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/BatchListQueryView.java -text
