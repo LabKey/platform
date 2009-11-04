@@ -31,18 +31,18 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.collections15.map.CaseInsensitiveMap;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.ResultSetMetaData;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Arrays;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.*;
@@ -139,7 +139,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         return null;
     }
 
-    public ResultSet generateResultSet(ViewContext context) throws Exception
+    public Results generateResults(ViewContext context) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
         QueryView view = createQueryView(context, descriptor);
@@ -163,7 +163,9 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
                     ctx.setBaseFilter(filter);
                 }
             }
-            return rgn.getResultSet(ctx);
+            if (null == rgn.getResultSet(ctx))
+                return null;
+            return new Results(ctx);
         }
         return null;
     }
@@ -205,10 +207,10 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
 
         if (context != null)
         {
-            ResultSet rs = generateResultSet(context);
-            if (rs != null)
+            Results r = generateResults(context);
+            if (r != null && r.rs != null)
             {
-                TSVGridWriter tsv = createGridWriter(rs);
+                TSVGridWriter tsv = createGridWriter(r);
                 tsv.write(resultFile);
             }
         }
@@ -287,22 +289,84 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         return tempRoot;
     }
 
-    protected TSVGridWriter createGridWriter(ResultSet rs) throws SQLException
+
+    protected TSVGridWriter createGridWriter(Results r) throws SQLException
     {
+        ResultSet rs = r.rs;
         ResultSetMetaData md = rs.getMetaData();
         ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
-
+        List<String> outputColumnNames = outputColumnNames(r);
         List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>();
         for (int i = 0; i < cols.length; i++)
         {
             int sqlColumn = i + 1;
-            dataColumns.add(new NADisplayColumn( new ColumnInfo(md, sqlColumn)));
+            dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new ColumnInfo(md, sqlColumn)));
         }
         TSVGridWriter tsv = new TSVGridWriter(rs, dataColumns);
         tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
 
         return tsv;
     }
+
+
+    protected List<String> outputColumnNames(Results r) throws SQLException
+    {
+        assert null != r.rs;
+        CaseInsensitiveHashSet aliases = new CaseInsensitiveHashSet(); // output names
+        Map<String,String> remap = new CaseInsensitiveMap<String>();       // resultset name to output name
+                
+        // process the FieldKeys in order to be backward compatible
+        for (Map.Entry<FieldKey,ColumnInfo> e : r.getFieldMap().entrySet())
+        {
+            ColumnInfo col = e.getValue();
+            FieldKey fkey = e.getKey();
+            assert fkey.equals(col.getFieldKey());
+
+            String alias = oldLegalName(fkey);
+            if (!aliases.add(alias))
+            {
+                int i;
+                for (i=1; !aliases.add(alias+i) ;i++)
+                    ;
+                alias = alias+i;
+            }
+            remap.put(col.getAlias(), alias);
+        }
+
+        ArrayList<String> ret = new ArrayList<String>(r.rs.getMetaData().getColumnCount());
+        // now go through the resultset
+        ResultSetMetaData md = r.rs.getMetaData();
+        for (int col=1, count=md.getColumnCount() ; col<=count ; col++)
+        {
+            String name = md.getColumnName(col);
+            String alias = remap.get(name);
+            if (null != alias)
+            {
+                ret.add(alias);
+                continue;
+            }
+            alias = ColumnInfo.propNameFromName(name).toLowerCase();
+            if (!aliases.add(alias))
+            {
+                int i;
+                for (i=1; !aliases.add(alias+i) ;i++)
+                    ;
+                alias = alias+i;
+            }
+            ret.add(alias);
+        }
+        return ret;
+    }
+    
+
+    private String oldLegalName(FieldKey fkey)
+    {
+        String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(),"_"), null, false);
+//        if (r.length() > 40)
+//            r = r.substring(0,40);
+        return ColumnInfo.propNameFromName(r).toLowerCase();
+    }
+
 
     public static void renderViews(ScriptEngineReport report, VBox view, List<ParamReplacement> parameters, boolean deleteTempFiles)
     {
@@ -458,11 +522,25 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         }
     }
 
+
     public static class NADisplayColumn extends DataColumn
     {
         public NADisplayColumn(ColumnInfo col)
         {
             super(col);
+            this.setName(col.getPropertyName());
+        }
+
+        public NADisplayColumn(String name, ColumnInfo col)
+        {
+            super(col);
+            this.setName(name);
+        }
+
+        @Override
+        public String getName()
+        {
+            return _name;
         }
 
         public String getTsvFormattedValue(RenderContext ctx)
@@ -490,3 +568,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         }
     }
 }
+
+/*
+participantvisit_pre_1_pre1init
+*/

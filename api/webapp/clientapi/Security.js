@@ -22,11 +22,16 @@
  * @namespace LabKey Security Reporting and Helper class.
  * This class provides several static methods and data members for
  * calling the security-related APIs, and interpreting the results.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=security">LabKey Security and Accounts</a></li>
+ *              </ul>
+ *           </p>
  */
 LABKEY.Security = new function()
 {
     /*-- public methods --*/
-    /** @scope LABKEY.Security.prototype */
+    /** @scope LABKEY.Security */
     return {
 
         /**
@@ -475,7 +480,7 @@ LABKEY.Security = new function()
          * @param {object} config A configuration object with the following properties:
          * @param {boolean} [config.useSiteLoginPage] Set to true to redirect the browser to the normal site login page.
          * After the user logs in, the browser will be redirected back to the current page, and the current user information
-         * will be available via {@link LABKEY.Security#currentUser}. If omitted or set to false, this function
+         * will be available via {@link LABKEY.Security.currentUser}. If omitted or set to false, this function
          * will attempt to login via an AJAX request, which will cause the browser to display the basic authentication
          * dialog. After the user logs in successfully, the config.successCallback function will be called.
          * @param {function} config.successCallback A reference to a function that will be called after a successful login.
@@ -483,12 +488,12 @@ LABKEY.Security = new function()
          * <ul>
          *  <li>results: an object with the following properties:
          *      <ul>
-         *          <li>currentUser: a reference to the current user. See {@link LABKEY.Security#currentUser} for more details.</li>
+         *          <li>currentUser: a reference to the current user. See {@link LABKEY.Security.currentUser} for more details.</li>
          *      </ul>
          *  </li>
          * </ul>
          * Note that if the current user is already logged in, the successCallback function will be called immediately,
-         * passing the current user information from {@link LABKEY.Security#currentUser}.
+         * passing the current user information from {@link LABKEY.Security.currentUser}.
          * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>

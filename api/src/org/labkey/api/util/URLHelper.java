@@ -19,10 +19,13 @@ package org.labkey.api.util;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.data.CompareType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -86,6 +89,8 @@ public class URLHelper implements Cloneable, Serializable
             p = url.substring(0,i);
             q = url.substring(i+1);
         }
+        if (-1 != p.indexOf(' '))
+            p = StringUtils.replace(p, " ", "%20");
         _setURI(new URI(p));
         setRawQuery(q);
     }
@@ -784,4 +789,19 @@ public class URLHelper implements Cloneable, Serializable
             }
         }
     }
+
+    public void addFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
+    {
+        StringBuilder key = new StringBuilder();
+        if (!StringUtils.isEmpty(dataRegionName))
+        {
+            key.append(dataRegionName);
+            key.append(".");
+        }
+        key.append(field);
+        key.append("~");
+        key.append(ct.getUrlKey());
+        addParameter(key.toString(), value == null ? "" : value.toString());
+    }
+
 }

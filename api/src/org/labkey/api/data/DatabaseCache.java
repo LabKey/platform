@@ -23,9 +23,9 @@ import org.labkey.api.collections.TTLCacheMap;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 12, 2006
  * Time: 9:54:06 AM
@@ -41,68 +41,81 @@ public class DatabaseCache<ValueType>
     protected final static long MINUTE = TTLCacheMap.MINUTE;
     protected final static long SECOND = TTLCacheMap.SECOND;
 
-    TTLCacheMap<String, ValueType> ttlMap;
-    DbScope scope;
+    private TTLCacheMap<String, ValueType> _sharedMap;
+    private DbScope _scope;
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive)
     {
-        ttlMap = new TTLCacheMap<String,ValueType>(maxSize, defaultTimeToLive);
-        this.scope = scope;
+        _sharedMap = new TTLCacheMap<String, ValueType>(maxSize, defaultTimeToLive);
+        _scope = scope;
     }
 
     public DatabaseCache(DbScope scope, int maxSize)
     {
-        this(scope,maxSize,-1);
+        this(scope, maxSize, -1);
+    }
+
+    private TTLCacheMap<String, ValueType> getMap()
+    {
+        Transaction t = _scope.getCurrentTransaction();
+        if (null != t)
+        {
+            Map<Object, TTLCacheMap> transactionCaches = t.getCaches();
+
+            TTLCacheMap<String, ValueType> map = transactionCaches.get(this);
+
+            if (null == map)
+            {
+                map = new TTLCacheMap<String, ValueType>(_sharedMap.getMaxSize(), _sharedMap.getDefaultExpires());
+                map.setDebugName("transaction cache: " + _sharedMap.toString());
+                transactionCaches.put(this, map);
+            }
+
+            return map;
+        }
+        else
+        {
+            return _sharedMap;
+        }
     }
 
     public synchronized ValueType put(String key, ValueType value)
     {
-        if (scope.isTransactionActive())
-            return null;
-        return ttlMap.put(key, value);
+        return getMap().put(key, value);
     }
 
     public synchronized ValueType put(String key, ValueType value, long timeToLive)
     {
-        if (scope.isTransactionActive())
-            return null;
-        return ttlMap.put(key, value, timeToLive);
+        return getMap().put(key, value, timeToLive);
     }
 
     public synchronized ValueType get(String key)
     {
-        if (scope.isTransactionActive())
-        {
-            // No-op if we're in the middle of a transaction as we're not seeing
-            // the same view of the database as anyone else
-            return null;
-        }
-
-        return ttlMap.get(key);
+        return getMap().get(key);
     }
 
     public synchronized void remove(String key)
     {
-        if (scope.isTransactionActive())
-            scope.addTransactedRemoval(this, key, false);
-        else
-            ttlMap.remove(key);
+        if (_scope.isTransactionActive())
+            _scope.addTransactedRemoval(this, key, false);
+
+        getMap().remove(key);
     }
 
     public synchronized void removeUsingPrefix(String prefix)
     {
-        if (scope.isTransactionActive())
-            scope.addTransactedRemoval(this, prefix, true);
-        else
-            ttlMap.removeUsingPrefix(prefix);
+        if (_scope.isTransactionActive())
+            _scope.addTransactedRemoval(this, prefix, true);
+
+        getMap().removeUsingPrefix(prefix);
     }
 
     public synchronized void clear()
     {
-        if (scope.isTransactionActive())
-                scope.addTransactedRemoval(this);
-        else
-            ttlMap.clear();
+        if (_scope.isTransactionActive())
+            _scope.addTransactedRemoval(this);
+
+        getMap().clear();
     }
 
 
@@ -135,7 +148,7 @@ public class DatabaseCache<ValueType>
             for (int i=1 ; i<=20 ; i++)
             {
                 cache.put("key_" + i, values[i]);
-                assertTrue(cache.ttlMap.size() <= 10);
+                assertTrue(cache.getMap().size() <= 10);
             }
             // access in reverse order
             for (int i=10 ; i>=1 ; i--)
@@ -147,7 +160,7 @@ public class DatabaseCache<ValueType>
             for (int i=21 ; i<=25 ; i++)
                 cache.put("key_" + i, values[i]);
 
-            assertTrue(cache.ttlMap.size() == 10);
+            assertTrue(cache.getMap().size() == 10);
             for (int i=11 ; i<=15 ; i++)
             {
                 assertTrue(cache.get("key_" + i) == values[i]);
@@ -169,7 +182,7 @@ public class DatabaseCache<ValueType>
             assertTrue(null == cache.get("key_11"));
 
             cache.removeUsingPrefix("key");
-            assert cache.ttlMap.size() == 0;
+            assert cache.getMap().size() == 0;
 
             scope.closeConnection();
         }
@@ -189,6 +202,7 @@ public class DatabaseCache<ValueType>
         static class MyScope extends DbScope
         {
             Boolean overrideTransactionActive = null;
+            Transaction overrideTransaction = null;
             
             MyScope()
             {
@@ -227,15 +241,35 @@ public class DatabaseCache<ValueType>
                 return super.isTransactionActive();
             }
 
+            @Override
+            public Transaction getCurrentTransaction()
+            {
+                if (null != overrideTransactionActive)
+                {
+                    return overrideTransaction;
+                }
+
+                return super.getCurrentTransaction();
+            }
+
             public void setOverrideTransactionActive(Boolean override)
             {
                 overrideTransactionActive = override;
+
+                if (null == overrideTransactionActive || !overrideTransactionActive.booleanValue())
+                {
+                    overrideTransaction = null;
+                }
+                else
+                {
+                    overrideTransaction = new Transaction(null);
+                }
             }
         }
     }
 
     public void setDebugName(String name)
     {
-        ttlMap.setDebugName(name);
+        _sharedMap.setDebugName(name);
     }
 }

@@ -653,18 +653,4 @@ public class ActionURL extends URLHelper implements Cloneable
             return suite;
         }
     }
-
-    public void addFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
-    {
-        StringBuilder key = new StringBuilder();
-        if (!StringUtils.isEmpty(dataRegionName))
-        {
-            key.append(dataRegionName);
-            key.append(".");
-        }
-        key.append(field);
-        key.append("~");
-        key.append(ct.getUrlKey());
-        addParameter(key.toString(), value == null ? "" : value.toString());
-    }
 }

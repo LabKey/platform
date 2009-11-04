@@ -22,11 +22,17 @@
  * @namespace <font color="black">LabKey Email Notification Helper class.
  * This class provides static methods to generate an email notification message that gets sent from the
  * LabKey SMTP server.</font>
+ *            <p>Additional documentation on SMTP setup for LabKey Server:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=configWindows">Install LabKey via the Installer</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=cpasxml">Modify the Configuration File -- Includes SMTP Settings</a></li>
+ *              </ul>
+ *           </p>
  */
 LABKEY.Message = new function()
 {
     /*-- public methods --*/
-    /** @scope LABKEY.Message.prototype */
+    /** @scope LABKEY.Message */
     return {
         /**
          * A map of the email recipient types. The values in

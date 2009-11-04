@@ -116,48 +116,45 @@ public abstract class SqlDialect
 
         public void run()
         {
-            Collection<DbScope> scopes = DbScope.getDbScopes();
+            DbScope scope = DbScope.getLabkeyScope();
 
-            for (DbScope scope : scopes)
+            Connection conn = null;
+            String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
+            DataSource ds = scope.getDataSource();
+
+            String url = null;
+
+            try
             {
-                Connection conn = null;
-                String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
-                DataSource ds = scope.getDataSource();
-
-                String url = null;
-
-                try
-                {
-                    DataSourceProperties props = new DataSourceProperties(scope.getDataSourceName(), ds);
-                    url = props.getUrl();
-                    _log.info("Database maintenance on " + url + " started");
-                }
-                catch (Exception e)
-                {
-                    // Shouldn't happen, but we can survive without the url
-                    _log.error("Exception retrieving url", e);
-                }
-
-                try
-                {
-                    if (null != sql)
-                    {
-                        conn = ds.getConnection();
-                        Table.execute(conn, sql, null);
-                    }
-                }
-                catch(SQLException e)
-                {
-                    // Nothing to do here... table layer will log any errors
-                }
-                finally
-                {
-                    try {  if (null != conn) conn.close(); } catch (SQLException e) { /**/ }
-                }
-
-                if (null != url)
-                    _log.info("Database maintenance on " + url + " complete");
+                DataSourceProperties props = new DataSourceProperties(scope.getDataSourceName(), ds);
+                url = props.getUrl();
+                _log.info("Database maintenance on " + url + " started");
             }
+            catch (Exception e)
+            {
+                // Shouldn't happen, but we can survive without the url
+                _log.error("Exception retrieving url", e);
+            }
+
+            try
+            {
+                if (null != sql)
+                {
+                    conn = ds.getConnection();
+                    Table.execute(conn, sql, null);
+                }
+            }
+            catch(SQLException e)
+            {
+                // Nothing to do here... table layer will log any errors
+            }
+            finally
+            {
+                try {  if (null != conn) conn.close(); } catch (SQLException e) { /**/ }
+            }
+
+            if (null != url)
+                _log.info("Database maintenance on " + url + " complete");
         }
     }
 

@@ -577,7 +577,36 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                     catch (Exception x)
                     {
                         if (_throwOnErrors)
-                                throw new ConversionException("Conversion error: line " + lineNo + " column " + (i+ 1) + " (" + column.name + ")", x);
+                        {
+                            StringBuilder sb = new StringBuilder("Could not convert the ");
+                            if (fields[i] == null)
+                            {
+                                sb.append("empty value");
+                            }
+                            else
+                            {
+                                sb.append("value '");
+                                sb.append(fields[i]);
+                                sb.append("'");
+                            }
+                            sb.append(" from line #");
+                            sb.append(lineNo);
+                            sb.append(" in column #");
+                            sb.append(i + 1);
+                            sb.append(" (");
+                            if (column.name.indexOf("#") != -1)
+                            {
+                                sb.append(column.name.substring(column.name.indexOf("#") + 1));
+                            }
+                            else
+                            {
+                                sb.append(column.name);
+                            }
+                            sb.append(") to ");
+                            sb.append(column.clazz.getSimpleName());
+
+                            throw new ConversionException(sb.toString(), x);
+                        }
 
                         values[i] = column.errorValues;
                     }

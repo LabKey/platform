@@ -157,6 +157,7 @@ public class LookupColumn extends ColumnInfo
         strJoin.append(getJoinCondition(baseAlias));
         assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL());
         map.put(colTableAlias, strJoin);
+        this.lookupColumn.declareJoins(colTableAlias, map);
     }
 
 

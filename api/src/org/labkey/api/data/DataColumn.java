@@ -386,6 +386,7 @@ public class DataColumn extends DisplayColumn
         {
             NamedObjectList entryList = _boundColumn.getFkTableInfo().getSelectList();
             NamedObject[] entries = entryList.toArray();
+            String valueStr = ConvertUtils.convert(value);
 
             out.write("<select");
             outputName(ctx, out, formFieldName);
@@ -399,7 +400,7 @@ public class DataColumn extends DisplayColumn
                 out.write("  <option value=\"");
                 out.write(entryName);
                 out.write("\"");
-                if (null != value && entryName.equals(value.toString()))
+                if (null != valueStr && entryName.equals(valueStr))
                     out.write(" selected ");
                 out.write(" >");
                 if (null != entry.getObject())
@@ -438,7 +439,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {
-            boolean checked = ColumnInfo.booleanFromObj(value);
+            boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
             out.write("<input type='checkbox'");
             if (checked)
                 out.write(" CHECKED");

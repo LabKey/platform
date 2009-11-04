@@ -52,14 +52,6 @@ public class ResultsQueryView extends AssayBaseQueryView
     public ResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings)
     {
         super(protocol, schema, settings);
-        setViewItemFilter(new ReportService.ItemFilter() {
-            public boolean accept(String type, String label)
-            {
-                if (RReport.TYPE.equals(type)) return true;
-                if (ChartQueryReport.TYPE.equals(type)) return true;
-                return false;
-            }
-        });
     }
 
     @Override

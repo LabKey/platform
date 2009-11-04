@@ -144,7 +144,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             public void onClick(ClickEvent e)
             {
                 final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
-                popup.setText("Import Schema");
+                popup.setText("Import Fields");
                 popup.center();
             }
         };
@@ -154,7 +154,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             public void onClick(ClickEvent e)
             {
                 final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
-                popup.setText("Export Schema");
+                popup.setText("Export Fields");
                 popup.center();
             }
         };
@@ -168,17 +168,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                     public void onClick(ClickEvent event)
                     {
                         final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
-                        popup.setText("Infer Schema");
+                        popup.setText("Infer Fields");
                         popup.center();
                     }
                 });
-                WindowUtil.showConfirmDialog("Infer Schema From File", "This will delete all existing fields and data. Are you sure you wish to proceed?", confirmButton);
+                WindowUtil.showConfirmDialog("Infer Fields From File", "This will delete all existing fields and data. Are you sure you wish to proceed?", confirmButton);
             }
         };
 
-        _importSchemaButton = new ImageButton("Import Schema", importSchemaListener);
-        _exportSchemaButton = new ImageButton("Export Schema", exportSchemaListener);
-        _inferSchemaButton = new ImageButton("Infer Schema from File", inferSchemaListener);
+        _importSchemaButton = new ImageButton("Import Fields", importSchemaListener);
+        _exportSchemaButton = new ImageButton("Export Fields", exportSchemaListener);
+        _inferSchemaButton = new ImageButton("Infer Fields from File", inferSchemaListener);
 
         refreshButtons(_buttonPanel);
 
@@ -263,32 +263,31 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected int getExtraPropertiesHeight()
     {
-        return 270;
+        return 250;
     }
 
     protected List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)
     {
-        PropertyPane<DomainType, FieldType> basicPropertyPane = new PropertyPane<DomainType, FieldType>(this, "Additional Properties");
-        basicPropertyPane.addItem(new DescriptionItem<DomainType, FieldType>(basicPropertyPane));
-        RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(basicPropertyPane);
-        basicPropertyPane.addItem(requiredItem);
-        basicPropertyPane.addItem(new MvEnabledItem<DomainType, FieldType>(basicPropertyPane));
-        _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, basicPropertyPane);
-        basicPropertyPane.addItem(_defaultValueSelector);
-        basicPropertyPane.addItem(new ImportAliasesItem<DomainType, FieldType>(basicPropertyPane));
-
-        PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
-        validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(basicPropertyPane));
-
         PropertyPane<DomainType, FieldType> displayPane = new PropertyPane<DomainType, FieldType>(this, "Display");
+        displayPane.addItem(new DescriptionItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new FormatItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
 
+        PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
+        validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
+        validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
+
+        PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");
+        advancedPane.addItem(new MvEnabledItem<DomainType, FieldType>(advancedPane));
+        _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, advancedPane);
+        advancedPane.addItem(_defaultValueSelector);
+        advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
+
         List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
-        result.add(basicPropertyPane);
         result.add(displayPane);
         result.add(validatorPane);
+        result.add(advancedPane);
         return result;
     }
 
@@ -437,6 +436,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
+    protected boolean isReorderable()
+    {
+        return true;
+    }
+    
     private void repositionExtraProperties()
     {
         if (_extraPropertiesTabPanel.isVisible() && _selectedPD != null)
@@ -480,35 +484,43 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _table.setWidget(tableRow, col, statusImage);
         col++;
 
-        PushButton upButton = getUpButton(index);
-        upButton.addClickHandler(new ClickHandler()
+        if (isReorderable())
         {
-            public void onClick(ClickEvent event)
+            PushButton upButton = getUpButton(index);
+            upButton.addClickHandler(new ClickHandler()
             {
-                _rows.set(index, _rows.get(index - 1));
-                _rows.set(index - 1, rowObject);
-                fireChangeEvent();
-                refresh();
-            }
-        });
-        upButton.setEnabled(index > 0);
-        Tooltip.addTooltip(upButton, "Click to move up");
-        _table.setWidget(tableRow, col++, upButton);
+                public void onClick(ClickEvent event)
+                {
+                    _rows.set(index, _rows.get(index - 1));
+                    _rows.set(index - 1, rowObject);
+                    fireChangeEvent();
+                    refresh();
+                }
+            });
+            upButton.setEnabled(index > 0);
+            Tooltip.addTooltip(upButton, "Click to move up");
+            _table.setWidget(tableRow, col++, upButton);
 
-        PushButton downButton = getDownButton(index);
-        downButton.addClickHandler(new ClickHandler()
-        {
-            public void onClick(ClickEvent event)
+            PushButton downButton = getDownButton(index);
+            downButton.addClickHandler(new ClickHandler()
             {
-                _rows.set(index, _rows.get(index + 1));
-                _rows.set(index + 1, rowObject);
-                fireChangeEvent();
-                refresh();
-            }
-        });
-        downButton.setEnabled(index < _rows.size() - 1);
-        Tooltip.addTooltip(downButton, "Click to move down");
-        _table.setWidget(tableRow, col++, downButton);
+                public void onClick(ClickEvent event)
+                {
+                    _rows.set(index, _rows.get(index + 1));
+                    _rows.set(index + 1, rowObject);
+                    fireChangeEvent();
+                    refresh();
+                }
+            });
+            downButton.setEnabled(index < _rows.size() - 1);
+            Tooltip.addTooltip(downButton, "Click to move down");
+            _table.setWidget(tableRow, col++, downButton);
+        }
+        else
+        {
+            _table.setText(tableRow, col++, "");
+            _table.setText(tableRow, col++, "");
+        }
 
         if (!locked && !_readOnly && !_domain.isMandatoryField(pd))
         {

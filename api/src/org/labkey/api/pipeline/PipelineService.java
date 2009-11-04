@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /**
  */
@@ -59,7 +60,7 @@ abstract public class PipelineService
     abstract public boolean hasValidPipelineRoot(Container container);
 
     @NotNull
-    abstract public PipeRoot[] getAllPipelineRoots();
+    abstract public Map<Container, PipeRoot> getAllPipelineRoots();
 
     @Nullable
     abstract public PipeRoot getPipelineRootSetting(Container container);

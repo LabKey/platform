@@ -19,7 +19,13 @@
  */
 
 /**
- * @namespace Experiment static class to allow creating hidden run groups and other experiment-related functionality.
+ * @namespace The Experiment static class allows you to create hidden run groups and other experiment-related functionality.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *              </ul>
+ *           </p>
  */
 LABKEY.Experiment = new function()
 {
@@ -59,7 +65,7 @@ LABKEY.Experiment = new function()
         };
     }
 
-    /** @scope LABKEY.Experiment.prototype */
+    /** @scope LABKEY.Experiment */
     return {
 
         /**
@@ -82,6 +88,7 @@ LABKEY.Experiment = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @static
          */
         createHiddenRunGroup : function (config)
         {
@@ -127,6 +134,7 @@ LABKEY.Experiment = new function()
          * <li><b>response</b> The original response
          * </ul>
          * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @static
          */
         loadBatch : function (config)
         {
@@ -164,7 +172,7 @@ LABKEY.Experiment = new function()
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
-         * <li><b>batch</b> A new LABKEY.Exp.RunGroup object.  Some values will be filled in by the server.
+         * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.  Some values will be filled in by the server.
          * <li><b>response</b> The original response
          * </ul>
          * @param {function} [config.errorCallback] The function to call if this function encounters an error.
@@ -173,6 +181,7 @@ LABKEY.Experiment = new function()
          * <li><b>response</b> The original response
          * </ul>
          * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @static
          */
         saveBatch : function (config)
         {
@@ -211,7 +220,7 @@ LABKEY.Experiment = new function()
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
-         * <li><b>batch</b> A new LABKEY.Exp.RunGroup object.  Some values will be filled in by the server.
+         * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.  Some values will be filled in by the server.
          * <li><b>response</b> The original response
          * </ul>
          * @param {function} [config.errorCallback] The function to call if this function encounters an error.
@@ -219,6 +228,7 @@ LABKEY.Experiment = new function()
          * <ul>
          * <li><b>response</b> The original response
          * </ul>
+         * @static
          */
         saveMaterials : function (config)
         {
@@ -255,20 +265,29 @@ Ext.namespace('LABKEY', 'LABKEY.Exp');
 
 /**
  * This constructor isn't called directly, but is used by derived classes.
- * @class Experiment object base class.
+ * @class The experiment object base class describes basic
+ * characteristics of a protocol or an experimental run.  Many experiment classes (such as {@link LABKEY.Exp.Run},
+ * {@link LABKEY.Exp.Data} and {@link LABKEY.Exp.Material}) are subclasses
+ * of ExpObject, so they provide the fields defined by this object (e.g., name, lsid, etc).
+ * In java, ExpObject is an abstract class.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *              </ul>
+ *           </p>
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] Configuration object.
  *
- * @param {String} config.lsid The LSID of the object.
- * @param {String} config.name The name of the object.
- * @param {number} config.id The id of this object.
- * @param {number} config.rowId The id of this object (alias of id property)
+ * @param {String} config.lsid The LSID of the ExpObject.
+ * @param {String} config.name The name of the ExpObject.
+ * @param {number} config.id The id of the ExpObject.
+ * @param {number} config.rowId The id of the ExpObject (alias of id property)
  * @param {String} config.comment User editable comment.
  * @param {Date} config.created When the ExpObject was created.
- * @param {String} config.createdBy Who created the ExpObject.
+ * @param {String} config.createdBy The person who created the ExpObject.
  * @param {Date} config.modified When the ExpObject was last modified.
- * @param {String} config.modifiedBy Who last modified the ExpObject.
+ * @param {String} config.modifiedBy The person who last modified the ExpObject.
  * @param {Object} config.properties Map of property descriptor names to values.
  */
 LABKEY.Exp.ExpObject = function (config) {
@@ -287,11 +306,18 @@ LABKEY.Exp.ExpObject = function (config) {
 
 /**
  * Constructs a new experiment run object.
- * @class Experiment run class defines an experiment run.
+ * @class The Exp.Run class describes an experiment run.  An experiment run is an application of an experimental
+ * protocol to concrete inputs, producing concrete outputs. In object-oriented terminology, a protocol would be a class
+ * while a run would be an instance.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *              </ul>
+ *           </p>
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] The configuration object.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
  * @param {Object[]} config.dataInputs Array of {@link LABKEY.Exp.Data} config objects.
  * @param {Object[]} config.dataRows Array of Objects where each Object corresponds to a row in the results domain.
  * @param {Object[]} config.materialInputs Array of {@link LABKEY.Exp.Material} config objects.
@@ -396,7 +422,7 @@ Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] private constructor argument.  Inherits config properties of {@link LABKEY.Exp.ExpObject}.
  *
  * @ignore hide from JsDoc for now
  */
@@ -422,20 +448,25 @@ Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
 
 /**
  * The RunGroup constructor is private.  To retrieve a batch RunGroup
- * from the server, see {@link LABKEY.Experiment#loadBatch}.
- * @class Experiment Run Group.  An experiment run group contains an array of
+ * from the server, see {@link LABKEY.Experiment.loadBatch}.
+ * @class An experiment run group contains an array of
  * {@link LABKEY.Exp.Run}s.  If all runs have the same assay protocol, the run group
  * is considered a batch.  To add runs to a batch, insert new {@link LABKEY.Exp.Run}
  * instances into to the 'runs' Array and save the batch. 
  * <p>
- * Use {@link LABKEY.Experiment#loadBatch} and {@link LABKEY.Experiment#saveBatch} to
+ * Use {@link LABKEY.Experiment.loadBatch} and {@link LABKEY.Experiment.saveBatch} to
  * load and save a RunGroup.
- * <p>
- * See the <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+ * </p>
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *              </ul>
+ *           </p>
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] Private configuration object. Inherits config properties of {@link LABKEY.Exp.ExpObject}.
  * @param {LABKEY.Exp.Run[]} config.runs Array of {@link LABKEY.Exp.Run}s in this run group.
  * @param {Boolean} config.hidden Determines whether the RunGroup is hidden.
  */
@@ -462,7 +493,7 @@ Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] Private configuration object. Inherits config properties of {@link LABKEY.Exp.ExpObject}.
  *
  * @ignore hide from JsDoc for now
  */
@@ -474,11 +505,19 @@ LABKEY.Exp.ProtocolApplication = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
 /**
- * @class Sample set class to describe an experiment sample set
+ * @class The SampleSet class describes a collection of experimental samples, which are
+ * also known as materials (see {@link LABKEY.Exp.Material}). This class defines the set of fields that
+ * you you wish to attach to all samples in the group. These fields supply characteristics of the sample
+ * (e.g., its volume, number of cells, color, etc.).
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *              </ul>
+ *           </p>
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] Describes the SampleSet's properties.
+ * @param {Object} [config] Describes the SampleSet's properties.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
  * @param {Object[]} config.samples Array of {@link LABKEY.Exp.Material} config objects.
  * @param {String} config.description Description of the SampleSet
  */
@@ -497,7 +536,7 @@ Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] Private configuration object. Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
  *
  * @ignore hide from JsDoc for now
  */
@@ -514,9 +553,7 @@ Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
  * and {@link LABKEY.Exp.Material}.
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
-
- * @param {Object} [config] private constructor argument.
-  *
+ * @param {Object} [config] Private configuration object. Inherits config properties of {@link LABKEY.Exp.ExpObject}.
  * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.ProtocolOutput = function (config) {
@@ -533,11 +570,21 @@ LABKEY.Exp.ProtocolOutput = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
 
 /**
- * @class Experiment Material.   
+ * Constructs a new experiment material object.
+ * @class The Exp.Material class describes an experiment material.  "Material" is a synonym for both
+ * "sample" and "specimen."  Thus, for example, the input to an assay could be called a material.
+ * The fields of this class are inherited from the {@link LABKEY.Exp.ExpObject} object and
+ * the private LABKEY.Exp.ProtocolOutput object.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *              </ul>
+ *           </p>
  * @extends LABKEY.Exp.ProtocolOutput
+ * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] config.
+ * @param {Object} [config] Configuration object.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
  */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
@@ -550,18 +597,24 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  * To create a LABKEY.Exp.Data object, upload a file using to the "assayFileUpload" action of
  * the "assay" controller.
  * 
- * @class Experiment Data.  A data input or output of an {@link LABKEY.Exp.Run}.  Usually this
+ * @class The Experiment Data class describes the data input or output of a {@link LABKEY.Exp.Run}.  This typically
  * corresponds to an assay results file uploaded to the LabKey server.
  * <p>
  * To create a LABKEY.Exp.Data object, upload a file using to the "assayFileUpload" action of
  * the "assay" controller.
- * <p>
- * See the <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+ * </p>
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *              </ul>
+ *           </p>
  *
  * @extends LABKEY.Exp.ProtocolOutput
+ * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] Private configuration object.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
  * @param {String} config.dataFileURL The local file url of the uploaded file.
  *
  * @example
@@ -569,7 +622,7 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  *   &lt;div id="upload-run-button">&lt;/div>
  * &lt;/form>
  * &lt;script type="text/javascript">
- *    LABKEY.requiresScript("FileUploadField.js");
+ *    LABKEY.Utils.requiresScript("FileUploadField.js");
  * &lt;/script>
  * &lt;script type="text/javascript">
  * var form = new Ext.form.BasicForm(

@@ -111,12 +111,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         studyPd.setDescription(colInfo.getDescription());
     }
 
-    protected void addStandardRunPublishProperties(User user, Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run,
+    protected void addStandardRunPublishProperties(Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run,
                                                    CopyToStudyContext context) throws SQLException
     {
-        AssaySchema schema = AssayService.get().createSchema(user, run.getContainer());
-        TableInfo runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()));
-
+        TableInfo runTable = context.getRunTable(run);
         PropertyDescriptor pd = addProperty(study, "RunName", run.getName(), dataMap, types);
         setStandardPropertyAttributes(runTable.getColumn("Name"), pd);
         pd = addProperty(study, "RunComments", run.getComments(), dataMap, types);
@@ -166,12 +164,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
         private Map<Integer, ExpRun> _runsByOntologyObjectId = new HashMap<Integer, ExpRun>();
         private Map<Integer, ExpRun> _runsByDataId = new HashMap<Integer, ExpRun>();
         private Map<Integer, ExpData> _data = new HashMap<Integer, ExpData>();
+        private Map<Container, TableInfo> _runTables = new HashMap<Container, TableInfo>();
+        private User _user;
 
-        public CopyToStudyContext(ExpProtocol protocol, PropertyDescriptor... extraRunPDs)
+        public CopyToStudyContext(ExpProtocol protocol, User user, PropertyDescriptor... extraRunPDs)
         {
             _runPDs = new ArrayList<PropertyDescriptor>(Arrays.asList(getPropertyDescriptors(getRunDomain(protocol))));
             _runPDs.addAll(Arrays.asList(extraRunPDs));
             _batchPDs = new ArrayList<PropertyDescriptor>(Arrays.asList(getPropertyDescriptors(getBatchDomain(protocol))));
+            _user = user;
         }
 
         public List<PropertyDescriptor> getRunPDs()
@@ -257,6 +258,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 _runsByOntologyObjectId.put(o.getOwnerObjectId(), result);
             }
             return result;
+        }
+
+        public TableInfo getRunTable(ExpRun run)
+        {
+            TableInfo runTable = _runTables.get(run.getContainer());
+            if (runTable == null)
+            {
+                AssaySchema schema = AssayService.get().createSchema(_user, run.getContainer());
+                runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()));
+                _runTables.put(run.getContainer(), runTable);
+            }
+            return runTable;
         }
     }
 
@@ -692,7 +705,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             batch.addRuns(context.getUser(), run);
 
             ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
-            XarContext xarContext = new XarContext("Simple Run Creation", context.getContainer(), context.getUser());
+            XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
 
             run = ExperimentService.get().insertSimpleExperimentRun(run,
                     inputMaterials,

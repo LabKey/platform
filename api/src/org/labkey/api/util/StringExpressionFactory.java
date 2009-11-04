@@ -88,7 +88,6 @@ public class StringExpressionFactory
      * CONSIDER javascript: (permissions!)
      *
      */
-
     public static StringExpression createURL(String str)
     {
         if (str == null)
@@ -127,6 +126,20 @@ public class StringExpressionFactory
 
         templatesUrl.put(key, expr);
         return expr.copy();
+    }
+
+    /** Silently swallow any problems with parsing, effectively ignoring the URL if there are any errors */
+    public static StringExpression createURLSilent(String str)
+    {
+        try
+        {
+            return createURL(str);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // We were told to be silent
+            return null;
+        }
     }
 
 

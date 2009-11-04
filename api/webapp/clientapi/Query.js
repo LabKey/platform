@@ -21,15 +21,24 @@
 /**
  * @namespace Query static class to programmatically retrieve, insert, update and 
  *		delete data from LabKey public queries. <p/>
- *		{@link LABKEY.Query#selectRows} works for all LabKey public queries.  However,
- *		{@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} and
- *		{@link LABKEY.Query#deleteRows} are only available for lists, study datasets, or
+ *		{@link LABKEY.Query.selectRows} works for all LabKey public queries.  However,
+ *		{@link LABKEY.Query.updateRows}, {@link LABKEY.Query.insertRows} and
+ *		{@link LABKEY.Query.deleteRows} are only available for lists, study datasets, or
  *		tables in a user-defined schema.
  *		These three methods may not be used to operate on rows returned by queries to other LabKey 
  *		module schemas (e.g., ms1, ms2, flow, etc). To update, insert or delete data returned by 
  * 		queries to these types of schemas, use the methods for their respective classes, 
  *		such as the methods defined by {@link LABKEY.Assay} for assays.
- *
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+ *                      LabKey SQL Reference</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                      How To Find schemaName, queryName &amp; viewName</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *              </ul>
+ *           </p>
  */
 LABKEY.Query = new function()
 {
@@ -124,13 +133,13 @@ LABKEY.Query = new function()
     }
 
     // public methods:
-    /** @scope LABKEY.Query.prototype */
+    /** @scope LABKEY.Query */
     return {
 
         /**
-         * Execute arbitrary LabKey SQL. For more information on LabKey SQL, see
+         * Execute arbitrary LabKey SQL. For more information, see the
          * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
-         * https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql</a>.
+         * LabKey SQL Reference</a>.
          * @param config An object which contains the following configuration properties.
          * @param {String} config.schemaName name of the schema to query.
          * @param {String} config.sql The LabKey SQL to execute.
@@ -150,7 +159,7 @@ LABKEY.Query = new function()
 				Function called when the "selectRows" function executes successfully. Will be called with arguments:
 				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
          * @param {Function} [config.errorCallback] Function called when execution of the "executeSql" function fails.
-         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
+         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
          * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning all rows).
          * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
          *        Use this along with the maxRows config property to request pages of data.
@@ -217,9 +226,9 @@ LABKEY.Query = new function()
          * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
          * called, the user will be prompted to accept a file from the server, and most browsers will allow
          * the user to either save it or open it in an apporpriate application.
-         * For more information on LabKey SQL, see
+         * For more information, see the
          * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
-         * https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql</a>.
+         * LabKey SQL Reference</a>.
          * @param config An object which contains the following configuration properties.
          * @param {String} config.schemaName name of the schema to query.
          * @param {String} config.sql The LabKey SQL to execute.
@@ -285,7 +294,7 @@ LABKEY.Query = new function()
 				    <li>options: the options used for the AJAX request</li>
 				    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
 				</ul>
-        * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter#create}.
+        * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be
@@ -429,7 +438,7 @@ LABKEY.Query = new function()
 						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 						{@link LABKEY.Query.ModifyRowsOptions}.
         * @param {Function} [config.errorCallback] Function called when execution of the "updateRows" function fails.
-         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
+         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
         *               other columns you wish to update.
@@ -462,7 +471,7 @@ LABKEY.Query = new function()
 						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 						{@link LABKEY.Query.ModifyRowsOptions}.
 		* @param {Function} [config.errorCallback]  Function called when execution of the "insertRows" function fails.
-         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
+         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
         *                  However, you will need to include the primary key column values if you defined
@@ -519,7 +528,7 @@ LABKEY.Query = new function()
         			Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 				    {@link LABKEY.Query.ModifyRowsOptions}.
 		* @param {Function} [config.errorCallback] Function called when execution of the "deleteRows" function fails.
-         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
+         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array needs to include only the primary key column value, not all columns.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
@@ -547,7 +556,7 @@ LABKEY.Query = new function()
         * @param {String} queryName Name of a query table associated with the chosen schema.   See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Array} [filterArray] Array of objects created by {@link LABKEY.Filter#create}.
+        * @param {Array} [filterArray] Array of objects created by {@link LABKEY.Filter.create}.
         * @param {String} [sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be
@@ -779,21 +788,23 @@ LABKEY.Query = new function()
     };
 };
 
-
-
-
-
 /**
 * @name LABKEY.Query.ModifyRowsOptions
 * @class   ModifyRowsOptions class to describe
             the second object passed to the successCallback function
-            by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
-            {@link LABKEY.Query#deleteRows}. This object's properties are useful for
+            by {@link LABKEY.Query.updateRows}, {@link LABKEY.Query.insertRows} or
+            {@link LABKEY.Query.deleteRows}. This object's properties are useful for
             matching requests to responses, as HTTP requests are typically
             processed asynchronously.
-  * @see LABKEY.Query#updateRows
-  * @see LABKEY.Query#insertRows
-  * @see LABKEY.Query#deleteRows
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                      How To Find schemaName, queryName &amp; viewName</a></li>
+ *              </ul>
+ *           </p>
+  * @see LABKEY.Query.updateRows
+  * @see LABKEY.Query.insertRows
+  * @see LABKEY.Query.deleteRows
 */
 
 /**#@+
@@ -822,7 +833,7 @@ LABKEY.Query = new function()
             The fields required for inclusion for each row depend on the which LABKEY.Query method you are
             using (updateRows, insertRows or deleteRows).
             <p/>
-            <b>For {@link LABKEY.Query#updateRows}:</b> <p/>
+            <b>For {@link LABKEY.Query.updateRows}:</b> <p/>
             For the 'updateRows' method, each row in the rows array must include its primary key value
             as one of its fields.
             <p/>
@@ -837,7 +848,7 @@ LABKEY.Query = new function()
 } </pre></code>
 
             <p/>
-            <b>For {@link LABKEY.Query#insertRows}:</b> <p/>
+            <b>For {@link LABKEY.Query.insertRows}:</b> <p/>
             For the 'insertRows' method, the fields of the rows should look the same as
             they do for the 'updateRows' method, except that primary key values for new rows
             need not be supplied if the primary key columns are auto-increment.
@@ -852,7 +863,7 @@ LABKEY.Query = new function()
 } </pre></code>
 
             <p/>
-            <b>For {@link LABKEY.Query#deleteRows}:</b> <p/>
+            <b>For {@link LABKEY.Query.deleteRows}:</b> <p/>
             For the 'deleteRows' method, the fields of the rows should look the
             same as they do for the 'updateRows' method, except that the 'deleteRows'
             method needs to supply only the primary key values for the rows. All
@@ -874,10 +885,18 @@ LABKEY.Query = new function()
 * @name LABKEY.Query.ModifyRowsResults
 * @class  ModifyRowsResults class to describe
             the first object passed to the successCallback function
-            by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
-            {@link LABKEY.Query#deleteRows}. This object's properties are useful for
+            by {@link LABKEY.Query.updateRows}, {@link LABKEY.Query.insertRows} or
+            {@link LABKEY.Query.deleteRows}. This object's properties are useful for
             matching requests to responses, as HTTP requests are typically
             processed asynchronously.
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+  *                      How To Find schemaName, queryName &amp; viewName</a></li>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+  *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+  *              </ul>
+  *           </p>
 * @example For example:
         <pre name="code" class="xml">
         {  "schemaName": "lists",
@@ -886,9 +905,9 @@ LABKEY.Query = new function()
            "command": "insert",
            "keys": [3],
         } </pre></code>
-* @see LABKEY.Query#updateRows
-* @see LABKEY.Query#insertRows
-* @see LABKEY.Query#deleteRows
+* @see LABKEY.Query.updateRows
+* @see LABKEY.Query.insertRows
+* @see LABKEY.Query.deleteRows
 */
 
 /**#@+
@@ -945,10 +964,16 @@ LABKEY.Query = new function()
 * @name LABKEY.Query.SelectRowsOptions
 * @class  SelectRowsOptions class to describe
            the second object passed to the successCallback function by
-           {@link LABKEY.Query#selectRows}.  This object's properties are useful for
+           {@link LABKEY.Query.selectRows}.  This object's properties are useful for
            matching requests to responses, as HTTP requests are typically
            processed asynchronously.
-* @see LABKEY.Query#selectRows
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                      How To Find schemaName, queryName &amp; viewName</a></li>
+ *              </ul>
+ *           </p>
+* @see LABKEY.Query.selectRows
 */
 
 /**#@+
@@ -1033,10 +1058,18 @@ LABKEY.Query = new function()
 * @name LABKEY.Query.SelectRowsResults
 * @class  SelectRowsResults class to describe the first
             object passed to the successCallback function by
-            {@link LABKEY.Query#selectRows}. This object's properties are useful for
+            {@link LABKEY.Query.selectRows}. This object's properties are useful for
             matching requests to responses, as HTTP requests are typically
             processed asynchronously.
-* @see LABKEY.Query#selectRows
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                      How To Find schemaName, queryName &amp; viewName</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *              </ul>
+ *           </p>
+* @see LABKEY.Query.selectRows
 */
 
 /**#@+
@@ -1082,13 +1115,13 @@ LABKEY.Query = new function()
 * @name    metaData.fields
 * @description	Array of field information.
             Each field has the following properties:
-            <ul><li>name -- The name of the field</li>
-            <li>type -- JavaScript type name of the field</li>
-            <li>shownInInsertView -- whether this field is intended to be shown in insert views</li>
-            <li>shownInUpdateView -- whether this field is intended to be shown in update views</li>
-            <li>shownInDetailsView -- whether this field is intended to be shown in details views</li>
-            <li>hidden -- whether this field is hidden and not normally shown in grid views</li>
-            <li>lookup -- If the field is a lookup, there will
+            <ul><li><b>name</b> -- The name of the field</li>
+            <li><b>type</b> -- JavaScript type name of the field</li>
+            <li><b>shownInInsertView</b> -- whether this field is intended to be shown in insert views</li>
+            <li><b>shownInUpdateView</b> -- whether this field is intended to be shown in update views</li>
+            <li><b>shownInDetailsView</b> -- whether this field is intended to be shown in details views</li>
+            <li><b>hidden</b> -- whether this field is hidden and not normally shown in grid views</li>
+            <li><b>lookup</b> -- If the field is a lookup, there will
                  be four sub-properties listed under this property:
                  schema, table, displayColumn, and keyColumn, which describe the schema, table, and
                  display column, and key column of the lookup table (query).</li></ul>
@@ -1128,8 +1161,14 @@ LABKEY.Query = new function()
 * @name LABKEY.Query.ExtendedSelectRowsResults
 * @class  ExtendedSelectRowsResults class to describe the first
             object passed to the successCallback function by
-            {@link LABKEY.Query#selectRows} if config.requiredVersion is set to "9.1".
-* @see LABKEY.Query#selectRows
+            {@link LABKEY.Query.selectRows} if config.requiredVersion is set to "9.1".
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+  *                      How To Find schemaName, queryName &amp; viewName</a></li>
+  *              </ul>
+  *           </p>
+* @see LABKEY.Query.selectRows
  */
 
 /**#@+
@@ -1175,13 +1214,13 @@ LABKEY.Query = new function()
 * @name    LABKEY.Query.ExtendedSelectRowsResults#metaData.fields
 * @description	Array of field information.
             Each field has the following properties:
-            <ul><li>name -- The name of the field</li>
-            <li>type -- JavaScript type name of the field</li>
-            <li>shownInInsertView -- whether this field is intended to be shown in insert views</li>
-            <li>shownInUpdateView -- whether this field is intended to be shown in update views</li>
-            <li>shownInDetailsView -- whether this field is intended to be shown in details views</li>
-            <li>hidden -- whether this field is hidden and not normally shown in grid views</li>
-            <li>lookup -- If the field is a lookup, there will
+            <ul><li><b>name</b> -- The name of the field</li>
+            <li><b>type</b> -- JavaScript type name of the field</li>
+            <li><b>shownInInsertView</b> -- whether this field is intended to be shown in insert views</li>
+            <li><b>shownInUpdateView</b> -- whether this field is intended to be shown in update views</li>
+            <li><b>shownInDetailsView</b> -- whether this field is intended to be shown in details views</li>
+            <li><b>hidden</b> -- whether this field is hidden and not normally shown in grid views</li>
+            <li><b>lookup</b> -- If the field is a lookup, there will
                 be four sub-properties listed under this property:
                 schema, table, displayColumn, and keyColumn, which describe the schema, table, and
                 display column, and key column of the lookup table (query).</li></ul>

@@ -25,6 +25,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.util.URLHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -179,7 +180,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ActionURL urlShowDefinition();
     ActionURL urlEditDefinition();
 
-    ActionURL urlUpdate(Object pk, ActionURL returnUrl);
+    ActionURL urlUpdate(Object pk, URLHelper returnUrl);
     ActionURL urlDetails(Object pk);
     ActionURL urlShowData();
     ActionURL urlShowHistory();

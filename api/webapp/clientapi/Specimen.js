@@ -20,6 +20,12 @@
 
 /**
  * @namespace Specimen static class to retrieve and update specimen and specimen request information.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+ *              </ul>
+ *           </p>
 */
 LABKEY.Specimen = new function()
 {
@@ -30,7 +36,7 @@ LABKEY.Specimen = new function()
         }, this);
     }
 
-    /** @scope LABKEY.Specimen.prototype */
+    /** @scope LABKEY.Specimen */
     return {
         /**
          * Retrieves an array of locations that are identified as specimen repositories.
@@ -145,7 +151,7 @@ LABKEY.Specimen = new function()
 
         // GetRequestAction
         /**
-         * Retrieves a specimen request for a given specimen request.
+         * Retrieves a specimen request for a given specimen request ID.
          * @param {Function} successCallback Required. Function called when the
                  "getRequest" function executes successfully.  Will be called with the argument:
                  {@link LABKEY.Specimen.Request}.
@@ -307,6 +313,12 @@ LABKEY.Specimen = new function()
  /**
 * @name LABKEY.Specimen.Location
 * @class   Location class to describe the shape and fields of a specimen location.
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+  *              </ul>
+  *           </p>
 */
 
 /**#@+
@@ -357,7 +369,7 @@ LABKEY.Specimen = new function()
 */
 
 /**
-* @name      rowId
+* @name      LABKEY.Specimen.Location#rowId
 * @description   An integer uniquely identifying this location.
 * @type   Integer
 */
@@ -385,6 +397,12 @@ LABKEY.Specimen = new function()
  /**
 * @name LABKEY.Specimen.Request
 * @class   Request class to describe the shape and fields of a specimen request.
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+  *              </ul>
+  *           </p>
 * @see LABKEY.Specimen.Location
 * @see LABKEY.Specimen.Vial
 */
@@ -453,6 +471,12 @@ LABKEY.Specimen = new function()
  /**
 * @name LABKEY.Specimen.Vial
 * @class  Vial class to describe the shape and fields of a specimen vial.
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+  *              </ul>
+  *           </p>
 * @see LABKEY.Specimen.Location
 */
 

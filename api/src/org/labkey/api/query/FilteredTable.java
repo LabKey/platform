@@ -285,7 +285,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         applyContainerFilter(_containerFilter);
     }
 
-    private void applyContainerFilter(ContainerFilter filter)
+    protected void applyContainerFilter(ContainerFilter filter)
     {
         ColumnInfo containerColumn = _rootTable.getColumn("container");
         if (containerColumn != null && getContainer() != null)

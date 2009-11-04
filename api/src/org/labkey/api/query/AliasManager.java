@@ -98,12 +98,18 @@ public class AliasManager
 
     public static String makeLegalName(String str, SqlDialect dialect)
     {
+        return makeLegalName(str, dialect, true);
+    }
+
+
+    public static String makeLegalName(String str, SqlDialect dialect, boolean truncate)
+    {
         String ret = legalNameFromName(str);
         if (null != dialect && dialect.isReserved(str))
             ret = "_" + ret;
         if (ret.length() == 0)
             return "_";
-        return truncate(ret, 40);
+        return truncate ? truncate(ret, 40) : ret;
     }
 
 

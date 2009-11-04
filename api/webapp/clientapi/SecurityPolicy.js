@@ -37,6 +37,11 @@
  * assigned to the role. Asking for a user's effective roles will return all roles the user is directly assigned to
  * plus all roles the groups the user belongs to are assigned to.</li>
  * </ul>
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=security">LabKey Security and Accounts</a></li>
+ *              </ul>
+ *           </p>
  * @example
 &lt;script type="text/javascript"&gt;
     LABKEY.Security.getPolicy({

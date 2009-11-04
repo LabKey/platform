@@ -70,6 +70,10 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
+    //our largest servers currently have around 3,500 containers
+    //we essentially want to cache all containers, so set the limit quite high
+    private static final Cache _cache = new Cache(20000, Cache.DAY, "containers");
+
 
     // enum of properties you can see in property change events
     public enum Property
@@ -84,7 +88,7 @@ public class ContainerManager
 
     private static Cache getCache()
     {
-        return Cache.getShared();
+        return _cache;
     }
 
 
@@ -1203,6 +1207,63 @@ public class ContainerManager
         return mm;
     }
 
+    /**
+     * Returns a branch of the container tree including only the root and its descendants
+     * @param root The root container
+     * @return MultiMap of containers including root and its descendants
+     */
+    public static MultiMap<Container, Container> getContainerTree(Container root)
+    {
+        //build a multimap of only the container ids
+        MultiMap<String, String> mmIds = new MultiHashMap<String, String>();
+
+        ResultSet rs = null;
+        try
+        {
+            // Get all containers and parents
+            rs = Table.executeQuery(core.getSchema(), "SELECT Parent, EntityId FROM " + core.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC", null);
+
+            while (rs.next())
+            {
+                mmIds.put(rs.getString(1), rs.getString(2));
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
+        //now find the root and build a MultiMap of it and its descendants
+        MultiMap<Container,Container> mm = new MultiHashMap<Container,Container>();
+        addChildren(root, mmIds, mm);
+        for (Object key : mm.keySet())
+        {
+            List<Container> siblings = new ArrayList<Container>(mm.get(key));
+            Collections.sort(siblings);
+        }
+        return mm;
+    }
+
+    private static void addChildren(Container c, MultiMap<String,String> mmIds, MultiMap<Container,Container> mm)
+    {
+        Collection<String> childIds = mmIds.get(c.getId());
+        if (null != childIds)
+        {
+            for (String childId : childIds)
+            {
+                Container child = getForId(childId);
+                if (null != child)
+                {
+                    mm.put(c, child);
+                    addChildren(child, mmIds, mm);
+                }
+            }
+        }
+    }
 
     public static MultiMap<Container, Container> prune(MultiMap<Container, Container> mm, Container root)
     {

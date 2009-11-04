@@ -108,7 +108,10 @@ public class QueryView extends WebPartView<Object>
     private boolean _exportView = false;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
-    private ReportService.ItemFilter _itemFilter = new ReportService.ItemFilter(){
+    private ReportService.ItemFilter _itemFilter = DEFAULT_ITEM_FILTER;
+
+    public static ReportService.ItemFilter DEFAULT_ITEM_FILTER = new ReportService.ItemFilter()
+    {
         public boolean accept(String type, String label)
         {
             if (RReport.TYPE.equals(type)) return true;
@@ -1227,14 +1230,23 @@ public class QueryView extends WebPartView<Object>
         return tsv;
     }
 
-    public ResultSet getResultset() throws SQLException, IOException
+    public Report.Results getResults() throws SQLException, IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setMaxRows(0);
         rgn.setAllowAsync(false);
         view.getRenderContext().setCache(false);
-        return rgn.getResultSet(view.getRenderContext());
+        RenderContext ctx = view.getRenderContext();
+        if (null == rgn.getResultSet(ctx))
+            return null;
+        return new Report.Results(ctx);
+    }
+
+    public ResultSet getResultset() throws SQLException, IOException
+    {
+        Report.Results r = getResults();
+        return r == null ? null : r.rs;
     }
 
     public List<DisplayColumn> getExportColumns(List<DisplayColumn> list)

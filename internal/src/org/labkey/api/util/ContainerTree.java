@@ -103,7 +103,7 @@ public class ContainerTree
 
     public void render(StringBuilder html)
     {
-        renderChildren(html, ContainerManager.getContainerTree(), _root, _initialLevel);
+        renderChildren(html, ContainerManager.getContainerTree(_root), _root, _initialLevel);
     }
 
 

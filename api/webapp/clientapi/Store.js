@@ -28,6 +28,11 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  *
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a></li>
+ *              </ul>
+ *           </p>
  * @constructor
  * @augments Ext.data.Store
  * @param config Configuration properties.
@@ -36,7 +41,7 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  * @param {String} [config.sql] A LabKey SQL statement to execute to fetch the data. You may specify either a queryName or sql,
  * but not both. Note that when using sql, the store becomes read-only, as it has no way to know how to update/insert/delete the rows.
  * @param {String} [config.viewName] A saved custom view of the specified query to use if desired.
- * @param {String} [config.columns] A comma-delimeted list of column names to fetch from the specified query. Note
+ * @param {String} [config.columns] A comma-delimited list of column names to fetch from the specified query. Note
  *  that the names may refer to columns in related tables using the form 'column/column/column' (e.g., 'RelatedPeptide/TrimmedPeptide').
  * @param {String} [config.sort] A base sort specification in the form of '[-]column,[-]column' ('-' is used for descending sort).
  * @param {Array} [config.filterArray] An array of LABKEY.Filter.FilterDefinition objects to use as the base filters.

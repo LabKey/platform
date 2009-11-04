@@ -50,7 +50,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     {
         CacheMap.Entry<K,V> _entry;
 
-        SoftEntry(CacheMap.Entry<K,V> e, V value, ReferenceQueue q)
+        SoftEntry(CacheMap.Entry<K, V> e, V value, ReferenceQueue<V> q)
         {
             super(value, q);
             _entry = e;
@@ -70,13 +70,13 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
         public V getValue()
         {
-            return null == _value ? null : ((SoftEntry<K,V>)_value).get();
+            return null == _value ? null : ((SoftEntry<K, V>)_value).get();
         }
 
         public V setValue(V value)
         {
             V old = getValue();
-            _value = new SoftEntry(this,value,_q);
+            _value = new SoftEntry(this, value, _q);
             return old;
         }
 
@@ -90,7 +90,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     @Override
     protected Entry<K, V> newEntry(int hash, K key)
     {
-        return new TTLCacheEntry(hash, key, -1);
+        return new TTLCacheEntry<K, V>(hash, key, -1);
     }
 
 
@@ -108,6 +108,16 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         this(maxSize, -1);
     }
 
+
+    public int getMaxSize()
+    {
+        return maxSize;
+    }
+
+    public long getDefaultExpires()
+    {
+        return defaultExpires;
+    }
 
     @Override
     public V put(K key, V value)
@@ -169,7 +179,6 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     public void removeUsingPrefix(String prefix)
     {
         // since we're touching all the Entrys anyway, might as well test expired()
-        long ms = System.currentTimeMillis();
         for (Entry<K, V> entry = head.next; entry != head; entry = entry.next)
         {
             if (removeOldestEntry(entry))

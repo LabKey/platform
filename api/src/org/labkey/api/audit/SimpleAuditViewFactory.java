@@ -202,8 +202,12 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     {
         if (domain != null)
         {
-            try {
+            boolean dirty = false;
+
+            try
+            {
                 Map<String, DomainProperty> existingProps = new HashMap<String, DomainProperty>();
+
                 for (DomainProperty dp : domain.getProperties())
                 {
                     existingProps.put(dp.getName(), dp);
@@ -214,6 +218,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
                     DomainProperty prop = existingProps.remove(pInfo.name);
                     if (prop == null)
                     {
+                        dirty = true;
                         prop = domain.addProperty();
                         prop.setLabel(pInfo.label);
                         prop.setName(pInfo.name);
@@ -225,7 +230,9 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
                 // remove orphaned properties
                 for (DomainProperty dp : existingProps.values())
                 {
-                    try {
+                    try
+                    {
+                        dirty = true;
                         OntologyManager.deletePropertyDescriptor(dp.getPropertyDescriptor());
                     }
                     catch (SQLException se)
@@ -235,7 +242,8 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             }
             finally
             {
-                domain.save(user);
+                if (dirty)
+                    domain.save(user);
             }
         }
     }

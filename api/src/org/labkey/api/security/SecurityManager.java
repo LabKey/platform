@@ -1018,8 +1018,7 @@ public class SecurityManager
 
         try
         {
-            group.setName(newName);
-            Table.update(currentUser, core.getTableInfoPrincipals(), group, group.getUserId());
+            Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name",newName), group.getUserId());
             removeGroupFromCache(group.getUserId());
         }
         catch(SQLException e)
@@ -1265,7 +1264,7 @@ public class SecurityManager
             {
                 Group[] groups = Table.executeQuery(
                         core.getSchema(),
-                        "SELECT Name, UserId, Container FROM " + core.getTableInfoPrincipals() + " WHERE type <> 'u' AND userId=?",
+                        "SELECT Name, UserId, Container, OwnerId FROM " + core.getTableInfoPrincipals() + " WHERE type <> 'u' AND userId=?",
                         new Object[] {groupId},
                         Group.class);
                 assert groups.length <= 1;

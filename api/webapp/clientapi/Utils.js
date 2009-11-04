@@ -71,7 +71,7 @@ LABKEY.Utils = new function()
     }
 
 
-    /** @scope LABKEY.Utils.prototype */
+    /** @scope LABKEY.Utils */
     return {
         // public functions
 
@@ -408,6 +408,34 @@ LABKEY.Utils.convertToExcel(
         deleteCookie : function (name, pageonly)
         {
             LABKEY.Utils.setCookie(name, "", pageonly, -1);
+        },
+
+        /**
+         * Includes a script file into the page. If the file was already included by some other code, this
+         * function will simply ignore the call. This may be used to include files defined in your module's web/ directory
+         * or any existing script file in the code web application (e.g., FileUploadField.js) 
+         * @param {String} filePath The path to the script file to include. This path should be relative to the web application
+         * root. So for example, if you wanted to include a file in your module's web/mymodule/scripts/ directory,
+         * the path would be "mymodule/scripts/myscript.js"
+         * @param {Boolean} [immediate] Set to false to indicate that the script is not needed until the page is fully
+         * loaded (defaults to true). If true, a script element referencing this path will be added immediately
+         * following the script block from which this function is called.
+         */
+        requiresScript : function(filePath, immediate)
+        {
+            LABKEY.requiresScript(filePath, immediate);
+        },
+
+        /**
+         * Includes a Cascading Style Sheet (CSS) file into the page. If the file was already included by some other code, this
+         * function will simply ignore the call. This may be used to include CSS files defined in your module's web/ directory.
+         * @param {String} filePath The path to the script file to include. This path should be relative to the web application
+         * root. So for example, if you wanted to include a file in your module's web/mymodule/styles/ directory,
+         * the path would be "mymodule/styles/mystyles.css"
+         */
+        requiresCSS : function(filePath)
+        {
+            LABKEY.requiresCss(filePath);
         }
     };
 };

@@ -19,8 +19,21 @@
  */
 
 /**
- * @description WebPart class to render a web part into an existing page element.
- * @class Web Part class to render a web part into an existing page element.
+ * @description WebPart class to render a web part into an existing page element.  If you wish to render a Query web part, please
+ * use the {@link LABKEY.QueryWebPart} class instead.
+ * @class Web Part class to render a web part into an existing page element.  If you wish to render a Query web part, please
+ * use the {@link LABKEY.QueryWebPart} class instead.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig">
+					        Web Part Configuration Properties</a></li>
+ *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartInventoryWiki">
+					        List of LabKey Web Parts</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *              </ul>
+ *           </p>
+ *
  * @constructor
  * @param {Object} config Describes configuration properties for this class.  
  * @param {String} config.partName Name of the web part ("Wiki", "Lists", etc.), as listed in the
@@ -65,19 +78,6 @@
 		})
 	wikiWebPartRenderer.render();
  &lt;/script&gt;  </pre></code>
- * @example Example for a Query web part:<pre name="code" class="xml">
- &lt;div id='queryTestDiv'/&gt;
- &lt;script type="text/javascript"&gt;
-	var queryWebPartRenderer = new LABKEY.WebPart({
-		partName: 'Query', 
-		renderTo: 'queryTestDiv', 
-		partConfig: { 
-				title: 'Webpart Title', 
-				schemaName: 'lists', 
-				queryName: 'People' 
-		}});
-	queryWebPartRenderer.render(); 
-  &lt;/script&gt; </pre></code>
  * @example Example for a Report web part, from the Reagent Request <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
   &lt;div id='reportDiv'&gt;Loading...&lt;/div&gt;
   &lt;script type="text/javascript"&gt;

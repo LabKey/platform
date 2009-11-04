@@ -47,7 +47,6 @@ import java.util.*;
 @SuppressWarnings({"StringConcatenationInsideStringBufferAppend"})
 public class OntologyManager
 {
-	static HashMap classMap;
     static Logger _log = Logger.getLogger(OntologyManager.class);
 	static DatabaseCache<Map<String, ObjectProperty>> mapCache = null;
 	static DatabaseCache<Integer> objectIdCache = null;
@@ -854,6 +853,7 @@ public class OntologyManager
                     PropertyDescriptor pd = getPropertyDescriptor(propUri,c );
                     if (pd.getContainer().getId().equals(c.getId()))
                     {
+                        propDescCache.remove(getCacheKey(pd));
                         pd.setContainer(project);
                         pd.setProject(project);
                         pd.setPropertyId(0);
@@ -864,6 +864,7 @@ public class OntologyManager
                         DomainDescriptor dd = getDomainDescriptor(domUri, c);
                         if (dd.getContainer().getId().equals(c.getId()))
                         {
+                            domainDescCache.remove(getCacheKey(dd));
                             dd.setContainer(project);
                             dd.setProject(project);
                             dd.setDomainId(0);
@@ -2013,6 +2014,10 @@ public class OntologyManager
                 if (!errors.contains(e))
                     errors.add(e);
                 continue;
+            }
+            if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
+            {
+                pt = PropertyType.MULTI_LINE;
             }
             rangeURI = pt.getTypeUri();
 

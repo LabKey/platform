@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,54 +28,32 @@ import java.util.WeakHashMap;
  * Date: Nov 30, 2005
  * Time: 4:41:26 PM
  *
- * DbCache is a wrapper that allocates one transaction aware cache per TableInfo
+ * DbCache is a wrapper that allocates a shared transaction-aware cache per TableInfo (for non-transaction use)
+ * and a private transaction-aware cache per TableInfo per thread/connection (used for the duration of a transaction)
  */
 public class DbCache
 {
-    // CONSIDER: move constant into web.xml
-    static int CACHE_SIZE = 1000;
+    private static Logger LOG = Logger.getLogger(DbCache.class);
+    private static final Map<TableInfo, DatabaseCache<Object>> CACHES = new WeakHashMap<TableInfo, DatabaseCache<Object>>(100);
 
-    static final WeakHashMap<TableInfo, DatabaseCache<Object>> tableCaches = new WeakHashMap<TableInfo, DatabaseCache<Object>>(100);
-
+    static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
 
     public static DatabaseCache<Object> getCache(TableInfo tinfo)
     {
-        synchronized(tableCaches)
+        synchronized(CACHES)
         {
-            DatabaseCache<Object> cache = tableCaches.get(tinfo);
+            DatabaseCache<Object> cache = CACHES.get(tinfo);
+
             if (null == cache)
             {
                 cache = new DatabaseCache<Object>(tinfo.getSchema().getScope(), tinfo.getCacheSize());
                 cache.setDebugName(tinfo.getName());
-                tableCaches.put(tinfo, cache);
+                CACHES.put(tinfo, cache);
             }
+
             return cache;
         }
     }
-    
-
-    /*
-    With the introduction of Nick's query layer, we can now have multiple tableinfo objects
-    for a single actual table.  These tableinfo objects may have different filters applied.
-    As a result, we need to be very careful with our caching; we look up and store using
-    Object .equals (by just letting the CacheMap do its thing), but on removal we need to
-    remove all tableinfos that are bound to the same underlying table.  We gather that
-    list of tables here:
-    */
-    private static List<TableInfo> getTableInfosByUnderlyingTable(TableInfo tinfo)
-    {
-        synchronized (tableCaches)
-        {
-            List<TableInfo> matchingCaches = new ArrayList<TableInfo>();
-            for (Map.Entry<TableInfo, DatabaseCache<Object>> entry : tableCaches.entrySet())
-            {
-                if (entry.getKey().getName().equals(tinfo.getName()))
-                    matchingCaches.add(entry.getKey());
-            }
-            return matchingCaches;
-        }
-    }
-
 
     public static void put(TableInfo tinfo, String name, Object obj)
     {
@@ -103,26 +83,50 @@ public class DbCache
     }
 
 
+    /*
+    With the introduction of Nick's query layer, we can now have multiple tableinfo objects
+    for a single actual table.  These tableinfo objects may have different filters applied.
+    As a result, we need to be very careful with our caching; we look up and store using
+    Object .equals (by just letting the CacheMap do its thing), but on removal we need to
+    remove all tableinfos that are bound to the same underlying table.  We gather that
+    list of tables here:
+    */
+    private static List<TableInfo> getTableInfosByUnderlyingTable(TableInfo tinfo)
+    {
+        synchronized (CACHES)
+        {
+            List<TableInfo> matchingCaches = new ArrayList<TableInfo>();
+            for (Map.Entry<TableInfo, DatabaseCache<Object>> entry : CACHES.entrySet())
+            {
+                if (entry.getKey().getName().equals(tinfo.getName()))
+                    matchingCaches.add(entry.getKey());
+            }
+            return matchingCaches;
+        }
+    }
+
+
     /** used by Table */
     static void invalidateAll(TableInfo tinfo)
     {
+        // If we're in a transaction, then the code below will clear out the private cache only.  Need to queue up a
+        // the invalidate on the shared cache.
         if (tinfo.getSchema().getScope().isTransactionActive())
         {
             tinfo.getSchema().getScope().addTransactedInvalidate(tinfo);
         }
-        else
+
+        // see comment above 'getTableInfosByUnderlyingTable' for an explanation of why
+        // we clear multiple caches here:
+        synchronized(CACHES)
         {
-            // see comment above 'getTableCaches' for an explanation of why
-            // we clear multiple caches here:
-            synchronized(tableCaches)
+            List<TableInfo> tableInfos = getTableInfosByUnderlyingTable(tinfo);
+
+            for (TableInfo matchingTinfo : tableInfos)
             {
-                List<TableInfo> tableInfos = getTableInfosByUnderlyingTable(tinfo);
-                for (TableInfo matchingTinfo : tableInfos)
-                {
-                    DatabaseCache cacheMap = tableCaches.get(matchingTinfo);
-                    if (null != cacheMap)
-                        cacheMap.clear();
-                }
+                DatabaseCache cacheMap = CACHES.get(matchingTinfo);
+                if (null != cacheMap)
+                    cacheMap.clear();
             }
         }
     }
@@ -134,12 +138,10 @@ public class DbCache
         {
             tinfo.getSchema().getScope().addTransactedClear(tinfo);
         }
-        else
-        {
-            DatabaseCache cacheMap = tableCaches.get(tinfo);
-            if (null != cacheMap)
-                cacheMap.clear();
-        }
+
+        DatabaseCache cacheMap = getCache(tinfo);
+        if (null != cacheMap)
+            cacheMap.clear();
     }
 
 

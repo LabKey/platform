@@ -19,6 +19,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.*;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.StringExpression;
 
 import java.sql.Types;
 import java.util.*;
@@ -152,6 +153,13 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         tableInfo.addColumn(new ExprColumn(tableInfo, AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME, sql, Types.BOOLEAN));
         return tableInfo;
+    }
+
+    public StringExpression getURL(ColumnInfo parent)
+    {
+        // SpecimenForeignKeys never have details URLs, and it's very expensive to instantiate a TableInfo to check,
+        // so we override the behavior here:
+        return null;
     }
 
     @Override

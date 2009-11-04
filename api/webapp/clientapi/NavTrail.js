@@ -26,7 +26,7 @@
 LABKEY.NavTrail = new function()
 {
     // public methods:
-    /** @scope LABKEY.NavTrail.prototype */
+    /** @scope LABKEY.NavTrail */
     return {
         /**
         * Set the nav trail's elements.

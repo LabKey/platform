@@ -26,7 +26,7 @@ import org.labkey.api.view.DisplayElement;
 public abstract class RenderColumn extends DisplayElement
 {
     private String _formatString = null;
-    private String _name = this.getClass().getName() + this.hashCode();
+    protected String _name = this.getClass().getName() + this.hashCode();
     private String _tsvFormatString;
 
     public String getFormatString()

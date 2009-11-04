@@ -327,8 +327,9 @@ public class ReportUtil
 
         public ActionURL getViewEditURL(Container c, CustomViewInfo view, User user)
         {
-            return QueryService.get().urlFor(user, c, QueryAction.chooseColumns, view.getSchemaName(), view.getQueryName()).
+            return PageFlowUtil.urlProvider(ReportUrls.class).urlCustomizeView(c).
                     addParameter(QueryParam.queryName.name(), view.getQueryName()).
+                    addParameter(QueryParam.schemaName.name(), view.getSchemaName()).
                     addParameter(QueryParam.viewName.name(), view.getName());
         }
     }
@@ -378,7 +379,7 @@ public class ReportUtil
                 record.put("modifiedBy", modifiedBy != null ? modifiedBy.getDisplayName(context) : String.valueOf(descriptor.getModifiedBy()));
                 record.put("modified", DateUtil.formatDate(descriptor.getModified()));
                 record.put("type", r.getTypeDescription());
-                record.put("editable", String.valueOf(descriptor.canEdit(context.getUser(), context.getContainer())));
+                record.put("editable", String.valueOf(descriptor.canEdit(user, c)));
                 record.put("inherited", String.valueOf(inherited));
                 record.put("version", descriptor.getVersionString());
 
@@ -390,13 +391,18 @@ public class ReportUtil
                  */
                 if (!inherited || !StringUtils.isBlank(reportKey))
                 {
-                    record.put("editUrl", r.getEditReportURL(context) != null ? r.getEditReportURL(context).getLocalURIString() : null);
-                    record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
+                    ActionURL editUrl = r.getEditReportURL(context);
+                    ActionURL runUrl = r.getRunReportURL(context);
+
+                    record.put("editUrl", editUrl != null ? editUrl.getLocalURIString() : null);
+                    record.put("runUrl", runUrl != null ? runUrl.getLocalURIString() : null);
                 }
                 else
                 {
+                    ActionURL runUrl = r.getRunReportURL(context);
+
                     if (queryExists(user, c, schema, query))
-                        record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
+                        record.put("runUrl", runUrl != null ? runUrl.getLocalURIString() : null);
                     else
                         continue;
                 }
@@ -473,7 +479,7 @@ public class ReportUtil
 
         QueryDefinition def = QueryService.get().getQueryDef(container, schema, query);
         if (def == null)
-        {
+        {                                                                                                                            
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, schema);
             if (userSchema != null)
                 return userSchema.getTableNames().contains(query);

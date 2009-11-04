@@ -149,14 +149,10 @@ public class WindowUtil
 
     public static void reportException(String description, Throwable caught)
     {
-        String message;
-        if (description == null)
+        String message = caught.getMessage() == null ? caught.toString() : caught.getMessage();
+        if (description != null)
         {
-            message = caught.toString();
-        }
-        else
-        {
-            message = description + ": " + caught;
+            message = description + ": " + message;
         }
         Window.alert(message);
     }

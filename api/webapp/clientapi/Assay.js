@@ -20,6 +20,11 @@
 
 /**
  * @namespace Assay static class to retrieve read-only assay definitions.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=createDatasetViaAssay">LabKey Assays</a></li>
+ *              </ul>
+ *           </p>
 */
 LABKEY.Assay = new function()
 {
@@ -69,7 +74,7 @@ LABKEY.Assay = new function()
         }
     }
 
-    /** @scope LABKEY.Assay.prototype */
+    /** @scope LABKEY.Assay */
     return {
 
 	/**
@@ -77,6 +82,7 @@ LABKEY.Assay = new function()
 	* @param {Function} config.successCallback Required. Function called when the
 			"getAll" function executes successfully.  Will be called with the argument: 
 			{@link LABKEY.Assay.AssayDesign[]}.
+    * @param {Object} config An object which contains the following configuration properties.
 	* @param {Function} [config.failureCallback] Function called when execution of the "getAll" function fails.
 	* @param {String} [config.containerPath] The container path in which the requested Assays are defined.
 	*       If not supplied, the current container path will be used.
@@ -135,6 +141,7 @@ LABKEY.Assay = new function()
 	  /**
 	  * Gets an assay by name.
 	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called when the "getByName" function executes successfully.
+      * @param {Object} config An object which contains the following configuration properties.
 	  * @param {Function} [config.failureCallback] Function called when execution of the "getByName" function fails.
 	  * @param {String} config.name String name of the assay.
 	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
@@ -161,6 +168,7 @@ LABKEY.Assay = new function()
 	  * Gets an assay by type.
 	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called
 				when the "getByType" function executes successfully.
+      * @param {Object} config An object which contains the following configuration properties.
 	  * @param {Function} [config.failureCallback] Function called when execution of the "getByType" function fails.
 	  * @param {String} config.type String name of the assay type.  "ELISpot", for example.
 	  * @param {String} [config.containerPath] The container path in which the requested Assays are defined.
@@ -187,6 +195,7 @@ LABKEY.Assay = new function()
 	 * Gets an assay by its ID.
 	 * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called
 				when the "getById" function executes successfully.
+     * @param {Object} config An object which contains the following configuration properties.
 	 * @param {Function} [config.failureCallback] Function called when execution of the "getById" function fails.
 	 * @param {Integer} config.id Unique integer ID for the assay.
 	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
@@ -235,7 +244,7 @@ LABKEY.Assay = new function()
                     <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
                 </ul>
         *
-        * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter#create}.
+        * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be
@@ -300,6 +309,11 @@ LABKEY.Assay = new function()
 * @name LABKEY.Assay.AssayDesign
 * @class  Static class to describe the shape and fields of an assay.  Each of the {@link LABKEY.Assay}
             'get' methods passes its success callback function an array of AssayDesigns.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=createDatasetViaAssay">LabKey Assays</a></li>
+ *              </ul>
+ *           </p>
 */
 
 /**#@+
@@ -308,7 +322,7 @@ LABKEY.Assay = new function()
 */
 
 /**
-* @name name
+* @name LABKEY.Assay.AssayDesign#name
 * @description   The name of the assay.
 * @type String
 */
@@ -332,7 +346,7 @@ LABKEY.Assay = new function()
 */
 
 /**
-* @name description
+* @name LABKEY.Assay.AssayDesign#description
 * @description  Contains the assay description.
 * @type String
 */
@@ -345,8 +359,9 @@ LABKEY.Assay = new function()
 
 /**
 * @name domains
-* @description Map containing name/value pairs.  Typically contains three entries (batch, run and results).
-  * Each one is associated with an array, where the elements in the array have the following properties
+* @description Map containing name/value pairs.  Typically contains three entries for three domains (batch, run and results).
+  * Each domain is associated with an array of objects that each describe a domain field.
+ *  Each field object has the following properties:
   *        <ul>
   *           <li><b>name: </b>The name of the domain field. (string)</li>
   *           <li><b>typeName: </b> The name of the type of the domain field. (Human readable.) (string)</li>
@@ -355,12 +370,12 @@ LABKEY.Assay = new function()
   *           <li><b>description: </b> The domain field description. (string)</li>
   *           <li><b>formatString: </b> The format string applied to the domain field. (string)</li>
   *           <li><b>required: </b> Indicates whether a value is required for this domain field. (boolean)</li>
-  *           <li><b>lookup.container: </b> If this domain field is a lookup, lookupContainer holds the
+  *           <li><b>lookup.container: </b> If this domain field is a lookup, lookup.container holds the
              String path to the lookup container or null if the lookup in the
              same container.  Undefined otherwise.(string)</li>
-  *           <li><b>lookup.schema: </b> If this domain field object is a lookup, lookupSchema holds the
+  *           <li><b>lookup.schema: </b> If this domain field object is a lookup, lookup.schema holds the
             String name of the lookup schema.  Undefined otherwise.(string)</li>
-  *           <li><b>lookup.table: </b> If this domain field object is a lookup, lookupTable holds the String
+  *           <li><b>lookup.table: </b> If this domain field object is a lookup, lookup.table holds the String
             name of the lookup query.  Undefined otherwise. (string)</li>
   *           <li><b>lookup.keyColumn: </b> The primary key field in target table (string)</li>
   *           <li><b>lookup.displayColumn: </b>The display column in target table (string)</li>

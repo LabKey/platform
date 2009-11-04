@@ -46,8 +46,10 @@ public class PopupDeveloperView  extends PopupMenuView
 
     public static List<NavTree> getNavTree(ViewContext context)
     {
+        Container container = context.getContainer();
         ArrayList<NavTree> items = new ArrayList<NavTree>();
-        items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(context.getContainer())));
+        if (!container.isRoot())
+            items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(container)));
         items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
         return items;
     }

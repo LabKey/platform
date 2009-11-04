@@ -20,7 +20,17 @@
 
 /**
   * @description Chart class to create and render live charts and imagemaps.
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=charts">LabKey Chart Views</a></li>
+  *              </ul>
+  *            </p>
   * @class Chart class to create and render live charts and imagemaps.
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=charts">LabKey Chart Views</a></li>
+  *              </ul>
+  *            </p>
   * @constructor
   * @param {Object} config Describes the chart's properties.
   * @param {String} config.schemaName Name of a schema defined within the current

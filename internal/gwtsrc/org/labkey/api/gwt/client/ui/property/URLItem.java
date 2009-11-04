@@ -53,7 +53,7 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
                 "<span>Include controller and action name, omitting context path and folder path</span><br/>" +
                 "<span style='white-space:nowrap;'><em>/wiki/page.view?name=${Name}</em></span><br/>" +
                 "&nbsp;<br>" +
-                "<a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=propertyFields'>More information</a>"
+                "<a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=propertyFields' target='_blank'>More information</a>"
                 ));
 
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);

@@ -33,10 +33,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayFileWriter;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -158,7 +155,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         assert(dataFiles.size() <= 1);
 
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
-        XarContext xarContext = new XarContext("Simple Run Creation", context.getContainer(), context.getUser());
+        XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
 
         for (File data : dataFiles)
         {
@@ -392,6 +389,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         {
                             if (Date.class.isAssignableFrom(o.getClass()))
                                 pw.append(DateUtil.formatDateTime((Date)o));
+                            else if (Collection.class.isAssignableFrom(o.getClass()))
+                                pw.append(StringUtils.join((Collection)o, ","));
+                            else if (Object[].class.isAssignableFrom(o.getClass()))
+                                pw.append(StringUtils.join((Object[])o, ","));
                             else
                                 pw.append(String.valueOf(o));
                         }

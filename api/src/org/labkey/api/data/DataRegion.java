@@ -1504,6 +1504,8 @@ public class DataRegion extends DisplayElement
     {
         TableViewForm viewForm = ctx.getForm();
         Map valueMap = ctx.getRow();
+        LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
+        ctx.setResultSet(null, selectKeyMap);
         if (null == valueMap)
         {
             //For updates, the rowMap is the OLD version of the data.
@@ -1519,7 +1521,6 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
                 Map[] maps = Table.select(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null, Map.class);
                 if (maps.length > 0)
                     valueMap = maps[0];
@@ -1725,8 +1726,12 @@ public class DataRegion extends DisplayElement
 
                 for (int i = 0; i < _groupHeadings.size(); i++)
                 {
-                    out.write("<tr>");
-                    out.write("<td valign='bottom' class='labkey-form-label'>");
+                    out.write("<tr");
+                    String rowClass = getRowClass(ctx, i);
+                    if (rowClass != null)
+                        out.write(" class=\"" + rowClass + "\"");
+                    out.write(">");
+                    out.write("<td class='labkey-form-label' nowrap>");
                     out.write(PageFlowUtil.filter(_groupHeadings.get(i)));
                     out.write("</td>");
                     for (DisplayColumnGroup group : _groups)

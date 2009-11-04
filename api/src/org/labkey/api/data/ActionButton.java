@@ -19,10 +19,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.ACL;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.springframework.web.servlet.mvc.Controller;
@@ -134,7 +131,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         _actionName = StringExpressionFactory.create(actionName);
     }
 
-    public ActionButton(String caption, ActionURL link)
+    public ActionButton(String caption, URLHelper link)
     {
         _caption = StringExpressionFactory.create(caption);
         _url = StringExpressionFactory.create(link.toString(), true);

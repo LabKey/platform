@@ -57,7 +57,7 @@ public class SchemaTableInfo implements TableInfo
 
     protected SQLFragment selectName = null;
     private String _sequence = null;
-    private int _cacheSize = DbCache.CACHE_SIZE;
+    private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
 
     private DetailsURL _gridURL;
     private DetailsURL _insertURL;

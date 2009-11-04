@@ -74,7 +74,7 @@ public class SQLFragment
     public String toString()
     {
         String sql = getSQL();
-        if (!params.isEmpty())
+        if (null != params && !params.isEmpty())
         {
             // Question marks in comments and string literals aren't supported right now - so we only do substitution
             // if the number of parameter markers equals the number of parameters

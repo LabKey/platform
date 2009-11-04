@@ -18,6 +18,7 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.ButtonBase;
 import com.google.gwt.user.client.ui.ClickListener;
@@ -75,6 +76,19 @@ public class ImageButton extends ButtonBase implements ClickListener
                 }
             }
         });
+    }
+
+    @Override
+    public HandlerRegistration addClickHandler(final ClickHandler handler)
+    {
+        _clickHandlers.add(handler);
+        return new HandlerRegistration()
+        {
+            public void removeHandler()
+            {
+                _clickHandlers.remove(handler);
+            }
+        };
     }
 
     public void addClickListener(ClickListener listener)

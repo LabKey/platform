@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.collections.TTLCacheMap;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -54,8 +55,8 @@ public class DbScope
     private String _driverVersion;
 
 
-    private ThreadLocal<Connection> threadConnection = new ThreadLocal<Connection>();
-    private ThreadLocal<LinkedList<Runnable>> _transactedRemovals = new ThreadLocal<LinkedList<Runnable>>()
+    private ThreadLocal<Transaction> threadConnection = new ThreadLocal<Transaction>();
+    private ThreadLocal<LinkedList<Runnable>> _transactedRemovals = new ThreadLocal<LinkedList<Runnable>>()  // TODO: Add to Transaction instead of separate ThreadLocal?
     {
         protected LinkedList<Runnable> initialValue()
         {
@@ -163,20 +164,21 @@ public class DbScope
 
     public Connection beginTransaction() throws SQLException
     {
-        if (null != threadConnection.get())
+        if (isTransactionActive())
             throw new IllegalStateException("Existing transaction");
 
         Connection conn = _getConnection(null);
         conn.setAutoCommit(false);
-        threadConnection.set(conn);
+        threadConnection.set(new Transaction(conn));
         return conn;
     }
 
 
     public void commitTransaction() throws SQLException
     {
-        Connection conn = threadConnection.get();
-        assert null != conn;
+        Transaction t = threadConnection.get();
+        assert null != t;
+        Connection conn = t.getConnection();
         conn.commit();
         conn.setAutoCommit(true);
         conn.close();
@@ -190,8 +192,9 @@ public class DbScope
 
     public void rollbackTransaction()
     {
-        Connection conn = threadConnection.get();
-        assert null != conn;
+        Transaction t = threadConnection.get();
+        assert null != t;
+        Connection conn = t.getConnection();
         try
         {
             conn.rollback();
@@ -223,8 +226,15 @@ public class DbScope
 
     public boolean isTransactionActive()
     {
-        return threadConnection.get() != null;
+        return getCurrentTransaction() != null;
     }
+
+
+    public Transaction getCurrentTransaction()
+    {
+        return threadConnection.get();
+    }
+
 
     public Connection getConnection() throws SQLException
     {
@@ -233,10 +243,12 @@ public class DbScope
 
     public Connection getConnection(Logger log) throws SQLException
     {
-        Connection conn = threadConnection.get();
-        if (null == conn)
-            conn = _getConnection(log);
-        return conn;
+        Transaction t = threadConnection.get();
+
+        if (null == t)
+            return _getConnection(log);
+        else
+            return t.getConnection();
     }
 
 
@@ -343,19 +355,22 @@ public class DbScope
 
     public void releaseConnection(Connection conn) throws SQLException
     {
-        Connection threadConn = threadConnection.get();
-        assert null == threadConn || conn == threadConn; //Should release same conn we handed out
+        Transaction t = getCurrentTransaction();
 
-        if (null == threadConn)
+        if (null != t)
+            assert t.getConnection() == conn; //Should release same conn we handed out
+        else
             conn.close();
     }
 
 
     public void closeConnection()
     {
-        Connection conn = threadConnection.get();
-        if (conn != null)
+        Transaction t = threadConnection.get();
+        if (null != t)
         {
+            Connection conn = t.getConnection();
+
             try
             {
                 conn.close();
@@ -364,6 +379,7 @@ public class DbScope
             {
                 _log.error("Failed to close connection", e);
             }
+
             threadConnection.remove();
             _transactedRemovals.remove();
         }

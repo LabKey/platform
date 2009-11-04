@@ -20,6 +20,11 @@
 
  /**
  * @namespace  Filter static class to describe and create filters.
+  *            <p>Additional Documentation:
+  *              <ul>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
+  *              </ul>
+  *           </p>
  * @property {Object} Types Types static class to describe different types of filters.
  * @property {LABKEY.Filter.FilterDefinition} Types.EQUAL Finds rows where the column value matches the given filter value. Case-sensitivity depends upon how your underlying relational database was configured.
  * @property {LABKEY.Filter.FilterDefinition} Types.DATE_EQUAL Finds rows where the date portion of a datetime column matches the filter value (ignoring the time portion).
@@ -61,7 +66,7 @@ LABKEY.Filter = new function()
         };
     }
 
-    return /** @scope LABKEY.Filter.prototype */{
+    return /** @scope LABKEY.Filter */{
 
 		Types : {
 
@@ -136,9 +141,20 @@ LABKEY.Filter = new function()
 
 /**
 * @name LABKEY.Filter.FilterDefinition
-* @description static class to define the functions that describe how a particular
+* @description Static class that defines the functions that describe how a particular
 *            type of filter is identified and operates.  See {@link LABKEY.Filter}.
-* @class
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
+ *              </ul>
+ *           </p>
+* @class  Static class that defines the functions that describe how a particular
+*            type of filter is identified and operates.  See {@link LABKEY.Filter}.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
+ *              </ul>
+ *           </p>
 */
 
 /**#@+
@@ -146,19 +162,19 @@ LABKEY.Filter = new function()
 */
 
 /**
-* Get the Boolean that indicates whether a data value is required.
+* Get the string displayed for this filter.
 * @name getDisplayText
 * @type String
 */
 
 /**
-* Get the string displayed for this filter.
+* Get the ULR suffix used to identify this filter.
 * @name getURLSuffix
 * @type String
 */
 
 /**
-* Get the ULR suffix used to identify this filter.
+* Get the Boolean that indicates whether a data value is required.
 * @name isDataValueRequired
 * @type Boolean
 */

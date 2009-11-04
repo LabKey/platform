@@ -79,7 +79,7 @@ public abstract class DisplayElement implements View, Cloneable
         _contextualRoles.add(RoleManager.getRole(role));
     }
 
-    public boolean isVisible(Map ctx)
+    public boolean isVisible(RenderContext ctx)
     {
         return _visible;
     }

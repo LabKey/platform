@@ -244,6 +244,10 @@ public class ColumnRenderProperties
 
     public static String convertToString(Set<String> set)
     {
+        if (set.isEmpty())
+        {
+            return null;
+        }
         StringBuilder sb = new StringBuilder();
         String separator = "";
         for (String alias : set)

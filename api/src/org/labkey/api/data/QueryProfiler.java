@@ -16,21 +16,21 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.collections15.map.ReferenceMap;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletContextEvent;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.lang.management.RuntimeMXBean;
-import java.lang.management.ManagementFactory;
 
 /*
 * User: adam
@@ -46,9 +46,13 @@ public class QueryProfiler
     private static final Object LOCK = new Object();
     private static final Collection<QueryTrackerSet> TRACKER_SETS = new ArrayList<QueryTrackerSet>();
 
-    private static long _totalQueryCount = 0;
-    private static long _totalQueryTime = 0;
-    private static long _uniqueQueryCountEstimate = 0;  // This is a ceiling; true unique count is likely less than this since we're limiting capacity
+    // All access to these guarded by LOCK
+    private static long _totalQueryCount;
+    private static long _totalQueryTime;
+    private static long _uniqueQueryCountEstimate;  // This is a ceiling; true unique count is likely less than this since we're limiting capacity
+    private static int _requestCountAtLastReset;
+    private static long _upTimeAtLastReset;
+    private static boolean _hasBeenReset = false;
 
     static
     {
@@ -119,6 +123,7 @@ public class QueryProfiler
             }
         }));
 
+        initializeCounters();
         THREAD.start();
     }
 
@@ -132,7 +137,37 @@ public class QueryProfiler
         QUEUE.offer(new Query(sql, elapsed));
     }
 
-    public static HttpView getReportView(String statName, ActionURLFactory factory)
+    public static void resetAllStatistics()
+    {
+        synchronized (LOCK)
+        {
+            for (QueryTrackerSet set : TRACKER_SETS)
+                set.clear();
+
+            QUERIES.clear();
+
+            initializeCounters();
+
+            _hasBeenReset = true;
+        }
+    }
+
+    private static void initializeCounters()
+    {
+        synchronized (LOCK)
+        {
+            _totalQueryCount = 0;
+            _totalQueryTime = 0;
+            _uniqueQueryCountEstimate = 0;
+            _requestCountAtLastReset = ViewServlet.getRequestCount();
+
+            RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+            if (runtimeBean != null)
+                _upTimeAtLastReset = runtimeBean.getUptime();
+        }
+    }
+
+    public static HttpView getReportView(String statName, ActionURL resetURL, ActionURLFactory factory)
     {
         for (QueryTrackerSet set : TRACKER_SETS)
         {
@@ -147,20 +182,22 @@ public class QueryProfiler
                 // Don't update anything while we're rendering the report or vice versa
                 synchronized (LOCK)
                 {
-                    int requests = ViewServlet.getRequestCount();
+                    int requests = ViewServlet.getRequestCount() - _requestCountAtLastReset;
                     sb.append("  <tr>");
+                    sb.append("<td>").append(PageFlowUtil.generateButton("Reset All Statistics", resetURL)).append("</td>");
+                    sb.append("</tr>\n  <tr>");
                     sb.append("<td>Total Query Invocation Count:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryCount)).append("</td>");
                     sb.append("<td width=10>&nbsp;</td>");
-                    sb.append("<td>Server Requests:</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td>");
+                    sb.append("<td>").append(_hasBeenReset ? "Requests Since Last Reset" : "Server Requests").append(":</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td>");
                     sb.append("</tr>\n  <tr>");
                     sb.append("<td>Total Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryTime)).append("</td>");
                     sb.append("<td width=10>&nbsp;</td>");
                     RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
                     if (runtimeBean != null)
                     {
-                        long upTime = runtimeBean.getUptime(); // round to sec
+                        long upTime = runtimeBean.getUptime() - _upTimeAtLastReset;
                         upTime = upTime - (upTime % 1000);
-                        sb.append("<td>Server Uptime:</td><td align=\"right\">").append(DateUtil.formatDuration(upTime)).append("</td>");
+                        sb.append("<td>").append(_hasBeenReset ? "Elapsed Time Since Last Reset" : "Server Uptime").append(":</td><td align=\"right\">").append(DateUtil.formatDuration(upTime)).append("</td>");
                     }
                     sb.append("</tr>\n  <tr>");
                     sb.append("<td>Total Unique Queries");
@@ -353,33 +390,26 @@ public class QueryProfiler
                 {
                     Query query = QUEUE.take();
 
+                    // Don't update or add while we're rendering the report or vice versa
                     synchronized (LOCK)
                     {
                         _totalQueryCount++;
                         _totalQueryTime += query.getElapsed();
-                    }
 
-                    QueryTracker tracker = QUERIES.get(query.getSql());
+                        QueryTracker tracker = QUERIES.get(query.getSql());
 
-                    if (null == tracker)
-                    {
-                        tracker = new QueryTracker(query.getSql(), query.getElapsed());
-
-                        // Don't update or add while we're rendering the report or vice versa
-                        synchronized (LOCK)
+                        if (null == tracker)
                         {
+                            tracker = new QueryTracker(query.getSql(), query.getElapsed());
+
                             _uniqueQueryCountEstimate++;
 
                             for (QueryTrackerSet set : TRACKER_SETS)
                                 set.add(tracker);
-                        }
 
-                        QUERIES.put(query.getSql(), tracker);
-                    }
-                    else
-                    {
-                        // Don't update while we're rendering the report or vice versa
-                        synchronized (LOCK)
+                            QUERIES.put(query.getSql(), tracker);
+                        }
+                        else
                         {
                             for (QueryTrackerSet set : TRACKER_SETS)
                                 set.beforeUpdate(tracker);

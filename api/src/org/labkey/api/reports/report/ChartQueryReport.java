@@ -103,7 +103,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         return null;
     }
 
-    public ResultSet generateResultSet(ViewContext context) throws Exception
+    public Results generateResults(ViewContext context) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
         ReportQueryView view = createQueryView(context, descriptor);
@@ -112,8 +112,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
             RenderContext ctx = dataView.getRenderContext();
-
-            return rgn.getResultSet(ctx);
+            return null == ctx.getResultSet() ? null : new Results(ctx);
         }
         return null;
     }

@@ -22,11 +22,11 @@ Ext.namespace("LABKEY","LABKEY.ext");
 
 /**
  * Constructs a new LabKey FormPanel using the supplied configuration.
- * @class LabKey extension to the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>,
- * which understands various labkey metadata formats and can simplify generating basic forms.
+ * @class LabKey extension to the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>.
+ * This class understands various LabKey metadata formats and can simplify generating basic forms.
  * When a LABKEY.ext.FormPanel is created with additional metadata, it will try to intelligently construct fields
  * of the appropriate type.
- * *
+ * 
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  * @constructor
@@ -34,14 +34,14 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * @param config Configuration properties. This may contain any of the configuration properties supported
  * by the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>,
  * plus those listed here.
- * @param {object} [config.metaData] as returned by Query.selectRows
- * @param {object} [config.columnModel] as returned by Query.selectRows
- * @param {object} [config.selectRowsResults] as returned by Query.selectRows
- * @param {boolean} [config.addAllFields] default=false.  If true, automatically create all fields specified in the metaData.
- * @param {object} [config.values] initial values to populate the form
- * @param {object} [config.errorEl] if specified form errors will be written to this element, otherwise a MsgBox will be used.
- * Also items may specify a ToolTip config in the helpPopup property to display a LabKey style ? help tip
- * selectRowsResults includes both a columnModel and the metaData so you don't need to specify all three.
+ * Also, items may specify a ToolTip config in the helpPopup property to display a LabKey-style "?" help tip.
+ * Note that the selectRowsResults object (see {@link LABKEY.Query.SelectRowsResults}) includes both columnModel and metaData, so you don't need to specify all three.
+ * @param {object} [config.metaData] as returned by {@link LABKEY.Query.selectRows}. See {@link LABKEY.Query.SelectRowsResults}.
+ * @param {object} [config.columnModel] as returned by {@link LABKEY.Query.selectRows}. See {@link LABKEY.Query.SelectRowsResults}.
+ * @param {LABKEY.Query.SelectRowsResults} [config.selectRowsResults] as returned by {@link LABKEY.Query.selectRows}.
+ * @param {boolean} [config.addAllFields='false'] If true, all fields specified in the metaData are automatically created.
+ * @param {object} [config.values] Provides initial values to populate the form.
+ * @param {object} [config.errorEl] If specified, form errors will be written to this element; otherwise, a MsgBox will be used.
  *
  * @example
 &lt;script type="text/javascript"&gt;
@@ -179,7 +179,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             if (!metaData)
                 metaData = config.selectRowsResults.metaData;
             if (config.selectRowsResults.rowCount)
-                this.values = config.selectRowsResults.rows[0];
+                config.values = config.selectRowsResults.rows[0];
         }
         var fields = metaData ? metaData.fields : null;
 
@@ -307,7 +307,10 @@ LABKEY.ext.FormHelper =
                 xtype: 'combo',
                 store: store,
                 allowBlank: !config.required,
+                forceSelection:true,
                 typeAhead: false,
+                hiddenName: config.name,
+                hiddenId : (new Ext.Component()).getId(),
                 triggerAction: 'all',
                 displayField: l.displayColumn,
                 valueField: l.keyColumn,
@@ -385,7 +388,6 @@ LABKEY.ext.FormHelper =
         var store = this.lookupStores[uniqueName];
         if (!store)
         {
-            //create the lookup store and kick off a load
             var config = {
                 schemaName: c.lookup.schema,
                 queryName: c.lookup.table,
@@ -439,7 +441,40 @@ LABKEY.ext.DateField = Ext.extend(Ext.form.DateField,
 });
 
 
+LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox,
+{                                
+    constructor : function(c)
+    {
+        LABKEY.ext.ComboBox.superclass.constructor.call(this, c);
+        if (this.mode == 'remote' && this.store && this.value && this.displayField && this.valueField && this.displayField != this.valueField)
+        {
+            this.initialValue = this.value;
+            if (this.store.getCount())
+                this.initialLoad();
+            else
+            {
+                this.store.on('load', this.initialLoad, this);
+                if (!this.store.proxy.activeRequest)
+                    this.store.load();
+            }
+        }
+    },
+
+    initialLoad : function()
+    {
+        this.store.un('load', this.initialLoad, this);
+        if (this.value === this.initialValue)
+        {
+            var v = this.value;
+            this.setValue(v);
+        }
+    }
+});
+
+
+
 Ext.reg('checkbox', LABKEY.ext.Checkbox);
+Ext.reg('combo', LABKEY.ext.ComboBox);
 Ext.reg('datefield',  LABKEY.ext.DateField);
 Ext.reg('labkey-form', LABKEY.ext.FormPanel);
 

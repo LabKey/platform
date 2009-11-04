@@ -67,6 +67,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     }
 
     private DesignerForm _form;
+    private ExpProtocol _protocol;
 
     public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
     {
@@ -75,6 +76,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         Map<String, String> properties = new HashMap<String, String>();
         if (rowId != null)
         {
+            _protocol = form.getProtocol(!form.isCopy());
             properties.put("protocolId", "" + rowId);
             properties.put("copy", Boolean.toString(form.isCopy()));
         }
@@ -98,10 +100,9 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     public NavTree appendNavTrail(NavTree root)
     {
         NavTree result = super.appendNavTrail(root);
-        if (!_form.isCopy() && _form.getRowId() != null)
+        if (!_form.isCopy() && _protocol != null)
         {
-            ExpProtocol protocol = _form.getProtocol(!_form.isCopy());
-            result.addChild(protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol));
+            result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         }
         result.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
         return result;
@@ -109,6 +110,6 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 
     public AppBar getAppBar()
     {
-        return getAppBar(_form.getProtocol());
+        return getAppBar(_form.isCopy() ? null : _protocol);
     }
 }

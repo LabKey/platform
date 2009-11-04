@@ -38,7 +38,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
     private String _titleColumn;
-    private int _cacheSize = DbCache.CACHE_SIZE;
+    private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
 
     protected final Map<String, ColumnInfo> _columnMap;
     private Map<String, MethodInfo> _methodMap;

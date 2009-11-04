@@ -118,22 +118,30 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
 
     public T selectObject() throws SQLException
     {
-        T ret = getFromCache();
-        if (ret != null)
-            return ret;
-        ret = Table.selectObject(_table, Table.ALL_COLUMNS, _filter, null, _clazz);
+        Object o = DbCache.get(_table, toString());
+        if (o != null)
+            return notFoundValue==o ? null : (T)o;
+        T ret = Table.selectObject(_table, Table.ALL_COLUMNS, _filter, null, _clazz);
         putInCache(ret);
         return ret;
     }
     
+    private static Object notFoundValue = new Object(){@Override public String toString()
+    {
+        return "~~NOT FOUND VALUE~~";
+    }};
+
     public T getFromCache()
     {
-        return (T) DbCache.get(_table, toString());
+        Object o = DbCache.get(_table, toString());
+        if (o == notFoundValue)
+            return null;
+        return (T)o;
     }
 
     public void putInCache(T value)
     {
-        DbCache.put(_table, toString(), value);
+        DbCache.put(_table, toString(), null==value ? notFoundValue : value);
     }
 
     public T[] getArrayFromCache()

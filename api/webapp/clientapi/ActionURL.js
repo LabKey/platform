@@ -21,6 +21,11 @@
 /**
  * @namespace ActionURL static class to supply the current context path, container and action.
  *            Additionally, builds a URL from a controller and an action.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=url">LabKey URLs</a></li>
+ *              </ul>
+ *           </p>
  */
 LABKEY.ActionURL = new function()
 {
@@ -55,7 +60,7 @@ LABKEY.ActionURL = new function()
         return parameters;
     }
 
-    /** @scope LABKEY.ActionURL.prototype */
+    /** @scope LABKEY.ActionURL */
     return {
         // public functions
 
@@ -94,9 +99,22 @@ LABKEY.ActionURL = new function()
         },
 
         /**
-        * Gets a URL parameteter by name. Note that if the given parameter name is present more than once
+         * Get the current controller name
+         * @return {String} Current controller.
+         */
+        getController : function()
+        {
+            var path = window.location.pathname;
+            var start = LABKEY.contextPath.length + 1;
+            var end = path.indexOf("/", start);
+            return path.substring(start, end);
+        },
+
+        /**
+        * Gets a URL parameter by name. Note that if the given parameter name is present more than once
         * in the query string, the returned value will be the first occurance of that parameter name. To get all
         * instances of the parameter, use getParameterArray().
+        * @param {String} parameterName The name of the URL parameter.
         * @return {String} The value of the named parameter, or undefined of the parameter is not present.
         */
         getParameter : function(parameterName)
@@ -109,7 +127,7 @@ LABKEY.ActionURL = new function()
          * Gets a URL parameter by name. This method will always return an array of values, one for
          * each instance of the parameter name in the query string. If the parameter name appears only once
          * this method will return a one-element array.
-         * @param parameterName
+         * @param {String} parameterName The name of the URL parameter.
          */
         getParameterArray : function(parameterName)
         {
@@ -136,21 +154,42 @@ LABKEY.ActionURL = new function()
 		* @param {String} action The action to use in building the URL
 		* @param {String} [containerPath] The container path to use (defaults to the current container)
 		* @param {Object} [parameters] An object with properties corresponding to GET parameters to append to the URL.
-		* Parameters will be encoded automatically. (Defaults to no parameters)
+		* Parameters will be encoded automatically. Parameter values that are arrays will be appended as multiple parameters
+         * with the same name. (Defaults to no parameters)
 		* @example Examples:
 
 1. Build the URL for the 'plotChartAPI' action in the 'reports' controller within 
 the current container:
+
 	var url = LABKEY.ActionURL.buildURL("reports", "plotChartApi");
 
 2.  Build the URL for the 'getWebPart' action in the 'reports' controller within 
 the current container:
+
 	var url = LABKEY.ActionURL.buildURL("project", "getWebPart");
 
 3.  Build the URL for the 'updateRows' action in the 'query' controller within
 the container "My Project/My Folder":
+
 	var url = LABKEY.ActionURL.buildURL("query", "updateRows",
-	                         "My Project/My Folder");
+	    "My Project/My Folder");
+
+4.  Navigate the browser to the study controller's begin action in the current
+container:
+
+    window.location = LABKEY.ActionURL.buildURL("study", "begin");
+
+5.  Navigate the browser to the study controller's begin action in the folder
+"/myproject/mystudyfolder":
+         
+    window.location = LABKEY.ActionURL.buildURL("study", "begin",
+        "/myproject/mystudyfolder");
+
+6.  Navigate to the list controller's insert action, passing a returnUrl parameter
+that points back to the current page:
+         
+    window.location = LABKEY.ActionURL.buildURL("list", "insert",
+         LABKEY.ActionURL.getContainer(), {listId: 50, returnUrl: window.location});
 		* @return {String} URL constructed from the current container and context path,
 					plus the specified controller and action.
 		*/
@@ -172,7 +211,18 @@ the container "My Project/My Folder":
             {
                 newUrl += '?';
                 for (var parameter in parameters)
-                    newUrl += encodeURIComponent(parameter) + '=' + encodeURIComponent(parameters[parameter]) + '&';
+                {
+                    var pval = parameters[parameter];
+                    if (Ext.isArray(pval))
+                    {
+                        for (var idx = 0; idx < pval.length; ++idx)
+                        {
+                            newUrl += encodeURIComponent(parameter) + '=' + encodeURIComponent(pval[idx]) + '&';
+                        }
+                    }
+                    else
+                        newUrl += encodeURIComponent(parameter) + '=' + encodeURIComponent(pval) + '&';
+                }
                 newUrl = newUrl.substring(0, newUrl.length - 1);
             }
             return newUrl;

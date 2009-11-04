@@ -20,7 +20,21 @@
 
 /**
  * @description Constructs a LABKEY.QueryWebPart class instance
- * @class The LABKEY.QueryWebPart simplifies the task of dynamically adding a query web part to your page.
+ * @class The LABKEY.QueryWebPart simplifies the task of dynamically adding a query web part to your page.  Please use
+ * this class for adding query web parts to a page instead of {@link LABKEY.WebPart},
+ * which can be used for other types of web parts.
+ *              <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig">
+ *  				        Web Part Configuration Properties</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                      How To Find schemaName, queryName &amp; viewName</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+ *                      LabKey SQL Reference</a></li>
+ *              </ul>
+ *           </p>
  * @constructor
  * @param {Object} config A configuration object with the following possible properties:
  * @param {String} config.schemaName The name of the schema the web part will query
@@ -47,9 +61,9 @@
  * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
  * @param {String} [config.sort] A base sort order to use. This may be a comma-separated list of column names, each of
  * which may have a - prefix to indicate a descending sort.
- * @param {Array} [config.filters] A base set of filters to apply. This should be an array of LABKEY.Filter objects
- * each of which is created using the LABKEY.Filter.create() method.
- * For compatibility with the LABKEY.Query object, you may also specify base filters using config.filterArray.
+ * @param {Array} [config.filters] A base set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
+ * each of which is created using the {@link LABKEY.Filter.create} method.
+ * For compatibility with the {@link LABKEY.Query} object, you may also specify base filters using config.filterArray.
  * @param {Array} [config.aggregates] A array of aggregate definitions. The objects in this array should have two
  * properties: 'column' and 'type'. The column property is the column name, and the type property may be one of the
  * the {@link LABKEY.AggregateTypes} values.

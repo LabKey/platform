@@ -43,7 +43,7 @@ public abstract class ChartReport extends AbstractReport implements Report.Resul
         return null;
     }
 
-    public ResultSet generateResultSet(ViewContext context) throws Exception
+    public Results generateResults(ViewContext context) throws Exception
     {
         return null;
     }

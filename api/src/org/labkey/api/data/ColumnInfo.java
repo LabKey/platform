@@ -734,7 +734,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         {
             String url = xmlCol.getUrl();
             if (!StringUtils.isEmpty(url))
-                setURL(StringExpressionFactory.createURL(url));
+                setURL(StringExpressionFactory.createURLSilent(url));
         }
         if (xmlCol.isSetIsAutoInc())
             isAutoIncrement = xmlCol.getIsAutoInc();
@@ -962,6 +962,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
         {
             TableInfo lookupTable = getLookupTableInfo();
+            if (null == lookupTable)
+            {
+                return null;
+            }
             ColumnInfo lookupColumn = lookupTable.getColumn(displayField == null ? lookupTable.getTitleColumn() : displayField);
             if (lookupColumn == null)
             {
