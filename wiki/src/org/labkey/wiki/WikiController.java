@@ -641,6 +641,9 @@ public class WikiController extends SpringActionController
         {
             Container c = getViewContext().getContainer();
 
+            if (null == form.getName() || form.getName().trim().length() == 0)
+                throw new NotFoundException("You must supply a page name!");
+
             Wiki rootWiki = WikiManager.getWiki(c, form.getName());
             if(null == rootWiki)
                 throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found.");
