@@ -286,7 +286,6 @@ public class CoreQuerySchema extends UserSchema
 
         ColumnInfo userIdCol = users.addWrapColumn(usersBase.getColumn("UserId"));
         userIdCol.setKeyField(true);
-        userIdCol.setHidden(true);
         userIdCol.setReadOnly(true);
 
         ColumnInfo entityIdCol = users.addWrapColumn(usersBase.getColumn("EntityId"));
