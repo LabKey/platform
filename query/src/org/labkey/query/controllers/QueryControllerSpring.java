@@ -1929,7 +1929,7 @@ public class QueryControllerSpring extends SpringActionController
             checkTablePermission(user, table);
             QueryUpdateService qus = table.getUpdateService();
             if (null == qus)
-                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' is not updateable via the HTTP-based APIs.");
+                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' is not updatable via the HTTP-based APIs.");
 
             //we will transact operations by default, but the user may
             //override this by sending a "transacted" property set to false
