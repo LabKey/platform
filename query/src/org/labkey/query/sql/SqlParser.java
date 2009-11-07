@@ -316,14 +316,24 @@ public class SqlParser
                     exprList._replaceChildren(args);
                     validateTimestampConstant(args.get(0));
                 }
-                else if (name.equals("locate"))
+
+                try
                 {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
+                    Method m = Method.valueOf(name);
+                    int count = exprList.childList().size();
+                    if (count < m._minArgs || count > m._maxArgs)
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getColumn()));
-                        break;
+                        if (m._minArgs == m._maxArgs)
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " argument" + (m._minArgs==1?"":"s"), null, node.getLine(), node.getColumn()));
+                        else
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects " + m._minArgs + " to " + m._maxArgs + " arguments", null, node.getLine(), node.getColumn()));
                     }
                 }
+                catch (Exception x)
+                {
+
+                }
+                
 				break;
 
 			default:

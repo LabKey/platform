@@ -25,24 +25,24 @@ import java.sql.Types;
 
 public enum Method
 {
-    abs(Types.DOUBLE),
-    acos(Types.DOUBLE),
-    atan(Types.DOUBLE),
-    atan2(Types.DOUBLE),
-    ceiling(Types.DOUBLE),
-    cos(Types.DOUBLE),
-    cot(Types.DOUBLE),
-    degrees(Types.DOUBLE),
-    exp(Types.DOUBLE),
-    floor(Types.DOUBLE),
-    log(Types.DOUBLE),
-    log10(Types.DOUBLE),
-    mod(Types.DOUBLE),
-    pi(Types.DOUBLE),
-    power(Types.DOUBLE),
-    radians(Types.DOUBLE),
-    rand(Types.DOUBLE),
-    round(Types.DOUBLE)
+    abs(Types.DOUBLE, 1, 1),
+    acos(Types.DOUBLE, 1, 1),
+    atan(Types.DOUBLE, 1, 1),
+    atan2(Types.DOUBLE, 2, 2),
+    ceiling(Types.DOUBLE, 1, 1),
+    cos(Types.DOUBLE, 1, 1),
+    cot(Types.DOUBLE, 1, 1),
+    degrees(Types.DOUBLE, 1, 1),
+    exp(Types.DOUBLE, 1, 1),
+    floor(Types.DOUBLE, 1, 1),
+    log(Types.DOUBLE, 1, 1),
+    log10(Types.DOUBLE, 1, 1),
+    mod(Types.DOUBLE, 2, 2),
+    pi(Types.DOUBLE, 0, 0),
+    power(Types.DOUBLE, 2, 2),
+    radians(Types.DOUBLE, 1, 1),
+    rand(Types.DOUBLE, 0, 1),
+    round(Types.DOUBLE, 1, 2)
 			{
 				@Override
 				public MethodInfo getMethodInfo()
@@ -50,15 +50,16 @@ public enum Method
 					return new RoundInfo();
 				}
 			},
-    sign(Types.DOUBLE),
-    sin(Types.DOUBLE),
-    sqrt(Types.DOUBLE),
-    tan(Types.DOUBLE),
+    sign(Types.DOUBLE, 1, 1),
+    sin(Types.DOUBLE, 1, 1),
+    sqrt(Types.DOUBLE, 1, 1),
+    tan(Types.DOUBLE, 1, 1),
+    truncate(Types.DOUBLE, 2, 2),
 
-    truncate(Types.DOUBLE),
-    lcase(Types.VARCHAR),
+
+    lcase(Types.VARCHAR, 1, 1),
     // left(Types.VARCHAR), // disabled for now since "left" is a reserved word, so identifier must be quoted.
-    locate(Types.INTEGER)
+    locate(Types.INTEGER, 2, 3)
             {
                 public MethodInfo getMethodInfo()
                 {
@@ -66,59 +67,65 @@ public enum Method
                     {
                         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
                         {
+                            assert arguments.length == 2 || arguments.length == 3;
                             if (arguments.length == 2)
-                            {
                                 return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1]);
-                            }
-                            else if (arguments.length == 3)
-                            {
+                            else
                                 return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1], arguments[2]);
-                            }
-                            return new SQLFragment("'Method \"locate\" requires 2 or 3 arguments, found " + arguments.length + "'");
                         }
                     };
                 }
             },
-    ltrim(Types.VARCHAR),
-    repeat(Types.VARCHAR),
-    rtrim(Types.VARCHAR),
-    substring(Types.VARCHAR),
-    ucase(Types.VARCHAR),
-    length(Types.INTEGER),
+    ltrim(Types.VARCHAR, 1, 1),
+    repeat(Types.VARCHAR, 2, 2),
+    rtrim(Types.VARCHAR, 1, 1),
+    substring(Types.VARCHAR, 2, 3),
+    ucase(Types.VARCHAR, 1, 1),
+    length(Types.INTEGER, 1, 1),
 
-    curdate(Types.DATE),
-    curtime(Types.DATE),
-    dayofmonth(Types.INTEGER),
-    dayofweek(Types.INTEGER),
-    dayofyear(Types.INTEGER),
-    hour(Types.INTEGER),
-    minute(Types.INTEGER),
-    month(Types.INTEGER),
-    monthname(Types.VARCHAR),
-    now(Types.TIMESTAMP),
-    quarter(Types.INTEGER),
-    second(Types.INTEGER),
-    week(Types.INTEGER),
-    year(Types.INTEGER),
-	timestampadd(Types.INTEGER)
+
+    curdate(Types.DATE, 0, 0),
+    curtime(Types.DATE, 0, 0),
+    dayofmonth(Types.INTEGER, 1, 1),
+    dayofweek(Types.INTEGER, 1, 1),
+    dayofyear(Types.INTEGER, 1, 1),
+    hour(Types.INTEGER, 1, 1),
+    minute(Types.INTEGER, 1, 1),
+    month(Types.INTEGER, 1, 1),
+    monthname(Types.VARCHAR, 1, 1),
+    now(Types.TIMESTAMP, 0, 0),
+    quarter(Types.INTEGER, 1, 1),
+    second(Types.INTEGER, 1, 1),
+    week(Types.INTEGER, 1, 1),
+    year(Types.INTEGER, 1, 1),
+	timestampadd(Types.INTEGER, 3, 3)
 			{
 				@Override
 				public MethodInfo getMethodInfo()
 				{
-					return new TimestampInfo();
+					return new TimestampInfo(this);
 				}
 			},
-    timestampdiff(Types.INTEGER)
+    timestampdiff(Types.INTEGER, 3, 3)
             {
                 @Override
                 public MethodInfo getMethodInfo()
                 {
-                    return new TimestampInfo();
+                    return new TimestampInfo(this);
+                }
+            },
+    age_in_years(Types.INTEGER, 2, 2)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new AgeInYearsMethodInfo();
                 }
             },
 
-    ifnull(Types.OTHER),
-    convert(Types.OTHER)
+
+    ifnull(Types.OTHER, 2, 2),
+    convert(Types.OTHER, 2, 2)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -126,7 +133,7 @@ public enum Method
                     return new ConvertInfo();
                 }
             },
-    coalesce(Types.OTHER)
+    coalesce(Types.OTHER, 0, Integer.MAX_VALUE)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -139,16 +146,20 @@ public enum Method
 
     int _sqlType;
     String _fnEscapeName;
+    int _minArgs = 0;
+    int _maxArgs = Integer.MAX_VALUE;
     
-    Method(int sqlType, String fnEscapeName)
+    Method(int sqlType, String fnEscapeName, int min, int max)
     {
         _sqlType = sqlType;
         _fnEscapeName = fnEscapeName;
+        _minArgs = min;
+        _maxArgs = max;
     }
 
-    Method(int sqlType)
+    Method(int sqlType, int min, int max)
     {
-        this(sqlType, null);
+        this(sqlType, null, min , max);
         _fnEscapeName = this.name();
     }
 
@@ -185,7 +196,7 @@ public enum Method
 
     class TimestampInfo extends MethodInfoImpl
     {
-        public TimestampInfo()
+        public TimestampInfo(Method method)
         {
             super(Types.INTEGER);
         }
@@ -377,6 +388,41 @@ public enum Method
 		}
 	}
 
+    class AgeInYearsMethodInfo extends MethodInfoImpl
+    {
+        AgeInYearsMethodInfo()
+        {
+            super(Types.INTEGER);
+        }
+
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            MethodInfo year = Method.year.getMethodInfo();
+            MethodInfo month = Method.month.getMethodInfo();
+            MethodInfo dayofmonth = Method.dayofmonth.getMethodInfo();
+
+            SQLFragment ret = new SQLFragment();
+            SQLFragment yearA = year.getSQL(schema, new SQLFragment[] {arguments[0]});
+            SQLFragment monthA = month.getSQL(schema, new SQLFragment[] {arguments[0]});
+            SQLFragment dayA = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[0]});
+            SQLFragment yearB = year.getSQL(schema, new SQLFragment[] {arguments[1]});
+            SQLFragment monthB = month.getSQL(schema, new SQLFragment[] {arguments[1]});
+            SQLFragment dayB = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[1]});
+
+            ret.append("CASE WHEN (")
+                    .append(monthA).append(">").append(monthB).append(" OR ")
+                    .append(monthA).append("=").append(monthB).append(" AND ")
+                    .append(dayA).append(">").append(dayB)
+                    .append(") THEN (")
+                    .append(yearB).append("-").append(yearA).append("-1")
+                    .append(") ELSE (")
+                    .append(yearB).append("-").append(yearA)
+                    .append(") END");
+            return ret;
+        }
+    }
+    
 
     enum ConvertType
     {
