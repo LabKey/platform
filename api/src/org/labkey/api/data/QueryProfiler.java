@@ -215,11 +215,12 @@ public class QueryProfiler
                     sb.append("  <tr><td>").append("Unique queries with the ").append(set.getDescription()).append(" (top ").append(Formats.commaf0.format(set.size())).append("):</td></tr>\n");
                     sb.append("</table><br>\n");
 
+                    int row=0;
                     for (QueryTracker tracker : set)
-                        tracker.insertRow(rows);
+                        tracker.insertRow(rows, (0==(++row)%2)?"labkey-alternate-row":"labkey-row");
                 }
 
-                sb.append("<table>\n");
+                sb.append("<table cellspacing=0 cellpadding=3>\n");
                 QueryTracker.appendRowHeader(sb, set, factory);
                 sb.append(rows);
                 sb.append("</table>\n");
@@ -356,16 +357,16 @@ public class QueryProfiler
             sb.append("</b></a></td>");
         }
 
-        private void insertRow(StringBuilder sb)
+        private void insertRow(StringBuilder sb, String className)
         {
             StringBuilder row = new StringBuilder();
-            row.append("  <tr>");
+            row.append("  <tr class=\"").append(className).append("\">");
 
             for (QueryTrackerSet set : TRACKER_SETS)
                 if (set.shouldDisplay())
-                    row.append("<td>").append(Formats.commaf0.format(((QueryTrackerComparator)set.comparator()).getPrimaryStatisticValue(this))).append("</td>");
+                    row.append("<td valign=top align=right>").append(Formats.commaf0.format(((QueryTrackerComparator)set.comparator()).getPrimaryStatisticValue(this))).append("</td>");
 
-            row.append("<td>").append(PageFlowUtil.filter(getSql())).append("</td>");
+            row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSql(),true)).append("</td>");
             row.append("</tr>\n");
             sb.insert(0, row);
         }
