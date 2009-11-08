@@ -115,6 +115,14 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return child;
     }
 
+    public NavTree addChild(int pos, NavTree child)
+    {
+        if (null == children)
+            children = new ArrayList<NavTree>();
+        children.add(pos, child);
+        return child;
+    }
+
     public NavTree addChild(HString display)
     {
         return addChild(display.getSource());

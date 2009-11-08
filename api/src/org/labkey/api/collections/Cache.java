@@ -90,6 +90,13 @@ public class Cache
         _cache.removeUsingPrefix(name);
     }
 
+
+    public synchronized void clear()
+    {
+        _cache.clear();
+    }
+
+
     private void _logDebug(String msg)
     {
 //        _log.debug(msg);

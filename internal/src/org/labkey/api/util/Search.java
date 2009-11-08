@@ -339,7 +339,7 @@ public class Search
                 //determine the set of containers to search
                 //if includeSubfolders is true, get all children in which the user has read permission
                 Set<Container> containers = _includeSubfolders ?
-                        ContainerManager.getAllChildren(_root, getViewContext().getUser(), ACL.PERM_READ) :
+                        ContainerManager.getAllChildren(_root, getViewContext().getUser()) :
                         Collections.singleton(_root);
 
                 //parse the search terms

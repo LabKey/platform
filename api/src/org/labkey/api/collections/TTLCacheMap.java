@@ -96,7 +96,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     public TTLCacheMap(int maxSize, long defaultExpires)
     {
-        super(maxSize);
+        super(Math.min(10000,maxSize));
         this.lru = true;
         this.maxSize = maxSize;
         this.defaultExpires = defaultExpires;

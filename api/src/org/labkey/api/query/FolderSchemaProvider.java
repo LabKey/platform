@@ -98,17 +98,6 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             return new FolderSchema(_user, child, fallback);
         }
 
-        protected Map<String, Container> getChildContainers()
-        {
-            Map<String, Container> ret = new TreeMap();
-            Container[] children = ContainerManager.getAllChildren(_container);
-            for (Container child : children)
-            {
-                ret.put(child.getName(), child);
-            }
-            return ret;
-        }
-
         public boolean canEdit(String name)
         {
             return false;

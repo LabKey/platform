@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.*;
 
@@ -214,7 +215,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, _user, ACL.PERM_READ));
+            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, _user));
             containers.add(currentContainer);
             return toIds(containers);
         }
@@ -324,7 +325,7 @@ public abstract class ContainerFilter
                 // Don't allow anything
                 return Collections.emptySet();
             }
-            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(project, _user, ACL.PERM_READ));
+            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(project, _user));
             containers.add(project);
             return toIds(containers);
         }
@@ -349,7 +350,7 @@ public abstract class ContainerFilter
                 // Don't bother filtering, the user can see everything
                 return null;
             }
-            return ContainerManager.getIds(_user, ACL.PERM_READ);
+            return ContainerManager.getIds(_user, ReadPermission.class);
         }
 
         public Type getType()

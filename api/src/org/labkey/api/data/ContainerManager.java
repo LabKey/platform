@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
@@ -27,9 +26,10 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
@@ -66,14 +66,12 @@ public class ContainerManager
 
     private static final String _containerPrefix = ContainerManager.class.getName() + "/";
     private static final String _containerChildrenPrefix = ContainerManager.class.getName() + "/children/";
+    private static final String _containerAllChildrenPrefix = ContainerManager.class.getName() + "/children/*/";
     private static final String PROJECT_LIST_ID = "Projects";
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
-    //our largest servers currently have around 3,500 containers
-    //we essentially want to cache all containers, so set the limit quite high
-    private static final Cache _cache = new Cache(20000, Cache.DAY, "containers");
-
+    private static final Cache _cache = new Cache(Integer.MAX_VALUE, Cache.DAY, "containers");
 
     // enum of properties you can see in property change events
     public enum Property
@@ -250,6 +248,29 @@ public class ContainerManager
         return c;
     }
 
+    public static Container ensureContainer(Container parent, String name)
+    {
+        if (core.getSchema().getScope().isTransactionActive())
+            throw new IllegalStateException("Transaction should not be active");
+
+        Container c = null;
+
+        try
+        {
+            c = getForPath(makePath(parent,name));
+        }
+        catch (RootContainerException e)
+        {
+            // Ignore this -- root doesn't exist yet
+        }
+
+        if (null == c)
+        {
+                c = createContainer(parent, name);
+        }
+        return c;
+    }
+
 
     private static final String SHARED_CONTAINER_PATH = "/Shared";
 
@@ -267,10 +288,10 @@ public class ContainerManager
 
     private static final String LOSTANDFOUND_CONTAINER_NAME = "_LostAndFound";
 
-    public static Container getLostAndFoundContainer()
+    public static Container getLostAndFoundContainer()                                 
     {
         Container shared = getSharedContainer();
-        return ensureContainer(shared.getPath() + "/" + LOSTANDFOUND_CONTAINER_NAME);
+        return ensureContainer(shared, LOSTANDFOUND_CONTAINER_NAME);
     }
 
 
@@ -286,7 +307,13 @@ public class ContainerManager
     }
 
 
-    public static Set<Container> getAllChildren(Container parent, User u, int perm)
+    public static Set<Container> getAllChildren(Container parent, User u)
+    {
+        return getAllChildren(parent, u, ReadPermission.class);
+    }
+    
+
+    public static Set<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
         Set<Container> result = new HashSet<Container>();
         Container[] containers = getAllChildren(parent);
@@ -300,10 +327,10 @@ public class ContainerManager
 
         return result;
     }
-
+    
 
     // Returns true only if user has the specified permission in the entire container tree starting at root
-    public static boolean hasTreePermission(Container root, User u, int perm)
+    public static boolean hasTreePermission(Container root, User u,  Class<? extends Permission> perm)
     {
         Container[] all = getAllChildren(root);
 
@@ -315,8 +342,25 @@ public class ContainerManager
     }
 
 
+    static String[] emptyStringArray = new String[0];
+
     public static synchronized List<Container> getChildren(Container parent)
     {
+        String[] childIds = (String[])getCache().get(_containerChildrenPrefix + parent.getId());
+        if (null != childIds)
+        {
+            if (childIds == emptyStringArray)
+                return Collections.emptyList();
+            List<Container> ret = new ArrayList<Container>(childIds.length);
+            for (String id : childIds)
+            {
+                Container c = ContainerManager.getForId(id);
+                if (null != c)
+                    ret.add(c);
+            }
+            return ret;
+        }
+        
         List<Container> children = new ArrayList<Container>();
 
         try
@@ -325,11 +369,20 @@ public class ContainerManager
                     "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
                     new Object[]{parent.getId()},
                     Container.class);
-            for (Container c : ret)
+            if (ret.length == 0)
             {
+                getCache().put(_containerChildrenPrefix + parent.getId(),emptyStringArray);
+                return Collections.emptyList();
+            }
+            childIds = new String[ret.length];
+            for (int i=0 ; i<ret.length ; i++)
+            {
+                Container c = ret[i];
+                childIds[i] = c.getId();
                 _addToCache(c);
                 children.add(c);
             }
+            getCache().put(_containerChildrenPrefix + parent.getId(), childIds);
             return children;
         }
         catch (SQLException e)
@@ -337,6 +390,7 @@ public class ContainerManager
             throw new RuntimeSQLException(e);
         }
     }
+
 
     public static Container getForRowId(String idString)
     {
@@ -430,9 +484,8 @@ public class ContainerManager
             }
             else
             {
-                int i = path.lastIndexOf('/');
-                String name = path.substring(i + 1);
-                String parent = (-1 == i) ? "/" : path.substring(0, i);
+                String parent = getParentPath(path);
+                String name = getName(path);
                 Container dirParent = getForPath(parent);
 
                 if (null == dirParent)
@@ -454,6 +507,7 @@ public class ContainerManager
     }
 
 
+    @SuppressWarnings({"serial"})
     public static class RootContainerException extends RuntimeException
     {
         private RootContainerException(String message)
@@ -467,6 +521,7 @@ public class ContainerManager
     {
         return getForPath("/");
     }
+
 
     public static void saveAliasesForContainer(Container container, List<String> aliases) throws SQLException
     {
@@ -581,48 +636,33 @@ public class ContainerManager
         return getForPath(HOME_PROJECT_PATH);
     }
 
+    public static List<Container> getProjects()
+    {
+        return ContainerManager.getChildren(ContainerManager.getRoot());
+    }
 
     private static NavTree getProjectListForAdmin(ViewContext context)
     {
-        ResultSet rs = null;
-        try
+        // CONSIDER: use UserManager.getAdmin() here for user
+        NavTree navTree = (NavTree) NavTreeManager.getFromCache(PROJECT_LIST_ID, context);
+        if (null != navTree)
+            return navTree;
+
+        NavTree list = new NavTree("Projects");
+        List<Container> projects = ContainerManager.getProjects();
+
+        for (Container project : projects)
         {
-            // CONSIDER: use UserManager.getAdmin() here for user
-            NavTree navTree = (NavTree) NavTreeManager.getFromCache(PROJECT_LIST_ID, context);
-            if (null != navTree)
-                return navTree;
+            ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
 
-            String rootId = ContainerManager.getRoot().getId();
-            rs = Table.executeQuery(
-                    core.getSchema(),
-                    "SELECT Name, EntityId FROM " + core.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                    new Object[]{rootId});
-
-            NavTree list = new NavTree("Projects");
-            while (rs.next())
-            {
-                Container project = getForId(rs.getString(2));
-
-                if (project == null || !project.shouldDisplay())
-                    continue;
-
-                ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
-                String name = project.equals(getHomeContainer()) ? "Home" : rs.getString(1);
-
-                list.addChild(name, startURL);
-            }
-            list.setId(PROJECT_LIST_ID);
-            NavTreeManager.cacheTree(list, context.getUser());
-            return list;
+            if (project.equals(getHomeContainer()))
+                list.addChild(0, new NavTree("Home", startURL));
+            else
+                list.addChild(project.getName(), startURL);
         }
-        catch (SQLException x)
-        {
-            return null;
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        list.setId(PROJECT_LIST_ID);
+        NavTreeManager.cacheTree(list, context.getUser());
+        return list;
     }
 
 
@@ -682,7 +722,7 @@ public class ContainerManager
                 if (null == c || !c.shouldDisplay())
                     continue;
                 //ensure that user has permissions on container, and that container is not already in nav tree set
-                if (c.hasPermission(user, ACL.PERM_READ))
+                if (c.hasPermission(user, ReadPermission.class))
                 {
                     containerSet.add(c);
                 }
@@ -705,44 +745,6 @@ public class ContainerManager
         }
     }
 
-    public static NavTree getFolderNavTrail(User user, ViewContext context)
-    {
-        NavTree tree;
-        NavTree root = new NavTree();
-        tree = root;
-        Container container = context.getContainer();
-
-        if (container != null)
-        {
-            ArrayStack stack = new ArrayStack();
-            while (!container.isRoot())
-            {
-                stack.push(new NavTree(container.getName(), container.getStartURL(context)));
-                container = container.getParent();
-            }
-            while (stack.size() > 0)
-            {
-                NavTree child =(NavTree) stack.pop();
-                child.setCanCollapse(false);
-                tree.addChildren(new NavTree[] {child});
-                tree = child;
-            }
-
-            //Now find children of the current container and add them
-            Container c = context.getContainer();
-            List<Container> children = getChildren(c, user, ReadPermission.class);
-            List<NavTree> childNavTrees = new ArrayList<NavTree>();
-            for (Container child : children)
-            {
-                NavTree t = new NavTree(child.getName(), child.getStartURL(context));
-                childNavTrees.add(t);
-            }
-
-            tree.addChildren(childNavTrees);
-        }
-
-        return root;
-    }
 
     public static NavTree getFolderListForUser(Container project, ViewContext viewContext)
     {
@@ -757,10 +759,6 @@ public class ContainerManager
         Container[] folders = ContainerManager.getAllChildren(project);
 
         Arrays.sort(folders);
-
-        ActionURL url = new ActionURL();
-        url.setPageFlow("project");
-        url.setAction("start");
 
         Set<Container> containersInTree = new HashSet<Container>();
 
@@ -781,7 +779,7 @@ public class ContainerManager
             NavTree t = new NavTree(name);
             if (perms.size() > 0)
             {
-                url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
+                ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
                 t.second = (url.getEncodedLocalURIString());
             }
             containersInTree.add(f);
@@ -1016,37 +1014,45 @@ public class ContainerManager
 
     public static void deleteAll(Container root, User user) throws UnauthorizedException
     {
-        if (!hasTreePermission(root, user, ACL.PERM_DELETE))
+        if (!hasTreePermission(root, user, DeletePermission.class))
             throw new UnauthorizedException("You don't have delete permissions to all folders");
 
-        List<Container> depthFirst = new ArrayList<Container>();
-        getAllChildrenDepthFirst(root, depthFirst);
+        LinkedHashSet<Container> depthFirst = getAllChildrenDepthFirst(root);
+        depthFirst.add(root);
 
         for (Container c : depthFirst)
             delete(c, user);
     }
 
 
-    private static void getAllChildrenDepthFirst(Container c, List<Container> list)
+    private static LinkedHashSet<Container> getAllChildrenDepthFirst(Container c)
     {
-        List<Container> children = c.getChildren();
+        LinkedHashSet<Container> set = new LinkedHashSet<Container>();
+        getAllChildrenDepthFirst(c, set);
+        return set;
+    }
 
-        for (Container child : children)
+
+    private static void getAllChildrenDepthFirst(Container c, Collection<Container> list)
+    {
+        for (Container child : c.getChildren())
+        {
             getAllChildrenDepthFirst(child, list);
-
-        list.add(c);
+            list.add(child);
+        }
     }
 
-    private static synchronized Container[] _getChildrenFromCache(Container c)
+    
+    private static synchronized Container[] _getAllChildrenFromCache(Container c)
     {
-        return (Container[]) getCache().get(_containerChildrenPrefix + c.getId());
+        return (Container[]) getCache().get(_containerAllChildrenPrefix + c.getId());
     }
 
-    private static void _addChildrenToCache(Container c, Container[] children)
+    private static void _addAllChildrenToCache(Container c, Container[] children)
     {
         assert Thread.holdsLock(ContainerManager.class) : "Any insertion into the cache must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        getCache().put(_containerChildrenPrefix + c.getId(), children);
+        getCache().put(_containerAllChildrenPrefix + c.getId(), children);
     }
 
 
@@ -1068,27 +1074,43 @@ public class ContainerManager
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
         getCache().put( _containerPrefix + c.getPath().toLowerCase(), c);
         getCache().put(_containerPrefix + c.getId(), c);
+        Container parent = c.getParent();
         return c;
     }
 
 
     private static synchronized void _removeFromCache(Container c)
     {
-        Container p = c.getProject();
-        if (p != null && p != c)
-            getCache().removeUsingPrefix(_containerPrefix + p.getId());
-        getCache().remove( _containerPrefix + c.getPath().toLowerCase());
-        getCache().remove(_containerPrefix + c.getId());
-        getCache().removeUsingPrefix(_containerChildrenPrefix); // Need to clear all, as parent or child may have changed
+        Container project = c.getProject();
+        Container parent = c.getParent();
+
+        Cache cache = getCache();
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (cache)
+        {
+            cache.remove(_containerPrefix + c.getPath().toLowerCase());
+            cache.remove(_containerPrefix + c.getId());
+            cache.remove(_containerChildrenPrefix + c.getId());
+
+            if (null != parent)
+                cache.remove(_containerChildrenPrefix + parent.getId());
+
+            // blow away the all children caches
+            cache.removeUsingPrefix(_containerChildrenPrefix);
+        }
+
+        // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheTree(PROJECT_LIST_ID);
-        if (p != null)
-            NavTreeManager.uncacheTree(p.getId());
+        if (project != null)
+            NavTreeManager.uncacheTree(project.getId());
     }
 
 
     private static synchronized void _clearCache()
     {
-        getCache().removeUsingPrefix(_containerPrefix);
+        getCache().clear();
+
+        // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
     }
 
@@ -1105,56 +1127,21 @@ public class ContainerManager
     }
 
 
+    /** including root node */
     public static synchronized Container[] getAllChildren(Container root)
     {
-        Container[] allChildren = _getChildrenFromCache(root);
+        Container[] allChildren = _getAllChildrenFromCache(root);
         if (allChildren != null)
             return allChildren.clone(); // don't let callers modify the array in the cache
-        ResultSet rs = null;
-        try
-        {
-            // this is simple, but works fine unless this table gets really big
-            rs = Table.executeQuery(core.getSchema(), "SELECT Parent, EntityId FROM " + core.getTableInfoContainers(), null);
-            MultiMap<String, String> mm = new MultiHashMap<String, String>();
-            while (rs.next())
-            {
-                String parent = rs.getString(1);
-                String entityid = rs.getString(2);
-                mm.put(parent, entityid);
-            }
-            List<String> list = new ArrayList<String>();
-            list.add(root.getId());
 
-            for (int i = 0; i < list.size(); i++)
-            {
-                String id = list.get(i);
-                Collection<String> children = mm.get(id);
-                if (null == children) continue;
-                list.addAll(children);
-            }
+        LinkedHashSet<Container> containerList = getAllChildrenDepthFirst(root);
+        containerList.add(root);
 
-            List<Container> containerList = new ArrayList<Container>();
-
-            for (String id : list)
-            {
-                Container c = getForId(id);
-
-                if (null != c)
-                    containerList.add(c);
-            }
-            allChildren = containerList.toArray(new Container[containerList.size()]);
-            _addChildrenToCache(root, allChildren);
-            return allChildren.clone(); // don't let callers modify the array in the cache
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        allChildren = containerList.toArray(new Container[containerList.size()]);
+        _addAllChildrenToCache(root, allChildren);
+        return allChildren.clone(); // don't let callers modify the array in the cache
     }
+
 
     public static long getContainerCount()
     {
@@ -1167,6 +1154,7 @@ public class ContainerManager
             throw new RuntimeSQLException(e);
         }
     }
+
 
     // Retrieve entire container hierarchy
     public static MultiMap<Container, Container> getContainerTree()
@@ -1265,31 +1253,28 @@ public class ContainerManager
         }
     }
 
-    public static MultiMap<Container, Container> prune(MultiMap<Container, Container> mm, Container root)
-    {
-        MultiMap<Container, Container> pruned = new MultiHashMap<Container, Container>();
-        pruned.put(null, root);
-        addChildren(pruned, mm, root);
-        return pruned;
-    }
 
-
-    private static void addChildren(MultiMap<Container, Container> newMap, MultiMap<Container, Container> oldMap, Container root)
+    @Deprecated
+    public static Set<Container> getContainerSet(MultiMap<Container, Container> mm, User user, int perm)
     {
         //noinspection unchecked
-        Collection<Container> children = oldMap.get(root);
+        Collection<Container> containers = mm.values();
+        if (null == containers)
+            return new HashSet<Container>();
 
-        if (null != children)
+        Set<Container> set = new HashSet<Container>(containers.size());
+
+        for (Container c : containers)
         {
-            newMap.putAll(root, children);
-
-            for (Container child : children)
-                addChildren(newMap, oldMap, child);
+            if (c.hasPermission(user, perm))
+                set.add(c);
         }
+
+        return set;
     }
 
 
-    public static Set<Container> getContainerSet(MultiMap<Container, Container> mm, User user, int perm)
+    public static Set<Container> getContainerSet(MultiMap<Container, Container> mm, User user, Class<? extends Permission> perm)
     {
         //noinspection unchecked
         Collection<Container> containers = mm.values();
@@ -1325,7 +1310,7 @@ public class ContainerManager
     }
 
 
-    public static List<String> getIds(User user, int perm)
+    public static List<String> getIds(User user, Class<? extends Permission> perm)
     {
         Set<Container> containers = getContainerSet(getContainerTree(), user, perm);
 
@@ -1336,6 +1321,7 @@ public class ContainerManager
 
         return ids;
     }
+
 
     //
     // ContainerListener
@@ -1381,6 +1367,13 @@ public class ContainerManager
             _listeners.add(listener);
         else
             _laterListeners.add(listener);
+    }
+
+
+    public static void removeContainerListener(ContainerListener listener)
+    {
+        _listeners.remove(listener);
+        _laterListeners.remove(listener);
     }
 
 
@@ -1507,10 +1500,7 @@ public class ContainerManager
      * This prevents us from resetting permissions if all users
      * are dropped.
      */
-    public static Container bootstrapContainer(String path,
-                                               Role adminRole,
-                                               Role userRole,
-                                               Role guestRole)
+    public static Container bootstrapContainer(String path, Role adminRole, Role userRole, Role guestRole)
     {
         Container c = null;
 
@@ -1549,7 +1539,7 @@ public class ContainerManager
                     new Object[]{c.getId()}, Integer.class);
             }
 
-            if (newContainer || 0 == policyCount)
+            if (newContainer || 0 == policyCount.intValue())
             {
                 _log.debug("Setting permissions for '" + path + "'");
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
@@ -1567,8 +1557,11 @@ public class ContainerManager
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends junit.framework.TestCase implements ContainerListener
     {
+        Map<String,Container> _containers = new HashMap<String,Container>();
+        Container _testRoot = null;        
+
         public TestCase()
         {
             super();
@@ -1581,11 +1574,29 @@ public class ContainerManager
         }
 
 
-        public void testContainers() throws Exception
+        @Override
+        protected void setUp() throws Exception
         {
-            Container junit = ContainerManager.ensureContainer("/Shared/_junit");
-            Container testRoot = ContainerManager.createContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
+            if (null == _testRoot)
+            {
+                Container junit = ContainerManager.ensureContainer("/Shared/_junit");
+                _testRoot = ContainerManager.ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
+                ContainerManager.addContainerListener(this);
+            }
+        }
 
+
+        @Override
+        protected void tearDown() throws Exception
+        {
+            ContainerManager.removeContainerListener(this);
+            if (null != _testRoot)
+                ContainerManager.deleteAll(_testRoot, TestContext.get().getUser());
+        }
+
+
+        public void testCreateDeleteContainers() throws Exception
+        {
             int count = 20;
             Random random = new Random();
             MultiMap<String, String> mm = new MultiHashMap<String, String>();
@@ -1593,15 +1604,68 @@ public class ContainerManager
             for (int i = 1; i <= count; i++)
             {
                 int parentId = random.nextInt(i);
-                String parentName = 0 == parentId ? testRoot.getName() : String.valueOf(parentId);
+                String parentName = 0 == parentId ? _testRoot.getName() : String.valueOf(parentId);
                 String childName = String.valueOf(i);
                 mm.put(parentName, childName);
             }
 
-            logNode(mm, testRoot.getName(), 0);
-            createContainers(mm, testRoot.getName(), testRoot);
-            cleanUpChildren(mm, testRoot.getName(), testRoot);
-            assertTrue(ContainerManager.delete(testRoot, null));
+            logNode(mm, _testRoot.getName(), 0);
+            createContainers(mm, _testRoot.getName(), _testRoot);
+            assertEquals(count, _containers.size());
+            cleanUpChildren(mm, _testRoot.getName(), _testRoot);
+            assertEquals(0, _containers.size());
+        }
+
+
+        public void testCache() throws Exception
+        {
+            assertEquals(0, _containers.size());
+            assertEquals(0, ContainerManager.getChildren(_testRoot).size());
+
+            Container one = ContainerManager.createContainer(_testRoot, "one");
+            assertEquals(1, _containers.size());
+            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(0, ContainerManager.getChildren(one).size());
+
+            Container oneA = ContainerManager.createContainer(one,"A");
+            assertEquals(2, _containers.size());
+            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(1, ContainerManager.getChildren(one).size());
+            assertEquals(0, ContainerManager.getChildren(oneA).size());
+
+            Container oneB = ContainerManager.createContainer(one,"B");
+            assertEquals(3, _containers.size());
+            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(2, ContainerManager.getChildren(one).size());
+            assertEquals(0, ContainerManager.getChildren(oneB).size());
+
+            Container deleteme = ContainerManager.createContainer(one,"deleteme");
+            assertEquals(4, _containers.size());
+            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(3, ContainerManager.getChildren(one).size());
+            assertEquals(0, ContainerManager.getChildren(deleteme).size());
+
+            ContainerManager.delete(deleteme, TestContext.get().getUser());
+            assertEquals(3, _containers.size());
+            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(2, ContainerManager.getChildren(one).size());
+
+            Container oneC = ContainerManager.createContainer(one,"C");
+            assertEquals(4, _containers.size());
+            assertEquals(1, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(3, ContainerManager.getChildren(one).size());
+            assertEquals(0, ContainerManager.getChildren(oneC).size());
+
+            ContainerManager.delete(oneC, TestContext.get().getUser());
+            ContainerManager.delete(oneB, TestContext.get().getUser());
+            assertEquals(1, ContainerManager.getChildren(one).size());
+
+            ContainerManager.delete(oneA, TestContext.get().getUser());
+            assertEquals(0, ContainerManager.getChildren(one).size());
+
+            ContainerManager.delete(one, TestContext.get().getUser());
+            assertEquals(0, ContainerManager.getChildren(_testRoot).size());
+            assertEquals(0, _containers.size());
         }
 
 
@@ -1651,6 +1715,23 @@ public class ContainerManager
         }
 
 
+        // ContainerListener
+        public void propertyChange(PropertyChangeEvent evt)
+        {
+        }
+
+        public void containerCreated(Container c)
+        {
+            if (null == _testRoot || !c.getPath().startsWith(_testRoot.getPath()))
+                return;
+            _containers.put(c.getPath(), c);
+        }
+
+        public void containerDeleted(Container c, User user)
+        {
+            _containers.remove(c.getPath());
+        }
+
         public static Test suite()
         {
             return new TestSuite(TestCase.class);
@@ -1660,7 +1741,7 @@ public class ContainerManager
 
     static
     {
-    ObjectFactory.Registry.register(Container.class, new ContainerFactory());
+        ObjectFactory.Registry.register(Container.class, new ContainerFactory());
     }
 
 
