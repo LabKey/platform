@@ -31,7 +31,7 @@
     JspView me = (JspView) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
     Container proj = ctx.getContainer().getProject();
-    Set<Container> containers = ContainerManager.getAllChildren(proj, ctx.getUser(), ACL.PERM_READ);
+    Set<Container> containers = ContainerManager.getAllChildren(proj, ctx.getUser());
 %>
 <%
     WikiService wikiSvc = ServiceRegistry.get().getService(WikiService.class);

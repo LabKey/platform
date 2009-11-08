@@ -794,7 +794,7 @@ public class ProjectController extends SpringActionController
             //determine the set of containers to search
             //if includeSubfolders is true, get all children in which the user has read permission
             Set<Container> containers = form.isIncludeSubfolders() ?
-                    ContainerManager.getAllChildren(getViewContext().getContainer(), getViewContext().getUser(), ACL.PERM_READ) :
+                    ContainerManager.getAllChildren(getViewContext().getContainer(), getViewContext().getUser()) :
                     Collections.singleton(getViewContext().getContainer());
 
             //determine the set of searchables to search based on the list of domains

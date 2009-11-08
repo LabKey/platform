@@ -27,6 +27,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
@@ -55,7 +56,7 @@
 
     // Attempting recursive delete.  Could be first or second confirmation page.  Either way, user must have
     // admin permissions to the entire tree.
-    if (c.hasChildren() && !ContainerManager.hasTreePermission(c, user, ACL.PERM_ADMIN))
+    if (c.hasChildren() && !ContainerManager.hasTreePermission(c, user, AdminPermission.class))
     {
         %><tr><td>This <%=h(containerType)%> has <%=childrenDescription%>s, but you don't have admininistrative permissions to all the <%=childrenDescription%>s.</td></tr>
         <tr><td>&nbsp;</td></tr>

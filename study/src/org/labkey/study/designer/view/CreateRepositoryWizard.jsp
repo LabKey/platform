@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="java.util.*" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%
     DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();
     Container container = HttpView.currentContext().getContainer();
@@ -60,7 +61,7 @@ the vaccine study.
             <td>
                 <select name="parentFolderId">
             <%
-                Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), HttpView.currentContext().getUser(), ACL.PERM_ADMIN);
+                Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), HttpView.currentContext().getUser(), org.labkey.api.security.permissions.AdminPermission.class);
                 SortedSet<Container> sortedContainers = new TreeSet<Container>(new Comparator<Container>()
                 {
                     public int compare(Container o1, Container o2)
