@@ -30,6 +30,7 @@ import org.labkey.api.reader.BeanTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.*;
@@ -57,6 +58,11 @@ import java.util.*;
 public class TypesController extends SpringActionController
 {
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(TypesController.class);
+
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "ontology", new ActionURL(BeginAction.class,ContainerManager.getRoot()));
+    }
 
     public TypesController() throws Exception
     {
