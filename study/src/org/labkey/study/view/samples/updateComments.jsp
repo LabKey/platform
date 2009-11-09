@@ -156,7 +156,9 @@
             NavTree button = new NavTree("Copy or Move Comment(s)");
 
             NavTree moveButton = new NavTree("Move");
+            moveButton.setId("Comment:Move");
             NavTree copyButton = new NavTree("Copy");
+            copyButton.setId("Comment:Copy");
 
             button.addChild(moveButton);
             button.addChild(copyButton);
@@ -177,6 +179,7 @@
         {
             StringBuilder sb = new StringBuilder();
             NavTree participantItem = new NavTree("To Participant", "#");
+            participantItem.setId(isMove ? "Move:ToParticipant" : "Copy:ToParticipant");
             button.addChild(participantItem);
 
             for (String ptid : pvMap.keySet())
@@ -193,6 +196,10 @@
                     sb.append("}");
 
                 subItem.setScript(sb.toString());
+                if (isMove)
+                    subItem.setId("MovePtid:" + ptid);
+                else
+                    subItem.setId("CopyPtid:" + ptid);
                 participantItem.addChild(subItem);
             }
         }
@@ -202,10 +209,12 @@
         {
             StringBuilder sb = new StringBuilder();
             NavTree participantVisitItem = new NavTree("To Participant/Visit", "#");
+            participantVisitItem.setId(isMove ? "Move:ToParticipantVisit" : "Copy:ToParticipantVisit");
             button.addChild(participantVisitItem);
             for (Map.Entry<String, Map<String, Integer>> entry : pvMap.entrySet())
             {
                 NavTree ptidItem = new NavTree(entry.getKey());
+                ptidItem.setId("PtidVisit:" + entry.getKey());
 
                 for (Map.Entry<String, Integer> visitEntry : entry.getValue().entrySet())
                 {

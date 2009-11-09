@@ -82,7 +82,7 @@
             <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant basis. The dataset " +
                     "selected must be a demographics dataset.")%></th>
             <td>
-                <select name="participantCommentDataSetId" onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
+                <select name="participantCommentDataSetId" id="participantCommentDataSetId" onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : datasets)
@@ -101,7 +101,7 @@
         <tr>
             <th align="right">Comment Field Name</th>
             <td>
-                <select name="participantCommentProperty">
+                <select name="participantCommentProperty" id="participantCommentProperty">
                     <option value="">[None]</option>
                 <%
                 for (PropertyDescriptor pd : ptidDescriptors)
@@ -129,7 +129,7 @@
             <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant/visit basis. The dataset " +
                     "selected cannot be a demographics dataset.")%></th>
             <td>
-                <select name="participantVisitCommentDataSetId" onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
+                <select name="participantVisitCommentDataSetId" id="participantVisitCommentDataSetId" onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : datasets)
@@ -148,7 +148,7 @@
         <tr>
             <th align="right">Comment Field Name</th>
             <td>
-                <select name="participantVisitCommentProperty">
+                <select name="participantVisitCommentProperty" id="participantVisitCommentProperty">
                     <option value="">[None]</option>
                 <%
                 for (PropertyDescriptor pd : ptidVisitDescriptors)
