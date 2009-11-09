@@ -17,17 +17,16 @@ package org.labkey.api.action;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.JSONException;
+import org.json.JSONObject;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.RequestBasicAuthException;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.query.InvalidKeyException;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.beans.MutablePropertyValues;
 
 import java.io.BufferedReader;
 import java.util.Iterator;
@@ -72,22 +71,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
      */
     public void checkPermissions() throws TermsOfUseException, UnauthorizedException
     {
-        try
-        {
-            super.checkPermissions();
-        }
-        catch (TermsOfUseException e)
-        {
-            // We don't enforce terms of use when calling api actions
-        }
-        catch (UnauthorizedException e)
-        {
-            // Force Basic authentication
-            if (!getViewContext().getUser().isGuest())
-                throw e;
-            else
-                throw new RequestBasicAuthException();
-        }
+        checkPermissionsBasicAuth();
     }
 
     protected String getCommandClassMethodName()

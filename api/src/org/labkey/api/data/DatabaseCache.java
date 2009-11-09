@@ -94,26 +94,56 @@ public class DatabaseCache<ValueType>
         return getMap().get(key);
     }
 
-    public synchronized void remove(String key)
+
+    public synchronized void remove(final String key)
     {
-        if (_scope.isTransactionActive())
-            _scope.addTransactedRemoval(this, key, false);
+        Transaction t = _scope.getCurrentTransaction();
+
+        if (null != t)
+        {
+            t.addCommitTask(new Runnable() {
+                public void run()
+                {
+                    DatabaseCache.this.remove(key);
+                }
+            });
+        }
 
         getMap().remove(key);
     }
 
-    public synchronized void removeUsingPrefix(String prefix)
+
+    public synchronized void removeUsingPrefix(final String prefix)
     {
-        if (_scope.isTransactionActive())
-            _scope.addTransactedRemoval(this, prefix, true);
+        Transaction t = _scope.getCurrentTransaction();
+
+        if (null != t)
+        {
+            t.addCommitTask(new Runnable() {
+                 public void run()
+                 {
+                     DatabaseCache.this.removeUsingPrefix(prefix);
+                 }
+            });
+        }
 
         getMap().removeUsingPrefix(prefix);
     }
 
+
     public synchronized void clear()
     {
-        if (_scope.isTransactionActive())
-            _scope.addTransactedRemoval(this);
+        Transaction t = _scope.getCurrentTransaction();
+
+        if (null != t)
+        {
+            t.addCommitTask(new Runnable() {
+                public void run()
+                {
+                    DatabaseCache.this.clear();
+                }
+            });
+        }
 
         getMap().clear();
     }

@@ -57,29 +57,29 @@ public class DbCache
 
     public static void put(TableInfo tinfo, String name, Object obj)
     {
-        DatabaseCache<Object> cacheMap = getCache(tinfo);
-        cacheMap.put(name, obj);
+        DatabaseCache<Object> cache = getCache(tinfo);
+        cache.put(name, obj);
     }
 
 
     public static Object put(TableInfo tinfo, String name, Object obj, long millisToLive)
     {
-        DatabaseCache<Object> cacheMap = getCache(tinfo);
-        return cacheMap.put(name, obj, millisToLive);
+        DatabaseCache<Object> cache = getCache(tinfo);
+        return cache.put(name, obj, millisToLive);
     }
 
 
     public static Object get(TableInfo tinfo, String name)
     {
-        DatabaseCache cacheMap = getCache(tinfo);
-        return cacheMap.get(name);
+        DatabaseCache cache = getCache(tinfo);
+        return cache.get(name);
     }
     
 
     public static void remove(TableInfo tinfo, String name)
     {
-        DatabaseCache cacheMap = getCache(tinfo);
-        cacheMap.remove(name);
+        DatabaseCache cache = getCache(tinfo);
+        cache.remove(name);
     }
 
 
@@ -109,13 +109,6 @@ public class DbCache
     /** used by Table */
     static void invalidateAll(TableInfo tinfo)
     {
-        // If we're in a transaction, then the code below will clear out the private cache only.  Need to queue up a
-        // the invalidate on the shared cache.
-        if (tinfo.getSchema().getScope().isTransactionActive())
-        {
-            tinfo.getSchema().getScope().addTransactedInvalidate(tinfo);
-        }
-
         // see comment above 'getTableInfosByUnderlyingTable' for an explanation of why
         // we clear multiple caches here:
         synchronized(CACHES)
@@ -124,9 +117,9 @@ public class DbCache
 
             for (TableInfo matchingTinfo : tableInfos)
             {
-                DatabaseCache cacheMap = CACHES.get(matchingTinfo);
-                if (null != cacheMap)
-                    cacheMap.clear();
+                DatabaseCache cache = CACHES.get(matchingTinfo);
+                if (null != cache)
+                    cache.clear();
             }
         }
     }
@@ -134,20 +127,15 @@ public class DbCache
 
     public static void clear(TableInfo tinfo)
     {
-        if (tinfo.getSchema().getScope().isTransactionActive())
-        {
-            tinfo.getSchema().getScope().addTransactedClear(tinfo);
-        }
-
-        DatabaseCache cacheMap = getCache(tinfo);
-        if (null != cacheMap)
-            cacheMap.clear();
+        DatabaseCache cache = getCache(tinfo);
+        if (null != cache)
+            cache.clear();
     }
 
 
     public static void removeUsingPrefix(TableInfo tinfo, String name)
     {
-        DatabaseCache cacheMap = getCache(tinfo);
-        cacheMap.removeUsingPrefix(name);
+        DatabaseCache cache = getCache(tinfo);
+        cache.removeUsingPrefix(name);
     }
 }

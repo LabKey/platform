@@ -25,8 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.regex.Pattern;
 
-// TODO: Should be an abstract class
-public class TSVWriter
+public abstract class TSVWriter
 {
     private static Logger _log = Logger.getLogger(TSVWriter.class);
 
@@ -242,7 +241,5 @@ public class TSVWriter
     }
 
 
-    protected void write()
-    {
-    }
+    protected abstract void write();
 }

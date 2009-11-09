@@ -354,7 +354,7 @@ public class QueryProfiler
             if (highlight)
                 sb.append("</b>");
 
-            sb.append("</b></a></td>");
+            sb.append("</a></td>");
         }
 
         private void insertRow(StringBuilder sb, String className)

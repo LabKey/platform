@@ -20,8 +20,6 @@ import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
-import org.labkey.api.view.RequestBasicAuthException;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -43,22 +41,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     {
         if ("excelWebQuery".equals(getViewContext().getRequest().getParameter("exportType")))
         {
-            try
-            {
-                super.checkPermissions();
-            }
-            catch (TermsOfUseException e)
-            {
-                // We don't enforce terms of use for access through ExcelWebQuery
-            }
-            catch (UnauthorizedException e)
-            {
-                // Force Basic authentication for excel web query
-                if (!getViewContext().getUser().isGuest())
-                    throw e;
-                else
-                    throw new RequestBasicAuthException();
-            }
+            checkPermissionsBasicAuth();
         }
         else
         {

@@ -309,10 +309,10 @@ public class Search
 
     public static class SearchResultsView extends VBox
     {
-        public SearchResultsView(Container root, List<Searchable> searchables, String searchTerm, ActionURL searchUrl, User user, boolean includeSubfolders, boolean includeSettings)
+        public SearchResultsView(Container root, List<Searchable> searchables, String searchTerm, ActionURL searchUrl, boolean includeSubfolders, boolean includeSettings)
         {
             addView(new SearchWebPart(searchables, searchTerm, searchUrl, includeSubfolders, includeSettings, 40, true));
-            addView(new ResultsView(root, includeSubfolders, searchTerm, searchables, user));
+            addView(new ResultsView(root, includeSubfolders, searchTerm, searchables));
         }
 
         private static class ResultsView extends WebPartView
@@ -321,15 +321,13 @@ public class Search
             private boolean _includeSubfolders;
             private String _searchTerm;
             private List<Searchable> _searchables;
-            private User _user;
 
-            private ResultsView(Container root, boolean includeSubfolders, String searchTerm, List<Searchable> searchables, User user)
+            private ResultsView(Container root, boolean includeSubfolders, String searchTerm, List<Searchable> searchables)
             {
                 _root = root;
                 _includeSubfolders = includeSubfolders;
                 _searchTerm = searchTerm;
                 _searchables = searchables;
-                _user = user;
                 setTitle("Results");
             }
 

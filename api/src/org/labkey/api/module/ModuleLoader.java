@@ -477,6 +477,11 @@ public class ModuleLoader implements Filter
         }
         catch (Exception e)
         {
+            Throwable cause = e.getCause();
+
+            if (cause instanceof ServletException)
+                throw (ServletException)cause;
+
             throw new ServletException(e);
         }
     }

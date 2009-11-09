@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.collections.TTLCacheMap;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -55,14 +54,7 @@ public class DbScope
     private String _driverVersion;
 
 
-    private ThreadLocal<Transaction> threadConnection = new ThreadLocal<Transaction>();
-    private ThreadLocal<LinkedList<Runnable>> _transactedRemovals = new ThreadLocal<LinkedList<Runnable>>()  // TODO: Add to Transaction instead of separate ThreadLocal?
-    {
-        protected LinkedList<Runnable> initialValue()
-        {
-            return new LinkedList<Runnable>();
-        }
-    };
+    private static final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
 
 
     protected DbScope()
@@ -169,30 +161,27 @@ public class DbScope
 
         Connection conn = _getConnection(null);
         conn.setAutoCommit(false);
-        threadConnection.set(new Transaction(conn));
+        _transaction.set(new Transaction(conn));
         return conn;
     }
 
 
     public void commitTransaction() throws SQLException
     {
-        Transaction t = threadConnection.get();
+        Transaction t = _transaction.get();
         assert null != t;
         Connection conn = t.getConnection();
         conn.commit();
         conn.setAutoCommit(true);
         conn.close();
-        threadConnection.remove();
-
-        LinkedList<Runnable> removes = _transactedRemovals.get();
-        while (!removes.isEmpty())
-            removes.removeFirst().run();
+        _transaction.remove();
+        t.runCommitTasks();
     }
 
 
     public void rollbackTransaction()
     {
-        Transaction t = threadConnection.get();
+        Transaction t = _transaction.get();
         assert null != t;
         Connection conn = t.getConnection();
         try
@@ -219,8 +208,8 @@ public class DbScope
         {
             _log.error(x);
         }
-        threadConnection.remove();
-        _transactedRemovals.get().clear();
+        _transaction.remove();
+        t.clearCommitTasks();
     }
 
 
@@ -232,7 +221,7 @@ public class DbScope
 
     public Transaction getCurrentTransaction()
     {
-        return threadConnection.get();
+        return _transaction.get();
     }
 
 
@@ -243,7 +232,7 @@ public class DbScope
 
     public Connection getConnection(Logger log) throws SQLException
     {
-        Transaction t = threadConnection.get();
+        Transaction t = _transaction.get();
 
         if (null == t)
             return _getConnection(log);
@@ -366,7 +355,7 @@ public class DbScope
 
     public void closeConnection()
     {
-        Transaction t = threadConnection.get();
+        Transaction t = _transaction.get();
         if (null != t)
         {
             Connection conn = t.getConnection();
@@ -380,8 +369,7 @@ public class DbScope
                 _log.error("Failed to close connection", e);
             }
 
-            threadConnection.remove();
-            _transactedRemovals.remove();
+            _transaction.remove();
         }
     }
 
@@ -394,58 +382,12 @@ public class DbScope
 
     public void addCommitTask(Runnable task)
     {
-        if (!isTransactionActive())
-        {
+        Transaction t = _transaction.get();
+
+        if (null == t)
             throw new IllegalStateException("Must be inside a transaction");
-        }
-        _transactedRemovals.get().add(task);
-    }
-    
 
-    void addTransactedRemoval(final DatabaseCache cache, final String name, final boolean isPrefix)
-    {
-        addCommitTask(new Runnable() {
-            public void run()
-            {
-                if (isPrefix)
-                    cache.removeUsingPrefix(name);
-                else
-                    cache.remove(name);
-            }
-        });
-    }
-
-    void addTransactedRemoval(final DatabaseCache cache)
-    {
-        addCommitTask(new Runnable() {
-            public void run()
-            {
-                cache.clear();
-            }
-        });
-    }
-
-
-    void addTransactedClear(final TableInfo tinfo)
-    {
-        addCommitTask(new Runnable() {
-            public void run()
-            {
-                DbCache.clear(tinfo);
-            }
-        });
-    }
-
-
-    void addTransactedInvalidate(final TableInfo tinfo)
-    {
-        addCommitTask(new Runnable()
-        {
-            public void run()
-            {
-                DbCache.invalidateAll(tinfo);
-            }
-        });
+        t.addCommitTask(task);
     }
 
 
@@ -773,9 +715,9 @@ public class DbScope
         //noinspection MismatchedQueryAndUpdateOfCollection
         Set<String> save = new HashSet<String>();
         
-        for (int i=0 ; i<100000 ; i++)
+        for (int i = 0 ; i < 100000; i++)
         {
-            if (i%1000 == 0) System.gc();
+            if (i % 1000 == 0) System.gc();
             String s = "" + i;
             if (i % 3 == 0)
                 save.add(s);

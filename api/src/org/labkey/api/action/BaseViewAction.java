@@ -527,6 +527,31 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
     }
 
+    // Special version of check permissions for actions that need to support Basic Authentication.  Do the standard
+    // permissions check, but ignore terms-of-use (non-web clients can't view/respond to terms of use page).  If user
+    // is guest and unauthorized, then send a Basic Authentication request.
+    //
+    // To use, simply override checkPermissions() and call this method
+    protected void checkPermissionsBasicAuth() throws UnauthorizedException
+    {
+        try
+        {
+            checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
+        }
+        catch (TermsOfUseException e)
+        {
+            // We don't enforce terms of use
+        }
+        catch (UnauthorizedException e)
+        {
+            // Force Basic authentication
+            if (!getViewContext().getUser().isGuest())
+                throw e;
+            else
+                throw new RequestBasicAuthException();
+        }
+    }
+
     /**
      * Actions may provide a set of {@link Role}s used during permission checking
      * or null if no contextual roles apply.
