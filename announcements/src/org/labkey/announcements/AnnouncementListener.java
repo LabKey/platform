@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: adam
@@ -101,7 +102,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
             if (!memberList.contains(user))
             {
                 //find all containers for which this user could have an entry in EmailPrefs
-                List<Container> containerList = cProject.getChildren();
+                List<Container> containerList = new ArrayList<Container>(cProject.getChildren());
                 //add project container to list
                 containerList.add(cProject);
                 try
