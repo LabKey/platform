@@ -29,12 +29,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.OwnerRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -47,6 +42,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
+import org.labkey.issue.model.LuceneSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.query.IssuesQueryView;
 import org.labkey.issue.query.IssuesTable;
@@ -742,7 +738,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) //will check for update/update-own below
+    @RequiresPermission(ACL.PERM_UPDATEOWN)
     public class UpdateAction extends IssueUpdateAction
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
@@ -1122,8 +1118,8 @@ public class IssuesController extends SpringActionController
     {
         final Set<String> emailAddresses = new HashSet<String>();
         final Container c = getContainer();
-        int assignedToPref = issue.getAssignedTo() != null ? IssueManager.getUserEmailPreferences(c, issue.getAssignedTo()) : 0;
-        int assignedToPrevPref = (prevIssue != null && prevIssue.getAssignedTo() != null) ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
+        int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
+        int assignedToPrevPref = prevIssue != null ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
         int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
 
 
@@ -1403,6 +1399,12 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class RssAction extends SimpleViewAction
     {
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            checkPermissionsBasicAuth();
+        }
+
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -1459,6 +1461,69 @@ public class IssuesController extends SpringActionController
         {
             this.issues = issues;
             this.filteredURLString = filteredURLString;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class BuildIndexAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            LuceneSearch.buildIndex();
+            return getListURL(getContainer());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class SearchLuceneAction extends SimpleViewAction<LuceneSearchForm>
+    {
+        public ModelAndView getView(LuceneSearchForm form, BindException errors) throws Exception
+        {
+            String query = form.getQuery();
+
+            HtmlView searchBox = new HtmlView("<form><input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">" + PageFlowUtil.generateSubmitButton("Search") + "</form>");
+            getPageConfig().setFocusId("query");
+
+            if (null == query)
+                return searchBox;
+            
+            String results = LuceneSearch.search(query, form.getSort());
+
+            return new VBox(searchBox, new HtmlView(results));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Lucene Search");
+        }
+    }
+
+
+    public static class LuceneSearchForm
+    {
+        private String _query;
+        private String _sort;
+
+        public String getQuery()
+        {
+            return _query;
+        }
+
+        public void setQuery(String query)
+        {
+            _query = query;
+        }
+
+        public String getSort()
+        {
+            return _sort;
+        }
+
+        public void setSort(String sort)
+        {
+            _sort = sort;
         }
     }
 
@@ -1533,7 +1598,7 @@ public class IssuesController extends SpringActionController
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance(c)), searchTerm, new ActionURL(SearchAction.class, c), getUser(), false, false);
+            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance(c)), searchTerm, new ActionURL(SearchAction.class, c), false, false);
             return results;
         }
 
@@ -1973,10 +2038,17 @@ public class IssuesController extends SpringActionController
      */
     private boolean hasUpdatePermission(User user, Issue issue)
     {
-        return getContainer().hasPermission(user, UpdatePermission.class,
-                (issue.getCreatedBy() == user.getUserId()) ? 
-                        RoleManager.roleSet(OwnerRole.class) :
-                        null);
+        // If we have full Update rights on the container, continue
+        if (getViewContext().hasPermission(ACL.PERM_UPDATE))
+            return true;
+
+        // If UpdateOwn on the container AND we created this Issue, continue
+        //noinspection RedundantIfStatement
+        if (getViewContext().hasPermission(ACL.PERM_UPDATEOWN)
+                && issue.getCreatedBy() == user.getUserId())
+            return true;
+
+        return false;
     }
 
 

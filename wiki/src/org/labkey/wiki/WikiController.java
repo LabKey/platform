@@ -2371,7 +2371,7 @@ public class WikiController extends SpringActionController
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            return new Search.SearchResultsView(c, l, searchTerm, new ActionURL(SearchAction.class, c), getUser(), includeSubfolders, true);
+            return new Search.SearchResultsView(c, l, searchTerm, new ActionURL(SearchAction.class, c), includeSubfolders, true);
         }
 
         public NavTree appendNavTrail(NavTree root)

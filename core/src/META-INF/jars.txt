@@ -1,6 +1,6 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-annotations.jar|Compiler annotations|1.0|{link:JetBrains|http://www.jetbrains.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jgarms|Annotations to enable compile-time checking for null
+annotations.jar|Compiler annotations|1.0|{link:JetBrains|http://www.jetbrains.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Annotations to enable compile-time checking for null
 antlr-3.1.1.jar|ANTLR|3.1.1|{link:ANTLR|http://www.antlr.org/}|{link:BSD|http://www.antlr.org/license.html}|mbellew|Query language parsing
 axis.jar|Apache Axis|1.2RC2|{link:Apache|http://ws.apache.org/axis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web service implementation
 backport-util-concurrent-3.1.jar|JSR 166|3.1|{link:Emory|http://dcl.mathcs.emory.edu/util/backport-util-concurrent/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|jeckels|Pipeline (Mule dependency)
@@ -29,6 +29,8 @@ jfreechart-1.0.0.jar|JFreeChart|1.0.0|{link:JFreeChart|http://www.jfree.org/jfre
 junit-4.1.jar|JUnit|4.1|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
 jxl.jar|Java Excel|2.6.8|{link:Java Excel API|http://jexcelapi.sourceforge.net//}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|Import/Export Excel files
 log4j-1.2.8.jar|Log4j|1.2.8|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
+lucene-core-2.9.1.jar|Lucene|2.9.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
+lucene-snowball-2.9.1.jar|Snowball|2.9.1|||adam|Stemming support for full-text search
 radeox-api.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 radeox.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 saaj.jar|SOAP with Attachments API for Java|1.2|{link:SAAJ|https://saaj.dev.java.net/}|{link:CDDL|https://glassfish.dev.java.net/public/CDDL+GPL.html}|jeckels|Attachments with webservices

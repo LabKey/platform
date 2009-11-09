@@ -329,12 +329,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 unmaterialize();
                 JobRunner.getDefault().submit(new Runnable()
+                    {
+                        public void run()
                         {
-                            public void run()
-                            {
-                                getMaterializedTempTableInfo(user);
-                            }
-                        });
+                            getMaterializedTempTableInfo(user);
+                        }
+                    });
             }
         };
 

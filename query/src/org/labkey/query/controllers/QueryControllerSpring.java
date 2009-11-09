@@ -1552,7 +1552,7 @@ public class QueryControllerSpring extends SpringActionController
     @ActionNames("selectRows, getQuery")
     @RequiresPermission(ACL.PERM_READ)
     @ApiVersion(9.1)
-    public class GetQueryAction extends ApiAction<APIQueryForm>
+    public class SelectRowsAction extends ApiAction<APIQueryForm>
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
         {

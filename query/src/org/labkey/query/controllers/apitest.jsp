@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
 <%
     JspView me = (JspView) HttpView.currentView();
-    ActionURL defGetUrl = new ActionURL(QueryControllerSpring.GetQueryAction.class, me.getViewContext().getContainer());
+    ActionURL defGetUrl = new ActionURL(QueryControllerSpring.SelectRowsAction.class, me.getViewContext().getContainer());
     String schemaName = HttpView.currentRequest().getParameter("schemaName");
     if (schemaName == null)
         schemaName = "**schema**";

@@ -25,6 +25,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletException;
 import java.sql.*;
@@ -434,14 +435,14 @@ class SqlDialectPostgreSQL extends SqlDialect
                 return;
 
             String dbName = schema.getScope().getDatabaseName();
-            String message = "PL/pgSQL is not enabled in the \"" + dbName + "\" database because it is not enabled in your Template1 master database.  Use PostgreSQL's 'createlang' command line utility to enable PL/pgSQL in the \"" + dbName + "\" database then restart Tomcat.";
-            _log.error(message);
-            throw new ServletException(message);
+            String message = "PL/pgSQL is not enabled in the \"" + dbName + "\" database because it is not enabled in your Template1 master database.";
+            String advice = "Use PostgreSQL's 'createlang' command line utility to enable PL/pgSQL in the \"" + dbName + "\" database then restart Tomcat.";
+
+            throw new ConfigurationException(message, advice);
         }
         catch(SQLException e)
         {
-             _log.error("Exception attempting to verify PL/pgSQL", e);
-             throw new ServletException("Failure attempting to verify language PL/pgSQL", e);
+            throw new ServletException("Failure attempting to verify language PL/pgSQL", e);
         }
         finally
         {
