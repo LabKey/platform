@@ -358,6 +358,7 @@ public class ContainerManager
                 if (null != c)
                     ret.add(c);
             }
+            assert null != (ret = Collections.unmodifiableList(ret));
             return ret;
         }
         
