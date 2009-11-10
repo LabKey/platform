@@ -450,48 +450,38 @@ public class TypesController extends SpringActionController
         String concat = expSchema.getSqlDialect().getConcatenationOperator();
         String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();
 
-        Map propertyMap = Table.executeValueMap(ExperimentService.get().getSchema(),
-                "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " ? " + concat + " '#%'",
-                new Object[]{prefix}, null);
 
         try
         {
             int count = 0;
 
             expSchema.getScope().beginTransaction();
+
+            Map propertyMap = Table.executeValueMap(ExperimentService.get().getSchema(),
+                    "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " ? " + concat + " '#%'",
+                    new Object[]{prefix}, null);
+
+            List<PropertyDescriptor> inserts = new ArrayList<PropertyDescriptor>();
+            List<PropertyDescriptor> updates = new ArrayList<PropertyDescriptor>();
+
             for (Concept concept : concepts)
             {
                 PropertyDescriptor pd = concept.toPropertyDescriptor(prefix);
-                try
+                Integer propertyId = (Integer) propertyMap.get(pd.getPropertyURI());
+                if (null == propertyId)
                 {
-                    Integer propertyId = (Integer) propertyMap.get(pd.getPropertyURI());
-                    if (null == propertyId)
-                    {
-                        OntologyManager.insertPropertyDescriptor(pd);
-                    }
-                    else
-                    {
-                        pd.setPropertyId(propertyId.intValue());
-                        OntologyManager.updatePropertyDescriptor(pd);
-                    }
+                    inserts.add(pd);
                 }
-                catch (SQLException x)
+                else
                 {
-                    if (x.getMessage().contains("UNIQUE KEY"))
-                    {
-                        System.err.println("UNIQUE KEY VIOLATION " + pd.getPropertyURI());
-                        continue;
-                    }
-                    throw x;
-                }
-
-                if (++count == 1000)
-                {
-                    expSchema.getScope().commitTransaction();
-                    expSchema.getScope().beginTransaction();
-                    count = 0;
+                    pd.setPropertyId(propertyId.intValue());
+                    updates.add(pd);
                 }
             }
+
+            OntologyManager.insertPropertyDescriptors(inserts);
+            OntologyManager.updatePropertyDescriptors(updates);
+            
             expSchema.getScope().commitTransaction();
         }
         finally
