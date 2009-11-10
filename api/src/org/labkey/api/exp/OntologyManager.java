@@ -33,8 +33,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 
 import java.io.File;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -1856,6 +1858,94 @@ public class OntologyManager
         ensurePropertyDomain(pexist, dexist, sortOrder);
 
         return pexist;
+    }
+
+
+    static final String parameters = "propertyuri,ontologyuri,name,description,rangeuri,concepturi,label,searchterms,semantictype,format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden,mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview";
+    static final String[] parametersArray = parameters.split(",");
+    static final String insertSql;
+    static final String updateSql;
+    static
+    {
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
+        String comma = " ";
+        for (String p : parametersArray)
+        {
+            sb.append(comma).append(p).append("=?");
+            comma = ",";
+        }
+        sb.append("\nWHERE propertyid=?");
+        updateSql = sb.toString();
+    }
+
+
+
+    public static void insertPropertyDescriptors(List<PropertyDescriptor> pds) throws SQLException
+    {
+        if (null == pds || 0 == pds.size())
+            return;
+        PreparedStatement stmt = getExpSchema().getScope().getConnection().prepareStatement(insertSql);
+        ObjectFactory f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+        Map m = null;
+        for (PropertyDescriptor pd : pds)
+        {
+            m = f.toMap(pd, m);
+            for (int i=0 ; i<parametersArray.length ; i++)
+            {
+                String p = parametersArray[i];
+                Object o = m.get(p);
+                if (o == null)
+                    stmt.setNull(i+1, Types.VARCHAR);
+                else if (o instanceof String)
+                    stmt.setString(i+1, (String)o);
+                else if (o instanceof Integer)
+                    stmt.setInt(i+1, ((Integer)o).intValue());
+                else if (o instanceof Container)
+                    stmt.setString(i+1, ((Container)o).getId());
+                else if (o instanceof Boolean)
+                    stmt.setBoolean(i+1, ((Boolean)o).booleanValue());
+                else
+                    assert false : o.getClass().getName();
+            }
+            stmt.addBatch();
+        }
+        stmt.executeBatch();
+    }
+
+
+
+    public static void updatePropertyDescriptors(List<PropertyDescriptor> pds) throws SQLException
+    {
+        if (null == pds || 0 == pds.size())
+            return;
+        PreparedStatement stmt = getExpSchema().getScope().getConnection().prepareStatement(updateSql);
+        ObjectFactory f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+        Map m = null;
+        for (PropertyDescriptor pd : pds)
+        {
+            m = f.toMap(pd, m);
+            for (int i=0 ; i<parametersArray.length ; i++)
+            {
+                String p = parametersArray[i];
+                Object o = m.get(p);
+                if (o == null)
+                    stmt.setNull(i+1, Types.VARCHAR);
+                else if (o instanceof String)
+                    stmt.setString(i+1, (String)o);
+                else if (o instanceof Integer)
+                    stmt.setInt(i+1, ((Integer)o).intValue());
+                else if (o instanceof Container)
+                    stmt.setString(i+1, ((Container)o).getId());
+                else if (o instanceof Boolean)
+                    stmt.setBoolean(i+1, ((Boolean)o).booleanValue());
+                else
+                    assert false : o.getClass().getName();
+            }
+            stmt.setInt(parametersArray.length+1, pd.getPropertyId());
+            stmt.addBatch();
+        }
+        stmt.executeBatch();
     }
 
 
