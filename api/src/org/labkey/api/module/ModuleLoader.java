@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.*;
@@ -322,6 +323,27 @@ public class ModuleLoader implements Filter
                     //assume that module name is directory name
                     SimpleModule simpleModule = new SimpleModule(moduleDir.getName());
                     simpleModule.setSourcePath(moduleDir.getAbsolutePath());
+
+                    //check for simple .properties file
+                    File modulePropsFile = new File(moduleDir, "config/module.properties");
+                    if (modulePropsFile.exists())
+                    {
+                        FileInputStream in = new FileInputStream(modulePropsFile);
+                        try
+                        {
+                            Properties props = new Properties();
+                            props.load(in);
+                            BeanUtils.populate(simpleModule, props);
+                        }
+                        catch (IOException e)
+                        {
+                            _log.error("Error reading module properties file '" + modulePropsFile.getAbsolutePath() + "'", e);
+                        }
+                        finally
+                        {
+                            in.close();
+                        }
+                    }
 
                     module = simpleModule;
                 }
