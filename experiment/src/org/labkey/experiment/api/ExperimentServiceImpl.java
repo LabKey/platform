@@ -84,7 +84,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (materialSourceCache == null)
         {
-            materialSourceCache = new DatabaseCache<MaterialSource>(getExpSchema().getScope(), 300);
+            materialSourceCache = new DatabaseCache<MaterialSource>(getExpSchema().getScope(), 300, "Material source");
         }
         return materialSourceCache;
     }

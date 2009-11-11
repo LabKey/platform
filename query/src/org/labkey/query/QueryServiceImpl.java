@@ -61,7 +61,7 @@ public class QueryServiceImpl extends QueryService
         }
     };
 
-    private static Cache _moduleResourcesCache = new Cache(1024, Cache.DAY);
+    private static Cache _moduleResourcesCache = new Cache(1024, Cache.DAY, "Module resources cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
 
     public static Cache getModuleResourcesCache()

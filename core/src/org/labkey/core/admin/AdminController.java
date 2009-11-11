@@ -104,6 +104,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "queries", getQueriesURL(null));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "caches", new ActionURL(CachesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
@@ -2120,6 +2121,44 @@ public class AdminController extends SpringActionController
         }
     }
 
+
+    @RequiresSiteAdmin
+    public class CachesAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            StringBuilder html = new StringBuilder("<table>\n<tr><th>Cache</th><th>Misses</th><th>Requests</th><th>Miss Percentage</th></tr>\n");
+
+            Collection<DbCache.CacheStats> stats = DbCache.getStats();
+
+            long misses = 0;
+            long grandTotal = 0;
+
+            for (DbCache.CacheStats stat : stats)
+            {
+                misses += stat.getMisses();
+                long total = stat.getMisses() + stat.getHits();
+                double ratio = 0 != total ? stat.getMisses()/(double)total : 0;
+                grandTotal += total;
+
+                html.append("<tr><td>").append(stat.getDescription()).append("</td>");
+                html.append("<td align=\"right\">").append(Formats.commaf0.format(stat.getMisses())).append("</td>");
+                html.append("<td align=\"right\">").append(Formats.commaf0.format(total)).append("</td>");
+                html.append("<td align=\"right\">").append(Formats.percent.format(ratio)).append("</td></tr>\n");
+            }
+
+            double ratio = 0 != grandTotal ? misses/(double)grandTotal : 0;
+            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
+            html.append("<tr><td>Total</td><td align=\"right\"d>").append(Formats.commaf0.format(misses)).append("</td><td align=\"right\">").append(Formats.commaf0.format(grandTotal)).append("</td><td align=\"right\">").append(Formats.percent.format(ratio)).append("</td></tr>\n").append("</td></tr>");
+
+            return new HtmlView(html.toString());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "DatabaseCache Statistics", this.getClass());
+        }
+    }
 
     @RequiresSiteAdmin
     public class EnvironmentVariablesAction extends SimpleViewAction
