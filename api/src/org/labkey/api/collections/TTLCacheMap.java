@@ -34,8 +34,8 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     public static final long HOUR = DateUtils.MILLIS_PER_HOUR;
     public static final long DAY = DateUtils.MILLIS_PER_DAY;
 
-    int maxSize = 1000;
-    long defaultExpires = -1;
+    private final int maxSize;
+    private final long defaultExpires;
 
     /*
      * NOTE: this is distinctly unlike the WeakHashMap.  The refererant here is
@@ -94,18 +94,18 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     }
 
 
-    public TTLCacheMap(int maxSize, long defaultExpires)
+    public TTLCacheMap(int maxSize, long defaultExpires, String debugName)
     {
-        super(Math.min(10000,maxSize));
+        super(Math.min(10000, maxSize), debugName);
         this.lru = true;
         this.maxSize = maxSize;
         this.defaultExpires = defaultExpires;
     }
     
 
-    public TTLCacheMap(int maxSize)
+    public TTLCacheMap(int maxSize, String debugName)
     {
-        this(maxSize, -1);
+        this(maxSize, -1, debugName);
     }
 
 

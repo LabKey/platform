@@ -235,7 +235,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected String debugName = "";
+    private final String _debugName;
     protected Entry[] buckets;
     protected Entry head;
     protected int size = 0;
@@ -249,7 +249,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     /**
      * size is max expected entries
      */
-    public CacheMap(int initialSize)
+    public CacheMap(int initialSize, String debugName)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0,null);
@@ -257,6 +257,8 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         {
             KNOWN_CACHEMAPS.add(this);
         }
+        assert debugName.length() > 0;
+        _debugName = debugName;
     }
 
 
@@ -355,7 +357,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
 
     /**
-     * not as optimized as Map interfaces,  since this is just the entrySet()
+     * not as optimized as Map interfaces, since this is just the entrySet()
      */
     protected class CacheMapSet extends AbstractSet<Map.Entry<K, V>>
     {
@@ -432,15 +434,15 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    public void setDebugName(String name)
+    public String getDebugName()
     {
-        debugName = name;
+        return _debugName;
     }
 
 
     @Override
     public String toString()
     {
-        return (debugName + " " + super.toString()).trim();
+        return (_debugName + " " + super.toString()).trim();
     }
 }

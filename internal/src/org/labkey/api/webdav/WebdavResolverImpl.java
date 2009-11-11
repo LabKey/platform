@@ -122,7 +122,7 @@ public class WebdavResolverImpl implements WebdavResolver
     {
         FolderCache()
         {
-            super(1000, 5 * TTLCacheMap.MINUTE);
+            super(1000, 5 * TTLCacheMap.MINUTE, "WebDAV folders");
             ContainerManager.addContainerListener(this);
         }
 

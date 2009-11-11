@@ -41,23 +41,26 @@ public class DatabaseCache<ValueType>
     protected final static long MINUTE = TTLCacheMap.MINUTE;
     protected final static long SECOND = TTLCacheMap.SECOND;
 
-    private TTLCacheMap<String, ValueType> _sharedMap;
-    private DbScope _scope;
+    private final TTLCacheMap<String, ValueType> _sharedMap;
+    private final DbScope _scope;
+    private long _hits = 0;
+    private long _misses = 0;
 
-    public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive)
+    public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
-        _sharedMap = new TTLCacheMap<String, ValueType>(maxSize, defaultTimeToLive);
+        _sharedMap = new TTLCacheMap<String, ValueType>(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
     }
 
-    public DatabaseCache(DbScope scope, int maxSize)
+    public DatabaseCache(DbScope scope, int maxSize, String debugName)
     {
-        this(scope, maxSize, -1);
+        this(scope, maxSize, -1, debugName);
     }
 
     private TTLCacheMap<String, ValueType> getMap()
     {
         Transaction t = _scope.getCurrentTransaction();
+
         if (null != t)
         {
             Map<Object, TTLCacheMap> transactionCaches = t.getCaches();
@@ -66,8 +69,7 @@ public class DatabaseCache<ValueType>
 
             if (null == map)
             {
-                map = new TTLCacheMap<String, ValueType>(_sharedMap.getMaxSize(), _sharedMap.getDefaultExpires());
-                map.setDebugName("transaction cache: " + _sharedMap.toString());
+                map = new TransactionCacheMap<String, ValueType>(_sharedMap);
                 transactionCaches.put(this, map);
             }
 
@@ -91,7 +93,14 @@ public class DatabaseCache<ValueType>
 
     public synchronized ValueType get(String key)
     {
-        return getMap().get(key);
+        ValueType value = getMap().get(key);
+
+        if (null == value)
+            _misses++;
+        else
+            _hits++;
+
+        return value;
     }
 
 
@@ -149,6 +158,16 @@ public class DatabaseCache<ValueType>
     }
 
 
+    public long getHits()
+    {
+        return _hits;
+    }
+
+    public long getMisses()
+    {
+        return _misses;
+    }
+
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
@@ -166,7 +185,7 @@ public class DatabaseCache<ValueType>
         public void testDbCache() throws Exception
         {
             MyScope scope = new MyScope();
-            DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10);
+            DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10, "Test Cache");
 
             // basic TTL testing
 
@@ -200,8 +219,15 @@ public class DatabaseCache<ValueType>
             // transaction testing
             scope.beginTransaction();
             assertTrue(scope.isTransactionActive());
-            assertTrue(null == cache.get("key_" + 11));
+
+            if (TransactionCacheMap.ENABLE_READ_THROUGH)
+            {
+                // Test read-through transaction cache
+                assertTrue(cache.get("key_11") == values[11]);
+            }
+
             cache.remove("key_" + 11);
+            assertTrue(null == cache.get("key_11"));
 
             // imitate another thread: toggle transaction and test
             scope.setOverrideTransactionActive(Boolean.FALSE);
@@ -209,6 +235,7 @@ public class DatabaseCache<ValueType>
             scope.setOverrideTransactionActive(null);
 
             scope.commitTransaction();
+            // Test that remove got applied to shared cache
             assertTrue(null == cache.get("key_11"));
 
             cache.removeUsingPrefix("key");
@@ -296,10 +323,5 @@ public class DatabaseCache<ValueType>
                 }
             }
         }
-    }
-
-    public void setDebugName(String name)
-    {
-        _sharedMap.setDebugName(name);
     }
 }

@@ -25,11 +25,11 @@ import java.util.Map;
  */
 public class LimitedCacheMap<K, V> extends CacheMap<K, V>
 {
-    private int _maxSize;
+    private final int _maxSize;
 
-    public LimitedCacheMap(int initialSize, int maxSize)
+    public LimitedCacheMap(int initialSize, int maxSize, String debugName)
     {
-        super(initialSize);
+        super(initialSize, debugName);
         _maxSize = maxSize;
     }
 

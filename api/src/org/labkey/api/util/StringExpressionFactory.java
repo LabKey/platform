@@ -40,8 +40,8 @@ import java.util.*;
  */
 public class StringExpressionFactory
 {
-    private static CacheMap<String, StringExpression> templates = new LimitedCacheMap<String, StringExpression>(1000, 1000);
-    private static CacheMap<String, StringExpression> templatesUrl = new LimitedCacheMap<String, StringExpression>(1000, 1000);
+    private static CacheMap<String, StringExpression> templates = new LimitedCacheMap<String, StringExpression>(1000, 1000, "StringExpression templates");
+    private static CacheMap<String, StringExpression> templatesUrl = new LimitedCacheMap<String, StringExpression>(1000, 1000, "StringExpression template URLs");
 
     public static final StringExpression NULL_STRING = new ConstantStringExpression(null);
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");

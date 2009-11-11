@@ -43,16 +43,9 @@ public class Cache
     
     final TTLCacheMap<String, Object> _cache;
 
-    public Cache(int size, long defaultTimeToLive)
-    {
-        _cache = new TTLCacheMap<String, Object>(size, defaultTimeToLive); 
-    }
-
-    
     public Cache(int size, long defaultTimeToLive, String debugName)
     {
-        this(size, defaultTimeToLive);
-        _cache.setDebugName(debugName);
+        _cache = new TTLCacheMap<String, Object>(size, defaultTimeToLive, debugName); 
     }
 
 

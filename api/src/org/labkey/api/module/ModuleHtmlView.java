@@ -33,7 +33,7 @@ import java.io.File;
  */
 public class ModuleHtmlView extends HtmlView
 {
-    private static Cache _viewdefCache = new Cache(1024, Cache.HOUR);
+    private static Cache _viewdefCache = new Cache(1024, Cache.HOUR, "Module HTML view definition cache");
 
     private ModuleHtmlViewDefinition _viewdef = null;
 

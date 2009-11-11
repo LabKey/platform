@@ -70,10 +70,10 @@ public class OntologyManager
 
     public static void initCaches()
     {
-        mapCache = new DatabaseCache<Map<String, ObjectProperty>>(getExpSchema().getScope(), 1000);
-        objectIdCache = new DatabaseCache<Integer>(getExpSchema().getScope(), 1000);
-        propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 2000);
-        domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000);
+        mapCache = new DatabaseCache<Map<String, ObjectProperty>>(getExpSchema().getScope(), 1000, "Property maps");
+        objectIdCache = new DatabaseCache<Integer>(getExpSchema().getScope(), 1000, "ObjectIds");
+        propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 2000, "Property descriptors");
+        domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000, "Domain descriptors");
     }
 
     
