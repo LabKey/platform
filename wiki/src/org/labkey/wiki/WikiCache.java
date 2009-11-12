@@ -39,7 +39,6 @@ public class WikiCache
     private static final String PAGES_NAME = "~~pages~~";
     private static final String VERSIONS_NAME = "~~versions~~";
     private static final String TOC_NAME = "~~nvtoc~~";
-    private static final String API_TOC_NAME = "~~apitoc~~";
     private static boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
     private static final Cache _pageCache = Cache.getShared();
 
@@ -66,11 +65,6 @@ public class WikiCache
     static void cache(Container c, NavTree[] wikiToc)
     {
         _cache(c, TOC_NAME, wikiToc);
-    }
-
-    static void cache(Container c, List<Map<String,Object>> wikiToc)
-    {
-        _cache(c, API_TOC_NAME, wikiToc);
     }
 
     static void _cache(Container c, String name, Object o)
@@ -116,12 +110,19 @@ public class WikiCache
 
     static NavTree[] getCachedNavTree(Container c)
     {
-        return (NavTree[])getCached(c, TOC_NAME);
-    }
+        //need to make a deep copy of the NavTree so that
+        //the caller can apply per-session expand state
+        //and per-request selection state
+        NavTree[] toc = (NavTree[])getCached(c, TOC_NAME);
+        if (null == toc)
+            return null;
 
-    static List<Map<String,Object>> getCachedApiNavTree(Container c)
-    {
-        return (List<Map<String,Object>>)getCached(c, API_TOC_NAME);
+        NavTree[] copy = new NavTree[toc.length];
+        for (int idx = 0; idx < toc.length; ++idx)
+        {
+            copy[idx] = new NavTree(toc[idx]);
+        }
+        return copy;
     }
 
     // Not currently used -- only case where this would be the correct behavior is if we update the content of a wiki

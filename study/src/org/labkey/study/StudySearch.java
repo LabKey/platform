@@ -215,7 +215,7 @@ def:    for (DataSetDefinition def : defs)
                 // We can't search boolean or date columns due to sql limitations
                 Class columnClass = column.getJavaClass();
                 if (columnClass != Boolean.class && columnClass != Boolean.TYPE && columnClass != Date.class)
-                    columnsToSearch.add(column.getName());
+                    columnsToSearch.add(column.getSelectName());
             }
         }
 

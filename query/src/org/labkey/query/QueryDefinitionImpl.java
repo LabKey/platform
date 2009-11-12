@@ -161,7 +161,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                                 log.error("Invalid view definition file " + viewFile.getAbsolutePath(), e);
                             }
                         }
-                        ret.put(viewDef.getName(), new ModuleCustomView(this, viewDef));
+                        
+                        if (null != viewDef && null != viewDef.getName())
+                            ret.put(viewDef.getName(), new ModuleCustomView(this, viewDef));
                     }
                 }
             }

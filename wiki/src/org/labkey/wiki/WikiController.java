@@ -2070,7 +2070,7 @@ public class WikiController extends SpringActionController
             return "Wiki-TOC-" + cToc.getId();
         }
 
-        static private NavTree[] getNavTree(ViewContext context)
+        static public NavTree[] getNavTree(ViewContext context)
         {
             Container cToc = getTocContainer(context);
             NavTree[] tree = WikiCache.getCachedNavTree(cToc);
@@ -3280,13 +3280,9 @@ public class WikiController extends SpringActionController
 
             Container container = getViewContext().getContainer();
 
-            List<Map<String,Object>> pageProps = WikiCache.getCachedApiNavTree(container);
-            if (null == pageProps)
-            {
-                List<Wiki> pages = WikiManager.getWikisByParentId(container.getId(), -1);
-                pageProps = getChildrenProps(pages);
-                WikiCache.cache(container, pageProps);
-            }
+            NavTree[] toc = WikiTOC.getNavTree(getViewContext());
+
+            List<Map<String,Object>> pageProps = getChildrenProps(toc);
             response.put("pages", pageProps);
 
             Set<String> expandedPaths = NavTreeManager.getExpandedPaths(getViewContext(), WikiTOC.getNavTreeId(getViewContext()));
@@ -3359,25 +3355,19 @@ public class WikiController extends SpringActionController
             }
         }
 
-        public List<Map<String,Object>> getChildrenProps(List<Wiki> pages)
+        public List<Map<String,Object>> getChildrenProps(NavTree[] pages)
         {
             List<Map<String,Object>> ret = new ArrayList<Map<String,Object>>();
-            for(Wiki wiki : pages)
+            for(NavTree page : pages)
             {
                 Map<String,Object> props = new HashMap<String,Object>();
-                props.put("name", wiki.getName());
-                props.put("pageLink", wiki.getPageLink());
-                props.put("entityId", wiki.getEntityId());
-                props.put("rowId", wiki.getRowId());
-                props.put("depth", wiki.getDepth());
-                props.put("href", wiki.getPageLink());
+                ActionURL pageLink = new ActionURL(page.getValue());
+                props.put("name", pageLink.getParameter("name"));
+                props.put("title", page.getKey());
+                props.put("pageLink", page.getValue());
 
-                WikiVersion version = wiki.latestVersion();
-                if (null != version)
-                    props.put("title", wiki.latestVersion().getTitle());
-
-                List<Wiki> children = wiki.getChildren();
-                if (null != children && children.size() > 0)
+                NavTree[] children = page.getChildren();
+                if (null != children && children.length > 0)
                     props.put("children", getChildrenProps(children));
 
                 ret.add(props);

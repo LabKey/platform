@@ -103,7 +103,7 @@ public class ProjectController extends SpringActionController
         public ActionURL getExpandCollapseURL(Container c, String path, String treeId)
         {
             ActionURL url = new ActionURL(ExpandCollapseAction.class, c);
-            url.addParameter("path", "");
+            url.addParameter("path", path);
             url.addParameter("treeId", treeId);
 
             return url;

@@ -55,8 +55,8 @@
         %>
         <tr><td>&nbsp;</td></tr>
         <tr><td>Export to:</td></tr>
-        <tr><td><input type="radio" name="location" value="0">Pipeline root as individual files</td></tr>
-        <tr><td><input type="radio" name="location" value="1">Pipeline root as zip file</td></tr>
+        <tr><td><input type="radio" name="location" value="0">Pipeline root <b>export</b> directory, as individual files</td></tr>
+        <tr><td><input type="radio" name="location" value="1">Pipeline root <b>export</b> directory, as zip file</td></tr>
         <tr><td><input type="radio" name="location" value="2" checked>Browser as zip file</td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr>

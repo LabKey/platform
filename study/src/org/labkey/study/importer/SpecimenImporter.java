@@ -811,6 +811,7 @@ public class SpecimenImporter
 
     private static void markOrphanedRequestVials(Container container, User user, Logger logger) throws SQLException
     {
+        // Mark those global unique IDs that are in requests but are no longer found in the vial table:
         SQLFragment orphanMarkerSql = new SQLFragment("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n" +
                 "\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n" +
                 "\tLEFT OUTER JOIN study.Vial ON\n" +
@@ -821,6 +822,20 @@ public class SpecimenImporter
         logger.info("Marking requested vials that have been orphaned...");
         Table.execute(StudySchema.getInstance().getSchema(), orphanMarkerSql);
         logger.info("Complete.");
+
+        // un-mark those global unique IDs that were previously marked as orphaned but are now found in the vial table:
+        SQLFragment deorphanMarkerSql = new SQLFragment("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n" +
+                "\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n" +
+                "\tLEFT OUTER JOIN study.Vial ON\n" +
+                "\t\tstudy.Vial.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND\n" +
+                "\t\tstudy.Vial.Container = study.SampleRequestSpecimen.Container\n" +
+                "\tWHERE study.Vial.GlobalUniqueId IS NOT NULL AND\n" +
+                "\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n" +
+                "\t\tstudy.SampleRequestSpecimen.Container = ?);", Boolean.FALSE, Boolean.TRUE, container.getId());
+        logger.info("Marking requested vials that have been de-orphaned...");
+        Table.execute(StudySchema.getInstance().getSchema(), deorphanMarkerSql);
+        logger.info("Complete.");
+
     }
 
     private static void setLockedInRequestStatus(Container container, User user, Logger logger) throws SQLException

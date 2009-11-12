@@ -15,28 +15,37 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.query.QueryParam"%>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.VisitImpl"%>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
     org.labkey.study.controllers.reports.ReportsController.CreateCrosstabBean bean = me.getModelBean();
 
+    ActionURL returnURL = new ActionURL(ReportsController.ManageReportsAction.class, getViewContext().getContainer());
 %>
 <form action="participantCrosstab.view" method="GET">
+<input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StudyManager.getSchemaName()%>">
+<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=StudyCrosstabReport.TYPE%>">
+<input type="hidden" name="redirectUrl" value="<%=returnURL.getLocalURIString()%>">
 <table>
     <tr>
         <td>Dataset</td>
         <td>
-            <select name="datasetId">
+            <select name="<%=QueryParam.queryName%>">
                 <%
                     for (DataSetDefinition dataset : bean.getDatasets())
                     {
                 %>
-                <option value="<%= dataset.getRowId() %>"><%= h(dataset.getDisplayString()) %></option>
+                <option value="<%= dataset.getLabel()%>"><%= h(dataset.getDisplayString()) %></option>
                 <%
                     }
                 %>
@@ -63,7 +72,7 @@
         <td></td>
         <td>
             <%= generateSubmitButton("Next") %>
-            <%= generateButton("Cancel", "begin.view") %>
+            <%= generateButton("Cancel", returnURL) %>
         </td>
     </tr>
 </table>

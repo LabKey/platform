@@ -33,6 +33,7 @@ import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -2011,9 +2012,15 @@ public class StudyManager
         }
 
         Map<String,ColumnInfo> propName2Col = new CaseInsensitiveHashMap<ColumnInfo>();
-        for (Map.Entry<String, DomainProperty> aliasInfo : def.getDomain().createImportMap(false).entrySet())
+
+        Domain domain = def.getDomain();
+
+        if (null != domain)
         {
-            propName2Col.put(aliasInfo.getKey(), tinfo.getColumn(aliasInfo.getValue().getName()));
+            for (Map.Entry<String, DomainProperty> aliasInfo : def.getDomain().createImportMap(false).entrySet())
+            {
+                propName2Col.put(aliasInfo.getKey(), tinfo.getColumn(aliasInfo.getValue().getName()));
+            }
         }
 
         for (ColumnInfo col : tinfo.getColumns())

@@ -264,7 +264,7 @@ function removeSelectedVial()
     LABKEY.Specimen.removeVialsFromRequest(removeSelectedVialSuccessful, getSelectedRequestId(), vialIds, "GlobalUniqueId");
 }
 
-function failedAddCallback(responseObj, exceptionObj)
+function failedAddCallback(exceptionObj, responseObj)
 {
     Ext.Msg.hide();
     LABKEY.Utils.displayAjaxErrorResponse(responseObj, exceptionObj);

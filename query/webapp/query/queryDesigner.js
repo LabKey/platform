@@ -1292,10 +1292,10 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
     {
         return null;
     }
-    ret.fieldInfo = function(field)
-    {
-        return tableInfoService.getOutputColumnInfos([field])[field];
-    }
+//    ret.fieldInfo = function(field)
+//    {
+//        return tableInfoService.getOutputColumnInfos([field])[field];
+//    }
     ret.getFieldKeyString = function(dn)
     {
         var dnValue = XMLUtil.getChildWithTagName(dn, 'value', nsQuery);

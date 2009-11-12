@@ -1192,6 +1192,13 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 scope: this,
                 iconCls:'iconReload',
                 tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.'
+            },
+            {
+                text: 'Validate Queries',
+                handler: function(){this.showPanel("lk-vq-panel");},
+                scope: this,
+                iconCls: 'iconCheck',
+                tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.'
             }
         ];
 
@@ -1210,13 +1217,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 scope: this,
                 iconCls: 'iconFileNew',
                 tooltip: 'Create a new query in the selected schema (requires that you select a particular schema or query within that schema).'
-            });
-            tbar.push({
-                text: 'Validate Queries',
-                handler: function(){this.showPanel("lk-vq-panel");},
-                scope: this,
-                iconCls: 'iconCheck',
-                tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.'
             });
         }
 

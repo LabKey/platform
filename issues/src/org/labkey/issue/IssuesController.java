@@ -30,6 +30,7 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -806,7 +807,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_UPDATEOWN)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ResolveAction extends IssueUpdateAction
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
@@ -857,7 +858,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_UPDATEOWN)
+    @RequiresPermissionClass(ReadPermission.class)
     public class CloseAction extends IssueUpdateAction
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
@@ -898,7 +899,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_UPDATEOWN)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ReopenAction extends IssueUpdateAction
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception

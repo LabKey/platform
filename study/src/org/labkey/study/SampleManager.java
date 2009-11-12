@@ -1408,11 +1408,13 @@ public class SampleManager
         }
     }
 
-    public List<String> getDistinctColumnValues(Container container, ColumnInfo col, boolean forceDistinctQuery, String orderBy) throws SQLException
+    public List<String> getDistinctColumnValues(Container container, ColumnInfo col, boolean forceDistinctQuery, String orderBy, TableInfo forcedTable) throws SQLException
     {
         String cacheKey = "DistinctColumnValues." + col.getColumnName();
         boolean isLookup = col.getFk() != null && !forceDistinctQuery;
-        TableInfo tinfo = isLookup ? col.getFk().getLookupTableInfo() : col.getParentTable();
+        TableInfo tinfo = forcedTable;
+        if (tinfo == null)
+            tinfo = isLookup ? col.getFk().getLookupTableInfo() : col.getParentTable();
         DistinctValueList distinctValues = (DistinctValueList) StudyCache.getCached(tinfo, container.getId(), cacheKey);
         if (distinctValues == null)
         {

@@ -108,6 +108,7 @@ public class AllParticipantData
             final String defaultDateFormat = StudyManager.getInstance().getDefaultDateFormatString(study.getContainer());
             final String defaultNumberFormat = StudyManager.getInstance().getDefaultNumberFormatString(study.getContainer());
 
+            Map<Integer, PropertyDescriptor> propertyDescriptors = new HashMap<Integer, PropertyDescriptor>();
             while (rs.next())
             {
                 ArrayListMap row = (ArrayListMap)rs.getRowMap();
@@ -119,7 +120,13 @@ public class AllParticipantData
                 Integer propertyId = (Integer)row.get(colPropertyId);
                 String key = (String)row.get(colKey);
 
-                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyId);
+                PropertyDescriptor pd = propertyDescriptors.get(propertyId);
+                if (pd == null)
+                {
+                    pd = OntologyManager.getPropertyDescriptor(propertyId);
+                    propertyDescriptors.put(propertyId, pd);
+                }
+                
                 Object val;
                 String defaultFormat = null;
 

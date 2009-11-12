@@ -77,7 +77,7 @@ public class CohortTable extends BaseStudyTable
     {
         User user = _schema.getUser();
         if (!getContainer().getPolicy().hasPermission(user, AdminPermission.class))
-            throw new RuntimeException("User is not allowed to update cohorts");
+            return null;
         return new CohortUpdateService();
     }
 }

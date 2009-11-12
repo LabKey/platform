@@ -165,12 +165,12 @@ public class ListTable extends FilteredTable
                 return titleColumn.getName();
         }
 
-        // Title column setting is <AUTO> -- select the first non-pk string column
+        // Title column setting is <AUTO> -- select the first string column
         for (ColumnInfo column : getColumns())
-            if (column.isStringType() && !column.isKeyField())
+            if (column.isStringType())
                 return column.getName();
 
-        // No non-pk string columns -- fall back to pk (see issue #5452)
+        // No string columns -- fall back to pk (see issue #5452)
         return colKey.getName();
     }
 

@@ -769,15 +769,15 @@ public class SpringSpecimenController extends BaseStudyController
             super(context, SampleManager.getInstance().getRequestSpecimens(sampleRequest), !forExport, !forExport, forExport, false);
             _submissionResult = submissionResult;
             _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
-            _possibleNotifications = getUtils().getPossibleNotifications(sampleRequest);
             _sampleRequest = sampleRequest;
             _finalState = SampleManager.getInstance().isInFinalState(_sampleRequest);
             _requirementsComplete = true;
             _missingSpecimens = SampleManager.getInstance().getMissingSpecimens(_sampleRequest);
             _returnUrl = returnUrl;
-            for (int i = 0; i < sampleRequest.getRequirements().length && _requirementsComplete; i++)
+            SampleRequestRequirement[] requirements = sampleRequest.getRequirements();
+            for (int i = 0; i < requirements.length && _requirementsComplete; i++)
             {
-                SampleRequestRequirement requirement = sampleRequest.getRequirements()[i];
+                SampleRequestRequirement requirement = requirements[i];
                 _requirementsComplete = requirement.isComplete();
             }
 
@@ -808,6 +808,8 @@ public class SpringSpecimenController extends BaseStudyController
 
         public synchronized List<ActorNotificationRecipientSet> getPossibleNotifications() throws SQLException
         {
+            if (_possibleNotifications == null)
+                _possibleNotifications = getUtils().getPossibleNotifications(_sampleRequest);
             return _possibleNotifications;
         }
 
@@ -871,7 +873,7 @@ public class SpringSpecimenController extends BaseStudyController
             if (_providingSites == null)
             {
                 Set<Integer> siteSet = new HashSet<Integer>();
-                for (Specimen specimen : _sampleRequest.getSpecimens())
+                for (Specimen specimen : _samples)
                 {
                     Integer siteId = specimen.getCurrentLocation();
                     if (siteId != null)

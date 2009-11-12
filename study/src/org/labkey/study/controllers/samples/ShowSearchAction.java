@@ -16,10 +16,7 @@
 package org.labkey.study.controllers.samples;
 
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
@@ -28,6 +25,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -161,6 +159,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             private boolean _displayAsPickList;
             private boolean _forceDistinctQuery;
             private String _orderBy;
+            private TableInfo _tableInfo;
 
             public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList)
             {
@@ -169,9 +168,15 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
             public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery)
             {
+                this(displayByDefault, displayAsPickList, forceDistinctQuery, null);
+            }
+
+            public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery, TableInfo tableInfo)
+            {
                 _displayByDefault = displayByDefault;
                 _displayAsPickList = displayAsPickList;
                 _forceDistinctQuery = forceDistinctQuery;
+                _tableInfo = tableInfo;
             }
 
             public boolean isDisplayAsPickList()
@@ -198,6 +203,11 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             {
                 _orderBy = orderBy;
             }
+
+            public TableInfo getTableInfo()
+            {
+                return _tableInfo;
+            }
         }
 
 
@@ -214,15 +224,16 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultDetailCols = new HashMap<String, DisplayColumnInfo>();
             _defaultDetailCols.put("PrimaryType", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("AdditiveType", new DisplayColumnInfo(true, true));
-            _defaultDetailCols.put("SiteName", new DisplayColumnInfo(true, true, true));
             DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
             visitInfo.setOrderBy("DisplayOrder");
             _defaultDetailCols.put("Visit", visitInfo);
-            _defaultDetailCols.put("ParticipantId", new DisplayColumnInfo(true, true, true));
+            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
+            TableInfo simpleSpecimenTable = schema.createSimpleSpecimenTable();
+            _defaultDetailCols.put("ParticipantId", new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
             _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
-            _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(false, true));
+            _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("DerivativeType", new DisplayColumnInfo(true, true));
-            _defaultDetailCols.put("VolumeUnits", new DisplayColumnInfo(false, true));
+            _defaultDetailCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
             _defaultDetailCols.put("GlobalUniqueId", new DisplayColumnInfo(true, false));
             _defaultDetailCols.put("Clinic", new DisplayColumnInfo(true, true));
 
@@ -230,11 +241,10 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultSummaryCols.put("PrimaryType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("AdditiveType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("DerivativeType", new DisplayColumnInfo(true, true));
-            _defaultSummaryCols.put("SiteName", new DisplayColumnInfo(true, true, true));
             _defaultSummaryCols.put("Visit", visitInfo);
-            _defaultSummaryCols.put("ParticipantId", new DisplayColumnInfo(true, true, true));
+            _defaultSummaryCols.put("ParticipantId", new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
             _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
-            _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true));
+            _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
             _defaultSummaryCols.put("Clinic", new DisplayColumnInfo(true, true));
         }
 
@@ -277,7 +287,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
             DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
             assert colInfo != null : info.getName() + " is not a picklist column.";
-            return SampleManager.getInstance().getDistinctColumnValues(_container, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy());
+            return SampleManager.getInstance().getDistinctColumnValues(_container, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy(), colInfo.getTableInfo());
         }
     }
 

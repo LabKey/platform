@@ -269,7 +269,7 @@ public class DataSetTable extends FilteredTable
         User user = _schema.getUser();
         DataSet def = getDatasetDefinition();
         if (!def.canWrite(user))
-            throw new RuntimeException("User is not allowed to update dataset: " + getName());
+            return null;
         return new DatasetUpdateService(def.getDataSetId());
     }
 

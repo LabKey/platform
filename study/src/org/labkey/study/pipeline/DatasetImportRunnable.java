@@ -16,22 +16,21 @@
 
 package org.labkey.study.pipeline;
 
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.QCState;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.util.CPUTimer;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.apache.log4j.Logger;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.reader.TabLoader;
+import org.labkey.api.util.CPUTimer;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class DatasetImportRunnable implements Runnable
 {
@@ -113,29 +112,6 @@ public class DatasetImportRunnable implements Runnable
 
         try
         {
-            StringBuilder text = null;
-
-            if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
-            {
-                assert cpuReadFile.start();
-                // UNDONE: there's a helper for this somewhere
-                text = new StringBuilder((int) _tsv.length());
-                FileReader fr = new FileReader(_tsv);
-                BufferedReader reader = new BufferedReader(fr);
-                String s;
-                try
-                {
-                    while (null != (s = reader.readLine()))
-                        text.append(s).append("\n");
-                }
-                finally
-                {
-                    reader.close();
-                    fr.close();
-                }
-                assert cpuReadFile.stop();
-            }
-
             scope.beginTransaction();
 
             if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
@@ -149,14 +125,13 @@ public class DatasetImportRunnable implements Runnable
 
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
-                assert text != null;
                 assert cpuImport.start();
 
-                String[] imported = _task.getStudyManager().importDatasetTSV(
+                String[] imported = _task.getStudyManager().importDatasetData(
                         study,
                         pj.getUser(),
                         _datasetDefinition,
-                        text.toString(),
+                        new TabLoader(_tsv, true),
                         _tsv.lastModified(),
                         _columnMap,
                         errors,
