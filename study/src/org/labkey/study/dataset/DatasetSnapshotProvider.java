@@ -36,6 +36,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -158,6 +159,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         try
         {
             QueryView view = QueryView.create(form);
+            // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
             StringBuilder sb = new StringBuilder();
             TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
@@ -197,7 +199,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 }
 
                 // import the data
-                StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), def, sb.toString(),
+                StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), def, new TabLoader(sb, true),
                         System.currentTimeMillis(), columnMap, errors, true, null);
 
                 if (errors.isEmpty())
@@ -279,6 +281,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     view.setShowInsertNewButton(false);
                     view.setShowDeleteButton(false);
 
+                    // TODO: Create and use a ResultSetDataLoader here instead of round-tripping through a TSV StringBuilder
                     StringBuilder sb = new StringBuilder();
                     TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
@@ -294,7 +297,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     Map<String, String> columnMap = getColumnMap(d, view, def.getColumns());
 
                     // import the new data
-                    String[] newRows = StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), dsDef, sb.toString(), System.currentTimeMillis(),
+                    String[] newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(),
                             columnMap, errors, true, null);
 
                     if (!errors.isEmpty())

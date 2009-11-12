@@ -66,9 +66,9 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
 
         TabLoader loader = new TabLoader(form.getTsv(), true);
-        Map<String,String> columnAliases = new CaseInsensitiveHashMap<String>();
+        Map<String, String> columnAliases = new CaseInsensitiveHashMap<String>();
         //Make sure we accept the labels
-        for (Map.Entry<String,String> entry : importer.getColumnLabels().entrySet())
+        for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
             columnAliases.put(entry.getValue(), entry.getKey());
         //And a few more aliases
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
@@ -96,7 +96,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         columnAliases.put("global Unique Id", SimpleSpecimenImporter.VIAL_ID);
 
         //Remember whether we used a different header so we can put up error messages that make sense
-        Map<String,String> labels = new HashMap();
+        Map<String, String> labels = new HashMap<String, String>();
         for (ColumnDescriptor c : loader.getColumns())
         {
             if (columnAliases.containsKey(c.name))

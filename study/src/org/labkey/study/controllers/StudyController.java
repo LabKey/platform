@@ -1809,7 +1809,7 @@ public class StudyController extends BaseStudyController
                 List<String> errorList = new LinkedList<String>();
 
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-                Pair<String[],UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, tsvData, columnMap, errorList);
+                Pair<String[], UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, tsvData, columnMap, errorList);
 
                 if (result.getKey().length > 0)
                 {

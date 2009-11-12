@@ -36,6 +36,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.BaseStudyController;
@@ -593,7 +594,7 @@ public class AssayPublishManager implements AssayPublishService.Service
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<String[],UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, String tsv, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
+    public Pair<String[], UploadLog> importDatasetTSV(User user, StudyImpl study, DataSetDefinition dsd, String tsv, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
     {
         UploadLog ul = null;
         String[] lsids = new String[0];
@@ -604,7 +605,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             QCState defaultQCState = null;
             if (defaultQCStateId != null)
                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-            lsids = StudyManager.getInstance().importDatasetTSV(study, user, dsd, tsv, ul.getCreated().getTime(), columnMap, errors, true, defaultQCState);
+            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, new TabLoader(tsv, true), ul.getCreated().getTime(), columnMap, errors, true, defaultQCState);
             if (errors.size() == 0)
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
         }

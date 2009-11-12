@@ -33,17 +33,16 @@ import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
@@ -727,7 +726,6 @@ public class StudyManager
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();
-        List<String> errors = new ArrayList<String>();
         Study study = getStudy(container);
         DataSetDefinition def = getDataSetDefinition(study, datasetId);
 
@@ -832,7 +830,7 @@ public class StudyManager
 
             clearCaches(container, true);
 
-            if (transactionOwner && errors.size() == 0)
+            if (transactionOwner)
                 scope.commitTransaction();
         }
         finally
@@ -2186,14 +2184,6 @@ public class StudyManager
         return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, defaultQCState);
     }
 
-
-    public String[] importDatasetTSV(Study study, User user, DataSetDefinition def, String tsv, long lastModified,
-                                     Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState)
-            throws IOException, ServletException, SQLException
-    {
-        TabLoader loader = new TabLoader(tsv, true);
-        return importDatasetData(study, user, def, loader, lastModified, columnMap, errors, checkDuplicates, defaultQCState);
-    }
 
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
