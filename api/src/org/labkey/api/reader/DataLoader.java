@@ -348,7 +348,7 @@ public abstract class DataLoader<T> implements Iterable<T>
     {
         getColumns();
 
-        List<T> rowList = new ArrayList<T>();
+        List<T> rowList = new LinkedList<T>();
         CloseableIterator<T> it = iterator();
 
         try

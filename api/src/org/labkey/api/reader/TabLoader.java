@@ -46,12 +46,12 @@ public class TabLoader extends AbstractTabLoader<Map<String, Object>>
     }
 
     // Infer whether there are headers
-    public TabLoader(String src) throws IOException
+    public TabLoader(CharSequence src) throws IOException
     {
         super(src, null);
     }
 
-    public TabLoader(String src, boolean hasColumnHeaders) throws IOException
+    public TabLoader(CharSequence src, boolean hasColumnHeaders) throws IOException
     {
         super(src, hasColumnHeaders);
     }

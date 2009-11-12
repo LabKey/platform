@@ -59,7 +59,7 @@ public class DatabaseCache<ValueType>
 
     private TTLCacheMap<String, ValueType> getMap()
     {
-        Transaction t = _scope.getCurrentTransaction();
+        DbScope.Transaction t = _scope.getCurrentTransaction();
 
         if (null != t)
         {
@@ -106,7 +106,7 @@ public class DatabaseCache<ValueType>
 
     public synchronized void remove(final String key)
     {
-        Transaction t = _scope.getCurrentTransaction();
+        DbScope.Transaction t = _scope.getCurrentTransaction();
 
         if (null != t)
         {
@@ -124,7 +124,7 @@ public class DatabaseCache<ValueType>
 
     public synchronized void removeUsingPrefix(final String prefix)
     {
-        Transaction t = _scope.getCurrentTransaction();
+        DbScope.Transaction t = _scope.getCurrentTransaction();
 
         if (null != t)
         {
@@ -142,7 +142,7 @@ public class DatabaseCache<ValueType>
 
     public synchronized void clear()
     {
-        Transaction t = _scope.getCurrentTransaction();
+        DbScope.Transaction t = _scope.getCurrentTransaction();
 
         if (null != t)
         {

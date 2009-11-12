@@ -51,7 +51,7 @@ public class BeanTabLoader<T> extends AbstractTabLoader<T>
         _clazz = clazz;
     }
 
-    public BeanTabLoader(Class<T> clazz, String src, boolean hasColumnHeaders) throws IOException
+    public BeanTabLoader(Class<T> clazz, CharSequence src, boolean hasColumnHeaders) throws IOException
     {
         super(src, hasColumnHeaders);
         _clazz = clazz;

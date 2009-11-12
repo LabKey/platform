@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.collections.TTLCacheMap;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -722,6 +723,46 @@ public class DbScope
             if (i % 3 == 0)
                 save.add(s);
             m.put(s,i);
+        }
+    }
+
+    // Represents a single database transaction.  Holds onto the Connection, the temporary caches to use during that
+    // transaction, and the tasks to run immediately after commit to update the shared cache with removals.
+    static class Transaction
+    {
+        private final Connection _conn;
+        private final Map<Object, TTLCacheMap> _caches = new HashMap<Object, TTLCacheMap>(20);
+        private final LinkedList<Runnable> _commitTasks = new LinkedList<Runnable>();
+
+        Transaction(Connection conn)
+        {
+            _conn = conn;
+        }
+
+        Map<Object, TTLCacheMap> getCaches()
+        {
+            return _caches;
+        }
+
+        void addCommitTask(Runnable task)
+        {
+            _commitTasks.add(task);
+        }
+
+        private Connection getConnection()
+        {
+            return _conn;
+        }
+
+        private void clearCommitTasks()
+        {
+            _commitTasks.clear();
+        }
+
+        private void runCommitTasks()
+        {
+            while (!_commitTasks.isEmpty())
+                _commitTasks.removeFirst().run();
         }
     }
 }

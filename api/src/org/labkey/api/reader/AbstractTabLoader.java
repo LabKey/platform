@@ -20,6 +20,7 @@ import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
@@ -55,7 +56,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     private static final Logger _log = Logger.getLogger(TabLoader.class);
 
     // source data
-    private String _stringData = null;
+    private CharSequence _stringData = null;
     private Reader _reader;
     private int _commentLines = 0;
 
@@ -73,7 +74,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         init(hasColumnHeaders);
     }
 
-    protected AbstractTabLoader(String src, Boolean hasColumnHeaders) throws IOException
+    protected AbstractTabLoader(CharSequence src, Boolean hasColumnHeaders) throws IOException
     {
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");
@@ -125,7 +126,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         }
 
         if (null != _stringData)
-            return new BufferedReader(new StringReader(_stringData));
+            return new BufferedReader(new CharSequenceReader(_stringData));
 
         return new BufferedReader(new FileReader(_file));
     }
