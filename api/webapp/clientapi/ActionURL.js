@@ -87,8 +87,8 @@ LABKEY.ActionURL = new function()
         },
 
 		/**
-		* Gets the current container
-		* @return {String} Current container.
+		* Gets the current container path
+		* @return {String} Current container path.
 		*/
         getContainer : function()
         {
@@ -96,6 +96,19 @@ LABKEY.ActionURL = new function()
             var start = path.indexOf("/", LABKEY.contextPath.length + 1);
             var end = path.lastIndexOf("/");
             return path.substring(start, end);
+        },
+
+        /**
+         * Gets the current container's name. For exmaple, if you are in the
+         * /Project/SubFolder/MyFolder container, this method would return 'MyFolder'
+         * while getContainer() would return the entire path.
+         * @return {String} Current container name.
+         */
+        getContainerName : function()
+        {
+            var containerPath = LABKEY.ActionURL.getContainer();
+            var start = containerPath.lastIndexOf("/");
+            return containerPath.substring(start + 1);
         },
 
         /**

@@ -214,6 +214,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/PersistentToolTip.js", immediate);
         LABKEY.requiresScript("clientapi/Message.js", immediate);
         LABKEY.requiresScript("clientapi/FormPanel.js", immediate);
+        LABKEY.requiresScript("clientapi/Pipeline.js", immediate);
     }
     else
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
