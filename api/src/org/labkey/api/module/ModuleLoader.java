@@ -306,6 +306,7 @@ public class ModuleLoader implements Filter
 
     public static List<Module> loadModules(List<File> explodedModuleDirs)
     {
+        Map<String,File> moduleNameToFile = new HashMap<String,File>();
         List<Module> modules = new ArrayList<Module>();
         for(File moduleDir : explodedModuleDirs)
         {
@@ -350,8 +351,18 @@ public class ModuleLoader implements Filter
 
                 if (null != module)
                 {
-                    module.setExplodedPath(moduleDir);
-                    modules.add(module);
+                    //don't load if we've already loaded a module of the same name
+                    if (moduleNameToFile.containsKey(module.getName()))
+                    {
+                        _log.warn("Module with name '" + module.getName() + "' has already been loaded from "
+                                + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping module.");
+                    }
+                    else
+                    {
+                        module.setExplodedPath(moduleDir);
+                        modules.add(module);
+                        moduleNameToFile.put(module.getName(), moduleDir);
+                    }
                 }
                 else
                     _log.error("No module class was found for the module '" + moduleDir.getName() + "'");
