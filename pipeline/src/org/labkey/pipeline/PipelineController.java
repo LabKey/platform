@@ -38,6 +38,7 @@ import org.labkey.api.module.Module;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
+import org.labkey.pipeline.api.PipelineManager;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1283,6 +1284,18 @@ public class PipelineController extends SpringActionController
         public void setKeyPassword(String keyPassword)
         {
             _keyPassword = keyPassword;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetPipelineContainerAction extends ApiAction
+    {
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            PipelineRoot root = PipelineManager.findPipelineRoot(getViewContext().getContainer());
+            resp.put("containerPath", null != root ? root.getContainerPath() : null);
+            return resp;
         }
     }
 
