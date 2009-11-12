@@ -17,6 +17,7 @@ package org.labkey.api.collections;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.CachedRowSetImpl;
+import org.labkey.api.util.ResultSetUtil;
 
 import java.beans.Introspector;
 import java.io.Serializable;
@@ -131,7 +132,11 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
                 BigDecimal dec = (BigDecimal) o;
                 o = dec.doubleValue();
             }
-
+            else if (o instanceof Double)
+            { 
+                double value = ((Number) o).doubleValue();
+                o = ResultSetUtil.mapDatabaseDoubleToJavaDouble(value);
+            }
             if (i == _list.size())
                 _list.add(o);
             else

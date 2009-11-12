@@ -1714,7 +1714,10 @@ public class Table
             {
                 Statement stmt = getStatement();
                 super.close();
-                stmt.close();
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
                 schema.getScope().releaseConnection(connection);
             }
             else

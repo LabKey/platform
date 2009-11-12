@@ -149,7 +149,7 @@ public class StringExpressionFactory
         if (str.startsWith("mailto:"))
             return null;
         
-        if (str.startsWith("http://") || str.startsWith("http://"))
+        if (str.startsWith("http://") || str.startsWith("https://"))
         {
             try
             {

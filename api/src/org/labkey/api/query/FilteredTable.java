@@ -43,6 +43,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     private boolean _public = true;
 
+    // CAREFUL: This constructor does not take a container... call one of the other constructors to filter based on container
+    // TODO: Should be protected?
     public FilteredTable(TableInfo table)
     {
         super(table.getSchema());

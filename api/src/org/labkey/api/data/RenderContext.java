@@ -154,31 +154,37 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public void setResultSet(ResultSet rs)
     {
-        _rs = rs;
-        if (AppProps.getInstance().isDevMode())
-            _log.warn("Call to RenderContext.setResultSet() without a field map"); // , new Throwable());
-        _fieldMap = new LinkedHashMap<FieldKey,ColumnInfo>();
-        try
-        {
-            ResultSetMetaData rsmd = rs.getMetaData();
-            for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
-            {
-                String name = rsmd.getColumnName(i);
-                ColumnInfo col = new ColumnInfo(name);
-                col.setAlias(name);
-                _fieldMap.put(col.getFieldKey(),col);
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        setResultSet(rs, null);
     }
 
     public void setResultSet(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap)
     {
         _rs = rs;
-        _fieldMap = fieldMap;
+        if (fieldMap == null)
+        {
+            if (AppProps.getInstance().isDevMode())
+                _log.warn("Call to RenderContext.setResultSet() without a field map"); // , new Throwable());
+            _fieldMap = new LinkedHashMap<FieldKey,ColumnInfo>();
+            try
+            {
+                ResultSetMetaData rsmd = rs.getMetaData();
+                for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
+                {
+                    String name = rsmd.getColumnName(i);
+                    ColumnInfo col = new ColumnInfo(name);
+                    col.setAlias(name);
+                    _fieldMap.put(col.getFieldKey(),col);
+                }
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+        else
+        {
+            _fieldMap = fieldMap;
+        }
     }
     
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)

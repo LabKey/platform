@@ -222,7 +222,9 @@ public class ConnectionWrapper implements java.sql.Connection
         //noinspection ConstantConditions
         assert null != _openConnections.remove(this) || true;
         _loggedLeaks.remove(this);
-        if (null != _connection)
+        // The Tomcat connection pool violates the API for close() - it throws an exception
+        // if it's already been closed instead of doing a no-op
+        if (null != _connection && !isClosed())
             _connection.close();
     }
 

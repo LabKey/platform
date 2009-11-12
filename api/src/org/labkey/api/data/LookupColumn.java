@@ -126,37 +126,33 @@ public class LookupColumn extends ColumnInfo
     @SuppressWarnings({"ConstantConditions"})
     public void declareJoins(String baseAlias, Map<String, SQLFragment> map)
     {
-        boolean assertEnabled = false;
+        boolean assertEnabled = false; // needed to generate SQL for logging
         assert assertEnabled = true;
 
         String colTableAlias = getTableAlias();
 
-        if (map.containsKey(colTableAlias))
+        if (assertEnabled || !map.containsKey(colTableAlias))
         {
-            if (!assertEnabled)
-                return;
-            // if asserts enabled, fall through
+            foreignKey.declareJoins(baseAlias, map);
+            TableInfo lookupTable = lookupKey.getParentTable();
+            SQLFragment strJoin = new SQLFragment("\n\tLEFT OUTER JOIN ");
+
+            String selectName = lookupTable.getSelectName();
+            if (null != selectName)
+                strJoin.append(selectName);
+            else
+            {
+                strJoin.append("(");
+                strJoin.append(lookupTable.getFromSQL());
+                strJoin.append(")");
+            }
+
+            strJoin.append(" AS ").append(colTableAlias);
+            strJoin.append(" ON ");
+            strJoin.append(getJoinCondition(baseAlias));
+            assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL());
+            map.put(colTableAlias, strJoin);
         }
-
-        foreignKey.declareJoins(baseAlias, map);
-        TableInfo lookupTable = lookupKey.getParentTable();
-        SQLFragment strJoin = new SQLFragment("\n\tLEFT OUTER JOIN ");
-
-        String selectName = lookupTable.getSelectName();
-        if (null != selectName)
-            strJoin.append(selectName);
-        else
-        {
-            strJoin.append("(");
-            strJoin.append(lookupTable.getFromSQL());
-            strJoin.append(")");
-        }
-
-        strJoin.append(" AS ").append(colTableAlias);
-        strJoin.append(" ON ");
-        strJoin.append(getJoinCondition(baseAlias));
-        assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL());
-        map.put(colTableAlias, strJoin);
         this.lookupColumn.declareJoins(colTableAlias, map);
     }
 

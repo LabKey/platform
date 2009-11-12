@@ -92,6 +92,29 @@ public class NavTree extends Pair<String, String> implements Collapsible
         this(display, (String) null);
     }
 
+    /**
+     * Creates a new NavTree instance which is a deep copy of the source NavTree
+     * @param source The source NavTree
+     */
+    public NavTree(NavTree source)
+    {
+        super(source.first, source.second);
+        imageSrc = source.imageSrc;
+        _selected = source._selected;
+        _collapsed = source._collapsed;
+        _canCollapse = source._canCollapse;
+        _highlighted = source._highlighted;
+        _script = source._script;
+        _id = source._id;
+        _disabled = source._disabled;
+
+        children = new ArrayList<NavTree>();
+        for (NavTree child : source.children)
+        {
+            children.add(new NavTree(child));
+        }
+    }
+
     public String getEscapedKey()
     {
         return escapeKey(getKey());

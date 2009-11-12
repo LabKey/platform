@@ -116,7 +116,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
                 throw new QueryUpdateServiceException("The existing row was not found.");
 
             Object oldContainer = new CaseInsensitiveHashMap(oldValues).get("container");
-            if (!rowContainer.equals(oldContainer))
+            if (null != oldContainer && !rowContainer.equals(oldContainer))
                 throw new QueryUpdateServiceException("The row is from the wrong container.");
         }
 
@@ -133,6 +133,21 @@ public class DefaultQueryUpdateService implements QueryUpdateService
     {
         if (!hasPermission(user, ACL.PERM_DELETE))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
+
+        if (container != null && getDbTable().getColumn("container") != null)
+        {
+            Map<String, Object> oldValues = getRow(user, container, keys);
+
+            // if row doesn't exist, bail early
+            if (oldValues == null)
+                return keys;
+
+            // UNDONE: 9077: check container permission on each row before delete
+            Object oldContainer = new CaseInsensitiveHashMap(oldValues).get("container");
+            if (null != oldContainer && !container.getId().equals(oldContainer))
+                throw new QueryUpdateServiceException("The row is from the wrong container.");
+        }
+
         Table.delete(getDbTable(), getKeys(keys));
         return keys;
     }

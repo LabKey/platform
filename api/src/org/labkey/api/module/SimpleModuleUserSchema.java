@@ -20,6 +20,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
@@ -70,7 +71,7 @@ public class SimpleModuleUserSchema extends UserSchema
 
         public SimpleModuleTable(SimpleModuleUserSchema schema, SchemaTableInfo table)
         {
-            super(table);
+            super(table, schema.getContainer());
             _userSchema = schema;
             wrapAllColumns();
         }
@@ -150,6 +151,27 @@ public class SimpleModuleUserSchema extends UserSchema
 
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause(pk.get(0).getName(), pkValues);
+
+            ColumnInfo containerCol = getRealTable().getColumn("container");
+            if (containerCol != null)
+            {
+                String[] containerIds = Table.executeArray(getRealTable(), containerCol, filter, null, String.class);
+                Set<String> seen = new HashSet<String>();
+                for (String containerId : containerIds)
+                {
+                    if (containerId != null)
+                    {
+                        if (seen.contains(containerId))
+                            continue;
+                        seen.add(containerId);
+                        if (!form.getContainer().getId().equals(containerId))
+                            HttpView.throwUnauthorized("The row is from the wrong container.");
+                    }
+                }
+
+                // Filter out non-current-container rows.
+                filter.addCondition(containerCol, form.getContainer());
+            }
 
             addQueryFilters(filter);
             Table.delete(getRealTable(), filter);

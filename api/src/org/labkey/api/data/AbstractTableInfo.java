@@ -259,6 +259,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
      */
     protected ColumnInfo resolveColumn(String name)
     {
+        for (ColumnInfo col : getColumns())
+        {
+            if (col.getPropertyName().equalsIgnoreCase(name))
+                return col;
+        }
         return null;
     }
 

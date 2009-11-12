@@ -2127,7 +2127,7 @@ public class OntologyManager
                             (new SimpleDateFormat(format)).format(new Date());
                             // UNDONE: don't import date format until we have default format for study
                             // UNDONE: it looks bad to have mixed formats
-                            // break;
+                            break;
                         case STRING:
                         case MULTI_LINE:
                         default:

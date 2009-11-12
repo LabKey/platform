@@ -1005,9 +1005,7 @@ public class SecurityManager
     {
         if (group.isSystemGroup())
             throw new IllegalArgumentException("System groups may not be renamed!");
-        Container c = ContainerManager.getForId(group.getContainer());
-        if (null == c)
-            throw new IllegalArgumentException("The container the group exists in no longer exists!");
+        Container c = null == group.getContainer() ? null : ContainerManager.getForId(group.getContainer());
         if (StringUtils.isEmpty(newName))
             throw new IllegalArgumentException("Name is required (may not be blank)");
         String valid = UserManager.validGroupName(newName, group.getType());

@@ -322,7 +322,8 @@ public class ReportUtil
 
         public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
         {
-            return QueryService.get().urlFor(user, c, QueryAction.executeQuery, view.getSchemaName(), view.getQueryName());
+            return QueryService.get().urlFor(user, c, QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).
+                    addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName.name(), view.getName());
         }
 
         public ActionURL getViewEditURL(Container c, CustomViewInfo view, User user)
