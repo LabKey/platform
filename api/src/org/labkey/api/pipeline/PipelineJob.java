@@ -613,6 +613,7 @@ abstract public class PipelineJob extends Job implements Serializable
             boolean success = false;
             try
             {
+                getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
                 if (task instanceof WorkDirectoryTask)
                 {
                     workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());
@@ -620,6 +621,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 }
                 actions = task.run();
                 success = true;
+                getLogger().info("Completed task '" + factory.getId() + "'");
             }
             finally
             {

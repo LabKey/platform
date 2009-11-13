@@ -22,11 +22,13 @@ import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.arrays.DoubleArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.*;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.reports.Report;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
-import org.labkey.api.arrays.DoubleArray;
-import org.labkey.api.data.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,10 +44,10 @@ public class Crosstab
     public static final String TOTAL_COLUMN = "CROSSTAB_TOTAL_COLUMN";
     public static final String TOTAL_ROW = "CROSSTAB_TOTAL_ROW";
     private Set<Stats.StatDefinition> statSet;
-    private String _rowField;
-    private String _colField;
-    private String _statField;
-    private Map<String, ColumnInfo> _columnMap;
+    private FieldKey _rowFieldKey;
+    private FieldKey _colFieldKey;
+    private FieldKey _statFieldKey;
+    private Report.Results _results;
 
     List colHeaders = new  ArrayList<Object>();
 
@@ -57,19 +59,30 @@ public class Crosstab
     Map<Object, DoubleArray> colDatasets = new HashMap<Object, DoubleArray>();
     DoubleArray grandTotalDataset = new DoubleArray();
 
-    public Crosstab(ResultSet rs, Map<String, ColumnInfo> columnMap, String rowField, String colField, String statField, Stats.StatDefinition stat) throws SQLException
-    {
-        this(rs, columnMap, rowField, colField, statField, Stats.statSet(stat));
-    }
-    
-    public Crosstab(ResultSet rs, Map<String, ColumnInfo> columnMap, String rowField, String colField, String statField, Set<Stats.StatDefinition> statSet) throws SQLException
+    public Crosstab(Report.Results results, FieldKey rowFieldKey, FieldKey colFieldKey, FieldKey statFieldKey, Set<Stats.StatDefinition> statSet) throws SQLException
     {
         this.statSet = statSet;
-        _columnMap = columnMap;
-        _rowField = rowField;
-        _colField = colField;
-        _statField = statField;
+        _results = results;
+        _rowFieldKey = rowFieldKey;
+        _colFieldKey = colFieldKey;
+        _statFieldKey = statFieldKey;
+
+        String rowFieldAlias = null;
+        String colFieldAlias = null;
+        String statFieldAlias = null;
         String statCol = null;
+
+        // map the row, column and stat FieldKey names to result set aliases
+        Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
+
+        if (fieldMap.containsKey(rowFieldKey))
+            rowFieldAlias = fieldMap.get(rowFieldKey).getAlias();
+        if (fieldMap.containsKey(colFieldKey))
+            colFieldAlias = fieldMap.get(colFieldKey).getAlias();
+        if (fieldMap.containsKey(statFieldKey))
+            statFieldAlias = fieldMap.get(statFieldKey).getAlias();
+
+        ResultSet rs = _results.getResultSet();
 
         try {
             //TODO: Use DisplayField for display & value extraction. Support Grouping fields with custom groupings
@@ -78,15 +91,15 @@ public class Crosstab
                 Object rowVal = null;
                 DoubleArray cellValues = null;
                 DoubleArray colDataset = null;
-                if (null != rowField)
+                if (null != rowFieldAlias)
                 {
-                    rowVal = rs.getObject(rowField);
+                    rowVal = rs.getObject(rowFieldAlias);
                     Map<Object, DoubleArray> rowMap = crossTab.get(rowVal);
                     if (null == rowMap)
                     {
                         rowMap = new HashMap<Object, DoubleArray>();
                         crossTab.put(rowVal, rowMap);
-                        if (null == colField)
+                        if (null == colFieldAlias)
                             rowMap.put(statCol, new DoubleArray());
 
                         rowDatasets.put(rowVal, new DoubleArray());
@@ -94,9 +107,9 @@ public class Crosstab
 
                     cellValues = null;
                     colDataset = null;
-                    if (null != colField)
+                    if (null != colFieldAlias)
                     {
-                        Object colVal = rs.getObject(colField);
+                        Object colVal = rs.getObject(colFieldAlias);
                         cellValues = rowMap.get(colVal);
                         if (null == cellValues)
                         {
@@ -114,7 +127,7 @@ public class Crosstab
                     }
                 }
 
-                Object statFieldVal = rs.getObject(statField);
+                Object statFieldVal = rs.getObject(statFieldAlias);
                 double d;
                 if (statFieldVal instanceof Number)
                     d = ((Number) statFieldVal).doubleValue();
@@ -129,7 +142,7 @@ public class Crosstab
                 Collections.sort(colHeaders, new GenericComparator());
 
                 grandTotalDataset.add(d);
-                if (null != rowField)
+                if (null != rowFieldAlias)
                     rowDatasets.get(rowVal).add(d);
             }
         }
@@ -156,16 +169,16 @@ public class Crosstab
         return title;
     }
 
-    public String getFieldLabel(String fieldName)
+    public String getFieldLabel(FieldKey fieldKey)
     {
-        if (null == fieldName)
+        if (null == fieldKey)
             return "";
 
-        ColumnInfo col = getColumnMap().get(fieldName);
+        ColumnInfo col = _results.getFieldMap().get(fieldKey);
         if (null != col)
             return col.getLabel();
 
-        return fieldName;
+        return fieldKey.getName();
     }
 
     public List<Object> getRowHeaders()
@@ -230,24 +243,24 @@ public class Crosstab
         return statSet;
     }
 
-    public String getRowField()
+    public FieldKey getRowField()
     {
-        return _rowField;
+        return _rowFieldKey;
     }
 
-    public String getColField()
+    public FieldKey getColField()
     {
-        return _colField;
+        return _colFieldKey;
     }
 
-    public String getStatField()
+    public FieldKey getStatField()
     {
-        return _statField;
+        return _statFieldKey;
     }
 
-    public Map<String, ColumnInfo> getColumnMap()
+    public Report.Results getResults()
     {
-        return _columnMap;
+        return _results;
     }
 
     public ExcelWriter getExcelWriter()
@@ -309,7 +322,7 @@ public class Crosstab
                     if (_crosstab.getStatSet().size() > 1)
                     {
                         rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), rowValue);
-                        rowMap.put(_crosstab.getFieldLabel(STAT_COLUMN), rowStat.getName());
+                        rowMap.put(STAT_COLUMN, rowStat.getName());
                     }
                     else
                         rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), rowValue);
@@ -325,7 +338,7 @@ public class Crosstab
                 if (_crosstab.getStatSet().size() > 1)
                 {
                     rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), "Total");
-                    rowMap.put(_crosstab.getFieldLabel(STAT_COLUMN), rowStat.getName());
+                    rowMap.put(STAT_COLUMN, rowStat.getName());
                 }
                 else
                     rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), "Total");

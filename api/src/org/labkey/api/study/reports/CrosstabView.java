@@ -16,16 +16,13 @@
 package org.labkey.api.study.reports;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.StringUtils;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.Stats;
+import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,7 +32,6 @@ import java.util.Set;
  */
 public class CrosstabView extends WebPartView
 {
-    Map<String, ColumnInfo> colMap;
     ActionURL _exportAction;
     Crosstab _crosstab;
 
@@ -43,7 +39,7 @@ public class CrosstabView extends WebPartView
     protected void renderView(Object model, PrintWriter pw) throws Exception
     {
         StringBuilder errStr = new StringBuilder();
-        if (null == StringUtils.trimToNull(_crosstab.getStatField()))
+        if (null == _crosstab.getStatField())
             errStr.append("Stat field is not defined.<br>");
 
         if (errStr.length() > 0)
@@ -74,10 +70,10 @@ public class CrosstabView extends WebPartView
             if (statSet.size() > 1)
                 pw.write("\t<th class=\"labkey-data-region-title\">&nbsp;</th>\n");
 
-            pw.printf("\t<th class=\"labkey-data-region-title\" colspan=\"%d\">%s</th>\n", colHeaders.size(), str(getFieldLabel(_crosstab.getColField())));
+            pw.printf("\t<th class=\"labkey-data-region-title\" colspan=\"%d\">%s</th>\n", colHeaders.size(), str(_crosstab.getFieldLabel(_crosstab.getColField())));
             pw.write("\t<th class=\"labkey-data-region-title\" style=\"border-right:hidden\">&nbsp;</th>\n</tr>\n");
         }
-        pw.printf("\t<th class=\"labkey-data-region-title\">%s</th>\n", str(getFieldLabel(_crosstab.getRowField())));
+        pw.printf("\t<th class=\"labkey-data-region-title\">%s</th>\n", str(_crosstab.getFieldLabel(_crosstab.getRowField())));
         if (statSet.size() > 1)
             pw.write("\t<td class=\"labkey-col-header\">&nbsp;</td>\n");
 
@@ -168,23 +164,10 @@ public class CrosstabView extends WebPartView
 
     public CrosstabView(Crosstab crosstab, ActionURL exportAction)
     {
-        colMap = crosstab.getColumnMap();
         _crosstab = crosstab;
         _exportAction = exportAction;
 
         setTitle(_crosstab.getDescription());
-    }
-
-    private String getFieldLabel(String fieldName)
-    {
-        if (null == fieldName)
-            return "";
-
-        ColumnInfo col = colMap.get(fieldName);
-        if (null != col)
-            return col.getLabel();
-
-        return fieldName;
     }
 
     private String str(Object val)

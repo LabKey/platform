@@ -17,11 +17,11 @@
 package org.labkey.api.study.reports;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.query.*;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
@@ -41,7 +41,7 @@ import java.util.Set;
  * User: klum
  * Date: Aug 4, 2009
  */
-public class CrosstabReport extends AbstractReport
+public class CrosstabReport extends AbstractReport implements Report.ResultSetGenerator
 {
     public static final String TYPE = "ReportService.CrossTab";
 
@@ -130,15 +130,32 @@ public class CrosstabReport extends AbstractReport
         return null;
     }
 
+    public Results generateResults(ViewContext context) throws Exception
+    {
+        ReportQueryView view = createQueryView(context, getDescriptor());
+        if (view != null)
+        {
+            DataView dataView = view.createDataView();
+            DataRegion rgn = dataView.getDataRegion();
+            rgn.setMaxRows(0);
+            RenderContext ctx = dataView.getRenderContext();
+
+            if (null == rgn.getResultSet(ctx))
+                return null;
+            return new Results(ctx);
+        }
+        return null;
+    }
+
     protected Crosstab createCrosstab(ViewContext context) throws Exception
     {
         CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)getDescriptor();
-        ReportQueryView qv = createQueryView(context, getDescriptor());
-        if (qv != null)
+        Results results = generateResults(context);
+        if (results != null)
         {
-            String rowField = descriptor.getProperty("rowField");
-            String colField = descriptor.getProperty("colField");
-            String statField = descriptor.getProperty("statField");
+            FieldKey rowFieldKey = FieldKey.decode(descriptor.getProperty("rowField"));
+            FieldKey colFieldKey = FieldKey.decode(descriptor.getProperty("colField"));
+            FieldKey statFieldKey = FieldKey.decode(descriptor.getProperty("statField"));
 
             Set<Stats.StatDefinition> statSet = new LinkedHashSet<Stats.StatDefinition>();
             for (String stat : descriptor.getStats())
@@ -162,7 +179,7 @@ public class CrosstabReport extends AbstractReport
                 else if ("Median".equals(stat))
                     statSet.add(Stats.MEDIAN);
             }
-            return new Crosstab(qv.getResultSet(0), qv.getColumnMap(), rowField, colField, statField, statSet);
+            return new Crosstab(results, rowFieldKey, colFieldKey, statFieldKey, statSet);
         }
         return null;
     }

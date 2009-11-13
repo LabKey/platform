@@ -75,20 +75,6 @@ public class ReportQueryView extends QueryView
         return rgn.getResultSet(view.getRenderContext());
     }
 
-    public Map<String, ColumnInfo> getColumnMap()
-    {
-        TableInfo table = getTable();
-        if (table == null)
-            return Collections.emptyMap();
-
-        Map<String, ColumnInfo> ret = new LinkedHashMap<String, ColumnInfo>();
-        List<ColumnInfo> columns = getQueryDef().getColumns(getCustomView(), table);
-        for (ColumnInfo col : columns)
-            ret.put(col.getAlias(), col);
-
-        return ret;
-    }
-
     public DataView createDataView()
     {
         DataView view = super.createDataView();
