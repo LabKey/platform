@@ -904,6 +904,8 @@ public class ListController extends SpringActionController
                     {
                         return new ItemDetails(event, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter("redirectURL"));
                     }
+                    else
+                        return new HtmlView("No details available for this event.");
                 }
             }
             return HttpView.throwNotFound("Unable to find the audit history detail for this event");

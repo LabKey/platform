@@ -82,15 +82,25 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
                 // If the temp directory is shared, then create a jobId directory to be sure the
                 // work directory path is unique.
-                if (_sharedTempDirectory)
+                try
                 {
-                    dirParent = File.createTempFile(jobId, "", dirParent);
-                    dirParent.delete();
-                    dirParent.mkdirs();                    
+                    if (_sharedTempDirectory)
+                    {
+                        dirParent = File.createTempFile(jobId, "", dirParent);
+                        dirParent.delete();
+                        dirParent.mkdirs();
+                    }
+
+                    tempDir = File.createTempFile(support.getBaseName(), WORK_DIR_SUFFIX, dirParent);
+                    tempDir.delete();
+                    tempDir.mkdirs();
                 }
-                tempDir = File.createTempFile(support.getBaseName(), WORK_DIR_SUFFIX, dirParent);
-                tempDir.delete();
-                tempDir.mkdirs();
+                catch (IOException e)
+                {
+                    IOException ioException = new IOException("Failed to create local working directory in " + dirParent);
+                    ioException.initCause(e);
+                    throw ioException;
+                }
                 attempt++;
             }
             while (attempt < 5 && !tempDir.isDirectory());

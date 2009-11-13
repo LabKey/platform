@@ -16,11 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
+<%@ page import="org.labkey.api.query.FieldKey"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
-<%@ page import="java.util.Arrays"%>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -93,20 +94,23 @@
                 sb.append(">Participant Id</option>");
             }
         }
+        FieldKey ptid = new FieldKey(null,"ParticipantId");
+        FieldKey seqNum = new FieldKey(null, "SequenceNum");
+
         for (ColumnInfo col : cols.values())
         {
             if (numericOnly && !(Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive()))
                 continue;
 
-            if ("ParticipantId".equalsIgnoreCase(col.getAlias()) || "SequenceNum".equalsIgnoreCase(col.getAlias()))
+            if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey().encode()))
                 continue;
 
-            if (null != selected && selected.equalsIgnoreCase(col.getAlias()))
+            if (null != selected && selected.equalsIgnoreCase(col.getFieldKey().encode()))
                 sb.append("<option selected value=\"");
             else
                 sb.append("<option value=\"");
 
-            sb.append(h(col.getAlias()));
+            sb.append(h(col.getFieldKey().encode()));
             sb.append("\">");
             sb.append(h(col.getLabel()));
             sb.append("</option>\n");
