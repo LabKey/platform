@@ -99,7 +99,7 @@ LABKEY.ActionURL = new function()
         },
 
         /**
-         * Gets the current container's name. For exmaple, if you are in the
+         * Gets the current container's name. For example, if you are in the
          * /Project/SubFolder/MyFolder container, this method would return 'MyFolder'
          * while getContainer() would return the entire path.
          * @return {String} Current container name.
