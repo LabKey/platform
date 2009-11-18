@@ -43,6 +43,7 @@ public class ExperimentJSONConverter
     public static final String PROPERTIES = "properties";
     public static final String COMMENT = "comment";
     public static final String DATA_FILE_URL = "dataFileURL";
+    public static final String PIPELINE_PATH = "pipelinePath"; //path relative to pipeline root
 
     // Run properties
     public static final String DATA_INPUTS = "dataInputs";

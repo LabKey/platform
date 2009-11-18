@@ -669,6 +669,8 @@ LABKEY.Exp.Data = function (config) {
 
     this.dataType = config.dataType;
     this.dataFileURL = config.dataFileURL;
+    if (config.pipelinePath)
+        this.pipelinePath = config.pipelinePath;
 
     function getSuccessCallbackWrapper(fn, format, scope)
     {
