@@ -167,13 +167,16 @@ public class RenderContext extends BoundMap // extends ViewContext
             _fieldMap = new LinkedHashMap<FieldKey,ColumnInfo>();
             try
             {
-                ResultSetMetaData rsmd = rs.getMetaData();
-                for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
+                if (null != rs)
                 {
-                    String name = rsmd.getColumnName(i);
-                    ColumnInfo col = new ColumnInfo(name);
-                    col.setAlias(name);
-                    _fieldMap.put(col.getFieldKey(),col);
+                    ResultSetMetaData rsmd = rs.getMetaData();
+                    for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
+                    {
+                        String name = rsmd.getColumnName(i);
+                        ColumnInfo col = new ColumnInfo(name);
+                        col.setAlias(name);
+                        _fieldMap.put(col.getFieldKey(),col);
+                    }
                 }
             }
             catch (SQLException x)

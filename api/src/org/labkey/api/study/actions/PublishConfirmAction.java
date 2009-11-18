@@ -30,6 +30,8 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
@@ -58,16 +60,16 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private boolean _attemptPublish;
         private boolean _validate;
         private String _dataRegionSelectionKey;
-        private String _returnURL;
+        private ReturnURLString _returnURL;
         private String _containerFilterName;
         private PublishResultsQueryView.DefaultValueSource _defaultValueSource = PublishResultsQueryView.DefaultValueSource.Assay;
 
-        public String getReturnURL()
+        public ReturnURLString getReturnURL()
         {
             return _returnURL;
         }
 
-        public void setReturnURL(String returnURL)
+        public void setReturnURL(ReturnURLString returnURL)
         {
             _returnURL = returnURL;
         }
@@ -229,14 +231,14 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
 
         List<ActionButton> buttons = new ArrayList<ActionButton>();
-        String returnURL;
+        HString returnURL;
         if (publishConfirmForm.getReturnURL() != null)
         {
             returnURL = publishConfirmForm.getReturnURL();
         }
         else
         {
-            returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString();
+            returnURL = new HString(getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString(), false);
         }
         String script = "window.onbeforeunload = null;"; // Need to prevent a warning if the user clicks on these buttons
 

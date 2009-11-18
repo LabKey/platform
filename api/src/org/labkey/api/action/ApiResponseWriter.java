@@ -19,7 +19,7 @@ import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
+import java.io.Writer;
 import java.util.Stack;
 
 /**
@@ -74,11 +74,19 @@ public abstract class ApiResponseWriter
         XML
     }
 
-    private HttpServletResponse _response = null;
+    private final HttpServletResponse _response;
+    private final Writer _writer;
 
-    public ApiResponseWriter(HttpServletResponse response)
+    public ApiResponseWriter(HttpServletResponse response) throws IOException
     {
         _response = response;
+        _writer = _response.getWriter();
+    }
+
+    public ApiResponseWriter(Writer out) throws IOException
+    {
+        _response = null;
+        _writer = out;
     }
 
     public abstract void write(ApiResponse response) throws IOException;
@@ -109,4 +117,8 @@ public abstract class ApiResponseWriter
         return _response;
     }
 
+    protected Writer getWriter()
+    {
+        return _writer;
+    }
 }

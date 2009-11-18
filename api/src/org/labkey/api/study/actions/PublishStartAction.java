@@ -25,6 +25,8 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;
@@ -48,7 +50,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     public static class PublishForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm
     {
         private String _dataRegionSelectionKey;
-        private String _returnURL;
+        private ReturnURLString _returnURL;
         private String _containerFilterName;
         private boolean _runIds;
 
@@ -62,12 +64,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
-        public String getReturnURL()
+        public ReturnURLString getReturnURL()
         {
             return _returnURL;
         }
 
-        public void setReturnURL(String returnURL)
+        public void setReturnURL(ReturnURLString returnURL)
         {
             _returnURL = returnURL;
         }
@@ -102,12 +104,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private boolean _nullStudies;
         private boolean _insufficientPermissions;
         private String _dataRegionSelectionKey;
-        private final String _returnURL;
+        private final HString _returnURL;
         private final String _containerFilterName;
 
         public PublishBean(AssayProvider provider, ExpProtocol protocol,
                            List<Integer> ids, String dataRegionSelectionKey,
-                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL,
+                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, HString returnURL,
                            String containerFilterName)
         {
             _insufficientPermissions = insufficientPermissions;
@@ -121,13 +123,13 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _containerFilterName = containerFilterName;
         }
 
-        public String getReturnURL()
+        public HString getReturnURL()
         {
             if (_returnURL != null)
             {
                 return _returnURL;
             }
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString();
+            return new HString(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString());
         }
 
         public List<Integer> getIds()

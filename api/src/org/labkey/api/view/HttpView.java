@@ -21,6 +21,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Debug;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.HString;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
@@ -617,6 +618,13 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         throw new RedirectException(url);
     }
 
+
+    public static ModelAndView throwRedirect(HString url) throws RedirectException
+    {
+        throw new RedirectException(url.getSource());
+    }
+
+
     public static ModelAndView redirect(ActionURL url)
     {
         return new ModelAndView(new RedirectView(url.getLocalURIString(), false));
@@ -626,6 +634,11 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static ModelAndView redirect(String url)
     {
         return new ModelAndView(new RedirectView(url, false));
+    }
+
+    public static ModelAndView redirect(HString url)
+    {
+        return new ModelAndView(new RedirectView(url.getSource(), false));
     }
 
     public static ModelAndView throwNotFound() throws NotFoundException

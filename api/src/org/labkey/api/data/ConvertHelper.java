@@ -97,6 +97,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new FloatArrayConverter(), float[].class);
         _register(new GuidString.Converter(), GuidString.class);
         _register(new HString.Converter(), HString.class);
+        _register(new ReturnURLString.Converter(), ReturnURLString.class);
         _register(new IdentifierString.Converter(), IdentifierString.class);
         _register(new NullSafeConverter(new IntegerArrayConverter()), int[].class);
         _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);

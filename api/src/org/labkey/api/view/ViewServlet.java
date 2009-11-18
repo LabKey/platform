@@ -325,26 +325,62 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    public static String testView(HttpServletRequest request, ActionURL urlTest)
+    public static MockHttpServletResponse GET(HttpServletRequest request, final ActionURL urlTest, final String expectedContentType)
             throws Exception
     {
-        int stackSize = 0;
+        if (!"GET".equals(request.getMethod()))
+            throw new IllegalArgumentException(request.getMethod());
         ActionURL url = urlTest.clone();
         url.setReadOnly();
 
-        MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+        MockHttpServletResponse mockResponse = new MockHttpServletResponse()
+        {
+            @Override
+            public void setContentType(String s)
+            {
+                if (null != expectedContentType && !s.startsWith(expectedContentType))
+                    throw new IllegalStateException(s);
+            }
+        };
+
+
+        HttpServletRequestWrapper requestWrapper = new HttpServletRequestWrapper(request)
+        {
+            @Override
+            public Map getParameterMap()
+            {
+                return urlTest.getParameterMap();
+            }
+
+            @Override
+            public String getParameter(String name)
+            {
+                return super.getParameter(name);    //To change body of overridden methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public String[] getParameterValues(String name)
+            {
+                return urlTest.getParameters(name);
+            }
+
+            @Override
+            public Enumeration getParameterNames()
+            {
+                return urlTest.getParameterNames();
+            }
+        };
 
         try
         {
-            ViewContext rootContext = new ViewContext(request, mockResponse, url);
-            String pageFlow = url.getPageFlow().replace('-', '/');
-            String strutsUrl = "/" + pageFlow + "/" + url.getAction() + ".do";
-            ServletView rootView = new ServletView(strutsUrl, rootContext);
-
-            stackSize = HttpView.getStackSize();
-            HttpView.pushView(rootView, request, mockResponse);
-            RequestDispatcher r = _servletContext.getRequestDispatcher(strutsUrl);
-            r.forward(request, mockResponse);
+            Module module = ModuleLoader.getInstance().getModuleForPageFlow(url.getPageFlow());
+            if (module == null)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+            module.dispatch(requestWrapper, mockResponse, url);
+            return mockResponse;
         }
         catch (ServletException x)
         {
@@ -361,16 +397,6 @@ public class ViewServlet extends HttpServlet
             _logError("error", x);
             throw new ServletException(x);
         }
-        finally
-        {
-            HttpView.popView();
-            assert stackSize == HttpView.getStackSize();
-            HttpView.resetStackSize(stackSize);
-        }
-
-        String html;
-        html = mockResponse.getContentAsString();
-        return html;
     }
 
 

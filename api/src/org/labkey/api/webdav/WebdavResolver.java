@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -84,6 +85,8 @@ public interface WebdavResolver
 
         String getContentType();
 
+        Map<String,?> getProperties();
+
         FileStream getFileStream(User user) throws IOException;
         
         InputStream getInputStream(User user) throws IOException;
@@ -131,6 +134,7 @@ public interface WebdavResolver
         // dav methods
         boolean delete(User user) throws IOException;
     }
+
 
     public static interface History
     {

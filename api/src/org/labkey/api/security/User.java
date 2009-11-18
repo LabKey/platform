@@ -41,14 +41,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private Container _impersonationProject = null;
     private boolean _active = false;
 
-    static final User guest = new GuestUser();
-
+    static final User guest = new GuestUser("guest");
+    static final User search = new GuestUser("search");
 
     private static class GuestUser extends User
     {
-        GuestUser()
+        GuestUser(String name)
         {
-            super("guest", 0);
+            super(name, 0);
             _groups = _guestGroups;
         }
 
@@ -273,5 +273,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public void setActive(boolean active)
     {
         _active = active;
+    }
+
+
+    public static User getSearchUser()
+    {
+        return search;
     }
 }

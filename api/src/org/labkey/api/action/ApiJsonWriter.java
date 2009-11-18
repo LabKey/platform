@@ -24,9 +24,8 @@ import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.List;
-import java.util.Stack;
 
 /**
  * Writes various objects returned by API actions in JSON format.
@@ -41,17 +40,26 @@ public class ApiJsonWriter extends ApiResponseWriter
     //per http://www.iana.org/assignments/media-types/application/
     public static final String CONTENT_TYPE_JSON = "application/json";
 
-    public ApiJsonWriter(HttpServletResponse response)
+
+    public ApiJsonWriter(Writer out) throws IOException
+    {
+        super(out);
+    }
+
+
+    public ApiJsonWriter(HttpServletResponse response) throws IOException
     {
         this(response, null);
     }
 
-    public ApiJsonWriter(HttpServletResponse response, String contentTypeOverride)
+
+    public ApiJsonWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         super(response);
         response.setContentType(null == contentTypeOverride ? CONTENT_TYPE_JSON : contentTypeOverride);
         response.setCharacterEncoding("utf-8");
     }
+
 
     public void write(ApiResponse response) throws IOException
     {
@@ -61,13 +69,16 @@ public class ApiJsonWriter extends ApiResponseWriter
             {
                 ((ApiStreamResponse)response).render(this);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 //at this point, we can't guarantee a legitimate
                 //JSON response, and we need to write the exception
                 //back so the client can tell something went wrong
-                if(!getResponse().isCommitted())
-                    getResponse().reset();
+                if (null != getResponse())
+                {
+                    if (!getResponse().isCommitted())
+                        getResponse().reset();
+                }
                 write(e);
             }
         }
@@ -80,7 +91,16 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public void write(Throwable e) throws IOException
     {
-        if(e instanceof NotFoundException)
+        if (null == getResponse())
+        {
+            if (e instanceof IOException)
+                throw (IOException)e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException)e;
+            throw new RuntimeException(e);
+        }
+            
+        if (e instanceof NotFoundException)
             getResponse().setStatus(404);
         else
             getResponse().setStatus(500);
@@ -96,7 +116,8 @@ public class ApiJsonWriter extends ApiResponseWriter
     public void write(Errors errors) throws IOException
     {
         //set the status to 400 to indicate that it was a bad request
-        getResponse().setStatus(400);
+        if (null != getResponse())
+            getResponse().setStatus(400);
 
         String exception = null;
         JSONArray jsonErrors = new JSONArray();
@@ -131,21 +152,21 @@ public class ApiJsonWriter extends ApiResponseWriter
     protected void writeJsonObj(JSONObject obj) throws IOException
     {
         //jsonObj.write(getResponse().getWriter()); //use this for compact output
-        getResponse().getWriter().write(obj.toString(4)); //or this for pretty output
+        getWriter().write(obj.toString(4)); //or this for pretty output
     }
 
     public void startResponse() throws IOException
     {
         assert _streamStack.size() == 0 : "called startResponse() after response was already started!";
         //we always return an object at the top level
-        getResponse().getWriter().write("{");
+        getWriter().write("{");
         _streamStack.push(new StreamState());
     }
 
     public void endResponse() throws IOException
     {
         assert _streamStack.size() == 1 : "called endResponse without a corresponding startResponse()!";
-        getResponse().getWriter().write("}");
+        getWriter().write("}");
         _streamStack.pop();
     }
 
@@ -153,39 +174,39 @@ public class ApiJsonWriter extends ApiResponseWriter
     {
         StreamState state = _streamStack.peek();
         assert(null != state) : "startResponse will start the root-level map!";
-        getResponse().getWriter().write("\n" + JSONObject.quote(name) + ":{");
+        getWriter().write("\n" + JSONObject.quote(name) + ":{");
         _streamStack.push(new StreamState(name, state.getLevel() + 1));
     }
 
     public void endMap() throws IOException
     {
-        getResponse().getWriter().write("}");
+        getWriter().write("}");
         _streamStack.pop();
     }
 
     public void writeProperty(String name, Object value) throws IOException
     {
         StreamState state = _streamStack.peek();
-        getResponse().getWriter().write(state.getSeparator() + JSONObject.quote(name) + ":" 
+        getWriter().write(state.getSeparator() + JSONObject.quote(name) + ":" 
                 + JSONObject.valueToString(value, 4, state.getLevel()));
     }
 
     public void startList(String name) throws IOException
     {
         StreamState state = _streamStack.peek();
-        getResponse().getWriter().write(state.getSeparator() + JSONObject.quote(name) + ":[");
+        getWriter().write(state.getSeparator() + JSONObject.quote(name) + ":[");
         _streamStack.push(new StreamState(name, state.getLevel() + 1));
     }
 
     public void endList() throws IOException
     {
-        getResponse().getWriter().write("]");
+        getWriter().write("]");
         _streamStack.pop();
     }
 
     public void writeListEntry(Object entry) throws IOException
     {
         StreamState state = _streamStack.peek();
-        getResponse().getWriter().write(state.getSeparator() + JSONObject.valueToString(entry, 4, state.getLevel()));
+        getWriter().write(state.getSeparator() + JSONObject.valueToString(entry, 4, state.getLevel()));
     }
 }

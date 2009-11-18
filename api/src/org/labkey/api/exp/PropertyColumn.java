@@ -65,7 +65,8 @@ public class PropertyColumn extends LookupColumn
         String format = StringUtils.trimToNull(pd.getFormat());
         if (null != format)
             setFormat(format);
-        
+
+        // UNDONE PropertyDescriptor() does not have getScale()
         setInputType(pd.getPropertyType().getInputType());
         setInputLength(pd.getInputLength());
         setInputRows(pd.getInputRows());

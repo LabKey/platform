@@ -259,6 +259,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             _additional = addl;
         }
 
+        @Override
+        public boolean canList(User user)
+        {
+            return false;
+        }
+
         public List<Resource> list()
         {
             Map<String, Resource> children = _children.get();

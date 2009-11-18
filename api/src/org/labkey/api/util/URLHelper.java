@@ -21,6 +21,7 @@ import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -35,7 +36,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 
-public class URLHelper implements Cloneable, Serializable
+public class URLHelper implements Cloneable, Serializable, Taintable
 {
     /**
      * this interface allows user to plug in his own path interpreter
@@ -51,7 +52,10 @@ public class URLHelper implements Cloneable, Serializable
     }
 
     protected static PathParser _defaultParser = new _DirParser();
+    static Category _log = Logger.getInstance(URLHelper.class);
 
+
+    protected boolean _tainted = false;
     protected String _scheme = "http";
     protected String _userInfo = null;
     protected String _host = null;
@@ -71,6 +75,13 @@ public class URLHelper implements Cloneable, Serializable
     public URLHelper(URI uri)
     {
         _setURI(uri);
+    }
+
+
+    public URLHelper(HString url) throws URISyntaxException
+    {
+        this(url.getSource());
+        _tainted = url.isTainted();
     }
 
 
@@ -159,10 +170,19 @@ public class URLHelper implements Cloneable, Serializable
         return getBaseServer(getScheme(), getHost(), getPort()).toString();
     }
 
+
+    public HString toLocalString(boolean allowSubstSyntax)
+    {
+        String local = getLocalURIString(allowSubstSyntax);
+        return new HString(local,_tainted);
+    }
+
+
     public String getLocalURIString()
     {
         return getLocalURIString(false);
     }
+
 
     public String getLocalURIString(boolean allowSubstSyntax)
     {
@@ -174,6 +194,12 @@ public class URLHelper implements Cloneable, Serializable
             uriString.append(getQueryString(allowSubstSyntax));
         if (null != _fragment && _fragment.length() > 0)
             uriString.append("#").append(_fragment);
+
+        if (_tainted)
+        {
+            _log.warn("tainted URL: " + uriString.toString());
+        }
+
         return uriString.toString();
     }
 
@@ -382,6 +408,7 @@ public class URLHelper implements Cloneable, Serializable
         return addParameter(key, Boolean.toString(value));
     }
 
+
     public URLHelper addParameter(String key, String value)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
@@ -391,18 +418,16 @@ public class URLHelper implements Cloneable, Serializable
     }
 
 
-    // UNDONE: handle tainted HString
-    public URLHelper addParameter(String key, CharSequence value)
+    public URLHelper addParameter(String key, HString value)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         if (null == _parameters)
             _parameters = new ArrayList<Pair<String, String>>();
-        if (value instanceof HString)
-            value = ((HString)value).getSource();
-        _parameters.add(new Pair<String, String>(key, value.toString()));
+        _parameters.add(new Pair<String, String>(key, null==value ? null : value.getSource()));
+        _tainted |= (null != value && value.isTainted());
         return this;
     }
-
+    
 
     public URLHelper addParameters(Map m)
     {
@@ -707,7 +732,13 @@ public class URLHelper implements Cloneable, Serializable
 
     public String toString()
     {
-        return getLocalURIString();
+        return getLocalURIString(true);
+    }
+
+
+    public HString toHString()
+    {
+        return toLocalString(true);
     }
 
 
@@ -771,6 +802,36 @@ public class URLHelper implements Cloneable, Serializable
         }
     }
 
+
+    // like HttpRequest.getParameterMap
+    public Map getParameterMap()
+    {
+        PropertyValues pvs = getPropertyValues();
+        HashMap<String,String[]> map = new HashMap<String,String[]>();
+        for (PropertyValue pv : pvs.getPropertyValues())
+        {
+            String name = pv.getName();
+            Object o = pv.getValue();
+            if (o instanceof String)
+                map.put(name, new String[]{(String)o});
+            else
+                map.put(pv.getName(), (String[])o);
+        }
+        return map;
+    }
+
+
+    // like HttpRequest.getParameterMap
+    public Enumeration getParameterNames()
+    {
+        Hashtable<String,String> h = new Hashtable<String,String>();
+        for (Pair<String,String> p : _parameters)
+            h.put(p.getKey(), p.getKey());
+        return h.keys();
+    }
+
+
+
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
         public Object convert(Class type, Object value)
@@ -790,6 +851,13 @@ public class URLHelper implements Cloneable, Serializable
         }
     }
 
+
+    public boolean isTainted()
+    {
+        return _tainted;
+    }
+
+
     public void addFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
     {
         StringBuilder key = new StringBuilder();
@@ -803,5 +871,4 @@ public class URLHelper implements Cloneable, Serializable
         key.append(ct.getUrlKey());
         addParameter(key.toString(), value == null ? "" : value.toString());
     }
-
 }

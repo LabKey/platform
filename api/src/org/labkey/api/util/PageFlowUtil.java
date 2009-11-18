@@ -134,25 +134,24 @@ public class PageFlowUtil
         return filter(s,false,false);
     }
 
-    static public HString filter(Taintable s)
+    static public HString filter(HString s)
     {
         if (null == s)
             return HString.EMPTY;
         
-        if (s instanceof HString)
-        {
-            return new HString(filter(((HString)s).getSource()), false);
-        }
-        else if (s instanceof HStringBuilder)
-        {
-            return new HString(filter(((HStringBuilder)s).getSource()), false);
-        }
-        else
-        {
-            return new HString(filter(s.toString()),false);
-        }
+        return new HString(filter(s.getSource()), false);
     }
 
+
+    static public HString filter(HStringBuilder s)
+    {
+        if (null == s)
+            return HString.EMPTY;
+
+        return new HString(filter(((HStringBuilder)s).getSource()), false);
+    }
+
+    
     static public String filter(String s, boolean encodeSpace, boolean encodeLinks)
     {
         if (null == s || 0 == s.length())
@@ -1005,6 +1004,11 @@ public class PageFlowUtil
         return generateButton(text, href, null);
     }
 
+    public static String generateButton(String text, HString href)
+    {
+        return generateButton(text, null==href ? null : href.getSource(), null);
+    }
+
     public static String generateButton(String text, String href, String onClick)
     {
         return generateButton(text, href, onClick, "");
@@ -1167,6 +1171,14 @@ public class PageFlowUtil
     public static String textLink(String text, String href)
     {
         return textLink(text, href, null, null);
+    }
+
+    public static String textLink(String text, HString href, String onClickScript, String id)
+    {
+        return "[<a href=\"" + filter(href) + "\"" +
+                (id != null ? " id=\"" + id + "\"" : "") +
+                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                ">" + text + "</a>]";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id)

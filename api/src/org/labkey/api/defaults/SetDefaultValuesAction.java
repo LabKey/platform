@@ -26,6 +26,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -47,7 +48,7 @@ import java.io.File;
 @RequiresPermissionClass(AdminPermission.class)
 public class SetDefaultValuesAction<FormType extends DomainIdForm> extends DefaultValuesAction<FormType>
 {
-    private String _returnUrl;
+    private ReturnURLString _returnUrl;
 
     public SetDefaultValuesAction()
     {
@@ -252,12 +253,12 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         return new VBox(headerView, view, new HtmlView(overrideHtml.toString()));
     }
 
-    private void appendEditURL(StringBuilder builder, Container container, Domain domain, String returnUrl)
+    private void appendEditURL(StringBuilder builder, Container container, Domain domain, ReturnURLString returnUrl)
     {
         ActionURL editURL = new ActionURL(this.getClass(), container);
         editURL.addParameter("domainId", domain.getTypeId());
         editURL.addParameter("returnUrl", returnUrl);
-        builder.append("<a href=\"").append(editURL.getLocalURIString()).append("\">");
+        builder.append("<a href=\"").append(PageFlowUtil.filter(editURL.getLocalURIString())).append("\">");
         builder.append(PageFlowUtil.filter(container.getPath()));
         builder.append("</a><br>");
     }

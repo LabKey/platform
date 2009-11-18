@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.ACL;
@@ -278,6 +279,8 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
             {
                 String path = url.getExtraPath();
                 c = ContainerManager.getForPath(path);
+                if (c == null)
+                    c = ContainerManager.getForId(StringUtils.strip(path,"/"));
             }
             _c = c;
         }

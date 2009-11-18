@@ -15,7 +15,9 @@
  */
 package org.labkey.api.defaults;
 
-import org.labkey.api.view.ViewForm;/*
+import org.labkey.api.view.ViewForm;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.ReturnURLString;/*
  * User: brittp
  * Date: Mar 2, 2009
  * Time: 5:17:59 PM
@@ -24,7 +26,7 @@ import org.labkey.api.view.ViewForm;/*
 public class DomainIdForm extends ViewForm
 {
     private int _domainId;
-    private String _returnUrl;
+    private ReturnURLString _returnUrl;
 
     public int getDomainId()
     {
@@ -36,12 +38,12 @@ public class DomainIdForm extends ViewForm
         _domainId = domainId;
     }
 
-    public String getReturnUrl()
+    public ReturnURLString getReturnUrl()
     {
         return _returnUrl;
     }
 
-    public void setReturnUrl(String returnUrl)
+    public void setReturnUrl(ReturnURLString returnUrl)
     {
         _returnUrl = returnUrl;
     }

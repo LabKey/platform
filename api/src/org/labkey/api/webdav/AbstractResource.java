@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,6 +49,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     private String _path;
     protected SecurityPolicy _policy;
     protected String _etag = null;
+    Map<String,?> _properties = null;
 
     protected AbstractResource(String path)
     {
@@ -185,6 +187,15 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         if (null == _etag)
             _etag = "W/\"" + len + "-" + getLastModified() + "\"";
         return _etag;
+    }
+
+    public Map<String, ?> getProperties()
+    {
+        if (null == _properties)
+            return Collections.emptyMap();
+        Map<String,?> ret = _properties;
+        assert null != (ret = Collections.unmodifiableMap(ret));
+        return ret;
     }
 
     /** provides one place to completely block access to the resource */

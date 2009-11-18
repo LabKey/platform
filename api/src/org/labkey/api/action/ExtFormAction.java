@@ -15,6 +15,8 @@
  */
 package org.labkey.api.action;
 
+import java.io.IOException;
+
 /*
 * User: Dave
 * Date: Sep 3, 2008
@@ -37,7 +39,7 @@ public abstract class ExtFormAction<FORM> extends ApiAction<FORM>
         super(formClass);
     }
 
-    public ApiResponseWriter createResponseWriter()
+    public ApiResponseWriter createResponseWriter() throws IOException
     {
         return new ExtFormResponseWriter(getViewContext().getResponse(), getContentTypeOverride());
     }

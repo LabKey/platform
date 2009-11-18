@@ -258,11 +258,19 @@ public class ActionButton extends DisplayElement implements Cloneable
     {
         setURL(url.getLocalURIString());
     }
+
     public void setURL(String url)
     {
         checkLocked();
         _actionType = Action.LINK;
         _url = StringExpressionFactory.create(url, true);
+    }
+
+    public void setURL(HString url)
+    {
+        checkLocked();
+        _actionType = Action.LINK;
+        _url = StringExpressionFactory.create(url.getSource(), true);
     }
 
     public String getURL(RenderContext ctx)

@@ -18,6 +18,7 @@ package org.labkey.api.action;
 
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ActionURLException;
+import org.labkey.api.util.ReturnURLString;
 
 /**
 * User: adam
@@ -31,14 +32,14 @@ public class ReturnUrlForm
         returnUrl
     }
 
-    private String _returnUrl;
+    private ReturnURLString _returnUrl;
 
-    public String getReturnUrl()
+    public ReturnURLString getReturnUrl()
     {
         return _returnUrl;
     }
 
-    public void setReturnUrl(String returnUrl)
+    public void setReturnUrl(ReturnURLString returnUrl)
     {
         _returnUrl = returnUrl;
     }
@@ -47,15 +48,17 @@ public class ReturnUrlForm
     {
         try
         {
+            if (null == _returnUrl)
+                return null;
             return new ActionURL(_returnUrl);
         }
         catch(IllegalArgumentException e)
         {
-            throw new ActionURLException(_returnUrl, "returnUrl parameter", e);
+            throw new ActionURLException(_returnUrl.getSource(), "returnUrl parameter", e);
         }
         catch(NullPointerException e)
         {
-            throw new ActionURLException(_returnUrl, "returnUrl parameter", e);
+            throw new ActionURLException(null, "returnUrl parameter", e);
         }
     }
 

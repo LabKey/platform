@@ -25,9 +25,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.*;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -289,7 +287,7 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     @Override
-    public ActionURL addParameter(String key, CharSequence value)
+    public ActionURL addParameter(String key, HString value)
     {
         return (ActionURL) super.addParameter(key, value);
     }
@@ -311,6 +309,11 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     public ActionURL addParameter(Enum e, String value)
+    {
+        return addParameter(e.name(), value);
+    }
+
+    public ActionURL addParameter(Enum e, HString value)
     {
         return addParameter(e.name(), value);
     }
@@ -386,6 +389,14 @@ public class ActionURL extends URLHelper implements Cloneable
     public ActionURL addReturnURL(URLHelper returnURL)
     {
         return addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+    }
+
+
+    public ActionURL(HString url)
+    {
+        this(url.getSource());
+        // UNDONE:
+        _tainted = url.isTainted();
     }
 
 

@@ -19,9 +19,9 @@ package org.labkey.api.webdav;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Set;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 
 /**
  * Created by IntelliJ IDEA.
@@ -34,6 +34,10 @@ public class WebdavService
     static WebdavResolver _resolver = null;
     static CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<Provider>();
 
+
+
+
+    // this is the resolver used to resolve http requests
     public static void setResolver(WebdavResolver r)
     {
         _resolver = r;
@@ -49,6 +53,13 @@ public class WebdavService
         return "_webdav";
     }
 
+
+
+    /*
+     * interface for resources that are accessible through http:
+     */
+
+    
     public interface Provider
     {
         // currently addChildren is called only for web folders

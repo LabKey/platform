@@ -205,6 +205,11 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         return PageFlowUtil.textLink(text, href, null, null);
     }
 
+    public String textLink(String text, HString href)
+    {
+        return PageFlowUtil.textLink(text, href, null, null);
+    }
+
     public String textLink(String text, String href, String onClickScript, String id)
     {
         return PageFlowUtil.textLink(text, href, onClickScript, id);
@@ -233,6 +238,11 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
     public String generateButton(String text, String href)
     {
         return PageFlowUtil.generateButton(text, href);
+    }
+
+    public String generateButton(String text, HString href)
+    {
+        return PageFlowUtil.generateButton(text, href.getSource());
     }
 
     public String generateButton(String text, Class<? extends Controller> actionClass)

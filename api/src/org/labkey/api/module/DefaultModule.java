@@ -35,6 +35,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
+import org.labkey.api.search.SearchService;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletContext;
@@ -811,5 +812,9 @@ public abstract class DefaultModule implements Module
                 l.add(f);
         }
         return l;
+    }
+
+    public void enumerateDocuments(SearchService ss)
+    {
     }
 }

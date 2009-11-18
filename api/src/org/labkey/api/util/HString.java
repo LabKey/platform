@@ -119,6 +119,7 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
         return _safe;
     }
 
+
     // only supports String and HString at the moment
     public static boolean eq(CharSequence a, CharSequence b)
     {

@@ -23,10 +23,14 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.HString;
 import org.labkey.api.view.*;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.action.*;
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -66,7 +70,7 @@ public class DataRegion extends DisplayElement
     private int _maxRows = 0;   // Display all rows by default
     private long _offset = 0;
     private ShowRows _showRows = ShowRows.PAGINATED;
-    private List<Pair<String, String>> _hiddenFormFields = new ArrayList<Pair<String, String>>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
+    private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<Pair<String, Object>>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private int _defaultMode = MODE_GRID;
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.BOTTOM;
     private boolean allowAsync = false;
@@ -256,20 +260,37 @@ public class DataRegion extends DisplayElement
         addHiddenFormField(name.toString(), value);
     }
 
+
+    public void addHiddenFormField(Enum name, HString value)
+    {
+        addHiddenFormField(name.toString(), value);
+    }
+
+
     //TODO: Fix these up. They are just regular fields that are hidden (not rendered in grid mode)
+    public void addHiddenFormField(String name, HString value)
+    {
+        if (null != value)
+            _hiddenFormFields.add(new Pair<String, Object>(name, value));
+    }
+
+
     public void addHiddenFormField(String name, String value)
     {
         if (null != value)
-            _hiddenFormFields.add(new Pair<String, String>(name, value));
+            _hiddenFormFields.add(new Pair<String, Object>(name, value));
     }
 
     public String getHiddenFormFieldValue(String name)
     {
-        for (Pair<String, String> hiddenFormField : _hiddenFormFields)
+        for (Pair<String, Object> hiddenFormField : _hiddenFormFields)
         {
             if (name.equals(hiddenFormField.getKey()))
             {
-                return hiddenFormField.getValue();
+                if (hiddenFormField.getValue() instanceof HString)
+                    return ((HString)hiddenFormField.getValue()).getSource();
+                else
+                    return (String)hiddenFormField.getValue();
             }
         }
         return null;
@@ -1279,8 +1300,13 @@ public class DataRegion extends DisplayElement
         if (mode == MODE_GRID)
             out.write("<input type=\"hidden\" name=\"" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "\" value=\"" + PageFlowUtil.filter(getSelectionKey()) + "\" />");
 
-        for (Pair<String, String> field : _hiddenFormFields)
-            out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter(field.second) + "\">");
+        for (Pair<String, Object> field : _hiddenFormFields)
+        {
+            if (field.second instanceof HString)
+                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((HString)field.second) + "\">");
+            else
+                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String)field.second) + "\">");
+        }
     }
 
     public void setRecordSelectorValueColumns(String... columns)
@@ -1582,8 +1608,258 @@ public class DataRegion extends DisplayElement
         }
     }
 
+    private boolean renderExtForm(RenderContext ctx, Writer out) throws SQLException, IOException
+    {
+        int action = ctx.getMode();
+        Map valueMap = ctx.getRow();
+        TableViewForm viewForm = ctx.getForm();
+
+        List<DisplayColumn> renderers = getDisplayColumns();
+        Set<String> renderedColumns = new HashSet<String>();
+
+        //if user doesn't have read permissions, don't render anything
+        if ((action == MODE_INSERT && !ctx.getViewContext().hasPermission(ACL.PERM_INSERT)) || (action == MODE_UPDATE && !ctx.getViewContext().hasPermission(ACL.PERM_UPDATE)))
+        {
+            out.write("You do not have permission to " +
+                    (action == MODE_INSERT ? "Insert" : "Update") +
+                    " data in this container.");                       
+            return true;
+        }
+
+        TableInfo t = viewForm.getTable();
+        ApiQueryResponse json = new ApiQueryResponse();
+        ApiJsonWriter jsonOut = new ApiJsonWriter(out);
+        json.initialize(null, ctx.getFieldMap(), t, _displayColumns, null);
+
+        out.write("<script type='text/javascript'>\n");
+        out.write("Ext.namespace('DataRegionForm');\n");
+        out.write("(function(){\n");
+        out.write("var dr = DataRegionForm[" + PageFlowUtil.jsString(getName()) + "] = {config:{}};\n");
+        out.write("dr.config.selectRowsReponse = ");
+        jsonOut.write(json);
+        out.write(";\n");
+
+        out.write(")})();\n");
+        out.write("</script>\n");
+
+        if (1==1)
+            return false;
+        
+        ButtonBar buttonBar;
+
+        if (action == MODE_INSERT)
+            buttonBar = _insertButtonBar;
+        else
+            buttonBar = _updateButtonBar;
+
+        renderFormHeader(out, action);
+        renderMainErrors(ctx, out);
+
+        out.write("<table>");
+
+        for (DisplayColumn renderer : renderers)
+        {
+            if (shouldRender(renderer, ctx) && null != renderer.getColumnInfo() && !renderer.getColumnInfo().isNullable())
+            {
+                out.write("<tr><td colspan=3>Fields marked with an asterisk * are required.</td></tr>");
+                break;
+            }
+        }
+
+        for (DisplayColumn renderer : renderers)
+        {
+            if (!shouldRender(renderer, ctx))
+                continue;
+            renderFormField(ctx, out, renderer);
+            if (null != renderer.getColumnInfo())
+                renderedColumns.add(renderer.getColumnInfo().getPropertyName());
+        }
+
+        int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size()); // One extra one for the column to reuse the same value
+
+        if (!_groups.isEmpty())
+        {
+            assert _groupHeadings != null : "Must set group headings before rendering";
+            out.write("<tr><td/>");
+            boolean hasCopyable = false;
+
+            for (DisplayColumnGroup group : _groups)
+            {
+                if (group.isCopyable() && group.getColumns().size() > 1)
+                {
+                    hasCopyable = true;
+                    break;
+                }
+            }
+
+            if (_horizontalGroups)
+            {
+                if (hasCopyable)
+                {
+                    writeSameHeader(ctx, out);
+                }
+                else
+                {
+                    out.write("<td/>");
+                }
+                for (String heading : _groupHeadings)
+                {
+                    out.write("<td valign='bottom' class='labkey-form-label'>");
+                    out.write(PageFlowUtil.filter(heading));
+                    out.write("</td>");
+                }
+            }
+            else
+            {
+                for (DisplayColumnGroup group : _groups)
+                {
+                    group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
+                }
+                out.write("</tr>\n<tr>");
+                if (hasCopyable)
+                {
+                    writeSameHeader(ctx, out);
+                    for (DisplayColumnGroup group : _groups)
+                    {
+                        if (group.isCopyable() && hasCopyable)
+                        {
+                            group.writeSameCheckboxCell(ctx, out);
+                        }
+                        else
+                        {
+                            out.write("<td/>");
+                        }
+                    }
+                }
+                else
+                {
+                    out.write("<td/>");
+                }
+            }
+            out.write("</tr>");
+
+            if (_horizontalGroups)
+            {
+                for (DisplayColumnGroup group : _groups)
+                {
+                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                    out.write("<tr>");
+                    group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
+                    if (group.isCopyable() && hasCopyable)
+                    {
+                        group.writeSameCheckboxCell(ctx, out);
+                    }
+                    else
+                    {
+                        out.write("<td/>");
+                    }
+                    for (DisplayColumn col : group.getColumns())
+                    {
+                        if (!shouldRender(col, ctx))
+                            continue;
+                        col.renderInputCell(ctx, out, 1);
+                    }
+                    out.write("\t</tr>");
+                }
+            }
+            else
+            {
+                for (DisplayColumnGroup group : _groups)
+                {
+                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                }
+
+                for (int i = 0; i < _groupHeadings.size(); i++)
+                {
+                    out.write("<tr>");
+                    out.write("<td valign='bottom' class='labkey-form-label'>");
+                    out.write(PageFlowUtil.filter(_groupHeadings.get(i)));
+                    out.write("</td>");
+                    for (DisplayColumnGroup group : _groups)
+                    {
+                        DisplayColumn col = group.getColumns().get(i);
+                        if (!shouldRender(col, ctx))
+                            continue;
+                        col.renderInputCell(ctx, out, 1);
+                    }
+                    out.write("\t</tr>");
+                }
+            }
+
+            out.write("<script language='javascript'>");
+            for (DisplayColumnGroup group : _groups)
+            {
+                if (group.isCopyable())
+                {
+                    out.write("function " + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "Updated()\n{");
+                    out.write("if (document.getElementById('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "CheckBox') != null && document.getElementById('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "CheckBox').checked) {");
+                    out.write("v = document.getElementsByName('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "')[0].value;");
+                    for (int i = 1; i < group.getColumns().size(); i++)
+                    {
+                        out.write("document.getElementsByName('" + ctx.getForm().getFormFieldName(group.getColumns().get(i).getColumnInfo()) + "')[0].value = v;");
+                    }
+                    out.write("}}\n");
+                    out.write("e = document.getElementsByName('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "')[0];\n");
+                    out.write("e.onchange=" +ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "Updated;");
+                    out.write("e.onkeyup=" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "Updated;");
+                }
+            }
+            out.write("</script>");
+        }
+
+        out.write("<tr><td colspan=" + (span + 1) + " align=left>");
+
+        if (action == MODE_UPDATE && valueMap != null)
+        {
+            if (valueMap instanceof BoundMap)
+                renderOldValues(out, ((BoundMap)valueMap).getBean());
+            else
+                renderOldValues(out, valueMap);
+        }
+
+        //Make sure all pks are included
+        if (action == MODE_UPDATE)
+        {
+            List<String> pkColNames = getTable().getPkColumnNames();
+            for (String pkColName : pkColNames)
+            {
+                if (!renderedColumns.contains(pkColName)) {
+                    Object pkVal = null;
+                    //UNDONE: Should we require a viewForm whenver someone
+                    //posts? I tend to think so.
+                    if (null != viewForm)
+                        pkVal = viewForm.getPkVal();        //TODO: Support multiple PKs?
+
+                    if (pkVal == null && valueMap != null)
+                        pkVal = valueMap.get(pkColName);
+
+                    if (null != pkVal) {
+                        out.write("<input type='hidden' name='");
+                        out.write(pkColName);
+                        out.write("' value=\"");
+                        out.write(PageFlowUtil.filter(pkVal.toString()));
+                        out.write("\">");
+                    }
+                }
+            }
+        }
+
+        buttonBar.render(ctx, out);
+        out.write("</td></tr>");
+        out.write("</table>");
+        renderFormEnd(ctx, out);
+        return true;
+    }
+
+    
     private void renderForm(RenderContext ctx, Writer out) throws SQLException, IOException
     {
+        if (false)
+        {
+            if (renderExtForm(ctx, out))
+                return;
+        }
+
         int action = ctx.getMode();
         Map valueMap = ctx.getRow();
         TableViewForm viewForm = ctx.getForm();
@@ -1809,6 +2085,7 @@ public class DataRegion extends DisplayElement
         renderFormEnd(ctx, out);
     }
 
+    
     private void writeSameHeader(RenderContext ctx, Writer out)
             throws IOException
     {

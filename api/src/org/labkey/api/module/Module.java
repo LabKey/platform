@@ -25,6 +25,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.util.Pair;
+import org.labkey.api.search.SearchService;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.web.servlet.mvc.Controller;
@@ -256,4 +257,8 @@ public interface Module extends Comparable<Module>
      */
     @NotNull
     public List<File> getStaticFileDirectories();
+
+    
+    /** enumerate documents for full text search */
+    public void enumerateDocuments(SearchService ss);
 }

@@ -36,12 +36,12 @@ import java.util.List;
  */
 public class ExtFormResponseWriter extends ApiJsonWriter
 {
-    public ExtFormResponseWriter(HttpServletResponse response)
+    public ExtFormResponseWriter(HttpServletResponse response) throws IOException
     {
         super(response);
     }
 
-    public ExtFormResponseWriter(HttpServletResponse response, String contentTypeOverride)
+    public ExtFormResponseWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         super(response, contentTypeOverride);
     }

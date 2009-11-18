@@ -24,6 +24,7 @@ import org.labkey.api.data.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.util.Pair;
+import org.labkey.api.search.SearchService;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.web.servlet.mvc.Controller;
@@ -260,5 +261,9 @@ public class MockModule implements Module
     public List<File> getStaticFileDirectories()
     {
         return Collections.emptyList();
+    }
+
+    public void enumerateDocuments(SearchService ss)
+    {
     }
 }

@@ -29,6 +29,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Iterator;
 
 /**
@@ -302,7 +303,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     {
     }
 
-    public ApiResponseWriter createResponseWriter()
+    public ApiResponseWriter createResponseWriter() throws IOException
     {
         //for now, always return a JSON writer.
         //in the future, look at the posted content-type, or a query string param

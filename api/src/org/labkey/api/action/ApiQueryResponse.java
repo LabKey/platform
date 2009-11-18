@@ -68,6 +68,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         view.exportToApiResponse(this);
     }
 
+    public ApiQueryResponse()
+    {
+        _includeLookupInfo = true;
+        _metaDataOnly = true;
+    }
+
     public Map<String, Object> getProperties()
     {
         //this will stream the response instead
@@ -92,14 +98,14 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
         writer.endResponse();
-    }
+    }    
 
     public List<FieldKey> getFieldKeys()
     {
         return _fieldKeys;
     }
 
-    public void initialize(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount) throws Exception
+    public void initialize(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount)
     {
         _rs = rs;
         _tinfo = table;
@@ -144,40 +150,27 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected Map<String,Object> getMetaData() throws Exception
     {
         Map<String,Object> mdata = new HashMap<String,Object>();
-        ArrayList<Map<String,Object>> fields = new ArrayList<Map<String,Object>>();
-        for(DisplayColumn dc : _displayColumns)
-        {
-            if(dc.isQueryColumn())
-            {
-                Map<String,Object> fmdata = getMetaData(dc);
-                //if the column type is file, include an extra column for the url
-                if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
-                {
-                    fmdata.put("file", true);
-                    Map<String,Object> urlmdata = getFileUrlMeta(dc);
-                    if(null != urlmdata)
-                        fields.add(urlmdata);
-                }
-                fields.add(fmdata);
-            }
-        }
+        ArrayList<Map<String,Object>> fields = getFieldsMetaData(_displayColumns, _includeLookupInfo);
 
         mdata.put("root", "rows");
         mdata.put("totalProperty", "rowCount");
 
-        String sort =_viewContext.getRequest().getParameter("query.sort");
-        if (sort != null && sort.length() > 1)
+        if (null != _viewContext && null != _viewContext.getRequest())
         {
-            String dir =  "ASC";
-            if (sort.charAt(0) == '-')
+            String sort =_viewContext.getRequest().getParameter("query.sort");
+            if (sort != null && sort.length() > 1)
             {
-                dir = "DESC";
-                sort = sort.substring(1);
+                String dir =  "ASC";
+                if (sort.charAt(0) == '-')
+                {
+                    dir = "DESC";
+                    sort = sort.substring(1);
+                }
+                Map<String, String> sortInfo = new HashMap<String, String>();
+                sortInfo.put("field", sort);
+                sortInfo.put("direction", dir);
+                mdata.put("sortInfo", sortInfo);
             }
-            Map<String, String> sortInfo = new HashMap<String, String>();
-            sortInfo.put("field", sort);
-            sortInfo.put("direction", dir);
-            mdata.put("sortInfo", sortInfo);
         }
         
         //include an id property set to the pk column name if there is one (and only one)
@@ -189,6 +182,30 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         return mdata;
     }
+
+    
+    public ArrayList<Map<String, Object>> getFieldsMetaData(Collection<DisplayColumn> displayColumns, boolean includeLookupInfo)
+    {
+        ArrayList<Map<String, Object>> fields = new ArrayList<Map<String,Object>>();
+        for(DisplayColumn dc : displayColumns)
+        {
+            if(dc.isQueryColumn())
+            {
+                Map<String,Object> fmdata = getMetaData(dc, includeLookupInfo);
+                //if the column type is file, include an extra column for the url
+                if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                {
+                    fmdata.put("file", true);
+                    Map<String,Object> urlmdata = getFileUrlMeta(dc);
+                    if(null != urlmdata)
+                        fields.add(urlmdata);
+                }
+                fields.add(fmdata);
+            }
+        }
+        return fields;
+    }
+    
 
     protected Map<String,Object> getFileUrlMeta(DisplayColumn fileColumn)
     {
@@ -209,7 +226,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return ret;
     }
 
-    protected Map<String, Object> getMetaData(DisplayColumn dc) throws Exception
+    protected Map<String, Object> getMetaData(DisplayColumn dc, boolean includeLookupInfo)
     {
         HashMap<String,Object> fmdata = new HashMap<String,Object>();
         fmdata.put("name", dc.getColumnInfo().getName());
@@ -220,7 +237,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         fmdata.put("shownInDetailsView", dc.getColumnInfo().isShownInDetailsView());
         fmdata.put("hidden", dc.getColumnInfo().isHidden());
 
-        if(isLookup(dc))
+        if(includeLookupInfo && isLookup(dc))
         {
             ForeignKey fk = dc.getColumnInfo().getFk();
             TableInfo lookupTable = fk.getLookupTableInfo();
@@ -341,11 +358,13 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         }
     }
 
+
     protected Object getColumnValue(DisplayColumn dc)
     {
         Object value = dc.getValue(_ctx);
         return value instanceof Date ? _dateFormat.format(value) : value;
     }
+
 
     protected boolean isEditable(DisplayColumn dc)
     {
@@ -356,15 +375,16 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return (!(col instanceof LookupColumn) || col instanceof PropertyColumn);
     }
 
+
     protected boolean isLookup(DisplayColumn dc)
     {
         //to be treated as a lookup, the column must have an FK, and an FK TableInfo that is public
-        return (_includeLookupInfo
-                && null != dc.getColumnInfo().getFk()
+        return (null != dc.getColumnInfo().getFk()
                 && null != dc.getColumnInfo().getFkTableInfo()
                 && dc.getColumnInfo().getFkTableInfo().isPublic());
 
     }
+
 
     protected RenderContext getRenderContext()
     {
