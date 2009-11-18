@@ -38,6 +38,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.data.Container;
 import org.labkey.study.assay.ModuleRunUploadContext;
 import org.labkey.study.assay.TsvDataHandler;
 import org.labkey.study.assay.ModuleAssayProvider;
@@ -220,11 +221,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     private ExpData handleData(JSONObject dataObject, PipeRoot pipelineRoot) throws ValidationException
     {
+        ExperimentService.Interface expSvc = ExperimentService.get();
+        Container container = getViewContext().getContainer();
         ExpData data;
         if (dataObject.has(ExperimentJSONConverter.ID))
         {
             int dataId = dataObject.getInt(ExperimentJSONConverter.ID);
-            data = ExperimentService.get().getExpData(dataId);
+            data = expSvc.getExpData(dataId);
 
             if (data == null)
             {
@@ -235,12 +238,18 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 throw new NotFoundException("Data with row id " + dataId + " is not in folder " + getViewContext().getContainer());
             }
         }
-        else
+        else if (dataObject.has(ExperimentJSONConverter.PIPELINE_PATH))
         {
-            //create a new data object if there's a pipeline path property
-            if (dataObject.has(ExperimentJSONConverter.PIPELINE_PATH))
+            String pipelinePath = dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH);
+            String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
+            DataType type = ModuleAssayProvider.RAW_DATA_TYPE;
+
+            //check to see if this is already an ExpData
+            String lsid = expSvc.generateLSID(container, type, name);
+            data = expSvc.getExpData(lsid);
+            if (null == data)
             {
-                String pipelinePath = dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH);
+                //create a new one
                 URI uri;
                 try
                 {
@@ -253,14 +262,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
                 }
 
-                String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
-                data = ExperimentService.get().createData(getViewContext().getContainer(), ModuleAssayProvider.RAW_DATA_TYPE, name);
+                data = expSvc.createData(container, type, name);
                 data.setDataFileURI(uri);
                 data.save(getViewContext().getUser());
             }
-            else
-                throw new IllegalArgumentException("Data input must have an id proeprty or a pipelinePath property.");
         }
+        else
+            throw new IllegalArgumentException("Data input must have an id proeprty or a pipelinePath property.");
 
         saveProperties(data, new DomainProperty[0], dataObject);
         return data;
