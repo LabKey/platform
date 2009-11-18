@@ -2207,9 +2207,10 @@ public class StudyManager
         {
             for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
                 qcStateLabels.put(state.getLabel(), state);
+
             if (tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null)
             {
-                for (Map<String,Object> dataMap : dataMaps)
+                for (Map<String, Object> dataMap : dataMaps)
                 {
                     String qcStateLabel = (String) dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
                     // We have a non-null QC state column value.  We need to check to see if this is a known state,
@@ -2225,10 +2226,11 @@ public class StudyManager
         // Try not to be too repetitive, stop each loop after one error
         //
 
-        // In certain cases (e.g. QC Columns), we have multiple columns with the same
+        // In certain cases (e.g., QC Columns), we have multiple columns with the same
         // property URI. We don't want to complain about conversion errors multiple
         // times, so we keep a set around in case we run into one and only report it once.
-        MultiMap<Integer,String> rowToConversionErrorURIs = new MultiHashMap<Integer,String>();
+        MultiMap<Integer, String> rowToConversionErrorURIs = new MultiHashMap<Integer, String>();
+
         for (ColumnInfo col : tinfo.getColumns())
         {
             // lsid is generated
@@ -2237,10 +2239,10 @@ public class StudyManager
 
             for (int i = 0; i < dataMaps.size(); i++)
             {
-                Map<String,Object> dataMap = dataMaps.get(i);
+                Map<String, Object> dataMap = dataMaps.get(i);
                 Object val = dataMap.get(col.getPropertyURI());
-
                 boolean valueMissing;
+
                 if (val == null)
                 {
                     valueMissing = true;
@@ -2248,11 +2250,15 @@ public class StudyManager
                 else if (val instanceof MvFieldWrapper)
                 {
                     MvFieldWrapper mvWrapper = (MvFieldWrapper)val;
+
                     if (mvWrapper.isEmpty())
+                    {
                         valueMissing = true;
+                    }
                     else
                     {
                         valueMissing = false;
+
                         if (col.isMvEnabled() && !MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), def.getContainer()))
                         {
                             String columnName = col.getName() + MvColumn.MV_INDICATOR_SUFFIX;
@@ -2265,6 +2271,7 @@ public class StudyManager
                 {
                     valueMissing = false;
                 }
+
                 if (valueMissing && !col.isNullable() && col.isUserEditable())
                 {
                     // Demographic data gets special handling for visit or date fields, depending on the type of study,
@@ -2319,6 +2326,7 @@ public class StudyManager
 
         String keyPropertyURI = null;
         String keyPropertyName = def.getKeyPropertyName();
+
         if (keyPropertyName != null)
         {
             ColumnInfo col = tinfo.getColumn(keyPropertyName);
@@ -2331,15 +2339,17 @@ public class StudyManager
             String participantIdURI = DataSetDefinition.getParticipantIdURI();
             String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
             String visitDateURI = DataSetDefinition.getVisitDateURI();
+            HashMap<String, Map> failedReplaceMap = checkAndDeleteDups(user, study, def, dataMaps);
 
-            HashMap<String,Map> failedReplaceMap = checkAndDeleteDups(user, study, def, dataMaps);
             if (null != failedReplaceMap && failedReplaceMap.size() > 0)
             {
                 StringBuilder error = new StringBuilder();
                 error.append("Only one row is allowed for each Participant");
+
                 if (!def.isDemographicData())
                 {
-                     error.append(study.isDateBased() ? "/Date" : "/Visit");
+                    error.append(study.isDateBased() ? "/Date" : "/Visit");
+
                     if (def.getKeyPropertyName() != null)
                         error.append("/").append(def.getKeyPropertyName()).append(" Triple.  ");
                     else
@@ -2349,9 +2359,11 @@ public class StudyManager
                 {
                     error.append("/").append(def.getKeyPropertyName()).append(" Pair.  ");
                 }
+
                 error.append("Duplicates were found in the database or imported data.");
                 errors.add(error.toString());
-                for (Map.Entry<String,Map> e : failedReplaceMap.entrySet())
+
+                for (Map.Entry<String, Map> e : failedReplaceMap.entrySet())
                 {
                     Map m = e.getValue();
                     String err = "Duplicate: Participant = " + m.get(participantIdURI);
@@ -2397,6 +2409,7 @@ public class StudyManager
                 {
                     // We first insert new QC states for any previously unknown QC labels found in the data:
                     Map<String, QCState> iterableStates = new HashMap<String, QCState>(qcStateLabels);
+
                     for (Map.Entry<String, QCState> state : iterableStates.entrySet())
                     {
                         if (state.getValue() == null)
@@ -2415,6 +2428,7 @@ public class StudyManager
                     // swapping in the appropriate row id for each QC label, and applying the default QC state
                     // to null QC rows if appropriate:
                     String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
+
                     for (Map<String, Object> dataMap : dataMaps)
                     {
                         // only update the QC state ID if it isn't already explicitly specified:
@@ -2422,6 +2436,7 @@ public class StudyManager
                         {
                             Object currentStateObj = dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
                             String currentStateLabel = currentStateObj != null ? currentStateObj.toString() : null;
+
                             if (currentStateLabel != null)
                             {
                                 QCState state = qcStateLabels.get(currentStateLabel);
@@ -2433,17 +2448,19 @@ public class StudyManager
                         }
                     }
                 }
+
                 //
                 // Use OntologyManager for bulk insert
                 //
-                // CONSIDER: it would nice if we could use the Table/TableInfo methods here
+                // CONSIDER: it would be nice if we could use the Table/TableInfo methods here
 
                 // Need to generate keys if the server manages them
                 if (def.isKeyPropertyManaged())
                 {
                     int currentKey = getMaxKeyValue(def, user);
+
                     // Sadly, may have to create new maps, since TabLoader's aren't modifyable
-                    for (int i=0;i<dataMaps.size();i++)
+                    for (int i = 0; i < dataMaps.size(); i++)
                     {
                         // Only insert if there isn't already a value
                         if (dataMaps.get(i).get(keyPropertyURI) == null)
@@ -2467,6 +2484,7 @@ public class StudyManager
                     startedTransaction = false;
                 }
             }
+
             _dataSetHelper.clearCache(def);
         }
         catch (ValidationException ve)
@@ -2484,6 +2502,7 @@ public class StudyManager
                 imported = new String[0];
             }
         }
+
         return imported;
     }
 

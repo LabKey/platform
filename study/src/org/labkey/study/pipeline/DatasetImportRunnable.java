@@ -89,7 +89,6 @@ public class DatasetImportRunnable implements Runnable
     {
         PipelineJob pj = _task.getJob();
         String name = getDatasetDefinition().getName();
-        CPUTimer cpuReadFile = new CPUTimer(name + ": readFile");
         CPUTimer cpuDelete = new CPUTimer(name + ": delete");
         CPUTimer cpuImport = new CPUTimer(name + ": import");
         CPUTimer cpuCommit = new CPUTimer(name + ": commit");
@@ -177,7 +176,6 @@ public class DatasetImportRunnable implements Runnable
             assert debug = true;
             if (debug)
             {
-                LOG.debug(cpuReadFile);
                 LOG.debug(cpuDelete);
                 LOG.debug(cpuImport);
                 LOG.debug(cpuCommit);
