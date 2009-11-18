@@ -40,10 +40,14 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.assay.ModuleRunUploadContext;
 import org.labkey.study.assay.TsvDataHandler;
+import org.labkey.study.assay.ModuleAssayProvider;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.io.File;
 
 /**
  * User: jeckels
@@ -154,13 +158,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 materialInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
             }
 
-            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject);
+            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject, pipeRoot);
         }
 
         return run;
     }
 
-    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject) throws ExperimentException, ValidationException
+    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, PipeRoot pipelineRoot) throws ExperimentException, ValidationException
     {
         ViewContext context = getViewContext();
 
@@ -174,7 +178,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         for (int i = 0; i < inputDataArray.length(); i++)
         {
             JSONObject dataObject = inputDataArray.getJSONObject(i);
-            inputData.put(handleData(dataObject), "Data");
+            inputData.put(handleData(dataObject, pipelineRoot), "Data");
         }
 
         Map<ExpMaterial, String> inputMaterial = new HashMap<ExpMaterial, String>();
@@ -210,22 +214,54 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             dataValidator.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
 
         TsvDataHandler dataHandler = new TsvDataHandler();
+        dataHandler.setAllowEmptyData(true);
         dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
     }
 
-    private ExpData handleData(JSONObject dataObject) throws ValidationException
+    private ExpData handleData(JSONObject dataObject, PipeRoot pipelineRoot) throws ValidationException
     {
-        // Unlike with runs and batches, we require that the datas are already created
-        int dataId = dataObject.getInt(ExperimentJSONConverter.ID);
-        ExpData data = ExperimentService.get().getExpData(dataId);
-        if (data == null)
+        ExpData data;
+        if (dataObject.has(ExperimentJSONConverter.ID))
         {
-            throw new NotFoundException("Could not find data with id " + dataId);
+            int dataId = dataObject.getInt(ExperimentJSONConverter.ID);
+            data = ExperimentService.get().getExpData(dataId);
+
+            if (data == null)
+            {
+                throw new NotFoundException("Could not find data with id " + dataId);
+            }
+            if (!data.getContainer().equals(getViewContext().getContainer()))
+            {
+                throw new NotFoundException("Data with row id " + dataId + " is not in folder " + getViewContext().getContainer());
+            }
         }
-        if (!data.getContainer().equals(getViewContext().getContainer()))
+        else
         {
-            throw new NotFoundException("Data with row id " + dataId + " is not in folder " + getViewContext().getContainer());
+            //create a new data object if there's a pipeline path property
+            if (dataObject.has(ExperimentJSONConverter.PIPELINE_PATH))
+            {
+                String pipelinePath = dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH);
+                URI uri;
+                try
+                {
+                    File file = new File(pipelineRoot.getRootPath(), pipelinePath);
+                    uri = new URI("file://" + file.getAbsolutePath());
+                }
+                catch (URISyntaxException e)
+                {
+                    throw new ValidationException(e.getMessage());
+
+                }
+
+                String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
+                data = ExperimentService.get().createData(getViewContext().getContainer(), ModuleAssayProvider.RAW_DATA_TYPE, name);
+                data.setDataFileURI(uri);
+                data.save(getViewContext().getUser());
+            }
+            else
+                throw new IllegalArgumentException("Data input must have an id proeprty or a pipelinePath property.");
         }
+
         saveProperties(data, new DomainProperty[0], dataObject);
         return data;
     }

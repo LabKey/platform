@@ -52,6 +52,7 @@ import java.util.Set;
 public class TsvDataHandler extends AbstractAssayTsvDataHandler implements TransformDataHandler
 {
     public static final DataType DATA_TYPE = new DataType("AssayRunTSVData");
+    private boolean _allowEmptyData = false;
 
     public Priority getPriority(ExpData data)
     {
@@ -65,7 +66,12 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
     protected boolean allowEmptyData()
     {
-        return false;
+        return _allowEmptyData;
+    }
+
+    public void setAllowEmptyData(boolean allowEmpty)
+    {
+        _allowEmptyData = allowEmpty;
     }
 
     @Override
