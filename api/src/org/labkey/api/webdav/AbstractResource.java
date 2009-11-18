@@ -123,6 +123,14 @@ public abstract class AbstractResource implements Resource
         return Long.MIN_VALUE;
     }
 
+    public long getLastIndexed()
+    {
+        return Long.MIN_VALUE;
+    }
+
+    public void setLastIndexed(long ms)
+    {
+    }
 
     public String getModifiedBy()
     {
@@ -161,7 +169,7 @@ public abstract class AbstractResource implements Resource
 
     public String getExecuteHref(ViewContext context)
     {
-        return null;
+        return c(AppProps.getInstance().getContextPath(), getPath());
     }
 
 
@@ -294,7 +302,7 @@ public abstract class AbstractResource implements Resource
         return Collections.EMPTY_LIST;
     }
 
-    protected static String c(String path, String... names)
+    public static String c(String path, String... names)
     {
         StringBuilder s = new StringBuilder();
         s.append(StringUtils.stripEnd(path,"/"));

@@ -53,6 +53,12 @@ public interface Resource
 
     String getModifiedBy();
 
+    // may return Long.MIN_VALUE
+    long getLastIndexed();
+
+    // may silently ignore
+    void setLastIndexed(long ms);
+
     String getContentType();
 
     Map<String,?> getProperties();

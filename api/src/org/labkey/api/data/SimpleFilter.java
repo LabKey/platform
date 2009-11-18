@@ -342,7 +342,6 @@ public class SimpleFilter implements Filter
         this._clauses = (ArrayList<FilterClause>) src._clauses.clone();
     }
 
-
     public SimpleFilter(String colName, Object value)
     {
         addCondition(colName, value);

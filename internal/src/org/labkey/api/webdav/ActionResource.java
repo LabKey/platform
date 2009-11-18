@@ -17,9 +17,9 @@ package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.ViewContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -104,6 +104,15 @@ public class ActionResource extends AbstractDocumentResource
         return _response;
     }
 
+    public String getExecuteHref(ViewContext context)
+    {
+        return getExecuteHref();
+    }
+
+    public String getExecuteHref()
+    {
+        return _url.getLocalURIString();
+    }
 
     public long copyFrom(User user, FileStream in) throws IOException
     {
