@@ -5,10 +5,12 @@ import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ShutdownListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.apache.log4j.Category;
 
+import javax.servlet.ServletContextEvent;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 
@@ -128,6 +130,7 @@ public abstract class AbstractSearchService implements SearchService
 
     void startThread()
     {
+        indexer.setDaemon(true);
         indexer.start();
         // UNDONE: showdown listener
     }
