@@ -15,14 +15,9 @@
  */
 package org.labkey.api.search;
 
-import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.Resource;
 import org.labkey.api.view.ActionURL;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,7 +45,7 @@ public interface SearchService
 
     public interface ResourceResolver
     {
-        WebdavResolver.Resource resolve(@NotNull String resourceIdentifier);
+        Resource resolve(@NotNull String resourceIdentifier);
     }
 
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);

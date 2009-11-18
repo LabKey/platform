@@ -452,7 +452,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     public static class SymbolicLink extends AbstractCollectionResource
     {
         final WebdavResolver _resolver;
-        final WebdavResolver.Resource _inner;
+        final Resource _inner;
 
         SymbolicLink(String path, WebdavResolver r)
         {

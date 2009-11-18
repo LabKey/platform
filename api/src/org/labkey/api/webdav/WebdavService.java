@@ -64,8 +64,8 @@ public class WebdavService
     {
         // currently addChildren is called only for web folders
         @Nullable
-        Set<String> addChildren(@NotNull WebdavResolver.Resource target);
-        WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name);
+        Set<String> addChildren(@NotNull Resource target);
+        Resource resolve(@NotNull Resource parent, @NotNull String name);
     }
 
     public static void addProvider(Provider provider)

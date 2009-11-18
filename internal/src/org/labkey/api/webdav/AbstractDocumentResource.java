@@ -42,12 +42,12 @@ public abstract class AbstractDocumentResource extends AbstractResource
 		return exists();
 	}
 
-	public WebdavResolver.Resource find(String name)
+	public Resource find(String name)
 	{
 		return null;
 	}
 
-	public List<WebdavResolver.Resource> list()
+	public List<Resource> list()
     {
         return Collections.emptyList();
     }

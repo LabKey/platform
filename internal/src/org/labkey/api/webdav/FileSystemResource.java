@@ -42,7 +42,7 @@ public class FileSystemResource extends AbstractResource
     Container _c;
     protected File _file;
     String _name = null;
-    WebdavResolver.Resource _folder;   // containing controller used for canList()
+    Resource _folder;   // containing controller used for canList()
 
     private FileType _type;
     private long _length = UNKNOWN;
@@ -63,7 +63,7 @@ public class FileSystemResource extends AbstractResource
         this(WebdavResolverImpl.c(folder,name));
     }
 
-    public FileSystemResource(WebdavResolver.Resource folder, String name, File file, SecurityPolicy policy)
+    public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy)
     {
         super(folder.getPath(), name);
         _folder = folder;
@@ -245,13 +245,13 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public List<WebdavResolver.Resource> list()
+    public List<Resource> list()
     {
         List<String> names = listNames();
-        ArrayList<WebdavResolver.Resource> infos = new ArrayList<WebdavResolver.Resource>(names.size());
+        ArrayList<Resource> infos = new ArrayList<Resource>(names.size());
         for (String name : names)
         {
-            WebdavResolver.Resource r = find(name);
+            Resource r = find(name);
             if (null != r && !(r instanceof WebdavResolverImpl.UnboundResource))
                 infos.add(r);
         }
@@ -259,7 +259,7 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public WebdavResolver.Resource find(String name)
+    public Resource find(String name)
     {
         return new FileSystemResource(this, name);
     }

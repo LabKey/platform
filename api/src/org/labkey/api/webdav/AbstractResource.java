@@ -43,7 +43,7 @@ import java.util.Map;
 * Date: Oct 21, 2008
 * Time: 10:00:49 AM
 */
-public abstract class AbstractResource implements WebdavResolver.Resource
+public abstract class AbstractResource implements Resource
 {
     protected long _ts = System.currentTimeMillis();                   
     private String _path;
@@ -62,7 +62,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         this(c(folder,name));
     }
 
-    protected AbstractResource(WebdavResolver.Resource folder, String name)
+    protected AbstractResource(Resource folder, String name)
     {
         this(c(folder.getPath(),name));
     }
@@ -97,7 +97,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
-    public WebdavResolver.Resource parent()
+    public Resource parent()
     {
         if ("/".equals(_path))
             return null;
@@ -268,13 +268,13 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         return null;
     }
 
-    public long copyFrom(User user, WebdavResolver.Resource r) throws IOException
+    public long copyFrom(User user, Resource r) throws IOException
     {
         return copyFrom(user, r.getFileStream(user));
     }
 
 
-    public void moveFrom(User user, WebdavResolver.Resource src) throws IOException
+    public void moveFrom(User user, Resource src) throws IOException
     {
         copyFrom(user, src);
         src.delete(user);

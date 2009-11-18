@@ -22,7 +22,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.Resource;
 import org.springframework.validation.BindException;
 import org.apache.commons.lang.StringUtils;
 
@@ -117,7 +117,7 @@ public class AttachmentService
         public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException;
         public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
         public Attachment[] getAttachments(AttachmentParent parent);
-        public WebdavResolver.Resource getAttachmentResource(String path, AttachmentParent parent);
+        public Resource getAttachmentResource(String path, AttachmentParent parent);
         public Attachment getAttachment(AttachmentParent parent, String name);
         public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;

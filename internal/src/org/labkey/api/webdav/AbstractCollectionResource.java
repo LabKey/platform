@@ -73,13 +73,13 @@ public abstract class AbstractCollectionResource extends AbstractResource
         return 0;
     }
 
-    public List<WebdavResolver.Resource> list()
+    public List<Resource> list()
     {
         List<String> names = listNames();
-        List<WebdavResolver.Resource> list = new ArrayList<WebdavResolver.Resource>(names.size());
+        List<Resource> list = new ArrayList<Resource>(names.size());
         for (String name : names)
         {
-            WebdavResolver.Resource r = find(name);
+            Resource r = find(name);
             if (r != null)
                 list.add(r);
         }
