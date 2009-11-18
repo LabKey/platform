@@ -1,11 +1,7 @@
 package org.labkey.core.search;
 
-import org.labkey.api.webdav.WebdavResolver;
-import org.labkey.api.security.User;
+import org.labkey.api.webdav.Resource;
 import org.apache.log4j.Category;
-import org.apache.commons.io.IOUtils;
-
-import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,7 +13,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 {
     static Category _log = Category.getInstance(SolrSearchServiceImpl.class);
     
-    protected void index(String id, WebdavResolver.Resource r)
+    protected void index(String id, Resource r)
     {
         _log.info("INDEX: " + id);
 //        if ("text/html".equals(r.getContentType()))

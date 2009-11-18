@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.api.webdav.Resource" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -33,7 +34,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 %>
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
-    WebdavResolver.Resource resource = listpage.resource;
+    Resource resource = listpage.resource;
     String path = listpage.getDirectory();
     ViewContext context = HttpView.currentContext();
     AppProps app = AppProps.getInstance();
@@ -56,8 +57,8 @@ if (plainHtml)
 <table width="100%"><tr><td align="left">
 <b><%
 {
-    ArrayList<WebdavResolver.Resource> dirs = new ArrayList<WebdavResolver.Resource>();
-    WebdavResolver.Resource dir = resource;
+    ArrayList<Resource> dirs = new ArrayList<Resource>();
+    Resource dir = resource;
     while (null != dir)
     {
         dirs.add(dir);
@@ -96,13 +97,13 @@ if (plainHtml)
 <th align="right" width="240">Last Modified</th>
 </thead>
 <tr><%
-    TreeMap<String, WebdavResolver.Resource> dirs = new TreeMap<String, WebdavResolver.Resource>();
-    TreeMap<String, WebdavResolver.Resource> files = new TreeMap<String, WebdavResolver.Resource>();
-    WebdavResolver.Resource parent = resource.parent();
+    TreeMap<String, Resource> dirs = new TreeMap<String, Resource>();
+    TreeMap<String, Resource> files = new TreeMap<String, Resource>();
+    Resource parent = resource.parent();
 
     if (resource.canList(user))
     {
-        for (WebdavResolver.Resource info : resource.list())
+        for (Resource info : resource.list())
         {
             if (!info.canList(user))
                 continue;
@@ -117,7 +118,7 @@ if (plainHtml)
     if (parent != null)
     {
         String name = "[ up ]";
-        WebdavResolver.Resource info = parent;
+        Resource info = parent;
         shade = !shade;
         long modified = info.getLastModified();
         %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
@@ -125,10 +126,10 @@ if (plainHtml)
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
         out.println();
     }
-    for (Map.Entry<String, WebdavResolver.Resource> entry : dirs.entrySet())
+    for (Map.Entry<String, Resource> entry : dirs.entrySet())
     {
         String name = entry.getKey() + "/";
-        WebdavResolver.Resource info = entry.getValue();
+        Resource info = entry.getValue();
         shade = !shade;
         long modified = info.getLastModified();
         %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
@@ -136,10 +137,10 @@ if (plainHtml)
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
         out.println();
     }
-    for (Map.Entry<String, WebdavResolver.Resource> entry : files.entrySet())
+    for (Map.Entry<String, Resource> entry : files.entrySet())
     {
         String name = entry.getKey();
-        WebdavResolver.Resource info = entry.getValue();
+        Resource info = entry.getValue();
         shade = !shade;
         long modified = info.getLastModified();
         if (info.canRead(user))

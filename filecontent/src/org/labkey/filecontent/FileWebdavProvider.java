@@ -39,7 +39,7 @@ public class FileWebdavProvider implements WebdavService.Provider
     static final String FILEMODULE_LINK = "@files";
     
     @Nullable
-    public Set<String> addChildren(@NotNull WebdavResolver.Resource target)
+    public Set<String> addChildren(@NotNull Resource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -59,7 +59,7 @@ public class FileWebdavProvider implements WebdavService.Provider
     }
 
 
-    public WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name)
+    public Resource resolve(@NotNull Resource parent, @NotNull String name)
     {
         if (!FILEMODULE_LINK.equalsIgnoreCase(name))
             return null;
@@ -123,11 +123,11 @@ public class FileWebdavProvider implements WebdavService.Provider
             return Collections.unmodifiableList(_names);
         }
 
-        public WebdavResolver.Resource find(String name)
+        public Resource find(String name)
         {
             AttachmentDirectory dir = _map.get(name);
             String path = c(getPath(),name);
-            WebdavResolver.Resource r;
+            Resource r;
             r = AttachmentService.get().getAttachmentResource(path, dir);
             return r;
         }

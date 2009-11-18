@@ -39,7 +39,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 {
     final static String VIEW_NAME = "@views";
 
-    public Set<String> addChildren(@NotNull WebdavResolver.Resource target)
+    public Set<String> addChildren(@NotNull Resource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -49,7 +49,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         return hasViews(null, c) ? PageFlowUtil.set(VIEW_NAME) : null;
     }
 
-    public WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name)
+    public Resource resolve(@NotNull Resource parent, @NotNull String name)
     {
         if (!VIEW_NAME.equalsIgnoreCase(name))
             return null;
@@ -76,7 +76,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
     {
         Container _c;
 
-        ViewProviderResource(WebdavResolver.Resource parent, Container c)
+        ViewProviderResource(Resource parent, Container c)
         {
             super(parent.getPath(), VIEW_NAME);
             _c = c;
@@ -90,7 +90,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         }
 
         private Map<String, Report> _map;
-        public WebdavResolver.Resource find(String name)
+        public Resource find(String name)
         {
             Map<String, Report> map = getReportMap();
             if (map.containsKey(name))
@@ -220,7 +220,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return true;
         }
 
-        public WebdavResolver.Resource parent()
+        public Resource parent()
         {
             return _folder;
         }
@@ -253,7 +253,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             }
         }
 
-        public WebdavResolver.Resource find(String name)
+        public Resource find(String name)
         {
             return null;
         }

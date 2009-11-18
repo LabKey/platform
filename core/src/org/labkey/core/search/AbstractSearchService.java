@@ -1,7 +1,7 @@
 package org.labkey.core.search;
 
 import org.labkey.api.search.SearchService;
-import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.Resource;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
@@ -43,11 +43,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         OPERATION _op;
         String _id;
-        WebdavResolver.Resource _res;
+        Resource _res;
         Runnable _run;
         PRIORITY _pri;
         
-        Item(OPERATION op, String id, WebdavResolver.Resource r, PRIORITY pri)
+        Item(OPERATION op, String id, Resource r, PRIORITY pri)
         {
             _op = op; _id = id; _res = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
@@ -59,7 +59,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _pri = null == pri ? PRIORITY.bulk : pri;
         }
 
-        WebdavResolver.Resource getResource()
+        Resource getResource()
         {
             if (null == _res)
                 _res = resolveResource(_id);
@@ -99,7 +99,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public void addResource(String identifier, WebdavResolver.Resource r, PRIORITY pri)
+    public void addResource(String identifier, Resource r, PRIORITY pri)
     {
         queueItem(new Item(OPERATION.add, identifier, r, pri));
     }
@@ -122,7 +122,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     // CONSIDER Iterable<Resource>
     @Nullable
-    public WebdavResolver.Resource resolveResource(@NotNull String resourceIdentifier)
+    public Resource resolveResource(@NotNull String resourceIdentifier)
     {
         int i = resourceIdentifier.indexOf(":");
         if (i == -1)
@@ -179,7 +179,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     }
                     else
                     {
-                        WebdavResolver.Resource r = i.getResource();
+                        Resource r = i.getResource();
                         if (null == r || !r.exists())
                             continue;
                         assert MemTracker.put(r);
@@ -197,6 +197,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     };
 
-    protected abstract void index(String id, WebdavResolver.Resource r);
+    protected abstract void index(String id, Resource r);
     protected abstract void commit();
 }

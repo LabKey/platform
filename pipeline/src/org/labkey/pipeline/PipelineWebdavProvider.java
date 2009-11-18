@@ -43,7 +43,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
     // currently addChildren is called only for web folders
     @Nullable
-    public Set<String> addChildren(@NotNull WebdavResolver.Resource target)
+    public Set<String> addChildren(@NotNull Resource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -54,7 +54,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         return null != root ? PageFlowUtil.set(PIPELINE_LINK) : null;
     }
 
-    public WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name)
+    public Resource resolve(@NotNull Resource parent, @NotNull String name)
     {
         if (!PIPELINE_LINK.equalsIgnoreCase(name))
             return null;
@@ -74,7 +74,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     {
         Container c;
 
-        PipelineFolderResource(WebdavResolver.Resource parent, Container c, PipeRoot root)
+        PipelineFolderResource(Resource parent, Container c, PipeRoot root)
         {
             super(parent.getPath(), PIPELINE_LINK);
 

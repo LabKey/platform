@@ -3,6 +3,7 @@ package org.labkey.core.search;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.webdav.Resource;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,7 +36,7 @@ public class DavCrawler
 
     static void crawl(SearchService ss, WebdavResolver res, String path)
     {
-        WebdavResolver.Resource r = res.lookup(path);
+        Resource r = res.lookup(path);
         if (null == r)
             return;
 
@@ -45,7 +46,7 @@ public class DavCrawler
         }
         else if (r.isCollection())
         {
-            for (WebdavResolver.Resource child : r.list())
+            for (Resource child : r.list())
             {
                 if (child.isFile())
                     ss.addResource("dav:" + child.getPath(), SearchService.PRIORITY.background);

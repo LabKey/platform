@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
@@ -57,7 +56,7 @@ class WikiWebdavProvider implements WebdavService.Provider
     final String WIKI_NAME = "@wiki";
     
     // currently addChildren is called only for web folders
-    public Set<String> addChildren(@NotNull WebdavResolver.Resource target)
+    public Set<String> addChildren(@NotNull Resource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -67,7 +66,7 @@ class WikiWebdavProvider implements WebdavService.Provider
     }
 
 
-    public WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name)
+    public Resource resolve(@NotNull Resource parent, @NotNull String name)
     {
         if (!WIKI_NAME.equalsIgnoreCase(name))
             return null;
@@ -92,7 +91,7 @@ class WikiWebdavProvider implements WebdavService.Provider
     {
         Container _c;
         
-        WikiProviderResource(WebdavResolver.Resource parent, Container c)
+        WikiProviderResource(Resource parent, Container c)
         {
             super(parent.getPath(), WIKI_NAME);
             _c = c;
@@ -105,7 +104,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return WIKI_NAME;
         }
 
-        public WebdavResolver.Resource find(String name)
+        public Resource find(String name)
         {
             return new WikiFolder(this, name);
         }
@@ -182,7 +181,7 @@ class WikiWebdavProvider implements WebdavService.Provider
     {
         Container _c;
         Wiki _wiki;
-        WebdavResolver.Resource _attachments;
+        Resource _attachments;
 
         WikiFolder(WikiProviderResource folder, String name)
         {
@@ -230,7 +229,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return ret;
         }
 
-        public synchronized WebdavResolver.Resource find(String name)
+        public synchronized Resource find(String name)
         {
             String docName = getDocumentName(_wiki);
             if (docName.equalsIgnoreCase(name))
@@ -408,7 +407,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return true;
         }
 
-        public WebdavResolver.Resource parent()
+        public Resource parent()
         {
             return _folder;
         }

@@ -34,6 +34,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractCollectionResource;
+import org.labkey.api.webdav.Resource;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
@@ -741,7 +742,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public WebdavResolver.Resource getAttachmentResource(String path, AttachmentParent parent)
+    public Resource getAttachmentResource(String path, AttachmentParent parent)
     {
         // NOTE parent does not supply ACL, but should?
         // acl = parent.getAcl()
@@ -1493,7 +1494,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
 
-        public WebdavResolver.Resource find(String name)
+        public Resource find(String name)
         {
             Attachment a = getAttachment(_parent, name);
             if (null != a)
@@ -1518,10 +1519,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
         @Override
-        public List<WebdavResolver.Resource> list()
+        public List<Resource> list()
         {
             Attachment[] attachments = getAttachments(_parent);
-            ArrayList<WebdavResolver.Resource> resources = new ArrayList<WebdavResolver.Resource>(attachments.length);
+            ArrayList<Resource> resources = new ArrayList<Resource>(attachments.length);
             for (Attachment a : attachments)
             {
                 if (null != a.getFile() && !a.getFile().exists())
@@ -1535,7 +1536,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     private class AttachmentResource extends AbstractDocumentResource
     {
-        WebdavResolver.Resource _folder = null;
+        Resource _folder = null;
         AttachmentParent _parent = null;
         String _name = null;
         long _created = Long.MIN_VALUE;
@@ -1544,7 +1545,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         Attachment _cached = null;
 
         
-        AttachmentResource(@NotNull WebdavResolver.Resource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
+        AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
         {
             this(folder, parent, attachment.getName());
             _created = attachment.getCreated().getTime();
@@ -1553,7 +1554,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
 
-        AttachmentResource(@NotNull WebdavResolver.Resource folder, @NotNull AttachmentParent parent, @NotNull String name)
+        AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull String name)
         {
             super(folder.getPath(), name);
             _folder = folder;
@@ -1625,7 +1626,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         @Override
-        public void moveFrom(User user, WebdavResolver.Resource r) throws IOException
+        public void moveFrom(User user, Resource r) throws IOException
         {
             if (r instanceof AttachmentResource)
             {
@@ -1704,7 +1705,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return 0;
         }
 
-        public WebdavResolver.Resource parent()
+        public Resource parent()
         {
             return _folder;
         }

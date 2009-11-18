@@ -35,10 +35,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
-import org.labkey.api.webdav.WebdavResolverImpl;
-import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.webdav.WebdavResolver;
-import org.labkey.api.webdav.ActionResource;
+import org.labkey.api.webdav.*;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.core.admin.AdminController;
@@ -161,14 +158,14 @@ public class CoreModule extends SpringModule
         ServiceRegistry.get().registerService(SearchService.class, ss);
         ss.addResourceResolver("action", new AbstractSearchService.ResourceResolver()
         {
-            public WebdavResolver.Resource resolve(@NotNull String str)
+            public Resource resolve(@NotNull String str)
             {
                 return new ActionResource(str);
             }
         });
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
-            public WebdavResolver.Resource resolve(@NotNull String path)
+            public Resource resolve(@NotNull String path)
             {
                 return WebdavService.getResolver().lookup(path);
             }

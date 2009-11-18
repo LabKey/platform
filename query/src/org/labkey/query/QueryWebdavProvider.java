@@ -44,14 +44,14 @@ public class QueryWebdavProvider implements WebdavService.Provider
 {
 	final String QUERY_NAME = "@query";
 
-	public Set<String> addChildren(@NotNull WebdavResolver.Resource target)
+	public Set<String> addChildren(@NotNull Resource target)
 	{
 		if (target instanceof WebdavResolverImpl.WebFolderResource)
 			return PageFlowUtil.set(QUERY_NAME);
 		return null;
 	}
 
-	public WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name)
+	public Resource resolve(@NotNull Resource parent, @NotNull String name)
 	{
 		if (!QUERY_NAME.equalsIgnoreCase(name))
 			return null;
@@ -81,7 +81,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return true;
 		}
 
-		public WebdavResolver.Resource find(String name)
+		public Resource find(String name)
 		{
 			DefaultSchema folderSchema = DefaultSchema.get(null, _c);
 			QuerySchema s  = folderSchema.getSchema(name);
@@ -132,7 +132,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return true;
 		}
 
-		public WebdavResolver.Resource find(String name)
+		public Resource find(String name)
 		{
 			if (!name.endsWith(".sql"))
 				return null;
