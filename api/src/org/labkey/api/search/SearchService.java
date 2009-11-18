@@ -34,8 +34,14 @@ public interface SearchService
 {
     enum PRIORITY
     {
-        bulk, group, item
+        crawl,      // lowest
+        background, // crawler item
+
+        bulk,       // all wikis
+        group,      // one container
+        item        // one page/attachment
     }
+    
     
     void addResource(ActionURL url, PRIORITY pri);
     void addResource(Runnable r, PRIORITY pri);
@@ -44,7 +50,7 @@ public interface SearchService
 
     public interface ResourceResolver
     {
-        Object resolve(@NotNull String resourceIdentifier);
+        WebdavResolver.Resource resolve(@NotNull String resourceIdentifier);
     }
 
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);

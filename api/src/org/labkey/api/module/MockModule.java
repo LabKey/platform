@@ -263,7 +263,7 @@ public class MockModule implements Module
         return Collections.emptyList();
     }
 
-    public void enumerateDocuments(SearchService ss)
+    public void enumerateDocuments(@NotNull SearchService ss, @Nullable Container c, @Nullable Date modifiedSince)
     {
     }
 }

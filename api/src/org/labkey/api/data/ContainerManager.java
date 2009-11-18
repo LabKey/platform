@@ -449,6 +449,27 @@ public class ContainerManager
     }
 
 
+    public static synchronized Container getChild(Container c, String name)
+    {
+        String path = c.getPath() + (c.isRoot() ? "" : "/") + name;
+        
+        path = StringUtils.trimToEmpty(path);
+
+        // normalize (assert instead?)
+        if (path.endsWith("/"))
+            path = path.substring(0, path.length() - 1);
+        if (!path.startsWith("/"))
+            path = '/' + path;
+
+        Container d = _getFromCachePath(path);
+        if (null != d)
+            return d;
+
+        // CONSIDER: getChildrenMap
+        ContainerManager.getChildren(c);
+        return _getFromCachePath(path);
+    }
+
     public static synchronized Container getForPath(String path)
     {
         path = StringUtils.trimToEmpty(path);

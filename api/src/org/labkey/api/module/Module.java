@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.List;
@@ -260,5 +261,5 @@ public interface Module extends Comparable<Module>
 
     
     /** enumerate documents for full text search */
-    public void enumerateDocuments(SearchService ss);
+    public void enumerateDocuments(@NotNull SearchService ss, @Nullable Container c, @Nullable Date modifiedSince);
 }

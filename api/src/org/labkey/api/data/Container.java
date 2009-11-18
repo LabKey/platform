@@ -314,9 +314,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Container getChild(String folderName)
     {
-        String path = _path + (isRoot() ? "" : "/") + folderName;
-
-        return ContainerManager.getForPath(path);
+        return ContainerManager.getChild(this,folderName);
     }
 
     public boolean hasChild(String folderName)

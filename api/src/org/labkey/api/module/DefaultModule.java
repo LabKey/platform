@@ -814,7 +814,8 @@ public abstract class DefaultModule implements Module
         return l;
     }
 
-    public void enumerateDocuments(SearchService ss)
+    
+    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
     {
     }
 }
