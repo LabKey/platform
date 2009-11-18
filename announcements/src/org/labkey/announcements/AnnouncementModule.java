@@ -190,13 +190,13 @@ public class AnnouncementModule extends DefaultModule
 
 
     @Override
-    public void enumerateDocuments(SearchService ss)
+    public void enumerateDocuments(SearchService ss, final Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()
             {
                 public void run()
                 {
-                    AnnouncementManager.indexMessages();
+                    AnnouncementManager.indexMessages(c,modifiedSince);
                 }
             };
         ss.addResource(r, SearchService.PRIORITY.bulk);

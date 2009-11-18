@@ -3,9 +3,9 @@ package org.labkey.core.search;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.ContextListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.apache.log4j.Category;
@@ -20,7 +20,7 @@ import java.util.concurrent.PriorityBlockingQueue;
  * Date: Nov 12, 2009
  * Time: 12:58:21 PM
  */
-public abstract class AbstractSearchService implements SearchService
+public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
     // CONSIDER: don't allow duplicates in queue
     PriorityBlockingQueue<Item> _queue = new PriorityBlockingQueue<Item>(1000, new Comparator<Item>()
@@ -57,6 +57,13 @@ public abstract class AbstractSearchService implements SearchService
         {
             _run = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
+        }
+
+        WebdavResolver.Resource getResource()
+        {
+            if (null == _res)
+                _res = resolveResource(_id);
+            return _res;
         }
     }
 
@@ -115,7 +122,7 @@ public abstract class AbstractSearchService implements SearchService
 
     // CONSIDER Iterable<Resource>
     @Nullable
-    public Object resolveResource(@NotNull String resourceIdentifier)
+    public WebdavResolver.Resource resolveResource(@NotNull String resourceIdentifier)
     {
         int i = resourceIdentifier.indexOf(":");
         if (i == -1)
@@ -130,49 +137,61 @@ public abstract class AbstractSearchService implements SearchService
 
     void startThread()
     {
-        indexer.setDaemon(true);
-        indexer.start();
-        // UNDONE: showdown listener
+        if (_shuttingDown)
+            return;
+        _indexingThread = new Thread(indexRunnable, "SearchService");
+        _indexingThread.setDaemon(true);
+        _indexingThread.start();
+        ContextListener.addShutdownListener(this);
     }
 
 
-    Thread indexer = new Thread()
+    boolean _shuttingDown = false;
+    Thread _indexingThread = null;
+    
+
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
+        if (null == _indexingThread)
+            return;
+        _shuttingDown = true;
+        _indexingThread.interrupt();
+        try
+        {
+            _indexingThread.join(2000);
+        }
+        catch (InterruptedException e) {}
+    }
+
+
+    Runnable indexRunnable = new Runnable()
     {
         public void run()
         {
-            while (true)
+            while (!_shuttingDown)
             {
-                Item i;
                 try
                 {
-                    i = _queue.take();
+                    Item i = _queue.take();
+                    if (null != i._run)
+                    {
+                        i._run.run();
+                    }
+                    else
+                    {
+                        WebdavResolver.Resource r = i.getResource();
+                        if (null == r || !r.exists())
+                            continue;
+                        assert MemTracker.put(r);
+                        index(i._id, i._res);
+                    }
                 }
                 catch (InterruptedException x)
                 {
-                    continue;
                 }
-                if (null != i._run)
+                catch (Exception x)
                 {
-                    i._run.run();
-                }
-                else
-                {
-                    if (null == i._res)
-                    {
-                        Object o = resolveResource(i._id);
-                        assert MemTracker.put(o);
-                        if (null == o)
-                            continue;
-                        i._res = (WebdavResolver.Resource)o;
-                    }
-                    try
-                    {
-                        index(i._id, i._res);
-                    }
-                    catch (Exception x)
-                    {
-                        Category.getInstance(SearchService.class).error(x);
-                    }
+                    Category.getInstance(SearchService.class).error(x);
                 }
             }
         }

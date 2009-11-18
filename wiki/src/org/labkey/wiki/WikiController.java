@@ -3453,7 +3453,7 @@ public class WikiController extends SpringActionController
 
             for (Module m : ModuleLoader.getInstance().getModules())
             {
-                m.enumerateDocuments(ss);
+                m.enumerateDocuments(ss, null, null);
             }
             return null;
         }

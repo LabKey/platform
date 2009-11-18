@@ -821,14 +821,29 @@ public class AnnouncementManager
     }
 
 
-    public static void indexMessages()
+    public static void indexMessages(Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null == ss)
+            return;
         ResultSet rs = null;
         ActionURL page = new ActionURL(AnnouncementsController.ThreadAction.class, null);
         try
         {
-            rs = Table.executeQuery(_comm.getSchema(), "SELECT container, rowid FROM " + _comm.getTableInfoThreads(), (Object[])null);
+            SQLFragment sql = new SQLFragment("SELECT container, rowid FROM " + _comm.getTableInfoThreads());
+            String and = " WHERE ";
+            if (null != c)
+            {
+                sql.append(and).append("container = ?");
+                sql.add(c);
+                and = " AND ";
+            }
+            if (null != modifiedSince)
+            {
+                sql.append(and).append(" modified >= ?");
+                sql.add(modifiedSince);
+            }
+            rs = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());
             while (rs.next())
             {
                 String id = rs.getString(1);

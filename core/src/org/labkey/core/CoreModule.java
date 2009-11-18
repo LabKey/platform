@@ -57,6 +57,7 @@ import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.labkey.core.search.AbstractSearchService;
 import org.labkey.core.search.SolrSearchServiceImpl;
+import org.labkey.core.search.DavCrawler;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -429,5 +430,12 @@ public class CoreModule extends SpringModule
             }
         }
         return dirs;
+    }
+
+
+    @Override
+    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
+    {
+        ss.addResource(DavCrawler.start(ss,"/"), SearchService.PRIORITY.crawl);
     }
 }

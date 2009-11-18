@@ -132,7 +132,7 @@ public class IssuesModule extends DefaultModule
 
 
     @Override
-    public void enumerateDocuments(SearchService ss)
+    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
     {
         Runnable r = new Runnable()
             {

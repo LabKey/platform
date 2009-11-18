@@ -20,17 +20,17 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     protected void index(String id, WebdavResolver.Resource r)
     {
         _log.info("INDEX: " + id);
-        if ("text/html".equals(r.getContentType()))
-        {
-            try
-            {
-                IOUtils.copy(r.getInputStream(User.getSearchUser()), System.out);
-            }
-            catch (IOException x)
-            {
-                _log.error(x);
-            }
-        }
+//        if ("text/html".equals(r.getContentType()))
+//        {
+//            try
+//            {
+//                IOUtils.copy(r.getInputStream(User.getSearchUser()), System.out);
+//            }
+//            catch (IOException x)
+//            {
+//                _log.error(x);
+//            }
+//        }
     }
 
     protected void commit()
