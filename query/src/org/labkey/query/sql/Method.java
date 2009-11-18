@@ -114,6 +114,14 @@ public enum Method
                     return new TimestampInfo(this);
                 }
             },
+    age_in_months(Types.INTEGER, 2, 2)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new AgeInMonthsMethodInfo();
+                }
+            },
     age(Types.INTEGER, 3, 3)
             {
                 @Override
@@ -397,7 +405,6 @@ public enum Method
 	}
 
 
-
     class AgeMethodInfo extends MethodInfoImpl
     {
         AgeMethodInfo()
@@ -410,6 +417,8 @@ public enum Method
             String unit = arguments[2].getSQL().toUpperCase();
             if (unit.equals("YEAR") || unit.equals("SQL_TSI_YEAR"))
                 return new AgeInYearsMethodInfo().getSQL(schema, arguments);
+            if (unit.equals("MONTH") || unit.equals("SQL_TSI_YEAR"))
+                return new AgeInYearsMethodInfo().getSQL(schema, arguments);
             throw new IllegalArgumentException("AGE(" + unit + ")");
         }
     }
@@ -421,7 +430,6 @@ public enum Method
         {
             super(Types.INTEGER);
         }
-
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
         {
@@ -445,6 +453,43 @@ public enum Method
                     .append(yearB).append("-").append(yearA).append("-1")
                     .append(") ELSE (")
                     .append(yearB).append("-").append(yearA)
+                    .append(") END");
+            return ret;
+        }
+    }
+
+
+    class AgeInMonthsMethodInfo extends MethodInfoImpl
+    {
+        AgeInMonthsMethodInfo()
+        {
+            super(Types.INTEGER);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            MethodInfo year = Method.year.getMethodInfo();
+            MethodInfo month = Method.month.getMethodInfo();
+            MethodInfo dayofmonth = Method.dayofmonth.getMethodInfo();
+
+            SQLFragment ret = new SQLFragment();
+            SQLFragment yearA = year.getSQL(schema, new SQLFragment[] {arguments[0]});
+            SQLFragment monthA = month.getSQL(schema, new SQLFragment[] {arguments[0]});
+            SQLFragment dayA = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[0]});
+            SQLFragment yearB = year.getSQL(schema, new SQLFragment[] {arguments[1]});
+            SQLFragment monthB = month.getSQL(schema, new SQLFragment[] {arguments[1]});
+            SQLFragment dayB = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[1]});
+
+            ret.append("CASE WHEN (")
+                    .append(dayA).append(">").append(dayB)
+                    .append(") THEN (")
+                    .append("12*(").append(yearB).append("-").append(yearA).append(")")
+                    .append("+")
+                    .append(monthB).append("-").append(monthA).append("-1")
+                    .append(") ELSE (")
+                    .append("12*(").append(yearB).append("-").append(yearA).append(")")
+                    .append("+")
+                    .append(monthB).append("-").append(monthA)
                     .append(") END");
             return ret;
         }
