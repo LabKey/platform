@@ -2073,13 +2073,7 @@ public class WikiController extends SpringActionController
         static public NavTree[] getNavTree(ViewContext context)
         {
             Container cToc = getTocContainer(context);
-            NavTree[] tree = WikiCache.getCachedNavTree(cToc);
-            if (null == tree)
-            {
-                tree = createNavTree(WikiManager.getWikisByParentId(cToc.getId(), -1), getNavTreeId(context));
-                WikiCache.cache(cToc, tree);
-            }
-            return tree;
+            return WikiCache.getCachedNavTree(cToc);
         }
 
         static private NavTree[] createNavTree(List<Wiki> pageList, String rootId)
@@ -2932,7 +2926,7 @@ public class WikiController extends SpringActionController
             if (null != name && name.length() > 0)
             {
                 Wiki existingWiki = WikiManager.getWiki(container, name);
-                if (null != existingWiki && !(HString.eq(existingWiki.getEntityId().toLowerCase(),form.getEntityId().toLowerCase())))
+                if (null != existingWiki && (null == form.getEntityId() || !HString.eq(existingWiki.getEntityId().toLowerCase(), form.getEntityId().toLowerCase())))
                     errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
             }
 
@@ -3280,7 +3274,7 @@ public class WikiController extends SpringActionController
 
             Container container = getViewContext().getContainer();
 
-            NavTree[] toc = WikiTOC.getNavTree(getViewContext());
+            NavTree[] toc = WikiCache.getCachedNavTree(container);
 
             List<Map<String,Object>> pageProps = getChildrenProps(toc);
             response.put("pages", pageProps);

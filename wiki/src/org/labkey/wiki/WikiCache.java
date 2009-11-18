@@ -22,10 +22,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.model.Wiki;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: adam
@@ -62,7 +64,7 @@ public class WikiCache
         _cache(c, wikipair.getWiki().getName().getSource(), wikipair);
     }
 
-    static void cache(Container c, NavTree[] wikiToc)
+    private static void cache(Container c, NavTree[] wikiToc)
     {
         _cache(c, TOC_NAME, wikiToc);
     }
@@ -108,14 +110,24 @@ public class WikiCache
         return (Map<HString, WikiRenderer.WikiLinkable>) WikiCache.getCached(c, WikiCache.VERSIONS_NAME);
     }
 
-    static NavTree[] getCachedNavTree(Container c)
+    /**
+     * Returns an array of NavTree nodes representing the Wiki table of contents. This method will
+     * create the nodes if necessary, cache them, and return them.
+     * @param c The Container
+     * @return An array of NavTree nodes.
+     */
+    @NotNull
+    static synchronized NavTree[] getCachedNavTree(Container c)
     {
         //need to make a deep copy of the NavTree so that
         //the caller can apply per-session expand state
         //and per-request selection state
         NavTree[] toc = (NavTree[])getCached(c, TOC_NAME);
         if (null == toc)
-            return null;
+        {
+            toc = createNavTree(WikiManager.getWikisByParentId(c.getId(), -1), "Wiki-TOC-" + c.getId());
+            cache(c, toc);
+        }
 
         NavTree[] copy = new NavTree[toc.length];
         for (int idx = 0; idx < toc.length; ++idx)
@@ -124,6 +136,21 @@ public class WikiCache
         }
         return copy;
     }
+
+    static private NavTree[] createNavTree(List<Wiki> pageList, String rootId)
+    {
+        ArrayList<NavTree> elements = new ArrayList<NavTree>();
+        //add all pages to the nav tree
+        for (Wiki page : pageList)
+        {
+            NavTree node = new NavTree(page.latestVersion().getTitle().getSource(), page.getPageLink(), true);
+            node.addChildren(createNavTree(page.getChildren(), rootId));
+            node.setId(rootId);
+            elements.add(node);
+        }
+        return elements.toArray(new NavTree[elements.size()]);
+    }
+
 
     // Not currently used -- only case where this would be the correct behavior is if we update the content of a wiki
     // and verify that the title & name didn't change.  Not worth it.
