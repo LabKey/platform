@@ -15,7 +15,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     
     protected void index(String id, Resource r)
     {
-        _log.info("INDEX: " + id);
+        _log.info("INDEX: " + r.getExecuteHref(null));
 //        if ("text/html".equals(r.getContentType()))
 //        {
 //            try

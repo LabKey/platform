@@ -32,8 +32,10 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Filter;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.apache.log4j.Category;
@@ -125,6 +127,22 @@ public class WikiManager
     }
 
 
+    static String getSearchId(Wiki page)
+    {
+//        return "dav:/" + WebdavService.getServletPath() + WikiWebdavProvider.getResourcePath(page);
+        ActionURL url = new ActionURL(WikiController.PageAction.class, null).addParameter("name",page.getName());
+        url.setExtraPath(page.getContainerId());
+        return "action:" + url.getLocalURIString();
+    }
+
+
+    static void indexWiki(Wiki page)
+    {
+        String searchId = getSearchId(page);
+        ServiceRegistry.get().getService(SearchService.class).addResource(searchId, SearchService.PRIORITY.item);
+    }
+
+    
     // Used to verify that entityId is a wiki and belongs in the specified container
     public static Wiki getWikiByEntityId(Container c, String entityId) throws SQLException
     {
@@ -216,9 +234,12 @@ public class WikiManager
         {
             if (scope != null)
                 scope.closeConnection();
+
+            //uncache the entire container cache since wikis can refer to pages that haven't been created yet
+            WikiCache.uncache(c);
+
+            indexWiki(wikiInsert);
         }
-        //uncache the entire container cache since wikis can refer to pages that haven't been created yet
-        WikiCache.uncache(c);
         return true;
     }
 
@@ -257,9 +278,12 @@ public class WikiManager
         {
             if (scope != null)
                 scope.closeConnection();
+
+            // Uncache entire container to invalidate old version of page and references to this page from other pages
+            WikiCache.uncache(ContainerManager.getForId(wikiUpdate.getContainerId()));
+
+            indexWiki(wikiUpdate);
         }
-        // Uncache entire container to invalidate old version of page and references to this page from other pages
-        WikiCache.uncache(ContainerManager.getForId(wikiUpdate.getContainerId()));
         return true;
     }
 
@@ -708,21 +732,27 @@ public class WikiManager
         return tree;
     }
 
+
     public static boolean wikiNameExists(Container c, HString wikiname)
     {
         return getWiki(c, wikiname) != null;
     }
 
 
-
-    public static void indexWikis()
+    public static void indexWikis(Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         ResultSet rs = null;
         ActionURL page = new ActionURL(WikiController.PageAction.class, null);
         try
         {
-            rs = Table.executeQuery(comm.getSchema(), "SELECT container, name FROM comm.pages", (Object[])null);
+            SimpleFilter f = new SimpleFilter();
+            if (null != c)
+                f.addCondition("container", c);
+            if (null != modifiedSince)
+                f.addCondition("modified", modifiedSince, CompareType.GTE);
+
+            rs = Table.select(comm.getTableInfoPages(), PageFlowUtil.set("container","name"), f, null);
             while (rs.next())
             {
                 String id = rs.getString(1);

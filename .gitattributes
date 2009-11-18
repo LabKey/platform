@@ -483,6 +483,7 @@ core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
 core/src/org/labkey/core/search/AbstractSearchService.java -text
 core/src/org/labkey/core/search/DavCrawler.java -text
+core/src/org/labkey/core/search/NoopSearchService.java -text
 core/src/org/labkey/core/search/SolrSearchServiceImpl.java -text
 core/src/org/labkey/core/security/ContainersView.java -text
 core/src/org/labkey/core/security/FolderPermissions.jsp -text

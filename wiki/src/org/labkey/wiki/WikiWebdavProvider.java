@@ -40,6 +40,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
+import javax.swing.text.html.HTML;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -53,7 +54,7 @@ import java.util.*;
 
 class WikiWebdavProvider implements WebdavService.Provider
 {
-    final String WIKI_NAME = "@wiki";
+    final static String WIKI_NAME = "@wiki";
     
     // currently addChildren is called only for web folders
     public Set<String> addChildren(@NotNull Resource target)
@@ -259,6 +260,32 @@ class WikiWebdavProvider implements WebdavService.Provider
     }
 
 
+    static String getResourcePath(Wiki page)
+    {
+        String docname = getDocumentName(page);
+        return AbstractResource.c(page.getContainerPath(),WIKI_NAME,page.getName().getSource(),docname);
+    }
+
+
+    static String getResourcePath(Container c, String name, WikiRendererType type)
+    {
+        String docname = getDocumentName(name, type);
+        return AbstractResource.c(c.getPath(),WIKI_NAME,name,docname);
+    }
+
+
+    static String getDocumentName(String name, WikiRendererType type)
+    {
+        switch (type)
+        {
+            default:
+            case HTML: return name + ".html";
+            case RADEOX: return name +  ".wiki";
+            case TEXT_WITH_LINKS: return name + ".txt";
+        }
+    }
+
+
     static String getDocumentName(Wiki wiki)
     {
         WikiVersion v = WikiManager.getLatestVersion(wiki);
@@ -270,13 +297,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         catch (IllegalArgumentException x)
         {
         }
-        switch (r)
-        {
-            default:
-            case HTML: return wiki.getName() + ".html";
-            case RADEOX: return wiki.getName() +  ".wiki";
-            case TEXT_WITH_LINKS: return wiki.getName() + ".txt";
-        }
+        return getDocumentName(wiki.getName().getSource(), r);
     }
 
 

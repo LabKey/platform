@@ -41,7 +41,6 @@ import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -202,13 +201,13 @@ public class WikiModule extends DefaultModule
 
 
     @Override
-    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
+    public void enumerateDocuments(SearchService ss, final Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()
             {
                 public void run()
                 {
-                    WikiManager.indexWikis();
+                    WikiManager.indexWikis(c, modifiedSince);
                 }
             };
         ss.addResource(r, SearchService.PRIORITY.bulk);
