@@ -436,6 +436,20 @@ LABKEY.Utils.convertToExcel(
         requiresCSS : function(filePath)
         {
             LABKEY.requiresCss(filePath);
+        },
+
+        /**
+         * Returns true if value ends with ending
+         * @param value the value to examine
+         * @param ending the ending to look for
+         */
+        endsWith : function(value, ending)
+        {
+            if (!value || !ending)
+                return false;
+            if (value.length < ending.length)
+                return false;
+            return value.substring(value.length - ending.length) == ending;
         }
     };
 };

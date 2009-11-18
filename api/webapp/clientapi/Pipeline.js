@@ -28,13 +28,16 @@ LABKEY.Pipeline = new function(){
     /** @scope LABKEY.Pipeline */
     return {
         /**
-         * Gets the container in which the pipeline for this container is defined.
+         * Gets the container in which the pipeline for this container is defined. This may be the
+         * container in which the request was made, or a parent container if the pipeline was defined
+         * there.
          * @param {Object} config A configuration object with the following properites.
          * @param {Function} config.successCallback The function to call with the resulting information.
          * This function will be passed a single parameter of type object, which will have the following
          * properites:
          * <ul>
-         *  <li>containerPath: the container path in which the pipeline is defined</li>
+         *  <li>containerPath: the container path in which the pipeline is defined. If no pipeline has
+         * been defined in this container hierarhcy, the value of this property will be null.</li>
          * </ul>
          * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:
