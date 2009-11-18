@@ -59,7 +59,10 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         if (assayDir.exists())
         {
             for (File assayProviderDir : assayDir.listFiles())
-                loadAssayProvider(assayProviderDir);
+            {
+                if (!assayProviderDir.isHidden())
+                    loadAssayProvider(assayProviderDir);
+            }
         }
     }
 
