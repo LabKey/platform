@@ -565,7 +565,7 @@ public class WebdavResolverImpl implements WebdavResolver
         @NotNull
         public List<History> getHistory()
         {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
     }
 

@@ -59,14 +59,9 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
             return _key;
         }
 
-        public void setKey(K key)
-        {
-            throw new UnsupportedOperationException("can't set key");
-        }
-
         public V getValue()
         {
-            return (V)_value;
+            return _value;
         }
 
         public V setValue(V value)
@@ -77,17 +72,17 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         }
 
         private K _key;
-        protected Object _value;
+        protected V _value;
         public int hash;
-        public Entry overflow;
-        public Entry next;
-        public Entry prev;
+        public Entry<K, V> overflow;
+        public Entry<K, V> next;
+        public Entry<K, V> prev;
     }
 
 
-    protected Entry<K,V> newEntry(int hash, K key)
+    protected Entry<K, V> newEntry(int hash, K key)
     {
-        return new Entry<K,V>(hash, key);
+        return new Entry<K, V>(hash, key);
     }
 
 
@@ -100,14 +95,14 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     protected Entry<K, V> findOrAddEntry(K key)
     {
         int h = hash(key);
-        Entry<K,V> e = findEntry(h, key);
+        Entry<K, V> e = findEntry(h, key);
         if (null == e)
             e = addEntry(newEntry(h, key));
         return e;
     }
     
 
-    protected Entry<K,V> findEntry(Object key)
+    protected Entry<K, V> findEntry(Object key)
     {
         return findEntry(hash(key), key);
     }
@@ -125,9 +120,9 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected Entry<K,V> findEntry(int hash, Object key)
+    protected Entry<K, V> findEntry(int hash, Object key)
     {
-        Entry e = buckets[bucketIndex(hash)];
+        Entry<K, V> e = buckets[bucketIndex(hash)];
         while (null != e)
         {
             if (hash == e.hash && eq(key, e.getKey()))
@@ -136,11 +131,11 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         }
         if (null != e && lru)
             moveToTail(e);
-        return (Entry<K,V>)e;
+        return e;
     }
 
 
-    protected Entry removeEntry(K key)
+    protected Entry<K, V> removeEntry(K key)
     {
         return removeEntry(hash(key), key);
     }
@@ -152,7 +147,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
         Entry prev = null;
         int h = bucketIndex(hash);
-        Entry e = buckets[h];
+        Entry<K, V> e = buckets[h];
         while (null != e)
         {
             if (e == remove)
@@ -173,11 +168,11 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected Entry removeEntry(int hash, K key)
+    protected Entry<K, V> removeEntry(int hash, K key)
     {
         Entry prev = null;
         int h = bucketIndex(hash);
-        Entry e = buckets[h];
+        Entry<K, V> e = buckets[h];
         while (null != e)
         {
             if (hash == e.hash && eq(key,e.getKey()))
@@ -198,14 +193,14 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected Entry<K,V> addEntry(Entry e)
+    protected Entry<K, V> addEntry(Entry<K, V> e)
     {
         int h = bucketIndex(e.hash);
         e.overflow = buckets[h];
         buckets[h] = e;
         moveToTail(e);
         size++;
-        return (Entry<K,V>)e;
+        return e;
     }
 
 
@@ -216,7 +211,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected void moveToTail(Entry e)
+    protected void moveToTail(Entry<K, V> e)
     {
         // unlink (NOOP for new entry)
         e.prev.next = e.next;
@@ -231,13 +226,13 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected Entry<K,V> firstEntry()
     {
-        return (Entry<K,V>)head.next != head ? head.next : null;
+        return head.next != head ? head.next : null;
     }
 
 
     private final String _debugName;
-    protected Entry[] buckets;
-    protected Entry head;
+    protected Entry<K, V>[] buckets;
+    protected Entry<K, V> head;
     protected int size = 0;
     protected boolean lru = false;
     private static final List<CacheMap> KNOWN_CACHEMAPS = new ArrayList<CacheMap>();
@@ -246,9 +241,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     // Map implementation
     //
 
-    /**
-     * size is max expected entries
-     */
+    // size is max expected entries
     public CacheMap(int initialSize, String debugName)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
@@ -334,7 +327,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected boolean removeOldestEntry(Map.Entry entry)
+    protected boolean removeOldestEntry(Map.Entry<K, V> entry)
     {
         return false;
     }
@@ -361,7 +354,8 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
      */
     protected class CacheMapSet extends AbstractSet<Map.Entry<K, V>>
     {
-        public boolean add(Entry<K, V> e)
+        @Override
+        public boolean add(Map.Entry<K, V> e)
         {
             throw new UnsupportedOperationException("can't add to entrySet");
         }
@@ -386,7 +380,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         public Iterator<Map.Entry<K, V>> iterator()
         {
             // UNDONE concurrent modification checking
-            return new Iterator()
+            return new Iterator<Map.Entry<K, V>>()
             {
                 Entry<K, V> current = head;
                 Entry<K, V> next = head != null ? head.next : null; // to make remove easier
@@ -398,7 +392,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
                 }
 
 
-                public Object next()
+                public Map.Entry<K, V> next()
                 {
                     if (head == next)
                         throw new NoSuchElementException();

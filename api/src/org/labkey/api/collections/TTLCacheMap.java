@@ -44,13 +44,14 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
      * NOTE: the usual way to do this is to have Entry extend SoftReference
      * However, I just want to reuse base class as conveniently as possible.
      */
-    ReferenceQueue<V> _q = new ReferenceQueue<V>();
+    private ReferenceQueue<V> _q = new ReferenceQueue<V>();
 
-    static class SoftEntry<K,V> extends SoftReference<V>
+    // Static class -- different K & V from outer class
+    private static class SoftEntry<K2, V2> extends SoftReference<V2>
     {
-        CacheMap.Entry<K,V> _entry;
+        private CacheMap.Entry<K2, V2> _entry;
 
-        SoftEntry(CacheMap.Entry<K, V> e, V value, ReferenceQueue<V> q)
+        SoftEntry(CacheMap.Entry<K2, V2> e, V2 value, ReferenceQueue<V2> q)
         {
             super(value, q);
             _entry = e;
@@ -58,31 +59,32 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     }
 
 
-    class TTLCacheEntry<K, V> extends CacheMap.Entry<K, V>
+    private class TTLCacheEntry extends CacheMap.Entry<K, V>
     {
-        long expires = -1;
+        private long _expires = -1;
+        private SoftEntry<K, V> _ref = null;
 
-        TTLCacheEntry(int hash, K key, long expires)
+        private TTLCacheEntry(int hash, K key, long expires)
         {
             super(hash, key);
-            this.expires = expires;
+            _expires = expires;
         }
 
         public V getValue()
         {
-            return null == _value ? null : ((SoftEntry<K, V>)_value).get();
+            return null == _ref ? null : _ref.get();
         }
 
         public V setValue(V value)
         {
             V old = getValue();
-            _value = new SoftEntry(this, value, _q);
+            _ref = new SoftEntry<K, V>(this, value, _q);
             return old;
         }
 
-        boolean expired()
+        private boolean expired()
         {
-            return getValue() == null || expires != -1 && System.currentTimeMillis() > expires;
+            return getValue() == null || _expires != -1 && System.currentTimeMillis() > _expires;
         }
     }
 
@@ -90,7 +92,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     @Override
     protected Entry<K, V> newEntry(int hash, K key)
     {
-        return new TTLCacheEntry<K, V>(hash, key, -1);
+        return new TTLCacheEntry(hash, key, -1);
     }
 
 
@@ -128,12 +130,11 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     public V put(K key, V value, long timeToLive)
     {
-        assert timeToLive == -1 || timeToLive < 7*DAY;
+        assert timeToLive == -1 || timeToLive < 7 * DAY;
 
-        Entry<K,V> e = findOrAddEntry(key);
+        Entry<K, V> e = findOrAddEntry(key);
         V prev = e.setValue(value);
-        assert e instanceof TTLCacheEntry;
-        ((TTLCacheEntry) e).expires = timeToLive == -1 ? -1 : System.currentTimeMillis() + timeToLive;
+        ((TTLCacheEntry) e)._expires = timeToLive == -1 ? -1 : System.currentTimeMillis() + timeToLive;
         testOldestEntry();
         return prev;
     }
@@ -142,7 +143,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     @Override
     public V get(Object key)
     {
-        TTLCacheEntry<K, V> e = (TTLCacheEntry<K, V>) findEntry(key);
+        TTLCacheEntry e = (TTLCacheEntry)findEntry(key);
         if (null == e)
             return null;
         if (e.expired())
@@ -160,7 +161,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     {
         for (Entry<K, V> entry = head.next; entry != head; entry = entry.next)
         {
-            SoftEntry<K,V> r = (SoftEntry<K,V>)entry._value;
+            SoftEntry<K, V> r = ((TTLCacheEntry)entry)._ref;
             if (null != r)
                 r.clear();
         }
@@ -168,7 +169,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     }
 
 
-    protected boolean removeOldestEntry(Map.Entry mapEntry)
+    protected boolean removeOldestEntry(Map.Entry<K, V> mapEntry)
     {
         purge();
         return size > maxSize || ((TTLCacheEntry) mapEntry).expired();
@@ -190,8 +191,8 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     void purge()
     {
-        SoftEntry<K,V> e;
-        while (null != (e = (SoftEntry<K,V>)_q.poll()))
+        SoftEntry<K, V> e;
+        while (null != (e = (SoftEntry<K, V>)_q.poll()))
         {
             removeEntry(e._entry);
         }
