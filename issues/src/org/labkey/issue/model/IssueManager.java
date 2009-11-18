@@ -27,6 +27,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Cache;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 
 import javax.servlet.ServletException;
@@ -575,6 +578,35 @@ public class IssueManager
         map.put(ISSUES_REQUIRED_FIELDS, requiredFields);
         PropertyManager.saveProperties(map);
     }
+
+
+    public static void indexIssues()
+    {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        ResultSet rs = null;
+        ActionURL page = new ActionURL(IssuesController.DetailsAction.class, null);
+        try
+        {
+            rs = Table.executeQuery(_issuesSchema.getSchema(), "SELECT container, issueid FROM " + _issuesSchema.getTableInfoIssues(), (Object[])null);
+            while (rs.next())
+            {
+                String id = rs.getString(1);
+                String name = rs.getString(2);
+                ActionURL url = page.clone().setExtraPath(id).replaceParameter("issueId",name);
+                ss.addResource(url, SearchService.PRIORITY.item);
+            }
+        }
+        catch (SQLException x)
+        {
+            _log.error(x);
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
 
     public static class TestCase extends junit.framework.TestCase
     {

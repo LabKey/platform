@@ -37,6 +37,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
@@ -49,6 +50,8 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.search.SearchService;
 import org.labkey.wiki.model.*;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
 import org.springframework.validation.BindException;
@@ -3434,6 +3437,25 @@ public class WikiController extends SpringActionController
             PropertyManager.saveProperties(properties);
 
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+
+    // UNDONE: remove for testing only
+    @RequiresPermissionClass(org.labkey.api.security.permissions.AdminPermission.class)
+    public class IndexAction implements Controller
+    {
+        public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null == ss)
+                return null;
+
+            for (Module m : ModuleLoader.getInstance().getModules())
+            {
+                m.enumerateDocuments(ss);
+            }
+            return null;
         }
     }
 }

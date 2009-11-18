@@ -30,10 +30,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.*;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
@@ -127,6 +124,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+
         public ActionURL getLoginURL(Container c, String returnURLString)
         {
             ActionURL url = new ActionURL(LoginAction.class, c);
@@ -134,7 +132,15 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-        private ActionURL getLoginURL(Container c, String email, boolean skipProfile, String returnURLString)
+        
+        public ActionURL getLoginURL(Container c, ReturnURLString returnURLString)
+        {
+            ActionURL url = new ActionURL(LoginAction.class, c);
+            addReturnURL(url, returnURLString);
+            return url;
+        }
+
+        private ActionURL getLoginURL(Container c, String email, boolean skipProfile, ReturnURLString returnURLString)
         {
             ActionURL url = getLoginURL(c, returnURLString);
 
@@ -186,6 +192,12 @@ public class LoginController extends SpringActionController
         }
 
         private void addReturnURL(ActionURL url, String returnURLString)
+        {
+            if (null != returnURLString)
+                url.addParameter("URI", returnURLString);
+        }
+
+        private void addReturnURL(ActionURL url, HString returnURLString)
         {
             if (null != returnURLString)
                 url.addParameter("URI", returnURLString);
@@ -350,12 +362,12 @@ public class LoginController extends SpringActionController
             throw new UnsupportedOperationException("This should never occur. Success should redirect.");
         }
 
-        private String getSuccessURLAsString(LoginForm form) throws SQLException, ServletException
+        private ReturnURLString getSuccessURLAsString(LoginForm form) throws SQLException, ServletException
         {
             // If this is user's first log in or some required field isn't filled in then go to update page
             if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
             {
-                return PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(form.getReturnActionURL(), _user.getUserId()).getLocalURIString();
+                return new ReturnURLString(PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(form.getReturnActionURL(), _user.getUserId()).getLocalURIString());
             }
             else
             {
@@ -550,12 +562,12 @@ public class LoginController extends SpringActionController
     {
         Container termsContainer = null;
 
-        String redir = form.getURI();
+        ReturnURLString redir = form.getURI();
         if (null != redir)
         {
             try
             {
-                URI uri = new URI(redir);
+                URI uri = new URI(redir.getSource());
             }
             catch (URISyntaxException e)
             {
@@ -603,7 +615,7 @@ public class LoginController extends SpringActionController
         private boolean remember;
         private String email;
         private String password;
-        private String URI;       // TODO: Remove this once we convert URI -> returnURL
+        private ReturnURLString URI;       // TODO: Remove this once we convert URI -> returnURL
         private boolean approvedTermsOfUse;
         private boolean skipProfile;
 
@@ -647,12 +659,12 @@ public class LoginController extends SpringActionController
             return this.errorHtml;
         }
 
-        public String getURI()
+        public ReturnURLString getURI()
         {
             return URI;
         }
 
-        public void setURI(String URI)
+        public void setURI(ReturnURLString URI)
         {
             this.URI = URI;
             setReturnUrl(URI);
@@ -1279,14 +1291,14 @@ public class LoginController extends SpringActionController
     public static class TokenAuthenticationForm
     {
         String _labkeyToken;
-        String _returnUrl;
+        ReturnURLString _returnUrl;
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }

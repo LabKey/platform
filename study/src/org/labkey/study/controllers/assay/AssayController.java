@@ -374,7 +374,7 @@ public class AssayController extends SpringActionController
     public static class CreateAssayForm extends ProtocolIdForm
     {
         private boolean createInProject;
-        private String returnURL;
+        private ReturnURLString returnURL;
 
         public CreateAssayForm() { }
 
@@ -388,12 +388,12 @@ public class AssayController extends SpringActionController
             this.createInProject = createInProject;
         }
 
-        public String getReturnURL()
+        public ReturnURLString getReturnURL()
         {
             return returnURL;
         }
 
-        public void setReturnURL(String returnURL)
+        public void setReturnURL(ReturnURLString returnURL)
         {
             this.returnURL = returnURL;
         }

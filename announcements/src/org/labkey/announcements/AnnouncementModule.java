@@ -32,6 +32,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.search.SearchService;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -186,4 +187,19 @@ public class AnnouncementModule extends DefaultModule
         }
         return list;
     }
+
+
+    @Override
+    public void enumerateDocuments(SearchService ss)
+    {
+        Runnable r = new Runnable()
+            {
+                public void run()
+                {
+                    AnnouncementManager.indexMessages();
+                }
+            };
+        ss.addResource(r, SearchService.PRIORITY.bulk);
+    }
+
 }

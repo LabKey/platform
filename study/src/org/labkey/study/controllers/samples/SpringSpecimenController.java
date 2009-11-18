@@ -141,7 +141,7 @@ public class SpringSpecimenController extends BaseStudyController
         return getManageRequestURL(requestID, null);
     }
 
-    private ActionURL getManageRequestURL(int requestID, String returnUrl)
+    private ActionURL getManageRequestURL(int requestID, ReturnURLString returnUrl)
     {
         ActionURL url = new ActionURL(ManageRequestAction.class, getContainer());
         url.addParameter(IdForm.PARAMS.id, Integer.toString(requestID));
@@ -429,7 +429,7 @@ public class SpringSpecimenController extends BaseStudyController
     {
         private boolean _selected;
         private boolean _vialView;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public boolean isSelected()
         {
@@ -451,12 +451,12 @@ public class SpringSpecimenController extends BaseStudyController
             _vialView = vialView;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -465,9 +465,9 @@ public class SpringSpecimenController extends BaseStudyController
     public static class SpecimenEventBean
     {
         private Specimen _specimen;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
-        public SpecimenEventBean(Specimen specimen, String returnUrl)
+        public SpecimenEventBean(Specimen specimen, ReturnURLString returnUrl)
         {
             _specimen = specimen;
             _returnUrl = returnUrl;
@@ -483,12 +483,12 @@ public class SpringSpecimenController extends BaseStudyController
             _specimen = specimen;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -569,7 +569,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
 
         private String _specimenIds;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public String getSpecimenIds()
         {
@@ -591,12 +591,12 @@ public class SpringSpecimenController extends BaseStudyController
             return builder.toString();
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -657,7 +657,7 @@ public class SpringSpecimenController extends BaseStudyController
         private String _newDescription;
         private String _export;
         private Boolean _submissionResult;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public Integer getNewActor()
         {
@@ -709,12 +709,12 @@ public class SpringSpecimenController extends BaseStudyController
             _submissionResult = submissionResult;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -762,9 +762,9 @@ public class SpringSpecimenController extends BaseStudyController
         protected List<String> _missingSpecimens = null;
         private Boolean _submissionResult;
         private Site[] _providingSites;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
-        public ManageRequestBean(ViewContext context, SampleRequest sampleRequest, boolean forExport, Boolean submissionResult, String returnUrl) throws SQLException, ServletException
+        public ManageRequestBean(ViewContext context, SampleRequest sampleRequest, boolean forExport, Boolean submissionResult, ReturnURLString returnUrl) throws SQLException, ServletException
         {
             super(context, SampleManager.getInstance().getRequestSpecimens(sampleRequest), !forExport, !forExport, forExport, false);
             _submissionResult = submissionResult;
@@ -887,12 +887,12 @@ public class SpringSpecimenController extends BaseStudyController
             return _providingSites;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -1194,7 +1194,7 @@ public class SpringSpecimenController extends BaseStudyController
         private boolean[] _required;
         private boolean _fromGroupedView;
         private Integer _preferredLocation;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
         private boolean _ignoreReturnUrl;
         private String[] _sampleIds;
 
@@ -1307,12 +1307,12 @@ public class SpringSpecimenController extends BaseStudyController
             _preferredLocation = preferredLocation;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -1376,7 +1376,7 @@ public class SpringSpecimenController extends BaseStudyController
         private String[] _inputValues;
         private int _selectedSite;
         private BindException _errors;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public NewRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens, CreateSampleRequestForm form, BindException errors) throws SQLException
         {
@@ -1413,7 +1413,7 @@ public class SpringSpecimenController extends BaseStudyController
             return _errors;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }

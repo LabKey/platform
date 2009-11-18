@@ -63,8 +63,6 @@ public class DataSetTable extends FilteredTable
             if ("ParticipantId".equalsIgnoreCase(name))
             {
                 ColumnInfo column = new AliasedColumn(this, "ParticipantId", baseColumn);
-                //column.setFk(new QueryForeignKey(_schema, "Participant", "RowId", "RowId"));
-
                 column.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", "ParticipantId")
                 {
                     public StringExpression getURL(ColumnInfo parent) {

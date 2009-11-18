@@ -2748,9 +2748,9 @@ public class StudyController extends BaseStudyController
     {
         private StudyImpl _study;
         private QCState[] _states;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
-        public ManageQCStatesBean(StudyImpl study, String returnUrl)
+        public ManageQCStatesBean(StudyImpl study, ReturnURLString returnUrl)
         {
             _study = study;
             _returnUrl = returnUrl;
@@ -2768,7 +2768,7 @@ public class StudyController extends BaseStudyController
             return _study;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
@@ -2788,7 +2788,7 @@ public class StudyController extends BaseStudyController
         private Integer _defaultAssayQCState;
         private Integer _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public int[] getIds()
         {
@@ -2910,12 +2910,12 @@ public class StudyController extends BaseStudyController
             _showPrivateDataByDefault = showPrivateDataByDefault;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }

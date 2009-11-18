@@ -35,11 +35,10 @@
 %>
 
 <% if (bean.getObjects().isEmpty())
-{ %>
-    <p>There are no selected objects to delete.</p>
-<%= generateButton("OK", bean.getReturnURL() == null ? "begin.view" : bean.getReturnURL())%>
-
-<% }
+{
+    %><p>There are no selected objects to delete.</p>
+    <%= bean.getReturnURL() == null || bean.getReturnURL().isEmpty() ? generateButton("OK", "begin.view") : generateButton("OK", bean.getReturnURL())%><%
+}
 else
 { %>
     <p>Are you sure you want to delete the following <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? (bean.getObjectType().endsWith("h") ? "es" : "s") : "" %>?</p>
@@ -116,6 +115,6 @@ else
         { %>
             <%= generateSubmitButton("Confirm Delete") %>
         <% } %>
-        <%= generateButton("Cancel", bean.getReturnURL() == null ? "begin.view" : bean.getReturnURL())%>
+        <%= bean.getReturnURL() == null || bean.getReturnURL().isEmpty()? generateButton("Cancel", "begin.view") : generateButton("Cancel", bean.getReturnURL())%>
     </form>
 <% } %>

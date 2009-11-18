@@ -1173,7 +1173,7 @@ public class SecurityController extends SpringActionController
         private String newUsers;
         private String _cloneUser;
         private boolean _skipProfile;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public void setNewUsers(String newUsers)
         {
@@ -1208,12 +1208,12 @@ public class SecurityController extends SpringActionController
             _skipProfile = skipProfile;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -1274,7 +1274,7 @@ public class SecurityController extends SpringActionController
             if (form.isSkipProfile())
                 extraParams.add(new Pair<String, String>("skipProfile", "1"));
             if (null != form.getReturnUrl())
-                extraParams.add(new Pair<String, String>(ReturnUrlForm.Params.returnUrl.toString(), form.getReturnUrl()));
+                extraParams.add(new Pair<String, String>(ReturnUrlForm.Params.returnUrl.toString(), form.getReturnUrl().getSource()));
 
             for (ValidEmail email : emails)
             {

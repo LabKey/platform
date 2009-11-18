@@ -31,6 +31,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
@@ -686,14 +687,14 @@ public class DatasetController extends BaseStudyController
     {
         private String lsid;
         private int datasetId;
-        private String returnURL;
+        private ReturnURLString returnURL;
 
         public String getLsid() {return lsid;}
         public void setLsid(String lsid) {this.lsid = lsid;}
         public int getDatasetId() {return datasetId;}
         public void setDatasetId(int datasetId) {this.datasetId = datasetId;}
-        public String getReturnURL() {return returnURL;}
-        public void setReturnURL(String returnURL) {this.returnURL = returnURL;}
+        public ReturnURLString getReturnURL() {return returnURL;}
+        public void setReturnURL(ReturnURLString returnURL) {this.returnURL = returnURL;}
     }
 
     public static class DatasetAuditHistoryForm
@@ -705,5 +706,4 @@ public class DatasetController extends BaseStudyController
         public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
 
     }
-
 }

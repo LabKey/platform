@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.util.ReturnURLString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -31,9 +32,9 @@
     ViewContext context = HttpView.currentContext();
     User user = context.getUser();
     LoginForm form = bean.form;
-    String returnURI = form.getReturnUrl();
+    ReturnURLString returnURI = form.getReturnUrl();
     if (returnURI == null)
-        returnURI = form.getReturnActionURL().toString();
+        returnURI = new ReturnURLString(form.getReturnActionURL().toHString());
     boolean agreeOnly = bean.agreeOnly;
 
     // Next bit of code makes the enter button work on IE.

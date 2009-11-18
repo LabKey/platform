@@ -174,7 +174,7 @@ function setDefaults()
             <td>
                 <input type="hidden" name="<%= SpringSpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() %>" value="false">
                 <%
-                    boolean hasReturnURL = bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0;
+                    boolean hasReturnURL = bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty();
                     if (hasReturnURL)
                     {
                 %>
@@ -184,7 +184,7 @@ function setDefaults()
                 %>
                 <%= buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details", 
                         "document.CreateSampleRequest." + SpringSpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;")%>
-                <%= generateButton("Cancel", hasReturnURL ? bean.getReturnUrl() : "viewRequests.view")%>
+                <%= hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", "viewRequests.view")%>
             </td>
         </tr>
 

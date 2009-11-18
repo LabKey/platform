@@ -481,6 +481,8 @@ core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text
 core/src/org/labkey/core/query/CoreQuerySchema.java -text
 core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
+core/src/org/labkey/core/search/AbstractSearchService.java -text
+core/src/org/labkey/core/search/SolrSearchServiceImpl.java -text
 core/src/org/labkey/core/security/ContainersView.java -text
 core/src/org/labkey/core/security/FolderPermissions.jsp -text
 core/src/org/labkey/core/security/GroupView.java -text

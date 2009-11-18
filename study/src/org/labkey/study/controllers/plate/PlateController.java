@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.FormViewAction;
@@ -86,14 +87,14 @@ public class PlateController extends SpringActionController
 
     public static class PlateTemplateListForm
     {
-        private String _returnURL;
+        private ReturnURLString _returnURL;
 
-        public String getReturnURL()
+        public ReturnURLString getReturnURL()
         {
             return _returnURL;
         }
 
-        public void setReturnURL(String returnURL)
+        public void setReturnURL(ReturnURLString returnURL)
         {
             _returnURL = returnURL;
         }

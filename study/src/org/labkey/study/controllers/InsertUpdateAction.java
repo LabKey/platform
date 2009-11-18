@@ -29,6 +29,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
@@ -181,13 +182,13 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
         }
         DataRegion dataRegion = view.getDataRegion();
 
-        String referer = form.getReturnURL();
-        if (referer == null)
-            referer = HttpView.currentRequest().getHeader("Referer");
+        ReturnURLString referer = form.getReturnURL();
+        if (referer == null || referer.isEmpty())
+            referer =  new ReturnURLString(HttpView.currentRequest().getHeader("Referer"));
 
         ActionURL cancelURL;
 
-        if (referer == null)
+        if (referer.isEmpty())
         {
             cancelURL = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
             cancelURL.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());

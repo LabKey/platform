@@ -36,10 +36,12 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.search.SearchService;
 import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.permissions.IncludeScriptPermission;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -196,5 +198,19 @@ public class WikiModule extends DefaultModule
     {
         return new HashSet<Class<? extends TestCase>>(Arrays.asList(
             WikiManager.TestCase.class));
+    }
+
+
+    @Override
+    public void enumerateDocuments(SearchService ss)
+    {
+        Runnable r = new Runnable()
+            {
+                public void run()
+                {
+                    WikiManager.indexWikis();
+                }
+            };
+        ss.addResource(r, SearchService.PRIORITY.bulk);
     }
 }

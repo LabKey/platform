@@ -32,14 +32,18 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.util.Pair;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
+import org.apache.log4j.Category;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+
 
 /**
  * User: mbellew
@@ -708,6 +712,37 @@ public class WikiManager
     {
         return getWiki(c, wikiname) != null;
     }
+
+
+
+    public static void indexWikis()
+    {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        ResultSet rs = null;
+        ActionURL page = new ActionURL(WikiController.PageAction.class, null);
+        try
+        {
+            rs = Table.executeQuery(comm.getSchema(), "SELECT container, name FROM comm.pages", (Object[])null);
+            while (rs.next())
+            {
+                String id = rs.getString(1);
+                String name = rs.getString(2);
+                ActionURL url = page.clone().setExtraPath(id).replaceParameter("name",name);
+                ss.addResource(url, SearchService.PRIORITY.item);
+            }
+        }
+        catch (SQLException x)
+        {
+            Category.getInstance(WikiManager.class).error(x);
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);    
+        }
+    }
+
+
 
     public static class TestCase extends junit.framework.TestCase
     {

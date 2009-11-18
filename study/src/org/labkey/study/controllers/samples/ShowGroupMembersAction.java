@@ -25,6 +25,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SampleRequestActor;
@@ -131,11 +132,12 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         return !errors.hasErrors();
     }
 
+
     public ActionURL getSuccessURL(UpdateGroupForm form)
     {
-        String returnURL = form.getReturnUrl();
-        if (returnURL != null && returnURL.length() > 0)
-            return new ActionURL(returnURL);
+        ReturnURLString returnURL = form.getReturnUrl();
+        if (null != returnURL && !returnURL.isEmpty())
+            return new ActionURL(returnURL.getSource());
         else
         {
             return new ActionURL(SpringSpecimenController.ManageActorsAction.class, getViewContext().getContainer());
@@ -185,7 +187,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         private String[] _delete;
         private boolean _sendEmail;
         private String _names;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public Integer getSiteId()
         {
@@ -227,12 +229,12 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             _delete = delete;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -244,9 +246,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         private SiteImpl _site;
         private User[] _members;
         private String _ldapDomain;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
-        public GroupMembersBean(SampleRequestActor actor, SiteImpl site, User[] members, String returnUrl)
+        public GroupMembersBean(SampleRequestActor actor, SiteImpl site, User[] members, ReturnURLString returnUrl)
         {
             _actor = actor;
             _site = site;
@@ -275,7 +277,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return _ldapDomain;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }

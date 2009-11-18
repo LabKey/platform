@@ -114,6 +114,14 @@ public enum Method
                     return new TimestampInfo(this);
                 }
             },
+    age(Types.INTEGER, 3, 3)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new AgeMethodInfo();
+                }
+            },
     age_in_years(Types.INTEGER, 2, 2)
             {
                 @Override
@@ -387,6 +395,25 @@ public enum Method
             return ret;
 		}
 	}
+
+
+
+    class AgeMethodInfo extends MethodInfoImpl
+    {
+        AgeMethodInfo()
+        {
+            super(Types.INTEGER);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            String unit = arguments[2].getSQL().toUpperCase();
+            if (unit.equals("YEAR") || unit.equals("SQL_TSI_YEAR"))
+                return new AgeInYearsMethodInfo().getSQL(schema, arguments);
+            throw new IllegalArgumentException("AGE(" + unit + ")");
+        }
+    }
+
 
     class AgeInYearsMethodInfo extends MethodInfoImpl
     {

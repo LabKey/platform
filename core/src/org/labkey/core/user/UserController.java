@@ -35,6 +35,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
@@ -1319,7 +1320,7 @@ public class UserController extends SpringActionController
         private String newEmail;
         private String _message = null;
         private boolean _renderInHomeTemplate = true;
-        private String _returnUrl;
+        private ReturnURLString _returnUrl;
 
         public String getNewEmail()
         {
@@ -1355,12 +1356,12 @@ public class UserController extends SpringActionController
             _message = message;
         }
 
-        public String getReturnUrl()
+        public ReturnURLString getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(String returnUrl)
+        public void setReturnUrl(ReturnURLString returnUrl)
         {
             _returnUrl = returnUrl;
         }

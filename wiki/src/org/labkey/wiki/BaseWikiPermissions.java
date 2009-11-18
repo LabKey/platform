@@ -20,10 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.*;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.OwnerRole;
-import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.roles.*;
 import org.labkey.wiki.model.Wiki;
 
 import java.util.Set;
@@ -55,7 +52,9 @@ public class BaseWikiPermissions
     protected Set<Role> getContextualRoles(Wiki wiki)
     {
         Set<Role> roles = new HashSet<Role>();
-        if(userIsCreator(wiki))
+        if (_user == User.getSearchUser())
+            roles.add(RoleManager.getRole(ReaderRole.class));
+        if (userIsCreator(wiki))
             roles.add(RoleManager.getRole(OwnerRole.class));
         return roles;
     }

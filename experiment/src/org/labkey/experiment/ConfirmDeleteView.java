@@ -22,6 +22,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import javax.servlet.ServletException;
@@ -41,7 +42,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final List<? extends ExpObject> _objects;
         private final String _objectType;
         private final String _detailAction;
-        private String _returnURL;
+        private ReturnURLString _returnURL;
         private String _dataRegionSelectionKey;
         private Integer _singleObjectRowId;
 
@@ -86,12 +87,12 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             return _detailAction;
         }
 
-        public void setReturnURL(String url)
+        public void setReturnURL(ReturnURLString url)
         {
             _returnURL =  url;
         }
 
-        public String getReturnURL()
+        public ReturnURLString getReturnURL()
         {
             return _returnURL;
         }

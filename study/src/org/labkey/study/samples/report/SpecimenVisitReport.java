@@ -81,7 +81,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         url.deleteParameter(columnBase + "~eq");
         url.deleteParameter(columnBase + "~isblank");
         if (value == null)
-            url.addParameter(columnBase + "~isblank", null);
+            url.addParameter(columnBase + "~isblank", (String)null);
         else
             url.addParameter(columnBase + "~eq", value.toString());
         return url;

@@ -32,6 +32,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.search.SearchService;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -127,5 +128,19 @@ public class IssuesModule extends DefaultModule
     public UpgradeCode getUpgradeCode()
     {
         return new IssueUpgradeCode();
+    }
+
+
+    @Override
+    public void enumerateDocuments(SearchService ss)
+    {
+        Runnable r = new Runnable()
+            {
+                public void run()
+                {
+                    IssueManager.indexIssues();
+                }
+            };
+        ss.addResource(r, SearchService.PRIORITY.bulk);
     }
 }

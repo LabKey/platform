@@ -20,6 +20,7 @@ import junit.framework.TestSuite;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
@@ -30,7 +31,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Pair;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.announcements.AnnouncementsController;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -814,6 +819,36 @@ public class AnnouncementManager
             _emailOptionId = emailOptionId;
         }
     }
+
+
+    public static void indexMessages()
+    {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        ResultSet rs = null;
+        ActionURL page = new ActionURL(AnnouncementsController.ThreadAction.class, null);
+        try
+        {
+            rs = Table.executeQuery(_comm.getSchema(), "SELECT container, rowid FROM " + _comm.getTableInfoThreads(), (Object[])null);
+            while (rs.next())
+            {
+                String id = rs.getString(1);
+                String name = rs.getString(2);
+                ActionURL url = page.clone().setExtraPath(id).replaceParameter("rowId",name);
+                ss.addResource(url, SearchService.PRIORITY.item);
+            }
+        }
+        catch (SQLException x)
+        {
+            _log.error(x);
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
+
 
     public static class TestCase extends junit.framework.TestCase
     {

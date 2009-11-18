@@ -2154,7 +2154,7 @@ public class ExperimentController extends SpringActionController
 
     public static class DeleteForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm
     {
-        private String _returnURL;
+        private ReturnURLString _returnURL;
         private boolean _forceDelete;
         private String _dataRegionSelectionKey;
         private Integer _singleObjectRowId;
@@ -2178,12 +2178,12 @@ public class ExperimentController extends SpringActionController
             _singleObjectRowId = singleObjectRowId;
         }
 
-        public String getReturnURL()
+        public ReturnURLString getReturnURL()
         {
             return _returnURL;
         }
 
-        public void setReturnURL(String returnURL)
+        public void setReturnURL(ReturnURLString returnURL)
         {
             _returnURL = returnURL;
         }

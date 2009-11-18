@@ -1583,7 +1583,7 @@ public class AnnouncementsController extends SpringActionController
             // TODO: This only grabs announcements... add responses too?
             Pair<Announcement[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
 
-            ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", null);
+            ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", (String)null);
 
             WebPartView v = new RssView(pair.first, url.getURIString());
 

@@ -37,6 +37,10 @@ import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.ActionResource;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -51,6 +55,8 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
+import org.labkey.core.search.AbstractSearchService;
+import org.labkey.core.search.SolrSearchServiceImpl;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -149,7 +155,25 @@ public class CoreModule extends SpringModule
             }
         }
 
+
+        SearchService ss = new SolrSearchServiceImpl();
+        ServiceRegistry.get().registerService(SearchService.class, ss);
+        ss.addResourceResolver("action", new AbstractSearchService.ResourceResolver()
+        {
+            public WebdavResolver.Resource resolve(@NotNull String str)
+            {
+                return new ActionResource(str);
+            }
+        });
+        ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
+        {
+            public WebdavResolver.Resource resolve(@NotNull String path)
+            {
+                return WebdavService.getResolver().lookup(path);
+            }
+        });
     }
+
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
