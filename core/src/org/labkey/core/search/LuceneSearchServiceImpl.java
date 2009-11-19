@@ -28,6 +28,7 @@ import java.io.StringReader;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * User: adam
@@ -125,6 +126,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private static final int SUMMARY_LENGTH = 400;
     private static final Pattern TITLE_STRIPPING_PATTERN = Pattern.compile(": /" + GUID.guidRegEx);
+    private static final Pattern SEPARATOR_PATTERN = Pattern.compile("[\\s/]");  // Any whitespace character or slash
 
     private String extractSummary(String body, String title)
     {
@@ -136,7 +138,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (body.length() <= SUMMARY_LENGTH)
             return body;
 
-        return body.substring(0, SUMMARY_LENGTH) + "...";
+        Matcher wordSplitter = SEPARATOR_PATTERN.matcher(body);
+
+        if (!wordSplitter.find(SUMMARY_LENGTH - 1))
+            return body.substring(0, SUMMARY_LENGTH) + "...";
+        else
+            return body.substring(0, wordSplitter.start()) + "...";
     }
 
 
@@ -146,7 +153,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             Document doc = (Document)preprocessMap.get(Document.class);
             _iw.addDocument(doc);
-            _log.info("Indexed document " + _count + ": " + id);
             commit();
         }
         catch(Exception e)
