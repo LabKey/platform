@@ -260,7 +260,8 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (null == data)
             {
                 //create a new one
-                data = expSvc.createData(container, type, name);
+                String lsid = expSvc.generateLSID(container, type, pipelinePath);
+                data = expSvc.createData(container, name, lsid);
                 data.setDataFileURI(uri);
                 data.save(getViewContext().getUser());
             }
