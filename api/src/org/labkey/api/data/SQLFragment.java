@@ -137,9 +137,12 @@ public class SQLFragment
         return params == null ? Collections.emptyList() : params;
     }
 
+
+    final static Object[] emptyArray = new Object[0];
+
     public Object[] getParamsArray()
     {
-        return params.toArray();
+        return null == params ? emptyArray : params.toArray();
     }
 
     private List<Object> getModfiableParams()

@@ -49,7 +49,7 @@ public abstract class AbstractResource implements Resource
     private String _path;
     protected SecurityPolicy _policy;
     protected String _etag = null;
-    Map<String,?> _properties = null;
+    protected Map<String,?> _properties = null;
 
     protected AbstractResource(String path)
     {

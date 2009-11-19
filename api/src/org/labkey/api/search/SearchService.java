@@ -41,6 +41,8 @@ public interface SearchService
     void addResource(ActionURL url, PRIORITY pri);
     void addResource(Runnable r, PRIORITY pri);
     void addResource(String identifier, PRIORITY pri);
+    void addResource(Resource r, PRIORITY pri);
+
     void deleteResource(String identifier, PRIORITY pri);
 
     public interface ResourceResolver
