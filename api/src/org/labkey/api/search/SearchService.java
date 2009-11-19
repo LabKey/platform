@@ -15,9 +15,9 @@
  */
 package org.labkey.api.search;
 
-import org.labkey.api.webdav.Resource;
-import org.labkey.api.view.ActionURL;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.Resource;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,4 +49,6 @@ public interface SearchService
     }
 
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
+    public String search(String queryString);
+    public void clearIndex();
 }
