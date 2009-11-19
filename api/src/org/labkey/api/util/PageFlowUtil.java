@@ -1410,7 +1410,7 @@ public class PageFlowUtil
 
         try
         {
-            // parse want's to use streams
+            // parse wants to use streams
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             tidy.setErrout(new PrintWriter(err));
             tidy.parse(new ByteArrayInputStream(html.getBytes("UTF-8")), out);

@@ -83,7 +83,7 @@ public class GUID
         String netDigest;
 
         {
-            StringBuffer sbSource = new StringBuffer();
+            StringBuilder sbSource = new StringBuilder();
             try
             {
                 ProcessBuilder cmd = new ProcessBuilder("ipconfig.exe", "/all");
@@ -170,7 +170,8 @@ public class GUID
     }
 
 
-    static Pattern guidPattern = Pattern.compile("\\p{XDigit}{8}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{12}");
+    public static final String guidRegEx = "\\p{XDigit}{8}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{12}";
+    public static final Pattern guidPattern = Pattern.compile(guidRegEx);
 
     public static boolean isGUID(String s)
     {
