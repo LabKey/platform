@@ -1,7 +1,7 @@
 package org.labkey.core.search;
 
-import org.labkey.api.webdav.Resource;
 import org.apache.log4j.Category;
+import org.labkey.api.webdav.Resource;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,8 +29,23 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 //        }
     }
 
+    public String search(String queryString)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void clearIndex()
+    {
+        
+    }
+
     protected void commit()
     {
         _log.info("COMMIT");
+    }
+
+    protected void shutDown()
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

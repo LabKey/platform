@@ -1,17 +1,20 @@
 package org.labkey.core.search;
 
-import org.labkey.api.search.SearchService;
-import org.labkey.api.webdav.Resource;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.ContextListener;
+import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.apache.log4j.Category;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.Resource;
 
 import javax.servlet.ServletContextEvent;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.PriorityBlockingQueue;
 
 /**
@@ -161,6 +164,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _indexingThread.join(2000);
         }
         catch (InterruptedException e) {}
+        shutDown();
     }
 
 
@@ -170,9 +174,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             while (!_shuttingDown)
             {
+                Item i = null;
                 try
                 {
-                    Item i = _queue.take();
+                    i = _queue.take();
                     if (null != i._run)
                     {
                         i._run.run();
@@ -191,7 +196,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 catch (Exception x)
                 {
-                    Category.getInstance(SearchService.class).error(x);
+                    Category.getInstance(SearchService.class).error("Error indexing " + (null != i ? i._id : ""), x);
                 }
             }
         }
@@ -199,4 +204,5 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected abstract void index(String id, Resource r);
     protected abstract void commit();
+    protected abstract void shutDown();
 }

@@ -31,4 +31,14 @@ public class NoopSearchService implements SearchService
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
     }
+
+    public String search(String queryString)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void clearIndex()
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 }
