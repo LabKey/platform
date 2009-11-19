@@ -19,6 +19,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.SecurityManager;
@@ -27,13 +28,18 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Cache;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.issue.IssuesController;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
-import java.io.IOException;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -65,29 +71,39 @@ public class IssueManager
     private static final String PROP_ENTRY_TYPE_NAME_SINGULAR = "issueEntryTypeNameSingular";
     private static final String PROP_ENTRY_TYPE_NAME_PLURAL = "issueEntryTypeNamePlural";
 
+
     private IssueManager()
     {
     }
 
-    public static Issue getIssue(Container c, int issueId) throws SQLException
-    {
-        Issue[] issues = Table.selectForDisplay(
-                _issuesSchema.getTableInfoIssues(),
-                Table.ALL_COLUMNS,
-                new SimpleFilter("issueId", new Integer(issueId))
-                        .addCondition("container", c.getId()),
-                null, Issue.class);
-        if (null == issues || issues.length < 1)
-            return null;
-        Issue issue = issues[0];
 
-        Issue.Comment[] comments = Table.select(
-                _issuesSchema.getTableInfoComments(),
-                Table.ALL_COLUMNS,
-                new SimpleFilter("issueId", new Integer(issue.getIssueId())),
-                new Sort("CommentId"), Issue.Comment.class);
-        issue.setComments(new ArrayList<Issue.Comment>(Arrays.asList(comments)));
-        return issue;
+    public static Issue getIssue(Container c, int issueId)
+    {
+        try
+        {
+            SimpleFilter f = new SimpleFilter("issueId", new Integer(issueId));
+            if (null != c)
+                f.addCondition("container", c.getId());
+
+            Issue[] issues = Table.selectForDisplay(
+                    _issuesSchema.getTableInfoIssues(),
+                    Table.ALL_COLUMNS, f, null, Issue.class);
+            if (null == issues || issues.length < 1)
+                return null;
+            Issue issue = issues[0];
+
+            Issue.Comment[] comments = Table.select(
+                    _issuesSchema.getTableInfoComments(),
+                    Table.ALL_COLUMNS,
+                    new SimpleFilter("issueId", new Integer(issue.getIssueId())),
+                    new Sort("CommentId"), Issue.Comment.class);
+            issue.setComments(new ArrayList<Issue.Comment>(Arrays.asList(comments)));
+            return issue;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
 
@@ -296,7 +312,7 @@ public class IssueManager
         private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>(5);
         private Set<String> _pickListColumns = new HashSet<String>(2);
 
-        public CustomColumnConfiguration(Map<String, ? extends Object> map)
+        public CustomColumnConfiguration(Map<String, ?> map)
         {
             if (null == map)
                 return;
@@ -305,7 +321,7 @@ public class IssueManager
             setPickListColumns(map);
         }
 
-        private void setColumnCaptions(Map<String, ? extends Object> map)
+        private void setColumnCaptions(Map<String, ?> map)
         {
             for (String tableColumn : _tableColumns)
             {
@@ -321,7 +337,7 @@ public class IssueManager
             return _columnCaptions;
         }
 
-        private void setPickListColumns(Map<String, ? extends Object> map)
+        private void setPickListColumns(Map<String, ?> map)
         {
             Object pickListColumnNames = map.get(PICK_LIST_NAME);
 
@@ -333,7 +349,7 @@ public class IssueManager
             if (pickListColumnNames.getClass().equals(String.class))
                 columns = ((String)pickListColumnNames).split(",");
             else
-                columns = ((List<String>)pickListColumnNames).toArray(new String[]{});
+                columns = ((List<String>)pickListColumnNames).toArray(new String[((List<String>)pickListColumnNames).size()]);
 
             for (String column : columns)
                 if (null != _columnCaptions.get(column))
@@ -569,6 +585,7 @@ public class IssueManager
         return new HString(requiredFields,true);
     }
 
+
     public static void setRequiredIssueFields(Container container, String requiredFields) throws SQLException
     {
         Map<String, String> map = PropertyManager.getWritableProperties(0, container.getId(), ISSUES_PREF_MAP, true);
@@ -580,30 +597,245 @@ public class IssueManager
     }
 
 
-    public static void indexIssues()
+    public static void indexIssues(Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null == ss)
+            return;
         ResultSet rs = null;
-        ActionURL page = new ActionURL(IssuesController.DetailsAction.class, null);
         try
         {
-            rs = Table.executeQuery(_issuesSchema.getSchema(), "SELECT container, issueid FROM " + _issuesSchema.getTableInfoIssues(), (Object[])null);
+            SimpleFilter f = new SimpleFilter();
+            if (null != c)
+                f.addCondition("container", c);
+            if (null != modifiedSince)
+                f.addCondition("modified", modifiedSince, CompareType.GTE);
+
+            rs = Table.select(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null);
+            int[] ids = new int[100];
+            int count = 0;
             while (rs.next())
             {
-                String id = rs.getString(1);
-                String name = rs.getString(2);
-                ActionURL url = page.clone().setExtraPath(id).replaceParameter("issueId",name);
-                ss.addResource(url, SearchService.PRIORITY.item);
+                int id = rs.getInt(1);
+                ids[count++] = id;
+                if (count == ids.length)
+                {
+                    ss.addResource(new IndexGroup(ids,count), SearchService.PRIORITY.group);
+                    ids = new int[ids.length];
+                }
             }
+            ss.addResource(new IndexGroup(ids,count), SearchService.PRIORITY.group);
         }
         catch (SQLException x)
         {
-            _log.error(x);
+            Category.getInstance(IssueManager.class).error(x);
             throw new RuntimeSQLException(x);
         }
         finally
         {
             ResultSetUtil.close(rs);
+        }
+    }
+
+    private static class IndexGroup implements Runnable
+    {
+        int[] ids; int len;
+        IndexGroup(int[] ids, int len)
+        {
+            this.ids = ids; this.len = len;
+        }
+
+        public void run()
+        {
+            indexIssues(ids, len);
+        }
+    }
+
+    /* CONSIDER: some sort of generator interface instead */
+    public static void indexIssues(int[] ids, int count)
+    {
+        if (count == 0) return;
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+        SQLFragment f = new SQLFragment();
+        f.append("SELECT I.issueId, I.container, I.entityid, I.title, I.status, AssignedTo$.displayName as assignedto, I.type, I.area, ")
+            .append("I.priority, I.milestone, I.buildfound, ModifiedBy$.displayName as modifiedby, ")
+            .append("I.modified, CreatedBy$.displayName as createdby, I.created, I.tag, ResolvedBy$.displayName as resolvedby, ")
+            .append("I.resolved, I.resolution, I.duplicate, ClosedBy$.displayName as closedby, I.closed, ")
+            .append("I.int1, I.int2, I.string1, I.string2, ")
+            .append("C.comment\n");
+        f.append("FROM issues.issues I \n")
+            .append("LEFT OUTER JOIN issues.comments C ON I.issueid = C.issueid\n")
+            .append("LEFT OUTER JOIN core.usersdata AS AssignedTo$ ON I.assignedto = AssignedTo$.userid\n")
+            .append("LEFT OUTER JOIN core.usersdata AS ClosedBy$  ON I.createdby = ClosedBy$.userid\n")
+            .append("LEFT OUTER JOIN core.usersdata AS CreatedBy$  ON I.createdby = CreatedBy$.userid\n")
+            .append("LEFT OUTER JOIN core.usersdata AS ModifiedBy$ ON I.modifiedby = ModifiedBy$.userid\n")
+            .append("LEFT OUTER JOIN core.usersdata AS ResolvedBy$ ON I.modifiedby = ResolvedBy$.userid\n");
+        f.append("WHERE I.issueid IN ");
+
+        String comma = "(";
+        for (int i=0 ; i<count ; i++)
+        {
+            int id = ids[i];
+            f.append(comma).append(id);
+            comma = ",";
+        }
+        f.append(")\n");
+        f.append("ORDER BY I.issueid");
+
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.executeQuery(_issuesSchema.getSchema(), f, 0, false, false);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            int currentIssueId = -1;
+
+            Map<String,?> m = null;
+            ArrayList<Issue.Comment> comments = new ArrayList<Issue.Comment>();
+
+            while (rs.next())
+            {
+                int id = rs.getInt(1);
+                if (id != currentIssueId)
+                {
+                    queueIssue(ss, m, comments);
+                    comments = new ArrayList<Issue.Comment>();
+                    m = factory.getRowMap(rs);
+                }
+                comments.add(new Issue.Comment(rs.getString("comment")));
+            }
+            queueIssue(ss, m, comments);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+    
+
+    static void queueIssue(SearchService ss, Map<String,?> m, ArrayList<Issue.Comment> comments)
+    {
+        if (null == ss || null == m)
+            return;
+        m.put("comment",null);
+        ss.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
+    }
+
+
+    public static SearchService.ResourceResolver getSearchResolver()
+    {
+        return new SearchService.ResourceResolver()
+        {
+            public Resource resolve(@NotNull String resourceIdentifier)
+            {
+                return IssueManager.resolve(resourceIdentifier);
+            }
+        };
+    }
+
+
+    public static Resource resolve(String id)
+    {
+        int issueId;
+        try
+        {
+            issueId = Integer.parseInt(id);
+        }
+        catch (NumberFormatException x)
+        {
+            return null;
+        }
+
+        final Issue issue = getIssue(null, issueId);
+        if (null == issue)
+            return null;
+
+        return new IssueResource(issue);
+    }
+
+
+    static final ObjectFactory _issueFactory = ObjectFactory.Registry.getFactory(Issue.class);
+
+    private static class IssueResource extends AbstractDocumentResource
+    {
+        Collection<Issue.Comment> _comments;
+        String _containerId;
+
+        IssueResource(Issue issue)
+        {
+            super(null==issue?"NOTFOUND":"issue:" + String.valueOf(issue.getIssueId()));
+            if (null == issue)
+                return;
+            Map<String,?> m = _issueFactory.toMap(issue, null);
+            // UNDONE: custom field names
+            // UNDONE: user names
+            m.remove("comments");
+            _containerId = issue.getContainerId();
+            _properties = m;
+            _comments = issue.getComments();
+        }
+
+
+        IssueResource(Map<String,?> m, List<Issue.Comment> comments)
+        {
+            super("issue:"+String.valueOf(m.get("issueid")));
+            _containerId = (String)m.get("container");
+            _properties = m;
+            _comments = comments;
+        }
+
+        public boolean exists()
+        {
+            return true;
+        }
+
+        @Override
+        public String getExecuteHref(ViewContext context)
+        {
+            ActionURL url = new ActionURL(IssuesController.DetailsAction.class, null).addParameter("issueId", String.valueOf(_properties.get("issueid")));
+            url.setExtraPath(_containerId);
+            return url.getLocalURIString();
+        }
+
+        @Override
+        public String getContentType()
+        {
+            return "text/html";
+        }
+
+        public InputStream getInputStream(User user) throws IOException
+        {
+            String id = String.valueOf(_properties.get("issueid"));
+            String title = (String)_properties.get("title");
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            Writer out = new OutputStreamWriter(bos);
+            out.write("<html><head><title>");
+            out.write(id);
+            out.write(" ");
+            out.write(PageFlowUtil.filter(title));
+            out.write("</title></head><body>");
+            out.write(id);
+            out.write(" ");
+            out.write(PageFlowUtil.filter(title));
+            out.write("\n");
+            for (Issue.Comment c : _comments)
+                out.write(c.getComment().getSource());
+            out.close();
+            return new ByteArrayInputStream(bos.toByteArray());
+        }
+
+        public long copyFrom(User user, FileStream in) throws IOException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public long getContentLength() throws IOException
+        {
+            throw new UnsupportedOperationException();
         }
     }
 

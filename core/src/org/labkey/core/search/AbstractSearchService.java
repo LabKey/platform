@@ -115,6 +115,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         queueItem(new Item(OPERATION.add, identifier, r, pri));
     }
 
+    public void addResource(Resource r, PRIORITY pri)
+    {
+        queueItem(new Item(OPERATION.add, r.getName(), r, pri));
+    }
 
     public void deleteResource(String identifier, PRIORITY pri)
     {

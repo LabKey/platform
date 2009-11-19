@@ -2,6 +2,7 @@ package org.labkey.core.search;
 
 import org.labkey.api.search.SearchService;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.Resource;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -21,6 +22,10 @@ public class NoopSearchService implements SearchService
     }
 
     public void addResource(String identifier, PRIORITY pri)
+    {
+    }
+
+    public void addResource(Resource r, PRIORITY pri)
     {
     }
 

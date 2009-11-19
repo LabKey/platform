@@ -493,6 +493,16 @@ public class Issue extends Entity implements Serializable, Cloneable
         private int commentId;
         HString comment;
 
+        public Comment()
+        {
+
+        }
+
+        public Comment(String comment)
+        {
+            this.comment = new HString(comment, false);
+        }
+
         @ManyToOne
         @JoinColumn(name = "issueId")
         public Issue getIssue()

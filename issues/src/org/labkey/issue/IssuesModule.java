@@ -33,6 +33,7 @@ import org.labkey.api.util.Search;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -83,6 +84,7 @@ public class IssuesModule extends DefaultModule
         SecurityManager.addGroupListener(new IssueGroupListener());
         UserManager.addUserListener(new IssueUserListener());
         Search.register(IssueSearch.getInstance());
+        ServiceRegistry.get().getService(SearchService.class).addResourceResolver("issue",IssueManager.getSearchResolver());
     }
 
     @Override
@@ -132,13 +134,13 @@ public class IssuesModule extends DefaultModule
 
 
     @Override
-    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
+    public void enumerateDocuments(SearchService ss, final Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()
             {
                 public void run()
                 {
-                    IssueManager.indexIssues();
+                    IssueManager.indexIssues(c, modifiedSince);
                 }
             };
         ss.addResource(r, SearchService.PRIORITY.bulk);
