@@ -19,6 +19,8 @@ import org.labkey.api.webdav.Resource;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: adam
@@ -49,6 +51,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+
     public void clearIndex()
     {
         try
@@ -62,7 +65,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    protected void index(String id, Resource r)
+
+    @Override
+    Map<?, ?> preprocess(String id, Resource r)
     {
         try
         {
@@ -81,9 +86,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     doc.add(new Field("summary", body.substring(0, Math.min(200, body.length())), Field.Store.YES, Field.Index.NO));
                     String url = r.getExecuteHref(null);
                     doc.add(new Field("url", null == url ? id : url, Field.Store.YES, Field.Index.NO));
-                    _iw.addDocument(doc);
-                    _log.info("Indexed document " + _count + ": " + id);
-                    commit();
+                    return Collections.singletonMap(Document.class, doc);
                 }
             }
             else
@@ -95,7 +98,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             _log.error("Indexing error with " + id, e);
         }
+        return null;
     }
+
+
+    protected void index(String id, Resource r, Map preprocessMap)
+    {
+        try
+        {
+            Document doc = (Document)preprocessMap.get(Document.class);
+            _iw.addDocument(doc);
+            _log.info("Indexed document " + _count + ": " + id);
+                commit();
+        }
+        catch(Exception e)
+        {
+            _log.error("Indexing error with " + id, e);
+        }
+    }
+
 
     protected void commit()
     {
@@ -110,6 +131,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             shutDown();
         }
     }
+
 
     public String search(String queryString)
     {

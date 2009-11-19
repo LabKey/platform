@@ -3,6 +3,8 @@ package org.labkey.core.search;
 import org.apache.log4j.Category;
 import org.labkey.api.webdav.Resource;
 
+import java.util.Map;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -13,7 +15,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 {
     static Category _log = Category.getInstance(SolrSearchServiceImpl.class);
     
-    protected void index(String id, Resource r)
+    protected void index(String id, Resource r, Map preprocessMap)
     {
         _log.info("INDEX: " + r.getExecuteHref(null));
 //        if ("text/html".equals(r.getContentType()))

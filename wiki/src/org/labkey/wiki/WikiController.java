@@ -3443,9 +3443,10 @@ public class WikiController extends SpringActionController
 
     // UNDONE: remove for testing only
     @RequiresSiteAdmin
-    public class IndexAction extends SimpleRedirectAction
+    public class IndexAction extends SimpleViewAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null == ss)
@@ -3456,8 +3457,15 @@ public class WikiController extends SpringActionController
             {
                 m.enumerateDocuments(ss, null, null);
             }
-            return new ActionURL(NewSearchAction.class, getContainer());
+            HttpView.throwRedirect(new ActionURL(NewSearchAction.class, getContainer()));
+            return null;
         }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
     }
 
 

@@ -11,11 +11,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 
 import javax.servlet.ServletContextEvent;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,16 +23,18 @@ import java.util.concurrent.PriorityBlockingQueue;
  */
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
+    final static Category _log = Category.getInstance(SearchService.class);
+
     // CONSIDER: don't allow duplicates in queue
-    PriorityBlockingQueue<Item> _queue = new PriorityBlockingQueue<Item>(1000, new Comparator<Item>()
+    PriorityBlockingQueue<Item> _submitQueue = new PriorityBlockingQueue<Item>(1000, new Comparator<Item>()
     {
         public int compare(Item o1, Item o2)
         {
             return o1._pri.compareTo(o2._pri);
         }
     });
-    String _solrEndpoint = "http://localhost:8080/";
 
+    BlockingQueue<Item> _indexQueue = new ArrayBlockingQueue<Item>(Math.min(4,Runtime.getRuntime().availableProcessors()));
 
     enum OPERATION
     {
@@ -49,9 +49,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Resource _res;
         Runnable _run;
         PRIORITY _pri;
+        long _start = 0;
+        Map<?,?> _preprocessMap = null;
         
         Item(OPERATION op, String id, Resource r, PRIORITY pri)
         {
+            if (null != r)
+                _start = System.currentTimeMillis();
             _op = op; _id = id; _res = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
         }
@@ -65,7 +69,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Resource getResource()
         {
             if (null == _res)
+            {
+                _start = System.currentTimeMillis();
                 _res = resolveResource(_id);
+            }
             return _res;
         }
     }
@@ -80,7 +87,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     private void queueItem(Item i)
     {
         assert MemTracker.put(i);
-        _queue.put(i);
+        _log.debug("_sumbitQueue.put(" + i._id + ")");
+        _submitQueue.put(i);
     }
 
     
@@ -111,7 +119,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void deleteResource(String identifier, PRIORITY pri)
     {
         Item i = new Item(OPERATION.delete, identifier, null, pri);
-        _queue.put(i);
+        _submitQueue.put(i);
     }
 
 
@@ -142,33 +150,52 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         if (_shuttingDown)
             return;
-        _indexingThread = new Thread(indexRunnable, "SearchService");
+        _indexingThread = new Thread(indexRunnable, "SearchService:index");
         _indexingThread.setDaemon(true);
         _indexingThread.start();
+
+        for (int i=0 ; i<1 ; i++)
+        {
+            Thread t = new Thread(preprocessRunnable, "SearchService:preprocess " + i);
+            t.setDaemon(true);
+            t.start();
+            _preprocessingThreads.add(t);
+        }
         ContextListener.addShutdownListener(this);
     }
 
 
     boolean _shuttingDown = false;
     Thread _indexingThread = null;
-    
+    ArrayList<Thread> _preprocessingThreads = new ArrayList<Thread>(10);
+
 
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
-        if (null == _indexingThread)
-            return;
         _shuttingDown = true;
-        _indexingThread.interrupt();
+
+        for (Thread t : _preprocessingThreads)
+            t.interrupt();
+        if (null != _indexingThread)
+            _indexingThread.interrupt();
+
         try
         {
-            _indexingThread.join(2000);
+            if (null != _indexingThread)
+                _indexingThread.join(2000);
+            for (Thread t : _preprocessingThreads)
+                t.join(100);
         }
         catch (InterruptedException e) {}
         shutDown();
     }
 
 
-    Runnable indexRunnable = new Runnable()
+    // Runnables can probably queue items faster than we can process them, so we only want to process
+    // one runnable at a time.  Do you have a better idea?
+    AtomicReference<Runnable> _running = new AtomicReference<Runnable>();
+
+    Runnable preprocessRunnable = new Runnable()
     {
         public void run()
         {
@@ -177,10 +204,25 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 Item i = null;
                 try
                 {
-                    i = _queue.take();
+                    i = _submitQueue.take();
                     if (null != i._run)
                     {
-                        i._run.run();
+                        if (_running.compareAndSet(null, i._run))
+                        {
+                            try
+                            {
+                                i._run.run();
+                            }
+                            finally
+                            {
+                                _running.compareAndSet(i._run, null);
+                            }
+                        }
+                        else
+                        {
+                            Thread.sleep(10);
+                            queueItem(i);   // toss it back
+                        }
                     }
                     else
                     {
@@ -188,8 +230,58 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         if (null == r || !r.exists())
                             continue;
                         assert MemTracker.put(r);
-                        index(i._id, i._res);
+                        i._preprocessMap = preprocess(i._id, i._res);
+                        if (null == i._preprocessMap)
+                        {
+                            _log.debug("skipping " + i._id);
+                            continue;
+                        }
+                        _log.debug("_indexQueue.put(" + i._id + ")");
+                        _indexQueue.put(i);
                     }
+                }
+                catch (InterruptedException x)
+                {
+                }
+                catch (Exception x)
+                {
+                    Category.getInstance(SearchService.class).error("Error processing " + (null != i ? i._id : ""), x);
+                }
+            }
+        }
+    };
+    
+
+    Runnable indexRunnable = new Runnable()
+    {
+        public void run()
+        {
+            int countIndexedSinceCommit = 0;
+            
+            while (!_shuttingDown)
+            {
+                Item i = null;
+                try
+                {
+                    i = _indexQueue.poll(1, TimeUnit.SECONDS);
+                    if (null == i)
+                    {
+                        if (countIndexedSinceCommit > 0)
+                        {
+                            commit();
+                            countIndexedSinceCommit = 0;
+                        }
+                        continue;
+                    }
+                    
+                    Resource r = i.getResource();
+                    if (null == r || !r.exists())
+                        continue;
+                    assert MemTracker.put(r);
+                    _log.debug("index(" + i._id + ")");
+                    index(i._id, i._res, i._preprocessMap);
+                    countIndexedSinceCommit++;
+                    i._res.setLastIndexed(i._start);
                 }
                 catch (InterruptedException x)
                 {
@@ -199,10 +291,19 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     Category.getInstance(SearchService.class).error("Error indexing " + (null != i ? i._id : ""), x);
                 }
             }
+            if (countIndexedSinceCommit > 0)
+                commit();
         }
     };
 
-    protected abstract void index(String id, Resource r);
+    protected abstract void index(String id, Resource r, Map preprocessProps);
     protected abstract void commit();
     protected abstract void shutDown();
+
+    static Map emptyMap = Collections.emptyMap();
+    
+    Map<?,?> preprocess(String id, Resource r)
+    {
+        return emptyMap;
+    }
 }

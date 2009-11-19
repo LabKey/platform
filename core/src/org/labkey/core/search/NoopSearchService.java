@@ -34,11 +34,10 @@ public class NoopSearchService implements SearchService
 
     public String search(String queryString)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void clearIndex()
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 }
