@@ -13,14 +13,21 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.TextExtractor;
 import org.labkey.api.webdav.Resource;
 
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.parser.ParserDelegator;
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -81,11 +88,26 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 {
                     Document doc = new Document();
                     String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
-                    String body = new TextExtractor(html).extract();
-                    doc.add(new Field("body", body, Field.Store.NO, Field.Index.ANALYZED));
-                    doc.add(new Field("summary", body.substring(0, Math.min(200, body.length())), Field.Store.YES, Field.Index.NO));
+
+                    HTMLContentExtractor extractor = new HTMLContentExtractor(html);
+                    String body = extractor.extract();
+                    String title = extractor.getTitle();
+
                     String url = r.getExecuteHref(null);
-                    doc.add(new Field("url", null == url ? id : url, Field.Store.YES, Field.Index.NO));
+                    assert null != url;
+                    if (null == title)
+                    {
+                        _log.error("Bogus content for: " + id + "\n" + html);
+                        title = url;
+                    }
+
+                    String summary = extractSummary(body, title);
+
+                    doc.add(new Field("body", body, Field.Store.NO, Field.Index.ANALYZED));
+                    doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
+                    doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
+                    doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
+
                     return Collections.singletonMap(Document.class, doc);
                 }
             }
@@ -101,6 +123,22 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return null;
     }
 
+    private static final int SUMMARY_LENGTH = 400;
+    private static final Pattern TITLE_STRIPPING_PATTERN = Pattern.compile(": /" + GUID.guidRegEx);
+
+    private String extractSummary(String body, String title)
+    {
+        title = TITLE_STRIPPING_PATTERN.matcher(title).replaceAll("");
+
+        if (body.startsWith(title))
+            body = body.substring(title.length());
+
+        if (body.length() <= SUMMARY_LENGTH)
+            return body;
+
+        return body.substring(0, SUMMARY_LENGTH) + "...";
+    }
+
 
     protected void index(String id, Resource r, Map preprocessMap)
     {
@@ -109,7 +147,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Document doc = (Document)preprocessMap.get(Document.class);
             _iw.addDocument(doc);
             _log.info("Indexed document " + _count + ": " + id);
-                commit();
+            commit();
         }
         catch(Exception e)
         {
@@ -154,7 +192,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             ScoreDoc[] hits = topDocs.scoreDocs;
 
-            StringBuilder html = new StringBuilder("<table><tr><td>Found ");
+            StringBuilder html = new StringBuilder("<table><tr><td colspan=2>Found ");
             html.append(topDocs.totalHits).append(" result");
 
             if (topDocs.totalHits != 1)
@@ -173,7 +211,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 html.append("all results");
             }
 
-            html.append(".</td></tr>\n<tr><td>&nbsp;</td></tr>\n");
+            html.append(".</td></tr>\n");
 
             for (ScoreDoc hit : hits)
             {
@@ -181,9 +219,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                 String summary = doc.get("summary");
                 String url = doc.get("url");
+                String title = doc.get("title");
 
-                html.append("<tr><td><a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(url)).append("</a>").append("</td></tr>\n");
-                html.append("<tr><td>").append(PageFlowUtil.filter(summary)).append("</td></tr>\n");
+                html.append("<tr><td colspan=2>&nbsp;</td></tr>\n");
+                html.append("<tr><td colspan=2><a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(title)).append("</a>").append("</td></tr>\n");
+                html.append("<tr><td width=25>&nbsp;</td><td>").append(PageFlowUtil.filter(summary)).append("</td></tr>\n");
             }
 
             html.append("</table>\n");
@@ -218,6 +258,82 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 _log.error("Exception closing index", e2);
             }
+        }
+    }
+
+    private static class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
+    {
+        private StringBuffer _text = new StringBuffer();
+        private StringBuffer _title = new StringBuffer();
+        private Reader _reader;
+        private boolean _isBody = false;
+        private boolean _isTitle = false;
+
+        public HTMLContentExtractor(String html)
+        {
+            _reader = new StringReader(html);
+        }
+
+        public HTMLContentExtractor(Reader reader)
+        {
+            _reader = reader;
+        }
+
+        public String extract() throws IOException
+        {
+            ParserDelegator parserDelegator = new ParserDelegator();
+            parserDelegator.parse(_reader, this, true);
+            _reader.close();
+            return _text.toString();
+        }
+
+        @Override
+        public void handleText(char[] data, int pos)
+        {
+            if (_isBody)
+            {
+                _text.append(data);
+                _text.append("\n");
+            }
+            if (_isTitle)
+                _title.append(data);
+        }
+
+        @Override
+        public void handleComment(char[] data, int pos)
+        {
+            String comment = new String(data);
+
+            if (" BODY ".equals(comment))
+                _isBody = true;
+            else if (" /BODY ".equals(comment))
+                _isBody = false;
+        }
+
+        @Override
+        public void handleStartTag(HTML.Tag t, MutableAttributeSet a, int pos)
+        {
+            if (HTML.Tag.TITLE == t)
+                _isTitle = true;
+
+            super.handleStartTag(t, a, pos);
+        }
+
+        @Override
+        public void handleEndTag(HTML.Tag t, int pos)
+        {
+            if (HTML.Tag.TITLE == t)
+                _isTitle = false;
+
+            super.handleEndTag(t, pos);
+        }
+
+        private String getTitle()
+        {
+            if (_title.length() == 0)
+                return null;
+            else
+                return _title.toString();
         }
     }
 }
