@@ -39,6 +39,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -1538,6 +1539,14 @@ public class AnnouncementsController extends SpringActionController
     public class ThreadAction extends SimpleViewAction<AnnouncementForm>
     {
         private String _title;
+
+        @Override
+        protected Set<Role> getContextualRoles()
+        {
+            if (getViewContext().getUser() == User.getSearchUser())
+                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+            return null;
+        }
 
         public ModelAndView getView(AnnouncementForm form, BindException errors) throws Exception
         {

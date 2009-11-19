@@ -123,6 +123,8 @@ public class IssueManager
             Table.update(user, _issuesSchema.getTableInfoIssues(), issue, new Integer(issue.getIssueId()));
         }
         saveComments(user, issue);
+
+        indexIssue(issue);
     }
 
 
@@ -400,7 +402,7 @@ public class IssueManager
                 DbCache.put(table, cacheKey, assignedToMap, Cache.HOUR);
             }
         }
-        return assignedToMap.values().toArray(new User[0]);
+        return assignedToMap.values().toArray(new User[assignedToMap.size()]);
     }
 
     public static String getCacheKey(Container c)
@@ -717,13 +719,23 @@ public class IssueManager
             ResultSetUtil.close(rs);
         }
     }
-    
+
+
+    static void indexIssue(Issue issue)
+    {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null == ss)
+            return;
+        ss.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
+    }
+
 
     static void queueIssue(SearchService ss, Map<String,?> m, ArrayList<Issue.Comment> comments)
     {
         if (null == ss || null == m)
             return;
         m.put("comment",null);
+        m.put("_row",null);
         ss.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
     }
 
@@ -772,7 +784,12 @@ public class IssueManager
             super(null==issue?"NOTFOUND":"issue:" + String.valueOf(issue.getIssueId()));
             if (null == issue)
                 return;
-            Map<String,?> m = _issueFactory.toMap(issue, null);
+            Map<String,Object> m = _issueFactory.toMap(issue, null);
+            for (Map.Entry<String,Object> e : m.entrySet())
+            {
+                if (e.getValue() instanceof HString)
+                    e.setValue(((HString)e.getValue()).getSource());
+            }
             // UNDONE: custom field names
             // UNDONE: user names
             m.remove("comments");
@@ -812,7 +829,7 @@ public class IssueManager
         public InputStream getInputStream(User user) throws IOException
         {
             String id = String.valueOf(_properties.get("issueid"));
-            String title = (String)_properties.get("title");
+            String title = String.valueOf(_properties.get("title"));
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             Writer out = new OutputStreamWriter(bos);
             out.write("<html><head><title>");

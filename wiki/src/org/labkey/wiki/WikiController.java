@@ -39,10 +39,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.DeveloperRole;
-import org.labkey.api.security.roles.OwnerRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
@@ -1162,6 +1159,15 @@ public class WikiController extends SpringActionController
             _wiki = wiki;
             _wikiversion = wikiversion;
         }
+
+        @Override
+        protected Set<Role> getContextualRoles()
+        {
+            if (getViewContext().getUser() == User.getSearchUser())
+                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+            return null;
+        }
+
 
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
@@ -3454,7 +3460,9 @@ public class WikiController extends SpringActionController
 
             ss.clearIndex();
 
+//            Module m = ModuleLoader.getInstance().getModule("Wiki");
             Module m = ModuleLoader.getInstance().getModule("Issues");
+//            Module m = ModuleLoader.getInstance().getModule("Announcements");
 //            for (Module m : ModuleLoader.getInstance().getModules())
             {
                 m.enumerateDocuments(ss, null, null);
