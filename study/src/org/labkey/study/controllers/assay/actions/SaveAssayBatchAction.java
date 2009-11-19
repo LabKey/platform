@@ -245,23 +245,21 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             DataType type = ModuleAssayProvider.RAW_DATA_TYPE;
 
             //check to see if this is already an ExpData
-            String lsid = expSvc.generateLSID(container, type, name);
-            data = expSvc.getExpData(lsid);
+            File file = new File(pipelineRoot.getRootPath(), pipelinePath);
+            URI uri;
+            try
+            {
+                uri = new URI("file:" + file.getAbsolutePath());
+            }
+            catch (URISyntaxException e)
+            {
+                throw new ValidationException(e.getMessage());
+            }
+            data = expSvc.getExpDataByURL(uri.toString(), container);
+
             if (null == data)
             {
                 //create a new one
-                URI uri;
-                try
-                {
-                    File file = new File(pipelineRoot.getRootPath(), pipelinePath);
-                    uri = new URI("file://" + file.getAbsolutePath());
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new ValidationException(e.getMessage());
-
-                }
-
                 data = expSvc.createData(container, type, name);
                 data.setDataFileURI(uri);
                 data.save(getViewContext().getUser());
