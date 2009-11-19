@@ -197,7 +197,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
         if (_tainted)
         {
-            _log.warn("tainted URL: " + uriString.toString());
+            //_log.warn("tainted URL: " + uriString.toString());
         }
 
         return uriString.toString();
