@@ -86,6 +86,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 _count++;
 
                 if (0 == _count % 100)
+                    _log.info("Indexing: " + _count);
+
                 {
                     Document doc = new Document();
                     String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
@@ -153,7 +155,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             Document doc = (Document)preprocessMap.get(Document.class);
             _iw.addDocument(doc);
-            commit();
         }
         catch(Exception e)
         {
@@ -187,7 +188,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             int hitsPerPage = 20;
 
             long start = System.nanoTime();
-            Query query = new QueryParser("body", _analyzer).parse(queryString);
+            Query query = new QueryParser("body", _analyzer).parse(queryString.toLowerCase());
 
             TopDocs topDocs;
 
@@ -306,19 +307,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         @Override
-        public void handleComment(char[] data, int pos)
-        {
-            String comment = new String(data);
-
-            if (" BODY ".equals(comment))
-                _isBody = true;
-            else if (" /BODY ".equals(comment))
-                _isBody = false;
-        }
-
-        @Override
         public void handleStartTag(HTML.Tag t, MutableAttributeSet a, int pos)
         {
+            if (HTML.Tag.BODY == t)
+                _isBody = true;
             if (HTML.Tag.TITLE == t)
                 _isTitle = true;
 
@@ -328,6 +320,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         @Override
         public void handleEndTag(HTML.Tag t, int pos)
         {
+            if (HTML.Tag.BODY == t)
+                _isBody = false;
             if (HTML.Tag.TITLE == t)
                 _isTitle = false;
 

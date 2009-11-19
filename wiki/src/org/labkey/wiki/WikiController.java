@@ -2752,7 +2752,7 @@ public class WikiController extends SpringActionController
                     form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
                     form.getPageId(), form.getIndex(), user);
 
-            //cache the wiki so we can build the nav trail
+            //stash the wiki so we can build the nav trail
             _wiki = wiki;
             _wikiVer = curVersion;
 
@@ -3453,7 +3453,9 @@ public class WikiController extends SpringActionController
                 return null;
 
             ss.clearIndex();
-            for (Module m : ModuleLoader.getInstance().getModules())
+
+            Module m = ModuleLoader.getInstance().getModule("Issues");
+//            for (Module m : ModuleLoader.getInstance().getModules())
             {
                 m.enumerateDocuments(ss, null, null);
             }

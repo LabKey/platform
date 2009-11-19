@@ -621,6 +621,7 @@ public class IssueManager
                 if (count == ids.length)
                 {
                     ss.addResource(new IndexGroup(ids,count), SearchService.PRIORITY.group);
+                    count = 0;
                     ids = new int[ids.length];
                 }
             }
@@ -701,6 +702,7 @@ public class IssueManager
                     queueIssue(ss, m, comments);
                     comments = new ArrayList<Issue.Comment>();
                     m = factory.getRowMap(rs);
+                    currentIssueId = id;
                 }
                 comments.add(new Issue.Comment(rs.getString("comment")));
             }
