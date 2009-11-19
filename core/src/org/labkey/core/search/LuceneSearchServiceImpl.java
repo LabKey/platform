@@ -1,5 +1,6 @@
 package org.labkey.core.search;
 
+import org.labkey.core.search.HTMLContentExtractor.*;
 import org.apache.log4j.Category;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
@@ -17,14 +18,8 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.Resource;
 
-import javax.swing.text.MutableAttributeSet;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.parser.ParserDelegator;
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -91,10 +86,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 {
                     Document doc = new Document();
                     String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
+                    Map<String, ?> props = r.getProperties();
+                    String title = (String)props.get("title");
+                    String body;
 
-                    HTMLContentExtractor extractor = new HTMLContentExtractor(html);
-                    String body = extractor.extract();
-                    String title = extractor.getTitle();
+                    // TODO: Need better check for issue HTML vs. rendered page HTML
+                    if (null == title)
+                    {
+                        HTMLContentExtractor extractor = new LabKeyPageHTMLExtractor(html);
+                        body = extractor.extract();
+                        title = extractor.getTitle();
+                    }
+                    else
+                    {
+                        body = new GenericHTMLExtractor(html).extract();
+                    }
 
                     String url = r.getExecuteHref(null);
                     assert null != url;
@@ -265,75 +271,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 _log.error("Exception closing index", e2);
             }
-        }
-    }
-
-    private static class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
-    {
-        private StringBuffer _text = new StringBuffer();
-        private StringBuffer _title = new StringBuffer();
-        private Reader _reader;
-        private boolean _isBody = false;
-        private boolean _isTitle = false;
-
-        public HTMLContentExtractor(String html)
-        {
-            _reader = new StringReader(html);
-        }
-
-        public HTMLContentExtractor(Reader reader)
-        {
-            _reader = reader;
-        }
-
-        public String extract() throws IOException
-        {
-            ParserDelegator parserDelegator = new ParserDelegator();
-            parserDelegator.parse(_reader, this, true);
-            _reader.close();
-            return _text.toString();
-        }
-
-        @Override
-        public void handleText(char[] data, int pos)
-        {
-            if (_isBody)
-            {
-                _text.append(data);
-                _text.append("\n");
-            }
-            if (_isTitle)
-                _title.append(data);
-        }
-
-        @Override
-        public void handleStartTag(HTML.Tag t, MutableAttributeSet a, int pos)
-        {
-            if (HTML.Tag.BODY == t)
-                _isBody = true;
-            if (HTML.Tag.TITLE == t)
-                _isTitle = true;
-
-            super.handleStartTag(t, a, pos);
-        }
-
-        @Override
-        public void handleEndTag(HTML.Tag t, int pos)
-        {
-            if (HTML.Tag.BODY == t)
-                _isBody = false;
-            if (HTML.Tag.TITLE == t)
-                _isTitle = false;
-
-            super.handleEndTag(t, pos);
-        }
-
-        private String getTitle()
-        {
-            if (_title.length() == 0)
-                return null;
-            else
-                return _title.toString();
         }
     }
 }
