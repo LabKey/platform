@@ -44,19 +44,19 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    public ArrayListMap(Map<K, Integer> findMap)
+    protected ArrayListMap(Map<K, Integer> findMap)
     {
         this(findMap, new ArrayList<V>(findMap.size()));
     }
 
 
-    public ArrayListMap(Map<K, Integer> findMap, int columnCount)
+    protected ArrayListMap(Map<K, Integer> findMap, int columnCount)
     {
         this(findMap, new ArrayList<V>(columnCount));
     }
 
 
-    public ArrayListMap(Map<K, Integer> findMap, List<V> row)
+    protected ArrayListMap(Map<K, Integer> findMap, List<V> row)
     {
         _findMap = findMap;
         _row = row;
@@ -65,20 +65,32 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public V get(Object key)
     {
-        Integer i = _findMap.get(key);
-        return null == i ? null : _row.get(i.intValue());
+        Integer I = _findMap.get(key);
+        if (I == null)
+            return null;
+        int i = I.intValue();
+        return i>=_row.size() ? null : _row.get(i);
     }
 
 
     public V put(K key, V value)
     {
-        Integer i = _findMap.get(key);
-        if (null != i)
-            return _row.set(i, value);
-        _row.add(value);
-        i = _row.size() - 1;
-        _findMap.put(key, i);
-        return null;
+        Integer I = _findMap.get(key);
+        int i;
+
+        if (null == I)
+        {
+            i = _findMap.size();
+            _findMap.put(key, i);
+        }
+        else
+        {
+            i = I.intValue();
+        }
+        
+        while (i >= _row.size())
+            _row.add(null);
+        return _row.set(i, value);
     }
 
 
@@ -201,9 +213,10 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         return _row;
     }
 
+
     public static void main(String[] args)
     {
-        Map m = new ArrayListMap(4);
+        Map<String,String> m = new ArrayListMap<String,String>(4);
         m.put("A", "one");
         m.put("B", "two");
         m.put("C", "three");

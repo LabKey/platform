@@ -330,7 +330,14 @@ public class ViewServlet extends HttpServlet
     {
         if (!"GET".equals(request.getMethod()))
             throw new IllegalArgumentException(request.getMethod());
+
         ActionURL url = urlTest.clone();
+        String path = url.getExtraPath();
+        Container c = ContainerManager.getForPath(path);
+        if (null == c)
+            c = ContainerManager.getForId(StringUtils.strip(path,"/"));
+        if (null != c)
+            url.setExtraPath(c.getPath());
         url.setReadOnly();
 
         MockHttpServletResponse mockResponse = new MockHttpServletResponse()

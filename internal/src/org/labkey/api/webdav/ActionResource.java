@@ -20,6 +20,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.search.SearchService;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -27,6 +28,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
+import java.util.HashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,7 +51,14 @@ public class ActionResource extends AbstractDocumentResource
         _executeUrl.setHost("localhost");
     }
 
-    public ActionResource(ActionURL url, ActionURL source)
+
+    public ActionResource(SearchService.SearchCategory category, ActionURL url)
+    {
+        this(category, url, url.clone());    
+    }
+
+
+    public ActionResource(SearchService.SearchCategory category, ActionURL url, ActionURL source)
     {
         super(url.getLocalURIString());
         _url = url;
@@ -57,12 +66,16 @@ public class ActionResource extends AbstractDocumentResource
         _executeUrl.replaceParameter("_print","1");
         _executeUrl.setScheme("http");
         _executeUrl.setHost("localhost");
+        _properties = new HashMap<String,Object>();
+        _properties.put(SearchService.PROPERTY.category.toString(), category.getName());
     }
     
+
     public boolean exists()
     {
         return true;
     }                                                                                         
+
 
     @Override
     public String getContentType()
