@@ -49,11 +49,11 @@ public class ActionResource extends AbstractDocumentResource
         _executeUrl.setHost("localhost");
     }
 
-    public ActionResource(String str, String exec)
+    public ActionResource(ActionURL url, ActionURL source)
     {
-        super(str);
-        _url = new ActionURL(str);
-        _executeUrl = new ActionURL(str);
+        super(url.getLocalURIString());
+        _url = url;
+        _executeUrl = source;
         _executeUrl.replaceParameter("_print","1");
         _executeUrl.setScheme("http");
         _executeUrl.setHost("localhost");
