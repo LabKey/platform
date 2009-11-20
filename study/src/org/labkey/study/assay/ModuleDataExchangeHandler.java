@@ -54,7 +54,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
             if (data.size() > 0)
             {
                 File runData = new File(scriptDir, RUN_DATA_FILE);
-                writeRunData(data, runData);
+                getDataSerializer().exportRunData(context.getProtocol(), data, runData);
 
                 pw.append(Props.runDataFile.name());
                 pw.append('\t');
