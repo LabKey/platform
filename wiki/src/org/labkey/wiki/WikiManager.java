@@ -138,7 +138,7 @@ public class WikiManager
                 Table.ALL_COLUMNS,
                 new SimpleFilter("Container", c.getId()).addCondition("EntityId", entityId),
                 null, Wiki.class);
-        if (null == wikis || 0 == wikis.length)
+        if (0 == wikis.length)
             return null;
         else
             return wikis[0];
@@ -156,7 +156,7 @@ public class WikiManager
                     Table.ALL_COLUMNS,
                     new SimpleFilter("container", c.getId()).addCondition("name", name),
                     null, Wiki.class);
-            if (null == wikis || 0 == wikis.length)
+            if (0 == wikis.length)
             {
                 //Didn't find it with case-sensitive lookup, try case-sensitive (in case the
                 //underlying database is case sensitive)
@@ -165,7 +165,7 @@ public class WikiManager
                         Table.ALL_COLUMNS,
                         new SimpleFilter("container", c.getId()).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
                         null, Wiki.class);
-                if (null == wikis || 0 == wikis.length)
+                if (0 == wikis.length)
                     return null;
 
             }
@@ -736,8 +736,10 @@ public class WikiManager
 
     static void indexWiki(Wiki page)
     {
-        String searchId = getSearchId(page);
-        ServiceRegistry.get().getService(SearchService.class).addResource(searchId, SearchService.PRIORITY.item);
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        Container c = ContainerManager.getForId(page.getContainerId());
+        if (null != ss && null != c)
+            indexWikiContainerFast(ss, c, null, page.getName().getSource());
     }
 
 
@@ -749,7 +751,7 @@ public class WikiManager
 
         if (null != c)
         {
-            indexWikiContainerFast(ss, c, modifiedSince);
+            indexWikiContainerFast(ss, c, modifiedSince, null);
             return;
         }
 
@@ -764,7 +766,7 @@ public class WikiManager
                 if (null != wikiContainer)
                 {
                     ss.addRunnable(new Runnable(){public void run(){
-                        indexWikiContainerFast(ss,wikiContainer,modifiedSince);
+                        indexWikiContainerFast(ss, wikiContainer, modifiedSince, null);
                     }}, SearchService.PRIORITY.group);
                 }
             }
@@ -813,7 +815,7 @@ public class WikiManager
     }
 
 
-    public static void indexWikiContainerFast(@NotNull SearchService ss, @NotNull Container c, @Nullable Date modifiedSince)
+    public static void indexWikiContainerFast(@NotNull SearchService ss, @NotNull Container c, @Nullable Date modifiedSince, String name)
     {
         ResultSet rs = null;
         try
@@ -825,12 +827,17 @@ public class WikiManager
                 .append("LEFT OUTER JOIN core.usersdata AS owner$  ON P.createdby = owner$.userid\n")
                 .append("LEFT OUTER JOIN core.usersdata AS createdby$  ON P.createdby = createdby$.userid\n")
                 .append("LEFT OUTER JOIN core.usersdata AS modifiedby$  ON P.createdby = modifiedby$.userid\n");
-            f.append("WHERE P.container=?");
+            f.append("WHERE P.container = ?");
             f.add(c);
             if (null != modifiedSince)
             {
-                f.append(" AND P.modified >= modifiedSince");
+                f.append(" AND P.modified >= ?");
                 f.add(modifiedSince);
+            }
+            if (null != name)
+            {
+                f.append(" AND P.name = ?");
+                f.add(name);
             }
             rs = Table.executeQuery(comm.getSchema(), f, 0, false, false);
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);

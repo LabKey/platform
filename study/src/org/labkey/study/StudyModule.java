@@ -46,6 +46,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.search.SearchService;
 import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchemaImpl;
@@ -417,5 +418,12 @@ public class StudyModule extends SpringModule
         StudyUpgradeCode.upgradeExtensibleTables_83(moduleContext);
         StudyUpgradeCode.upgradeRequirementsTables(moduleContext);
         StudyUpgradeCode.updateAllCalculatedSpecimenData(moduleContext);
+    }
+
+    
+    @Override
+    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
+    {
+        StudyManager.indexDatasets(c, modifiedSince);
     }
 }

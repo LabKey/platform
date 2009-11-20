@@ -55,6 +55,9 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -308,6 +311,14 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_READ)
     public class DatasetDetailsAction extends SimpleViewAction<IdForm>
     {
+        @Override
+        protected Set<Role> getContextualRoles()
+        {
+            if (getViewContext().getUser() == User.getSearchUser())
+                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+            return null;
+        }
+
         private DataSetDefinition _def;
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {

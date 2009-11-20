@@ -55,13 +55,13 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.webdav.ActionResource;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
@@ -3157,6 +3157,46 @@ public class StudyManager
                 _log.error("fireUnmaterialized", t);
             }
     }
+
+
+
+    public static void indexDatasets(Container c, Date modifiedSince)
+    {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null == ss) return;
+        ResultSet rs = null;
+        try
+        {
+            SQLFragment f = new SQLFragment("SELECT container, datasetid FROM study.dataset ");
+            if (null != c)
+                f.append("WHERE container = '" + c.getId() + "'");
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+
+            ActionURL dataset = new ActionURL(StudyController.DatasetAction.class, null);
+            ActionURL details = new ActionURL(StudyController.DatasetDetailsAction.class, null);
+
+            while (rs.next())
+            {
+                String container = rs.getString(1);
+                int id = rs.getInt(2);
+                ActionURL view = dataset.clone().replaceParameter("datasetId",String.valueOf(id));
+                view.setExtraPath(container);
+                ActionURL source = details.clone().replaceParameter("id",String.valueOf(id));
+                source.setExtraPath(container);
+                ActionResource r = new ActionResource(view, source);
+                ss.addResource(r, SearchService.PRIORITY.item);
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+    
 
     public static class StudyTestCase extends junit.framework.TestCase
     {
