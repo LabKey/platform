@@ -23,6 +23,8 @@ import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Karl Lum
@@ -41,4 +43,15 @@ public interface DataExchangeHandler
 
     public File createTransformationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception;
     public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo) throws ValidationException;
+
+    public DataSerializer getDataSerializer();
+    
+    public interface DataSerializer
+    {
+        /**
+         * Called to save or import transformed or QC'd run data to the specified reader or writer.
+         */
+        public void exportRunData(ExpProtocol protocol, List<Map<String, Object>> data, File runData) throws Exception;
+        public List<Map<String, Object>> importRunData(ExpProtocol protocol, File runData) throws Exception;
+    }
 }

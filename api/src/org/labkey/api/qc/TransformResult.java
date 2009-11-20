@@ -17,10 +17,12 @@
 package org.labkey.api.qc;
 
 import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
 
 import java.io.File;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,7 +31,8 @@ import java.util.Map;
  */
 public interface TransformResult
 {
-    Map<DataType, File> getTransformedData();
+    Map<ExpData, List<Map<String, Object>>> getTransformedData();
     Map<DomainProperty, String> getRunProperties();
     Map<DomainProperty, String> getBatchProperties();
+    File getUploadedFile();
 }

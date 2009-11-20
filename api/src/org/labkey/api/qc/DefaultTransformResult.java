@@ -17,12 +17,14 @@
 package org.labkey.api.qc;
 
 import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -31,18 +33,19 @@ import java.util.Map;
  */
 public class DefaultTransformResult implements TransformResult
 {
-    private Map<DataType, File> _dataMap = Collections.emptyMap();
+    private Map<ExpData, List<Map<String, Object>>> _dataMap = Collections.emptyMap();
     private Map<DomainProperty, String> _batchProperties = Collections.emptyMap();
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
+    private File _uploadedFile;
 
     public DefaultTransformResult(){}
 
-    public DefaultTransformResult(Map<DataType, File> dataMap)
+    public DefaultTransformResult(Map<ExpData, List<Map<String, Object>>> dataMap)
     {
         _dataMap = dataMap;
     }
 
-    public Map<DataType, File> getTransformedData()
+    public Map<ExpData, List<Map<String, Object>>> getTransformedData()
     {
         return _dataMap;
     }
@@ -65,6 +68,16 @@ public class DefaultTransformResult implements TransformResult
     public void setRunProperties(Map<DomainProperty, String> runProperties)
     {
         _runProperties = runProperties;
+    }
+
+    public File getUploadedFile()
+    {
+        return _uploadedFile;
+    }
+
+    public void setUploadedFile(File uploadedFile)
+    {
+        _uploadedFile = uploadedFile;
     }
 
     public static TransformResult createEmptyResult()

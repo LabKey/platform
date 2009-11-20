@@ -16,6 +16,16 @@
 
 package org.labkey.api.qc;
 
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProvider;
+
+import java.util.Map;
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * User: klum
@@ -23,4 +33,8 @@ package org.labkey.api.qc;
  */
 public interface TransformDataHandler extends ValidationDataHandler
 {
+    /**
+     * Imports the data map which may have been transformed by an external script.
+     */
+    public void importTransformDataMap(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> dataMap) throws ExperimentException;
 }

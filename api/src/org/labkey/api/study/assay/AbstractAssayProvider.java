@@ -723,6 +723,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (context instanceof AssayRunUploadForm)
                 ((AssayRunUploadForm)context).setTransformResult(transformResult);
 
+/*
             if (!transformResult.getTransformedData().isEmpty())
             {
                 for (Map.Entry<DataType, File> entry : transformResult.getTransformedData().entrySet())
@@ -743,6 +744,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 insertedDatas.addAll(inputDatas.keySet());
                 insertedDatas.addAll(outputDatas.keySet());
             }
+*/
 
             if (saveBatchProps)
             {
@@ -769,9 +771,37 @@ public abstract class AbstractAssayProvider implements AssayProvider
             else
                 savePropertyObject(run.getLSID(), runProperties, context.getContainer());
 
-            for (ExpData insertedData : insertedDatas)
+            if (transformResult.getTransformedData().isEmpty())
             {
-                insertedData.findDataHandler().importFile(ExperimentService.get().getExpData(insertedData.getRowId()), insertedData.getFile(), info, LOG, xarContext);
+                insertedDatas.addAll(inputDatas.keySet());
+                insertedDatas.addAll(outputDatas.keySet());
+
+                for (ExpData insertedData : insertedDatas)
+                {
+                    insertedData.findDataHandler().importFile(ExperimentService.get().getExpData(insertedData.getRowId()), insertedData.getFile(), info, LOG, xarContext);
+                }
+            }
+            else
+            {
+                ExpData data = ExperimentService.get().createData(context.getContainer(), getDataType());
+                ExperimentDataHandler handler = data.findDataHandler();
+
+                // this should assert to always be true
+                if (handler instanceof TransformDataHandler)
+                {
+                    for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
+                    {
+                        ExpData expData = entry.getKey();
+
+                        expData.setSourceApplication(run.getOutputProtocolApplication());
+                        expData.setRun(run);
+                        expData.save(context.getUser());
+
+                        run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, "Data");
+
+                        ((TransformDataHandler)handler).importTransformDataMap(expData, context.getUser(), run, run.getProtocol(), this, entry.getValue());
+                    }
+                }
             }
             validate(context, run);
 
