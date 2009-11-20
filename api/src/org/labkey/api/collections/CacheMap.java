@@ -241,14 +241,25 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     // Map implementation
     //
 
-    // size is max expected entries
+    /**
+     * size is max expected entries
+     */
+
     public CacheMap(int initialSize, String debugName)
+    {
+        this(initialSize, true, debugName);
+    }
+
+    public CacheMap(int initialSize, boolean shared, String debugName)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0,null);
-        synchronized (KNOWN_CACHEMAPS)
+        if (shared)
         {
-            KNOWN_CACHEMAPS.add(this);
+            synchronized (KNOWN_CACHEMAPS)
+            {
+                KNOWN_CACHEMAPS.add(this);
+            }
         }
         assert debugName.length() > 0;
         _debugName = debugName;

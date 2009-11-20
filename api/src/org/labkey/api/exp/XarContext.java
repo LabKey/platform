@@ -24,6 +24,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.File;
 import java.util.Collections;
@@ -31,6 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * User: jeckels
@@ -168,6 +171,26 @@ public class XarContext
         if (NetworkDrive.exists(f))
         {
             return f;
+        }
+
+        // Finally, try using the pipeline's path mapper if we have one to
+        // translate from a cluster path to a webserver path
+        if (PipelineJobService.get().getGlobusClientProperties() != null &&
+            PipelineJobService.get().getGlobusClientProperties().getPathMapper() != null)
+        {
+            // Path mappers deal with URIs, not file paths
+            String uri = "file:" + (path.startsWith("/") ? path : "/" + path);
+            // This PathMapper considers "local" from a cluster node's point of view.
+            String mappedURI = PipelineJobService.get().getGlobusClientProperties().getPathMapper().localToRemote(uri);
+            try
+            {
+                f = new File(new URI(mappedURI));
+                if (NetworkDrive.exists(f))
+                {
+                    return f;
+                }
+            }
+            catch (URISyntaxException e) {}
         }
 
         return null;

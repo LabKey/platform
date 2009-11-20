@@ -129,8 +129,17 @@ abstract public class LookupForeignKey extends AbstractForeignKey
 
     public StringExpression getURL(ColumnInfo parent)
     {
+        return getURL(parent, false);
+    }
+
+
+    protected StringExpression getURL(ColumnInfo parent, boolean useDetailsURL)
+    {
         if (null != _baseURL)
             return new DetailsURL(_baseURL, _param.toString(), parent.getFieldKey());
+
+        if (!useDetailsURL)
+            return null;
 
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null || _columnName == null)
@@ -139,7 +148,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         return getDetailsURL(parent, lookupTable, _columnName);
     }
 
-    
+
     public static StringExpression getDetailsURL(ColumnInfo parent, TableInfo lookupTable, String columnName)
     {
         FieldKey columnKey = new FieldKey(null,columnName);

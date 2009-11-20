@@ -95,10 +95,14 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         return new TTLCacheEntry(hash, key, -1);
     }
 
-
     public TTLCacheMap(int maxSize, long defaultExpires, String debugName)
     {
-        super(Math.min(10000, maxSize), debugName);
+        this(maxSize, defaultExpires, true, debugName);
+    }
+
+    public TTLCacheMap(int maxSize, long defaultExpires, boolean shared, String debugName)
+    {
+        super(Math.min(10000, maxSize), shared, debugName);
         this.lru = true;
         this.maxSize = maxSize;
         this.defaultExpires = defaultExpires;

@@ -148,16 +148,17 @@ LABKEY.Query = new function()
          * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
         *       Supported values include:
                 <ul>
-                    <li>"Current": Include the current folder only</li>
-                    <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
-                    <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
-                    <li>"CurrentAndParents": Include the current folder and its parent folders</li>
-                    <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
-                    <li>"AllFolders": Include all folders for which the user has read permission</li>
+                    <li><b>"Current":</b> Include the current folder only</li>
+                    <li><b>"CurrentAndSubfolders":</b> Include the current folder and all subfolders</li>
+                    <li><b>"CurrentPlusProject":</b> Include the current folder and the project that contains it</li>
+                    <li><b>"CurrentAndParents":</b> Include the current folder and its parent folders</li>
+                    <li><b>"CurrentPlusProjectAndShared":</b> Include the current folder plus its project plus any shared folders</li>
+                    <li><b>"AllFolders":</b> Include all folders for which the user has read permission</li>
                 </ul>
          * @param {Function} config.successCallback
-				Function called when the "selectRows" function executes successfully. Will be called with arguments:
-				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
+				Function called when the "selectRows" function executes successfully. Will be called with three arguments:
+				the parsed response data ({@link LABKEY.Query.SelectRowsResults}), the XMLHttpRequest object and
+                (optionally) the "options" object ({@link LABKEY.Query.SelectRowsOptions}).
          * @param {Function} [config.errorCallback] Function called when execution of the "executeSql" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
          * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning all rows).
@@ -238,12 +239,12 @@ LABKEY.Query = new function()
          * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
          *       Supported values include:
                 <ul>
-                    <li>"Current": Include the current folder only</li>
-                    <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
-                    <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
-                    <li>"CurrentAndParents": Include the current folder and its parent folders</li>
-                    <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
-                    <li>"AllFolders": Include all folders for which the user has read permission</li>
+                    <li><b>"Current":</b> Include the current folder only</li>
+                    <li><b>"CurrentAndSubfolders":</b> Include the current folder and all subfolders</li>
+                    <li><b>"CurrentPlusProject":</b> Include the current folder and the project that contains it</li>
+                    <li><b>"CurrentAndParents":</b> Include the current folder and its parent folders</li>
+                    <li><b>"CurrentPlusProjectAndShared":</b> Include the current folder plus its project plus any shared folders</li>
+                    <li><b>"AllFolders":</b> Include all folders for which the user has read permission</li>
                 </ul>
          */
         exportSql : function(config)
@@ -278,21 +279,21 @@ LABKEY.Query = new function()
 				    <li><b>data:</b> Typically, an instance of {@link LABKEY.Query.SelectRowsResults}.  Alternatively, an instance of
                         {@link LABKEY.Query.ExtendedSelectRowsResults} if config.requiredVersion
                         is set to "9.1".</li>
+                    <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
 				    <li><b>options:</b> The options used for the AJAX request</li>
-				    <li><b>responseObj:</b> The XMLHttpResponseObject instance used to make the AJAX request</li>
 				</ul>
         * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
         *       This function will be called with the following arguments:
 				<ul>
-				    <li>errorInfo: an object describing the error with the following fields:
+				    <li><b>errorInfo:</b> an object describing the error with the following fields:
                         <ul>
-                            <li>exception: the exception message</li>
-                            <li>exceptionClass: the Java class of the exception thrown on the server</li>
-                            <li>stackTrace: the Java stack trace at the point when the exception occurred</li>
+                            <li><b>exception:</b> the exception message</li>
+                            <li><b>exceptionClass:</b> the Java class of the exception thrown on the server</li>
+                            <li><b>stackTrace:</b> the Java stack trace at the point when the exception occurred</li>
                         </ul>
                     </li>
-				    <li>options: the options used for the AJAX request</li>
-				    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
+                    <li><b>responseObj:</b> the XMLHttpResponseObject instance used to make the AJAX request</li>
+				    <li><b>options:</b> the options used for the AJAX request</li>
 				</ul>
         * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
@@ -311,12 +312,12 @@ LABKEY.Query = new function()
         * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
         *       Supported values include:
                 <ul>
-                    <li>"Current": Include the current folder only</li>
-                    <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
-                    <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
-                    <li>"CurrentAndParents": Include the current folder and its parent folders</li>
-                    <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
-                    <li>"AllFolders": Include all folders for which the user has read permission</li>
+                    <li><b>"Current":</b> Include the current folder only</li>
+                    <li><b>"CurrentAndSubfolders":</b> Include the current folder and all subfolders</li>
+                    <li><b>"CurrentPlusProject":</b> Include the current folder and the project that contains it</li>
+                    <li><b>"CurrentAndParents":</b> Include the current folder and its parent folders</li>
+                    <li><b>"CurrentPlusProjectAndShared":</b> Include the current folder plus its project plus any shared folders</li>
+                    <li><b>"AllFolders":</b> Include all folders for which the user has read permission</li>
                 </ul>
         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
         *        If you want to return all possible rows, set this config property to -1.
@@ -435,8 +436,9 @@ LABKEY.Query = new function()
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Function} config.successCallback Function called when the "updateRows" function executes successfully.
-						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
-						{@link LABKEY.Query.ModifyRowsOptions}.
+        	    Will be called with arguments:
+                the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
+                (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
         * @param {Function} [config.errorCallback] Function called when execution of the "updateRows" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
@@ -468,8 +470,9 @@ LABKEY.Query = new function()
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Function} config.successCallback Function called when the "insertRows" function executes successfully.
-						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
-						{@link LABKEY.Query.ModifyRowsOptions}.
+						Will be called with the following arguments:
+                        the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
+                        (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
 		* @param {Function} [config.errorCallback]  Function called when execution of the "insertRows" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
@@ -525,8 +528,9 @@ LABKEY.Query = new function()
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Function} config.successCallback Function called when the "deleteRows" function executes successfully.
-        			Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
-				    {@link LABKEY.Query.ModifyRowsOptions}.
+                     Will be called with the following arguments:
+                     the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
+                     (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
 		* @param {Function} [config.errorCallback] Function called when execution of the "deleteRows" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
@@ -626,16 +630,16 @@ LABKEY.Query = new function()
          * <ul>
          * <li><b>queriesInfo:</b> An object with the following properties
          *  <ul>
-         *      <li>schemaName: the name of the requested schema</li>
-         *      <li>queries: an array of objects, each of which has the following properties
+         *      <li><b>schemaName:</b> the name of the requested schema</li>
+         *      <li><b>queries:</b> an array of objects, each of which has the following properties
          *          <ul>
-         *              <li>name: the name of the query</li>
-         *              <li>columns: if config.includeColumns is not false, this will contain an array of
+         *              <li><b>name:</b> the name of the query</li>
+         *              <li><b>columns:</b> if config.includeColumns is not false, this will contain an array of
          *                 objects with the following properties
          *                  <ul>
-         *                      <li>name: the name of the column</li>
-         *                      <li>caption: the caption of the column (may be undefined)</li>
-         *                      <li>description: the description of the column (may be undefined)</li>
+         *                      <li><b>name:</b> the name of the column</li>
+         *                      <li><b>caption:</b> the caption of the column (may be undefined)</li>
+         *                      <li><b>description:</b> the description of the column (may be undefined)</li>
          *                  </ul>
           *             </li>
          *          </ul>
@@ -679,15 +683,15 @@ LABKEY.Query = new function()
          * <ul>
          * <li><b>viewsInfo:</b> An object with the following properties
          *  <ul>
-         *      <li>schemaName: the name of the requested schema</li>
-         *      <li>queryName: the name of the requested query</li>
-         *      <li>views: an array of objects, each of which has the following properties
+         *      <li><b>schemaName:</b> the name of the requested schema</li>
+         *      <li><b>queryName:</b> the name of the requested query</li>
+         *      <li><b>views:</b> an array of objects, each of which has the following properties
          *          <ul>
-         *              <li>name: the name of the view</li>
-         *              <li>columns: this will contain an array of objects with the following properties
+         *              <li><b>name:</b> the name of the view</li>
+         *              <li><b>columns:</b> this will contain an array of objects with the following properties
          *                  <ul>
-         *                      <li>name: the name of the column</li>
-         *                      <li>key: the field key for the column (may include join column names, e.g. 'State/Population')</li>
+         *                      <li><b>name:</b> the name of the column</li>
+         *                      <li><b>key:</b> the field key for the column (may include join column names, e.g. 'State/Population')</li>
          *                  </ul>
           *             </li>
          *          </ul>
@@ -791,7 +795,7 @@ LABKEY.Query = new function()
 /**
 * @name LABKEY.Query.ModifyRowsOptions
 * @class   ModifyRowsOptions class to describe
-            the second object passed to the successCallback function
+            the third object passed to the successCallback function
             by {@link LABKEY.Query.updateRows}, {@link LABKEY.Query.insertRows} or
             {@link LABKEY.Query.deleteRows}. This object's properties are useful for
             matching requests to responses, as HTTP requests are typically
@@ -813,70 +817,80 @@ LABKEY.Query = new function()
 */
 
 /**
-* @name   schemaName
-* @description    Contains the same schemaName the client passed to the calling function.
-* @memberOf LABKEY.Query.ModifyRowsOptions#
-* @type         String
+* @name headers
+* @description  An object containing one property for each HTTP header sent to the server.
+* @type Object
 */
 
 /**
-* @name    queryName
-* @description   Contains the same queryName the client passed to the calling function.
-* @memberOf LABKEY.Query.ModifyRowsOptions#
-* @type     String
+* @name method
+* @description The HTTP method used for the request (typically 'GET' or 'POST').
+* @type String
+ */
+
+/**
+* @name url
+* @description  The URL that was requested.
+* @type String
 */
 
 /**
-* @name   LABKEY.Query.ModifyRowsOptions#rows
-* @memberOf LABKEY.Query.ModifyRowsOptions#
-* @description Array of row objects that map the names of the row fields to their values.
+* @name jsonData
+* @description  The data object sent to the server. This will contain the following properties:
+          <ul>
+            <li><b>schemaName</b>: String. The schema name being modified.  This is the same schemaName
+                the client passed to the calling function. </li>
+            <li><b>queryName</b>: String. The query name being modified. This is the same queryName
+                the client passed to the calling function.  </li>
+            <li><b>rows</b>: Object[]. Array of row objects that map the names of the row fields to their values.
             The fields required for inclusion for each row depend on the which LABKEY.Query method you are
-            using (updateRows, insertRows or deleteRows).
-            <p/>
-            <b>For {@link LABKEY.Query.updateRows}:</b> <p/>
-            For the 'updateRows' method, each row in the rows array must include its primary key value
-            as one of its fields.
-            <p/>
-            An example of a ModifyRowsOptions object for the 'updateRows' successCallback:
-<pre name="code" class="xml">
-{"schemaName": "lists",
- "queryName": "API Test List",
- "rows": [
-    {"Key": 1,
-    "FirstName": "Z",
-    "Age": "100"}]
-} </pre></code>
+            using (updateRows, insertRows or deleteRows). </li>
+         </ul>
+ <p/>
+ <b>For {@link LABKEY.Query.updateRows}:</b> <p/>
+ For the 'updateRows' method, each row in the rows array must include its primary key value
+ as one of its fields.
+ <p/>
+ An example of a ModifyRowsOptions object for the 'updateRows' successCallback:
+ <pre name="code" class="xml">
+ {"schemaName": "lists",
+  "queryName": "API Test List",
+  "rows": [
+ {"Key": 1,
+ "FirstName": "Z",
+ "Age": "100"}]
+ } </pre></code>
 
-            <p/>
-            <b>For {@link LABKEY.Query.insertRows}:</b> <p/>
-            For the 'insertRows' method, the fields of the rows should look the same as
-            they do for the 'updateRows' method, except that primary key values for new rows
-            need not be supplied if the primary key columns are auto-increment.
-            <p/>
-            An example of a ModifyRowsOptions object for the 'insertRows' successCallback:
-<pre name="code" class="xml">
-{"schemaName": "lists",
- "queryName": "API Test List",
- "rows": [
-     {"FirstName": "C",
-    "Age": "30"}]
-} </pre></code>
+ <p/>
+ <b>For {@link LABKEY.Query.insertRows}:</b> <p/>
+ For the 'insertRows' method, the fields of the rows should look the same as
+ they do for the 'updateRows' method, except that primary key values for new rows
+ need not be supplied if the primary key columns are auto-increment.
+ <p/>
+ An example of a ModifyRowsOptions object for the 'insertRows' successCallback:
+ <pre name="code" class="xml">
+ {"schemaName": "lists",
+  "queryName": "API Test List",
+  "rows": [
+  {"FirstName": "C",
+ "Age": "30"}]
+ } </pre></code>
 
-            <p/>
-            <b>For {@link LABKEY.Query.deleteRows}:</b> <p/>
-            For the 'deleteRows' method, the fields of the rows should look the
-            same as they do for the 'updateRows' method, except that the 'deleteRows'
-            method needs to supply only the primary key values for the rows. All
-            other row data will be ignored.
-            <p/>
-            An example of a ModifyRowsOptions object for the 'deleteRows' successCallback:
-<pre name="code" class="xml">
-{"schemaName": "lists",
- "queryName": "API Test List",
- "rows": [
-       {"Key": 3}]
-} </pre></code>
-* @type Object[]
+ <p/>
+ <b>For {@link LABKEY.Query.deleteRows}:</b> <p/>
+ For the 'deleteRows' method, the fields of the rows should look the
+ same as they do for the 'updateRows' method, except that the 'deleteRows'
+ method needs to supply only the primary key values for the rows. All
+ other row data will be ignored.
+ <p/>
+ An example of a ModifyRowsOptions object for the 'deleteRows' successCallback:
+ <pre name="code" class="xml">
+ {"schemaName": "lists",
+  "queryName": "API Test List",
+  "rows": [
+{"Key": 3}]
+ } </pre></code>
+* @type  Object
 */
 
 /**#@-*/
@@ -963,7 +977,7 @@ LABKEY.Query = new function()
 /**
 * @name LABKEY.Query.SelectRowsOptions
 * @class  SelectRowsOptions class to describe
-           the second object passed to the successCallback function by
+           the third object passed to the successCallback function by
            {@link LABKEY.Query.selectRows}.  This object's properties are useful for
            matching requests to responses, as HTTP requests are typically
            processed asynchronously.

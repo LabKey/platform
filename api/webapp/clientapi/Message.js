@@ -144,6 +144,8 @@ LABKEY.Message = new function()
                 dataObject.msgContent = config.msgContent;
             if (config.msgSubject != undefined)
                 dataObject.msgSubject = config.msgSubject;
+            if (config.allowUnregisteredUser != undefined)
+                dataObject.allowUnregisteredUser = config.allowUnregisteredUser;
 
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("announcements", "sendMessage"),
