@@ -47,7 +47,7 @@ class ActionsView extends HttpView
 
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
 
-        out.print("<table>");
+        out.print("<table id=\"springActions\">");
 
         if (_summary)
             out.print("<tr align=left><th>Spring Controller</th><th>Actions</th><th>Invoked</th><th>Coverage</th></tr>");
