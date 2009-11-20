@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.biotrue.datamodel.Server" %>
 <%@ page import="org.labkey.biotrue.objectmodel.BtServer" %>
 <%@ page import="org.labkey.biotrue.task.BtTaskManager" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -70,7 +71,7 @@
     </table>
     <table>
         <tr><td>
-            <%=PageFlowUtil.generateButton("Back to BioTrue", context.cloneActionURL().setAction("begin.view"))%>&nbsp;
+            <%=PageFlowUtil.generateButton("Back to BioTrue", new ActionURL(BtController.BeginAction.class, context.getContainer()))%>&nbsp;
             <%=PageFlowUtil.generateSubmitButton("Delete Selected Servers")%>&nbsp;
         </td></tr>
         <tr><td>&nbsp;</td></tr>

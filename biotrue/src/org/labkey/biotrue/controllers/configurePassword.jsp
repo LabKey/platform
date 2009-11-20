@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.biotrue.controllers.ServerForm" %>
 <%@ page import="org.labkey.biotrue.datamodel.Server" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.biotrue.controllers.BtController" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -28,14 +30,13 @@
 %>
 <labkey:errors />
 
-
 <form action="" method="post">
     <table>
         <input type="hidden" name="serverId" value="<%=server.getRowId()%>">
         <tr><td align=center><div class="labkey-form-label"><b>Set Server Password</b></div></td></tr>
         <tr><td>Server:&nbsp;<%=server.getName()%></td><td><input name="password" value="<%=StringUtils.trimToEmpty(server.getPassword())%>"></td></tr>
         <tr><td colspan="2">
-            <%=PageFlowUtil.generateButton("Cancel", form.getViewContext().cloneActionURL().setAction("admin.view"))%>&nbsp;
+            <%=PageFlowUtil.generateButton("Cancel", new ActionURL(BtController.AdminAction.class, form.getViewContext().getContainer()))%>&nbsp;
             <%=PageFlowUtil.generateSubmitButton("Update")%>&nbsp;
         </td></tr>
         <tr><td>&nbsp;</td></tr>

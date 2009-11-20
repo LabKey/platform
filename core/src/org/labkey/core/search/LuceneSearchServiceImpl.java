@@ -88,67 +88,65 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (0 == _count % 100)
                     _log.info("Indexing: " + _count);
 
+                Document doc = new Document();
+                String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
+                Map<String, ?> props = r.getProperties();
+                String title = (String)props.get("title");
+                String body;
+
+                // TODO: Need better check for issue HTML vs. rendered page HTML
+                if (null == title)
                 {
-                    Document doc = new Document();
-                    String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
-                    Map<String, ?> props = r.getProperties();
-                    String title = (String)props.get("title");
-                    String body;
+                    HTMLContentExtractor extractor = new LabKeyPageHTMLExtractor(html);
+                    body = extractor.extract();
+                    title = extractor.getTitle();
+                }
+                else
+                {
+                    body = new GenericHTMLExtractor(html).extract();
+                }
 
-                    // TODO: Need better check for issue HTML vs. rendered page HTML
-                    if (null == title)
+                String url = r.getExecuteHref(null);
+                assert null != url;
+                if (null == title)
+                {
+                    _log.error("Bogus content for: " + id + "\n" + html);
+                    title = url;
+                }
+
+                String summary = extractSummary(body, title);
+
+                doc.add(new Field("body", body, Field.Store.NO, Field.Index.ANALYZED));
+                doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
+                doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
+                doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
+
+                for (Map.Entry<String, ?> entry : props.entrySet())
+                {
+                    Object value = entry.getValue();
+
+                    if (null != value)
                     {
-                        HTMLContentExtractor extractor = new LabKeyPageHTMLExtractor(html);
-                        body = extractor.extract();
-                        title = extractor.getTitle();
-                    }
-                    else
-                    {
-                        body = new GenericHTMLExtractor(html).extract();
-                    }
+                        String stringValue = value.toString().toLowerCase();
 
-                    String url = r.getExecuteHref(null);
-                    assert null != url;
-                    if (null == title)
-                    {
-                        _log.error("Bogus content for: " + id + "\n" + html);
-                        title = url;
-                    }
-
-                    String summary = extractSummary(body, title);
-
-                    doc.add(new Field("body", body, Field.Store.NO, Field.Index.ANALYZED));
-                    doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
-                    doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
-                    doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
-
-                    for (Map.Entry<String, ?> entry : props.entrySet())
-                    {
-                        Object value = entry.getValue();
-
-                        if (null != value)
+                        if (stringValue.length() > 0)
                         {
-                            String stringValue = value.toString().toLowerCase();
+                            String key = entry.getKey().toLowerCase();
 
-                            if (stringValue.length() > 0)
+                            if (!"title".equals(key))
                             {
-                                String key = entry.getKey().toLowerCase();
+                                doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
 
-                                if (!"title".equals(key))
+                                if ("area".equals(key))
                                 {
-                                    doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
-
-                                    if ("area".equals(key))
-                                    {
-                                        _areas.add(stringValue);
-                                    }
+                                    _areas.add(stringValue);
                                 }
                             }
                         }
                     }
-
-                    return Collections.singletonMap(Document.class, doc);
                 }
+
+                return Collections.singletonMap(Document.class, doc);
             }
             else
             {
