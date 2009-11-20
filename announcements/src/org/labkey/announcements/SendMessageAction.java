@@ -16,10 +16,14 @@
 
 package org.labkey.announcements;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MailHelper;
@@ -38,11 +42,14 @@ import javax.mail.MessagingException;
 @RequiresLogin
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
+    private boolean _allowUnregisteredUser;
+
     enum Props {
         msgFrom,
         msgRecipients,
         msgSubject,
         msgContent,
+        allowUnregisteredUser,
     }
     enum MsgContent {
         type,
@@ -60,6 +67,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
         String from = json.getString(Props.msgFrom.name());
         String subject = json.getString(Props.msgSubject.name());
+        _allowUnregisteredUser = BooleanUtils.toBoolean(json.getString(Props.allowUnregisteredUser.name()));
         JSONArray recipients = null;
         JSONArray contents = null;
 
@@ -103,10 +111,14 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
     {
         try {
             ValidEmail validEmail = new ValidEmail(email);
-            User user = UserManager.getUser(validEmail);
 
-            if (user == null)
-                throw new IllegalArgumentException("The user email: " + email + " does not exist in the system.");
+            if (!_allowUnregisteredUser)
+            {
+                User user = UserManager.getUser(validEmail);
+
+                if (user == null)
+                    throw new IllegalArgumentException("The user email: " + email + " does not exist in the system.");
+            }
             return validEmail.getAddress();
         }
         catch (ValidEmail.InvalidEmailException e)

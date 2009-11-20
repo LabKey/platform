@@ -98,7 +98,7 @@ public enum Method
     second(Types.INTEGER, 1, 1),
     week(Types.INTEGER, 1, 1),
     year(Types.INTEGER, 1, 1),
-	timestampadd(Types.INTEGER, 3, 3)
+	timestampadd(Types.TIMESTAMP, 3, 3)
 			{
 				@Override
 				public MethodInfo getMethodInfo()
@@ -214,7 +214,7 @@ public enum Method
     {
         public TimestampInfo(Method method)
         {
-            super(Types.INTEGER);
+            super(method._sqlType);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] argumentsIN)

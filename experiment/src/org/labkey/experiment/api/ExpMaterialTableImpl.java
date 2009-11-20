@@ -26,6 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.StringExpression;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
@@ -75,6 +76,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                         ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _schema);
                         sampleSetTable.populate();
                         return sampleSetTable;
+                    }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return super.getURL(parent, true);
                     }
                 });
                 return columnInfo;
@@ -193,6 +200,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             public TableInfo getLookupTableInfo()
             {
                 return new ExpSchema(_schema.getUser(), _schema.getContainer()).getTable(ExpSchema.TableType.SampleSets);
+            }
+
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return super.getURL(parent, true);
             }
         });
         addContainerColumn(ExpMaterialTable.Column.Folder, null);

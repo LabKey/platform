@@ -203,7 +203,7 @@ public class PipelineStatusManager
         try
         {
             beginTransaction(scope,active);
-            enforceLockOrder(sf.getJob(), active);
+            enforceLockOrder(sf.getJob(), sf.getFilePath(), active);
 
             Table.update(null, _schema.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()));
 
@@ -226,7 +226,7 @@ public class PipelineStatusManager
         try
         {
             beginTransaction(scope, active);
-            enforceLockOrder(jobId, active);
+            enforceLockOrder(jobId, path, active);
 
             PipelineStatusFileImpl sfExist = getStatusFile(path);
             if (sfExist != null)
@@ -236,7 +236,7 @@ public class PipelineStatusManager
                 {
                     child.setJobParent(null);
                     child.beforeUpdate(null, child);
-                    enforceLockOrder(child.getJobId(), active);
+                    enforceLockOrder(child.getJobId(), child.getFilePath(), active);
                     updateStatusFile(child);
                 }
                 sfExist.setJob(jobId);
@@ -600,9 +600,10 @@ public class PipelineStatusManager
      * readers from getting a share lock and ensuring the updater can update the index if necessary.
     *
     * @param jobId of the job that is going to be updated
+    * @param filePath path to the job that is going to be updated 
     * @throws SQLException database error
     */
-    protected static void enforceLockOrder(String jobId, boolean active)
+    protected static void enforceLockOrder(String jobId, String filePath, boolean active)
             throws SQLException
     {
         if (active)
@@ -616,6 +617,12 @@ public class PipelineStatusManager
             String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() +  " WITH (HOLDLOCK,XLOCK) WHERE Job = ?;";
             Table.execute(_schema.getSchema(), lockCmd, new Object[]{jobId}) ;
         }
+        if (null != filePath)
+        {
+            String lockCmd = "SELECT FilePath, Job FROM " + _schema.getTableInfoStatusFiles() +  " WITH (HOLDLOCK,XLOCK) WHERE FilePath = ?;";
+            Table.execute(_schema.getSchema(), lockCmd, new Object[]{filePath}) ;
+        }
+
     }
 
 }

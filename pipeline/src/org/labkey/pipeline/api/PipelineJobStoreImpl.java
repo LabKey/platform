@@ -113,7 +113,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             try
             {
                 PipelineStatusManager.beginTransaction(scope, active);
-                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), active);
+                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), job.getStatusFile().getPath(), active);
 
                 // Make sure the join job has an existing status record before creating
                 // the rows for the split jobs.  Just to ensure a consistent creation order.
@@ -155,7 +155,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
                 TaskId tid = job.getActiveTaskId();
 
                 PipelineStatusManager.beginTransaction(scope, active);
-                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), active);
+                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), job.getStatusFile().getPath(), active);
 
                 int count = getIncompleteSplitCount(job.getParentGUID(), job.getContainer());
                 setCompleteSplit(job);

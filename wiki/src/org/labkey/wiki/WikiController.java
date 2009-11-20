@@ -3346,7 +3346,7 @@ public class WikiController extends SpringActionController
             path[idx] = PageFlowUtil.decode(path[idx]); //decode path part before comparing!
             for(Map<String,Object> pageProps : pages)
             {
-                if (path[idx].equals(pageProps.get("name").toString()))
+                if (path[idx].equals(pageProps.get("title").toString()))
                 {
                     //add the expanded property
                     if (expandAncestors || idx == (path.length - 1))
