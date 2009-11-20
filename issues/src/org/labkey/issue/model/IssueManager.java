@@ -622,12 +622,12 @@ public class IssueManager
                 ids[count++] = id;
                 if (count == ids.length)
                 {
-                    ss.addResource(new IndexGroup(ids,count), SearchService.PRIORITY.group);
+                    ss.addRunnable(new IndexGroup(ids,count), SearchService.PRIORITY.group);
                     count = 0;
                     ids = new int[ids.length];
                 }
             }
-            ss.addResource(new IndexGroup(ids,count), SearchService.PRIORITY.group);
+            ss.addRunnable(new IndexGroup(ids,count), SearchService.PRIORITY.group);
         }
         catch (SQLException x)
         {
@@ -693,7 +693,7 @@ public class IssueManager
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             int currentIssueId = -1;
 
-            Map<String,?> m = null;
+            Map<String,Object> m = null;
             ArrayList<Issue.Comment> comments = new ArrayList<Issue.Comment>();
 
             while (rs.next())
@@ -730,10 +730,13 @@ public class IssueManager
     }
 
 
-    static void queueIssue(SearchService ss, Map<String,?> m, ArrayList<Issue.Comment> comments)
+    static void queueIssue(SearchService ss, Map<String,Object> m, ArrayList<Issue.Comment> comments)
     {
         if (null == ss || null == m)
             return;
+        String id = String.valueOf(m.get("issueid"));
+        String title = String.valueOf(m.get("title"));
+        m.put("title", id + " " + title);
         m.put("comment",null);
         m.put("_row",null);
         ss.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
@@ -799,7 +802,7 @@ public class IssueManager
         }
 
 
-        IssueResource(Map<String,?> m, List<Issue.Comment> comments)
+        IssueResource(Map<String,Object> m, List<Issue.Comment> comments)
         {
             super("issue:"+String.valueOf(m.get("issueid")));
             _containerId = (String)m.get("container");
@@ -828,17 +831,12 @@ public class IssueManager
 
         public InputStream getInputStream(User user) throws IOException
         {
-            String id = String.valueOf(_properties.get("issueid"));
             String title = String.valueOf(_properties.get("title"));
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             Writer out = new OutputStreamWriter(bos);
             out.write("<html><head><title>");
-            out.write(id);
-            out.write(" ");
             out.write(PageFlowUtil.filter(title));
             out.write("</title></head><body>");
-            out.write(id);
-            out.write(" ");
             out.write(PageFlowUtil.filter(title));
             out.write("\n");
             for (Issue.Comment c : _comments)

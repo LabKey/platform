@@ -45,6 +45,8 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowRead(Announcement ann)
     {
+        if (_user == User.getSearchUser())
+            return true;
         return hasPermission(ACL.PERM_READ);
     }
 

@@ -92,7 +92,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     
-    public void addResource(Runnable r, PRIORITY pri)
+    public void addRunnable(Runnable r, PRIORITY pri)
     {
         queueItem(new Item(r,pri));
     }

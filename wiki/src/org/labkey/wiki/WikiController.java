@@ -3461,9 +3461,9 @@ public class WikiController extends SpringActionController
             ss.clearIndex();
 
 //            Module m = ModuleLoader.getInstance().getModule("Wiki");
-            Module m = ModuleLoader.getInstance().getModule("Issues");
+//            Module m = ModuleLoader.getInstance().getModule("Issues");
 //            Module m = ModuleLoader.getInstance().getModule("Announcements");
-//            for (Module m : ModuleLoader.getInstance().getModules())
+            for (Module m : ModuleLoader.getInstance().getModules())
             {
                 m.enumerateDocuments(ss, null, null);
             }

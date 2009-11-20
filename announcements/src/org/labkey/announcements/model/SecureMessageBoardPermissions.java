@@ -39,6 +39,9 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
 
     public boolean allowRead(Announcement ann)
     {
+        if (_user == User.getSearchUser())
+            return true;
+        
         // Editors can read all messages
         if (hasPermission(EDITOR_PERM))
             return true;

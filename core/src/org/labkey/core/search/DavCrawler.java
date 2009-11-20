@@ -51,7 +51,7 @@ public class DavCrawler
                 if (child.isFile())
                     ss.addResource("dav:" + child.getPath(), SearchService.PRIORITY.background);
                 else if (!skipContainer(child.getName()))
-                    ss.addResource(start(ss, res, child.getPath()), SearchService.PRIORITY.crawl);
+                    ss.addRunnable(start(ss, res, child.getPath()), SearchService.PRIORITY.crawl);
             }
         }
     }

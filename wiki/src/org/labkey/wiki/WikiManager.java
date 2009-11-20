@@ -32,13 +32,14 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Filter;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.apache.log4j.Category;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -127,22 +128,6 @@ public class WikiManager
     }
 
 
-    static String getSearchId(Wiki page)
-    {
-//        return "dav:/" + WebdavService.getServletPath() + WikiWebdavProvider.getResourcePath(page);
-        ActionURL url = new ActionURL(WikiController.PageAction.class, null).addParameter("name",page.getName());
-        url.setExtraPath(page.getContainerId());
-        return "action:" + url.getLocalURIString();
-    }
-
-
-    static void indexWiki(Wiki page)
-    {
-        String searchId = getSearchId(page);
-        ServiceRegistry.get().getService(SearchService.class).addResource(searchId, SearchService.PRIORITY.item);
-    }
-
-    
     // Used to verify that entityId is a wiki and belongs in the specified container
     public static Wiki getWikiByEntityId(Container c, String entityId) throws SQLException
     {
@@ -739,16 +724,71 @@ public class WikiManager
     }
 
 
-    public static void indexWikis(Container c, Date modifiedSince)
+
+    static String getSearchId(Wiki page)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+//        return "dav:/" + WebdavService.getServletPath() + WikiWebdavProvider.getResourcePath(page);
+        ActionURL url = new ActionURL(WikiController.PageAction.class, null).addParameter("name",page.getName());
+        url.setExtraPath(page.getContainerId());
+        return "action:" + url.getLocalURIString();
+    }
+
+
+    static void indexWiki(Wiki page)
+    {
+        String searchId = getSearchId(page);
+        ServiceRegistry.get().getService(SearchService.class).addResource(searchId, SearchService.PRIORITY.item);
+    }
+
+
+    public static void indexWikis(Container c, final Date modifiedSince)
+    {
+        final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null == ss)
+            return;
+
+        if (null != c)
+        {
+            indexWikiContainerFast(ss, c, modifiedSince);
+            return;
+        }
+
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.executeQuery(comm.getSchema(), "SELECT DISTINCT container FROM comm.pages", null);
+            while (rs.next())
+            {
+                final String id = rs.getString(1);
+                final Container wikiContainer = ContainerManager.getForId(id);
+                if (null != wikiContainer)
+                {
+                    ss.addRunnable(new Runnable(){public void run(){
+                        indexWikiContainerFast(ss,wikiContainer,modifiedSince);
+                    }}, SearchService.PRIORITY.group);
+                }
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
+    }
+
+
+    public static void indexWikiContainerSlow(@NotNull SearchService ss, @NotNull Container c, @Nullable Date modifiedSince)
+    {
         ResultSet rs = null;
         ActionURL page = new ActionURL(WikiController.PageAction.class, null);
         try
         {
             SimpleFilter f = new SimpleFilter();
-            if (null != c)
-                f.addCondition("container", c);
+            f.addCondition("container", c);
             if (null != modifiedSince)
                 f.addCondition("modified", modifiedSince, CompareType.GTE);
 
@@ -768,10 +808,53 @@ public class WikiManager
         }
         finally
         {
-            ResultSetUtil.close(rs);    
+            ResultSetUtil.close(rs);
         }
     }
 
+
+    public static void indexWikiContainerFast(@NotNull SearchService ss, @NotNull Container c, @Nullable Date modifiedSince)
+    {
+        ResultSet rs = null;
+        try
+        {
+            SQLFragment f = new SQLFragment();
+            f.append("SELECT P.container, P.name, owner$.displayname as owner, createdby$.displayname as createdby, P.created, modifiedby$.displayname as modifiedby, P.modified,")
+                .append("V.body, V.renderertype\n");
+            f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n")
+                .append("LEFT OUTER JOIN core.usersdata AS owner$  ON P.createdby = owner$.userid\n")
+                .append("LEFT OUTER JOIN core.usersdata AS createdby$  ON P.createdby = createdby$.userid\n")
+                .append("LEFT OUTER JOIN core.usersdata AS modifiedby$  ON P.createdby = modifiedby$.userid\n");
+            f.append("WHERE P.container=?");
+            f.add(c);
+            if (null != modifiedSince)
+            {
+                f.append(" AND P.modified >= modifiedSince");
+                f.add(modifiedSince);
+            }
+            rs = Table.executeQuery(comm.getSchema(), f, 0, false, false);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            while (rs.next())
+            {
+                Map<String,Object> m = factory.getRowMap(rs);
+                if (null == m.get("body"))
+                    m.put("body","");
+                if (null == m.get("title"))
+                    m.put("title", m.get("name"));
+                WikiWebdavProvider.WikiPageResource r = new WikiWebdavProvider.WikiPageResource(c, (String)m.get("name"), m);
+                ss.addResource(r, SearchService.PRIORITY.item);
+            }
+        }
+        catch (SQLException x)
+        {
+            Category.getInstance(WikiManager.class).error(x);
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
 
 
     public static class TestCase extends junit.framework.TestCase

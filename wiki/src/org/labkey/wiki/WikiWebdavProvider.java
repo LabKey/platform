@@ -307,13 +307,49 @@ class WikiWebdavProvider implements WebdavService.Provider
         Wiki _wiki = null;
         WikiVersion _version = null;
 
+        Container _c;
+        String _name;
+        String _body = null;
+        String _type = WikiRendererType.HTML.name();
+
+        
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
             super(folder.getPath(), docName);
             _folder = folder;
             _policy = _folder._c.getPolicy();
+
+            _c = _folder._c;
+            _name = wiki.getName().getSource();
             _wiki = wiki;
+            WikiVersion v = getWikiVersion();
+
+            if (null != v)
+            {
+                _body = getWikiVersion().getBody();
+                _type = getWikiVersion().getRendererType();
+                _properties = new HashMap<String,Object>();
+                _properties.put("title", v.getTitle().getSource());
+            }
         }
+
+
+        WikiPageResource(Container c, String name, Map<String,Object> m)
+        {
+            super(name);
+
+            _c = c;
+            _name = name;
+            _folder = null;
+            _policy = c.getPolicy();
+            if (null != m.get("renderertype"))
+                _type = String.valueOf(m.get("renderertype"));
+            _body = String.valueOf(m.get("body"));
+            m.put("body",null);
+            m.put("renderertype",null);
+            _properties = m;
+        }
+
 
         WikiVersion getWikiVersion()
         {
@@ -324,8 +360,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public boolean exists()
         {
-            WikiVersion version = getWikiVersion();
-            return null != version && !StringUtils.isEmpty(version.getBody());
+            return !_properties.isEmpty();
         }
 
         public boolean isCollection()
@@ -347,8 +382,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public InputStream getInputStream(User user) throws IOException
         {
-            WikiVersion v = getWikiVersion();
-            byte[] buf = v.getBody().getBytes("UTF-8");
+            byte[] buf = (null==_body?"":_body).getBytes("UTF-8");
             return new ByteArrayInputStream(buf);
         }
 
@@ -447,7 +481,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         public String getContentType()
         {
             WikiVersion v = getWikiVersion();
-            if ("HTML".equals(v.getRendererType()))
+            if ("HTML".equals(_type))
                 return "text/html";
             return "text/plain";
         }
@@ -470,7 +504,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 		@Override
         public String getExecuteHref(ViewContext context)
         {
-            return new ActionURL(WikiController.PageAction.class, _folder._c).addParameter("name",_wiki.getName()).toString();
+            return new ActionURL(WikiController.PageAction.class, _c).addParameter("name",_name).toString();
         }
 
         @Override

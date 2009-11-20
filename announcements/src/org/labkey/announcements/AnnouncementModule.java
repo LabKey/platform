@@ -199,7 +199,7 @@ public class AnnouncementModule extends DefaultModule
                     AnnouncementManager.indexMessages(c,modifiedSince);
                 }
             };
-        ss.addResource(r, SearchService.PRIORITY.bulk);
+        ss.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
 }

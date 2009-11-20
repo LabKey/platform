@@ -17,7 +17,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public void addResource(Runnable r, PRIORITY pri)
+    public void addRunnable(Runnable r, PRIORITY pri)
     {
     }
 

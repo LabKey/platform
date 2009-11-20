@@ -210,6 +210,6 @@ public class WikiModule extends DefaultModule
                     WikiManager.indexWikis(c, modifiedSince);
                 }
             };
-        ss.addResource(r, SearchService.PRIORITY.bulk);
+        ss.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 }

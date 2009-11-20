@@ -38,7 +38,6 @@ import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -143,6 +142,6 @@ public class IssuesModule extends DefaultModule
                     IssueManager.indexIssues(c, modifiedSince);
                 }
             };
-        ss.addResource(r, SearchService.PRIORITY.bulk);
+        ss.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 }
