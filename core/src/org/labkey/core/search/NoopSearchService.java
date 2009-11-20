@@ -5,6 +5,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -13,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class NoopSearchService implements SearchService
 {
-    public void addResource(ActionURL url, PRIORITY pri)
+    public void addResource(SearchCategory category, ActionURL url, PRIORITY pri)
     {
     }
 
@@ -44,5 +46,20 @@ public class NoopSearchService implements SearchService
 
     public void clearIndex()
     {
+    }
+
+    public List<SearchCategory> getSearchCategories()
+    {
+        return null;
+    }
+
+    public void addResource(String category, ActionURL url, PRIORITY pri)
+    {
+        
+    }
+
+    public void addSearchCategory(SearchCategory category)
+    {
+
     }
 }

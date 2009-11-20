@@ -37,6 +37,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.search.SearchService;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
@@ -330,6 +331,7 @@ class WikiWebdavProvider implements WebdavService.Provider
                 _type = getWikiVersion().getRendererType();
                 _properties = new HashMap<String,Object>();
                 _properties.put("title", v.getTitle().getSource());
+                _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
             }
         }
 
@@ -348,6 +350,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             m.put("body",null);
             m.put("renderertype",null);
             _properties = m;
+            _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
         }
 
 

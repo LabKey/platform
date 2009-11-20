@@ -102,6 +102,10 @@ public class WikiModule extends DefaultModule
         // wiki module, so no dice.
         if (moduleContext.isNewInstall())
             bootstrap(moduleContext);
+
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null != ss)
+            ss.addSearchCategory(WikiManager.searchCategory);
     }
 
     private void bootstrap(ModuleContext moduleContext)

@@ -88,8 +88,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudyManager
 {
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
+
     private static final Logger _log = Logger.getLogger(StudyManager.class);
-    
     private static StudyManager _instance;
     private static final Object MANAGED_KEY_LOCK = new Object();
     private static final String SCHEMA_NAME = "study";
@@ -3183,7 +3184,7 @@ public class StudyManager
                 view.setExtraPath(container);
                 ActionURL source = details.clone().replaceParameter("id",String.valueOf(id));
                 source.setExtraPath(container);
-                ActionResource r = new ActionResource(view, source);
+                ActionResource r = new ActionResource(searchCategory, view, source);
                 ss.addResource(r, SearchService.PRIORITY.item);
             }
         }

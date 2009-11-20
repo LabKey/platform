@@ -52,6 +52,7 @@ import java.util.*;
  */
 public class IssueManager
 {
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("issue", "Issues");
     // UNDONE: Keywords, Summary, etc.
 
     private static IssuesSchema _issuesSchema = IssuesSchema.getInstance();
@@ -661,19 +662,19 @@ public class IssueManager
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
         SQLFragment f = new SQLFragment();
-        f.append("SELECT I.issueId, I.container, I.entityid, I.title, I.status, AssignedTo$.displayName as assignedto, I.type, I.area, ")
-            .append("I.priority, I.milestone, I.buildfound, ModifiedBy$.displayName as modifiedby, ")
-            .append("I.modified, CreatedBy$.displayName as createdby, I.created, I.tag, ResolvedBy$.displayName as resolvedby, ")
-            .append("I.resolved, I.resolution, I.duplicate, ClosedBy$.displayName as closedby, I.closed, ")
+        f.append("SELECT I.issueId, I.container, I.entityid, I.title, I.status, AssignedTo$.searchTerms as assignedto, I.type, I.area, ")
+            .append("I.priority, I.milestone, I.buildfound, ModifiedBy$.searchTerms as modifiedby, ")
+            .append("I.modified, CreatedBy$.searchTerms as createdby, I.created, I.tag, ResolvedBy$.searchTerms as resolvedby, ")
+            .append("I.resolved, I.resolution, I.duplicate, ClosedBy$.searchTerms as closedby, I.closed, ")
             .append("I.int1, I.int2, I.string1, I.string2, ")
             .append("C.comment\n");
         f.append("FROM issues.issues I \n")
             .append("LEFT OUTER JOIN issues.comments C ON I.issueid = C.issueid\n")
-            .append("LEFT OUTER JOIN core.usersdata AS AssignedTo$ ON I.assignedto = AssignedTo$.userid\n")
-            .append("LEFT OUTER JOIN core.usersdata AS ClosedBy$  ON I.createdby = ClosedBy$.userid\n")
-            .append("LEFT OUTER JOIN core.usersdata AS CreatedBy$  ON I.createdby = CreatedBy$.userid\n")
-            .append("LEFT OUTER JOIN core.usersdata AS ModifiedBy$ ON I.modifiedby = ModifiedBy$.userid\n")
-            .append("LEFT OUTER JOIN core.usersdata AS ResolvedBy$ ON I.modifiedby = ResolvedBy$.userid\n");
+            .append("LEFT OUTER JOIN core.usersearchterms AS AssignedTo$ ON I.assignedto = AssignedTo$.userid\n")
+            .append("LEFT OUTER JOIN core.usersearchterms AS ClosedBy$  ON I.createdby = ClosedBy$.userid\n")
+            .append("LEFT OUTER JOIN core.usersearchterms AS CreatedBy$  ON I.createdby = CreatedBy$.userid\n")
+            .append("LEFT OUTER JOIN core.usersearchterms AS ModifiedBy$ ON I.modifiedby = ModifiedBy$.userid\n")
+            .append("LEFT OUTER JOIN core.usersearchterms AS ResolvedBy$ ON I.modifiedby = ResolvedBy$.userid\n");
         f.append("WHERE I.issueid IN ");
 
         String comma = "(";
@@ -736,7 +737,7 @@ public class IssueManager
             return;
         String id = String.valueOf(m.get("issueid"));
         String title = String.valueOf(m.get("title"));
-        m.put("title", id + " " + title);
+        m.put("title", id + " : " + title);
         m.put("comment",null);
         m.put("_row",null);
         ss.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
@@ -799,6 +800,7 @@ public class IssueManager
             _containerId = issue.getContainerId();
             _properties = m;
             _comments = issue.getComments();
+            _properties.put(SearchService.PROPERTY.category.toString(), searchCategory.getName());
         }
 
 
@@ -808,6 +810,7 @@ public class IssueManager
             _containerId = (String)m.get("container");
             _properties = m;
             _comments = comments;
+            _properties.put(SearchService.PROPERTY.category.toString(), searchCategory.getName());
         }
 
         public boolean exists()

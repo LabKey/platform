@@ -7,8 +7,10 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.ActionResource;
 
 import javax.servlet.ServletContextEvent;
 import java.util.*;
@@ -87,7 +89,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     private void queueItem(Item i)
     {
         assert MemTracker.put(i);
-        _log.debug("_sumbitQueue.put(" + i._id + ")");
+        _log.debug("_submitQueue.put(" + i._id + ")");
         _submitQueue.put(i);
     }
 
@@ -100,13 +102,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public void addResource(String identifier, PRIORITY pri)
     {
-        addResource(identifier, null, pri);
+        addResource(identifier, (Resource)null, pri);
     }
 
 
-    public void addResource(ActionURL url, PRIORITY pri)
+    public void addResource(SearchCategory category, ActionURL url, PRIORITY pri)
     {
-        addResource("action:" + url.getLocalURIString(), null);
+        addResource(new ActionResource(category, url), pri);
     }
 
 
@@ -299,6 +301,32 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 commit();
         }
     };
+
+
+    final Object _categoriesLock = new Object();
+    List<SearchCategory> _readonlyCategories = Collections.emptyList();
+    ArrayList<SearchCategory> _searchCategories = new ArrayList<SearchCategory>();
+            
+    
+    public List<SearchCategory> getSearchCategories()
+    {
+        synchronized (_categoriesLock)
+        {
+            return _readonlyCategories;
+        }
+    }
+
+
+    public void addSearchCategory(SearchCategory category)
+    {
+        synchronized (_categoriesLock)
+        {
+            _searchCategories.add(category);
+            SearchCategory[] arr = _searchCategories.toArray(new SearchCategory[_searchCategories.size()]);
+            _readonlyCategories = Collections.unmodifiableList(Arrays.asList(arr));
+        }
+    }
+
 
     protected abstract void index(String id, Resource r, Map preprocessProps);
     protected abstract void commit();

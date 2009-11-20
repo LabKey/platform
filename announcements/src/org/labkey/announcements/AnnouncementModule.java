@@ -33,6 +33,7 @@ import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -112,6 +113,7 @@ public class AnnouncementModule extends DefaultModule
         return "Messages";
     }
 
+
     public void startup(ModuleContext moduleContext)
     {
         Search.register(new MessageSearch());
@@ -124,7 +126,14 @@ public class AnnouncementModule extends DefaultModule
         AuditLogService.get().addAuditViewFactory(MessageAuditViewFactory.getInstance());
 
         DailyDigest.setTimer();
+
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null != ss)
+        {
+            ss.addSearchCategory(AnnouncementManager.searchCategory);
+        }
     }
+    
 
     @Override
     public void afterUpdate(ModuleContext moduleContext)

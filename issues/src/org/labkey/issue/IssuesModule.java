@@ -77,14 +77,22 @@ public class IssuesModule extends DefaultModule
         return true;
     }
 
+
     public void startup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(new IssueContainerListener());
         SecurityManager.addGroupListener(new IssueGroupListener());
         UserManager.addUserListener(new IssueUserListener());
         Search.register(IssueSearch.getInstance());
-        ServiceRegistry.get().getService(SearchService.class).addResourceResolver("issue",IssueManager.getSearchResolver());
+
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null != ss)
+        {
+            ss.addSearchCategory(IssueManager.searchCategory);
+            ss.addResourceResolver("issue",IssueManager.getSearchResolver());
+        }
     }
+
 
     @Override
     public Collection<String> getSummary(Container c)

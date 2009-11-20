@@ -55,6 +55,8 @@ import java.util.*;
  */
 public class WikiManager
 {
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
+
     private static CommSchema comm = CommSchema.getInstance();
     private static CoreSchema core = CoreSchema.getInstance();
 
@@ -800,7 +802,7 @@ public class WikiManager
                 String id = rs.getString(1);
                 String name = rs.getString(2);
                 ActionURL url = page.clone().setExtraPath(id).replaceParameter("name",name);
-                ss.addResource(url, SearchService.PRIORITY.item);
+                ss.addResource(searchCategory, url, SearchService.PRIORITY.item);
             }
         }
         catch (SQLException x)
@@ -821,12 +823,12 @@ public class WikiManager
         try
         {
             SQLFragment f = new SQLFragment();
-            f.append("SELECT P.container, P.name, owner$.displayname as owner, createdby$.displayname as createdby, P.created, modifiedby$.displayname as modifiedby, P.modified,")
-                .append("V.body, V.renderertype\n");
+            f.append("SELECT P.container, P.name, owner$.searchterms as owner, createdby$.searchterms as createdby, P.created, modifiedby$.searchterms as modifiedby, P.modified,")
+                .append("V.title, V.body, V.renderertype\n");
             f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n")
-                .append("LEFT OUTER JOIN core.usersdata AS owner$  ON P.createdby = owner$.userid\n")
-                .append("LEFT OUTER JOIN core.usersdata AS createdby$  ON P.createdby = createdby$.userid\n")
-                .append("LEFT OUTER JOIN core.usersdata AS modifiedby$  ON P.createdby = modifiedby$.userid\n");
+                .append("LEFT OUTER JOIN core.usersearchterms AS owner$  ON P.createdby = owner$.userid\n")
+                .append("LEFT OUTER JOIN core.usersearchterms AS createdby$  ON P.createdby = createdby$.userid\n")
+                .append("LEFT OUTER JOIN core.usersearchterms AS modifiedby$  ON P.createdby = modifiedby$.userid\n");
             f.append("WHERE P.container = ?");
             f.add(c);
             if (null != modifiedSince)

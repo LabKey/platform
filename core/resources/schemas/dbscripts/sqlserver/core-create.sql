@@ -33,3 +33,8 @@ CREATE VIEW core.ActiveUsers AS
         INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
     WHERE Type = 'u' and Principals.Active=1
 GO
+
+CREATE VIEW core.UserSearchTerms AS
+    SELECT  U.UserId, U.Email + ' ' + U.FirstName + ' ' + U.LastName + ' ' + U.DisplayName as SearchTerms
+    FROM core.Users U
+GO

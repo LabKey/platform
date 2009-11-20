@@ -51,6 +51,8 @@ import java.util.*;
  */
 public class AnnouncementManager
 {
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("message", "Messages");
+
     private static CommSchema _comm = CommSchema.getInstance();
     private static CoreSchema _core = CoreSchema.getInstance();
 
@@ -849,7 +851,7 @@ public class AnnouncementManager
                 String id = rs.getString(1);
                 String name = rs.getString(2);
                 ActionURL url = page.clone().setExtraPath(id).replaceParameter("rowId",name);
-                ss.addResource(url, SearchService.PRIORITY.item);
+                ss.addResource(searchCategory, url, SearchService.PRIORITY.item);
             }
         }
         catch (SQLException x)

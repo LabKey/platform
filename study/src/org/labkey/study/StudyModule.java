@@ -253,6 +253,10 @@ public class StudyModule extends SpringModule
         initWebApplicationContext();
 
         StudyReload.initializeAllTimers();
+
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null != ss)
+            ss.addSearchCategory(StudyManager.searchCategory);
     }
 
 
