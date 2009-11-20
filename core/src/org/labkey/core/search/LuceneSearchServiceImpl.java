@@ -1,6 +1,7 @@
 package org.labkey.core.search;
 
-import org.labkey.core.search.HTMLContentExtractor.*;
+import org.apache.commons.collections15.Bag;
+import org.apache.commons.collections15.bag.TreeBag;
 import org.apache.log4j.Category;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
@@ -17,13 +18,15 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.Resource;
+import org.labkey.core.search.HTMLContentExtractor.GenericHTMLExtractor;
+import org.labkey.core.search.HTMLContentExtractor.LabKeyPageHTMLExtractor;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -36,17 +39,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static int _count = 0;
     private static IndexWriter _iw = null;
     private static Analyzer _analyzer = null;
-    private static IndexSearcher _searcher = null;
+    private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out underneath you.  Call getSearcher()
+    private static Directory _directory = null;
 
     public LuceneSearchServiceImpl()
     {
         try
         {
             File tempDir = new File(PageFlowUtil.getTempDirectory(), "labkey_full_text_index");
-            Directory directory = FSDirectory.open(tempDir);
+            _directory = FSDirectory.open(tempDir);
             _analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
-            _iw = new IndexWriter(directory, _analyzer);
-            _searcher = new IndexSearcher(directory, true);
         }
         catch (IOException e)
         {
@@ -59,7 +61,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            _iw.deleteAll();
+            getIndexWriter().deleteAll();
             commit();
         }
         catch (IOException e)
@@ -68,6 +70,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+
+
+    private static final Bag<String> _areas = new TreeBag<String>();
 
     @Override
     Map<?, ?> preprocess(String id, Resource r)
@@ -117,6 +122,31 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
                     doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
 
+                    for (Map.Entry<String, ?> entry : props.entrySet())
+                    {
+                        Object value = entry.getValue();
+
+                        if (null != value)
+                        {
+                            String stringValue = value.toString().toLowerCase();
+
+                            if (stringValue.length() > 0)
+                            {
+                                String key = entry.getKey().toLowerCase();
+
+                                if (!"title".equals(key))
+                                {
+                                    doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
+
+                                    if ("area".equals(key))
+                                    {
+                                        _areas.add(stringValue);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     return Collections.singletonMap(Document.class, doc);
                 }
             }
@@ -160,7 +190,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             Document doc = (Document)preprocessMap.get(Document.class);
-            _iw.addDocument(doc);
+            getIndexWriter().addDocument(doc);
         }
         catch(Exception e)
         {
@@ -169,18 +199,52 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    protected void commit()
+    protected synchronized void commit()
     {
         try
         {
-            _iw.commit();
+            for (String area : _areas.uniqueSet())
+                _log.info("Area: " + area + " Count: " + _areas.getCount(area));
+
+            if (null != _iw)
+                _iw.close();
         }
         catch (IOException e)
         {
-            _log.error("Exception commiting index", e);
-            _log.error("Attempting to close index");
-            shutDown();
+            try
+            {
+                _log.error("Exception closing index", e);
+                _log.error("Attempting to index close again");
+                _iw.close();
+            }
+            catch (IOException e2)
+            {
+                _log.error("Exception closing index", e2);
+            }
         }
+        finally
+        {
+            _searcher = null;
+            _iw = null;
+        }
+    }
+
+
+    private synchronized IndexWriter getIndexWriter() throws IOException
+    {
+        if (null == _iw)
+            _iw = new IndexWriter(_directory, _analyzer);
+
+        return _iw;
+    }
+
+
+    private synchronized IndexSearcher getIndexSearcher() throws IOException
+    {
+        if (null == _searcher)
+            _searcher = new IndexSearcher(_directory, true);
+
+        return _searcher;
     }
 
 
@@ -197,11 +261,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Query query = new QueryParser("body", _analyzer).parse(queryString.toLowerCase());
 
             TopDocs topDocs;
+            IndexSearcher searcher = getIndexSearcher();
 
             if (null == sort)
-                topDocs = _searcher.search(query, hitsPerPage);
+                topDocs = searcher.search(query, hitsPerPage);
             else
-                topDocs = _searcher.search(query, null, hitsPerPage, new Sort(new SortField(sort, SortField.AUTO)));
+                topDocs = searcher.search(query, null, hitsPerPage, new Sort(new SortField(sort, SortField.AUTO)));
 
             ScoreDoc[] hits = topDocs.scoreDocs;
 
@@ -228,7 +293,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             for (ScoreDoc hit : hits)
             {
-                Document doc = _searcher.doc(hit.doc);
+                Document doc = searcher.doc(hit.doc);
 
                 String summary = doc.get("summary");
                 String url = doc.get("url");
@@ -255,22 +320,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     protected void shutDown()
     {
-        try
-        {
-            _iw.close();
-        }
-        catch (IOException e)
-        {
-            try
-            {
-                _log.error("Exception closing index", e);
-                _log.error("Attempting to index close again");
-                _iw.close();
-            }
-            catch (IOException e2)
-            {
-                _log.error("Exception closing index", e2);
-            }
-        }
+        commit();
     }
 }
