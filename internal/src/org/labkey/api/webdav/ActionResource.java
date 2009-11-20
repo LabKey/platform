@@ -37,11 +37,26 @@ import java.security.Principal;
 public class ActionResource extends AbstractDocumentResource
 {
     ActionURL _url;
+    ActionURL _executeUrl;
 
     public ActionResource(String str)
     {
         super(str);
         _url = new ActionURL(str);
+        _executeUrl = _url.clone();
+        _executeUrl.replaceParameter("_print","1");
+        _executeUrl.setScheme("http");
+        _executeUrl.setHost("localhost");
+    }
+
+    public ActionResource(String str, String exec)
+    {
+        super(str);
+        _url = new ActionURL(str);
+        _executeUrl = new ActionURL(str);
+        _executeUrl.replaceParameter("_print","1");
+        _executeUrl.setScheme("http");
+        _executeUrl.setHost("localhost");
     }
     
     public boolean exists()
@@ -68,9 +83,6 @@ public class ActionResource extends AbstractDocumentResource
     {
         if (null == _response)
         {
-            ActionURL url = _url.clone().replaceParameter("_print","1");
-            url.setScheme("http");
-            url.setHost("localhost");
             MockHttpServletRequest req = new MockHttpServletRequest(ViewServlet.getViewServletContext())
             {
                 public Principal getUserPrincipal()
@@ -86,7 +98,7 @@ public class ActionResource extends AbstractDocumentResource
             };
             try
             {
-                _response = ViewServlet.GET(req, url, "text/html");
+                _response = ViewServlet.GET(req, _executeUrl, "text/html");
                 return _response;
             }
             catch (IOException x)
