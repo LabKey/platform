@@ -517,6 +517,11 @@
         <ns:column columnName="Role"/>
       </ns:columns>
     </ns:table>
-
+    <ns:table tableName="UserSearchTerms" tableDbType="VIEW">
+      <ns:columns>
+        <ns:column columnName="UserId"/>
+        <ns:column columnName="SearchTerms"/>
+      </ns:columns>
+    </ns:table>
 </ns:tables>
 
