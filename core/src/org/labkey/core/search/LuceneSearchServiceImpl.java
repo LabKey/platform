@@ -37,9 +37,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Category _log = Category.getInstance(LuceneSearchServiceImpl.class);
     private static int _count = 0;
-    private static IndexWriter _iw = null;
+    private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out underneath you.  Call getIndexWriter()
     private static Analyzer _analyzer = null;
-    private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out underneath you.  Call getSearcher()
+    private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
     public LuceneSearchServiceImpl()
@@ -251,8 +251,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             String sort = null;  // TODO: add sort parameter
-
-            // Should stash all this and reuse
             int hitsPerPage = 20;
 
             long start = System.nanoTime();

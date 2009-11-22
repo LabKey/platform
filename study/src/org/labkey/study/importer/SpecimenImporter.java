@@ -531,6 +531,9 @@ public class SpecimenImporter
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
             StudyImpl study = StudyManager.getInstance().getStudy(container);
+
+            // Hack that works around deadlocks caused by interaction between specimen importer and overly aggressive StudyImpl synchronization.
+            study = study.createMutable();  // TODO: Remove this line of code after fixing #9138
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,

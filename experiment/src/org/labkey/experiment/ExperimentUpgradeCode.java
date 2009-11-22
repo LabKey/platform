@@ -15,19 +15,17 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.data.*;
+import org.apache.log4j.Logger;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.experiment.list.ListDef;
-import org.labkey.experiment.list.ListManager;
-import org.labkey.experiment.list.ListDefinitionImpl;
-import org.labkey.experiment.list.ListItm;
-import org.apache.log4j.Logger;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
 import javax.naming.NamingException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 
 /**
@@ -58,7 +56,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    // Invoked at version 2.23
+    // Invoked at version 2.23  // TODO: Move to list module & re-enable, or delete
     public void populateListEntityIds(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())
@@ -103,7 +101,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     private void doPopulateListEntityIds() throws SQLException
     {
-        ListDef[] listDefs = ListManager.get().getAllLists();
+/*        ListDef[] listDefs = ListManager.get().getAllLists();
 
         for (ListDef listDef : listDefs)
         {
@@ -121,7 +119,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 Table.execute(tinfo.getSchema(), sql, new Object[]{GUID.makeGUID(), listId, itm.getKey()});
             }
         }
-    }
+*/    }
 
     private void setDescriptorProject(DbSchema tmpSchema, String containerId, String projectId, String newContainerId, String descriptorTable) throws SQLException
     {

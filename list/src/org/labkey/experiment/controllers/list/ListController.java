@@ -33,6 +33,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.list.ListImporterViewGetter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -52,7 +53,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.list.ListAuditViewFactory;
 import org.labkey.experiment.list.ListManager;
-import org.labkey.experiment.list.client.ListImporter;
+// TODO: import org.labkey.experiment.list.client.ListImporter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -215,7 +216,8 @@ public class ListController extends SpringActionController
             }
             props.put("baseColumnNames", sb.toString());
 
-            return new GWTView(ListImporter.class, props);
+            // TODO: return new GWTView(ListImporter.class, props);
+            return ListImporterViewGetter.getView(props);
         }
 
         public NavTree appendNavTrail(NavTree root)

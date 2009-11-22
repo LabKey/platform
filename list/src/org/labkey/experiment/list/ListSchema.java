@@ -21,17 +21,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ViewContext;
-import org.labkey.experiment.controllers.list.ListQueryView;
-import org.labkey.experiment.controllers.list.ListQueryForm;
-import org.labkey.experiment.controllers.list.ListDefinitionForm;
 
-import javax.servlet.ServletException;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
 public class ListSchema extends UserSchema
 {
