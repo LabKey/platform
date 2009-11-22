@@ -41,7 +41,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HttpView;
-import org.labkey.list.list.ListItemAttachmentParent;
+import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.io.IOException;
 import java.sql.ResultSet;

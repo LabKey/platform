@@ -24,8 +24,8 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.list.list.ListController" %>
-<%@ page import="org.labkey.list.list.ListDefinitionForm" %>
+<%@ page import="org.labkey.list.view.ListController" %>
+<%@ page import="org.labkey.list.view.ListDefinitionForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%

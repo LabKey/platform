@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.list.list;
+package org.labkey.list.view;
 
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;

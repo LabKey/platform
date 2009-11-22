@@ -26,8 +26,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.list.list.AttachmentDisplayColumn;
-import org.labkey.list.list.ListController;
+import org.labkey.list.view.AttachmentDisplayColumn;
+import org.labkey.list.view.ListController;
 
 import java.util.*;
 

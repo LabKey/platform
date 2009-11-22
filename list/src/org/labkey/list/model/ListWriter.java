@@ -35,7 +35,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.list.list.ListItemAttachmentParent;
+import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.io.*;
 import java.sql.ResultSet;

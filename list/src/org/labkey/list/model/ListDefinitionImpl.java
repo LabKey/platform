@@ -37,8 +37,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.URLHelper;
-import org.labkey.list.list.ListController;
-import org.labkey.list.list.ListImportHelper;
+import org.labkey.list.view.ListController;
+import org.labkey.list.view.ListImportHelper;
 
 import java.io.File;
 import java.io.IOException;

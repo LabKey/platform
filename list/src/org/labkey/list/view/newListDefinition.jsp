@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.list.list.ListController" %>
-<%@ page import="org.labkey.list.list.NewListForm" %>
+<%@ page import="org.labkey.list.view.ListController" %>
+<%@ page import="org.labkey.list.view.NewListForm" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>

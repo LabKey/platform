@@ -35,7 +35,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.list.list.ListController;
+import org.labkey.list.view.ListController;
 
 import java.io.IOException;
 import java.io.Writer;                              

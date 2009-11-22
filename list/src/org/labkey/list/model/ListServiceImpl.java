@@ -24,7 +24,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.list.list.ListController;
+import org.labkey.list.view.ListController;
 import org.apache.log4j.Logger;
 
 import java.util.Map;

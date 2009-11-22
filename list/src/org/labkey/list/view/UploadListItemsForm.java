@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.list.list;
+package org.labkey.list.view;
 
 public class UploadListItemsForm extends ListDefinitionForm
 {

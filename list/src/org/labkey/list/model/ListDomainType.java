@@ -31,7 +31,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.lists.permissions.DesignListPermission;
-import org.labkey.list.list.ListItemAttachmentParent;
+import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.SQLException;
 import java.util.Collections;

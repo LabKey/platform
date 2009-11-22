@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.lists.permissions.DesignListPermission" %>
 <%@ page import="org.labkey.api.security.SecurityPolicy" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.list.list.ListController" %>
+<%@ page import="org.labkey.list.view.ListController" %>
 <%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
