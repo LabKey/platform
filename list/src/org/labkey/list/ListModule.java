@@ -27,10 +27,10 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.experiment.controllers.list.ListController;
-import org.labkey.experiment.controllers.list.SingleListWebPartFactory;
-import org.labkey.experiment.controllers.list.ListWebPart;
-import org.labkey.experiment.list.*;
+import org.labkey.list.list.ListController;
+import org.labkey.list.list.SingleListWebPartFactory;
+import org.labkey.list.list.ListWebPart;
+import org.labkey.list.model.*;
 
 import java.util.Collection;
 import java.util.Collections;
