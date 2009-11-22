@@ -224,7 +224,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected Entry<K,V> firstEntry()
+    protected Entry<K, V> firstEntry()
     {
         return head.next != head ? head.next : null;
     }
@@ -250,11 +250,11 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         this(initialSize, true, debugName);
     }
 
-    public CacheMap(int initialSize, boolean shared, String debugName)
+    public CacheMap(int initialSize, boolean longLived, String debugName)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
-        head = newEntry(0,null);
-        if (shared)
+        head = newEntry(0, null);
+        if (longLived)
         {
             synchronized (KNOWN_CACHEMAPS)
             {

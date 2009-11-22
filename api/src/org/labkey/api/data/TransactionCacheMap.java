@@ -25,7 +25,7 @@ import org.labkey.api.collections.TTLCacheMap;
 */
 public class TransactionCacheMap<K, V> extends TTLCacheMap<K, V>
 {
-    static final boolean ENABLE_READ_THROUGH = false;   // Read-through is disabled for now -- exposes deadlock in specimen importer, see #9138
+    static final boolean ENABLE_READ_THROUGH = true;   // Read-through is disabled for now -- exposes deadlock in specimen importer, see #9138
 
     private boolean _hasWritten = !ENABLE_READ_THROUGH;
     private final TTLCacheMap<K, V> _sharedCacheMap;
