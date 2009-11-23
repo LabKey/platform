@@ -293,7 +293,10 @@ public class Path implements Serializable, Iterable<String>
         String[] path = new String[this._length + other._length];
         System.arraycopy(this._path, 0, path, 0, _length);
         System.arraycopy(other._path, 0, path, _length, other._length);
-        return createPath(path, this._length + other._length, this.isAbsolute(), other.isDirectory());
+        Path ret = createPath(path, this._length + other._length, this.isAbsolute(), other.isDirectory());
+        if (other._length == 1)
+            ret._parent.set(this);
+        return ret;
     }
 
     
@@ -303,10 +306,10 @@ public class Path implements Serializable, Iterable<String>
         String[] path = new String[_length+names.length];
         System.arraycopy(_path, 0, path, 0, _length);
         System.arraycopy(names, 0, path, _length, names.length);
-        Path res = createPath(path, path.length, isAbsolute(), false);
+        Path ret = createPath(path, path.length, isAbsolute(), false);
         if (names.length == 1)
-            res._parent.set(this);
-        return res;
+            ret._parent.set(this);
+        return ret;
     }
     
 
