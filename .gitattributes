@@ -830,6 +830,7 @@ api/src/org/labkey/api/util/MemTracker.java -text
 api/src/org/labkey/api/util/MothershipReport.java -text
 api/src/org/labkey/api/util/NameString.java -text
 api/src/org/labkey/api/util/Pair.java -text
+api/src/org/labkey/api/util/Path.java -text
 api/src/org/labkey/api/util/ReturnURLString.java -text
 api/src/org/labkey/api/util/SafeFileAppender.java -text
 api/src/org/labkey/api/util/SearchHit.java -text

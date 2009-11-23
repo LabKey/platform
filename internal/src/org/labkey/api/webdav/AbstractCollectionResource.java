@@ -17,6 +17,7 @@ package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.Path;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -33,12 +34,12 @@ import java.util.Collections;
  */
 public abstract class AbstractCollectionResource extends AbstractResource
 {
-    protected AbstractCollectionResource(String path)
+    protected AbstractCollectionResource(Path path)
     {
         super(path);
     }
     
-    protected AbstractCollectionResource(String parent, String name)
+    protected AbstractCollectionResource(Path parent, String name)
     {
         super(parent, name);
     }

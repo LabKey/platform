@@ -17,6 +17,7 @@ package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ViewContext;
@@ -43,7 +44,7 @@ public class ActionResource extends AbstractDocumentResource
 
     public ActionResource(String str)
     {
-        super(str);
+        super(new Path("action",str));
         _url = new ActionURL(str);
         _executeUrl = _url.clone();
         _executeUrl.replaceParameter("_print","1");
@@ -60,7 +61,7 @@ public class ActionResource extends AbstractDocumentResource
 
     public ActionResource(SearchService.SearchCategory category, ActionURL url, ActionURL source)
     {
-        super(url.getLocalURIString());
+        this(url.getLocalURIString());
         _url = url;
         _executeUrl = source;
         _executeUrl.replaceParameter("_print","1");

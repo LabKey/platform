@@ -15,6 +15,8 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.util.Path;
+
 import java.util.List;
 import java.util.Collections;
 
@@ -26,13 +28,12 @@ import java.util.Collections;
  */
 public abstract class AbstractDocumentResource extends AbstractResource
 {
-    public AbstractDocumentResource(String path)
+    public AbstractDocumentResource(Path path)
     {
         super(path);
-        assert(!path.endsWith("/"));
     }
 
-    protected AbstractDocumentResource(String parent, String name)
+    protected AbstractDocumentResource(Path parent, String name)
     {
         super(parent, name);
     }

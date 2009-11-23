@@ -17,6 +17,7 @@
 package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
+import org.labkey.api.util.Path;
 
 import java.util.Date;
 import java.util.List;
@@ -30,8 +31,8 @@ import java.util.List;
 public interface WebdavResolver
 {
     boolean requiresLogin();
-    String getRootPath();
-    Resource lookup(String path);
+    Path getRootPath();
+    Resource lookup(Path path);
     Resource welcome();
 
 
@@ -42,8 +43,6 @@ public interface WebdavResolver
         String getMessage();
         String getHref();       // optional detail link
     }
-
-
 
 
     // marker interfaces for web folder, see FtpConnectorImpl

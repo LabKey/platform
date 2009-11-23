@@ -25,6 +25,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.apache.commons.io.IOUtils;
+import org.labkey.api.util.Path;
 
 import java.io.*;
 import java.util.*;
@@ -52,15 +53,14 @@ public class FileSystemResource extends AbstractResource
 
     private enum FileType { file, directory, notpresent }
 
-    protected FileSystemResource(String path)
+    protected FileSystemResource(Path path)
     {
         super(path);
-        assert getPath().equals("/") || !getPath().endsWith("/");
     }
 
-    protected FileSystemResource(String folder, String name)
+    protected FileSystemResource(Path folder, String name)
     {
-        this(WebdavResolverImpl.c(folder,name));
+        this(folder.append(name));
     }
 
     public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy)
@@ -137,11 +137,12 @@ public class FileSystemResource extends AbstractResource
         return _type;
     }
 
+
     public boolean isCollection()
     {
         if (null != _file && getType() == FileType.directory)
             return true;
-        return getPath().endsWith("/");
+        return getPath().isDirectory();
     }
 
 

@@ -1,6 +1,7 @@
 package org.labkey.api.webdav;
 
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.Path;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
@@ -21,11 +22,12 @@ import java.util.Map;
  */
 public interface Resource
 {
-    String getPath();
+    Path getPath();
 
     String getName();
 
-    String getParentPath();
+    // unique name for full text index purposes there should be SearchService.ResourceResolver that can resolve this documentid */
+    String getDocumentId();
 
     boolean exists();
 

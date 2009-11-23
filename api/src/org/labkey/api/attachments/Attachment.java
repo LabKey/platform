@@ -22,6 +22,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
@@ -152,7 +153,7 @@ public class Attachment implements Serializable
                 WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
                 if (staticFiles != null)
                 {
-                    List<String> names = staticFiles.lookup("/_icons").listNames();
+                    List<String> names = staticFiles.lookup(new Path("_icons")).listNames();
                     for (String fileName : names)
                     {
                         int index = fileName.lastIndexOf('/');

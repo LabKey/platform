@@ -18,7 +18,6 @@ package org.labkey.api.webdav;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
@@ -65,40 +64,35 @@ public class WebdavResolverImpl implements WebdavResolver
 
     public Resource welcome()
     {
-        return lookup("/");
+        return lookup(Path.rootPath);
     }
 
-    String _rootPath = "/" + WebdavService.getServletPath();
 
-    public String getRootPath()
+    Path _rootPath = new Path(WebdavService.getServletPath());
+
+    public Path getRootPath()
     {
         return _rootPath;
     }
 
-    public Resource lookup(String fullPath)
+    public Resource lookup(Path fullPath)
     {
         if (fullPath == null || !fullPath.startsWith(getRootPath()))
             return null;
-        String path = fullPath.substring(getRootPath().length());
+        Path path = getRootPath().relativize(fullPath).normalize();
 
         Resource root = getRoot();
-        if ("/".equals(path))
+        if (path.size() == 0)
             return root;
 
         // start at the root and work down, to avoid lots of cache misses
-        ArrayList<String> paths = FileUtil.normalizeSplit(path);
-        if (paths == null)
-            return null;
-
         Resource resource = root;
-        int depth = 0;
-        for (String name : paths)
+        for (String name : path)
         {
             Resource r = resource.find(name);
             // short circuit the descent at last web folder
             if (null == r  || r instanceof UnboundResource)
-                return new UnboundResource(c(resource.getPath(),paths.subList(depth,paths.size())));
-            depth++;
+                return new UnboundResource(resource.getPath().append(name));
             resource = r;
         }
         if (null == resource)
@@ -118,7 +112,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
 
     /** short lived cache to make webdav perform reasonably */
-    class FolderCache extends TTLCacheMap<String,Resource> implements ContainerManager.ContainerListener
+    class FolderCache extends TTLCacheMap<Path,Resource> implements ContainerManager.ContainerListener
     {
         FolderCache()
         {
@@ -126,30 +120,30 @@ public class WebdavResolverImpl implements WebdavResolver
             ContainerManager.addContainerListener(this);
         }
 
-        public synchronized Resource put(String key, Resource value)
+        public synchronized Resource put(Path key, Resource value)
         {
             return super.put(key,value);
         }
 
-        public synchronized Resource get(String key)
+        public synchronized Resource get(Path key)
         {
             return super.get(key);
         }
 
-        public synchronized Resource remove(String key)
+        public synchronized Resource remove(Path key)
         {
             return super.remove(key);
         }
 
         public void containerCreated(Container c)
         {
-            invalidate(getParentPath(c), false);
+            invalidate(c.getParsedPath().getParent(), false);
         }
 
         public void containerDeleted(Container c, User user)
         {
-            invalidate(c.getPath(), true);
-            invalidate(getParentPath(c), false);
+            invalidate(c.getParsedPath(), true);
+            invalidate(c.getParsedPath().getParent(), false);
         }
 
         public void propertyChange(PropertyChangeEvent pce)
@@ -166,24 +160,24 @@ public class WebdavResolverImpl implements WebdavResolver
                     case WebRoot:
                     default:
                     {
-                        invalidate(c.getPath(), true);
+                        invalidate(c.getParsedPath(), true);
                         break;
                     }
                     case Name:
                     {
                         String oldName = (String)evt.getOldValue();
-                        invalidate(c.getPath(), true);
-                        invalidate(c(getParentPath(c),oldName), true);
-                        invalidate(getParentPath(c), false);
+                        invalidate(c.getParsedPath(), true);
+                        invalidate(resolveSibling(c, oldName), true);
+                        invalidate(c.getParsedPath().getParent(), false);
                         break;
                     }
                     case Parent:
                     {
                         Container oldParent = (Container)pce.getOldValue();
-                        invalidate(c.getPath(), true);
+                        invalidate(c.getParsedPath(), true);
                         invalidate(getParentPath(c), false);
-                        invalidate(c(oldParent.getPath(),c.getName()), true);
-                        invalidate(oldParent.getPath(), false);
+                        invalidate(resolveSibling(c,c.getName()), true);
+                        invalidate(oldParent.getParsedPath(), false);
                         break;
                     }
                 }
@@ -194,18 +188,32 @@ public class WebdavResolverImpl implements WebdavResolver
             }
         }
 
-        String getParentPath(Container c)
+
+        Path getParentPath(Container c)
         {
-            return c.getParent() == null ? "" : c.getParent().getPath();
+            Path p = c.getParsedPath();
+            if (p.size() == 0)
+                throw new IllegalArgumentException();
+            return p.getParent();
         }
 
-        void invalidate(String containerPath, boolean recursive)
+
+        Path resolveSibling(Container c, String name)
         {
-            String path = getRootPath() + containerPath;
+            Path p = c.getParsedPath();
+            if (p.size() == 0)
+                throw new IllegalArgumentException();
+            return p.getParent().append(name);
+        }
+
+
+        void invalidate(Path containerPath, boolean recursive)
+        {
+            Path path = getRootPath().append(containerPath);
             remove(path);
             if (recursive)
-                removeUsingPrefix(c(path,""));
-            if (containerPath.equals("/"))
+                removeUsingPrefix(path);
+            if (containerPath.size() == 0)
             {
                 synchronized (WebdavResolverImpl.this)
                 {
@@ -213,7 +221,21 @@ public class WebdavResolverImpl implements WebdavResolver
                 }
             }
         }
+
+
+        public void removeUsingPrefix(Path prefix)
+        {
+            // since we're touching all the Entrys anyway, might as well test expired()
+            for (Entry<Path, Resource> entry = head.next; entry != head; entry = entry.next)
+            {
+                if (removeOldestEntry(entry))
+                    removeEntry(entry);
+                else if (entry.getKey().startsWith(prefix))
+                    removeEntry(entry);
+            }
+        }
     }
+
 
     FolderCache _folderCache = new FolderCache();
 
@@ -305,7 +327,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         WebFolderResource(WebdavResolver resolver, Container c, AttachmentDirectory root)
         {
-            super(c(resolver.getRootPath(),c.getPath()));
+            super(resolver.getRootPath().append(c.getParsedPath()));
             _resolver = resolver;
             _c = c;
             _policy = c.getPolicy();
@@ -359,7 +381,7 @@ public class WebdavResolverImpl implements WebdavResolver
             ArrayList<String> ret = new ArrayList<String>();
             for (String name : _children)
             {
-                Resource r = lookup(WebdavResolverImpl.c(this,name));
+                Resource r = lookup(this.getPath().append(name));
                 if (null != r && r.canRead(user))
                     ret.add(name);
             }
@@ -428,7 +450,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
             if (name != null)
             {
-                String path = c(getPath(), name);
+                Path path = getPath().append(name);
                 // check in webfolder cache
                 Resource resource = _folderCache.get(path);
                 if (null != resource)
@@ -480,7 +502,7 @@ public class WebdavResolverImpl implements WebdavResolver
                 if (null != r)
                     return r;
             }
-            return new UnboundResource(WebdavResolverImpl.c(this,child));
+            return new UnboundResource(this.getPath().append(child));
         }
 
 
@@ -495,6 +517,11 @@ public class WebdavResolverImpl implements WebdavResolver
     public static class UnboundResource extends AbstractResource
     {
         UnboundResource(String path)
+        {
+            super(Path.parse(path));
+        }
+
+        UnboundResource(Path path)
         {
             super(path);
         }
@@ -524,7 +551,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public Resource find(String name)
         {
-            return new UnboundResource(WebdavResolverImpl.c(this,name));
+            return new UnboundResource(this.getPath().append(name));
         }
 
         public List<String> listNames()
@@ -569,29 +596,29 @@ public class WebdavResolverImpl implements WebdavResolver
         }
     }
 
-    String c(Container container, String... names)
-    {
-        return c(container.getPath(), names);
-    }
-
-    static String c(Resource r, String... names)
-    {
-        return c(r.getPath(), names);
-    }
-
-    static String c(String path, List<String> names)
-    {
-        return c(path, names.toArray(new String[names.size()]));
-    }
-
-    static String c(String path, String... names)
-    {
-        StringBuilder s = new StringBuilder();
-        s.append(StringUtils.stripEnd(path,"/"));
-        for (String name : names)
-            s.append("/").append(StringUtils.strip(name, "/"));
-        return s.toString();
-    }
+//    String c(Container container, String... names)
+//    {
+//        return c(container.getPath(), names);
+//    }
+//
+//    static String c(Resource r, String... names)
+//    {
+//        return c(r.getPath(), names);
+//    }
+//
+//    static String c(String path, List<String> names)
+//    {
+//        return c(path, names.toArray(new String[names.size()]));
+//    }
+//
+//    static String c(String path, String... names)
+//    {
+//        StringBuilder s = new StringBuilder();
+//        s.append(StringUtils.stripEnd(path,"/"));
+//        for (String name : names)
+//            s.append("/").append(StringUtils.strip(name, "/"));
+//        return s.toString();
+//    }
 
 
     public static class TestCase extends junit.framework.TestCase
@@ -619,30 +646,30 @@ public class WebdavResolverImpl implements WebdavResolver
 
             WebdavResolver resolver = WebdavResolverImpl.get();
 
-            assertNull(resolver.lookup(".."));
-            assertNull(resolver.lookup("/.."));
-            assertNull(resolver.lookup(c.getPath() + "/./../../.."));
+            assertNull(resolver.lookup(Path.parse("..")));
+            assertNull(resolver.lookup(Path.parse("/..")));
+            assertNull(resolver.lookup(Path.parse(c.getPath() + "/./../../..")));
 
-            String rootPath = resolver.getRootPath();
+            Path rootPath = resolver.getRootPath();
             Resource root = resolver.lookup(rootPath);
             assertNotNull(root);
             assertTrue(root.isCollection());
             assertTrue(root.canRead(user));
             assertFalse(root.canCreate(user));
 
-            Resource junit = resolver.lookup(rootPath + c.getPath());
+            Resource junit = resolver.lookup(rootPath.append(c.getParsedPath()));
             assertNotNull(junit);
             assertTrue(junit.isCollection());
 
-            String pathTest = c.getPath() + "/dav";
-            Container cTest = ContainerManager.ensureContainer(pathTest);
+            Path pathTest = c.getParsedPath().append("dav");
+            Container cTest = ContainerManager.ensureContainer(pathTest.toString());
 
             MutableSecurityPolicy policyNone = new MutableSecurityPolicy(cTest);
             policyNone.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
             policyNone.addRoleAssignment(user, ReaderRole.class);
             SecurityManager.savePolicy(policyNone);
 
-            Resource rTest = resolver.lookup(rootPath + pathTest);
+            Resource rTest = resolver.lookup(rootPath.append(pathTest));
             assertNotNull(rTest);
             assertTrue(rTest.canRead(user));
             assertFalse(rTest.canWrite(user));
@@ -656,19 +683,19 @@ public class WebdavResolverImpl implements WebdavResolver
             MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
             SecurityManager.savePolicy(policyRead);
-            rTest = resolver.lookup(rootPath + pathTest);
+            rTest = resolver.lookup(rootPath.append(pathTest));
             assertTrue(rTest.canRead(guest));
 
             ContainerManager.rename(cTest, "webdav");
-            String pathNew = c.getPath() + "/webdav";
-            assertFalse(resolver.lookup(rootPath + pathTest).exists());
-            assertTrue(resolver.lookup(rootPath + pathNew).exists());
+            Path pathNew = c.getParsedPath().append("webdav");
+            assertFalse(resolver.lookup(rootPath.append(pathTest)).exists());
+            assertTrue(resolver.lookup(rootPath.append(pathNew)).exists());
 
             names = resolver.lookup(junit.getPath()).listNames();
             assertTrue(names.contains("webdav"));
             assertFalse(names.contains("dav"));
 
-            Resource rNotFound = resolver.lookup(rootPath + "/NotFound/" + GUID.makeHash());
+            Resource rNotFound = resolver.lookup(rootPath.append("NotFound").append(GUID.makeHash()));
             assertFalse(rNotFound.exists());
         }
 

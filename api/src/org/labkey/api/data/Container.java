@@ -36,6 +36,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 
 import java.io.Serializable;
@@ -144,6 +145,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public String getPath()
     {
         return _path;
+    }
+
+
+    public Path getParsedPath()
+    {
+        return Path.parse(_path);
     }
 
 

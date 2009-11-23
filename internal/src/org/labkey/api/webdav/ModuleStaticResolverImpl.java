@@ -20,12 +20,12 @@ import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.services.ServiceRegistry;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Category;
-import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.ServletContext;
 import java.util.*;
@@ -71,7 +71,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     // DavController has a per request cache, but we want to agressively cache static file resources
     StaticResource _root = null;
-    Map<String, Resource> _files = Collections.synchronizedMap(new HashMap<String,Resource>());
+    Map<Path, Resource> _files = Collections.synchronizedMap(new HashMap<Path,Resource>());
 
 
     public boolean requiresLogin()
@@ -79,20 +79,22 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         return false;
     }
 
-    public String getRootPath()
+    public Path getRootPath()
     {
-        return "/";
+        return Path.emptyPath;
     }
+
+    final static Path pathIndexHtml = new Path("index.html");
     
     public Resource welcome()
     {
-        return lookup("/index.html");
+        return lookup(pathIndexHtml);
     }
 
-    public Resource lookup(String path)
+    
+    public Resource lookup(Path path)
     {
-        String normalized = FileUtil.normalize(path);
-		boolean isRoot = normalized.equals("/");
+        Path normalized = path.normalize();
 
         Resource r = _files.get(normalized);
         if (r == null)
@@ -110,25 +112,19 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                     _files.put(normalized,r);
             }
         }
-
-        boolean directory = path.endsWith("/") || path.endsWith("/.") || path.endsWith("/..");
-        if (isRoot || !directory || !r.isFile())
-            return r;
-        return null;
+        return r;
     }
 
 
-    private Resource resolve(String path)
+    private Resource resolve(Path path)
     {
         if (!initialized.get())
             init();
 
-        ArrayList<String> parts = FileUtil.normalizeSplit(path);
-
         Resource r = _root;
-        while (!parts.isEmpty())
+        for (int i=0 ; i<path.size() ; i++)
         {
-            String p = parts.remove(0);
+            String p = path.get(i);
             if (null == p || p.equalsIgnoreCase("META-INF") || p.equalsIgnoreCase("WEB-INF") || p.startsWith("."))
                 return null;
             r = r.find(p);
@@ -136,7 +132,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 return null;
             if (r instanceof SymbolicLink)
             {
-                String remainder = StringUtils.join(parts,"/");
+                Path remainder = path.subpath(i+1,path.getNameCount());
                 r = ((SymbolicLink)r).lookup(remainder);
                 break;
             }
@@ -184,7 +180,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
             roots.add(ModuleLoader.getInstance().getWebappDir());
 
-            _root = new StaticResource("/", roots, new SymbolicLink(WebdavResolverImpl.get().getRootPath(),WebdavResolverImpl.get()));
+            _root = new StaticResource(Path.emptyPath, roots, new SymbolicLink(WebdavResolverImpl.get().getRootPath(),WebdavResolverImpl.get()));
             initialized.set(true);
         }
     }
@@ -204,7 +200,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     private abstract class _PublicResource extends AbstractResource
     {
-        protected _PublicResource(String path)
+        protected _PublicResource(Path path)
         {
             super(path);
         }
@@ -252,7 +248,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         Resource[] _additional; // for _webdav
         AtomicReference<Map<String, Resource>> _children = new AtomicReference<Map<String, Resource>>();
 
-        StaticResource(String path, List<File> files, Resource... addl)
+        StaticResource(Path path, List<File> files, Resource... addl)
         {
             super(path);
             this._files = files;
@@ -292,7 +288,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 children = new CaseInsensitiveTreeMap<Resource>();
                 for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
                 {
-                    String path = c(getPath(), e.getKey());
+                    Path path = getPath().append(e.getKey());
                     children.put(e.getKey(), new StaticResource(path, e.getValue()));
                 }
                 for (Resource r : _additional)
@@ -326,7 +322,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                     // might not be case sensitive, but this is just devmode
                     File f = new File(dir,name);
                     if (f.exists())
-                        return new StaticResource(c(getPath(),f.getName()), new ArrayList<File>(Collections.singletonList(f)));
+                        return new StaticResource(getPath().append(f.getName()), new ArrayList<File>(Collections.singletonList(f)));
                 }
             }
             return r;
@@ -384,7 +380,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         URL _url;
         boolean _file;
 
-        ServletResource(String path)
+        ServletResource(Path path)
         {
             super(path);
             _url = getResource(path);
@@ -454,33 +450,34 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         final WebdavResolver _resolver;
         final Resource _inner;
 
-        SymbolicLink(String path, WebdavResolver r)
+        SymbolicLink(Path path, WebdavResolver r)
         {
-            this(path,r,"/");
+            this(path,r,Path.emptyPath);
         }
         
-        SymbolicLink(String path, WebdavResolver r, String relativePath)
+        SymbolicLink(Path path, WebdavResolver r, Path relativePath)
         {
             super(path);
             _resolver = r;
             _inner = r.lookup(relativePath);
         }
 
-        SymbolicLink(String path, WebdavResolver r, Resource inner)
+        SymbolicLink(Path path, WebdavResolver r, Resource inner)
         {
             super(path);
             _resolver = r;
             _inner = inner;
         }
 
-        public Resource lookup(String relpath)
+        public Resource lookup(Path relpath)
         {
-            return _resolver.lookup(c(getPath(),relpath));
+            Path full = getPath().resolve(relpath);
+            return _resolver.lookup(full);
         }
 
         public Resource find(String name)
         {
-            return lookup(name);
+            return lookup(new Path(name));
         }
 
         public boolean exists()
@@ -496,14 +493,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
 
     // should get the WebdavServlet context somehow
-    URL getResource(String path)
+    URL getResource(Path path)
     {
         ServletContext c = ViewServlet.getViewServletContext();
         if (c != null)
         {
             try
             {
-                return c.getResource(path);
+                return c.getResource(path.toString());
             }
             catch (MalformedURLException x)
             {
@@ -511,11 +508,5 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             }
         }
         return null;
-    }
-
-
-    static String c(String root, String... parts)
-    {
-        return WebdavResolverImpl.c(root, parts);
     }
 }

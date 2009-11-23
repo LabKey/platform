@@ -85,7 +85,7 @@ public class PageFlowUtil
 
     private static Logger _log = Logger.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
-
+                                                                           
     private static final Object[] NO_ARGS = new Object[ 0 ];
 
     private static final Pattern urlPattern = Pattern.compile(".*((http|https|ftp|mailto)://\\S+).*");

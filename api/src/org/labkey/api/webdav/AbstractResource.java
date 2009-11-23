@@ -25,6 +25,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -46,63 +47,54 @@ import java.util.Map;
 public abstract class AbstractResource implements Resource
 {
     protected long _ts = System.currentTimeMillis();                   
-    private String _path;
+    private Path _path;
     protected SecurityPolicy _policy;
     protected String _etag = null;
     protected Map<String,Object> _properties = null;
 
-    protected AbstractResource(String path)
+    protected AbstractResource(Path path)
     {
         this._path = path;
-        assert _path.equals("/") || !_path.endsWith("/");
     }
 
-    protected AbstractResource(String folder, String name)
+    protected AbstractResource(Path folder, String name)
     {
-        this(c(folder,name));
+        this(folder.append(name));
     }
 
     protected AbstractResource(Resource folder, String name)
     {
-        this(c(folder.getPath(),name));
+        this(folder.getPath().append(name));
     }
 
-    public String getPath()
+    public Path getPath()
     {
         return _path;
     }
 
-    protected void setPath(String path)
+    protected void setPath(Path path)
     {
         _path = path;
     }
 
+
     public String getName()
     {
-        String p = _path;
-        if (p.endsWith("/"))
-            p = _path.substring(0,p.length()-1);
-        int i = p.lastIndexOf("/");
-        return p.substring(i+1);
+        return _path.getName();
     }
 
 
-    public String getParentPath()
+    public String getDocumentId()
     {
-        String p = _path;
-        if (p.endsWith("/"))
-            p = _path.substring(0,p.length()-1);
-        int i = p.lastIndexOf("/");
-        return i<0 ? "" : p.substring(0,i+1);
+        return "dav:" + getPath().toString();
     }
-
+    
 
     public Resource parent()
     {
-        if ("/".equals(_path))
+        if (_path.getNameCount()==0)
             return null;
-        String parent = _path.endsWith("/") ? _path.substring(0, _path.length()-1) : _path;
-        parent = parent.substring(0,parent.lastIndexOf("/")+1);
+        Path parent = _path.getParent();
         return WebdavService.getResolver().lookup(parent);
     }
 
@@ -117,6 +109,7 @@ public abstract class AbstractResource implements Resource
     {
         return null;
     }
+
 
     public long getLastModified()
     {
@@ -142,7 +135,7 @@ public abstract class AbstractResource implements Resource
     {
         if (isCollection())
             return "text/html";
-        return PageFlowUtil.getContentTypeFor(_path);
+        return PageFlowUtil.getContentTypeFor(getName());
     }
 
 
@@ -160,7 +153,7 @@ public abstract class AbstractResource implements Resource
     @NotNull
     public String getLocalHref(ViewContext context)
     {                                             
-        String href = c(context.getContextPath(), PageFlowUtil.encodePath(_path));
+        String href = c(context.getContextPath(), _path.encode());
         if (isCollection() && !href.endsWith("/"))
             href += "/";
         return href;
@@ -169,7 +162,7 @@ public abstract class AbstractResource implements Resource
 
     public String getExecuteHref(ViewContext context)
     {
-        return c(AppProps.getInstance().getContextPath(), getPath());
+        return c(AppProps.getInstance().getContextPath(), getPath().toString());
     }
 
 
