@@ -28,10 +28,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.FileStream;
+import org.labkey.api.util.*;
 import org.labkey.api.webdav.*;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.view.ViewContext;
@@ -191,7 +188,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             _c = folder._c;
             _policy = _c.getPolicy();
             _wiki = WikiManager.getWiki(_c, new HString(name));
-            _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);               
+            _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
         }
 
 
@@ -338,7 +335,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         WikiPageResource(Container c, String name, Map<String,Object> m)
         {
-            super(name);
+            super(new Path("wiki",c.getId(),name));
 
             _c = c;
             _name = name;
@@ -353,6 +350,12 @@ class WikiWebdavProvider implements WebdavService.Provider
             _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
         }
 
+
+        public String getDocumentId()
+        {
+            return "wiki:" + _c.getId() + "/" + _name;
+        }
+        
 
         WikiVersion getWikiVersion()
         {

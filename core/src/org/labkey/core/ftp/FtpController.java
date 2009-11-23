@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.*;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -153,7 +154,7 @@ public class FtpController extends SpringActionController
         }
 
 
-        public WebFolderInfo getFolderInfo(int userid, String path)
+        public WebFolderInfo getFolderInfo(int userid, Path path)
         {
             User user = UserManager.getUser(userid);
             if (user == null)
@@ -161,17 +162,17 @@ public class FtpController extends SpringActionController
             if (path == null)
                 return null;
 
-            Resource resource = _resolver.lookup(StringUtils.stripEnd(_resolver.getRootPath(),"/") + path);
+            Resource resource = _resolver.lookup(_resolver.getRootPath().resolve(path));
             if (!(resource instanceof WebdavResolver.WebFolder))
                 return null;
 
             WebFolderInfo info = new WebFolderInfo();
             info.url = resource.getHref(_context);
             info.name = resource.getName();
-            String resourcePath = resource.getPath();
+            Path resourcePath = resource.getPath();
             assert resourcePath.startsWith(_resolver.getRootPath());
-            resourcePath = resourcePath.substring(_resolver.getRootPath().length());
-            info.path = resourcePath.startsWith("/") ? resourcePath : "/" + resourcePath;
+            resourcePath = _resolver.getRootPath().relativize(resourcePath);
+            info.path = resourcePath;
 
             info.created = resource.getCreated();
             info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());

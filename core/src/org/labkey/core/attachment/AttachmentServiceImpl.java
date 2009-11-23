@@ -742,7 +742,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public Resource getAttachmentResource(String path, AttachmentParent parent)
+    public Resource getAttachmentResource(Path path, AttachmentParent parent)
     {
         // NOTE parent does not supply ACL, but should?
         // acl = parent.getAcl()
@@ -1460,7 +1460,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         AttachmentParent _parent;
 
-        AttachmentCollection(String path, AttachmentParent parent, SecurityPolicy policy)
+        AttachmentCollection(Path path, AttachmentParent parent, SecurityPolicy policy)
         {
             super(path);
             _parent = parent;

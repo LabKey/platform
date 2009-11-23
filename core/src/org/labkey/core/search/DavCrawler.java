@@ -1,6 +1,7 @@
 package org.labkey.core.search;
 
 import org.labkey.api.search.SearchService;
+import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.webdav.Resource;
@@ -18,11 +19,11 @@ public class DavCrawler
         WebdavResolver res = WebdavService.getResolver();
         if ("/".equals(path))
             path = "/" + WebdavService.getServletPath();
-        return start(ss,res,path);
+        return start(ss,res,Path.parse(path));
     }
 
 
-    public static Runnable start(final SearchService ss, final WebdavResolver res, final String path)
+    public static Runnable start(final SearchService ss, final WebdavResolver res, final Path path)
     {
         return new Runnable()
         {
@@ -34,7 +35,7 @@ public class DavCrawler
     }
 
 
-    static void crawl(SearchService ss, WebdavResolver res, String path)
+    static void crawl(SearchService ss, WebdavResolver res, Path path)
     {
         Resource r = res.lookup(path);
         if (null == r)

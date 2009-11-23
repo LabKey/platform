@@ -27,6 +27,7 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.api.webdav.Resource" %>
+<%@ page import="org.labkey.api.util.Path" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -35,7 +36,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
     Resource resource = listpage.resource;
-    String path = listpage.getDirectory();
+    Path path = listpage.getDirectory();
     ViewContext context = HttpView.currentContext();
     AppProps app = AppProps.getInstance();
     User user = context.getUser();
@@ -238,7 +239,7 @@ Ext.onReady(function()
         items:[fileBrowser]
     });
     
-    fileBrowser.start(<%=PageFlowUtil.jsString(path)%>);
+    fileBrowser.start(<%=PageFlowUtil.jsString(path.toString())%>);
 });
 </script>
 <%

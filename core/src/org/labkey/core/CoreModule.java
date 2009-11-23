@@ -27,11 +27,13 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
@@ -53,8 +55,6 @@ import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.labkey.core.search.AbstractSearchService;
-import org.labkey.core.search.SolrSearchServiceImpl;
-import org.labkey.core.search.DavCrawler;
 import org.labkey.core.search.LuceneSearchServiceImpl;
 
 import javax.servlet.ServletException;
@@ -168,7 +168,7 @@ public class CoreModule extends SpringModule
         {
             public Resource resolve(@NotNull String path)
             {
-                return WebdavService.getResolver().lookup(path);
+                return WebdavService.getResolver().lookup(Path.parse(path));
             }
         });
     }
@@ -332,7 +332,7 @@ public class CoreModule extends SpringModule
         {
             return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
-        else if (c != null && c.hasPermission(user, ACL.PERM_ADMIN))
+        else if (c != null && c.hasPermission(user, AdminPermission.class))
         {
             return PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(c);
         }
@@ -378,7 +378,8 @@ public class CoreModule extends SpringModule
             MemTracker.TestCase.class,
             SqlDialect.SqlDialectTestCase.class,
             HString.TestCase.class,
-            StringExpressionFactory.TestCase.class
+            StringExpressionFactory.TestCase.class,
+            Path.TestCase.class
         ));
     }
 

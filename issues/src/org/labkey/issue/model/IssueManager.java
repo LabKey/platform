@@ -785,7 +785,7 @@ public class IssueManager
 
         IssueResource(Issue issue)
         {
-            super(null==issue?"NOTFOUND":"issue:" + String.valueOf(issue.getIssueId()));
+            super(new Path(null==issue ? "NOTFOUND" : "issue:" + String.valueOf(issue.getIssueId())));
             if (null == issue)
                 return;
             Map<String,Object> m = _issueFactory.toMap(issue, null);
@@ -806,12 +806,19 @@ public class IssueManager
 
         IssueResource(Map<String,Object> m, List<Issue.Comment> comments)
         {
-            super("issue:"+String.valueOf(m.get("issueid")));
+            super(new Path("issue:"+String.valueOf(m.get("issueid"))));
             _containerId = (String)m.get("container");
             _properties = m;
             _comments = comments;
             _properties.put(SearchService.PROPERTY.category.toString(), searchCategory.getName());
         }
+
+
+        public String getDocumentId()
+        {
+            return "issue:"+String.valueOf(_properties.get("issueid"));
+        }
+
 
         public boolean exists()
         {

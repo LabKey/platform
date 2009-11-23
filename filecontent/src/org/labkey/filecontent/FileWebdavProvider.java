@@ -16,6 +16,7 @@
 
 package org.labkey.filecontent;
 
+import org.labkey.api.util.Path;
 import org.labkey.api.webdav.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentService;
@@ -78,7 +79,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         HashMap<String,AttachmentDirectory> _map = new HashMap<String, AttachmentDirectory>();
         ArrayList<String> _names = new ArrayList<String>();
         
-        _FilesetsFolder(Container c, String folder)
+        _FilesetsFolder(Container c, Path folder)
         {
             super(folder, FILEMODULE_LINK);
             _c = c;
@@ -126,7 +127,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         public Resource find(String name)
         {
             AttachmentDirectory dir = _map.get(name);
-            String path = c(getPath(),name);
+            Path path = getPath().append(name);
             Resource r;
             r = AttachmentService.get().getAttachmentResource(path, dir);
             return r;

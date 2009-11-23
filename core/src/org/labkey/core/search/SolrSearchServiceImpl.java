@@ -33,7 +33,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 
     public String search(String queryString)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void clearIndex()
@@ -48,6 +48,5 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 
     protected void shutDown()
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 }
