@@ -478,7 +478,7 @@ public class DavController extends SpringActionController
         public WebdavStatus doMethod() throws DavException, IOException
         {
             Resource resource = null;
-            if ("GET".equals(method) && "/".equals(getResourcePath()))
+            if ("GET".equals(method) && getResourcePath().size() == 0)
                 resource = getResolver().welcome();
             if (null == resource)
                 resource = resolvePath();
