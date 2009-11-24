@@ -125,7 +125,7 @@ public class IssueManager
         }
         saveComments(user, issue);
 
-        indexIssue(issue);
+        indexIssue(null, issue);
     }
 
 
@@ -600,7 +600,7 @@ public class IssueManager
     }
 
 
-    public static void indexIssues(Container c, Date modifiedSince)
+    public static void indexIssues(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
@@ -623,12 +623,12 @@ public class IssueManager
                 ids[count++] = id;
                 if (count == ids.length)
                 {
-                    ss.addRunnable(new IndexGroup(ids,count), SearchService.PRIORITY.group);
+                    task.addRunnable(new IndexGroup(task, ids, count), SearchService.PRIORITY.group);
                     count = 0;
                     ids = new int[ids.length];
                 }
             }
-            ss.addRunnable(new IndexGroup(ids,count), SearchService.PRIORITY.group);
+            task.addRunnable(new IndexGroup(task, ids, count), SearchService.PRIORITY.group);
         }
         catch (SQLException x)
         {
@@ -644,19 +644,23 @@ public class IssueManager
     private static class IndexGroup implements Runnable
     {
         int[] ids; int len;
-        IndexGroup(int[] ids, int len)
+        SearchService.IndexTask _task;
+        
+        IndexGroup(SearchService.IndexTask task, int[] ids, int len)
         {
             this.ids = ids; this.len = len;
+            _task = task;
         }
 
         public void run()
         {
-            indexIssues(ids, len);
+            indexIssues(_task, ids, len);
         }
     }
 
+
     /* CONSIDER: some sort of generator interface instead */
-    public static void indexIssues(int[] ids, int count)
+    public static void indexIssues(SearchService.IndexTask task, int[] ids, int count)
     {
         if (count == 0) return;
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
@@ -702,14 +706,16 @@ public class IssueManager
                 int id = rs.getInt(1);
                 if (id != currentIssueId)
                 {
-                    queueIssue(ss, m, comments);
+                    queueIssue(task, ss, m, comments);
                     comments = new ArrayList<Issue.Comment>();
                     m = factory.getRowMap(rs);
                     currentIssueId = id;
                 }
                 comments.add(new Issue.Comment(rs.getString("comment")));
             }
-            queueIssue(ss, m, comments);
+            queueIssue(task, ss, m, comments);
+            if (Thread.interrupted())
+                return;
         }
         catch (SQLException x)
         {
@@ -722,16 +728,20 @@ public class IssueManager
     }
 
 
-    static void indexIssue(Issue issue)
+    static void indexIssue(SearchService.IndexTask task, Issue issue)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null == ss)
-            return;
-        ss.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
+        if (task == null)
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null == ss)
+                return;
+            task = ss.defaultTask();
+        }
+        task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
     }
 
 
-    static void queueIssue(SearchService ss, Map<String,Object> m, ArrayList<Issue.Comment> comments)
+    static void queueIssue(SearchService.IndexTask task, SearchService ss, Map<String,Object> m, ArrayList<Issue.Comment> comments)
     {
         if (null == ss || null == m)
             return;
@@ -740,7 +750,7 @@ public class IssueManager
         m.put("title", id + " : " + title);
         m.put("comment",null);
         m.put("_row",null);
-        ss.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
+        task.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
     }
 
 

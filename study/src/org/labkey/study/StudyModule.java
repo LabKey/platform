@@ -426,8 +426,8 @@ public class StudyModule extends SpringModule
 
     
     @Override
-    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
+    public void enumerateDocuments(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
-        StudyManager.indexDatasets(c, modifiedSince);
+        StudyManager.indexDatasets(task, c, modifiedSince);
     }
 }

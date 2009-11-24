@@ -7,7 +7,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.ActionResource;
@@ -15,7 +14,7 @@ import org.labkey.api.webdav.ActionResource;
 import javax.servlet.ServletContextEvent;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,45 +26,137 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 {
     final static Category _log = Category.getInstance(SearchService.class);
 
-    // CONSIDER: don't allow duplicates in queue
-    PriorityBlockingQueue<Item> _submitQueue = new PriorityBlockingQueue<Item>(1000, new Comparator<Item>()
-    {
-        public int compare(Item o1, Item o2)
-        {
-            return o1._pri.compareTo(o2._pri);
-        }
-    });
+    // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
+    PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
 
-    BlockingQueue<Item> _indexQueue = new ArrayBlockingQueue<Item>(Math.min(4,Runtime.getRuntime().availableProcessors()));
+    // Resources go here for preprocessing (this can be multi-threaded)
+    PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
+
+    // And a single threaded queue for actually writing to the index (can this be multi-threaded?)
+    BlockingQueue<Item> _indexQueue = new ArrayBlockingQueue<Item>(Math.min(100,Runtime.getRuntime().availableProcessors()));
+
+    final List<IndexTask> _tasks = Collections.synchronizedList(new ArrayList<IndexTask>());
+
+    final _IndexTask _defaultTask = new _IndexTask("default");
 
     enum OPERATION
     {
         add, delete
     }
 
+    static final Comparator<Item> itemCompare = new Comparator<Item>()
+    {
+        public int compare(Item o1, Item o2)
+        {
+            return o1._pri.compareTo(o2._pri);
+        }
+    };
 
+
+    public IndexTask createTask(String description)
+    {
+        _IndexTask task = new _IndexTask(description);
+        addTask(task);
+        return task;
+    }
+    
+
+    public IndexTask defaultTask()
+    {
+        return _defaultTask;
+    }
+    
+
+    class _IndexTask extends IndexTask
+    {
+        _IndexTask(String description)
+        {
+            super(description);
+        }
+
+
+        public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
+        {
+            Item i = new Item(this, r, pri);
+            this.addItem(i);
+            queueItem(i);
+        }
+        
+
+        public void addResource(@NotNull String identifier, PRIORITY pri)
+        {
+            addResource(identifier, (Resource)null, pri);
+        }
+
+
+        public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
+        {
+            addResource(new ActionResource(category, url), pri);
+        }
+
+
+        public void addResource(String identifier, Resource r, PRIORITY pri)
+        {
+            Item i = new Item(this, OPERATION.add, identifier, r, pri);
+            this.addItem(i);
+            queueItem(i);
+        }
+
+
+        public void addResource(@NotNull Resource r, PRIORITY pri)
+        {
+            Item i = new Item(this, OPERATION.add, r.getName(), r, pri);
+            addItem(i);
+            queueItem(i);
+        }
+
+
+        @Override
+        public void completeItem(Object item, boolean success)
+        {
+            super.completeItem(item, success);
+        }
+
+        
+        protected void checkDone()
+        {
+            if (_isReady && _subtasks.size() == 0)
+            {
+                if (_tasks.remove(this))
+                {
+                    _complete = System.currentTimeMillis();
+                    // onComplete()
+                }
+            }
+        }
+    }
+
+    
     class Item
     {
         OPERATION _op;
         String _id;
+        IndexTask _task;
         Resource _res;
         Runnable _run;
         PRIORITY _pri;
         long _start = 0;
         Map<?,?> _preprocessMap = null;
         
-        Item(OPERATION op, String id, Resource r, PRIORITY pri)
+        Item(IndexTask task, OPERATION op, String id, Resource r, PRIORITY pri)
         {
             if (null != r)
                 _start = System.currentTimeMillis();
             _op = op; _id = id; _res = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
+            _task = task;
         }
 
-        Item(Runnable r, PRIORITY pri)
+        Item(IndexTask task, Runnable r, PRIORITY pri)
         {
             _run = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
+            _task = task;
         }
 
         Resource getResource()
@@ -77,55 +168,65 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             return _res;
         }
+
+        void complete(boolean success)
+        {
+            if (null != _task)
+            {
+                ((_IndexTask)_task).completeItem(this, success);
+            }
+        }
     }
 
 
     public AbstractSearchService()
     {
-        startThread();
+    }
+
+
+    public void start()
+    {
+        startThreads();
     }
 
 
     private void queueItem(Item i)
     {
         assert MemTracker.put(i);
+
         _log.debug("_submitQueue.put(" + i._id + ")");
-        _submitQueue.put(i);
+        if (null != i._run)
+        {
+            _runQueue.put(i);
+        }
+        else
+        {
+            _itemQueue.put(i);
+        }
     }
 
-    
-    public void addRunnable(Runnable r, PRIORITY pri)
+
+    public void addTask(IndexTask task)
     {
-        queueItem(new Item(r,pri));
+        _tasks.add(task);
     }
 
 
-    public void addResource(String identifier, PRIORITY pri)
+    public List<IndexTask> getTasks()
     {
-        addResource(identifier, (Resource)null, pri);
+        IndexTask[] arr = _tasks.toArray(new IndexTask[0]);
+        return Arrays.asList(arr);
     }
 
-
-    public void addResource(SearchCategory category, ActionURL url, PRIORITY pri)
-    {
-        addResource(new ActionResource(category, url), pri);
-    }
-
-
-    public void addResource(String identifier, Resource r, PRIORITY pri)
-    {
-        queueItem(new Item(OPERATION.add, identifier, r, pri));
-    }
-
-    public void addResource(Resource r, PRIORITY pri)
-    {
-        queueItem(new Item(OPERATION.add, r.getName(), r, pri));
-    }
 
     public void deleteResource(String identifier, PRIORITY pri)
     {
-        Item i = new Item(OPERATION.delete, identifier, null, pri);
-        _submitQueue.put(i);
+        Item i = new Item(null, OPERATION.delete, identifier, null, pri);
+        // don't need to preprocess so try to put in the indexQueue
+        // if it's full then put in the itemQueue
+        if (_indexQueue.offer(i))
+            return;
+        _itemQueue.put(i);
     }
 
 
@@ -152,54 +253,107 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    void startThread()
+    protected int getCountPreprocessorThreads()
+    {
+        return 2;
+    }
+
+    protected int getCountIndexingThreads()
+    {
+        return 2;
+    }
+
+
+    void startThreads()
     {
         if (_shuttingDown)
             return;
-        _indexingThread = new Thread(indexRunnable, "SearchService:index");
-        _indexingThread.setDaemon(true);
-        _indexingThread.start();
 
-        for (int i=0 ; i<1 ; i++)
+        for (int i=0 ; i<getCountIndexingThreads() ; i++)
+        {
+            Thread t = new Thread(indexRunnable, "SearchService:index");
+            t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY+1);
+            t.start();
+            _threads.add(t);
+        }
+
+        for (int i=0 ; i<getCountPreprocessorThreads() ; i++)
         {
             Thread t = new Thread(preprocessRunnable, "SearchService:preprocess " + i);
             t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY+1);
             t.start();
-            _preprocessingThreads.add(t);
+            _threads.add(t);
         }
+
+        {
+            Thread t = new Thread(runRunnable, "SearchService:runner");
+            t.setDaemon(true);
+            t.start();
+            _threads.add(t);
+        }
+
         ContextListener.addShutdownListener(this);
     }
 
 
     boolean _shuttingDown = false;
-    Thread _indexingThread = null;
-    ArrayList<Thread> _preprocessingThreads = new ArrayList<Thread>(10);
+    ArrayList<Thread> _threads = new ArrayList<Thread>(10);
 
 
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
         _shuttingDown = true;
 
-        for (Thread t : _preprocessingThreads)
+        for (Thread t : _threads)
             t.interrupt();
-        if (null != _indexingThread)
-            _indexingThread.interrupt();
 
         try
         {
-            if (null != _indexingThread)
-                _indexingThread.join(2000);
-            for (Thread t : _preprocessingThreads)
-                t.join(100);
+            for (Thread t : _threads)
+                t.join(1000);
         }
         catch (InterruptedException e) {}
         shutDown();
     }
 
 
-    // Runnables can probably queue items faster than we can process them, so we only want to process
-    // one runnable at a time.  Do you have a better idea?
-    AtomicReference<Runnable> _running = new AtomicReference<Runnable>();
+    Runnable runRunnable = new Runnable()
+    {
+        public void run()
+        {
+            while (!_shuttingDown)
+            {
+                Item i = null;
+                boolean success = false;
+                try
+                {
+                    i = _runQueue.take();
+                    while (!_shuttingDown && _itemQueue.size() > 1000)
+                    {
+                        try {Thread.sleep(100);}catch(InterruptedException x){}
+                    }
+                    i._run.run();
+                }
+                catch (InterruptedException x)
+                {
+                }
+                catch (Exception x)
+                {
+                    Category.getInstance(SearchService.class).error("Error running " + (null != i ? i._id : ""), x);
+                }
+                finally
+                {
+                    if (null != i)
+                    {
+                        i.complete(success);
+                    }
+                }
+            }
+        }
+    };
+
 
     Runnable preprocessRunnable = new Runnable()
     {
@@ -208,43 +362,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             while (!_shuttingDown)
             {
                 Item i = null;
+                boolean success = false;
                 try
                 {
-                    i = _submitQueue.take();
-                    if (null != i._run)
+                    i = _itemQueue.take();
+                    Resource r = i.getResource();
+                    if (null == r || !r.exists())
+                        continue;
+                    assert MemTracker.put(r);
+                    i._preprocessMap = preprocess(i._id, i._res);
+                    if (null == i._preprocessMap)
                     {
-                        if (_running.compareAndSet(null, i._run))
-                        {
-                            try
-                            {
-                                i._run.run();
-                            }
-                            finally
-                            {
-                                _running.compareAndSet(i._run, null);
-                            }
-                        }
-                        else
-                        {
-                            Thread.sleep(10);
-                            queueItem(i);   // toss it back
-                        }
+                        _log.debug("skipping " + i._id);
+                        continue;
                     }
-                    else
-                    {
-                        Resource r = i.getResource();
-                        if (null == r || !r.exists())
-                            continue;
-                        assert MemTracker.put(r);
-                        i._preprocessMap = preprocess(i._id, i._res);
-                        if (null == i._preprocessMap)
-                        {
-                            _log.debug("skipping " + i._id);
-                            continue;
-                        }
-                        _log.debug("_indexQueue.put(" + i._id + ")");
-                        _indexQueue.put(i);
-                    }
+                    _log.debug("_indexQueue.put(" + i._id + ")");
+                    _indexQueue.put(i);
+                    success = true;
                 }
                 catch (InterruptedException x)
                 {
@@ -252,6 +386,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 catch (Exception x)
                 {
                     Category.getInstance(SearchService.class).error("Error processing " + (null != i ? i._id : ""), x);
+                }
+                finally
+                {
+                    if (!success)
+                    {
+                        i.complete(success);
+                    }
                 }
             }
         }
@@ -267,6 +408,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             while (!_shuttingDown)
             {
                 Item i = null;
+                boolean success = false;
                 try
                 {
                     i = _indexQueue.poll(1, TimeUnit.SECONDS);
@@ -288,6 +430,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     index(i._id, i._res, i._preprocessMap);
                     countIndexedSinceCommit++;
                     i._res.setLastIndexed(i._start);
+                    success = true;
                 }
                 catch (InterruptedException x)
                 {
@@ -295,6 +438,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 catch (Exception x)
                 {
                     Category.getInstance(SearchService.class).error("Error indexing " + (null != i ? i._id : ""), x);
+                }
+                finally
+                {
+                    if (null != i)
+                        i.complete(success);
                 }
             }
             if (countIndexedSinceCommit > 0)

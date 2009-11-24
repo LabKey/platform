@@ -5,6 +5,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.webdav.Resource;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by IntelliJ IDEA.
@@ -14,28 +15,28 @@ import org.labkey.api.webdav.Resource;
  */
 public class DavCrawler
 {
-    public static Runnable start(SearchService ss, String path)
+    public static Runnable start(@NotNull SearchService.IndexTask task, String path)
     {
         WebdavResolver res = WebdavService.getResolver();
         if ("/".equals(path))
             path = "/" + WebdavService.getServletPath();
-        return start(ss,res,Path.parse(path));
+        return start(task,res,Path.parse(path));
     }
 
 
-    public static Runnable start(final SearchService ss, final WebdavResolver res, final Path path)
+    public static Runnable start(@NotNull final SearchService.IndexTask task, final WebdavResolver res, final Path path)
     {
         return new Runnable()
         {
             public void run()
             {
-                crawl(ss, res, path);
+                crawl(task, res, path);
             }
         };
     }
 
 
-    static void crawl(SearchService ss, WebdavResolver res, Path path)
+    static void crawl(@NotNull SearchService.IndexTask task, WebdavResolver res, Path path)
     {
         Resource r = res.lookup(path);
         if (null == r)
@@ -43,16 +44,16 @@ public class DavCrawler
 
         if (r.isFile())
         {
-            ss.addResource("dav:" + path, SearchService.PRIORITY.background);
+            task.addResource("dav:" + path, SearchService.PRIORITY.background);
         }
         else if (r.isCollection())
         {
             for (Resource child : r.list())
             {
                 if (child.isFile())
-                    ss.addResource("dav:" + child.getPath(), SearchService.PRIORITY.background);
+                    task.addResource("dav:" + child.getPath(), SearchService.PRIORITY.background);
                 else if (!skipContainer(child.getName()))
-                    ss.addRunnable(start(ss, res, child.getPath()), SearchService.PRIORITY.crawl);
+                    task.addRunnable(start(task, res, child.getPath()), SearchService.PRIORITY.crawl);
             }
         }
     }

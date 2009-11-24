@@ -111,6 +111,7 @@ public class WikiManager
         }
     }
 
+
     private static void buildDescendentList(List<Wiki> list, Wiki page, boolean deep) throws SQLException
     {
         List<Wiki> children = getWikisByParentId(page.getContainerId(), page.getRowId());
@@ -741,11 +742,11 @@ public class WikiManager
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         Container c = ContainerManager.getForId(page.getContainerId());
         if (null != ss && null != c)
-            indexWikiContainerFast(ss, c, null, page.getName().getSource());
+            indexWikiContainerFast(ss.defaultTask(), c, null, page.getName().getSource());
     }
 
 
-    public static void indexWikis(Container c, final Date modifiedSince)
+    public static void indexWikis(@NotNull final SearchService.IndexTask task, Container c, final Date modifiedSince)
     {
         final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
@@ -753,7 +754,7 @@ public class WikiManager
 
         if (null != c)
         {
-            indexWikiContainerFast(ss, c, modifiedSince, null);
+            indexWikiContainerFast(task, c, modifiedSince, null);
             return;
         }
 
@@ -767,8 +768,8 @@ public class WikiManager
                 final Container wikiContainer = ContainerManager.getForId(id);
                 if (null != wikiContainer)
                 {
-                    ss.addRunnable(new Runnable(){public void run(){
-                        indexWikiContainerFast(ss, wikiContainer, modifiedSince, null);
+                    task.addRunnable(new Runnable(){public void run(){
+                        indexWikiContainerFast(task, wikiContainer, modifiedSince, null);
                     }}, SearchService.PRIORITY.group);
                 }
             }
@@ -785,7 +786,7 @@ public class WikiManager
     }
 
 
-    public static void indexWikiContainerSlow(@NotNull SearchService ss, @NotNull Container c, @Nullable Date modifiedSince)
+    public static void indexWikiContainerSlow(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         ResultSet rs = null;
         ActionURL page = new ActionURL(WikiController.PageAction.class, null);
@@ -802,7 +803,7 @@ public class WikiManager
                 String id = rs.getString(1);
                 String name = rs.getString(2);
                 ActionURL url = page.clone().setExtraPath(id).replaceParameter("name",name);
-                ss.addResource(searchCategory, url, SearchService.PRIORITY.item);
+                task.addResource(searchCategory, url, SearchService.PRIORITY.item);
             }
         }
         catch (SQLException x)
@@ -817,7 +818,7 @@ public class WikiManager
     }
 
 
-    public static void indexWikiContainerFast(@NotNull SearchService ss, @NotNull Container c, @Nullable Date modifiedSince, String name)
+    public static void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, String name)
     {
         ResultSet rs = null;
         try
@@ -850,8 +851,12 @@ public class WikiManager
                     m.put("body","");
                 if (null == m.get("title"))
                     m.put("title", m.get("name"));
-                WikiWebdavProvider.WikiPageResource r = new WikiWebdavProvider.WikiPageResource(c, (String)m.get("name"), m);
-                ss.addResource(r, SearchService.PRIORITY.item);
+                name = (String)m.get("name");
+                String entityid = (String)m.get("entityid");
+                WikiWebdavProvider.WikiPageResource r = new WikiWebdavProvider.WikiPageResource(c, name, entityid, m);
+                task.addResource(r, SearchService.PRIORITY.item);
+                if (Thread.interrupted())
+                    return;
             }
         }
         catch (SQLException x)

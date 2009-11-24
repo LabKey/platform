@@ -3161,7 +3161,7 @@ public class StudyManager
 
 
 
-    public static void indexDatasets(Container c, Date modifiedSince)
+    public static void indexDatasets(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss) return;
@@ -3185,7 +3185,7 @@ public class StudyManager
                 ActionURL source = details.clone().replaceParameter("id",String.valueOf(id));
                 source.setExtraPath(container);
                 ActionResource r = new ActionResource(searchCategory, view, source);
-                ss.addResource(r, SearchService.PRIORITY.item);
+                task.addResource(r, SearchService.PRIORITY.item);
             }
         }
         catch (SQLException x)

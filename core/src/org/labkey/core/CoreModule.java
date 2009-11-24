@@ -155,8 +155,10 @@ public class CoreModule extends SpringModule
         }
 
 
-        SearchService ss = new LuceneSearchServiceImpl();
+        LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
+        ss.start();
         ServiceRegistry.get().registerService(SearchService.class, ss);
+
         ss.addResourceResolver("action", new AbstractSearchService.ResourceResolver()
         {
             public Resource resolve(@NotNull String str)
@@ -433,7 +435,7 @@ public class CoreModule extends SpringModule
 
 
     @Override
-    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
+    public void enumerateDocuments(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         //ss.addResource(DavCrawler.start(ss,"/"), SearchService.PRIORITY.crawl);
     }

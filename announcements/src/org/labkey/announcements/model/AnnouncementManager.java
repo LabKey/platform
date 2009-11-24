@@ -823,7 +823,7 @@ public class AnnouncementManager
     }
 
 
-    public static void indexMessages(Container c, Date modifiedSince)
+    public static void indexMessages(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
@@ -851,7 +851,9 @@ public class AnnouncementManager
                 String id = rs.getString(1);
                 String name = rs.getString(2);
                 ActionURL url = page.clone().setExtraPath(id).replaceParameter("rowId",name);
-                ss.addResource(searchCategory, url, SearchService.PRIORITY.item);
+                task.addResource(searchCategory, url, SearchService.PRIORITY.item);
+                if (Thread.interrupted())
+                    return;
             }
         }
         catch (SQLException x)

@@ -4,8 +4,10 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,20 +17,42 @@ import java.util.List;
  */
 public class NoopSearchService implements SearchService
 {
-    public void addResource(SearchCategory category, ActionURL url, PRIORITY pri)
+    IndexTask _dummyTask = new IndexTask("Dummy Search Service")
     {
+        public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
+        {
+        }
+
+        public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
+        {
+        }
+
+        public void addResource(@NotNull String identifier, PRIORITY pri)
+        {
+        }
+
+        public void addResource(@NotNull Resource r, PRIORITY pri)
+        {
+        }
+
+        public void setReady()
+        {
+        }
+
+        protected void checkDone()
+        {
+        }
+    };
+
+
+    public IndexTask defaultTask()
+    {
+        return _dummyTask;
     }
 
-    public void addRunnable(Runnable r, PRIORITY pri)
+    public IndexTask createTask(String description)
     {
-    }
-
-    public void addResource(String identifier, PRIORITY pri)
-    {
-    }
-
-    public void addResource(Resource r, PRIORITY pri)
-    {
+        return _dummyTask;
     }
 
     public void deleteResource(String identifier, PRIORITY pri)
@@ -53,13 +77,21 @@ public class NoopSearchService implements SearchService
         return null;
     }
 
-    public void addResource(String category, ActionURL url, PRIORITY pri)
+    public void addResource(@Nullable IndexTask task, @NotNull SearchCategory category, ActionURL url, PRIORITY pri)
     {
-        
     }
 
     public void addSearchCategory(SearchCategory category)
     {
 
+    }
+
+    public List<IndexTask> getTasks()
+    {
+        return Collections.emptyList();
+    }
+
+    public void addTask(IndexTask task)
+    {
     }
 }

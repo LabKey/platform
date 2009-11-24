@@ -306,6 +306,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         WikiVersion _version = null;
 
         Container _c;
+        String _entityId;
         String _name;
         String _body = null;
         String _type = WikiRendererType.HTML.name();
@@ -319,6 +320,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
             _c = _folder._c;
             _name = wiki.getName().getSource();
+            _entityId = wiki.getEntityId();
             _wiki = wiki;
             WikiVersion v = getWikiVersion();
 
@@ -333,12 +335,13 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
-        WikiPageResource(Container c, String name, Map<String,Object> m)
+        WikiPageResource(Container c, String name, String entityId, Map<String,Object> m)
         {
             super(new Path("wiki",c.getId(),name));
 
             _c = c;
             _name = name;
+            _entityId = entityId;
             _folder = null;
             _policy = c.getPolicy();
             if (null != m.get("renderertype"))
@@ -353,7 +356,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public String getDocumentId()
         {
-            return "wiki:" + _c.getId() + "/" + _name;
+            return "wiki:" + _entityId;
         }
         
 
@@ -364,10 +367,12 @@ class WikiWebdavProvider implements WebdavService.Provider
             return _version;
         }
 
+
         public boolean exists()
         {
             return !_properties.isEmpty();
         }
+
 
         public boolean isCollection()
         {

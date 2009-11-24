@@ -23,6 +23,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Category;
 import org.labkey.api.action.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -3458,24 +3459,33 @@ public class WikiController extends SpringActionController
             if (null == ss)
                 return null;
 
-            ss.clearIndex();
-
-//            Module m = ModuleLoader.getInstance().getModule("Wiki");
-//            Module m = ModuleLoader.getInstance().getModule("Issues");
-//            Module m = ModuleLoader.getInstance().getModule("Announcements");
-            for (Module m : ModuleLoader.getInstance().getModules())
+//            List<SearchService.IndexTask> list = ss.getTasks();
+//            if (list.size() == 0)
             {
-                m.enumerateDocuments(ss, null, null);
+                ss.clearIndex();
+
+                SearchService.IndexTask task = ss.createTask("Full Index");
+
+//                Module m = ModuleLoader.getInstance().getModule("Wiki");
+//                Module m = ModuleLoader.getInstance().getModule("Issues");
+//                Module m = ModuleLoader.getInstance().getModule("Announcements");
+
+                for (Module m : ModuleLoader.getInstance().getModules())
+                {
+                    m.enumerateDocuments(task, null, null);
+                }
+
+                task.setReady();
             }
             HttpView.throwRedirect(new ActionURL(NewSearchAction.class, getContainer()));
             return null;
         }
+        
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
-
     }
 
 
@@ -3486,17 +3496,34 @@ public class WikiController extends SpringActionController
         {
             String query = form.getQuery();
 
-            String html = "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex</a>]<br>";
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null == ss)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            String html = "";
+
+            List<SearchService.IndexTask> tasks = ss.getTasks();
+            for (SearchService.IndexTask task : tasks)
+            {
+                int count = task.getIndexedCount();
+                long start = task.getStartTime();
+                long end = task.getCompleteTime();
+                if (0 == end)
+                    end = System.currentTimeMillis();
+                int skipped = task.getFailedCount();
+                html += "Indexing in progress: " + count + " documents (" + DateUtil.formatDuration(end-start) + ") " + skipped + " skipped or failed <br>";
+            }
+            html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex</a>]<br>";
+
             html += "<form><input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">&nbsp;" + PageFlowUtil.generateSubmitButton("Search") + "</form>";
             HtmlView searchBox = new HtmlView(html);
             getPageConfig().setFocusId("query");
 
-            if (null == query)
+            if (StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
                 return searchBox;
-
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-            if (null == ss)
-                return null;
 
             String results = ss.search(query);
 

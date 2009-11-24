@@ -505,7 +505,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                     if (-1 != atIndex)
                     {
                         String extSpace = name.substring(atIndex + 1);
-                        // known extarnal space ?
+                        // known external space ?
                         InterWiki interWiki = InterWiki.getInstance();
                         if (interWiki.contains(extSpace))
                         {
