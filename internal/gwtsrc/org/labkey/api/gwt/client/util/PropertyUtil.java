@@ -85,6 +85,8 @@ public class PropertyUtil
                 encodedPath += part + "/";
             }
         }
-        return getContextPath() + "/" + pageFlow + encodedPath + action + ".view";
+        if (-1 == action.indexOf("."))
+            action = action + ".view";
+        return getContextPath() + "/" + pageFlow + encodedPath + action;
     }
 }
