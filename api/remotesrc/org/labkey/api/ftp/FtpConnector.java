@@ -16,8 +16,6 @@
 
 package org.labkey.api.ftp;
 
-import org.labkey.api.util.Path;
-
 import java.io.Serializable;
 import java.io.File;
 
@@ -37,7 +35,7 @@ public interface FtpConnector
     int userid(String username, String password) throws Exception;
 
     // return detailed information about this folder
-    WebFolderInfo getFolderInfo(int userid, Path folder);
+    WebFolderInfo getFolderInfo(int userid, String folder);
 
     // return a list of all folders below this folder (list includes path)
     String[] getAllChildren(String path);
@@ -50,7 +48,7 @@ public interface FtpConnector
     public static class WebFolderInfo implements Serializable
     {
         public String url;
-        public Path path;
+        public String path;
         public String name;
         public long created;
         public int perm;
