@@ -244,7 +244,7 @@ public class PipelineEmailPreferences
                 }
                 c = c.getParent();
             }
-            while (!c.isRoot());
+            while (null != c && !c.isRoot());
 
             return PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
         }

@@ -327,9 +327,9 @@ public class PipelineQueueImpl implements PipelineQueue
 
     static class FakeContainer extends Container
     {
-        FakeContainer(String path, Container parent)
+        FakeContainer(String name, Container parent)
         {
-            super(path, parent, GUID.makeGUID(), 1, 0, new Date());
+            super(parent, name, GUID.makeGUID(), 1, 0, new Date());
         }
     }
 
@@ -350,9 +350,9 @@ public class PipelineQueueImpl implements PipelineQueue
         public void testPipeline()
                 throws Exception
         {
-            Container root = new FakeContainer("/", null);
-            Container containerA = new FakeContainer("/A", root);
-            Container containerB = new FakeContainer("/B", root);
+            Container root = new FakeContainer(null, null);
+            Container containerA = new FakeContainer("A", root);
+            Container containerB = new FakeContainer("B", root);
 
             PipelineQueueImpl queue = new PipelineQueueImpl();
             PipelineJobData data;

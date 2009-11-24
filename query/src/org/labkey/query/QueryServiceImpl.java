@@ -694,7 +694,7 @@ public class QueryServiceImpl extends QueryService
             }
             container = container.getParent();
         }
-        while (!container.isRoot());
+        while (null != container && !container.isRoot());
 
         // Try the shared container too
         queryDef = QueryManager.get().getQueryDef(ContainerManager.getSharedContainer(), schemaName, tableName, customQuery);
