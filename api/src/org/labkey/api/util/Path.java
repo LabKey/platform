@@ -46,7 +46,7 @@ public class Path implements Serializable, Iterable<String>
     
     transient private AtomicReference<Path> _parent;
 
-    final public static Path emptyPath = new Path(new String[0], 0, false, false);
+    final public static Path emptyPath = new Path(new String[0], 0, false, true);
     final public static Path rootPath = new Path(new String[0], 0, true, true);
     
 
@@ -70,7 +70,7 @@ public class Path implements Serializable, Iterable<String>
     }
 
 
-    // create a Path from an unencode string
+    // create a Path from an unencoded string
     public static Path parse(String path)
     {
         String strip = StringUtils.strip(path,"/");
@@ -159,7 +159,7 @@ public class Path implements Serializable, Iterable<String>
 
     public String getName()
     {
-        return _path[_length-1];    
+        return _length == 0 ? "" : _path[_length-1];
     }
 
 
@@ -210,7 +210,12 @@ public class Path implements Serializable, Iterable<String>
         return this;
     }
 
-    
+
+    /**
+     * CONSIDER: a version that allows a return path that starts with ../
+     *  
+     * @return null indicates illegal path,
+     */
     private Path _normalize()
     {
         String[] normal = new String[_length];
@@ -225,7 +230,7 @@ public class Path implements Serializable, Iterable<String>
             else if ("..".equals(part))
             {
                 if (next == 0)
-                    return emptyPath;   // CONSIDER: throw exception?
+                    return null;
                 next--;
             }
             else
@@ -313,6 +318,17 @@ public class Path implements Serializable, Iterable<String>
     }
     
 
+    public Path append(String name, boolean isDirectory)
+    {
+        String[] path = new String[_length+1];
+        System.arraycopy(_path, 0, path, 0, _length);
+        path[_length] = name;
+        Path ret = createPath(path, path.length, isAbsolute(), isDirectory);
+        ret._parent.set(this);
+        return ret;
+    }
+
+
     public boolean startsWith(Path other)
     {
         if (other._length > this._length)
@@ -341,7 +357,8 @@ public class Path implements Serializable, Iterable<String>
     public String toString()
     {
         if (_length == 0)
-            return "";
+            return isAbsolute() ? "/" : "";
+
         StringBuilder sb = new StringBuilder();
         String slash = isAbsolute() ? "/" : "";
         for (int i=0 ; i<_length ; i++)
@@ -350,6 +367,8 @@ public class Path implements Serializable, Iterable<String>
             sb.append(defaultEncodeName(_path[i]));
             slash = "/";
         }
+        if (isDirectory())
+            sb.append('/');
         return sb.toString();
     }
 

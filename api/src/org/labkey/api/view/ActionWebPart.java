@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +36,7 @@ public class ActionWebPart extends WebPartView
     public ActionWebPart(ActionURL url)
     {
         _url = url;
-        _url.setContextPath(null);
+        _url.setContextPath(Path.rootPath);
     }
 
     @Override

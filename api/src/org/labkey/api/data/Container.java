@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.FolderType;
@@ -34,7 +35,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
@@ -55,9 +55,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     static Logger _log = Logger.getLogger(Container.class);
 
     String _id;
-    String _path;
-    String _pathParent;
-    String _name;
+    Path _path;
     Date _created;
 
     int _rowId; //Unique for this installation
@@ -76,16 +74,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     // UNDONE: BeanFactory for Container
 
-    protected Container(String path, Container dirParent, String id, int rowId, int sortOrder, Date created)
+    protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created)
     {
-        _path = path;
+        _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = id;
         _parent = new WeakReference<Container>(dirParent);
-        assert dirParent != null || path == null || path.equals("/");
-        _pathParent = dirParent == null ? "" : dirParent.getPath();
-        if (path != null)
-            _name = _path.substring(_path.lastIndexOf('/') + 1);
-
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
@@ -101,13 +94,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @NotNull
     public String getName()
     {
-        return _name;
+        return _path.getName();
     }
 
     @NotNull
     public String getResourceName()
     {
-        return _name;
+        return _path.getName();
     }
 
     public Date getCreated()
@@ -133,9 +126,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public Container getParent()
     {
         Container parent = _parent == null ? null : _parent.get();
-        if (null == parent && null != _pathParent)
+        if (null == parent && _path.size() > 0)
         {
-            parent = ContainerManager.getForPath(_pathParent);
+            parent = ContainerManager.getForPath(_path.getParent());
             _parent = new WeakReference<Container>(parent);
         }
         return parent;
@@ -144,13 +137,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public String getPath()
     {
-        return _path;
+        if (_path.size() == 0)
+            return "/";
+        String path = _path.toString();
+        if (path.length() > 1 && path.endsWith("/"))
+            path = path.substring(0, path.length()-1);
+        return path;
     }
 
 
     public Path getParsedPath()
     {
-        return Path.parse(_path);
+        return _path;
     }
 
 
@@ -160,17 +158,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public String getEncodedPath()
     {
-        if (_path.equals("/"))
-            return "/";
-        ArrayList<String> parts = FileUtil.normalizeSplit(_path);
-        StringBuffer encoded = new StringBuffer(_path.length() + 10);
-        encoded.append("/");
-        for (String part : parts)
-        {
-            encoded.append(PageFlowUtil.encode(part));
-            encoded.append("/");
-        }
-        return encoded.toString();
+        String enc = _path.encode();
+        if (!enc.startsWith("/"))
+            enc = "/" + enc;
+        if (!enc.endsWith("/"))
+            enc = enc + "/";
+        return enc;
     }
 
 
@@ -280,21 +273,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean isProject()
     {
-        return "/".equals(_pathParent);
+        return _path.size() == 1;
     }
 
 
     public boolean isRoot()
     {
-        return "/".equals(_path);
+        return _path.size() == 0;
     }
 
 
     public boolean shouldDisplay()
     {
-        if(_name.length() == 0)
+        String name = _path.getName();
+        if(name.length() == 0)
             return true; // Um, I guess we should display it?
-        char c = _name.charAt(0);
+        char c = name.charAt(0);
         if (c == '_' || c == '.')
         {
             User user = HttpView.currentContext().getUser();
@@ -435,10 +429,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return null;
     }
 
+
     public String toString()
     {
         return getClass().getName() + "@" + System.identityHashCode(this) + " " + _path + " " + _id;
     }
+
 
     public boolean equals(Object o)
     {
@@ -447,23 +443,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         final Container container = (Container) o;
 
-        if (_id != null ? !_id.equals(container._id) : container._id != null) return false;
-        if (_name != null ? !_name.equals(container._name) : container._name != null) return false;
-        if (_path != null ? !_path.equals(container._path) : container._path != null) return false;
-        if (_pathParent != null ? !_pathParent.equals(container._pathParent) : container._pathParent != null)
+        if (_id != null ? !_id.equals(container._id) : container._id != null)
             return false;
-
-        return true;
+        return _path.equals(container._path);
     }
+
 
     public int hashCode()
     {
-        int result;
-        result = (_id != null ? _id.hashCode() : 0);
-        result = 29 * result + (_path != null ? _path.hashCode() : 0);
-        result = 29 * result + (_pathParent != null ? _pathParent.hashCode() : 0);
-        result = 29 * result + (_name != null ? _name.hashCode() : 0);
-        return result;
+        return _id.hashCode();
     }
 
 

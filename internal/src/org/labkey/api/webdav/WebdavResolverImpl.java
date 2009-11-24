@@ -623,6 +623,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
     public static class TestCase extends junit.framework.TestCase
     {
+
         public TestCase()
         {
             super();
@@ -634,6 +635,8 @@ public class WebdavResolverImpl implements WebdavResolver
             super(name);
         }
 
+        Container testContainer = null;
+        
 
         public void testContainers() throws SQLException
         {
@@ -642,7 +645,10 @@ public class WebdavResolverImpl implements WebdavResolver
             User user = context.getUser();
             assertTrue("login before running this test", null != user);
             assertFalse("login before running this test", user.isGuest());
-            Container c = JunitUtil.getTestContainer();
+            
+            Container junitContainer = JunitUtil.getTestContainer();
+            testContainer = ContainerManager.createContainer(junitContainer, "c" + (new Random().nextInt()));
+            Container c = testContainer;
 
             WebdavResolver resolver = WebdavResolverImpl.get();
 
@@ -675,6 +681,7 @@ public class WebdavResolverImpl implements WebdavResolver
             assertFalse(rTest.canWrite(user));
             assertNotNull(rTest.parent());
             assertTrue(rTest.parent().isCollection());
+
 
             List<String> names = resolver.lookup(junit.getPath()).listNames();
             assertFalse(names.contains("webdav"));
@@ -727,14 +734,19 @@ public class WebdavResolverImpl implements WebdavResolver
         @Override
         protected void tearDown() throws Exception
         {
-            Container c = JunitUtil.getTestContainer();
-            deleteContainer(c.getPath() + "/dav");
-            deleteContainer(c.getPath() + "/webdav");
+            if (null != testContainer)
+            {
+                deleteContainer(testContainer.getParsedPath().append("dav"));
+                deleteContainer(testContainer.getParsedPath().append("webdav"));
+                deleteContainer(testContainer.getParsedPath());
+                testContainer = null;
+            }
         }
+        
 
-        void deleteContainer(String path)
+        void deleteContainer(Path path)
         {
-             Container x = ContainerManager.getForPath(path);
+            Container x = ContainerManager.getForPath(path);
             if (null != x)
                 ContainerManager.delete(x, TestContext.get().getUser());
         }

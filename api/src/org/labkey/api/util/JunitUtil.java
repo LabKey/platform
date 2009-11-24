@@ -84,7 +84,7 @@ public class JunitUtil
      */
     public static Container getTestContainer()
     {
-        return ContainerManager.ensureContainer(ContainerManager.getSharedContainer().getPath() + "/_junit");
+        return ContainerManager.ensureContainer(ContainerManager.getSharedContainer().getParsedPath().append("_junit"));
     }
 
     public static void main(String[] args) throws Exception

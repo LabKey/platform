@@ -90,14 +90,11 @@ public class ContainerManager
     }
 
 
-    private static String makePath(Container parent, String name)
+    static Path makePath(Container parent, String name)
     {
         if (null == parent)
-            return "/";
-        String path = parent.getPath();
-        if (path.equals("/"))
-            path = "";
-        return path + "/" + name;
+            return new Path(name);
+        return parent.getParsedPath().append(name, true);
     }
 
 
@@ -185,7 +182,7 @@ public class ContainerManager
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
-        String path = makePath(parent, name);
+        Path path = makePath(parent, name);
         SQLException sqlx = null;
 
         try
@@ -217,6 +214,12 @@ public class ContainerManager
 
     public static Container ensureContainer(String path)
     {
+        return ensureContainer(Path.parse(path));
+    }
+
+
+    public static Container ensureContainer(Path path)
+    {
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
@@ -233,7 +236,7 @@ public class ContainerManager
 
         if (null == c)
         {
-            String parentPath = getParentPath(path);
+            Path parentPath = path.getParent();
 
             if (null == parentPath)
                 c = createRoot();
@@ -242,11 +245,12 @@ public class ContainerManager
                 c = ensureContainer(parentPath);
                 if (null == c)
                     return null;
-                c = createContainer(c, getName(path));
+                c = createContainer(c, path.getName());
             }
         }
         return c;
     }
+
 
     public static Container ensureContainer(Container parent, String name)
     {
@@ -295,11 +299,16 @@ public class ContainerManager
     }
 
 
+    public static List<Container> getChildren(Container parent)
+    {
+        return new ArrayList<Container>(getChildrenMap(parent).values());
+    }
+    
+
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        List<Container> allChildren = getChildren(parent);
         List<Container> children = new ArrayList<Container>();
-        for (Container child : allChildren)
+        for (Container child : getChildrenMap(parent).values())
             if (child.hasPermission(u, perm))
                 children.add(child);
 
@@ -344,47 +353,46 @@ public class ContainerManager
 
     static String[] emptyStringArray = new String[0];
 
-    public static synchronized List<Container> getChildren(Container parent)
+    public static synchronized Map<String, Container> getChildrenMap(Container parent)
     {
         String[] childIds = (String[])getCache().get(_containerChildrenPrefix + parent.getId());
         if (null != childIds)
         {
             if (childIds == emptyStringArray)
-                return Collections.emptyList();
-            List<Container> ret = new ArrayList<Container>(childIds.length);
+                return Collections.emptyMap();
+            Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
             for (String id : childIds)
             {
                 Container c = ContainerManager.getForId(id);
                 if (null != c)
-                    ret.add(c);
+                    ret.put(c.getName(), c);
             }
-            assert null != (ret = Collections.unmodifiableList(ret));
+            assert null != (ret = Collections.unmodifiableMap(ret));
             return ret;
         }
         
-        List<Container> children = new ArrayList<Container>();
-
         try
         {
-            Container[] ret = Table.executeQuery(core.getSchema(),
+            Container[] children = Table.executeQuery(core.getSchema(),
                     "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
                     new Object[]{parent.getId()},
                     Container.class);
-            if (ret.length == 0)
+            if (children.length == 0)
             {
-                getCache().put(_containerChildrenPrefix + parent.getId(),emptyStringArray);
-                return Collections.emptyList();
+                getCache().put(_containerChildrenPrefix + parent.getId(), emptyStringArray);
+                return Collections.emptyMap();
             }
-            childIds = new String[ret.length];
-            for (int i=0 ; i<ret.length ; i++)
+            Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
+            childIds = new String[children.length];
+            for (int i=0 ; i<children.length ; i++)
             {
-                Container c = ret[i];
+                Container c = children[i];
                 childIds[i] = c.getId();
                 _addToCache(c);
-                children.add(c);
+                ret.put(c.getName(),c);
             }
             getCache().put(_containerChildrenPrefix + parent.getId(), childIds);
-            return children;
+            return ret;
         }
         catch (SQLException e)
         {
@@ -451,42 +459,33 @@ public class ContainerManager
 
     public static synchronized Container getChild(Container c, String name)
     {
-        String path = c.getPath() + (c.isRoot() ? "" : "/") + name;
+        Path path = c.getParsedPath().append(name);
         
-        path = StringUtils.trimToEmpty(path);
-
-        // normalize (assert instead?)
-        if (path.endsWith("/"))
-            path = path.substring(0, path.length() - 1);
-        if (!path.startsWith("/"))
-            path = '/' + path;
-
         Container d = _getFromCachePath(path);
         if (null != d)
             return d;
 
-        // CONSIDER: getChildrenMap
-        ContainerManager.getChildren(c);
-        return _getFromCachePath(path);
+        Map<String,Container> map = ContainerManager.getChildrenMap(c);
+        return map.get(name);
     }
+
 
     public static synchronized Container getForPath(String path)
     {
-        path = StringUtils.trimToEmpty(path);
+        Path p = Path.parse(path);
+        return getForPath(p);
+    }
+    
 
-        // normalize (assert instead?)
-        if (path.endsWith("/"))
-            path = path.substring(0, path.length() - 1);
-        if (!path.startsWith("/"))
-            path = '/' + path;
-
+    public static synchronized Container getForPath(Path path)
+    {
         Container d = _getFromCachePath(path);
         if (null != d)
             return d;
 
         try
         {
-            if (path.equals("/"))
+            if (path.equals(Path.rootPath))
             {
                 // Special case for ROOT.  Never return null -- either database error or corrupt database
                 Container[] ret = Table.executeQuery(core.getSchema(),
@@ -506,8 +505,8 @@ public class ContainerManager
             }
             else
             {
-                String parent = getParentPath(path);
-                String name = getName(path);
+                Path parent = path.getParent();
+                String name = path.getName();
                 Container dirParent = getForPath(parent);
 
                 if (null == dirParent)
@@ -1084,9 +1083,9 @@ public class ContainerManager
     }
 
 
-    private static synchronized Container _getFromCachePath(String path)
+    private static synchronized Container _getFromCachePath(Path path)
     {
-        return (Container) getCache().get(_containerPrefix + path.toLowerCase());
+        return (Container) getCache().get(_containerPrefix + path.toString().toLowerCase());
     }
 
 
@@ -1094,7 +1093,7 @@ public class ContainerManager
     {
         assert Thread.holdsLock(ContainerManager.class) : "Any insertion into the cache must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        getCache().put( _containerPrefix + c.getPath().toLowerCase(), c);
+        getCache().put(_containerPrefix + c.getPath().toLowerCase(), c);
         getCache().put(_containerPrefix + c.getId(), c);
         Container parent = c.getParent();
         return c;
@@ -1358,6 +1357,7 @@ public class ContainerManager
         void containerDeleted(Container c, User user);
     }
 
+
     public static class ContainerPropertyChangeEvent extends PropertyChangeEvent
     {
         public final Property property;
@@ -1370,6 +1370,7 @@ public class ContainerManager
             property = p;
         }
     }
+
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<ContainerListener> _listeners = new CopyOnWriteArrayList<ContainerListener>();
@@ -1581,7 +1582,7 @@ public class ContainerManager
 
     public static class TestCase extends junit.framework.TestCase implements ContainerListener
     {
-        Map<String,Container> _containers = new HashMap<String,Container>();
+        Map<Path,Container> _containers = new HashMap<Path,Container>();
         Container _testRoot = null;        
 
         public TestCase()
@@ -1742,18 +1743,21 @@ public class ContainerManager
         {
         }
 
+
         public void containerCreated(Container c)
         {
-            if (null == _testRoot || !c.getPath().startsWith(_testRoot.getPath()))
+            if (null == _testRoot || !c.getParsedPath().startsWith(_testRoot.getParsedPath()))
                 return;
-            _containers.put(c.getPath(), c);
+            _containers.put(c.getParsedPath(), c);
         }
+
 
         public void containerDeleted(Container c, User user)
         {
-            _containers.remove(c.getPath());
+            _containers.remove(c.getParsedPath());
         }
 
+        
         public static Test suite()
         {
             return new TestSuite(TestCase.class);
@@ -1795,8 +1799,7 @@ public class ContainerManager
             if (null != parentId)
                 dirParent = getForId(parentId);
 
-            String path = makePath(dirParent, name);
-            d = new Container(path, dirParent, id, rowId, sortOrder, created);
+            d = new Container(dirParent, name, id, rowId, sortOrder, created);
             return d;
         }
 

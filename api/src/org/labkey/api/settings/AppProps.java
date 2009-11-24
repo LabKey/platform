@@ -40,7 +40,8 @@ public class AppProps extends AbstractWriteableSettingsGroup
 {
     private static AppProps _instance = null;
 
-    private static String _contextPath;
+    private static String _contextPathStr;
+    private static Path _contextPath = null;
     private static int _serverPort = -1;
     private static String _scheme;
     private static String _serverName;
@@ -102,16 +103,25 @@ public class AppProps extends AbstractWriteableSettingsGroup
     public void setContextPath(HttpServletRequest request)
     {
         // Should be called once at first request
-        assert null == _contextPath;
+        assert null == _contextPathStr;
 
-        _contextPath = request.getContextPath();
+        _contextPathStr = request.getContextPath();
     }
 
     public String getContextPath()
     {
-        if (_contextPath == null)
+        if (_contextPathStr == null)
         {
             throw new IllegalStateException("Unable to determine the context path before a request has come in");
+        }
+        return _contextPathStr;
+    }
+
+    public Path getParsedContextPath()
+    {
+        if (_contextPath == null)
+        {
+            _contextPath = Path.parse(getContextPath());
         }
         return _contextPath;
     }
@@ -182,7 +192,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
     {
         URLHelper url = new URLHelper(baseServerUrl);
 
-        if (url.getPathParts().length > 0)
+        if (url.getParsedPath().size() > 0)
             throw new URISyntaxException(baseServerUrl, "Too many path parts");
 
         String scheme = url.getScheme();

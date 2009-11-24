@@ -25,10 +25,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.SessionAppender;
+import org.labkey.api.util.*;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.mvc.Controller;
@@ -276,21 +273,23 @@ public class ViewServlet extends HttpServlet
         ActionURL url = new ActionURL(request);
 
         // canonicalize container
-        String path = StringUtils.trimToEmpty(url.getExtraPath());
-        if (!path.startsWith("/"))
-            path = "/" + path;
+        Path path = url.getParsedPath();
         Container c = ContainerManager.getForPath(path);
 
         // We support two types of permanent link encoding for containers:
         // 1) for backwards compatibility, long container ids (37 chars long, including the first "/"
         // 2) shorter row ids, starting with "/__r".
-        if (null == c && path.length()==37)
-            c = ContainerManager.getForId(path.substring(1));
-        if (null == c && path.startsWith("/__r"))
-            c = ContainerManager.getForRowId(path.substring(4));
+        if (null == c && path.size() == 1)
+        {
+            String name = path.getName();
+            if (name.length()==36)
+                c = ContainerManager.getForId(path.getName());
+            if (null == c && name.startsWith("__r"))
+                c = ContainerManager.getForRowId(path.getName().substring(3));
+        }
         if (null == c)
         {
-            c = ContainerManager.getForPathAlias(path);
+            c = ContainerManager.getForPathAlias(path.toString());
             if (c != null)
             {
                 url.setContainer(c);

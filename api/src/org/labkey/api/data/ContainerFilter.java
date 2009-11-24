@@ -269,7 +269,7 @@ public abstract class ContainerFilter
                 }
                 currentContainer = currentContainer.getParent();
             }
-            while (currentContainer != null && !currentContainer.getPath().equals("/"));
+            while (currentContainer != null && !currentContainer.isRoot());
             return toIds(containers);
         }
 

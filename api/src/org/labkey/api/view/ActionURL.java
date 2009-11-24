@@ -17,13 +17,9 @@ package org.labkey.api.view;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.collections.ArrayStack;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.springframework.web.servlet.mvc.Controller;
@@ -32,11 +28,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 /**
@@ -44,24 +37,15 @@ import java.util.regex.Pattern;
  */
 public class ActionURL extends URLHelper implements Cloneable
 {
-    protected static URLHelper.PathParser _viewParser = new _ViewParser();
-
-    private static final int indexContextPath = 0;
-    private static final int indexPageFlow = 1;
-    private static final int indexExtraPath = 2;
-    private static final int indexAction = 3;
-
     private boolean _baseServerPropsInitialized = false;
-
-    private static final Pattern urlPattern = indexExtraPath == 1 ?
-            // ExtraPath/PageFlow/Action
-            Pattern.compile("(.*)/(\\w*(?:\\-\\w*)*)/(\\w*)\\.(.*)") :
-            // PageFlow/ExtraPath/Action
-            Pattern.compile("/(\\w*(?:\\-\\w*)*)(/.*)?/(\\w*)\\.(.*)");
-
-
+    
     // ActionURL always uses the AppProps settings for scheme, host, and port.  We defer setting these since we
     // only need them when generating absolute URLs (which are rare).
+
+    private String _controller = "project";
+    private String _action = "begin";
+
+    
     private void ensureBaseServerProps()
     {
         if (_baseServerPropsInitialized)
@@ -105,6 +89,7 @@ public class ActionURL extends URLHelper implements Cloneable
         return getBaseServerURL(props.getScheme(), props.getServerName(), props.getServerPort());
     }
 
+
     public ActionURL()
     {
         this(true);
@@ -112,7 +97,6 @@ public class ActionURL extends URLHelper implements Cloneable
 
     public ActionURL(boolean useAppContextPath)
     {
-        _path = new ArrayStack(indexAction + 1);
         if (useAppContextPath)
             setContextPath(AppProps.getInstance().getContextPath());
     }
@@ -126,17 +110,10 @@ public class ActionURL extends URLHelper implements Cloneable
      */
     public ActionURL(Class<? extends Controller> actionClass, Container container)
     {
-        this(SpringActionController.getPageFlowName(actionClass), SpringActionController.getActionName(actionClass), container);
-    }
-
-    private static String toPathString(String pageFlow, String action, String extraPath)
-    {
-        String[] parts = new String[4];
-        parts[indexContextPath] = AppProps.getInstance().getContextPath(); //request.getContextPath();
-        parts[indexPageFlow] = pageFlow;
-        parts[indexExtraPath] = (null == extraPath ? "" : extraPath);  // Allow extraPath == null
-        parts[indexAction] = action;
-        return _viewParser.toPathString(parts, true, true);
+        this(true);
+        _controller = SpringActionController.getPageFlowName(actionClass);
+        _action = SpringActionController.getActionName(actionClass);
+        setContainer(container);
     }
 
 
@@ -146,8 +123,12 @@ public class ActionURL extends URLHelper implements Cloneable
     @Deprecated
     public ActionURL(String pageFlow, String actionName, Container container)
     {
-        this(pageFlow, actionName, container == null ? null : container.getPath());
+        this(true);
+        _controller = pageFlow;
+        _action = actionName;
+        setContainer(container);
     }
+
 
     /**
      * Worse old page flow constructor 
@@ -156,19 +137,56 @@ public class ActionURL extends URLHelper implements Cloneable
     public ActionURL(String pageFlow, String actionName, String extraPath)
     {
         this(true);
-        setPageFlow(pageFlow);
+        _controller = pageFlow;
+        _action = actionName;
         setExtraPath(extraPath);
-        setAction(actionName);
     }
 
 
-    @Deprecated
-    public ActionURL setPageFlow(String pageFlow)
+    /**
+     * used by ViewContext
+     */
+    ActionURL(HttpServletRequest request)
+            throws ServletException
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _arraySet(_path, indexPageFlow, pageFlow);
+        this();
 
-        return this;
+        try
+        {
+            setPath(request.getServletPath());
+        }
+        catch (IllegalArgumentException x)
+        {
+            throw new ServletException("Invalid path");
+        }
+        assert getContextPath().equals(request.getContextPath()) : "contextPath is not configured properly, check application configuration";
+
+        setContextPath(request.getContextPath());
+        setRawQuery(request.getQueryString());
+        setHost(request.getServerName());
+        setPort(request.getServerPort());
+        setScheme(request.getScheme());
+    }
+
+
+    private static String toPathString(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
+    {
+        Path path = contextPath.append(pageFlow).append(extraPath);
+        if (null != action)
+        {
+            if (-1 == action.indexOf('.'))
+                action = action + ".view";
+            path = path.append(action, false);
+        }
+        String str = encode ? path.encode() : path.toString();
+        return str;
+    }
+
+
+    private static String toPathString(String pageFlow, String action, Path extraPath, boolean encode)
+    {
+        Path contextPath = AppProps.getInstance().getParsedContextPath();
+        return toPathString(contextPath, pageFlow, action, extraPath, encode);
     }
 
 
@@ -183,9 +201,10 @@ public class ActionURL extends URLHelper implements Cloneable
     @Deprecated
     public String relativeUrl(String action, String params, String pageFlow)
     {
-        String pathString = toPathString(pageFlow, action, getExtraPath());
+        String pathString = toPathString(pageFlow, action, _path, true);
         return pathString + "?" + (null == params ? "" : params);
     }
+    
 
     /**
      * Return a string URL based on the container in this URL.
@@ -231,6 +250,7 @@ public class ActionURL extends URLHelper implements Cloneable
         return relativeUrl(action, paramStr, pageFlow != null ? pageFlow : getPageFlow());
     }
 
+
     /**
      * Create a url based on the container in this URL and pageFlow
      *
@@ -244,30 +264,6 @@ public class ActionURL extends URLHelper implements Cloneable
         return relativeUrl(action, params, getPageFlow());
     }
 
-    /**
-     * used by ViewContext
-     */
-    ActionURL(HttpServletRequest request)
-            throws ServletException
-    {
-        // UNDONE: rearrange this code so that it uses parsePath()
-        this();
-        Matcher m = urlPattern.matcher(request.getServletPath());
-        if (!m.matches())
-            throw new ServletException("invalid path");
-
-        assert getContextPath().equals(request.getContextPath()) : "contextPath is not configured properly, check application configuration";
-
-        setContextPath(request.getContextPath());
-        setExtraPath(m.group(indexExtraPath));
-        setPageFlow(m.group(indexPageFlow).toLowerCase());
-        setAction(m.group(indexAction));
-        setRawQuery(request.getQueryString());
-
-        setHost(request.getServerName());
-        setPort(request.getServerPort());
-        setScheme(request.getScheme());
-    }
 
     public String getParameter(Enum key)
     {
@@ -403,8 +399,6 @@ public class ActionURL extends URLHelper implements Cloneable
     public ActionURL(String url)
     {
         this();
-        // UNDONE: should just hand up to URLHelper and let parsePath work
-        // UNDONE: however there is a problem with context path handling
         String context = getContextPath();
         URI uri;
 
@@ -433,59 +427,74 @@ public class ActionURL extends URLHelper implements Cloneable
 
         String path = uri.getPath();
         if (path.startsWith(context))
+        {
             if (!"/".equals(context))
                 path = path.substring(context.length());
+        }
 
-        Matcher m = urlPattern.matcher(path);
-        if (!m.matches())
-            throw new IllegalArgumentException(url +  " is not a valid ViewServlet url.");
-
-        setExtraPath(m.group(indexExtraPath));
-        setPageFlow(m.group(indexPageFlow));
-        setAction(m.group(indexAction));
-
+        setPath(path);
         setRawQuery(q);
     }
 
 
-    public ActionURL setContextPath(String contextPath)
+    public ActionURL setContainer(Container c)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _arraySet(_path, indexContextPath, contextPath);
+        _path = null == c ? Path.rootPath : c.getParsedPath();
         return this;
     }
 
-
-    public String getContextPath()
-    {
-        return _path.size() > indexContextPath ? (String) _path.get(indexContextPath) : null;
-    }
-
-    public ActionURL setContainer(Container c)
-    {
-        return setExtraPath(c.getPath());
-    }
 
     public ActionURL setExtraPath(String extraPath)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         if (null == extraPath) extraPath = "";
-        _arraySet(_path, indexExtraPath, extraPath);
-
+        _path = Path.parse(extraPath);
         return this;
     }
 
 
     public String getExtraPath()
     {
-        return _path.size() > indexExtraPath ? (String) _path.get(indexExtraPath) : null;
+        String path = _path.toString();
+        if (path.endsWith("/"))
+            path = path.substring(0,path.length()-1);
+        return path;
+    }
+
+
+    @Override
+    public void setPath(String pathStr)
+    {
+        if (_readOnly)
+            throw new java.lang.IllegalStateException();
+        Path path = Path.decode(pathStr);
+        if (path.size() < 2)
+            throw new IllegalArgumentException(pathStr);
+
+        String action = path.get(path.size()-1);
+        int i = action.lastIndexOf('.');
+        action = -1==i ? action : action.substring(0, i);
+
+        _controller = path.get(0).toLowerCase();
+        _action = action;
+        _path = path.subpath(1,path.size()-1);
+    }
+
+
+    @Deprecated
+    public ActionURL setPageFlow(String pageFlow)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _controller = pageFlow;
+        return this;
     }
 
 
     public String getPageFlow()
     {
-        return _path.size() > indexPageFlow ? (String) _path.get(indexPageFlow) : null;
+        return _controller;
     }
+
 
     public ActionURL setAction(Class<? extends Controller> actionClass)
     {
@@ -493,6 +502,7 @@ public class ActionURL extends URLHelper implements Cloneable
         setAction(SpringActionController.getActionName(actionClass));
         return this;
     }
+
 
     /**
      *
@@ -502,108 +512,31 @@ public class ActionURL extends URLHelper implements Cloneable
     public ActionURL setAction(String action)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
-        _arraySet(_path, indexAction, action);
-        _hasFile = action != null;
+        _action = action;
         return this;
     }
 
+
     public String getAction()
     {
-        return _path.size() > indexAction ? (String) _path.get(indexAction) : null;
+        return _action;
     }
 
 
-    private static boolean _isEmpty(String s)
+    @Override
+    protected boolean isDirectory()
     {
-        return null == s || 0 == s.length();
+        return null == _action;
     }
+    
 
-
-    private static void _arraySet(ArrayList<String> a, int i, String s)
+    @Override
+    public String getPath(boolean asForward)
     {
-        while (a.size() <= i)
-            a.add(null);
-        a.set(i, s);
+        return toPathString(_contextPath, _controller, _action, _path, !asForward);
     }
 
-
-    private static boolean _inRange(String[] a, int i)
-    {
-        return 0 <= i && i < a.length;
-    }
-
-
-    protected URLHelper.PathParser pathParser()
-    {
-        return _viewParser;
-    }
-
-
-    public static class _ViewParser implements URLHelper.PathParser
-    {
-        public String[] parsePath(String path)
-        {
-            assert false : "NYI: need to know context path";
-            return new String[0];
-        }
-
-
-        private StringBuffer _pathAppend(StringBuffer sb, String part, boolean encode)
-        {
-            // make sure there is exactly one / between current path and new part
-            if (!(sb.length() > 0 && sb.charAt(sb.length() - 1) == '/'))
-                sb.append('/');
-
-            if (part.length() > 0 && part.charAt(0) == '/')
-                part = part.substring(1);
-
-            String enc = encode ? PageFlowUtil.encode(part) : part;
-            sb.append(enc);
-            return sb;
-        }
-
-
-        public String toPathString(String[] path, boolean _hasFile, boolean encode)
-        {
-            StringBuffer sb = new StringBuffer();
-
-            // contextPath
-            if (_inRange(path, indexContextPath) && !_isEmpty(path[indexContextPath]))
-                _pathAppend(sb, path[indexContextPath], encode);
-
-            if (_inRange(path, indexPageFlow) && !_isEmpty(path[indexPageFlow]))
-                _pathAppend(sb, path[indexPageFlow], encode);
-
-            if (_inRange(path, indexExtraPath))
-            {
-                // Pull apart extraPath, encode each bit, and piece it together again... allows for spaces, etc. in folder names
-                if (path[indexExtraPath].equals("/") || path[indexExtraPath].equals(""))
-                    _pathAppend(sb, "", encode);
-                else
-                {
-                    String[] extraPathParts = path[indexExtraPath].split("/");
-                    for (String extraPathPart : extraPathParts)
-                        _pathAppend(sb, extraPathPart, encode);
-                }
-                if (indexExtraPath == path.length - 1)
-                    _pathAppend(sb, "begin.view", false);
-            }
-
-            // action
-            if (_inRange(path, indexAction) && null != path[indexAction])
-            {
-                _pathAppend(sb, path[indexAction], encode);
-                if (-1 == path[indexAction].indexOf('.'))
-                    sb.append(".view");
-            }
-            else
-                _pathAppend(sb, "", encode);
-
-            return sb.toString();
-        }
-    }
-
-
+    
     @Override
     public ActionURL clone()
     {
@@ -633,9 +566,6 @@ public class ActionURL extends URLHelper implements Cloneable
             a.addParameter("key", "a");
             ActionURL b = a.clone();
 
-//            TestCase.assertTrue(a._path != b._path);
-//            TestCase.assertTrue(a._parameters != b._parameters);
-
             // url is unchanged after clone
             String stringA = a.getLocalURIString();
             String stringB = b.getLocalURIString();
@@ -654,7 +584,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
             ActionURL parse = new ActionURL("/Controller/path/action.view?foo=bar");
             String toString = parse.getLocalURIString();
-            assertEquals(parse.getContextPath() + "/Controller/path/action.view?foo=bar", toString);
+            assertEquals(parse.getContextPath() + "/controller/path/action.view?foo=bar", toString);
         }
 
 

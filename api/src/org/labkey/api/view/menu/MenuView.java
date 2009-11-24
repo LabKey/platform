@@ -54,7 +54,7 @@ public class MenuView extends VBox
         PrintWriter out = response.getWriter();
 
         out.println("<table class=\"labkey-expandable-nav-panel\">");
-        if(showFolders)
+        if (showFolders)
         {
             List<HttpView> nonNullViews = new ArrayList<HttpView>();
             for (ModelAndView possibleView : _views)

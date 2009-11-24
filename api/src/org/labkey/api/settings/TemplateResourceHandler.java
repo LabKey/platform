@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.util.Path;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -128,6 +129,7 @@ public enum TemplateResourceHandler
         return cal;
     }
 
+
     public ResourceURL getURL(Container c)
     {
         try
@@ -154,10 +156,12 @@ public enum TemplateResourceHandler
         }
     }
 
+
     public void sendResource(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException, ServletException
     {
         ResourceURL url = new ResourceURL(request);
-        Container c = LookAndFeelProperties.getSettingsContainer(ContainerManager.getForPath(url.getExtraPath()));  // Shouldn't be requesting anything but root & project, but just in case
+        Path containerPath = url.getParsedPath().getParent();
+        Container c = LookAndFeelProperties.getSettingsContainer(ContainerManager.getForPath(containerPath));  // Shouldn't be requesting anything but root & project, but just in case
 
         CacheableWriter writer = getWriter(c);
 
@@ -171,6 +175,7 @@ public enum TemplateResourceHandler
             request.getRequestDispatcher(getDefaultLink()).forward(request, response);
         }
     }
+
 
     private CacheableWriter getWriter(Container c) throws SQLException, IOException, ServletException
     {

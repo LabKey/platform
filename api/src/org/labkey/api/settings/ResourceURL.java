@@ -17,6 +17,8 @@ package org.labkey.api.settings;
 
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.Path;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -30,15 +32,17 @@ import java.util.regex.Matcher;
  */
 
 // Used for linking to resources that have a container but aren't pageflow actions.  Examples include logos, favicons, and stylesheets.
-public class ResourceURL extends ActionURL
+public class ResourceURL extends URLHelper
 {
     private static Pattern urlPattern = Pattern.compile("(/.*)?/(\\w*)\\.(.*)");
 
     public ResourceURL(String resource, Container c)
     {
-        super("", resource, c);
-        addParameter("revision", AppProps.getInstance().getLookAndFeelRevision());
+        setContextPath(AppProps.getInstance().getParsedContextPath());
+        _path = c.getParsedPath().append(resource,false);
+        addParameter("revision", String.valueOf(AppProps.getInstance().getLookAndFeelRevision()));
     }
+
 
     public ResourceURL(HttpServletRequest request) throws ServletException
     {
@@ -47,8 +51,6 @@ public class ResourceURL extends ActionURL
             throw new ServletException("invalid path");
 
         setContextPath(request.getContextPath());
-        setExtraPath(m.group(1));
-        setPageFlow("");
-        setAction(m.group(2));
+        _path = Path.decode(request.getServletPath());
     }
 }

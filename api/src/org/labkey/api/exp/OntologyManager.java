@@ -2484,7 +2484,7 @@ public class OntologyManager
             ContainerManager.move(fldr1a, proj2);
 
             // if demoting a folder
-            if (proj1.getPath().equals("/") )
+            if (proj1.isRoot())
             {
                 assertNotNull(OntologyManager.getPropertyDescriptor(propId, proj2));
 
@@ -2501,7 +2501,7 @@ public class OntologyManager
                 assertNotNull(OntologyManager.getDomainDescriptor(domId, proj2));
             }
             // if promoting a folder,
-            else if(proj2.getPath().equals("/"))
+            else if (proj2.isRoot())
             {
                 assertNotNull(OntologyManager.getPropertyDescriptor(propId, proj1));
 

@@ -17,7 +17,6 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -38,34 +37,20 @@ import java.util.*;
 
 public class URLHelper implements Cloneable, Serializable, Taintable
 {
-    /**
-     * this interface allows user to plug in his own path interpreter
-     */
-    public interface PathParser
-    {
-        /**
-         * path is already normalized and decoded
-         */
-        public String[] parsePath(String path);
-
-        public String toPathString(String path[], boolean hasFile, boolean encode);
-    }
-
-    protected static PathParser _defaultParser = new _DirParser();
     static Category _log = Logger.getInstance(URLHelper.class);
-
 
     protected boolean _tainted = false;
     protected String _scheme = "http";
     protected String _userInfo = null;
     protected String _host = null;
     protected int _port = 80;
-    protected boolean _hasFile = false;        // is the top of the path a directory or a file?
-    protected ArrayStack _path = null;        // path segments usually directories and filename
+    protected Path _contextPath = Path.rootPath;
+    protected Path _path = null;
     protected ArrayList<Pair<String, String>> _parameters = null;    // decoded key/value pairs
     protected String _fragment = null;
 
     protected boolean _readOnly = false;
+
 
     protected URLHelper()
     {
@@ -115,13 +100,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
         _parsePath(req.getRequestURI());
         _parseQuery(req.getQueryString(), req.getCharacterEncoding());
-
-        /*
-        if (null != req.getQueryString()  && req.getQueryString().length() > 0)
-            _setURI(new URI(req.getRequestURL().append("?").append(req.getQueryString()).toString()));
-        else
-            _setURI(new URI(req.getRequestURL().toString()));
-        */
     }
 
 
@@ -158,12 +136,14 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         return sb.toString();
     }
 
+
     public String getURIString(boolean allowSubstSyntax)
     {
         StringBuilder sb = getBaseServer(getScheme(), getHost(), getPort());
         sb.append(getLocalURIString(allowSubstSyntax));
         return sb.toString();
     }
+
 
     public String getBaseServerURI()
     {
@@ -184,11 +164,17 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
+    protected boolean isDirectory()
+    {
+        return _path.isDirectory();
+    }
+    
+
     public String getLocalURIString(boolean allowSubstSyntax)
     {
         StringBuilder uriString = new StringBuilder(getPath());
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
-        if (_hasFile || hasParams)
+        if (!isDirectory() || hasParams)
             uriString.append('?');      // makes it easier for users who want to concatentate
         if (hasParams)
             uriString.append(getQueryString(allowSubstSyntax));
@@ -245,20 +231,9 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     protected void _parsePath(String path)
     {
         if (null == path || 0 == path.length())
-            return;
-        boolean fRelative = true;
-        if (path.startsWith("/"))
-        {
-            fRelative = false;
-            path = path.substring(1);
-        }
-        String[] parts = pathParser().parsePath(path);
-        _path = new ArrayStack();
-        if (fRelative)
-            _path.push(".");
-        for (String part : parts)
-            _path.push(PageFlowUtil.decode(part));
-        _hasFile = !path.endsWith("/");
+            _path = Path.rootPath;
+        else
+            _path = Path.decode(path);
     }
 
 
@@ -284,13 +259,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         if (null == _path)
             return "";
-        //noinspection unchecked
-        String[] paths = (String[])_path.toArray(new String[_path.size()]);
-        if (asForward)
-            paths[0] = null; // contextPath
-        String path;
-        path = pathParser().toPathString(paths, _hasFile, !asForward);
-        return path;
+        Path p;
+        if (_contextPath.size() == 0)
+            p = _path;
+        else
+            p = _contextPath.append(_path);
+        return !asForward ? p.encode() : p.toString();
     }
 
 
@@ -308,6 +282,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _host = host;
+    }
+
+
+    public void setPath(Path path)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _path = path;
     }
 
 
@@ -352,9 +333,33 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    public Object[] getPathParts()
+    /** NOTE URLHelper is dumb wrt contextPath, it does not know what the webapp contextPath is
+     * it's up to the caller to use the contextPath and path part consistently
+     */
+    public URLHelper setContextPath(String contextPath)
     {
-        return null == _path ? new Object[0] : _path.toArray();
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _contextPath = Path.parse(contextPath);
+        return this;
+    }
+
+    public URLHelper setContextPath(Path contextPath)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _contextPath = contextPath;
+        return this;
+    }
+
+    /** NOTE URLHelper is dumb wrt contextPath, it does not know what the webapp contextPath is */
+    public String getContextPath()
+    {
+        return _contextPath.toString();
+    }
+
+
+    public Path getParsedPath()
+    {
+        return null == _path ? Path.rootPath : _path;
     }
 
 
@@ -644,89 +649,22 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    /**
-     * path manipulation
-     */
-    public void pushPath(Object o)
+    public void setFile(String name)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
-        if (null == _path) _path = new ArrayStack();
-        if (_hasFile)
-        {
-            throw new java.lang.IllegalStateException("File already specified");
-            // could try to fix up
-        }
-        _path.push(o);
-    }
-
-
-    public void setFile(Object o)
-    {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        if (null == _path)
-            _path = new ArrayStack();
-        if (_hasFile)
-        {
-            _path.pop();
-            _hasFile = false;
-        }
-        if (null != o)
-        {
-            _path.push(o);
-            _hasFile = true;
-        }
+        Path p = null==_path ? Path.rootPath : _path;
+        if (!p.isDirectory())
+            p = p.getParent();
+        if (null != name)
+            _path = p.append(name, false);
     }
 
 
     public String getFile()
     {
-        if (!_hasFile)
+        if (!_path.isDirectory())
             return null;
-        return (String) _path.peek();
-    }
-
-
-    public Object popPath()
-    {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        if (_hasFile)
-            _path.pop();
-        _hasFile = false;
-        return _path.pop();
-    }
-
-
-    protected PathParser pathParser()
-    {
-        return _defaultParser;
-    }
-
-
-    public static class _DirParser implements PathParser
-    {
-        public String[] parsePath(String path)
-        {
-            if (null == path || 0 == path.length())
-                return new String[0];
-            return path.split("/");
-        }
-
-        public String toPathString(String[] path, boolean _hasFile, boolean encode)
-        {
-            if (null == path || 0 == path.length)
-                return "";
-            StringBuilder sb = new StringBuilder();
-            if (!".".equals(path[0]))
-                sb.append('/');
-            for (String p : path)
-            {
-                String enc = encode ? PageFlowUtil.encode(p) : p;
-                sb.append(enc).append('/');
-            }
-            if (_hasFile)
-                sb.setLength(sb.length() - 1);
-            return sb.toString();
-        }
+        return _path.getName();
     }
 
 
@@ -748,7 +686,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         try
         {
             URLHelper n = (URLHelper) super.clone();
-            n._path = (ArrayStack) _path.clone();
+            n._path = _path;
             n._readOnly = false;
             n._parameters = _parameters==null ? null : new ArrayList<Pair<String,String>>(_parameters.size());
             if (null != _parameters)
