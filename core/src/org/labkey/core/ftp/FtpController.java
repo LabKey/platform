@@ -154,14 +154,15 @@ public class FtpController extends SpringActionController
         }
 
 
-        public WebFolderInfo getFolderInfo(int userid, Path path)
+        public WebFolderInfo getFolderInfo(int userid, String pathStr)
         {
             User user = UserManager.getUser(userid);
             if (user == null)
                 return null;
-            if (path == null)
+            if (pathStr == null)
                 return null;
 
+            Path path = Path.parse(pathStr);
             Resource resource = _resolver.lookup(_resolver.getRootPath().resolve(path));
             if (!(resource instanceof WebdavResolver.WebFolder))
                 return null;
@@ -172,7 +173,7 @@ public class FtpController extends SpringActionController
             Path resourcePath = resource.getPath();
             assert resourcePath.startsWith(_resolver.getRootPath());
             resourcePath = _resolver.getRootPath().relativize(resourcePath);
-            info.path = resourcePath;
+            info.path = resourcePath.toString();
 
             info.created = resource.getCreated();
             info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());
