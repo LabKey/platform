@@ -261,5 +261,5 @@ public interface Module extends Comparable<Module>
 
     
     /** enumerate documents for full text search */
-    public void enumerateDocuments(@NotNull SearchService ss, @Nullable Container c, @Nullable Date modifiedSince);
+    public void enumerateDocuments(@NotNull SearchService.IndexTask task, @Nullable Container c, @Nullable Date modifiedSince);
 }

@@ -815,7 +815,7 @@ public abstract class DefaultModule implements Module
     }
 
     
-    public void enumerateDocuments(SearchService ss, Container c, Date modifiedSince)
+    public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
     {
     }
 }

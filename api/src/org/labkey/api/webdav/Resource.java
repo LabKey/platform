@@ -26,7 +26,12 @@ public interface Resource
 
     String getName();
 
-    // unique name for full text index purposes there should be SearchService.ResourceResolver that can resolve this documentid */
+    /**
+     * unique name for full text index purposes there should be SearchService.ResourceResolver that can resolve this documentid
+     *
+     * This name should be server unique, and as far as possible not reusable (e.g. non-reused rowid and entityids are
+     * better than names that may be reused.
+     */
     String getDocumentId();
 
     boolean exists();

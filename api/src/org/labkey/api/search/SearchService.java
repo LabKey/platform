@@ -16,11 +16,14 @@
 package org.labkey.api.search;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
-import org.labkey.api.util.Pair;
+import org.apache.log4j.Category;
 
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.io.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,6 +33,8 @@ import java.util.List;
  */
 public interface SearchService
 {
+    static Category _log = Category.getInstance(SearchService.class);
+    
     enum PRIORITY
     {
         crawl,      // lowest
@@ -59,10 +64,135 @@ public interface SearchService
         }
     }
 
+
+
+    // UNDONE: convert to interface
+    
+    public abstract static class IndexTask
+    {
+        final private String _description;
+        protected long _start;
+        protected long _complete = 0;
+        protected boolean _isReady = false;
+        final private AtomicInteger _estimate = new AtomicInteger();
+        final private AtomicInteger _indexed = new AtomicInteger();
+        final private AtomicInteger _failed = new AtomicInteger();
+        final protected Map<Object,Object> _subtasks = Collections.synchronizedMap(new IdentityHashMap<Object,Object>());
+        final StringWriter _sw = new StringWriter();
+        final PrintWriter _out = new PrintWriter(_sw);
+
+
+        public IndexTask(String description)
+        {
+            _description = description;
+            _start = System.currentTimeMillis();
+        }
+
+
+        public String getDescription()
+        {
+            return _description;
+        }
+        
+
+        public int getDocumentCountEstimate()
+        {
+            return _estimate.get();
+        }
+
+
+        public int getIndexedCount()
+        {
+            return _indexed.get();
+        }
+
+
+        public int getFailedCount()
+        {
+            return _failed.get();
+        }
+        
+
+        public long getStartTime()
+        {
+            return _start;
+        }
+
+
+        public long getCompleteTime()
+        {
+            return _complete;
+        }
+
+
+        protected void addItem(Object item)
+        {
+            _subtasks.put(item,item);
+        }
+
+
+        public void log(String message)
+        {
+            synchronized (_sw)
+            {
+                _out.println(message);
+            }
+        }
+
+
+        public Reader getLog()
+        {
+            synchronized (_sw)
+            {
+                return new StringReader(_sw.getBuffer().toString());
+            }
+        }
+
+
+        public void addToEstimate(int i)
+        {
+            _estimate.addAndGet(i);
+        }
+
+
+        // indicates that caller is done adding Resources to this task
+        public void setReady()
+        {
+            _isReady = true;
+            checkDone();
+        }
+        
+
+        protected void completeItem(Object item, boolean success)
+        {
+            if (success)
+                _indexed.incrementAndGet();
+            else
+                _failed.incrementAndGet();
+            Object remove =  _subtasks.remove(item);
+            assert null != remove;
+            assert remove == item;
+            checkDone();
+        }
+
+
+        //
+        // add items to index
+        //
+
+        public abstract void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri);
+        public abstract void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri);
+        public abstract void addResource(@NotNull String identifier, PRIORITY pri);
+        public abstract void addResource(@NotNull Resource r, PRIORITY pri);
+        protected abstract void checkDone();
+    }
+    
+
     public interface ResourceResolver
     {
         Resource resolve(@NotNull String resourceIdentifier);
     }
+
 
     public static class SearchCategory
     {
@@ -90,20 +220,20 @@ public interface SearchService
     // search
     //
 
+
     public String search(String queryString);
     public List<SearchCategory> getSearchCategories();
 
     //
     // index
     //
-    
-    void addRunnable(Runnable r, PRIORITY pri);
-    
-    void addResource(SearchCategory category, ActionURL url, PRIORITY pri);
-    void addResource(String identifier, PRIORITY pri);
-    void addResource(Resource r, PRIORITY pri);
+
+    public IndexTask defaultTask();
+    public IndexTask createTask(String description);
 
     void deleteResource(String identifier, PRIORITY pri);
+
+    List<IndexTask> getTasks();
 
     //
     // configuration
