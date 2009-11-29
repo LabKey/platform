@@ -236,12 +236,11 @@ public class ContainerManager
 
         if (null == c)
         {
-            Path parentPath = path.getParent();
-
-            if (null == parentPath)
+            if (0 == path.size())
                 c = createRoot();
             else
             {
+                Path parentPath = path.getParent();
                 c = ensureContainer(parentPath);
                 if (null == c)
                     return null;
