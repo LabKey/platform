@@ -25,10 +25,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.ExternalStudyWriter;
-import org.labkey.api.study.ExternalStudyWriterFactory;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyContext;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -47,27 +44,17 @@ import java.util.*;
 * Date: Aug 25, 2009
 * Time: 10:11:16 AM
 */
-public class ListWriter implements ExternalStudyWriter
+public class ListWriter
 {
     private static final Logger LOG = Logger.getLogger(ListWriter.class);
-    private static final String DEFAULT_DIRECTORY = "lists";
-    public static final String SCHEMA_FILENAME = "lists.xml";
+    private static final String SCHEMA_FILENAME = "lists.xml";
 
-    public String getSelectionText()
+    public boolean write(Container c, User user, VirtualFile listsDir) throws Exception
     {
-        return "Lists";
-    }
-
-    public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
-    {
-        Container c = ctx.getContainer();
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
 
         if (!lists.isEmpty())
         {
-            ctx.getStudyXml().addNewLists().setDir(DEFAULT_DIRECTORY);
-            VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
-
             // Create meta data doc
             TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
             TablesDocument.Tables tablesXml = tablesDoc.addNewTables();
@@ -75,7 +62,7 @@ public class ListWriter implements ExternalStudyWriter
             for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
             {
                 ListDefinition def = entry.getValue();
-                TableInfo ti = def.getTable(ctx.getUser());
+                TableInfo ti = def.getTable(user);
 
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
@@ -103,6 +90,11 @@ public class ListWriter implements ExternalStudyWriter
             }
 
             listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -259,14 +251,6 @@ public class ListWriter implements ExternalStudyWriter
                 if (propType == PropertyType.ATTACHMENT)
                     columnXml.setDatatype(propType.getXmlName());
             }
-        }
-    }
-
-    public static class Factory implements ExternalStudyWriterFactory
-    {
-        public ExternalStudyWriter create()
-        {
-            return new ListWriter();
         }
     }
 }

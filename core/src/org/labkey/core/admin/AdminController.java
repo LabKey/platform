@@ -29,6 +29,8 @@ import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
 import org.labkey.api.collections.CacheMap;
+import org.labkey.api.collections.CacheStats;
+import org.labkey.api.collections.TTLCacheMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.exp.OntologyManager;
@@ -2142,36 +2144,90 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            StringBuilder html = new StringBuilder("<table>\n<tr><th>Cache</th><th>Misses</th><th>Requests</th><th>Miss Percentage</th></tr>\n");
+            StringBuilder html = new StringBuilder();
 
-            Collection<DbCache.CacheStats> stats = DbCache.getStats();
+            List<CacheMap> cacheMaps = CacheMap.getKnownCacheMaps();
+            List<CacheStats> cmStats = new ArrayList<CacheStats>();
+            List<CacheStats> ttlStats = new ArrayList<CacheStats>();
+            List<CacheStats> transStats = new ArrayList<CacheStats>();
 
-            long misses = 0;
-            long grandTotal = 0;
-
-            for (DbCache.CacheStats stat : stats)
+            for (CacheMap cm : cacheMaps)
             {
-                misses += stat.getMisses();
-                long total = stat.getMisses() + stat.getHits();
-                double ratio = 0 != total ? stat.getMisses()/(double)total : 0;
-                grandTotal += total;
-
-                html.append("<tr><td>").append(stat.getDescription()).append("</td>");
-                html.append("<td align=\"right\">").append(Formats.commaf0.format(stat.getMisses())).append("</td>");
-                html.append("<td align=\"right\">").append(Formats.commaf0.format(total)).append("</td>");
-                html.append("<td align=\"right\">").append(Formats.percent.format(ratio)).append("</td></tr>\n");
+                if (cm instanceof TTLCacheMap)
+                {
+                    ttlStats.add(cm.getCacheStats());
+                    transStats.add(cm.getTransactionCacheStats());
+                }
+                else
+                {
+                    cmStats.add(cm.getCacheStats());
+                }
             }
 
-            double ratio = 0 != grandTotal ? misses/(double)grandTotal : 0;
-            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
-            html.append("<tr><td>Total</td><td align=\"right\"d>").append(Formats.commaf0.format(misses)).append("</td><td align=\"right\">").append(Formats.commaf0.format(grandTotal)).append("</td><td align=\"right\">").append(Formats.percent.format(ratio)).append("</td></tr>\n").append("</td></tr>");
+            appendStats(html, "Cache Maps", cmStats);
+            appendStats(html, "TTL Cache Maps", ttlStats);
+            appendStats(html, "Transaction Cache Maps", transStats);
 
             return new HtmlView(html.toString());
         }
 
+        private void appendStats(StringBuilder html, String title, List<CacheStats> stats)
+        {
+            Collections.sort(stats);
+
+            html.append("<br/><table>\n<tr><td><b>").append(title).append(" (").append(stats.size()).append(")</b></td></tr>\n");
+            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
+
+            html.append("<tr><th>Debug Name</th>");
+            html.append("<th>Size</th><th>Expirations</th><th>Removes</th><th>Misses</th><th>Requests</th><th>Miss Percentage</th></tr>");
+
+            long misses = 0;
+            long total = 0;
+            long size = 0;
+            long expirations = 0;
+            long removes = 0;
+
+            for (CacheStats stat : stats)
+            {
+                size += stat.getSize();
+                expirations += stat.getExpirations();
+                removes += stat.getRemoves();
+                misses += stat.getMisses();
+                total += stat.getTotal();
+
+                html.append("<tr><td>").append(stat.getDescription()).append("</td>");
+
+                appendLongs(html, stat.getSize(), stat.getExpirations(), stat.getRemoves(), stat.getMisses(), stat.getTotal());
+                appendDoubles(html, stat.getMissRatio());
+
+                html.append("</tr>\n");
+            }
+
+            double ratio = 0 != total ? misses / (double)total : 0;
+            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
+            html.append("<tr><td>Total</td>");
+
+            appendLongs(html, size, expirations, removes, misses, total);
+            appendDoubles(html, ratio);
+
+            html.append("</tr>\n</table>\n");
+        }
+
+        private void appendLongs(StringBuilder html, long... stats)
+        {
+            for (long stat : stats)
+                html.append("<td align=\"right\">").append(Formats.commaf0.format(stat)).append("</td>");
+        }
+
+        private void appendDoubles(StringBuilder html, double... stats)
+        {
+            for (double stat : stats)
+                html.append("<td align=\"right\">").append(Formats.percent.format(stat)).append("</td>");
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "DatabaseCache Statistics", this.getClass());
+            return appendAdminNavTrail(root, "Cache Statistics", this.getClass());
         }
     }
 

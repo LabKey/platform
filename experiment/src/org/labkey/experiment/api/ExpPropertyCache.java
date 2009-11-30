@@ -33,12 +33,11 @@ import java.sql.ResultSet;
 
 public class ExpPropertyCache
 {
-    static private ExpPropertyCache instance;
-    static private final Logger _log = Logger.getLogger(ExpPropertyCache.class);
-    synchronized static public ExpPropertyCache get()
+    private static ExpPropertyCache instance = new ExpPropertyCache();
+    private static final Logger _log = Logger.getLogger(ExpPropertyCache.class);
+
+    public static ExpPropertyCache get()
     {
-        if (instance == null)
-            instance = new ExpPropertyCache();
         return instance;
     }
 
@@ -62,15 +61,17 @@ public class ExpPropertyCache
 
         try
         {
-            List<PropertyDescriptor> pdList = new ArrayList();
+            List<PropertyDescriptor> pdList = new ArrayList<PropertyDescriptor>();
             ResultSet rs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray());
+
             while (rs.next())
             {
                 int propertyId = rs.getInt(1);
                 PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyId);
                 pdList.add(pd);
             }
-            pds = pdList.toArray(new PropertyDescriptor[0]);
+
+            pds = pdList.toArray(new PropertyDescriptor[pdList.size()]);
             rs.close();
         }
         catch (SQLException e)

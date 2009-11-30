@@ -988,6 +988,7 @@ list/src/org/labkey/list/model/ListSchema.java -text
 list/src/org/labkey/list/model/ListServiceImpl.java -text
 list/src/org/labkey/list/model/ListTable.java -text
 list/src/org/labkey/list/model/ListWriter.java -text
+list/src/org/labkey/list/model/StudyListWriter.java -text
 list/src/org/labkey/list/view/AttachmentDisplayColumn.java -text
 list/src/org/labkey/list/view/EditListDefinitionForm.java -text
 list/src/org/labkey/list/view/ListController.java -text
@@ -1006,6 +1007,7 @@ list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
 list/src/org/labkey/list/view/editListDefinition.jsp -text
 list/src/org/labkey/list/view/historyDetail.jsp -text
+list/src/org/labkey/list/view/importLists.jsp -text
 list/src/org/labkey/list/view/insert.jsp -text
 list/src/org/labkey/list/view/newListDefinition.jsp -text
 list/src/org/labkey/list/view/showListDefinition.jsp -text
@@ -2501,7 +2503,6 @@ study/src/org/labkey/study/writer/AssayDatasetWriter.java -text
 study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
 study/src/org/labkey/study/writer/DatasetWriter.java -text
-study/src/org/labkey/study/writer/FileSystemFile.java -text
 study/src/org/labkey/study/writer/InternalStudyWriter.java -text
 study/src/org/labkey/study/writer/OutputStreamWrapper.java -text
 study/src/org/labkey/study/writer/ParticipantCommentWriter.java -text
@@ -2517,7 +2518,6 @@ study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
-study/src/org/labkey/study/writer/ZipFile.java -text
 study/webapp/WEB-INF/study/studyContext.xml -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text

@@ -69,6 +69,8 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.api.writer.ZipFile;
+import org.labkey.api.writer.FileSystemFile;
 import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
@@ -3657,7 +3659,7 @@ public class StudyController extends BaseStudyController
 
             if (map.isEmpty())
             {
-                errors.reject("studyImport", "You must select a .zip file to import.");
+                errors.reject("studyImport", "You must select a .study.zip file to import.");
             }
             else if (map.size() > 1)
             {
@@ -3669,7 +3671,7 @@ public class StudyController extends BaseStudyController
 
                 if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
                 {
-                    errors.reject("studyImport", "You must select a .zip file to import.");
+                    errors.reject("studyImport", "You must select a .study.zip file to import.");
                 }
                 else
                 {

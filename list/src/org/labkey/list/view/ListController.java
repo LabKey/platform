@@ -50,10 +50,13 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.ZipFile;
 import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListManager;
+import org.labkey.list.model.ListWriter;
 // TODO: import org.labkey.experiment.list.client.ListImporter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -62,11 +65,12 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.sql.SQLException;
 
 /**
  * User: adam
@@ -121,7 +125,7 @@ public class ListController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Available Lists");
+            return root.addChild("Available Lists");
         }
     }
 
@@ -190,7 +194,7 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
-            Map<String, String> props = new HashMap<String,String>();
+            Map<String, String> props = new HashMap<String, String>();
 
             props.put("typeURI", _list.getDomain().getTypeURI());
 
@@ -423,6 +427,8 @@ public class ListController extends SpringActionController
                 return false;
 
             boolean transaction = false;
+            ListItem item = null;
+
             try
             {
                 if (!ExperimentService.get().isTransactionActive())
@@ -430,7 +436,7 @@ public class ListController extends SpringActionController
                     ExperimentService.get().beginTransaction();
                     transaction = true;
                 }
-                ListItem item;
+
                 if (isInsert())
                 {
                     item = list.createListItem();
@@ -507,13 +513,15 @@ public class ListController extends SpringActionController
                 for (ValidationError error : ve.getErrors())
                     errors.reject(ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
             }
-            catch (RedirectException e)  // Because of stupid catch (Exception e) below
+            catch (SQLException e)
             {
-                throw e;
-            }
-            catch (Exception e)   // TODO: Check for specific errors and get rid of catch(Exception)
-            {
-                errors.reject(ERROR_MSG, "An exception occurred: " + e);
+                if (SqlDialect.isConstraintException(e))
+                {
+                    if (null != item && null != item.getKey())
+                        errors.reject(ERROR_MSG, "Error: A record having key \"" + item.getKey() + "\" already exists.");
+                    else
+                        errors.reject(ERROR_MSG, "Error: A record with that key already exists.");
+                }
             }
             finally
             {
@@ -1059,6 +1067,88 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+
+    @RequiresPermissionClass(DesignListPermission.class)
+    public class ExportAllListsAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            ListWriter writer = new ListWriter();
+            ZipFile zip = new ZipFile(response, c.getName() + "_lists.zip");
+            writer.write(c, getUser(), zip);
+            zip.close();
+        }
+    }
+
+
+    @RequiresPermissionClass(DesignListPermission.class)
+    public class ImportListsAction extends FormViewAction<Object>
+    {
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<Object>(this.getClass(), "importLists.jsp", null, errors);
+        }
+
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Map<String, MultipartFile> map = getFileMap();
+
+            if (map.isEmpty())
+            {
+                errors.reject("listImport", "You must select a .list.zip file to import.");
+            }
+            else if (map.size() > 1)
+            {
+                errors.reject("listImport", "Only one file is allowed.");
+            }
+            else
+            {
+                MultipartFile file = map.values().iterator().next();
+
+                if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
+                {
+                    errors.reject("listImport", "You must select a .list.zip file to import.");
+                }
+                else
+                {
+                    InputStream is = file.getInputStream();
+
+                    File zipFile = File.createTempFile("lists", ".zip");
+                    FileOutputStream fos = new FileOutputStream(zipFile);
+
+                    try
+                    {
+                        FileUtil.copyData(is, fos);
+                    }
+                    finally
+                    {
+                        if (is != null) try { is.close(); } catch (IOException e) {  }
+                        try { fos.close(); } catch (IOException e) {  }
+                    }
+
+                    //importStudy(errors, zipFile, file.getOriginalFilename());
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        public ActionURL getSuccessURL(Object o)
+        {
+            return getBeginURL(getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendRootNavTrail(root).addChild("Import Lists");
         }
     }
 

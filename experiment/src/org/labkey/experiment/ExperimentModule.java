@@ -250,7 +250,6 @@ public class ExperimentModule extends SpringModule
             }
         });
         SystemProperty.registerProperties();
-        OntologyManager.initCaches();
         TypesController.registerAdminConsoleLinks();
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
