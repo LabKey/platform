@@ -389,7 +389,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 finally
                 {
-                    if (!success)
+                    if (!success && null != i)
                     {
                         i.complete(success);
                     }

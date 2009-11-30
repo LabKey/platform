@@ -742,6 +742,39 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
+    /** Does not work for file system parents */
+    public List<Pair<String,String>> listAttachments(Collection<String> parents, Date modifiedSince)
+    {
+        ResultSet rs = null;
+
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("Parent", parents, CompareType.IN);
+            if (null != modifiedSince)
+                filter.addCondition("Modified", modifiedSince, CompareType.GTE);
+            
+            rs = Table.select(coreTables().getTableInfoDocuments(),
+                    PageFlowUtil.set("Parent","DocumentName"),
+                    filter,
+                    new Sort("+Created"));
+
+            ArrayList<Pair<String,String>> ret = new ArrayList<Pair<String, String>>();
+            while (rs.next())
+                ret.add(new Pair<String,String>(rs.getString(1), rs.getString(2)));
+            return ret;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
+
+    /** Collection resource with all attachments for this parent */
     public Resource getAttachmentResource(Path path, AttachmentParent parent)
     {
         // NOTE parent does not supply ACL, but should?
@@ -751,6 +784,12 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return null;
 
         return new AttachmentCollection(path, parent, c.getPolicy());
+    }
+
+
+    public Resource getDocumentResource(Path path, ActionURL downloadURL, AttachmentParent parent, String name)
+    {
+        return new AttachmentResource(path, downloadURL, parent, name);
     }
 
 
@@ -1601,10 +1640,21 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         String _name = null;
         long _created = Long.MIN_VALUE;
         String _createdBy = null;
-
+        ActionURL _downloadUrl = null;
         Attachment _cached = null;
 
-        
+
+        AttachmentResource(Path path, ActionURL downloadURL, AttachmentParent parent, String name)
+        {
+            super(path);
+            Container c = ContainerManager.getForId(parent.getContainerId());
+            _policy = c == null ? null : c.getPolicy();
+            _downloadUrl = downloadURL;
+            _parent = parent;
+            _name = name;
+        }
+
+
         AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
         {
             this(folder, parent, attachment.getName());
@@ -1630,6 +1680,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 return _cached;
             return AttachmentService.get().getAttachment(_parent, _name);
         }
+
+
+        @Override
+        public String getContentType()
+        {
+            return super.getContentType();
+        }
+        
 
         public boolean exists()
         {

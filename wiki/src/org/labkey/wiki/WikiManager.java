@@ -22,6 +22,7 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
@@ -35,6 +36,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.webdav.Resource;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.apache.log4j.Category;
@@ -824,7 +826,7 @@ public class WikiManager
         try
         {
             SQLFragment f = new SQLFragment();
-            f.append("SELECT P.container, P.name, owner$.searchterms as owner, createdby$.searchterms as createdby, P.created, modifiedby$.searchterms as modifiedby, P.modified,")
+            f.append("SELECT P.entityid, P.container, P.name, owner$.searchterms as owner, createdby$.searchterms as createdby, P.created, modifiedby$.searchterms as modifiedby, P.modified,")
                 .append("V.title, V.body, V.renderertype\n");
             f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n")
                 .append("LEFT OUTER JOIN core.usersearchterms AS owner$  ON P.createdby = owner$.userid\n")
@@ -844,6 +846,9 @@ public class WikiManager
             }
             rs = Table.executeQuery(comm.getSchema(), f, 0, false, false);
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            HashMap<String, AttachmentParent> ids = new HashMap<String, AttachmentParent>();
+            ObjectFactory<Wiki> wikiFactory = ObjectFactory.Registry.getFactory(Wiki.class);
+            
             while (rs.next())
             {
                 Map<String,Object> m = factory.getRowMap(rs);
@@ -857,6 +862,29 @@ public class WikiManager
                 task.addResource(r, SearchService.PRIORITY.item);
                 if (Thread.interrupted())
                     return;
+                assert null != entityid;
+                ids.put(entityid, wikiFactory.fromMap(m));
+            }
+
+            // now attachments
+            if (!ids.isEmpty())
+            {
+                List<Pair<String,String>> list = AttachmentService.get().listAttachments(ids.keySet(), modifiedSince);
+                ActionURL url = new ActionURL(WikiController.DownloadAction.class, c);
+                for (Pair<String,String> pair : list)
+                {
+                    String entityId = pair.first;
+                    String documentName = pair.second;
+                    ActionURL attachmentUrl = url.clone()
+                            .replaceParameter("entityId",entityId)
+                            .replaceParameter("name",documentName);
+                    Resource attachmentRes = AttachmentService.get().getDocumentResource(
+                            new Path(entityId,documentName),
+                            attachmentUrl,
+                            ids.get(entityId),
+                            documentName);
+                    task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                }
             }
         }
         catch (SQLException x)
