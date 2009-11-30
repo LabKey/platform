@@ -62,6 +62,9 @@ public class AttachmentService
 
         public File getWebRoot(Container project);
         public void setWebRoot(Container project, File webRoot);
+        public void disableFileRoot(Container container);
+        public boolean isFileRootDisabled(Container container);
+        public boolean hasSiteDefaultRoot(Container container);
 
         /**
          * Return an AttachmentParent for files in the directory mapped to this container

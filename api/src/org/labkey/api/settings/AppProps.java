@@ -24,6 +24,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -77,6 +78,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
     protected static final String CABIG_ENABLED = "caBIGEnabled";
     protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
+    protected static final String WEB_ROOT = "webRoot";
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
 
@@ -465,6 +467,16 @@ public class AppProps extends AbstractWriteableSettingsGroup
     public String getProjectRoot()
     {
         return _projectRoot;
+    }
+
+    public File getFileSystemRoot()
+    {
+        String webRoot = lookupStringValue(WEB_ROOT, "");
+        if (!StringUtils.isEmpty(webRoot))
+        {
+            return new File(webRoot);
+        }
+        return null;
     }
 
     public UsageReportingLevel getUsageReportingLevel()

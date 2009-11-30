@@ -190,6 +190,11 @@ public class WriteableAppProps extends AppProps
         storeStringValue(MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP, name);
     }
 
+    public void setFileSystemRoot(String root)
+    {
+        storeStringValue(WEB_ROOT, root);
+    }
+
     private void incrementLookAndFeelRevision()
     {
         storeIntValue(LOOK_AND_FEEL_REVISION, getLookAndFeelRevision() + 1);
