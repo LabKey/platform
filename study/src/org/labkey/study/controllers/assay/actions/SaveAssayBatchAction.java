@@ -246,15 +246,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             //check to see if this is already an ExpData
             File file = new File(pipelineRoot.getRootPath(), pipelinePath);
-            URI uri;
-            try
-            {
-                uri = new URI("file:" + file.getAbsolutePath());
-            }
-            catch (URISyntaxException e)
-            {
-                throw new ValidationException(e.getMessage());
-            }
+            URI uri = file.toURI();
             data = expSvc.getExpDataByURL(uri.toString(), container);
 
             if (null == data)
