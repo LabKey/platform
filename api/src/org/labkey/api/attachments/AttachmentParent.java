@@ -32,4 +32,6 @@ public interface AttachmentParent
     // AttachmentServiceImpl uses this to retrieve the attachments of many parents with a single query.  Implementation
     // is not necessary in most cases.
     public void setAttachments(Collection<Attachment> attachments);
+
+    // TODO add getDownloadURL(String name), see AttachmentResource constructor
 }

@@ -23,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.Resource;
 import org.springframework.validation.BindException;
 import org.apache.commons.lang.StringUtils;
@@ -37,6 +38,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Date;
 
 /**
  * User: adam
@@ -121,7 +123,9 @@ public class AttachmentService
         public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException;
         public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
         public Attachment[] getAttachments(AttachmentParent parent);
+        public List<Pair<String,String>> listAttachments(Collection<String> parents, Date modifiedSince);
         public Resource getAttachmentResource(Path path, AttachmentParent parent);
+        public Resource getDocumentResource(Path path, ActionURL downloadURL, AttachmentParent parent, String name);
         public Attachment getAttachment(AttachmentParent parent, String name);
         public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
