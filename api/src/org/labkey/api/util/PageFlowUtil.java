@@ -711,30 +711,6 @@ public class PageFlowUtil
     }
 
 
-    private static String _tempPath = null;
-
-    // Under Catalina, it seems to pick \tomcat\temp
-    // On the web server under Tomcat, it seems to pick c:\Documents and Settings\ITOMCAT_EDI\Local Settings\Temp
-    public static String getTempDirectory()
-    {
-        if (null == _tempPath)
-        {
-            try
-            {
-                File temp = File.createTempFile("deleteme", null);
-                _tempPath = temp.getParent() + File.separator;
-                temp.delete();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return _tempPath;
-    }
-
-
     private static MimeMap _mimeMap = new MimeMap();
 
     public static String getContentTypeFor(String filename)

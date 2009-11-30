@@ -240,7 +240,7 @@ public class TempTableTracker extends WeakReference<Object>
             try
             {
                 if (null == tempTableLog)
-                    tempTableLog = new RandomAccessFile(PageFlowUtil.getTempDirectory() + LOGFILE, "rwd");
+                    tempTableLog = new RandomAccessFile(FileUtil.getTempDirectory() + LOGFILE, "rwd");
 
                 if (loadFile)
                 {

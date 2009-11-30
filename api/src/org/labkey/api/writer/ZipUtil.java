@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * User: adam
@@ -33,7 +34,14 @@ import java.util.zip.ZipEntry;
  */
 public class ZipUtil
 {
-    // Unzip an archive to the specified directory
+    // Unzip a zipped input stream to the specified directory
+    public static List<File> unzipToDirectory(InputStream is, File unzipDir) throws IOException
+    {
+        return unzipToDirectory(is, unzipDir, null);
+    }
+
+
+    // Unzip a zipped file archive to the specified directory
     public static List<File> unzipToDirectory(File zipFile, File unzipDir) throws IOException
     {
         return unzipToDirectory(zipFile, unzipDir, null);
@@ -43,17 +51,67 @@ public class ZipUtil
     // Unzip an archive to the specified directory; log each file if Loggger is non-null
     public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
     {
+        InputStream is = new FileInputStream(zipFile);
+        return unzipToDirectory(is, unzipDir, log);
+    }
+
+
+    // Unzip all entries to the specified directory; log each file if Loggger is non-null
+    public static List<File> unzipToDirectory(Enumeration<? extends ZipEntry> entries, File unzipDir, InputStream zis, @Nullable Logger log) throws IOException
+    {
         List<File> files = new ArrayList<File>();
-        ZipFile zip = null;
+
+        while (entries.hasMoreElements())
+        {
+            ZipEntry entry = entries.nextElement();
+
+            if (entry.isDirectory())
+            {
+                File newDir = new File(unzipDir, entry.getName());
+                newDir.mkdir();
+                continue;
+            }
+
+            if (null != log)
+                log.info("Expanding " + entry.getName());
+
+            BufferedInputStream is = null;
+            BufferedOutputStream os = null;
+
+            try
+            {
+                is = new BufferedInputStream(zis); // TODO: Make work for file -- zip.getInputStream(entry)
+                File destFile = new File(unzipDir, entry.getName());
+                destFile.getParentFile().mkdirs();
+                destFile.createNewFile();
+                os = new BufferedOutputStream(new FileOutputStream(destFile));
+                FileUtil.copyData(is, os);
+                files.add(destFile);
+            }
+            finally
+            {
+                //if (is != null) is.close();
+                if (os != null) os.close();
+            }
+        }
+
+        return files;
+    }
+
+
+    // Unzip an input stream the specified directory; log each file if Loggger is non-null
+    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log) throws IOException
+    {
+        List<File> files = null;
+
         try
         {
-            zip = new ZipFile(zipFile);
-            Enumeration<? extends ZipEntry> entries = zip.entries();
+            ZipInputStream zis = new ZipInputStream(is);
+            files = new ArrayList<File>();
+            ZipEntry entry;
 
-            while (entries.hasMoreElements())
+            while (null != (entry = zis.getNextEntry()))
             {
-                ZipEntry entry = entries.nextElement();
-
                 if (entry.isDirectory())
                 {
                     File newDir = new File(unzipDir, entry.getName());
@@ -64,30 +122,65 @@ public class ZipUtil
                 if (null != log)
                     log.info("Expanding " + entry.getName());
 
-                BufferedInputStream is = null;
                 BufferedOutputStream os = null;
 
                 try
                 {
-                    is = new BufferedInputStream(zip.getInputStream(entry));
+                    is = new BufferedInputStream(zis);
                     File destFile = new File(unzipDir, entry.getName());
                     destFile.getParentFile().mkdirs();
                     destFile.createNewFile();
                     os = new BufferedOutputStream(new FileOutputStream(destFile));
                     FileUtil.copyData(is, os);
                     files.add(destFile);
+                    zis.closeEntry();
                 }
                 finally
                 {
-                    if (is != null) is.close();
+                    //if (is != null) is.close();
                     if (os != null) os.close();
                 }
             }
         }
         finally
         {
-            if (zip != null) try { zip.close(); } catch (IOException e) {}
+            is.close();
         }
+
         return files;
+    }
+
+
+    private static class ZipStreamEnumeration implements Enumeration<ZipEntry>
+    {
+        private ZipInputStream _zis;
+        private ZipEntry _nextEntry;
+
+        private ZipStreamEnumeration(ZipInputStream zis)
+        {
+            _zis = zis;
+        }
+
+        public boolean hasMoreElements()
+        {
+            try
+            {
+                if (null != _nextEntry)
+                    _zis.closeEntry();
+
+                _nextEntry = _zis.getNextEntry();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            return null != _nextEntry;
+        }
+
+        public ZipEntry nextElement()
+        {
+            return _nextEntry;
+        }
     }
 }

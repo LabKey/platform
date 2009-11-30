@@ -40,6 +40,8 @@ import junit.framework.TestSuite;
  */
 public class FileUtil
 {
+    public static String _tempPath = null;
+
     public static boolean deleteDirectoryContents(File dir)
     {
         if (dir.isDirectory())
@@ -649,6 +651,45 @@ quickScan:
             parent = file.getParentFile();
         }
         return new File(resolveFile(parent), file.getName());
+    }
+
+
+    // Create a directory within the standard temp directory
+    public static File createTempDirectory(String prefix) throws IOException
+    {
+        final File temp;
+
+        temp = File.createTempFile(prefix, "");
+
+        if (!(temp.delete()))
+            throw new IOException("Could not delete temp file: " + temp.getAbsolutePath());
+
+        if (!(temp.mkdir()))
+            throw new IOException("Could not create temp directory: " + temp.getAbsolutePath());
+
+        return temp;
+    }
+
+
+    // Under Catalina, it seems to pick \tomcat\temp
+    // On the web server under Tomcat, it seems to pick c:\Documents and Settings\ITOMCAT_EDI\Local Settings\Temp
+    public static String getTempDirectory()
+    {
+        if (null == _tempPath)
+        {
+            try
+            {
+                File temp = File.createTempFile("deleteme", null);
+                _tempPath = temp.getParent() + File.separator;
+                temp.delete();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return _tempPath;
     }
 
 
