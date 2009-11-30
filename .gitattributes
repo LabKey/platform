@@ -992,6 +992,7 @@ list/src/org/labkey/list/model/ListSchema.java -text
 list/src/org/labkey/list/model/ListServiceImpl.java -text
 list/src/org/labkey/list/model/ListTable.java -text
 list/src/org/labkey/list/model/ListWriter.java -text
+list/src/org/labkey/list/model/StudyListImporter.java -text
 list/src/org/labkey/list/model/StudyListWriter.java -text
 list/src/org/labkey/list/view/AttachmentDisplayColumn.java -text
 list/src/org/labkey/list/view/EditListDefinitionForm.java -text

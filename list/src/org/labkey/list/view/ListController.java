@@ -19,6 +19,7 @@ package org.labkey.list.view;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.*;
@@ -54,9 +55,12 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
+import org.labkey.api.writer.ZipUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListWriter;
+import org.labkey.list.model.ListImporter;
 // TODO: import org.labkey.experiment.list.client.ListImporter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1121,20 +1125,11 @@ public class ListController extends SpringActionController
                 {
                     InputStream is = file.getInputStream();
 
-                    File zipFile = File.createTempFile("lists", ".zip");
-                    FileOutputStream fos = new FileOutputStream(zipFile);
+                    File dir = FileUtil.createTempDirectory("list");
+                    ZipUtil.unzipToDirectory(is, dir);
 
-                    try
-                    {
-                        FileUtil.copyData(is, fos);
-                    }
-                    finally
-                    {
-                        if (is != null) try { is.close(); } catch (IOException e) {  }
-                        try { fos.close(); } catch (IOException e) {  }
-                    }
-
-                    //importStudy(errors, zipFile, file.getOriginalFilename());
+                    ListImporter li = new ListImporter();
+                    li.process(dir, dir, getContainer(), getUser(), Logger.getLogger(ListController.class));
                 }
             }
 

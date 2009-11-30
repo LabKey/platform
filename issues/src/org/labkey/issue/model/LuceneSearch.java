@@ -35,6 +35,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.jetbrains.annotations.Nullable;
@@ -70,7 +71,7 @@ public class LuceneSearch
         {
             rs = Table.select(tinfo, columns, null, null);
 
-            File tempDir = new File(PageFlowUtil.getTempDirectory(), "issues");
+            File tempDir = new File(FileUtil.getTempDirectory(), "issues");
             Directory directory = FSDirectory.open(tempDir);
 
             Analyzer analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
@@ -137,7 +138,7 @@ public class LuceneSearch
     {
         // Should stash all this and reuse
         Analyzer analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
-        File tempDir = new File(PageFlowUtil.getTempDirectory(), "issues");
+        File tempDir = new File(FileUtil.getTempDirectory(), "issues");
         Directory directory = FSDirectory.open(tempDir);
         IndexSearcher searcher = new IndexSearcher(directory, true);
         int hitsPerPage = 20;

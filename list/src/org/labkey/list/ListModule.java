@@ -80,7 +80,7 @@ public class ListModule extends DefaultModule
         StudySerializationRegistry registry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
 
         if (null != registry)
-            registry.addFactories(new StudyListWriter.Factory(), new ListImporter.Factory());
+            registry.addFactories(new StudyListWriter.Factory(), new StudyListImporter.Factory());
     }
 
     @Override

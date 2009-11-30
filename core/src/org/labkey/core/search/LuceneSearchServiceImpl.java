@@ -17,6 +17,7 @@ import org.apache.lucene.util.Version;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.Resource;
 import org.labkey.core.search.HTMLContentExtractor.GenericHTMLExtractor;
 import org.labkey.core.search.HTMLContentExtractor.LabKeyPageHTMLExtractor;
@@ -46,7 +47,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            File tempDir = new File(PageFlowUtil.getTempDirectory(), "labkey_full_text_index");
+            File tempDir = new File(FileUtil.getTempDirectory(), "labkey_full_text_index");
             _directory = FSDirectory.open(tempDir);
             _analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
         }
@@ -135,7 +136,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                             if (!"title".equals(key))
                             {
-                                doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
+                                doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.ANALYZED));
 
                                 if ("area".equals(key))
                                 {

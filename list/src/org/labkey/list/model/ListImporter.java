@@ -16,8 +16,10 @@
 
 package org.labkey.list.model;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
@@ -25,19 +27,15 @@ import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.study.ExternalStudyImporter;
-import org.labkey.api.study.ExternalStudyImporterFactory;
+import org.labkey.api.security.User;
 import org.labkey.api.study.InvalidFileException;
-import org.labkey.api.study.StudyContext;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.util.FileUtil;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.util.*;
@@ -47,110 +45,99 @@ import java.util.*;
 * Date: Aug 27, 2009
 * Time: 2:12:01 PM
 */
-public class ListImporter implements ExternalStudyImporter
+public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
 
-    public String getDescription()
+    public void process(File root, File listsDir, Container c, User user, Logger log) throws Exception
     {
-        return "lists";
-    }
+        File schemaFile = new File(listsDir, "lists.xml");
 
-    public void process(StudyContext ctx, File root) throws Exception
-    {
-        StudyDocument.Study.Lists listsXml = ctx.getStudyXml().getLists();
+        TablesDocument tablesDoc;
 
-        if (null != listsXml)
+        try
         {
-            File listsDir = ctx.getStudyDir(root, listsXml.getDir());
-            File schemaFile = new File(listsDir, "lists.xml");
+            tablesDoc = TablesDocument.Factory.parse(schemaFile, XmlBeansUtil.getDefaultParseOptions());
+            XmlBeansUtil.validateXmlDocument(tablesDoc);
+        }
+        catch (XmlValidationException xve)
+        {
+            // Note: different constructor than the one below
+            throw new InvalidFileException(root, schemaFile, xve);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidFileException(root, schemaFile, e);
+        }
 
-            TablesDocument tablesDoc;
+        TablesDocument.Tables tablesXml = tablesDoc.getTables();
+        List<String> names = new LinkedList<String>();
+
+        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+
+        for (TableType tableType : tablesXml.getTableArray())
+        {
+            String name = tableType.getTableName();
+            names.add(name);
+
+            ListDefinition def = lists.get(name);
+
+            if (null != def)
+                def.delete(user);
 
             try
             {
-                tablesDoc = TablesDocument.Factory.parse(schemaFile, XmlBeansUtil.getDefaultParseOptions());
-                XmlBeansUtil.validateXmlDocument(tablesDoc);
+                createNewList(c, user, name, tableType, log);
             }
-            catch (XmlValidationException xve)
+            catch (ImportException e)
             {
-                // Note: different constructor than the one below
-                throw new InvalidFileException(root, schemaFile, xve);
+                throw new ImportException("Error creating list \"" + name + "\": " + e.getMessage());
             }
-            catch (Exception e)
-            {
-                throw new InvalidFileException(root, schemaFile, e);
-            }
-
-            TablesDocument.Tables tablesXml = tablesDoc.getTables();
-            List<String> names = new LinkedList<String>();
-
-            Map<String, ListDefinition> lists = ListService.get().getLists(ctx.getContainer());
-
-            for (TableType tableType : tablesXml.getTableArray())
-            {
-                String name = tableType.getTableName();
-                names.add(name);
-
-                ListDefinition def = lists.get(name);
-
-                if (null != def)
-                    def.delete(ctx.getUser());
-
-                try
-                {
-                    createNewList(ctx, name, tableType);
-                }
-                catch (ImportException e)
-                {
-                    throw new ImportException("Error creating list \"" + name + "\": " + e.getMessage());
-                }
-            }
-
-            lists = ListService.get().getLists(ctx.getContainer());
-
-            for (String name : names)
-            {
-                ListDefinition def = lists.get(name);
-
-                if (null != def)
-                {
-                    String legalName = FileUtil.makeLegalName(name);
-                    File tsv = new File(listsDir, legalName + ".tsv");
-
-                    if (tsv.exists())
-                    {
-                        List<String> errors = def.insertListItems(ctx.getUser(), DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName));
-
-                        for (String error : errors)
-                            ctx.getLogger().error(error);
-
-                        // TODO: Error the entire job on import error?
-                    }
-                }
-            }
-
-            ctx.getLogger().info(names.size() + " list" + (1 == names.size() ? "" : "s") + " imported");
         }
+
+        lists = ListService.get().getLists(c);
+
+        for (String name : names)
+        {
+            ListDefinition def = lists.get(name);
+
+            if (null != def)
+            {
+                String legalName = FileUtil.makeLegalName(name);
+                File tsv = new File(listsDir, legalName + ".tsv");
+
+                if (tsv.exists())
+                {
+                    List<String> errors = def.insertListItems(user, DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName));
+
+                    for (String error : errors)
+                        log.error(error);
+
+                    // TODO: Error the entire job on import error?
+                }
+            }
+        }
+
+        log.info(names.size() + " list" + (1 == names.size() ? "" : "s") + " imported");
     }
 
-    private void createNewList(StudyContext ctx, String listName, TableType listXml) throws Exception
+    private void createNewList(Container c, User user, String listName, TableType listXml, Logger log) throws Exception
     {
         String keyName = listXml.getPkColumnName();
 
         if (null == keyName)
         {
-            ctx.getLogger().error("List \"" + listName + "\": no pkColumnName set.");
+            log.error("List \"" + listName + "\": no pkColumnName set.");
             return;
         }
 
         KeyType pkType = getKeyType(listXml, keyName);
 
-        ListDefinition list = ListService.get().createList(ctx.getContainer(), listName);
+        ListDefinition list = ListService.get().createList(c, listName);
         list.setKeyName(keyName);
         list.setKeyType(pkType);
         list.setDescription(listXml.getDescription());
-        list.save(ctx.getUser());
+        list.save(user);
 
         // TODO: This code is largely the same as SchemaXmlReader -- should consolidate
 
@@ -224,10 +211,10 @@ public class ListImporter implements ExternalStudyImporter
         };
 
         List<String> importErrors = new LinkedList<String>();
-        OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, importErrors, ctx.getContainer(), true);
+        OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, importErrors, c, true);
 
         for (String error : importErrors)
-            ctx.getLogger().error(error);
+            log.error(error);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException
@@ -249,19 +236,5 @@ public class ListImporter implements ExternalStudyImporter
         }
 
         throw new ImportException("pkColumnName is set to \"" + keyName + "\" but column is not defined.");
-    }
-
-    public Collection<PipelineJobWarning> postProcess(StudyContext ctx, File root) throws Exception
-    {
-        //nothing for now
-        return null;
-    }
-
-    public static class Factory implements ExternalStudyImporterFactory
-    {
-        public ExternalStudyImporter create()
-        {
-            return new ListImporter();
-        }
     }
 }
