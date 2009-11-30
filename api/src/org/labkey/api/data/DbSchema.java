@@ -553,7 +553,6 @@ public class DbSchema
             Map m2 = (Map) DbCache.get(testTable, key);
             assertEquals(m, m2);
 
-
             //Does cache get cleared on delete
             Table.delete(testTable, rowId);
             m2 = (Map) DbCache.get(testTable, key);
@@ -656,9 +655,9 @@ public class DbSchema
             return new TestSuite(TestCase.class);
         }
     }
-    public static Integer checkContainerColumns(String dbSchemaName, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId ) throws SQLException
-    {
 
+    public static Integer checkContainerColumns(String dbSchemaName, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
+    {
         int row = rowId.intValue();
         DbSchema curSchema = DbSchema.get(dbSchemaName);
         SQLFragment sbSql = new SQLFragment();
@@ -667,6 +666,7 @@ public class DbSchema
         {
             if (t.getTableType()!= TableInfo.TABLE_TYPE_TABLE)
                 continue;
+
             for (ColumnInfo col : t.getColumns())
             {
                 if (col.getName().equalsIgnoreCase("Container"))
@@ -718,9 +718,10 @@ public class DbSchema
                 }
             }
         }
-        sbSqlCmd.append(sbSql);
-        return new Integer(row);
 
+        sbSqlCmd.append(sbSql);
+
+        return new Integer(row);
     }
 
     public static String checkAllContainerCols(boolean bfix) throws SQLException
@@ -750,7 +751,8 @@ public class DbSchema
 
         StringBuilder sbOut = new StringBuilder();
 
-        try {
+        try
+        {
             SQLFragment sbCheck = new SQLFragment();
 
             for (Module module : modules)
@@ -760,6 +762,7 @@ public class DbSchema
                 for (DbSchema schema : schemas)
                     lastRowId = checkContainerColumns(schema.getName(), sbCheck, tempTableName, module.getName(), lastRowId);
             }
+
             Table.execute(coreSchema, createTempTableSql, new Object[]{});
             tTemplate.track();
             Table.execute(coreSchema, sbCheck);
@@ -776,12 +779,13 @@ public class DbSchema
 
                 rs1 = Table.executeQuery(coreSchema," SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
                         + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName" +
-                        " ;",new Object[]{});
+                        " ;", new Object[]{});
+
                 while (rs1.next())
                 {
                     modulesOfOrphans.add(ModuleLoader.getInstance().getModule(rs1.getString(3)));
-
                     String sql = "UPDATE " + rs1.getString(1) +" SET Container = ? WHERE Container = ? ";
+
                     try
                     {
                         Table.execute(coreSchema, sql, new Object[]{recovered.getId(), rs1.getString(2)});
@@ -800,14 +804,16 @@ public class DbSchema
                         sbOut.append(". Retrying recovery may work.  ");
                     }
                 }
-                recovered.setActiveModules(modulesOfOrphans);
-                return sbOut.toString();
 
+                recovered.setActiveModules(modulesOfOrphans);
+
+                return sbOut.toString();
             }
             else
             {
-                rs1 = Table.executeQuery(coreSchema," SELECT * FROM " + tempTableName
-                        + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;",new Object[]{});
+                rs1 = Table.executeQuery(coreSchema, " SELECT * FROM " + tempTableName
+                        + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;", new Object[]{});
+
                 while (rs1.next())
                 {
                     sbOut.append("<br/>&nbsp;&nbsp;&nbsp;ERROR:  ");
@@ -820,6 +826,7 @@ public class DbSchema
                     sbOut.append(rs1.getString(5));
                     sbOut.append("\n");
                 }
+
                 return sbOut.toString();
             }
         }

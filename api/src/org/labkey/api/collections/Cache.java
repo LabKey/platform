@@ -33,7 +33,7 @@ public class Cache
     public static long DEFAULT_TIMEOUT = HOUR;
     private static int CACHE_SIZE = 10000;
 
-    static final Cache _instance = new Cache(CACHE_SIZE, DEFAULT_TIMEOUT, "sharedCache");
+    private static final Cache _instance = new Cache(CACHE_SIZE, DEFAULT_TIMEOUT, "sharedCache");
 
     public static Cache getShared()
     {

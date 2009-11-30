@@ -25,7 +25,8 @@ import org.labkey.api.collections.TTLCacheMap;
 */
 public class TransactionCacheMap<K, V> extends TTLCacheMap<K, V>
 {
-    static final boolean ENABLE_READ_THROUGH = true;   // Read-through is disabled for now -- exposes deadlock in specimen importer, see #9138
+    // TODO: Remove this flag once we've tested read-through capability
+    static final boolean ENABLE_READ_THROUGH = true;
 
     private boolean _hasWritten = !ENABLE_READ_THROUGH;
     private final TTLCacheMap<K, V> _sharedCacheMap;
@@ -36,6 +37,13 @@ public class TransactionCacheMap<K, V> extends TTLCacheMap<K, V>
     {
         super(sharedCacheMap.getMaxSize(), sharedCacheMap.getDefaultExpires(), "transaction cache: " + sharedCacheMap.getDebugName());
         _sharedCacheMap = sharedCacheMap;
+        stats = _sharedCacheMap.transactionStats;      // All stats accumulate to the shared cache's transaction stats
+    }
+
+    @Override
+    protected void addToKnownCacheMaps()
+    {
+        // Transaction caches are transient & short-lived -- don't hold onto them
     }
 
     @Override

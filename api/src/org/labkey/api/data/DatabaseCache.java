@@ -23,7 +23,6 @@ import org.labkey.api.collections.TTLCacheMap;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
 
 /**
  * User: matthewb
@@ -43,12 +42,10 @@ public class DatabaseCache<ValueType>
 
     private final TTLCacheMap<String, ValueType> _sharedMap;
     private final DbScope _scope;
-    private long _hits = 0;
-    private long _misses = 0;
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
-        _sharedMap = new TTLCacheMap<String, ValueType>(maxSize, defaultTimeToLive, debugName);
+        _sharedMap = createSharedCacheMap(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
     }
 
@@ -57,20 +54,23 @@ public class DatabaseCache<ValueType>
         this(scope, maxSize, -1, debugName);
     }
 
+    protected TTLCacheMap<String, ValueType> createSharedCacheMap(int maxSize, long defaultTimeToLive, String debugName)
+    {
+        return new TTLCacheMap<String, ValueType>(maxSize, defaultTimeToLive, debugName);
+    }
+
     private TTLCacheMap<String, ValueType> getMap()
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
         if (null != t)
         {
-            Map<Object, TTLCacheMap> transactionCaches = t.getCaches();
-
-            TTLCacheMap<String, ValueType> map = transactionCaches.get(this);
+            TTLCacheMap<String, ValueType> map = t.getCache(this);
 
             if (null == map)
             {
                 map = new TransactionCacheMap<String, ValueType>(_sharedMap);
-                transactionCaches.put(this, map);
+                t.addCache(this, map);
             }
 
             return map;
@@ -93,14 +93,7 @@ public class DatabaseCache<ValueType>
 
     public synchronized ValueType get(String key)
     {
-        ValueType value = getMap().get(key);
-
-        if (null == value)
-            _misses++;
-        else
-            _hits++;
-
-        return value;
+        return getMap().get(key);
     }
 
 
@@ -158,16 +151,6 @@ public class DatabaseCache<ValueType>
     }
 
 
-    public long getHits()
-    {
-        return _hits;
-    }
-
-    public long getMisses()
-    {
-        return _misses;
-    }
-
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
@@ -185,7 +168,20 @@ public class DatabaseCache<ValueType>
         public void testDbCache() throws Exception
         {
             MyScope scope = new MyScope();
-            DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10, "Test Cache");
+
+            // Don't let the test cache add to KNOWN_CACHES, otherwise we'll leak a TTLCacheMap for each invocation
+            DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10, "Test Cache") {
+                @Override
+                protected TTLCacheMap<String, String> createSharedCacheMap(int maxSize, long defaultTimeToLive, String debugName)
+                {
+                    return new TTLCacheMap<String, String>(maxSize, defaultTimeToLive, debugName) {
+                        @Override
+                        protected void addToKnownCacheMaps()
+                        {
+                        }
+                    };
+                }
+            };
 
             // basic TTL testing
 

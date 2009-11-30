@@ -16,6 +16,7 @@
 package org.labkey.api.collections;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -230,12 +231,25 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
+    private static final List<CacheMap> KNOWN_CACHEMAPS = new LinkedList<CacheMap>();
+
     private final String _debugName;
+
     protected Entry<K, V>[] buckets;
     protected Entry<K, V> head;
     protected int size = 0;
     protected boolean lru = false;
-    private static final List<CacheMap> KNOWN_CACHEMAPS = new ArrayList<CacheMap>();
+
+    protected Stats stats = new Stats();
+    public Stats transactionStats = new Stats();
+
+    protected static class Stats
+    {
+        private AtomicLong misses = new AtomicLong(0);
+        private AtomicLong hits = new AtomicLong(0);
+        private AtomicLong expirations = new AtomicLong(0);
+        private AtomicLong removes = new AtomicLong(0);
+    }
 
     //
     // Map implementation
@@ -247,22 +261,20 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     public CacheMap(int initialSize, String debugName)
     {
-        this(initialSize, true, debugName);
-    }
-
-    public CacheMap(int initialSize, boolean longLived, String debugName)
-    {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0, null);
-        if (longLived)
-        {
-            synchronized (KNOWN_CACHEMAPS)
-            {
-                KNOWN_CACHEMAPS.add(this);
-            }
-        }
         assert debugName.length() > 0;
         _debugName = debugName;
+        addToKnownCacheMaps();
+    }
+
+
+    protected void addToKnownCacheMaps()
+    {
+        synchronized (KNOWN_CACHEMAPS)
+        {
+            KNOWN_CACHEMAPS.add(this);
+        }
     }
 
 
@@ -275,6 +287,22 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
                 cmap.clear();
             }
         }
+    }
+
+
+    public static List<CacheMap> getKnownCacheMaps()
+    {
+        List<CacheMap> copy = new ArrayList<CacheMap>();
+
+        synchronized (KNOWN_CACHEMAPS)
+        {
+            for (CacheMap cachemap : KNOWN_CACHEMAPS)
+            {
+                copy.add(cachemap);
+            }
+        }
+
+        return copy;
     }
 
 
@@ -311,8 +339,49 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     {
         Entry<K, V> e = findEntry(key);
         if (null == e)
-            return null;
-        return e.getValue();
+            return trackGet(null);
+        return trackGet(e.getValue());
+    }
+
+
+    public V trackGet(V value)
+    {
+        if (value == null)
+            stats.misses.incrementAndGet();
+        else
+            stats.hits.incrementAndGet();
+
+        return value;
+    }
+
+
+    protected void trackExpiration()
+    {
+        stats.expirations.incrementAndGet();
+    }
+
+
+    public void trackRemove()
+    {
+        stats.removes.incrementAndGet();
+    }
+
+
+    public CacheStats getCacheStats()
+    {
+        return getCacheStats(stats, size);
+    }
+
+
+    public CacheStats getTransactionCacheStats()
+    {
+        return getCacheStats(transactionStats, 0);
+    }
+
+
+    private CacheStats getCacheStats(Stats stats, int size)
+    {
+        return new CacheStats(getDebugName(), stats.hits.get(), stats.misses.get(), stats.expirations.get(), stats.removes.get(), size);
     }
 
 
@@ -321,7 +390,10 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     {
         Entry<K, V> e = removeEntry((K)key);
         if (null != e)
+        {
+            trackRemove();
             return e.getValue();
+        }
         return null;
     }
 
@@ -334,6 +406,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         if (!removeOldestEntry(eldest))
             return false;
         removeEntry(eldest);
+        trackExpiration();
         return true;
     }
 

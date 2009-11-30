@@ -112,7 +112,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
 
     /** short lived cache to make webdav perform reasonably */
-    class FolderCache extends TTLCacheMap<Path,Resource> implements ContainerManager.ContainerListener
+    class FolderCache extends TTLCacheMap<Path, Resource> implements ContainerManager.ContainerListener
     {
         FolderCache()
         {
@@ -229,9 +229,14 @@ public class WebdavResolverImpl implements WebdavResolver
             for (Entry<Path, Resource> entry = head.next; entry != head; entry = entry.next)
             {
                 if (removeOldestEntry(entry))
+                {
                     removeEntry(entry);
+                    trackExpiration();
+                }
                 else if (entry.getKey().startsWith(prefix))
+                {
                     removeEntry(entry);
+                }
             }
         }
     }

@@ -97,6 +97,7 @@ api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
 api/src/org/labkey/api/collections/BoundMap.java -text
 api/src/org/labkey/api/collections/Cache.java -text
 api/src/org/labkey/api/collections/CacheMap.java -text
+api/src/org/labkey/api/collections/CacheStats.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveArrayListMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
@@ -929,9 +930,11 @@ api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
 api/src/org/labkey/api/writer/Archive.java -text
 api/src/org/labkey/api/writer/ContainerUser.java -text
+api/src/org/labkey/api/writer/FileSystemFile.java -text
 api/src/org/labkey/api/writer/VirtualFile.java -text
 api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text
+api/src/org/labkey/api/writer/ZipFile.java -text
 api/src/org/labkey/api/writer/ZipUtil.java -text
 api/src/org/systemsbiology/jrap/DataProcessingInfo.java -text
 api/src/org/systemsbiology/jrap/MSInstrumentInfo.java -text

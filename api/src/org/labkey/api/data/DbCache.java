@@ -18,7 +18,10 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * User: migra
@@ -133,67 +136,5 @@ public class DbCache
     {
         DatabaseCache cache = getCache(tinfo);
         cache.removeUsingPrefix(name);
-    }
-
-    public static Collection<CacheStats> getStats()
-    {
-        List<CacheStats> stats = new ArrayList<CacheStats>();
-
-        synchronized (CACHES)
-        {
-            for (Map.Entry<TableInfo, DatabaseCache<Object>> entry : CACHES.entrySet())
-            {
-                DatabaseCache cache = entry.getValue();
-                stats.add(new CacheStats(entry.getKey().getName(), cache.getHits(), cache.getMisses()));
-            }
-        }
-
-        Collections.sort(stats);
-        return stats;
-    }
-
-    public static class CacheStats implements Comparable<CacheStats>
-    {
-        private final String _description;
-        private final long _hits;
-        private final long _misses;
-
-        private CacheStats(String description, long hits, long misses)
-        {
-            _description = description;
-            _hits = hits;
-            _misses = misses;
-        }
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public long getHits()
-        {
-            return _hits;
-        }
-
-        public long getMisses()
-        {
-            return _misses;
-        }
-
-        public long getTotal()
-        {
-            return _hits + _misses;
-        }
-
-        public double getMissRatio()
-        {
-            long total = getTotal();
-            return 0 != total ? getMisses()/(double)total : 0;
-        }
-
-        public int compareTo(CacheStats cs2)
-        {
-            return Double.compare(cs2.getMissRatio(), getMissRatio());   // Highest to lowest miss ratio
-        }
     }
 }

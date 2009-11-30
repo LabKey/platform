@@ -97,12 +97,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     public TTLCacheMap(int maxSize, long defaultExpires, String debugName)
     {
-        this(maxSize, defaultExpires, true, debugName);
-    }
-
-    public TTLCacheMap(int maxSize, long defaultExpires, boolean shared, String debugName)
-    {
-        super(Math.min(10000, maxSize), shared, debugName);
+        super(Math.min(10000, maxSize), debugName);
         this.lru = true;
         this.maxSize = maxSize;
         this.defaultExpires = defaultExpires;
@@ -149,14 +144,14 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     {
         TTLCacheEntry e = (TTLCacheEntry)findEntry(key);
         if (null == e)
-            return null;
+            return trackGet(null);
         if (e.expired())
         {
             removeEntry(e);
             testOldestEntry();
-            return null;
+            return trackGet(null);
         }
-        return e.getValue();
+        return trackGet(e.getValue());
     }
 
 
@@ -187,9 +182,15 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         for (Entry<K, V> entry = head.next; entry != head; entry = entry.next)
         {
             if (removeOldestEntry(entry))
+            {
+                trackExpiration();
                 removeEntry(entry);
+            }
             else if (entry.getKey() instanceof String && ((String)entry.getKey()).startsWith(prefix))
+            {
+                trackRemove();
                 removeEntry(entry);
+            }
         }
     }
 

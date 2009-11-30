@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
@@ -39,7 +40,7 @@ import java.util.*;
 
 public class SchemaTableInfo implements TableInfo
 {
-    private static Logger _log = Logger.getLogger(SchemaTableInfo.class);
+    private static final Logger _log = Logger.getLogger(SchemaTableInfo.class);
 
     String name;
     String title = null;

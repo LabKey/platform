@@ -731,7 +731,7 @@ public class DbScope
     static class Transaction
     {
         private final Connection _conn;
-        private final Map<Object, TTLCacheMap> _caches = new HashMap<Object, TTLCacheMap>(20);
+        private final Map<DatabaseCache<?>, TTLCacheMap<String, ?>> _caches = new HashMap<DatabaseCache<?>, TTLCacheMap<String, ?>>(20);
         private final LinkedList<Runnable> _commitTasks = new LinkedList<Runnable>();
 
         Transaction(Connection conn)
@@ -739,9 +739,14 @@ public class DbScope
             _conn = conn;
         }
 
-        Map<Object, TTLCacheMap> getCaches()
+        <ValueType> TTLCacheMap<String, ValueType> getCache(DatabaseCache<ValueType> cache)
         {
-            return _caches;
+            return (TTLCacheMap<String, ValueType>)_caches.get(cache);
+        }
+
+        <ValueType> void addCache(DatabaseCache<ValueType> cache, TTLCacheMap<String, ValueType> map)
+        {
+            _caches.put(cache, map);
         }
 
         void addCommitTask(Runnable task)

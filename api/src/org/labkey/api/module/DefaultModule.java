@@ -83,7 +83,7 @@ public abstract class DefaultModule implements Module
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
-    private Cache _reportDescriptorCache = new Cache(1024, Cache.DAY, "Report descriptor cache");
+    private static final Cache _reportDescriptorCache = new Cache(1024, Cache.DAY, "Report descriptor cache");
 
     private enum SchemaUpdateType
     {

@@ -49,17 +49,16 @@ import java.util.*;
 @SuppressWarnings({"StringConcatenationInsideStringBufferAppend"})
 public class OntologyManager
 {
-    static Logger _log = Logger.getLogger(OntologyManager.class);
-	static DatabaseCache<Map<String, ObjectProperty>> mapCache = null;
-	static DatabaseCache<Integer> objectIdCache = null;
-	static DatabaseCache<PropertyDescriptor> propDescCache = null;
-	static DatabaseCache<DomainDescriptor> domainDescCache = null;
-    static Container _sharedContainer = ContainerManager.getSharedContainer();
+    private static final Logger _log = Logger.getLogger(OntologyManager.class);
+	private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<Map<String, ObjectProperty>>(getExpSchema().getScope(), 1000, "Property maps");
+	private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<Integer>(getExpSchema().getScope(), 1000, "ObjectIds");
+    private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 2000, "Property descriptors");
+	private static final DatabaseCache<DomainDescriptor> domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000, "Domain descriptors");
+    private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     static
 	{
 		BeanObjectFactory.Registry.register(ObjectProperty.class, new ObjectProperty.ObjectPropertyObjectFactory());
-        initCaches();
     }
 
 
@@ -68,15 +67,6 @@ public class OntologyManager
 	}
 
 
-    public static void initCaches()
-    {
-        mapCache = new DatabaseCache<Map<String, ObjectProperty>>(getExpSchema().getScope(), 1000, "Property maps");
-        objectIdCache = new DatabaseCache<Integer>(getExpSchema().getScope(), 1000, "ObjectIds");
-        propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 2000, "Property descriptors");
-        domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000, "Domain descriptors");
-    }
-
-    
     /** @return map from PropertyURI to value */
     public static Map<String, Object> getProperties(Container container, String parentLSID) throws SQLException
 	{
