@@ -54,7 +54,6 @@ import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.jetbrains.annotations.Nullable;
@@ -82,7 +81,10 @@ import java.util.regex.Pattern;
  */
 public class AdminController extends SpringActionController
 {
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
+            AdminController.class,
+            FilesSiteSettingsAction.class,
+            ProjectSettingsAction.class);
     private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
 
     private static long _errorMark = 0;
@@ -98,6 +100,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderSettingsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -559,64 +562,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    private void handleLogoFile(MultipartFile file, Container c) throws ServletException, SQLException, IOException, AttachmentService.DuplicateFilenameException
-    {
-        User user = getViewContext().getUser();
-
-        // Set the name to something we'll recognize as a logo file
-        String uploadedFileName = file.getOriginalFilename();
-        int index = uploadedFileName.lastIndexOf(".");
-        if (index == -1)
-        {
-            throw new ServletException("No file extension on the uploaded image");
-        }
-
-        ContainerParent parent = new ContainerParent(c);
-        // Get rid of any existing logo
-        deleteExistingLogo(c);
-
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
-        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
-        AttachmentCache.clearLogoCache();
-    }
-
-
-    private void handleIconFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
-    {
-        User user = getViewContext().getUser();
-
-        if (!file.getOriginalFilename().toLowerCase().endsWith(".ico"))
-        {
-            throw new ServletException("FavIcon must be a .ico file");
-        }
-
-        deleteExistingFavicon(getContainer());
-
-        ContainerParent parent = new ContainerParent(c);
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.FAVICON_FILE_NAME);
-        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
-        AttachmentCache.clearFavIconCache();
-    }
-
-
-    private void handleCustomStylesheetFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
-    {
-        User user = getViewContext().getUser();
-
-        deleteExistingCustomStylesheet(getContainer());
-
-        ContainerParent parent = new ContainerParent(c);
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.STYLESHEET_FILE_NAME);
-        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
-
-        // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
-    }
-
-
+/*
     @ActionNames("projectSettings, lookAndFeelSettings")
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ProjectSettingsAction extends FormViewAction<ProjectSettingsForm>
@@ -629,8 +575,20 @@ public class AdminController extends SpringActionController
                 throw new UnauthorizedException();
         }
 
-        public void validateCommand(ProjectSettingsForm target, Errors errors)
+        public void validateCommand(ProjectSettingsForm form, Errors errors)
         {
+            if (form.isFilesTab())
+            {
+                String root = StringUtils.trimToNull(form.getProjectRootPath());
+                if (root != null)
+                {
+                    File f = new File(root);
+                    if (!f.exists() || !f.isDirectory())
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "Web root '" + root + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    }
+                }
+            }
         }
 
         public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
@@ -646,6 +604,8 @@ public class AdminController extends SpringActionController
                 return handleResourcesPost(c, errors);
             else if (form.isMenuTab())
                 return handleMenuPost(c, form, errors);
+            else if (form.isFilesTab())
+                return handleFilesPost(c, form, errors);
             else
                 return handlePropertiesPost(c, form, errors);
         }
@@ -708,6 +668,21 @@ public class AdminController extends SpringActionController
             props.setNavigationBarWidth(form.getNavigationBarWidth());
             props.setReportAProblemPath(form.getReportAProblemPath());
             props.setAppBarUIEnabled(form.isAppBarUIEnabled());
+
+            String webRoot = StringUtils.trimToNull(form.getProjectWebRoot());
+            if (webRoot != null)
+            {
+                File f = new File(webRoot);
+                if (!f.exists() || !f.isDirectory())
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Web root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    return false;
+                }
+                AttachmentService.get().setWebRoot(c.getProject(), new File(form.getProjectWebRoot()));
+            }
+            else
+                AttachmentService.get().setWebRoot(c.getProject(), null);
+
             FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
             try
             {
@@ -794,6 +769,17 @@ public class AdminController extends SpringActionController
 
         }
 
+        private boolean handleFilesPost(Container c, ProjectSettingsForm form, BindException errors)
+        {
+            String root = StringUtils.trimToNull(form.getProjectRootPath());
+            if (root != null)
+                AttachmentService.get().setWebRoot(c.getProject(), new File(root));
+            else
+                AttachmentService.get().setWebRoot(c.getProject(), null);
+
+            return true;
+        }
+
         public ActionURL getSuccessURL(ProjectSettingsForm form)
         {
             if (form.isResourcesTab())
@@ -817,6 +803,7 @@ public class AdminController extends SpringActionController
             return root;
         }
     }
+*/
 
     private static class FolderSettingsTabStrip extends TabStripView
     {
@@ -862,112 +849,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private static class ProjectSettingsTabStrip extends TabStripView
-    {
-        private ProjectSettingsForm _form;
-        private BindException _errors;
-
-        private ProjectSettingsTabStrip(ProjectSettingsForm form, BindException errors)
-        {
-            _form = form;
-            _errors = errors;
-        }
-
-        public List<NavTree> getTabList()
-        {
-            ActionURL url = new AdminUrlsImpl().getProjectSettingsURL(getViewContext().getContainer());
-            List<NavTree> tabs = new ArrayList<NavTree>(2);
-
-            tabs.add(new TabInfo("Properties", "properties", url));
-            tabs.add(new TabInfo("Resources", "resources", url));
-            if (!ContainerManager.getRoot().equals(getViewContext().getContainer()))
-                tabs.add(new TabInfo("Menu Bar", "menubar", url));
-
-            return tabs;
-        }
-
-        public HttpView getTabView(String tabId) throws Exception
-        {
-            Container c = getViewContext().getContainer();
-
-            if (c.isRoot() || c.isProject())
-            {
-                if ("resources".equals(tabId))
-                {
-                    LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
-                    return new JspView<LookAndFeelResourcesBean>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
-                }
-                else if ("properties".equals(tabId))
-                {
-                    LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
-                    return new JspView<LookAndFeelPropertiesBean>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
-                }
-                else if ("menubar".equals(tabId))
-                {
-                    if (c.isRoot())
-                        throw new NotFoundException("Menu bar must be configured for each project separately.");
-                    WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
-                    v.setView("menubar", new VBox());
-                    Portal.populatePortalView(getViewContext(), c.getId(), v, true);
-                    return v;
-                }
-                else
-                    throw new NotFoundException("Unknown tab id");
-            }
-            else
-            {
-                throw new NotFoundException("Can only be called for root or project.");
-            }
-        }
-    }
-
-
-    private static abstract class LookAndFeelBean
-    {
-        public String helpLink = "<a href=\"" + (new HelpTopic("customizeLook", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
-    }
-
-    public static class LookAndFeelPropertiesBean extends LookAndFeelBean
-    {
-        public Collection<WebTheme> themes = WebThemeManager.getWebThemes();
-        public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
-        public ThemeFont currentThemeFont;
-        public WebTheme currentTheme;
-        public Attachment customLogo;
-        public Attachment customFavIcon;
-        public Attachment customStylesheet;
-        public WebTheme newTheme = null;
-
-        private LookAndFeelPropertiesBean(Container c, String newThemeName) throws SQLException
-        {
-            customLogo = AttachmentCache.lookupLogoAttachment(c);
-            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerParent(c));
-            currentTheme = WebThemeManager.getTheme(c);
-            currentThemeFont = ThemeFont.getThemeFont(c);
-            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerParent(c));
-
-            //if new color scheme defined, get new theme name from url
-            if (newThemeName != null)
-                newTheme = WebThemeManager.getTheme(newThemeName);
-        }
-    }
-
-
-    public static class LookAndFeelResourcesBean extends LookAndFeelBean
-    {
-        public Attachment customLogo;
-        public Attachment customFavIcon;
-        public Attachment customStylesheet;
-
-        private LookAndFeelResourcesBean(Container c) throws SQLException
-        {
-            customLogo = AttachmentCache.lookupLogoAttachment(c);
-            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerParent(c));
-            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerParent(c));
-        }
-    }
-
-
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ResetLogoAction extends SimpleRedirectAction
     {
@@ -1012,7 +893,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    private void deleteExistingLogo(Container c) throws SQLException
+    static void deleteExistingLogo(Container c) throws SQLException
     {
         ContainerParent parent = new ContainerParent(c);
         Attachment[] attachments = AttachmentService.get().getAttachments(parent);
@@ -1048,7 +929,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    private void deleteExistingFavicon(Container c) throws SQLException
+    static void deleteExistingFavicon(Container c) throws SQLException
     {
         ContainerParent parent = new ContainerParent(c);
         AttachmentService.get().deleteAttachment(parent, AttachmentCache.FAVICON_FILE_NAME);
@@ -1076,7 +957,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    private void deleteExistingCustomStylesheet(Container c) throws SQLException
+    static void deleteExistingCustomStylesheet(Container c) throws SQLException
     {
         ContainerParent parent = new ContainerParent(c);
         AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME);
@@ -1321,6 +1202,15 @@ public class AdminController extends SpringActionController
         private boolean _appBarUIEnabled;
         private boolean _enableMenuBar;
         private String _tabId;
+        private String _projectRootPath;
+        private String _fileRootOption;
+
+        public enum FileRootProp
+        {
+            disable,
+            siteDefault,
+            projectSpecified,
+        }
 
         public boolean getShouldInherit()
         {
@@ -1452,6 +1342,21 @@ public class AdminController extends SpringActionController
             return "menubar".equals(getTabId());
         }
 
+        public boolean isFilesTab()
+        {
+            return "files".equals(getTabId());
+        }
+
+        public boolean isDisableFileSharing()
+        {
+            return FileRootProp.disable.name().equals(getFileRootOption());
+        }
+
+        public boolean hasSiteDefaultRoot()
+        {
+            return FileRootProp.siteDefault.name().equals(getFileRootOption());
+        }
+
         public boolean isEnableMenuBar()
         {
             return _enableMenuBar;
@@ -1470,6 +1375,26 @@ public class AdminController extends SpringActionController
         public void setAppBarUIEnabled(boolean appBarUIEnabled)
         {
             _appBarUIEnabled = appBarUIEnabled;
+        }
+
+        public String getProjectRootPath()
+        {
+            return _projectRootPath;
+        }
+
+        public void setProjectRootPath(String projectRootPath)
+        {
+            _projectRootPath = projectRootPath;
+        }
+
+        public String getFileRootOption()
+        {
+            return _fileRootOption;
+        }
+
+        public void setFileRootOption(String fileRootOption)
+        {
+            _fileRootOption = fileRootOption;
         }
     }
 

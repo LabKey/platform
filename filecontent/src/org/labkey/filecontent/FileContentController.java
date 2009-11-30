@@ -16,8 +16,8 @@
 
 package org.labkey.filecontent;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -33,18 +33,18 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletOutputStream;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +85,7 @@ public class FileContentController extends SpringActionController
        return t;
    }
 */
-    
+
     @RequiresPermission(ACL.PERM_READ)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
@@ -451,9 +451,6 @@ public class FileContentController extends SpringActionController
        }
    }
 
-
-
-
    @RequiresSiteAdmin
    public class ShowAdminAction extends FormViewAction<FileContentForm>
    {
@@ -584,36 +581,6 @@ public class FileContentController extends SpringActionController
 		   return true;
        }
    }
-
-
-   @RequiresSiteAdmin
-   public class SaveRootAction extends ShowAdminAction
-   {
-       public boolean handlePost(FileContentForm form, BindException errors) throws Exception
-       {
-           String filePath = StringUtils.trimToNull(form.getRootPath());
-           if (null == filePath)
-           {
-               AttachmentService.get().setWebRoot(getContainer(),  null);
-			   form.message = "Path successfully cleared.";
-			   setReshow(true);
-			   return true;
-           }
-           File f = new File(filePath);
-           if (!f.exists() || !f.isDirectory())
-           {
-               errors.reject(SpringActionController.ERROR_MSG, "Path " + filePath + " does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
-           }
-           else
-           {
-               AttachmentService.get().setWebRoot(getContainer(), f);
-               form.message = "Path successfully saved.";
-           }
-		   setReshow(true);
-           return errors.getErrorCount() == 0;
-       }
-   }
-
 
    public static class FileContentForm
    {

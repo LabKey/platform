@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.filecontent.FileContentController.FileContentForm" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
-<%@ page import="org.labkey.api.attachments.AttachmentService" %>
-<%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.attachments.AttachmentDirectory"%>
+<%@ page import="org.labkey.api.attachments.AttachmentService"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
+<%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<FileContentForm> me = (JspView<FileContentForm>) HttpView.currentView();
-    FileContentForm form = me.getModelBean();
+    JspView<FileContentController.FileContentForm> me = (JspView<FileContentController.FileContentForm>) HttpView.currentView();
+    FileContentController.FileContentForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     AttachmentDirectory[] attachmentDirs = AttachmentService.get().getRegisteredDirectories(ctx.getContainer());
 
@@ -45,56 +45,37 @@
         // UNDONE: do we have a message style?
         %><div style="color:green;"><%=form.getMessage()%></div><%
     }
+
     if (ctx.getUser().isAdministrator())
     {
-        if (ctx.getContainer().isProject())
-        {
-%>
-<b>Web Root</b><br>
-    Set web root for files in this project. Leave blank to turn off automatic web file sharing for folders.<br>
-When a web root is set,
-each folder in the project has a corresponding subdirectory in the file system.<br><br>
-<form action="saveRoot.post" method="POST">
-    Web Root <input name=rootPath size=50 value="<%=h(form.getRootPath())%>"><br>
-    <%=generateSubmitButton("Submit")%>
-</form>
-<br><br>
-<%      }
+        File rootFile = AttachmentService.get().getWebRoot(ctx.getContainer().getProject());
+        ActionURL configureHelper = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
+        if (null == rootFile)
+        { %>
+            There is no web root for this project.
+     <% }
         else
-        {
-            File rootFile = AttachmentService.get().getWebRoot(ctx.getContainer().getProject());
-            ActionURL configureHelper = new ActionURL(FileContentController.ShowAdminAction.class, ctx.getContainer().getProject());
-            if (null == rootFile)
-            { %>
-                    There is no web root for this project.
-        <%  }
-            else
-            {   %>
-                The web root for this project is <br><blockquote><%=h(rootFile.getCanonicalPath())%></blockquote>
-                The directory containing web files for this folder is
-
-<%
-    String path = "<unset>";
-    AttachmentDirectory attachDir = AttachmentService.get().getMappedAttachmentDirectory(ctx.getContainer(), false);
-    if (attachDir != null)
-    {
-        File fileSystemDir = attachDir.getFileSystemDirectory();
-        if (fileSystemDir != null)
-        {
-            path = fileSystemDir.getCanonicalPath();
-        }
-    }
-%>
-
-                <blockquote>
-                             <%=h(path)%>
-                </blockquote>
-            <%}
-            %>
- <a href="<%=h(configureHelper)%>">Configure web root for Project.</a><br><br>
-<%      }
-    } //site administrator
-%>
+        { %>
+            The web root for this project is <br><blockquote><%=h(rootFile.getCanonicalPath())%></blockquote>
+            The directory containing web files for this folder is
+        <%
+            String path = "<unset>";
+            AttachmentDirectory attachDir = AttachmentService.get().getMappedAttachmentDirectory(ctx.getContainer(), false);
+            if (attachDir != null)
+            {
+                File fileSystemDir = attachDir.getFileSystemDirectory();
+                if (fileSystemDir != null)
+                {
+                    path = fileSystemDir.getCanonicalPath();
+                }
+            }
+        %>
+            <blockquote>
+                <%=h(path)%>
+            </blockquote>
+     <% } %>
+        <a href="<%=h(configureHelper)%>">Configure web root for Project.</a><br><br>
+<%  } //site administrator %>
 
 
 <b>File Sets<%=PageFlowUtil.helpPopup("File Sets", fileSetHelp, true)%></b><br>

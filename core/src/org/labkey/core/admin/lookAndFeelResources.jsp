@@ -20,11 +20,12 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
 <%
-    AdminController.LookAndFeelResourcesBean bean = ((JspView<AdminController.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
+    ProjectSettingsAction.LookAndFeelResourcesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
 %>
 <form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">

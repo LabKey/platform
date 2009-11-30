@@ -25,11 +25,12 @@
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
 <%
-    AdminController.LookAndFeelPropertiesBean bean = ((JspView<AdminController.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
+    ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>

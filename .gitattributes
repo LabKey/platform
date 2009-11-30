@@ -424,6 +424,8 @@ core/src/org/labkey/core/admin/ActionsHelper.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
+core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
+core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
@@ -454,6 +456,8 @@ core/src/org/labkey/core/admin/sql/ViewHandler.java -text
 core/src/org/labkey/core/admin/sql/showRunningScripts.jsp -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
+core/src/org/labkey/core/admin/view/filesProjectSettings.jsp -text
+core/src/org/labkey/core/admin/view/filesSiteSettings.jsp -text
 core/src/org/labkey/core/admin/webTheme.jsp -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text

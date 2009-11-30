@@ -974,40 +974,61 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
+    enum Props {
+        root,
+        rootDisabled,
+    }
 
     public File getWebRoot(Container c)
     {
         if (c == null)
             return null;
-        
+
         Container project = c.getProject();
         if (null == project)
             return null;
 
         Map<String,String> m = PropertyManager.getProperties(project.getId(), "staticFile", false);
-        if (null == m)
+        if (m == null || !m.containsKey(Props.root.name()))
+        {
+            // check for file sharing disabled at the project level
+            if (m != null && m.containsKey(Props.rootDisabled.name()))
+                return null;
+
+            // check if there is a site wide file root
+            File siteRoot = AppProps.getInstance().getFileSystemRoot();
+            if (siteRoot != null)
+            {
+                File projRoot = new File(siteRoot, c.getProject().getName());
+
+                // automatically create project roots if a site wide root is specified
+                if (!projRoot.exists())
+                    projRoot.mkdir();
+
+                return projRoot;
+            }
             return null;
-
-        return null == m.get("root") ? null : new File(m.get("root"));
+        }
+        return null == m.get(Props.root.name()) ? null : new File(m.get(Props.root.name()));
     }
-
 
     public void setWebRoot(Container c, File root)
     {
         Map<String,String> m = PropertyManager.getWritableProperties(0, c.getProject().getId(), "staticFile", true);
-        String oldValue = m.get("root");
+        String oldValue = m.get(Props.root.name());
         try
         {
+            m.remove(Props.rootDisabled.name());
             if (null == root)
-                m.remove("root");
+                m.remove(Props.root.name());
             else
-                m.put("root", root.getCanonicalPath());
+                m.put(Props.root.name(), root.getCanonicalPath());
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
-        String newValue = m.get("root");
+        String newValue = m.get(Props.root.name());
         PropertyManager.saveProperties(m);
         
         ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
@@ -1015,6 +1036,45 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         ContainerManager.firePropertyChangeEvent(evt);
     }
 
+    public void disableFileRoot(Container container)
+    {
+        if (container == null || container.isRoot())
+            throw new IllegalArgumentException("Disabling either a null project or the root project is not allowed.");
+
+        Map<String,String> m = PropertyManager.getWritableProperties(0, container.getProject().getId(), "staticFile", true);
+        String oldValue = m.get(Props.root.name());
+        m.remove(Props.root.name());
+        m.put(Props.rootDisabled.name(), Boolean.toString(true));
+
+        PropertyManager.saveProperties(m);
+
+        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                container, ContainerManager.Property.WebRoot, oldValue, null);
+        ContainerManager.firePropertyChangeEvent(evt);
+    }
+
+    public boolean isFileRootDisabled(Container c)
+    {
+        if (c == null || c.isRoot())
+            throw new IllegalArgumentException("The file root of either a null project or the root project cannot be disabled.");
+
+        Container project = c.getProject();
+        if (null == project)
+            return false;
+
+        Map<String,String> m = PropertyManager.getProperties(project.getId(), "staticFile", false);
+        return m != null && m.containsKey(Props.rootDisabled.name());
+    }
+
+    public boolean hasSiteDefaultRoot(Container c)
+    {
+        Container project = c.getProject();
+        if (null == project)
+            return true;
+
+        Map<String,String> m = PropertyManager.getProperties(project.getId(), "staticFile", false);
+        return m == null || !m.containsKey(Props.root.name());
+    }
 
     private File getMappedDirectory(Container c, boolean create)
             throws AttachmentService.UnsetRootDirectoryException, AttachmentService.MissingRootDirectoryException
