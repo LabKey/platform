@@ -2,6 +2,7 @@ package org.labkey.core.search;
 
 import org.apache.commons.collections15.Bag;
 import org.apache.commons.collections15.bag.TreeBag;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
@@ -19,6 +20,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.ActionResource;
 import org.labkey.core.search.HTMLContentExtractor.GenericHTMLExtractor;
 import org.labkey.core.search.HTMLContentExtractor.LabKeyPageHTMLExtractor;
 
@@ -93,16 +95,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
                 Map<String, ?> props = r.getProperties();
                 String title = (String)props.get("title");
-                String body;
+                String body = null;
 
                 // TODO: Need better check for issue HTML vs. rendered page HTML
-                if (null == title)
+                if (r instanceof ActionResource)
                 {
                     HTMLContentExtractor extractor = new LabKeyPageHTMLExtractor(html);
                     body = extractor.extract();
                     title = extractor.getTitle();
                 }
-                else
+
+                if (StringUtils.isEmpty(body))
                 {
                     body = new GenericHTMLExtractor(html).extract();
                 }
