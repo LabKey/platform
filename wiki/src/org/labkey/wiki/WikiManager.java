@@ -247,7 +247,7 @@ public class WikiManager
             //UNDONE: should take RowId, not EntityId
             Table.update(user, comm.getTableInfoPages(), wikiUpdate, wikiUpdate.getEntityId());
 
-            if(wikiversion != null)
+            if (wikiversion != null)
             {
                 String entityId = wikiUpdate.getEntityId();
                 wikiversion.setPageEntityId(entityId);
@@ -863,7 +863,11 @@ public class WikiManager
                 if (Thread.interrupted())
                     return;
                 assert null != entityid;
-                ids.put(entityid, wikiFactory.fromMap(m));
+                Wiki parent = new Wiki();
+                parent.setContainer(c.getId());
+                parent.setEntityId(entityid);
+                parent.setName(new HString(name,false));
+                ids.put(entityid, parent);
             }
 
             // now attachments
@@ -878,10 +882,13 @@ public class WikiManager
                     ActionURL attachmentUrl = url.clone()
                             .replaceParameter("entityId",entityId)
                             .replaceParameter("name",documentName);
+                    // UNDONE: set title to make LuceneSearchServiceImpl work
+                    Wiki parent = (Wiki)ids.get(entityId);
+                    String title = documentName + " attached to page " + parent.getName();
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
-                            attachmentUrl,
-                            ids.get(entityId),
+                            attachmentUrl, title,
+                            parent,
                             documentName);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
