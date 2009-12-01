@@ -47,7 +47,6 @@ import org.springframework.validation.BindException;
 import java.sql.SQLException;
 import java.util.*;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.io.File;
 
 /**
@@ -128,6 +127,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             JSONArray dataRows;
             JSONArray dataInputs;
             JSONArray materialInputs;
+            JSONArray dataOutputs;
             if (!runJsonObject.has(DATA_ROWS))
             {
                 // Client didn't post the rows so reuse the values that are currently attached to the run
@@ -159,13 +159,24 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 materialInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
             }
 
-            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject, pipeRoot);
+            if (!runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
+            {
+                // Client didn't post the outputs so reuse the values that are currently attached to the run
+                // Ineffecient but easy
+                dataOutputs = serializeRun(run, provider, protocol).getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
+            }
+            else
+            {
+                dataOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
+            }
+
+            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject, pipeRoot, dataOutputs);
         }
 
         return run;
     }
 
-    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, PipeRoot pipelineRoot) throws ExperimentException, ValidationException
+    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, PipeRoot pipelineRoot, JSONArray outputDataArray) throws ExperimentException, ValidationException
     {
         ViewContext context = getViewContext();
 
@@ -179,7 +190,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         for (int i = 0; i < inputDataArray.length(); i++)
         {
             JSONObject dataObject = inputDataArray.getJSONObject(i);
-            inputData.put(handleData(dataObject, pipelineRoot), "Data");
+            inputData.put(handleData(dataObject, pipelineRoot), dataObject.optString(ExperimentJSONConverter.ROLE, "Data"));
         }
 
         Map<ExpMaterial, String> inputMaterial = new HashMap<ExpMaterial, String>();
@@ -195,8 +206,17 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
+        Map<ExpData, String> outputData = new HashMap<ExpData, String>();
         ExpData newData = AbstractAssayProvider.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
         newData.save(getViewContext().getUser());
+        outputData.put(newData, "Data");
+
+        //other data outputs
+        for (int i=0; i < outputDataArray.length(); i++)
+        {
+            JSONObject dataObject = outputDataArray.getJSONObject(i);
+            outputData.put(handleData(dataObject, pipelineRoot), dataObject.optString(ExperimentJSONConverter.ROLE, "Data"));
+        }
 
         List<Map<String, Object>> rawData = dataArray.toMapList();
 
@@ -204,7 +224,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             inputMaterial,
             inputData,
             Collections.<ExpMaterial, String>emptyMap(),
-            Collections.singletonMap(newData, "Data"),
+            outputData,
             Collections.<ExpData, String>emptyMap(),                
             new ViewBackgroundInfo(context.getContainer(),
                     context.getUser(), context.getActionURL()), LOG, false);
