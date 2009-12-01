@@ -48,6 +48,8 @@ public class ExperimentJSONConverter
     // Run properties
     public static final String DATA_INPUTS = "dataInputs";
     public static final String MATERIAL_INPUTS = "materialInputs";
+    public static final String ROLE = "role";
+    public static final String DATA_OUTPUTS = "dataOutputs";
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain) throws SQLException
     {
