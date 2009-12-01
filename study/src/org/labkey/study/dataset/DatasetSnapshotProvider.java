@@ -26,25 +26,26 @@ import org.labkey.api.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.IdentifierString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
-import java.util.*;
 import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 /*
  * User: Karl Lum
  * Date: Jul 9, 2008
@@ -55,9 +56,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
     private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
+    private static final BlockingQueue<DataSet> _queue = new LinkedBlockingQueue<DataSet>(1000);
+    private static final QuerySnapshotDependencyThread _dependencyThread = new QuerySnapshotDependencyThread();
 
     // map of property uri to dataset id
     private static final Map<String, Map<String, Integer>> _datasetPropertyMap = new HashMap<String, Map<String, Integer>>();
+
+    static {
+        _dependencyThread.start();
+    }
 
     private DatasetSnapshotProvider()
     {
@@ -237,7 +244,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return columnMap;
     }
 
-    private QueryForm getQueryForm(QuerySnapshotDefinition snapshotDef, ViewContext context)
+    private static QueryForm getQueryForm(QuerySnapshotDefinition snapshotDef, ViewContext context)
     {
         QueryDefinition def = snapshotDef.getQueryDefinition(context.getUser());
 
@@ -395,7 +402,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
-    private List<QuerySnapshotDefinition> getDependencies(DataSet dsDef)
+    private static List<QuerySnapshotDefinition> getDependencies(DataSet dsDef)
     {
         Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
         Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
@@ -425,7 +432,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     // map of property uri to dataset id
     private static final Map<Integer, Map<String, String>> _snapshotPropertyMap = new HashMap<Integer, Map<String, String>>();
 
-    private boolean hasDependency(QuerySnapshotDefinition def, String propertyURI) throws ServletException
+    private static boolean hasDependency(QuerySnapshotDefinition def, String propertyURI) throws ServletException
     {
         Map<String, String> propertyMap;
 
@@ -485,40 +492,54 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void dataSetUnmaterialized(final DataSet def)
     {
-        Runnable task = new Runnable()
+        _queue.add(def);
+    }
+
+    private static class QuerySnapshotDependencyThread extends Thread implements ShutdownListener
+    {
+        private QuerySnapshotDependencyThread()
         {
-            public void run()
-            {
-                //DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
-                if (def != null)
-                {
-                    _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
-                    for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
+            setDaemon(true);
+            setName(QuerySnapshotDependencyThread.class.getSimpleName());
+            ContextListener.addShutdownListener(this);
+        }
+
+        public void run()
+        {
+            try {
+                while (true) {
+                    DataSet def = _queue.take();
+                    if (def != null)
                     {
-                        try {
-                            _log.debug("Updating snapshot definition : " + snapshotDef.getName());
-                            autoUpdateSnapshot(snapshotDef, null);//HttpView.currentContext().getActionURL());
-                        }
-                        catch (Exception e)
+                        _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
+                        for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
                         {
-                            _log.error(e);
-                            throw new RuntimeException(e);
+                            try {
+                                _log.debug("Updating snapshot definition : " + snapshotDef.getName());
+                                autoUpdateSnapshot(snapshotDef, null);//HttpView.currentContext().getActionURL());
+                            }
+                            catch (Exception e)
+                            {
+                                _log.error(e);
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
                 }
             }
-        };
-        DbSchema schema = StudyManager.getSchema();
+            catch (InterruptedException e)
+            {
+                _log.debug(getClass().getSimpleName() + " is terminating due to interruption");
+            }
+        }
 
-        if (schema.getScope().isTransactionActive())
-            schema.getScope().addCommitTask(task);
-        else
+        public void shutdownStarted(ServletContextEvent servletContextEvent)
         {
-            new Thread(task, "QuerySnapshot Update Thread").start();
+            interrupt();
         }
     }
 
-    private void autoUpdateSnapshot(QuerySnapshotDefinition def, ActionURL url) throws Exception
+    private static void autoUpdateSnapshot(QuerySnapshotDefinition def, ActionURL url) throws Exception
     {
         if (def.getUpdateDelay() > 0 && def.getNextUpdate() == null)
         {
