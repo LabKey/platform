@@ -2250,10 +2250,12 @@ public class DavController extends SpringActionController
     }
 
 
+    static Path servletPrefix = new Path(WebdavService.getServletPath());
+    
     /** allow html listing of this resource */
     private boolean allowHtmlListing(Resource resource)
     {
-        return (resource.getPath() + "/").startsWith("/" + WebdavService.getServletPath() + "/");
+        return resource.getPath().startsWith(servletPrefix);
     }
     
 
