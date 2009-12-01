@@ -226,7 +226,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         {
             ActionURL urlLink;
             urlLink = new ActionURL(link);
-            return currentUrl.getExtraPath().equals(urlLink.getExtraPath());
+            return currentUrl.getParsedPath().equals(urlLink.getParsedPath());
         }
         return false;
     }
