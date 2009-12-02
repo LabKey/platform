@@ -109,6 +109,9 @@
       <ns:column columnName="EmailList"/>
       <ns:column columnName="discussionsrcidentifier"/>
       <ns:column columnName="discussionsrcurl"/>
+      <ns:column columnName="LastIndexed">
+          <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
     </ns:columns>
     <ns:tableTitle>Announcements</ns:tableTitle>
     <ns:pkColumnName>RowId</ns:pkColumnName>
@@ -197,7 +200,9 @@
       <ns:column columnName="DisplayOrder"/>
       <ns:column columnName="PageVersionId"/>
       <ns:column columnName="ShowAttachments"/>
-      <ns:column columnName="LastIndexed"/>
+      <ns:column columnName="LastIndexed">
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
     </ns:columns>
     <ns:tableTitle>Pages</ns:tableTitle>
     <ns:pkColumnName>RowId</ns:pkColumnName>
@@ -320,6 +325,15 @@
       <ns:column columnName="discussionsrcidentifier"/>
       <ns:column columnName="discussionsrcurl"/>
       <ns:column columnName="ResponseCount"/>
+        <ns:column columnName="Modified">
+          <ns:columnTitle>Modified</ns:columnTitle>
+          <ns:inputType>text</ns:inputType>
+          <ns:inputLength>23</ns:inputLength>
+          <ns:isReadOnly>true</ns:isReadOnly>
+        </ns:column>
+      <ns:column columnName="LastIndexed">
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
     </ns:columns>
     <ns:pkColumnName>RowId</ns:pkColumnName>
   </ns:table>

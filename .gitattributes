@@ -5,6 +5,7 @@ announcements/resources/schemas/dbscripts/postgresql/comm-0.00-2.00.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.10-9.11.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.10-9.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.30-9.31.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-9.31-9.32.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -33,6 +34,7 @@ announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-2.00.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.10-9.11.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.10-9.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.30-9.31.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-9.31-9.32.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-0.00-1.00.sql -text
@@ -919,6 +921,7 @@ issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-2.00.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-2.30-8.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-8.10-8.20.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-9.30-9.31.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-1.10-1.30.sql -text
@@ -932,6 +935,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-8.10-8.11.sql -tex
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-2.00.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-2.30-8.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-8.10-8.20.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-9.30-9.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.81.sql -text

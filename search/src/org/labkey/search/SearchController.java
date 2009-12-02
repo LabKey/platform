@@ -29,8 +29,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.labkey.api.data.Container;
+import org.labkey.search.model.DavCrawler;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -90,6 +92,8 @@ public class SearchController extends SpringActionController
                 {
                     m.enumerateDocuments(task, c, since);
                 }
+
+//                if (full) DavCrawler.start(task, Path.rootPath, since);
 
                 task.setReady();
             }

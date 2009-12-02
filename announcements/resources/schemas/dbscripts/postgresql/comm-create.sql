@@ -21,6 +21,7 @@ CREATE VIEW comm.Threads AS
     SELECT y.RowId, y.EntityId, y.Container, y.Body, y.RendererType, PropsId AS LatestId, props.Title, props.AssignedTo,
         props.Status, props.Expires, props.CreatedBy AS ResponseCreatedBy, props.Created AS ResponseCreated,
         y.DiscussionSrcIdentifier, y.DiscussionSrcURL, y.CreatedBy, y.Created,
+        y.modified, y.lastIndexed,
         (SELECT COUNT(*) FROM comm.Announcements WHERE Parent = y.EntityId) AS ResponseCount FROM
     (
         SELECT *, CASE WHEN LastResponseId IS NULL THEN x.RowId ELSE LastResponseId END AS PropsId FROM

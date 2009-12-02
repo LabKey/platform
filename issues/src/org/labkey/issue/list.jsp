@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -45,7 +46,7 @@
         <input type="text" size="5" name="issueId"/>
         <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName, "", "align=\"top\" vspace=\"2\"")%></form></td>
     <td width=100%>&nbsp;</td>
-    <td align="right" nowrap><form action="search.view" method="get">
-        <input type="text" size="30" name="search" value="">
+    <td align="right" nowrap><form action="<%=h(new ActionURL("search","search",context.getContainer()))%>" method="get">
+        <input type="text" size="30" name="query" value="">
         <%=PageFlowUtil.generateSubmitButton("Search", "", "align=\"top\" vspace=\"2\"")%></form></td>
 </tr></table>

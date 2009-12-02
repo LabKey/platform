@@ -65,7 +65,7 @@ public class WikiModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.31;
+        return 9.32;
     }
 
     protected void init()

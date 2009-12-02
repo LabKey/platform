@@ -273,6 +273,9 @@
             <ns:column columnName="String1"/>
             <ns:column columnName="String2"/>
             <ns:column columnName="NotifyList"/>
+            <ns:column columnName="LastIndexed">
+                <ns:isReadOnly>true</ns:isReadOnly>
+            </ns:column>
         </ns:columns>
 		<ns:tableTitle>Issues</ns:tableTitle>
 		<ns:pkColumnName>IssueId</ns:pkColumnName>

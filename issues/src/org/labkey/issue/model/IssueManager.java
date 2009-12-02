@@ -42,6 +42,7 @@ import javax.servlet.ServletException;
 import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 
@@ -600,6 +601,22 @@ public class IssueManager
     }
 
 
+    public static void setLastIndexed(String containerId, int issueId, long ms)
+    {
+        try
+        {
+        Table.execute(_issuesSchema.getSchema(),
+                "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
+                new Object[] {new Timestamp(ms), containerId, issueId}
+                );
+        }
+        catch (SQLException sql)
+        {
+            throw new RuntimeSQLException(sql);
+        }
+    }
+    
+
     public static void indexIssues(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
@@ -611,8 +628,11 @@ public class IssueManager
             SimpleFilter f = new SimpleFilter();
             if (null != c)
                 f.addCondition("container", c);
-            if (null != modifiedSince)
-                f.addCondition("modified", modifiedSince, CompareType.GTE);
+            SearchService.LastIndexedClause incremental = new SearchService.LastIndexedClause(_issuesSchema.getTableInfoIssues(), modifiedSince, null);
+            if (!incremental.toSQLFragment(null,null).isEmpty())
+                f.addClause(incremental);
+            if (f.getClauses().isEmpty())
+                f = null;
 
             rs = Table.select(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null);
             int[] ids = new int[100];
@@ -791,6 +811,7 @@ public class IssueManager
     private static class IssueResource extends AbstractDocumentResource
     {
         Collection<Issue.Comment> _comments;
+        int _issueId;
         String _containerId;
 
         IssueResource(Issue issue)
@@ -798,6 +819,7 @@ public class IssueManager
             super(new Path(null==issue ? "NOTFOUND" : "issue:" + String.valueOf(issue.getIssueId())));
             if (null == issue)
                 return;
+            _issueId = issue.issueId;
             Map<String,Object> m = _issueFactory.toMap(issue, null);
             for (Map.Entry<String,Object> e : m.entrySet())
             {
@@ -823,6 +845,12 @@ public class IssueManager
             _properties.put(SearchService.PROPERTY.category.toString(), searchCategory.getName());
         }
 
+
+        @Override
+        public void setLastIndexed(long ms)
+        {
+            IssueManager.setLastIndexed(_containerId, _issueId, ms);
+        }
 
         public String getDocumentId()
         {

@@ -35,6 +35,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Pair;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.webdav.ActionResource;
 import org.labkey.announcements.AnnouncementsController;
 
 import javax.servlet.ServletException;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 /**
@@ -867,13 +869,38 @@ public class AnnouncementManager
     }
 
 
-    public static void indexThread(SearchService.IndexTask task, String c, String entityId)
+    public static void setLastIndexed(String entityId, long ms)
+    {
+        try
+        {
+        Table.execute(_comm.getSchema(),
+                "UPDATE comm.announcements SET lastIndexed=? WHERE entityId=?",
+                new Object[] {new Timestamp(ms), entityId}
+                );
+        }
+        catch (SQLException sql)
+        {
+            throw new RuntimeSQLException(sql);
+        }
+    }
+
+
+    public static void indexThread(SearchService.IndexTask task, String c, final String entityId)
     {
         ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
         url.setExtraPath(c);
         url.addParameter("entityId", entityId);
-        task.addResource(searchCategory, url, SearchService.PRIORITY.item);
+        ActionResource r = new ActionResource(searchCategory, url)
+        {
+            @Override
+            public void setLastIndexed(long ms)
+            {
+                AnnouncementManager.setLastIndexed(entityId, ms);
+            }
+        };
+        task.addResource(r, SearchService.PRIORITY.item);
     }
+
 
 
     static void indexThread(Announcement ann)
