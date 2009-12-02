@@ -200,6 +200,8 @@ public class ContainerManager
             sqlx = x;
         }
 
+        _clearChildrenFromCache(parent);
+        
         Container c = getForPath(path);
         if (null == c && null != sqlx)
             throw new RuntimeSQLException(sqlx);
@@ -500,6 +502,7 @@ public class ContainerManager
                 if (null == ret[0])
                     throw new RootContainerException("Root container is NULL");
 
+                _addToCache(ret[0]);
                 return ret[0];
             }
             else
@@ -511,14 +514,9 @@ public class ContainerManager
                 if (null == dirParent)
                     return null;
 
-                Container[] ret  = Table.executeQuery(core.getSchema(),
-                        "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent=? AND LOWER(Name)=LOWER(?)",
-                        new Object[]{dirParent.getId(), name}, Container.class);
-                d = ret == null || ret.length == 0 ? null : ret[0];
+                Map<String,Container> map = ContainerManager.getChildrenMap(dirParent);
+                return map.get(name);
             }
-            if (d == null)
-                return null;
-            return _addToCache(d);
         }
         catch (SQLException e)
         {
@@ -1084,7 +1082,18 @@ public class ContainerManager
 
     private static synchronized Container _getFromCachePath(Path path)
     {
-        return (Container) getCache().get(_containerPrefix + path.toString().toLowerCase());
+        return (Container) getCache().get(_containerPrefix + toString(path));
+    }
+
+
+    // UNDONE: use Path directly instead of toString()
+    private static String toString(Container c)
+    {
+        return StringUtils.strip(c.getPath(),"/").toLowerCase();
+    }
+    private static String toString(Path p)
+    {
+        return StringUtils.strip(p.toString(),"/").toLowerCase();
     }
 
 
@@ -1092,10 +1101,26 @@ public class ContainerManager
     {
         assert Thread.holdsLock(ContainerManager.class) : "Any insertion into the cache must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        getCache().put(_containerPrefix + c.getPath().toLowerCase(), c);
+        getCache().put(_containerPrefix + toString(c), c);
         getCache().put(_containerPrefix + c.getId(), c);
-        Container parent = c.getParent();
         return c;
+    }
+
+
+    private static synchronized void _clearChildrenFromCache(Container c)
+    {
+        Cache cache = getCache();
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (cache)
+        {
+            cache.remove(_containerChildrenPrefix + c.getId());
+        }
+
+        // UNDONE: NavTreeManager should register a ContainerListener
+        Container project = c.getProject();
+        NavTreeManager.uncacheTree(PROJECT_LIST_ID);
+        if (project != null)
+            NavTreeManager.uncacheTree(project.getId());
     }
 
 
@@ -1108,7 +1133,7 @@ public class ContainerManager
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (cache)
         {
-            cache.remove(_containerPrefix + c.getPath().toLowerCase());
+            cache.remove(_containerPrefix + toString(c));
             cache.remove(_containerPrefix + c.getId());
             cache.remove(_containerChildrenPrefix + c.getId());
 
