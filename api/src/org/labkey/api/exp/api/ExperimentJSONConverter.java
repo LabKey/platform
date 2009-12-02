@@ -76,6 +76,14 @@ public class ExperimentJSONConverter
             inputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material));
         }
         jsonObject.put(MATERIAL_INPUTS, inputMaterialArray);
+
+        JSONArray outputDataArray = new JSONArray();
+        for (ExpData data : run.getDataOutputs())
+        {
+            outputDataArray.put(ExperimentJSONConverter.serializeData(data));
+        }
+        jsonObject.put(DATA_OUTPUTS, outputDataArray);
+
         return jsonObject;
     }
 
