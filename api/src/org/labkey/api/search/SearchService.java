@@ -292,9 +292,7 @@ public interface SearchService
             }
             else if (null != lastIndexed)
             {
-                _sqlf.append(prefix).append(lastIndexed.getSelectName()).append("< ?");
-                _sqlf.add(lastIndexed);
-                _colNames.add(lastIndexed.getName());
+                // lastIndexed but no modified???
             }
         }
 
