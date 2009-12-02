@@ -47,6 +47,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 
@@ -748,6 +749,22 @@ public class WikiManager
     }
 
 
+    public static void setLastIndexed(Container c, String name, long ms)
+    {
+        try
+        {
+        Table.execute(comm.getSchema(), 
+                "UPDATE comm.pages SET lastIndexed=? WHERE container=? AND name=?",
+                new Object[] {new Timestamp(ms), c, name}
+                );
+        }
+        catch (SQLException sql)
+        {
+            throw new RuntimeSQLException(sql);
+        }
+    }
+
+    
     public static void indexWikis(@NotNull final SearchService.IndexTask task, Container c, final Date modifiedSince)
     {
         final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
@@ -796,6 +813,8 @@ public class WikiManager
         {
             SimpleFilter f = new SimpleFilter();
             f.addCondition("container", c);
+            SearchService.LastIndexedClause clause = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, null);
+            f.addCondition(clause);
             if (null != modifiedSince)
                 f.addCondition("modified", modifiedSince, CompareType.GTE);
 
@@ -829,15 +848,15 @@ public class WikiManager
             f.append("SELECT P.entityid, P.container, P.name, owner$.searchterms as owner, createdby$.searchterms as createdby, P.created, modifiedby$.searchterms as modifiedby, P.modified,")
                 .append("V.title, V.body, V.renderertype\n");
             f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n")
-                .append("LEFT OUTER JOIN core.usersearchterms AS owner$  ON P.createdby = owner$.userid\n")
-                .append("LEFT OUTER JOIN core.usersearchterms AS createdby$  ON P.createdby = createdby$.userid\n")
-                .append("LEFT OUTER JOIN core.usersearchterms AS modifiedby$  ON P.createdby = modifiedby$.userid\n");
+                .append("LEFT OUTER JOIN core.usersearchterms AS owner$ ON P.createdby = owner$.userid\n")
+                .append("LEFT OUTER JOIN core.usersearchterms AS createdby$ ON P.createdby = createdby$.userid\n")
+                .append("LEFT OUTER JOIN core.usersearchterms AS modifiedby$ ON P.createdby = modifiedby$.userid\n");
             f.append("WHERE P.container = ?");
             f.add(c);
-            if (null != modifiedSince)
+            SQLFragment since = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, "P").toSQLFragment(null, comm.getSqlDialect());
+            if (!since.isEmpty())
             {
-                f.append(" AND P.modified >= ?");
-                f.add(modifiedSince);
+                f.append(" AND ").append(since);
             }
             if (null != name)
             {

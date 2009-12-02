@@ -30,10 +30,12 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.data.Container;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
+import java.sql.Date;
 
 public class SearchController extends SpringActionController
 {
@@ -53,34 +55,57 @@ public class SearchController extends SpringActionController
         }
     }
 
+
     // UNDONE: remove; for testing only
     @RequiresSiteAdmin
     public class IndexAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
         {
+            // SimpleRedirectAction doesn't take a form
+            boolean full = "1".equals(getViewContext().getRequest().getParameter("full"));
+            String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
             if (null == ss)
                 return null;
 
-//            List<SearchService.IndexTask> list = ss.getTasks();
-//            if (list.size() == 0)
+            boolean fullInProgress = false;
+            for (SearchService.IndexTask task : ss.getTasks())
+                if ("Full Index".equals(task.getDescription()))
+                    fullInProgress = true;
+
+            if (!fullInProgress)
             {
                 ss.clearIndex();
 
-                SearchService.IndexTask task = ss.createTask("Full Index");
+
+                Date since = full ? null : new Date(0);
+                Container c = full ? null : getViewContext().getContainer();
+
+                SearchService.IndexTask task = ss.createTask(full ? "Full Index" : c.getName());
 
                 for (Module m : ModuleLoader.getInstance().getModules())
                 {
-                    m.enumerateDocuments(task, null, null);
+                    m.enumerateDocuments(task, c, since);
                 }
 
                 task.setReady();
             }
 
+            try
+            {
+                if (null != returnUrl)
+                    return new ActionURL(returnUrl);
+            }
+            catch (Exception x)
+            {
+            }
             return new ActionURL(SearchAction.class, getContainer());
         }
     }
+
 
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -110,7 +135,8 @@ public class SearchController extends SpringActionController
                 int skipped = task.getFailedCount();
                 html += "Indexing in progress: " + count + " documents (" + DateUtil.formatDuration(end-start) + ") " + skipped + " skipped or failed <br>";
             }
-            html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex</a>]<br>";
+            html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer()).addParameter("full","1")) + "\">reindex (full)</a>]<br>";
+            html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex (incremental)</a>]<br>";
 
             html += "<form><input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">&nbsp;" + PageFlowUtil.generateSubmitButton("Search") + "</form>";
             HtmlView searchBox = new HtmlView(html);

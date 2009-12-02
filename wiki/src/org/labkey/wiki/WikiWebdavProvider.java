@@ -22,6 +22,7 @@ import org.labkey.api.attachments.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -35,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.announcements.CommSchema;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
@@ -353,6 +355,13 @@ class WikiWebdavProvider implements WebdavService.Provider
             _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
         }
 
+
+        @Override
+        public void setLastIndexed(long ms)
+        {
+            WikiManager.setLastIndexed(_c, _name, ms);
+        }
+        
 
         public String getDocumentId()
         {

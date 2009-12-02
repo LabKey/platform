@@ -197,6 +197,7 @@
       <ns:column columnName="DisplayOrder"/>
       <ns:column columnName="PageVersionId"/>
       <ns:column columnName="ShowAttachments"/>
+      <ns:column columnName="LastIndexed"/>
     </ns:columns>
     <ns:tableTitle>Pages</ns:tableTitle>
     <ns:pkColumnName>RowId</ns:pkColumnName>

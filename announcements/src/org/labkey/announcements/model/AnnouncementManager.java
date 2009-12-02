@@ -291,15 +291,16 @@ public class AnnouncementManager
         Announcement ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
 
         List<User> users = ann.getMemberList();
-        
+
         if (users != null)
         {
             // Always attach member list to initial message
-            int rowId = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
-            insertMemberList(user, ann.getMemberList(), rowId);
+            int first = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
+            insertMemberList(user, ann.getMemberList(), first);
         }
 
         AttachmentService.get().addAttachments(user, insert, files);
+        indexThread(insert);
     }
 
 
@@ -829,10 +830,9 @@ public class AnnouncementManager
         if (null == ss)
             return;
         ResultSet rs = null;
-        ActionURL page = new ActionURL(AnnouncementsController.ThreadAction.class, null);
         try
         {
-            SQLFragment sql = new SQLFragment("SELECT container, rowid FROM " + _comm.getTableInfoThreads());
+            SQLFragment sql = new SQLFragment("SELECT container, entityId FROM " + _comm.getTableInfoThreads());
             String and = " WHERE ";
             if (null != c)
             {
@@ -840,18 +840,17 @@ public class AnnouncementManager
                 sql.add(c);
                 and = " AND ";
             }
-            if (null != modifiedSince)
-            {
-                sql.append(and).append(" modified >= ?");
-                sql.add(modifiedSince);
-            }
+            SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null,null);
+            if (!modified.isEmpty())
+                sql.append(and).append(modified);
+
             rs = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());
+
             while (rs.next())
             {
-                String id = rs.getString(1);
-                String name = rs.getString(2);
-                ActionURL url = page.clone().setExtraPath(id).replaceParameter("rowId",name);
-                task.addResource(searchCategory, url, SearchService.PRIORITY.item);
+                String containerId = rs.getString(1);
+                String entityId = rs.getString(2);
+                indexThread(task, containerId, entityId);
                 if (Thread.interrupted())
                     return;
             }
@@ -868,7 +867,24 @@ public class AnnouncementManager
     }
 
 
+    public static void indexThread(SearchService.IndexTask task, String c, String entityId)
+    {
+        ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
+        url.setExtraPath(c);
+        url.addParameter("entityId", entityId);
+        task.addResource(searchCategory, url, SearchService.PRIORITY.item);
+    }
 
+
+    static void indexThread(Announcement ann)
+    {
+        String parent = null == ann.getParent() ? ann.getEntityId() : ann.getParent();
+        String container = ann.getContainerId();
+        SearchService.IndexTask task = ServiceRegistry.get().getService(SearchService.class).defaultTask();
+        indexThread(task, container, parent);
+    }
+
+    
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
