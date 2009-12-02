@@ -111,10 +111,11 @@ public class WebdavResolverImpl implements WebdavResolver
     }
 
 
-    /** short lived cache to make webdav perform reasonably */
-    class FolderCache extends TTLCacheMap<Path, Resource> implements ContainerManager.ContainerListener
+    // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
+    // end up with just one of these.
+    private class FolderCache extends TTLCacheMap<Path, Resource> implements ContainerManager.ContainerListener
     {
-        FolderCache()
+        private FolderCache()
         {
             super(1000, 5 * TTLCacheMap.MINUTE, "WebDAV folders");
             ContainerManager.addContainerListener(this);
@@ -242,7 +243,7 @@ public class WebdavResolverImpl implements WebdavResolver
     }
 
 
-    FolderCache _folderCache = new FolderCache();
+    private FolderCache _folderCache = new FolderCache();
 
 
 //    private FolderResourceImpl lookupWebFolder(String folder)

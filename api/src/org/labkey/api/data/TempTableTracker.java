@@ -24,6 +24,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -240,7 +241,7 @@ public class TempTableTracker extends WeakReference<Object>
             try
             {
                 if (null == tempTableLog)
-                    tempTableLog = new RandomAccessFile(FileUtil.getTempDirectory() + LOGFILE, "rwd");
+                    tempTableLog = new RandomAccessFile(new File(FileUtil.getTempDirectory(), LOGFILE), "rwd");
 
                 if (loadFile)
                 {

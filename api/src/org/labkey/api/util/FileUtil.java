@@ -40,7 +40,7 @@ import junit.framework.TestSuite;
  */
 public class FileUtil
 {
-    public static String _tempPath = null;
+    private static File _tempDir = null;
 
     public static boolean deleteDirectoryContents(File dir)
     {
@@ -673,14 +673,14 @@ quickScan:
 
     // Under Catalina, it seems to pick \tomcat\temp
     // On the web server under Tomcat, it seems to pick c:\Documents and Settings\ITOMCAT_EDI\Local Settings\Temp
-    public static String getTempDirectory()
+    public static File getTempDirectory()
     {
-        if (null == _tempPath)
+        if (null == _tempDir)
         {
             try
             {
                 File temp = File.createTempFile("deleteme", null);
-                _tempPath = temp.getParent() + File.separator;
+                _tempDir = temp.getParentFile();
                 temp.delete();
             }
             catch (IOException e)
@@ -689,7 +689,7 @@ quickScan:
             }
         }
 
-        return _tempPath;
+        return _tempDir;
     }
 
 
