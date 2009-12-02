@@ -80,7 +80,8 @@ public class ExperimentJSONConverter
         JSONArray outputDataArray = new JSONArray();
         for (ExpData data : run.getDataOutputs())
         {
-            outputDataArray.put(ExperimentJSONConverter.serializeData(data));
+            if (null != data.getFile())
+                outputDataArray.put(ExperimentJSONConverter.serializeData(data));
         }
         jsonObject.put(DATA_OUTPUTS, outputDataArray);
 
