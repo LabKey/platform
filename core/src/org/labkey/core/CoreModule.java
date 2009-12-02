@@ -26,20 +26,19 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.*;
-import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
-import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
-import org.labkey.api.webdav.*;
-import org.labkey.api.search.SearchService;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -54,8 +53,6 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
-import org.labkey.core.search.AbstractSearchService;
-import org.labkey.core.search.LuceneSearchServiceImpl;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -153,26 +150,6 @@ public class CoreModule extends SpringModule
                 }
             }
         }
-
-
-        LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
-        ss.start();
-        ServiceRegistry.get().registerService(SearchService.class, ss);
-
-        ss.addResourceResolver("action", new AbstractSearchService.ResourceResolver()
-        {
-            public Resource resolve(@NotNull String str)
-            {
-                return new ActionResource(str);
-            }
-        });
-        ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
-        {
-            public Resource resolve(@NotNull String path)
-            {
-                return WebdavService.getResolver().lookup(Path.parse(path));
-            }
-        });
     }
 
 

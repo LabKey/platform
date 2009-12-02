@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.issue.model;
+package org.labkey.search.model;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -31,14 +31,24 @@ import org.apache.lucene.search.Sort;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.issue.IssuesController;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.VBox;
+import org.labkey.search.SearchController;
+import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +61,9 @@ import java.util.List;
 * Date: Nov 5, 2009
 * Time: 8:05:02 AM
 */
+
+// NOT USED: old implementation of lucene issues prototype
+// TODO: Delete
 public class LuceneSearch
 {
     private static final Logger LOG = Logger.getLogger(LuceneSearch.class);
@@ -183,12 +196,75 @@ public class LuceneSearch
             Container container = ContainerManager.getForId(doc.get("Container"));
             int issueId = Integer.valueOf(doc.get("IssueId")).intValue();
 
-            ActionURL url = new ActionURL(IssuesController.DetailsAction.class, container);
+            ActionURL url = new ActionURL(SearchController.SearchAction.class, container);
             url.addParameter("issueId", issueId);
 
             html.append("<tr><td><a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(issueId).append(": ").append(title).append("</a>").append("</td></tr>\n");
         }
 
         return html.toString();
+    }
+
+
+    @RequiresSiteAdmin
+    public class BuildIndexAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            LuceneSearch.buildIndex();
+            return new ActionURL(SearchController.SearchAction.class, getViewContext().getContainer());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class SearchLuceneAction extends SimpleViewAction<LuceneSearchForm>
+    {
+        public ModelAndView getView(LuceneSearchForm form, BindException errors) throws Exception
+        {
+            String query = form.getQuery();
+
+            HtmlView searchBox = new HtmlView("<form><input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">" + PageFlowUtil.generateSubmitButton("Search") + "</form>");
+            getPageConfig().setFocusId("query");
+
+            if (null == query)
+                return searchBox;
+
+            String results = LuceneSearch.search(query, form.getSort());
+
+            return new VBox(searchBox, new HtmlView(results));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Lucene Search");
+        }
+    }
+
+
+    public static class LuceneSearchForm
+    {
+        private String _query;
+        private String _sort;
+
+        public String getQuery()
+        {
+            return _query;
+        }
+
+        public void setQuery(String query)
+        {
+            _query = query;
+        }
+
+        public String getSort()
+        {
+            return _sort;
+        }
+
+        public void setSort(String sort)
+        {
+            _sort = sort;
+        }
     }
 }

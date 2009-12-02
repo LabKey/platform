@@ -1,4 +1,4 @@
-package org.labkey.core.search;
+package org.labkey.search.model;
 
 import org.apache.log4j.Category;
 import org.labkey.api.webdav.Resource;

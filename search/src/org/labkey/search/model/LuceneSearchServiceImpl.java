@@ -1,7 +1,6 @@
-package org.labkey.core.search;
+package org.labkey.search.model;
 
-import org.apache.commons.collections15.Bag;
-import org.apache.commons.collections15.bag.TreeBag;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.lucene.analysis.Analyzer;
@@ -15,17 +14,20 @@ import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.ActionResource;
-import org.labkey.core.search.HTMLContentExtractor.GenericHTMLExtractor;
-import org.labkey.core.search.HTMLContentExtractor.LabKeyPageHTMLExtractor;
+import org.labkey.api.webdav.Resource;
+import org.xml.sax.ContentHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -74,93 +76,102 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-
-    private static final Bag<String> _areas = new TreeBag<String>();
-
     @Override
     Map<?, ?> preprocess(String id, Resource r)
     {
         try
         {
+            Map<String, ?> props = r.getProperties();
+            String body = null;
+            String title = (String)props.get("title");
             String type = r.getContentType();
 
             if ("text/html".equals(type))
             {
-                _count++;
-
-                if (0 == _count % 100)
-                    _log.info("Indexing: " + _count);
-
-                Document doc = new Document();
                 String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
-                Map<String, ?> props = r.getProperties();
-                String title = (String)props.get("title");
-                String body = null;
 
                 // TODO: Need better check for issue HTML vs. rendered page HTML
                 if (r instanceof ActionResource)
                 {
-                    HTMLContentExtractor extractor = new LabKeyPageHTMLExtractor(html);
+                    HTMLContentExtractor extractor = new HTMLContentExtractor.LabKeyPageHTMLExtractor(html);
                     body = extractor.extract();
                     title = extractor.getTitle();
                 }
 
                 if (StringUtils.isEmpty(body))
                 {
-                    body = new GenericHTMLExtractor(html).extract();
+                    body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
                 }
-
-                String url = r.getExecuteHref(null);
-                assert null != url;
-                if (null == title)
-                {
-                    _log.error("Bogus content for: " + id + "\n" + html);
-                    title = url;
-                }
-
-                String summary = extractSummary(body, title);
-
-                doc.add(new Field("body", body, Field.Store.NO, Field.Index.ANALYZED));
-                doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
-                doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
-                doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
-
-                for (Map.Entry<String, ?> entry : props.entrySet())
-                {
-                    Object value = entry.getValue();
-
-                    if (null != value)
-                    {
-                        String stringValue = value.toString().toLowerCase();
-
-                        if (stringValue.length() > 0)
-                        {
-                            String key = entry.getKey().toLowerCase();
-
-                            if (!"title".equals(key))
-                            {
-                                doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.ANALYZED));
-
-                                if ("area".equals(key))
-                                {
-                                    _areas.add(stringValue);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return Collections.singletonMap(Document.class, doc);
             }
             else
             {
-                _log.info("Unknown content type: " + type);
+                InputStream is = null;
+
+                try
+                {
+                    Metadata metadata = new Metadata();
+                    ContentHandler handler = new BodyContentHandler();
+                    is = r.getInputStream(User.getSearchUser());
+                    new AutoDetectParser().parse(is, handler, metadata);
+                    is.close();
+                    body = handler.toString();
+                    if (StringUtils.isBlank(title))
+                        title = metadata.get(Metadata.TITLE);
+                    _log.info("Parsed " + id);
+                }
+                finally
+                {
+                    IOUtils.closeQuietly(is);
+                }
             }
+
+            String url = r.getExecuteHref(null);
+            assert null != url;
+            if (StringUtils.isBlank(title))
+            {
+                _log.error("No title for: " + id);
+                title = url;
+            }
+
+            String summary = extractSummary(body, title);
+
+            _count++;
+
+            if (0 == _count % 100)
+                _log.info("Indexing: " + _count);
+
+            Document doc = new Document();
+
+            doc.add(new Field("body", body, Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
+            doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
+            doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
+
+            for (Map.Entry<String, ?> entry : props.entrySet())
+            {
+                Object value = entry.getValue();
+
+                if (null != value)
+                {
+                    String stringValue = value.toString().toLowerCase();
+
+                    if (stringValue.length() > 0)
+                    {
+                        String key = entry.getKey().toLowerCase();
+
+                        if (!"title".equals(key))
+                            doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.ANALYZED));
+                    }
+                }
+            }
+
+            return Collections.singletonMap(Document.class, doc);
         }
         catch(Exception e)
         {
-            _log.error("Indexing error with " + id, e);
+            _log.error("Indexing error with " + id + ": " + e.getMessage());
         }
+
         return null;
     }
 
@@ -205,9 +216,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            for (String area : _areas.uniqueSet())
-                _log.info("Area: " + area + " Count: " + _areas.getCount(area));
-
             if (null != _iw)
                 _iw.close();
         }

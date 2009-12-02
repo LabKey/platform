@@ -1,4 +1,4 @@
-package org.labkey.core.search;
+package org.labkey.search.model;
 
 import org.labkey.api.search.SearchService;
 import org.labkey.api.util.Path;

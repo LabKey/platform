@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module relativePaths="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/../../intellijBuild/modules/search/classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="API" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/tika-app-0.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/lucene-snowball-2.9.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Lucene 2.9.1">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-2.9.1.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1.zip!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/xml-query-parser/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/db/bdb/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/swing/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/spellchecker/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/snowball/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/highlighter/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/benchmark/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/analyzers/smartcn/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/queries/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/regex/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/wordnet/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/lucli/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/ant/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/analyzers/common/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/collation/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/spellchecker/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/src/demo" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/highlighter/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/spatial/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/wikipedia/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/remote/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/remote/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/analyzers/common/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/spatial/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/memory/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/surround/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/xml-query-parser/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/queryparser/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/swing/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/instantiated/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/wikipedia/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/xml-query-parser/src/demo/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/regex/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/snowball/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/db/bdb-je/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/memory/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/collation/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/ant/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/queries/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/fast-vector-highlighter/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/analyzers/smartcn/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/instantiated/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/fast-vector-highlighter/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/benchmark/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/misc/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/db/bdb/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/misc/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/surround/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/wordnet/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/db/bdb-je/src/test" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-2.9.1-src.zip!/lucene-2.9.1/contrib/queryparser/src/test" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module" module-name="Internal" />
+  </component>
+</module>
+

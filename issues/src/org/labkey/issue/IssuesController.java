@@ -43,7 +43,6 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
-import org.labkey.issue.model.LuceneSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.query.IssuesQueryView;
 import org.labkey.issue.query.IssuesTable;
@@ -1462,69 +1461,6 @@ public class IssuesController extends SpringActionController
         {
             this.issues = issues;
             this.filteredURLString = filteredURLString;
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public class BuildIndexAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            LuceneSearch.buildIndex();
-            return getListURL(getContainer());
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class SearchLuceneAction extends SimpleViewAction<LuceneSearchForm>
-    {
-        public ModelAndView getView(LuceneSearchForm form, BindException errors) throws Exception
-        {
-            String query = form.getQuery();
-
-            HtmlView searchBox = new HtmlView("<form><input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">" + PageFlowUtil.generateSubmitButton("Search") + "</form>");
-            getPageConfig().setFocusId("query");
-
-            if (null == query)
-                return searchBox;
-            
-            String results = LuceneSearch.search(query, form.getSort());
-
-            return new VBox(searchBox, new HtmlView(results));
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Lucene Search");
-        }
-    }
-
-
-    public static class LuceneSearchForm
-    {
-        private String _query;
-        private String _sort;
-
-        public String getQuery()
-        {
-            return _query;
-        }
-
-        public void setQuery(String query)
-        {
-            _query = query;
-        }
-
-        public String getSort()
-        {
-            return _sort;
-        }
-
-        public void setSort(String sort)
-        {
-            _sort = sort;
         }
     }
 

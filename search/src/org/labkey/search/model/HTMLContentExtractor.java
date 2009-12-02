@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.core.search;
+package org.labkey.search.model;
 
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.HTML;

@@ -1,4 +1,4 @@
-package org.labkey.core.search;
+package org.labkey.search.model;
 
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
@@ -85,7 +85,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         public void addResource(@NotNull String identifier, PRIORITY pri)
         {
-            addResource(identifier, (Resource)null, pri);
+            addResource(identifier, null, pri);
         }
 
 
@@ -214,7 +214,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public List<IndexTask> getTasks()
     {
-        IndexTask[] arr = _tasks.toArray(new IndexTask[0]);
+        IndexTask[] arr = _tasks.toArray(new IndexTask[_tasks.size()]);
         return Arrays.asList(arr);
     }
 
@@ -230,7 +230,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    Map<String,ResourceResolver> _resolvers = Collections.synchronizedMap(new HashMap<String,ResourceResolver>());
+    Map<String, ResourceResolver> _resolvers = Collections.synchronizedMap(new HashMap<String,ResourceResolver>());
 
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
