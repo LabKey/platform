@@ -93,7 +93,11 @@ public class SimpleFilter implements Filter
 
         protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append(toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), null));
+            SQLFragment sqlf = toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), null);
+            if (sqlf.isEmpty())
+                sb.append("1=1");
+            else
+                sb.append(sqlf);
         }
 
         abstract public List<String> getColumnNames();
@@ -436,6 +440,12 @@ public class SimpleFilter implements Filter
     public SimpleFilter addCondition(String colName, Object value, CompareType compare)
     {
         _clauses.add(compare.createFilterClause(colName, value));
+        return this;
+    }
+
+    public SimpleFilter addCondition(FilterClause clause)
+    {
+        _clauses.add(clause);
         return this;
     }
 

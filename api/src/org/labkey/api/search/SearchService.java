@@ -16,9 +16,9 @@
 package org.labkey.api.search;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
+import org.labkey.api.data.*;
 import org.apache.log4j.Category;
 
 import java.util.*;
@@ -44,6 +44,7 @@ public interface SearchService
         group,      // one container
         item        // one page/attachment
     }
+
 
     enum PROPERTY
     {
@@ -242,4 +243,69 @@ public interface SearchService
     public void addSearchCategory(SearchCategory category);
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
     public void clearIndex();
+
+
+    /**
+     * filter for documents modified since the provided date
+     *
+     * modifiedSince == null, means full search
+     * otherwise incremental search which may mean either
+     *      modified > lastIndexed
+     * or
+     *      modified > modifiedSince
+     *
+     * depending on whether lastIndexed is tracked
+
+     * see Module.enumerateDocuments
+     */
+
+    public static class LastIndexedClause extends SimpleFilter.FilterClause
+    {
+        SQLFragment _sqlf = new SQLFragment();
+        private List<String> _colNames = new ArrayList<String>();
+
+
+        public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
+        {
+            boolean incremental = modifiedSince != null;
+            // no filter
+            if (!incremental)
+                return;
+
+            ColumnInfo modified = info.getColumn("modified");
+            ColumnInfo lastIndexed = info.getColumn("lastIndexed");
+            String prefix = null == tableAlias ? " " : tableAlias + ".";
+
+            if (null != modified && null != lastIndexed)
+            {
+                _sqlf.append("NOT (");
+                _sqlf.append(prefix).append(modified.getSelectName()).append("<").append(prefix).append(lastIndexed.getSelectName());
+                _sqlf.append(")");
+                _colNames.add(modified.getName());
+                _colNames.add(lastIndexed.getName());
+            }
+            else if (null != modified)
+            {
+                _sqlf.append(prefix).append(modified.getSelectName()).append("> ?");
+                _sqlf.add(modifiedSince);
+                _colNames.add(modified.getName());
+            }
+            else if (null != lastIndexed)
+            {
+                _sqlf.append(prefix).append(lastIndexed.getSelectName()).append("< ?");
+                _sqlf.add(lastIndexed);
+                _colNames.add(lastIndexed.getName());
+            }
+        }
+
+        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            return _sqlf;
+        }
+
+        public List<String> getColumnNames()
+        {
+            return _colNames;
+        }
+    }
 }

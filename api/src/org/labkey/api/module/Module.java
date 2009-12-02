@@ -260,6 +260,11 @@ public interface Module extends Comparable<Module>
     public List<File> getStaticFileDirectories();
 
     
-    /** enumerate documents for full text search */
+    /**
+     * enumerate documents for full text search
+     *
+     * modifiedSince == null -> full reindex
+     * else incremental (either modified > modifiedSince, or modified > lastIndexed)
+     */
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, @Nullable Container c, @Nullable Date modifiedSince);
 }

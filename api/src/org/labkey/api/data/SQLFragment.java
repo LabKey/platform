@@ -65,6 +65,12 @@ public class SQLFragment
     }
 
 
+    public boolean isEmpty()
+    {
+        return null == sb || sb.length() == 0;
+    }
+
+
     public String getSQL()
     {
         return null != sb ? sb.toString() : null != sql ? sql : "";
