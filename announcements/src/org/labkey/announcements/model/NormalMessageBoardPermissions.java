@@ -22,6 +22,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.DeletePermission;
 
 /**
  * User: adam
@@ -62,20 +66,15 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowUpdate(Announcement ann)
     {
-        // Either current user has update permissions on this container OR
-        //   current user: is not a guest, has "update own" permissions, and created this message
-        return hasPermission(ACL.PERM_UPDATE) ||
-               (!_user.isGuest() && hasPermission(ACL.PERM_UPDATEOWN) && ann.getCreatedBy() == _user.getUserId());
+        return _c.hasPermission(_user, UpdatePermission.class,
+                (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null));
     }
 
     public boolean allowDeleteMessage(Announcement ann)
     {
-        // Simple case: current user has delete permissions on this container
-        if (hasPermission(ACL.PERM_DELETE))
-            return true;
-
-        // Otherwise current user can't be a guest, must have "delete own" permissions, and must have created this message & all responses
-        if (!_user.isGuest() && hasPermission(ACL.PERM_DELETEOWN) && ann.getCreatedBy() == _user.getUserId())
+        //to delete, user must have delete permission for this message and all responses
+        if (_c.hasPermission(_user, DeletePermission.class,
+                (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null)))
         {
             for (Announcement a : ann.getResponses())
                 if (!allowDeleteMessage(a))
@@ -83,8 +82,8 @@ public class NormalMessageBoardPermissions implements Permissions
 
             return true;
         }
-
-        return false;
+        else
+            return false;
     }
 
     public boolean allowDeleteAnyThread()

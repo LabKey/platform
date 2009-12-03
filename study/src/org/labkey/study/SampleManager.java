@@ -2032,6 +2032,7 @@ public class SampleManager
         // columns are required in case there's a saved filter on a column outside the primary table:
         columns.add(FieldKey.fromParts("Container"));
         columns.add(FieldKey.fromParts("Visit"));
+        columns.add(FieldKey.fromParts("LockedInRequest"));
         columns.add(FieldKey.fromParts("GlobalUniqueId"));
         columns.add(FieldKey.fromParts("ParticipantId"));
         if (StudyManager.getInstance().showCohorts(container, schema.getUser()))

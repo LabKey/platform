@@ -135,7 +135,8 @@ public abstract class BaseStudyTable extends FilteredTable
             String dateVisitJoinAlias = parentAlias + "$" + DATE_VISIT_JOIN_ALIAS;
             SQLFragment join = new SQLFragment();
             join.append(" LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoParticipantVisit() + " " + pvAlias + " ON\n" +
-                    parentAlias + ".ParticipantSequenceKey = " + pvAlias + ".ParticipantSequenceKey\n");
+                    parentAlias + ".ParticipantSequenceKey = " + pvAlias + ".ParticipantSequenceKey AND\n" +
+                    parentAlias + ".Container = " + pvAlias + ".Container\n");
             join.append("LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " " + dateVisitJoinAlias +
                     " ON " + dateVisitJoinAlias + ".RowId = " + pvAlias + ".VisitRowId");
             map.put(DATE_VISIT_JOIN_ALIAS, join);

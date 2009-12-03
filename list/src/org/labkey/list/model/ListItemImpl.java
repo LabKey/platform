@@ -59,7 +59,7 @@ public class ListItemImpl implements ListItem
     ListItm _itm;
     Map<String, ObjectProperty> _properties;
     Map<String, ObjectProperty> _oldProperties;
-    private static final Object _autoIncrementLock = new Object();  // Consider: Synchronize each list separately
+    private static final KeyIncrementer _keyIncrementer = new KeyIncrementer();
     private static final Logger _log = Logger.getLogger(ListItemImpl.class);
 
     public ListItemImpl(ListDefinitionImpl list, ListItm item)
@@ -292,20 +292,8 @@ public class ListItemImpl implements ListItem
             if (_new)
             {
                 if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
-                {
-                    synchronized(_autoIncrementLock)  // Consider: separate lock objects for each list having auto-increment key
-                    {
-                        TableInfo tinfo = _list.getIndexTable();
-                        String keyName = tinfo.getColumn("Key").getSelectName();
-                        Integer newKey = Table.executeSingleton(tinfo.getSchema(), "SELECT COALESCE(MAX(" + keyName + ") + 1, 1) FROM " + tinfo + " WHERE ListId = ?", new Object[]{_list.getListId()}, Integer.class);
-                        _itm.setKey(newKey);
-                        _itm = Table.insert(user, tinfo, _itm);
-                    }
-                }
-                else
-                {
-                    _itm = Table.insert(user, _list.getIndexTable(), _itm);
-                }
+                    _itm.setKey(_keyIncrementer.getNextKey(_list));
+                _itm = Table.insert(user, _list.getIndexTable(), _itm);
 
                 _new = false;
             }
@@ -330,6 +318,37 @@ public class ListItemImpl implements ListItem
             if (fTransaction)
             {
                 ExperimentService.get().rollbackTransaction();
+            }
+        }
+    }
+
+    private static class KeyIncrementer
+    {
+        private Map<Integer, Integer> _lastKeyByList = new HashMap<Integer, Integer>();
+        private static final Object INCREMENT_SYNC = new Object();
+
+        public int getNextKey(ListDefinitionImpl list) throws SQLException
+        {
+            Integer prevKey = _lastKeyByList.get(list.getListId());
+            Integer dbKey = null;
+            if (prevKey == null)
+            {
+                // this is the first time we've inserted into this list since startup, so we get the next key from the database.
+                // make this query outside of any synchronization to avoid java/database deadlocks:
+                TableInfo tinfo = list.getIndexTable();
+                String keyName = tinfo.getColumn("Key").getSelectName();
+                dbKey = Table.executeSingleton(tinfo.getSchema(), "SELECT COALESCE(MAX(" + keyName + "), 0) FROM " + tinfo + " WHERE ListId = ?", new Object[]{list.getListId()}, Integer.class);
+            }
+
+            synchronized (INCREMENT_SYNC)
+            {
+                // recheck the map within the synchronized block, just in case:
+                prevKey = _lastKeyByList.get(list.getListId());
+                if (prevKey == null)
+                    prevKey = dbKey;
+                int newKey = prevKey.intValue() + 1;
+                _lastKeyByList.put(list.getListId(), newKey);
+                return newKey;
             }
         }
     }

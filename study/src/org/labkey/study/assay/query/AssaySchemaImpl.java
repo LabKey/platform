@@ -157,7 +157,7 @@ public class AssaySchemaImpl extends AssaySchema
                     AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
                     if (providerSchema != null && name.startsWith(protocol.getName() + " "))
                     {
-                        return providerSchema.getTable(name, true);
+                        return providerSchema.createTable(name);
                     }
                 }
             }

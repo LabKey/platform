@@ -61,8 +61,8 @@ public class RequestReportFactory extends BaseRequestReportFactory
             else
             {
                 filter.addWhereClause("globaluniqueid IN\n" +
-                        "(SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE container = ?)",
-                        new Object[] { getContainer().getId()});
+                        "(SELECT specimenglobaluniqueid FROM study.samplerequestspecimen WHERE container = ?) and LockedInRequest = ?",
+                        new Object[] { getContainer().getId(), Boolean.TRUE });
             }
             addBaseFilters(filter);
             reports.add(new RequestReport("All Requested Specimens", filter, this, visits, isCompletedRequestsOnly()));

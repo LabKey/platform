@@ -614,15 +614,9 @@ public class PipelineStatusManager
 
         if (null != jobId)
         {
-            String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() +  " WITH (HOLDLOCK,XLOCK) WHERE Job = ?;";
+            String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() +  " WITH (TABLOCKX) WHERE Job = ?;";
             Table.execute(_schema.getSchema(), lockCmd, new Object[]{jobId}) ;
         }
-        if (null != filePath)
-        {
-            String lockCmd = "SELECT FilePath, Job FROM " + _schema.getTableInfoStatusFiles() +  " WITH (HOLDLOCK,XLOCK) WHERE FilePath = ?;";
-            Table.execute(_schema.getSchema(), lockCmd, new Object[]{filePath}) ;
-        }
-
     }
 
 }
