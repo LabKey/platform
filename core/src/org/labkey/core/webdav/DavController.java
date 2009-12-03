@@ -29,6 +29,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -65,6 +66,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
 
 
 /**
@@ -498,6 +501,97 @@ public class DavController extends SpringActionController
                 return serveCollection(resource, !"HEAD".equals(method));
             else
                 return serveResource(resource, !"HEAD".equals(method));
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ZipAction extends DavAction
+    {
+        public static final String PARAM_ZIPNAME = "zipName";
+        public static final String PARAM_DEPTH = "depth";
+
+        public ZipAction()
+        {
+            super("ZIP");
+        }
+
+        @Override
+        WebdavStatus doMethod() throws DavException, IOException, RedirectException
+        {
+            User user = getUser();
+            Resource resource = resolvePath();
+            if (null == resource)
+                return notFound();
+
+            //check for zipName parameter
+            HttpServletRequest request = getViewContext().getRequest();
+            String zipName = request.getParameter(PARAM_ZIPNAME);
+            if (null == zipName)
+                zipName = resource.getName() + " files";
+
+            int depth = 1;
+            try
+            {
+                depth = Integer.parseInt(request.getParameter(PARAM_DEPTH));
+            }
+            catch (NumberFormatException ignore) {}
+
+            //-1 means infinite (...well, as deep as max int)
+            if (-1 == depth)
+                depth = Integer.MAX_VALUE;
+
+            HttpServletResponse response = getViewContext().getResponse();
+            response.reset();
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + zipName + ".zip\"");
+
+            ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
+            try
+            {
+                addResource(resource, out, user, resource, depth);
+            }
+            finally
+            {
+                IOUtils.closeQuietly(out);
+            }
+            return WebdavStatus.SC_OK;
+        }
+
+        private void addResource(Resource resource, ZipOutputStream out, User user, Resource rootResource, int depth) throws IOException
+        {
+            if (!resource.canRead(user))
+                return;
+
+            if (resource.isCollection())
+            {
+                if (depth > 0)
+                {
+                    for (Resource child : resource.list())
+                    {
+                        addResource(child, out, user, rootResource, depth - 1);
+                    }
+                }
+            }
+            else
+            {
+                String entryName = rootResource.getPath().equals(resource.getPath())
+                        ? resource.getName()
+                        : rootResource.getPath().relativize(resource.getPath()).toString();
+
+                ZipEntry entry = new ZipEntry(entryName);
+                out.putNextEntry(entry);
+
+                InputStream in = null;
+                try
+                {
+                    in = resource.getInputStream(user);
+                    FileUtil.copyData(in, out);
+                }
+                finally
+                {
+                    IOUtils.closeQuietly(in);
+                }
+            }
         }
     }
 
