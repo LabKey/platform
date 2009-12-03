@@ -50,6 +50,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static org.labkey.api.search.SearchService.PROPERTY.*;
+
 
 /**
  * User: mbellew
@@ -866,7 +868,6 @@ public class WikiManager
             rs = Table.executeQuery(comm.getSchema(), f, 0, false, false);
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             HashMap<String, AttachmentParent> ids = new HashMap<String, AttachmentParent>();
-            ObjectFactory<Wiki> wikiFactory = ObjectFactory.Registry.getFactory(Wiki.class);
             
             while (rs.next())
             {
@@ -874,7 +875,7 @@ public class WikiManager
                 if (null == m.get("body"))
                     m.put("body","");
                 if (null == m.get("title"))
-                    m.put("title", m.get("name"));
+                    m.put(SearchService.PROPERTY.title.toString(), m.get("name"));
                 name = (String)m.get("name");
                 String entityid = (String)m.get("entityid");
                 WikiWebdavProvider.WikiPageResource r = new WikiWebdavProvider.WikiPageResource(c, name, entityid, m);

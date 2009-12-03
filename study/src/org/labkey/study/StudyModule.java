@@ -431,5 +431,6 @@ public class StudyModule extends SpringModule
     public void enumerateDocuments(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         StudyManager.indexDatasets(task, c, modifiedSince);
+        StudyManager.indexParticipants(task, c, modifiedSince);
     }
 }

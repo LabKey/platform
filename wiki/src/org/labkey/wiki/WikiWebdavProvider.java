@@ -16,13 +16,11 @@
 
 package org.labkey.wiki;
 
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -36,11 +34,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
-import javax.swing.text.html.HTML;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -326,13 +322,14 @@ class WikiWebdavProvider implements WebdavService.Provider
             _wiki = wiki;
             WikiVersion v = getWikiVersion();
 
+            _properties = new HashMap<String,Object>();
+            _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
+            _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
             if (null != v)
             {
                 _body = getWikiVersion().getBody();
                 _type = getWikiVersion().getRendererType();
-                _properties = new HashMap<String,Object>();
-                _properties.put("title", v.getTitle().getSource());
-                _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
+                _properties.put(SearchService.PROPERTY.title.toString(), v.getTitle().getSource());
             }
         }
 
@@ -352,6 +349,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             m.put("body",null);
             m.put("renderertype",null);
             _properties = m;
+            _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
             _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
         }
 
@@ -500,7 +498,6 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public String getContentType()
         {
-            WikiVersion v = getWikiVersion();
             if ("HTML".equals(_type))
                 return "text/html";
             return "text/plain";

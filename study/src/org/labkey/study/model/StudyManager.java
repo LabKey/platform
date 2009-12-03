@@ -60,6 +60,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.QueryHelper;
@@ -3198,6 +3199,48 @@ public class StudyManager
         }
     }
     
+
+    public static void indexParticipants(SearchService.IndexTask task, Container c, Date modifiedSince)
+    {
+        ResultSet rs = null;
+        try
+        {
+            SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
+            if (null != c)
+                f.append("WHERE container = '" + c.getId() + "'");
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+
+            ActionURL participant = new ActionURL(StudyController.ParticipantAction.class, null);
+            Map<String,Object> props = new HashMap<String,Object>();
+            while (rs.next())
+            {
+                String container = rs.getString(1);
+                String id = rs.getString(2);
+                ActionURL view = participant.clone().replaceParameter("datasetId",String.valueOf(id));
+                view.setExtraPath(container);
+                Path p = new Path(container,id);
+                // UNDONE: searchCategory
+                props.put("participantid", id);
+                SimpleDocumentResource r = new SimpleDocumentResource(
+                        p, "participant:/" + p,
+                        "text/html", new byte[0],
+                        view, props
+                );
+                r. getProperties();
+                task.addResource(r, SearchService.PRIORITY.item);
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
+
 
     public static class StudyTestCase extends junit.framework.TestCase
     {

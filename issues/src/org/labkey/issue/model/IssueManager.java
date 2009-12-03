@@ -45,6 +45,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static org.labkey.api.search.SearchService.PROPERTY.*;
 
 /**
  * User: mbellew
@@ -767,7 +768,7 @@ public class IssueManager
             return;
         String id = String.valueOf(m.get("issueid"));
         String title = String.valueOf(m.get("title"));
-        m.put("title", id + " : " + title);
+        m.put(SearchService.PROPERTY.title.toString(), id + " : " + title);
         m.put("comment",null);
         m.put("_row",null);
         task.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
@@ -832,7 +833,8 @@ public class IssueManager
             _containerId = issue.getContainerId();
             _properties = m;
             _comments = issue.getComments();
-            _properties.put(SearchService.PROPERTY.category.toString(), searchCategory.getName());
+            _properties.put(securableResourceId.toString(),_containerId);
+            _properties.put(category.toString(), searchCategory.getName());
         }
 
 
@@ -842,7 +844,8 @@ public class IssueManager
             _containerId = (String)m.get("container");
             _properties = m;
             _comments = comments;
-            _properties.put(SearchService.PROPERTY.category.toString(), searchCategory.getName());
+            _properties.put(securableResourceId.toString(),_containerId);
+            _properties.put(category.toString(), searchCategory.getName());
         }
 
 
