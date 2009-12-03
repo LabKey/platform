@@ -42,6 +42,12 @@ LABKEY.ActionURL = new function()
         for (var i = 0; i < paramArray.length; i++)
         {
             var nameValue = paramArray[i].split('=');
+            if (nameValue.length == 1 && nameValue[0] != '')
+            {
+                // Handle URL parameters with a name but no value or =
+                nameValue[1] = '';
+            }
+
             if (nameValue.length == 2)
             {
                 var name = decodeURIComponent(nameValue[0]);

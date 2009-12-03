@@ -335,8 +335,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         if (_gridURL != null)
         {
-            ActionURL url = _gridURL.getActionURL();
-            url.setContainer(container);
+            ActionURL url = _gridURL.copy(container).getActionURL();
             return url;
         }
         return null;
@@ -346,8 +345,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         if (_insertURL != null)
         {
-            ActionURL url = _insertURL.getActionURL();
-            url.setContainer(container);
+            ActionURL url = _insertURL.copy(container).getActionURL();
             return url;
         }
         return null;

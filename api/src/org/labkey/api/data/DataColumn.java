@@ -177,12 +177,24 @@ public class DataColumn extends DisplayColumn
 
     public Object getValue(RenderContext ctx)
     {
-        return _boundColumn.getValue(ctx);
+        Object result = ctx.get(_boundColumn.getFieldKey());
+        if (result == null)
+        {
+            // If we couldn't find it by FieldKey, check by alias as well
+            result = _boundColumn.getValue(ctx);
+        }
+        return result;
     }
 
     public Object getDisplayValue(RenderContext ctx)
     {
-        return _displayColumn.getValue(ctx);
+        Object result = ctx.get(_displayColumn.getFieldKey());
+        if (result == null)
+        {
+            // If we couldn't find it by FieldKey, check by alias as well
+            result = _displayColumn.getValue(ctx);
+        }
+        return result;
     }
 
     public Class getValueClass()
@@ -297,7 +309,7 @@ public class DataColumn extends DisplayColumn
     @Override
     public String renderURL(RenderContext ctx)
     {
-        if (null == _displayColumn.getValue(ctx))
+        if (null == getDisplayValue(ctx))
             return null;
         return super.renderURL(ctx);
     }
@@ -305,7 +317,12 @@ public class DataColumn extends DisplayColumn
 
     public String getFormattedValue(RenderContext ctx)
     {
-        Object value = _displayColumn.getValue(ctx);
+        Object value = ctx.get(_displayColumn.getFieldKey());
+        if (value == null)
+        {
+            // If we couldn't find it by FieldKey, check by alias as well
+            value = _displayColumn.getValue(ctx);
+        }
         if (value == null)
         {
             if (_displayColumn != _boundColumn)

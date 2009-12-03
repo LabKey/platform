@@ -205,6 +205,13 @@ public class RenderContext extends BoundMap // extends ViewContext
                 displayColumn.addQueryColumns(ret);
             }
 
+            // add any additional columns specified by FieldKey
+            LinkedHashSet<FieldKey> keys = new LinkedHashSet<FieldKey>();
+            for (DisplayColumn dc : displayColumns)
+                dc.addQueryFieldKeys(keys);
+
+            ret.addAll(QueryService.get().getColumns(tinfo, keys, ret).values());
+
             List<ColumnInfo> pkColumns = tinfo.getPkColumns();
             if (null != pkColumns)
             {
@@ -531,7 +538,6 @@ public class RenderContext extends BoundMap // extends ViewContext
                 return col == null ? null : col.getValue(_row);
             }
             // <UNDONE>
-            assert false : "where's the _fieldMap?";
             FieldKey f = (FieldKey)key;
             key = f.getParent() == null ? f.getName() : f.encode();
             // </UNDONE>

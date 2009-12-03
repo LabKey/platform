@@ -309,12 +309,7 @@ public class DataRegion extends DisplayElement
         LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
         addQueryColumns(columns);
 
-        // add any additional columns specified by FieldKey
-        LinkedHashSet<FieldKey> keys = new LinkedHashSet<FieldKey>();
-        for (DisplayColumn dc : displayCols)
-            dc.addQueryFieldKeys(keys);
-
-        LinkedHashMap<FieldKey,ColumnInfo> ret = QueryService.get().getColumns(getTable(), keys, columns);
+        LinkedHashMap<FieldKey,ColumnInfo> ret = QueryService.get().getColumns(getTable(), Collections.<FieldKey>emptySet(), columns);
 
         for (DisplayColumn dc : displayCols)
             dc.setAllColumns(ret);

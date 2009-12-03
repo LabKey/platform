@@ -265,7 +265,14 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     {
         if (null == _parsedUrl)
             parse();
-        return null == _parsedUrl ? null : _parsedUrl.clone();
+        ActionURL ret = null == _parsedUrl ? null : _parsedUrl.clone();
+        if (null != ret)
+        {
+            Container c = getContainer(null);
+            if (null != c)
+                ret.setContainer(c);
+        }
+        return ret;
     }
 
 

@@ -118,7 +118,10 @@ public class ReportUtil
             ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
             url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
             for (Pair<String, String> param : filterUrl.getParameters())
-                url.addParameter(param.getKey(), param.getValue());
+            {
+                if (!param.getKey().equals(ReportDescriptor.Prop.reportId.name()))
+                    url.addParameter(param.getKey(), param.getValue());
+            }
         }
         return url;
     }
