@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
+import org.labkey.api.security.SecurableResource;
 import org.apache.log4j.Category;
 
 import java.util.*;
@@ -50,7 +51,8 @@ public interface SearchService
     {
         title("title"),
         category("searchCategory"),
-        documentID("uniqueDocumentId");
+        securableResourceId(SecurableResource.class.getName()),
+        container(Container.class.getName());
 
         final String _propName;
         PROPERTY(String name)
@@ -74,6 +76,7 @@ public interface SearchService
         final private String _description;
         protected long _start;
         protected long _complete = 0;
+        protected boolean _cancelled = false;
         protected boolean _isReady = false;
         final private AtomicInteger _estimate = new AtomicInteger();
         final private AtomicInteger _indexed = new AtomicInteger();
@@ -94,8 +97,21 @@ public interface SearchService
         {
             return _description;
         }
-        
 
+
+        public void cancel()
+        {
+            _cancelled = true;
+            _complete = System.currentTimeMillis();
+        }
+
+
+        public boolean isCancelled()
+        {
+            return _cancelled;
+        }
+
+        
         public int getDocumentCountEstimate()
         {
             return _estimate.get();
@@ -166,6 +182,8 @@ public interface SearchService
 
         protected void completeItem(Object item, boolean success)
         {
+            if (_cancelled)
+                return;
             if (success)
                 _indexed.incrementAndGet();
             else
@@ -244,7 +262,6 @@ public interface SearchService
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
     public void clearIndex();
 
-
     /**
      * filter for documents modified since the provided date
      *
@@ -307,3 +324,12 @@ public interface SearchService
         }
     }
 }
+
+//
+// TODO Index Users
+// TODO Index Study descriptions
+// TODO lastIndexed field
+// TODO consider Files table (Attachments?) and attached properties
+// TODO participantid and sampleid
+// TODO Resource.shouldCrawl()
+//

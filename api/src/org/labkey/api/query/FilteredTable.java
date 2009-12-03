@@ -126,6 +126,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     final public void addCondition(SQLFragment condition, String... columnNames)
     {
+        if (condition.isEmpty())
+            return;
         _filter.addWhereClause("(" + condition.getSQL() + ")", condition.getParams().toArray(), columnNames);
     }
 
