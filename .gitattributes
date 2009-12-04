@@ -919,9 +919,12 @@ api/src/org/labkey/api/view/template/appBar.jsp -text
 api/src/org/labkey/api/view/template/dialogTemplate.jsp -text
 api/src/org/labkey/api/view/template/header.jsp -text
 api/src/org/labkey/api/view/template/menuBar.jsp -text
+api/src/org/labkey/api/webdav/AbstractCollectionResource.java -text
+api/src/org/labkey/api/webdav/AbstractDocumentResource.java -text
 api/src/org/labkey/api/webdav/AbstractResource.java -text
 api/src/org/labkey/api/webdav/HistoryImpl.java -text
 api/src/org/labkey/api/webdav/Resource.java -text
+api/src/org/labkey/api/webdav/SimpleDocumentResource.java -text
 api/src/org/labkey/api/webdav/WebdavResolver.java -text
 api/src/org/labkey/api/webdav/WebdavService.java -text
 api/src/org/labkey/api/wiki/FormattedHtml.java -text
@@ -1872,12 +1875,9 @@ internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
 internal/src/org/labkey/api/view/StatsView.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
-internal/src/org/labkey/api/webdav/AbstractCollectionResource.java -text
-internal/src/org/labkey/api/webdav/AbstractDocumentResource.java -text
 internal/src/org/labkey/api/webdav/ActionResource.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
-internal/src/org/labkey/api/webdav/SimpleDocumentResource.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
 internal/webapp/ColumnTree.css -text
 internal/webapp/ColumnTree.js -text

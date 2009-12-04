@@ -31,15 +31,22 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.collections.RowMap;
 
 import java.io.File;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
+
+import static org.labkey.api.search.SearchService.PROPERTY;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.view.ActionURL;
 
 /**
  * User: migra
@@ -3158,6 +3165,136 @@ public class OntologyManager
         {
             if (rs != null)
                 try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
+    }
+
+
+
+    static public void indexConcepts(SearchService.IndexTask task)
+    {
+        if (null == task)
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            task = null == ss ? null : ss.createTask("Index Concepts");
+            if (null == task)
+                return;
+        }
+
+        final SearchService.IndexTask t = task;
+        task.addRunnable(new Runnable(){
+            public void run()
+            {
+                _indexConcepts(t);
+            }
+        }, SearchService.PRIORITY.bulk);
+    }
+
+
+    final public static SearchService.SearchCategory conceptCategory = new SearchService.SearchCategory("concept", "Concepts and Property Descriptors");
+
+    private static class ConceptMapFactory extends RowMapFactory
+    {
+        int rsName;
+        int rsSearchTerms;
+        int rsPropertyUri;
+        int rsDescription;
+        int rsSemanticType;
+        int rsConceptUri;
+        int rsLabel;
+        int rsContainer;
+
+        ConceptMapFactory(ResultSet rs) throws SQLException
+        {
+            Map<String,Integer> findMap = getFindMap();
+            
+            rsName = rs.findColumn("name");
+            findMap.put("name",findMap.size());
+
+            rsSearchTerms = rs.findColumn("searchTerms");
+            findMap.put("searchTerms",findMap.size());
+
+            rsPropertyUri = rs.findColumn("propertyUri");
+            findMap.put("propertyUri",findMap.size());
+
+            rsDescription = rs.findColumn("description");
+            findMap.put("description", findMap.size());
+
+            rsSemanticType = rs.findColumn("semanticType");
+            findMap.put("semanticType", findMap.size());
+
+            rsLabel = rs.findColumn("label");
+            findMap.put("label", findMap.size());
+
+            rsContainer = rs.findColumn("container");
+            findMap.put(SearchService.PROPERTY.container.toString(), findMap.size());
+
+            findMap.put(SearchService.PROPERTY.category.toString(), findMap.size());
+            findMap.put(SearchService.PROPERTY.title.toString(), findMap.size());
+            findMap.put(SearchService.PROPERTY.securableResourceId.toString(), findMap.size());
+        }
+
+        Map<String,Object> getRowMap(ResultSet rs) throws SQLException
+        {
+            RowMap<Object> map = super.getRowMap();
+            List<Object> list = map.getRow();
+            list.add(rs.getString(rsName));
+            list.add(rs.getString(rsSearchTerms));
+            list.add(rs.getString(rsPropertyUri));
+            list.add(rs.getString(rsDescription));
+            list.add(rs.getString(rsSemanticType));
+            list.add(rs.getString(rsLabel));
+            list.add(rs.getString(rsContainer));
+            list.add(conceptCategory.toString());
+            list.add(null); // title
+            list.add(null); // securableResourceId
+            return map;
+        }
+    }
+
+    static private void _indexConcepts(SearchService.IndexTask task)
+    {
+        ResultSet rs = null;
+        Container root = ContainerManager.getSharedContainer();
+        Container shared = ContainerManager.getSharedContainer();
+
+        try
+        {
+            rs = Table.executeQuery(getExpSchema(),
+                    "SELECT * FROM exp.PropertyDescriptor", // WHERE Container=?",
+                    null, 0, false); // new Object[] {shared});
+            ConceptMapFactory f = new ConceptMapFactory(rs);
+            while (rs.next())
+            {
+                Map<String,Object> m = f.getRowMap(rs);
+                String propertyURI = (String)m.get("propertyUri");
+                m.put(PROPERTY.title.toString(), propertyURI);
+
+                String desc = (String)m.get("description");
+                String label = (String)m.get("label");
+                String name = (String)m.get("name");
+                String body = StringUtils.trimToEmpty(name) + " " +
+                        StringUtils.trimToEmpty(label) + " " +
+                        StringUtils.trimToEmpty(desc);
+                
+                ActionURL url = new ActionURL("experiment-types","findConcepts",shared);
+                url.addParameter("concept",propertyURI);
+                Resource r = new org.labkey.api.webdav.SimpleDocumentResource(
+                    new Path(propertyURI),
+                    "concept:" + propertyURI,
+                    "text/plain", body.getBytes(),
+                    url,
+                    m
+                );
+                task.addResource(r, SearchService.PRIORITY.item);
+            }
+        }
+        catch (SQLException sqlx)
+        {
+            throw new RuntimeSQLException(sqlx);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
         }
     }
 }

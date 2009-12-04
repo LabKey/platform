@@ -36,6 +36,12 @@ public class SimpleDocumentResource extends AbstractDocumentResource
             _properties = new HashMap<String,Object>(properties);
     }
 
+    @Override
+    public String getContentType()
+    {
+        return _contentType == null ? super.getContentType() : _contentType;
+    }
+
     public boolean exists()
     {
         return true;

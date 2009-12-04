@@ -16,14 +16,13 @@
 package org.labkey.api.search;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.view.ActionURL;
 import org.apache.log4j.Category;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.io.*;
 
 /**
@@ -68,144 +67,41 @@ public interface SearchService
     }
 
 
-
-    // UNDONE: convert to interface
-    
-    public abstract static class IndexTask
+    public interface IndexTask
     {
-        final private String _description;
-        protected long _start;
-        protected long _complete = 0;
-        protected boolean _cancelled = false;
-        protected boolean _isReady = false;
-        final private AtomicInteger _estimate = new AtomicInteger();
-        final private AtomicInteger _indexed = new AtomicInteger();
-        final private AtomicInteger _failed = new AtomicInteger();
-        final protected Map<Object,Object> _subtasks = Collections.synchronizedMap(new IdentityHashMap<Object,Object>());
-        final StringWriter _sw = new StringWriter();
-        final PrintWriter _out = new PrintWriter(_sw);
+        String getDescription();
 
+        void cancel();
 
-        public IndexTask(String description)
-        {
-            _description = description;
-            _start = System.currentTimeMillis();
-        }
+        boolean isCancelled();
 
+        int getDocumentCountEstimate();
 
-        public String getDescription()
-        {
-            return _description;
-        }
+        int getIndexedCount();
 
+        int getFailedCount();
 
-        public void cancel()
-        {
-            _cancelled = true;
-            _complete = System.currentTimeMillis();
-        }
+        long getStartTime();
 
+        long getCompleteTime();
 
-        public boolean isCancelled()
-        {
-            return _cancelled;
-        }
+        void log(String message);
 
-        
-        public int getDocumentCountEstimate()
-        {
-            return _estimate.get();
-        }
+        Reader getLog();
 
+        void addToEstimate(int i);// indicates that caller is done adding Resources to this task
 
-        public int getIndexedCount()
-        {
-            return _indexed.get();
-        }
+        void setReady();
 
+        void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
 
-        public int getFailedCount()
-        {
-            return _failed.get();
-        }
-        
+        void addResource(@NotNull SearchService.SearchCategory category, ActionURL url, SearchService.PRIORITY pri);
 
-        public long getStartTime()
-        {
-            return _start;
-        }
+        void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
-
-        public long getCompleteTime()
-        {
-            return _complete;
-        }
-
-
-        protected void addItem(Object item)
-        {
-            _subtasks.put(item,item);
-        }
-
-
-        public void log(String message)
-        {
-            synchronized (_sw)
-            {
-                _out.println(message);
-            }
-        }
-
-
-        public Reader getLog()
-        {
-            synchronized (_sw)
-            {
-                return new StringReader(_sw.getBuffer().toString());
-            }
-        }
-
-
-        public void addToEstimate(int i)
-        {
-            _estimate.addAndGet(i);
-        }
-
-
-        // indicates that caller is done adding Resources to this task
-        public void setReady()
-        {
-            _isReady = true;
-            checkDone();
-        }
-        
-
-        protected void completeItem(Object item, boolean success)
-        {
-            if (_cancelled)
-                return;
-            if (success)
-                _indexed.incrementAndGet();
-            else
-                _failed.incrementAndGet();
-            Object remove =  _subtasks.remove(item);
-            assert null != remove;
-            assert remove == item;
-            checkDone();
-        }
-
-
-        //
-        // add items to index
-        //
-
-        public abstract void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri);
-        public abstract void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri);
-        public abstract void addResource(@NotNull String identifier, PRIORITY pri);
-        public abstract void addResource(@NotNull Resource r, PRIORITY pri);
-        protected abstract void checkDone();
+        void addResource(@NotNull Resource r, SearchService.PRIORITY pri);
     }
-    
+
 
     public interface ResourceResolver
     {
