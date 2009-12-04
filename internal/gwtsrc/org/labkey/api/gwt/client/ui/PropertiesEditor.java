@@ -52,6 +52,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private TabPanel _extraPropertiesTabPanel = new TabPanel();
     private Image _spacerImage;
     private boolean _warnedAboutDelete = false;
+    private static final String BAD_NAME_ERROR_MESSAGE = "Name may only contain letters, numbers, spaces, and underscores (_), and must start with a letter or underscore.";
 
     public enum FieldStatus
     {
@@ -603,7 +604,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 if (text == null || isLegalName(text))
                     return null;
-                return "Name may only contain letters, numbers, spaces, and underscores (_).";
+                return BAD_NAME_ERROR_MESSAGE;
             }
 
             @Override
@@ -778,7 +779,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
             if (!isLegalName(name))
             {
-                errors.add("Name must only contain letters numbers and underscore (_)");
+                errors.add(BAD_NAME_ERROR_MESSAGE);
                 continue;
             }
 

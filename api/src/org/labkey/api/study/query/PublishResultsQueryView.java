@@ -541,8 +541,13 @@ public class PublishResultsQueryView extends ResultsQueryView
                             "value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\"\n" +
                             "onKeyDown=\"return ctrlKeyCheck(event);\"\n" +
                             "onBlur=\"hideCompletionDiv();\"\n" +
-                            "autocomplete=\"off\"\n" +
-                            "onKeyUp=\"return handleChange(this, event, '" + _completionBase + "');\">");
+                            "autocomplete=\"off\"\n");
+                    try
+                    {
+                        out.write("tabindex=\"" + ctx.getResultSet().getRow() + "\"\n");
+                    }
+                    catch (SQLException e) {}
+                    out.write("onKeyUp=\"return handleChange(this, event, '" + _completionBase + "');\">");
                 }
                 else
                 {
