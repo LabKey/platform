@@ -15,9 +15,7 @@
  */
 package org.labkey.pipeline.status;
 
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.PageFlowUtil;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
@@ -26,7 +24,6 @@ import org.labkey.pipeline.api.PipelineStatusFileImpl;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Map;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.sql.SQLException;
@@ -109,7 +106,9 @@ public class JobDisplayColumn extends SimpleDisplayColumn
                     String jobId = (String) ctx.get("Job");
                     if (jobId != null)
                     {
-                        _jobStatus = getSplitStatusFiles(jobId, ctx.getContainer());
+                        // If we're being rendered from the Admin Console, we won't be in the right container,
+                        // so don't specify one
+                        _jobStatus = getSplitStatusFiles(jobId, null);
                     }
                 }
                 else if (ctx.get("JobParent") != null)

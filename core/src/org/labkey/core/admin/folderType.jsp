@@ -44,7 +44,7 @@ Collections.sort(allModules, new Comparator<Module>()
 {
     public int compare(Module o1, Module o2)
     {
-        return o1.getTabName(context).compareTo(o2.getTabName(context));
+        return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
     }
 });
 Set<Module> activeModules = c.getActiveModules();

@@ -22,6 +22,8 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.settings.AppProps;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -65,6 +67,38 @@ abstract class DataLinkColumn extends DataColumn
         if (url != null)
         {
             out.write("</a>");
+        }
+
+        renderThumbnailPopup(out, data, url);
+    }
+
+    protected void renderThumbnailPopup(Writer out, ExpData data, ActionURL url)
+            throws IOException
+    {
+        if (data.isInlineImage() && data.isFileOnDisk())
+        {
+            ActionURL thumbnailURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data.getContainer(), data, true);
+            thumbnailURL.addParameter("maxDimension", 300);
+            StringBuilder html = new StringBuilder();
+            if (url != null)
+            {
+                html.append("<a href=\"");
+                html.append(url);
+                html.append("\">");
+            }
+
+            html.append("<img src=\"");
+            html.append(thumbnailURL);
+            html.append("\" />");
+
+            if (url != null)
+            {
+                html.append("</a>");
+            }
+
+            out.write("&nbsp;");
+            String icon = "<img src=\"" + AppProps.getInstance().getContextPath() + "/_icons/image.png\" />";
+            out.write(PageFlowUtil.helpPopup(data.getFile().getName(), html.toString(), true, icon, 310));
         }
     }
 

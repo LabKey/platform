@@ -33,6 +33,8 @@ import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;

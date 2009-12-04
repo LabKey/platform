@@ -66,6 +66,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
 import java.io.*;
 import java.lang.management.*;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
@@ -105,6 +106,7 @@ public class AdminController extends SpringActionController
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -1757,6 +1759,22 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Current Threads", this.getClass());
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class DumpHeapAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            // Use reflection so that we don't have to build directly against the com.sun. class
+            File destination = BreakpointThread.dumpHeap();
+            return new HtmlView(PageFlowUtil.filter("Heap dumped to " + destination.getAbsolutePath()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Heap dump");
         }
     }
 

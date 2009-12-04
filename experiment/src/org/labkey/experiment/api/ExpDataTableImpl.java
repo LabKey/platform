@@ -22,7 +22,6 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.*;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -292,32 +291,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         @Override
         protected void renderData(Writer out, ExpData data) throws IOException
         {
-            if (data.isInlineImage() && data.isFileOnDisk())
-            {
-                ActionURL thumbnailURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data.getContainer(), data, true);
-                thumbnailURL.addParameter("maxDimension", 300);
-                StringBuilder html = new StringBuilder();
-                ActionURL url = getURL(data);
-                if (url != null)
-                {
-                    html.append("<a href=\"");
-                    html.append(url);
-                    html.append("\">");
-                }
-
-                html.append("<img src=\"");
-                html.append(thumbnailURL);
-                html.append("\" />");
-
-                if (url != null)
-                {
-                    html.append("</a>");
-                }
-
-                out.write("[");
-                out.write(PageFlowUtil.helpPopup(data.getFile().getName(), html.toString(), true, "thumbnail", 310));
-                out.write("] ");
-            }
+            renderThumbnailPopup(out, data, getURL(data));
         }
     }
 
