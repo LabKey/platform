@@ -36,6 +36,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
@@ -163,7 +164,7 @@ public class ChartReportView extends AbstractReportView
     public void saveView(ViewContext context) throws Exception {
     }
 
-    public void beforeSave(ViewContext context)
+    public void beforeSave(ContainerUser context)
     {
         String reportGuid = getDescriptor().getProperty(REPORT_GUID);
         if (StringUtils.isEmpty(reportGuid))
@@ -214,7 +215,7 @@ public class ChartReportView extends AbstractReportView
         }
     }
 
-    public void beforeDelete(ViewContext context)
+    public void beforeDelete(ContainerUser context)
     {
         try
         {
@@ -236,7 +237,7 @@ public class ChartReportView extends AbstractReportView
         return super.renderDataView(context);
     }
 
-    Report[] getChildReports(ViewContext context)
+    Report[] getChildReports(ContainerUser context)
     {
         if (_reports == null)
         {

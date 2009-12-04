@@ -36,6 +36,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.beans.PropertyChangeEvent;
 import java.io.File;
@@ -196,7 +197,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
-    public void deleteReport(ViewContext context, Report report) throws SQLException
+    public void deleteReport(ContainerUser context, Report report) throws SQLException
     {
         //ensure that descriptor id is a DbReportIdentifier
         DbReportIdentifier reportId;
@@ -245,12 +246,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         throw new IllegalArgumentException("The specified class: " + reportClass.getName() + " does not implement the org.labkey.api.reports.Report interface");
     }
 
-    public int saveReport(ViewContext context, String key, Report report) throws SQLException
+    public int saveReport(ContainerUser context, String key, Report report) throws SQLException
     {
         return _saveReport(context, key, report).getRowId();
     }
 
-    private ReportDB _saveReport(ViewContext context, String key, Report report) throws SQLException
+    private ReportDB _saveReport(ContainerUser context, String key, Report report) throws SQLException
     {
         DbScope scope = getTable().getSchema().getScope();
         boolean ownsTransaction = !scope.isTransactionActive();
@@ -530,7 +531,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         throw new IllegalArgumentException("Specified file does not exist: " + reportFile.getAbsolutePath());
     }
 
-    public Report importReport(User user, Container container, File reportFile) throws IOException, SQLException, XmlValidationException
+    public Report importReport(final User user, final Container container, File reportFile) throws IOException, SQLException, XmlValidationException
     {
         Report report = deserialize(reportFile);
         ReportDescriptor descriptor = report.getDescriptor();
@@ -542,15 +543,18 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
         }
 
-        ViewContext context = ViewContext.getMockViewContext(user, container, new ActionURL(), false);
         Report[] existingReports = getReports(user, container, key);
-
         for (Report existingReport : existingReports)
+        {
             if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
-                deleteReport(context, existingReport);
-
+            {
+                deleteReport(new ContainerUser(){
+                    public User getUser() {return user;}
+                    public Container getContainer() {return container;}
+                }, existingReport);
+            }
+        }
         int rowId = _saveReport(user, container, key, descriptor).getRowId();
-
         descriptor.setReportId(new DbReportIdentifier(rowId));
 
         return report;

@@ -32,15 +32,18 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.util.Map;
@@ -64,7 +67,7 @@ public class ReportQueryViewFactory
     public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor,
                                                     String queryName, String viewName) throws Exception
     {
-        StudyQuerySchema schema = getStudyQuerySchema(context, ACL.PERM_READ, descriptor);
+        StudyQuerySchema schema = getStudyQuerySchema(context, ReadPermission.class, descriptor);
         if (schema != null)
         {
             QuerySettings settings = new QuerySettings(context, descriptor.getProperty(QueryParam.dataRegionName.toString()));
@@ -95,7 +98,7 @@ public class ReportQueryViewFactory
      * false if no permission checking is required.  and throws if
      * user does not have permission.
      */
-    private boolean mustCheckDatasetPermissions(User user, ReportDescriptor descriptor) throws ServletException
+    private static boolean mustCheckDatasetPermissions(User user, ReportDescriptor descriptor) throws ServletException
     {
         SecurityPolicy policy = SecurityManager.getPolicy(descriptor, false);
         if (policy.isEmpty())
@@ -107,9 +110,9 @@ public class ReportQueryViewFactory
         return false;   // user is OK, don't check permissions
     }
 
-    private StudyQuerySchema getStudyQuerySchema(ViewContext context, int perm, ReportDescriptor descriptor) throws ServletException
+    private static StudyQuerySchema getStudyQuerySchema(ContainerUser context, @NotNull Class<? extends Permission> perm, ReportDescriptor descriptor) throws ServletException
     {
-        if (perm != ACL.PERM_READ)
+        if (perm != ReadPermission.class)
             throw new IllegalArgumentException("only PERM_READ supported");
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         boolean mustCheckUserPermissions = mustCheckDatasetPermissions(context.getUser(), descriptor);
@@ -117,6 +120,11 @@ public class ReportQueryViewFactory
         if (study != null)
             return new StudyQuerySchema(study, context.getUser(), mustCheckUserPermissions);
         return null;
+    }
+
+    public static StudyQuerySchema getStudyQuerySchema(ContainerUser context, ReportDescriptor descriptor) throws ServletException
+    {
+        return getStudyQuerySchema(context, ReadPermission.class, descriptor);
     }
 
     public static class StudyReportQueryView extends ReportQueryView

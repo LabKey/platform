@@ -29,14 +29,17 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -54,32 +57,30 @@ public class StudyQueryReport extends QueryReport
         return TYPE;
     }
 
-    public void beforeSave(ViewContext context)
+    public void beforeSave(ContainerUser context)
     {
         ReportDescriptor reportDescriptor = getDescriptor();
         if (reportDescriptor instanceof QueryReportDescriptor)
         {
             try {
-                final QueryReportDescriptor descriptor = (QueryReportDescriptor)reportDescriptor;
-                CrosstabReportDescriptor.QueryViewGenerator qvGen = getQueryViewGenerator();
-                if (qvGen == null)
+                String queryName = getDescriptor().getProperty(QueryParam.queryName.name());
+                QueryDefinition def = QueryService.get().getQueryDef(context.getContainer(), StudyManager.getSchemaName(), queryName);
+                if (def == null)
                 {
-                    qvGen = descriptor.getQueryViewGenerator();
+                    // not a custom query definition, try a table based definition
+                    UserSchema schema = ReportQueryViewFactory.getStudyQuerySchema(context, getDescriptor());
+                    def = QueryService.get().createQueryDefForTable(schema, queryName);                                            
                 }
 
-                if (qvGen != null)
+                if (def != null)
                 {
-                    ReportQueryView qv = qvGen.generateQueryView(context, descriptor);
-                    if (qv != null)
+                    HttpServletRequest request = new MockHttpServletRequest();
+                    String viewName = getDescriptor().getProperty(QueryParam.viewName.toString());
+                    if (def.getCustomView(null, request, viewName) == null)
                     {
-                        QueryDefinition queryDef = qv.getQueryDef();
-                        final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-                        if (queryDef.getCustomView(null, context.getRequest(), viewName) == null)
-                        {
-                            CustomView view = queryDef.createCustomView(null, viewName);
-                            view.setIsHidden(true);
-                            view.save(context.getUser(), context.getRequest());
-                        }
+                        CustomView view = def.createCustomView(null, viewName);
+                        view.setIsHidden(true);
+                        view.save(context.getUser(), request);
                     }
                 }
             }
@@ -120,24 +121,12 @@ public class StudyQueryReport extends QueryReport
         return reportId;
     }
 
-    protected CustomView getCustomView(ViewContext context)
+    protected CustomView getCustomView(ContainerUser context)
     {
-        try
-        {
-            StudyQuerySchema schema = getStudyQuerySchema(context.getUser(), ACL.PERM_READ, context.getContainer());
-            String viewName = getDescriptor().getProperty(QueryParam.viewName.toString());
-            QuerySettings qs = new QuerySettings(context, getDescriptor().getProperty(QueryParam.dataRegionName.toString()));
-            qs.setSchemaName(schema.getSchemaName());
-            qs.setQueryName(getDescriptor().getProperty(QueryParam.queryName.toString()));
-            QueryDefinition queryDef = qs.getQueryDef(schema);
-            if (queryDef != null)
-                return queryDef.getCustomView(context.getUser(), context.getRequest(), viewName);
-            return null;
-        }
-        catch (ServletException e)
-        {
-            throw new RuntimeException(e);
-        }
+        String viewName = getDescriptor().getProperty(QueryParam.viewName.name());
+        String queryName = getDescriptor().getProperty(QueryParam.queryName.name());
+
+        return QueryService.get().getCustomView(context.getUser(), context.getContainer(), StudyManager.getSchemaName(), queryName, viewName);
     }
 
     protected StudyQuerySchema getStudyQuerySchema(User user, int perm, Container c) throws ServletException
@@ -148,11 +137,14 @@ public class StudyQueryReport extends QueryReport
         return new StudyQuerySchema(study, user, true);
     }
 
-    public void beforeDelete(ViewContext context)
+    public void beforeDelete(ContainerUser context)
     {
         CustomView view = getCustomView(context);
         if (view != null)
-            view.delete(context.getUser(), context.getRequest());
+        {
+            HttpServletRequest request = new MockHttpServletRequest();
+            view.delete(context.getUser(), request);
+        }
     }
 
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
