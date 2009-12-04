@@ -29,6 +29,7 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.collections.BoundMap;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
@@ -50,7 +51,7 @@ import java.util.*;
  *
  * UNDONE: kill BoundMap functionality of ViewContext
  */
-public class ViewContext extends BoundMap implements MessageSource, ContainerContext
+public class ViewContext extends BoundMap implements MessageSource, ContainerContext, ContainerUser
 {
     private WebApplicationContext _webApplicationContext;
     private HttpServletRequest _request;

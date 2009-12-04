@@ -34,6 +34,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.writer.ContainerUser;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -264,7 +265,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
      * Called before this report is saved or updated
      * @param context
      */
-    public void beforeSave(ViewContext context)
+    public void beforeSave(ContainerUser context)
     {
         super.beforeSave(context);
         clearCache();
@@ -274,7 +275,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
      * Called before this report is deleted
      * @param context
      */
-    public void beforeDelete(ViewContext context)
+    public void beforeDelete(ContainerUser context)
     {
         try {
             // clean up any temp files

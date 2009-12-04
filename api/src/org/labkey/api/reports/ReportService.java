@@ -27,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,9 +78,9 @@ public class ReportService
         public Report createReportInstance(String typeName);
         public Report createReportInstance(ReportDescriptor descriptor);
 
-        public void deleteReport(ViewContext context, Report report) throws SQLException;
+        public void deleteReport(ContainerUser context, Report report) throws SQLException;
 
-        public int saveReport(ViewContext context, String key, Report report) throws SQLException;
+        public int saveReport(ContainerUser context, String key, Report report) throws SQLException;
 
         public Report getReport(int reportId) throws SQLException;
         public ReportIdentifier getReportIdentifier(String reportId);

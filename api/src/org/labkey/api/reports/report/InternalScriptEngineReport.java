@@ -25,6 +25,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -138,7 +139,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
      * Called before this report is deleted
      * @param context
      */
-    public void beforeDelete(ViewContext context)
+    public void beforeDelete(ContainerUser context)
     {
         deleteReportDir();
         super.beforeDelete(context);

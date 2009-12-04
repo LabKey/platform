@@ -18,6 +18,7 @@ package org.labkey.api.reports;
 
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -70,14 +71,14 @@ public interface Report
      * individual reports.
      * @param context
      */
-    void beforeSave(ViewContext context);
+    void beforeSave(ContainerUser context);
 
     /**
      * Called before the report is deleted to allow any additional cleanup by
      * individual reports.
      * @param context
      */
-    void beforeDelete(ViewContext context);
+    void beforeDelete(ContainerUser context);
 
     ActionURL getRunReportURL(ViewContext context);
     ActionURL getEditReportURL(ViewContext context);

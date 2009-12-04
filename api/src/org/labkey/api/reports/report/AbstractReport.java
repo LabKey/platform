@@ -25,6 +25,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,8 +54,8 @@ public abstract class AbstractReport implements Report
         getDescriptor().setReportId(reportId);
     }
 
-    public void beforeSave(ViewContext context){}
-    public void beforeDelete(ViewContext context){}
+    public void beforeSave(ContainerUser context){}
+    public void beforeDelete(ContainerUser context){}
 
     public ReportDescriptor getDescriptor()
     {
