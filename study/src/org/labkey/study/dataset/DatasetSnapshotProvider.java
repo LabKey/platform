@@ -445,7 +445,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 // can't assume that the dependency check is coming from the same container that
                 // the snapshot is defined in.
-                ViewContext context = new ViewContext(getViewContext(def));
+                ViewContext context = new ViewContext(getViewContext(def, false));
                 context.setContainer(def.getContainer());
 
                 QueryForm sourceForm = getQueryForm(def, context);
@@ -478,7 +478,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return propertyMap.containsKey(propertyURI);
     }
 
-    private static ViewContext getViewContext(QuerySnapshotDefinition def)
+    private static ViewContext getViewContext(QuerySnapshotDefinition def, boolean pushViewContext)
     {
         if (HttpView.hasCurrentView())
             return HttpView.currentContext();
@@ -486,7 +486,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         {
             User user = def.getModifiedBy() != null ? def.getModifiedBy() : def.getCreatedBy();
 
-            return ViewContext.getMockViewContext(user, def.getContainer(), new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()), true);
+            return ViewContext.getMockViewContext(user, def.getContainer(), new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()), pushViewContext);
         }
     }
 
@@ -582,7 +582,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 _def.save(_def.getModifiedBy(), _def.getContainer());
 
                 QuerySnapshotForm form = new QuerySnapshotForm();
-                ViewContext context = getViewContext(_def);
+                ViewContext context = getViewContext(_def, true);
 
                 form.setViewContext(context);
                 form.init(_def, _def.getCreatedBy());
