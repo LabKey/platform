@@ -122,7 +122,6 @@ public class ListDomainType extends DomainKind
                     AttachmentParent parent = new ListItemAttachmentParent(item, c);
                     AttachmentService.get().deleteAttachment(parent, file.toString());
                 }
-
             }
         }
         catch (SQLException e)

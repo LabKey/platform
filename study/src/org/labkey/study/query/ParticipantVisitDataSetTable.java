@@ -16,14 +16,15 @@
 
 package org.labkey.study.query;
 
-import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
@@ -100,7 +101,8 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         }
 
         // duplicate label check a) two visits with same label b) two sequences with same visit
-        MultiValueMap labelMap = new MultiValueMap();
+        MultiMap<String, Double> labelMap = new MultiHashMap<String, Double>();
+
         for (double seq : sequenceSet)
         {
             VisitImpl visit = visitManager.findVisitBySequence(seq);
@@ -113,7 +115,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         // UNDONE: except that addColumn() does not preserve order
         for (VisitImpl visit : visitList)
         {
-            boolean uniqueLabel = labelMap.getCollection(visit.getLabel()).size() == 1;
+            boolean uniqueLabel = labelMap.get(visit.getLabel()).size() == 1;
             boolean hasSequenceRange = visit.getSequenceNumMin() != visit.getSequenceNumMax();
 
             // add columns for each sequence, show if there is a sequence range

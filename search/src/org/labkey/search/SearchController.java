@@ -17,9 +17,10 @@
 package org.labkey.search;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -30,14 +31,12 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.data.Container;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SearchController extends SpringActionController
 {
