@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.view.template;
 
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.Portal;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.apache.commons.collections.MultiMap;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.apache.commons.collections15.MultiMap;
 
-import java.util.List;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /*
 * User: markigra
@@ -43,22 +42,28 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
     {
         super(MenuBarView.class,  "menuBar.jsp", null);
         Container project = container.getProject();
+
         //Probably not right for site-level admin pages...
         if (null == project)
             project = ContainerManager.getHomeContainer();
 
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(project);
+
         if (laf.isMenuUIEnabled())
         {
-        Portal.WebPart[] allParts = Portal.getParts(project.getId());
-        MultiMap locationMap = Portal.getPartsByLocation(allParts);
-        List<Portal.WebPart> menuParts = (List<Portal.WebPart>) locationMap.get("menubar");
-        if (null == menuParts)
-            menuParts = Collections.EMPTY_LIST;
+            Portal.WebPart[] allParts = Portal.getParts(project.getId());
+            MultiMap<String, Portal.WebPart> locationMap = Portal.getPartsByLocation(allParts);
+            List<Portal.WebPart> menuParts = (List<Portal.WebPart>) locationMap.get("menubar");
 
-        setModelBean(menuParts);
+            if (null == menuParts)
+                menuParts = Collections.emptyList();
+
+            setModelBean(menuParts);
         }
         else
-            setModelBean(Collections.EMPTY_LIST);
+        {
+            List<Portal.WebPart> menuParts = Collections.emptyList();
+            setModelBean(menuParts);
+        }
     }
 }

@@ -18,7 +18,6 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ public class ThemeFont
         String sizeHeading_1, String sizeHeading_1_1, String sizeGraphicButtonTextHeight, String sizeGraphicTabTextHeight)
     {
         _friendlyName = friendlyName;
-
         _sizeNormal = sizeNormal;
         _sizeTextInput = sizeTextInput;
         _sizePageTitle = sizePageTitle;
@@ -120,17 +118,12 @@ public class ThemeFont
 
     public final static ThemeFont DEFAULT_THEME_FONT = SMALL;
     protected static final List<ThemeFont> webThemeFontList = new ArrayList<ThemeFont>();
+
     static
     {
         webThemeFontList.add(SMALL);
         webThemeFontList.add(MEDIUM);
         webThemeFontList.add(LARGE);
-    }
-
-    @Deprecated
-    public static ThemeFont getThemeFont()
-    {
-        return getThemeFont(ContainerManager.getRoot());
     }
 
     public static ThemeFont getThemeFont(Container c)

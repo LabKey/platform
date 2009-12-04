@@ -68,7 +68,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             _properties.put("action", context.getActionURL().getAction());
             _properties.put("queryString", context.getActionURL().getQueryString());
             _properties.put("contextPath", context.getContextPath());
-            _properties.put("header1Size", ThemeFont.getThemeFont().getHeader_1Size());
+            _properties.put("header1Size", ThemeFont.getThemeFont(context.getContainer()).getHeader_1Size());
         }
 
         public String getModuleName()

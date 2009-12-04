@@ -245,6 +245,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected static class Stats
     {
+        private AtomicLong puts = new AtomicLong(0);
         private AtomicLong misses = new AtomicLong(0);
         private AtomicLong hits = new AtomicLong(0);
         private AtomicLong expirations = new AtomicLong(0);
@@ -381,7 +382,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     private CacheStats getCacheStats(Stats stats, int size)
     {
-        return new CacheStats(getDebugName(), stats.hits.get(), stats.misses.get(), stats.expirations.get(), stats.removes.get(), size);
+        return new CacheStats(getDebugName(), stats.hits.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), size);
     }
 
 

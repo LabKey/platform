@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.view;
 
-import org.apache.commons.collections.MultiMap;
-import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
-import org.labkey.api.data.Filter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.util.*;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
@@ -496,18 +497,16 @@ public class Portal
         String contextPath = context.getContextPath();
         WebPart[] parts = getParts(id, false);
 
-        MultiMap locationMap = getPartsByLocation(parts);
-        Collection locations = locationMap.keySet();
+        MultiMap<String, WebPart> locationMap = getPartsByLocation(parts);
+        Collection<String> locations = locationMap.keySet();
 
-        for (Object location1 : locations)
+        for (String location : locations)
         {
-            String location = (String) location1;
+            Collection<WebPart> partsForLocation = locationMap.get(location);
+            int i = 0;
 
-            List partsForLocation = (List) locationMap.get(location);
-            for (int i = 0; i < partsForLocation.size(); i++)
+            for (WebPart part : partsForLocation)
             {
-                WebPart part = (WebPart) partsForLocation.get(i);
-
                 //instantiate
                 WebPartFactory desc = Portal.getPortalPart(part.getName());
                 if (null == desc)
@@ -546,6 +545,7 @@ public class Portal
                 }
 
                 addViewToRegion(template, location, view);
+                i++;
             }
         }
 
@@ -572,9 +572,9 @@ public class Portal
     }
 
 
-    public static MultiMap getPartsByLocation(WebPart[] parts)
+    public static MultiMap<String, WebPart> getPartsByLocation(WebPart[] parts)
     {
-        MultiMap multiMap = new MultiValueMap();
+        MultiMap<String, WebPart> multiMap = new MultiHashMap<String, WebPart>();
 
         for (WebPart part : parts)
         {
@@ -677,14 +677,17 @@ public class Portal
     {
         //TODO: Cache these
         Set<String> webPartNames = new TreeSet<String>();
+
         for (Module module : ModuleLoader.getInstance().getModules())
         {
             Collection<? extends WebPartFactory> factories = module.getWebPartFactories();
+
             if (null != factories)
                 for (WebPartFactory factory : factories)
                     if (factory.isAvailable(c, location))
                         webPartNames.add(factory.getName());
         }
+
         return new ArrayList<String>(webPartNames);
     }
 
@@ -696,6 +699,7 @@ public class Portal
     public static WebPartView getWebPartViewSafe(WebPartFactory factory, ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
         WebPartView view;
+
         try
         {
             view = factory.getWebPartView(portalCtx, webPart);
@@ -707,7 +711,7 @@ public class Portal
             view = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
             view.setTitle(webPart.getName());
         }
+
         return view;
     }
-
 }

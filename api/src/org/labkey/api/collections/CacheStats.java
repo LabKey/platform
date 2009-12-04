@@ -21,15 +21,18 @@ public class CacheStats implements Comparable<CacheStats>
     private final String _description;
     private final long _hits;
     private final long _misses;
+    private final long _puts;
     private final long _expirations;
     private final long _removes;
     private final long _size;
 
-    public CacheStats(String description, long hits, long misses, long expirations, long removes, long size)
+
+    public CacheStats(String description, long hits, long misses, long puts, long expirations, long removes, long size)
     {
         _description = description;
         _hits = hits;
         _misses = misses;
+        _puts = puts;
         _expirations = expirations;
         _removes = removes;
         _size = size;
@@ -48,6 +51,11 @@ public class CacheStats implements Comparable<CacheStats>
     public long getMisses()
     {
         return _misses;
+    }
+
+    public long getPuts()
+    {
+        return _puts;
     }
 
     public long getTotal()

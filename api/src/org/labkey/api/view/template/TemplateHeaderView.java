@@ -114,7 +114,6 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                 _warningMessages.add("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
             }
         }
-
     }
 
     public List<String> getWarningMessages()
