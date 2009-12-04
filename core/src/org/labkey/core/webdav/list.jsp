@@ -219,7 +219,7 @@ Ext.onReady(function()
     }});
 
     fileSystem = new LABKEY.WebdavFileSystem({
-        baseUrl:<%=PageFlowUtil.jsString(request.getContextPath() + listpage.root)%>,
+        baseUrl:<%=PageFlowUtil.jsString(Path.parse(request.getContextPath()).append(listpage.root).encode())%>,
         rootName:<%=PageFlowUtil.jsString(app.getServerName())%>});
 
     fileBrowser = new LABKEY.FileBrowser({
