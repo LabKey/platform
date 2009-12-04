@@ -3205,6 +3205,7 @@ public class StudyManager
         ResultSet rs = null;
         try
         {
+            Map<String,String> studyLabels = new HashMap<String,String>();
             SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
             if (null != c)
                 f.append("WHERE container = '" + c.getId() + "'");
@@ -3215,15 +3216,29 @@ public class StudyManager
             while (rs.next())
             {
                 String container = rs.getString(1);
+                String label = studyLabels.get(container);
+                if (null == label)
+                {
+                    Container k = ContainerManager.getForId(container);
+                    if (null != k)
+                    {
+                        Study s = StudyManager.getInstance().getStudy(k);
+                        if (null != s)
+                            label = s.getLabel();
+                    }
+                    label = StringUtils.trimToEmpty(label);
+                    studyLabels.put(container,label);
+                }
                 String id = rs.getString(2);
-                ActionURL view = participant.clone().replaceParameter("datasetId",String.valueOf(id));
+                ActionURL view = participant.clone().replaceParameter("participantId",String.valueOf(id));
                 view.setExtraPath(container);
                 Path p = new Path(container,id);
                 // UNDONE: searchCategory
                 props.put("participantid", id);
+                props.put(SearchService.PROPERTY.title.toString(), "Study " + label + " -- Participant " + id);
                 SimpleDocumentResource r = new SimpleDocumentResource(
                         p, "participant:/" + p,
-                        "text/html", new byte[0],
+                        "text/plain", id.getBytes(),
                         view, props
                 );
                 r. getProperties();

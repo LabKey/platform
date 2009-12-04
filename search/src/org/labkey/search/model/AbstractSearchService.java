@@ -67,7 +67,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
     
 
-    class _IndexTask extends IndexTask
+    class _IndexTask extends AbstractIndexTask
     {
         _IndexTask(String description)
         {
@@ -255,12 +255,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected int getCountPreprocessorThreads()
     {
-        return 2;
+        return 0;
     }
 
     protected int getCountIndexingThreads()
     {
-        return 2;
+        return 1;
     }
 
 
@@ -278,7 +278,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _threads.add(t);
         }
 
-        for (int i=0 ; i<getCountPreprocessorThreads() ; i++)
+        for (int i=0 ; i<Math.max(1,getCountPreprocessorThreads()) ; i++)
         {
             Thread t = new Thread(preprocessRunnable, "SearchService:preprocess " + i);
             t.setDaemon(true);
@@ -355,6 +355,22 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     };
 
 
+    private boolean preprocess(Item i)
+    {
+        Resource r = i.getResource();
+        if (null == r || !r.exists())
+            return false;
+        assert MemTracker.put(r);
+        i._preprocessMap = preprocess(i._id, i._res);
+        if (null == i._preprocessMap)
+        {
+            _log.debug("skipping " + i._id);
+            return false;
+        }
+        return true;
+    }
+
+
     Runnable preprocessRunnable = new Runnable()
     {
         public void run()
@@ -366,16 +382,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 try
                 {
                     i = _itemQueue.take();
-                    Resource r = i.getResource();
-                    if (null == r || !r.exists())
+                    if (!preprocess(i))
                         continue;
-                    assert MemTracker.put(r);
-                    i._preprocessMap = preprocess(i._id, i._res);
-                    if (null == i._preprocessMap)
-                    {
-                        _log.debug("skipping " + i._id);
-                        continue;
-                    }
                     _log.debug("_indexQueue.put(" + i._id + ")");
                     _indexQueue.put(i);
                     success = true;
@@ -397,40 +405,59 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
     };
-    
 
+
+    final Object _commitLock = new Object(){ public String toString() { return "COMMIT LOCK"; } };
+    int _countIndexedSinceCommit = 0;
+    
     Runnable indexRunnable = new Runnable()
     {
         public void run()
         {
-            int countIndexedSinceCommit = 0;
-            
             while (!_shuttingDown)
             {
                 Item i = null;
                 boolean success = false;
                 try
                 {
-                    i = _indexQueue.poll(1, TimeUnit.SECONDS);
+                    if (null == (i = _indexQueue.poll()))
+                    {
+                        // help out on preprocessing?
+                        i = _itemQueue.poll();
+                        if (null != i)
+                        {
+                            if (!preprocess(i))
+                                continue;
+                        }
+                        else
+                            i = _indexQueue.poll(1, TimeUnit.SECONDS);
+                    }
+
                     if (null == i)
                     {
-                        if (countIndexedSinceCommit > 0)
+                        synchronized (_commitLock)
                         {
-                            commit();
-                            countIndexedSinceCommit = 0;
+                            if (_countIndexedSinceCommit > 0)
+                            {
+                                commit();
+                                _countIndexedSinceCommit = 0;
+                            }
                         }
                         continue;
                     }
-                    
+
                     Resource r = i.getResource();
                     if (null == r || !r.exists())
                         continue;
                     assert MemTracker.put(r);
                     _log.debug("index(" + i._id + ")");
                     index(i._id, i._res, i._preprocessMap);
-                    countIndexedSinceCommit++;
                     i._res.setLastIndexed(i._start);
                     success = true;
+                    synchronized (_commitLock)
+                    {
+                        _countIndexedSinceCommit++;
+                    }
                 }
                 catch (InterruptedException x)
                 {
@@ -445,8 +472,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         i.complete(success);
                 }
             }
-            if (countIndexedSinceCommit > 0)
-                commit();
+            synchronized (_commitLock)
+            {
+                if (_countIndexedSinceCommit > 0)
+                {
+                    commit();
+                    _countIndexedSinceCommit = 0;
+                }
+            }
         }
     };
 

@@ -42,6 +42,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.search.SearchService;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainType;
@@ -55,6 +56,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.DefaultRunExpansionHandler;
 import org.labkey.experiment.list.client.ListImporter;
+import org.jetbrains.annotations.NotNull;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -298,5 +300,13 @@ public class ExperimentModule extends SpringModule
     public UpgradeCode getUpgradeCode()
     {
         return new ExperimentUpgradeCode();
+    }
+
+
+    @Override
+    public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
+    {
+        if (c == null && modifiedSince == null)
+            OntologyManager.indexConcepts(task);
     }
 }

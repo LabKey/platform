@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Collections;
+import java.io.Reader;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,7 +18,7 @@ import java.util.Collections;
  */
 public class NoopSearchService implements SearchService
 {
-    IndexTask _dummyTask = new IndexTask("Dummy Search Service")
+    IndexTask _dummyTask = new IndexTask()
     {
         public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
         {
@@ -40,6 +41,58 @@ public class NoopSearchService implements SearchService
         }
 
         protected void checkDone()
+        {
+        }
+
+        public String getDescription()
+        {
+            return "Dummy Search Service";
+        }
+
+        public void cancel()
+        {
+        }
+
+        public boolean isCancelled()
+        {
+            return false;
+        }
+
+        public int getDocumentCountEstimate()
+        {
+            return 0;
+        }
+
+        public int getIndexedCount()
+        {
+            return 0;
+        }
+
+        public int getFailedCount()
+        {
+            return 0;
+        }
+
+        public long getStartTime()
+        {
+            return 0;
+        }
+
+        public long getCompleteTime()
+        {
+            return 0;
+        }
+
+        public void log(String message)
+        {
+        }
+
+        public Reader getLog()
+        {
+            return null;
+        }
+
+        public void addToEstimate(int i)
         {
         }
     };

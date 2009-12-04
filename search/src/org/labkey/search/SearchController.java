@@ -29,14 +29,14 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.labkey.api.data.Container;
-import org.labkey.search.model.DavCrawler;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 import java.sql.Date;
 
 public class SearchController extends SpringActionController
@@ -80,13 +80,17 @@ public class SearchController extends SpringActionController
 
             if (!fullInProgress)
             {
-                ss.clearIndex();
-
+                if (full)
+                    ss.clearIndex();
 
                 Date since = full ? null : new Date(0);
                 Container c = full ? null : getViewContext().getContainer();
 
                 SearchService.IndexTask task = ss.createTask(full ? "Full Index" : c.getName());
+                if (full)
+                    _lastFullTask = task;
+                else
+                    _lastIncrementalTask = task;
 
                 for (Module m : ModuleLoader.getInstance().getModules())
                 {
@@ -111,7 +115,10 @@ public class SearchController extends SpringActionController
     }
 
 
+    static SearchService.IndexTask _lastFullTask = null;
+    static SearchService.IndexTask _lastIncrementalTask = null;
 
+    
     @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends SimpleViewAction<SearchForm>
     {
@@ -129,6 +136,14 @@ public class SearchController extends SpringActionController
             String html = "";
 
             List<SearchService.IndexTask> tasks = ss.getTasks();
+            if (tasks.isEmpty())
+            {
+                tasks = new ArrayList<SearchService.IndexTask>();
+                if (null != _lastFullTask)
+                    tasks.add(_lastFullTask);
+                if (null != _lastIncrementalTask)
+                    tasks.add(_lastIncrementalTask);
+            }
             for (SearchService.IndexTask task : tasks)
             {
                 int count = task.getIndexedCount();
@@ -137,7 +152,11 @@ public class SearchController extends SpringActionController
                 if (0 == end)
                     end = System.currentTimeMillis();
                 int skipped = task.getFailedCount();
-                html += "Indexing in progress: " + count + " documents (" + DateUtil.formatDuration(end-start) + ") " + skipped + " skipped or failed <br>";
+                if (task.getCompleteTime() != 0)
+                    html += "Indexing complete: ";
+                else
+                    html += "Indexing in progress: ";
+                html += count + " documents (" + DateUtil.formatDuration(end-start) + ") " + skipped + " skipped or failed <br>";
             }
             html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer()).addParameter("full","1")) + "\">reindex (full)</a>]<br>";
             html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex (incremental)</a>]<br>";

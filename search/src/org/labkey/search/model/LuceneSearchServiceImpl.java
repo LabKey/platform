@@ -103,6 +103,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
                 }
             }
+            else if (type.startsWith("text/") && !type.contains("xml"))
+            {
+                body = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
+            }
             else
             {
                 InputStream is = null;
@@ -117,7 +121,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     body = handler.toString();
                     if (StringUtils.isBlank(title))
                         title = metadata.get(Metadata.TITLE);
-                    _log.info("Parsed " + id);
+                    _log.debug("Parsed " + id);
                 }
                 finally
                 {
@@ -138,7 +142,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _count++;
 
             if (0 == _count % 100)
-                _log.info("Indexing: " + _count);
+                _log.debug("Indexing: " + _count);
 
             Document doc = new Document();
 

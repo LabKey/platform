@@ -1771,6 +1771,7 @@ search/src/META-INF/search_jars.txt -text
 search/src/org/labkey/search/SearchContainerListener.java -text
 search/src/org/labkey/search/SearchController.java -text
 search/src/org/labkey/search/SearchModule.java -text
+search/src/org/labkey/search/model/AbstractIndexTask.java -text
 search/src/org/labkey/search/model/AbstractSearchService.java -text
 search/src/org/labkey/search/model/DavCrawler.java -text
 search/src/org/labkey/search/model/HTMLContentExtractor.java -text
