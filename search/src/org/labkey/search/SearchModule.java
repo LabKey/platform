@@ -71,7 +71,7 @@ public class SearchModule extends DefaultModule
         {
             public Resource resolve(@NotNull String path)
             {
-                return WebdavService.getResolver().lookup(Path.parse(path));
+                return WebdavService.get().lookup(path);
             }
         });
         ss.start();

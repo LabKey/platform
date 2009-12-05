@@ -137,7 +137,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineEmailPreferences.get().startNotificationTasks();
         PipelineController.registerAdminConsoleLinks();
         StatusController.registerAdminConsoleLinks();
-        WebdavService.addProvider(new PipelineWebdavProvider());
+        WebdavService.get().addProvider(new PipelineWebdavProvider());
     }
 
     @Override

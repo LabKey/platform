@@ -66,6 +66,6 @@ public class FileContentModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
-        WebdavService.addProvider(new FileWebdavProvider());
+        WebdavService.get().addProvider(new FileWebdavProvider());
     }
 }

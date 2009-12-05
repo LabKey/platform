@@ -39,6 +39,7 @@ import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -290,7 +291,7 @@ public class CoreModule extends SpringModule
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
 
-        WebdavService.setResolver(WebdavResolverImpl.get());
+        WebdavService.get().setResolver(WebdavResolverImpl.get());
     }
 
     @Override
@@ -358,7 +359,8 @@ public class CoreModule extends SpringModule
             SqlDialect.SqlDialectTestCase.class,
             HString.TestCase.class,
             StringExpressionFactory.TestCase.class,
-            Path.TestCase.class
+            Path.TestCase.class,
+            ModuleStaticResolverImpl.TestCase.class
         ));
     }
 

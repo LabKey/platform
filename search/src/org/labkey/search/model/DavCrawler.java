@@ -34,27 +34,26 @@ public class DavCrawler
 {
     public static Runnable start(@NotNull SearchService.IndexTask task, Path path, Date modifiedSince)
     {
-        WebdavResolver res = WebdavService.getResolver();
         Path fullpath = new Path(WebdavService.getServletPath()).append(path);
-        return start(task,res,fullpath);
+        return start(task,fullpath);
     }
 
 
-    public static Runnable start(@NotNull final SearchService.IndexTask task, final WebdavResolver res, final Path path)
+    public static Runnable start(@NotNull final SearchService.IndexTask task, final Path path)
     {
         return new Runnable()
         {
             public void run()
             {
-                crawl(task, res, path);
+                crawl(task, path);
             }
         };
     }
 
 
-    static void crawl(@NotNull SearchService.IndexTask task, WebdavResolver res, Path path)
+    static void crawl(@NotNull SearchService.IndexTask task, Path path)
     {
-        Resource r = res.lookup(path);
+        Resource r = WebdavService.get().lookup(path);
         if (null == r)
             return;
 
@@ -69,7 +68,7 @@ public class DavCrawler
                 if (child.isFile())
                     task.addResource("dav:" + child.getPath(), SearchService.PRIORITY.background);
                 else if (!skipContainer(child.getName()))
-                    task.addRunnable(start(task, res, child.getPath()), SearchService.PRIORITY.crawl);
+                    task.addRunnable(start(task, child.getPath()), SearchService.PRIORITY.crawl);
             }
         }
     }
