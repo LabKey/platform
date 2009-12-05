@@ -373,7 +373,7 @@ public class WebdavResolverImpl implements WebdavResolver
                 for (Container aList : list)
                     _children.add(aList.getName());
 
-                for (WebdavService.Provider p : WebdavService.getProviders())
+                for (WebdavService.Provider p : WebdavService.get().getProviders())
                 {
                     Set<String> s = p.addChildren(this);
                     if (s != null)
@@ -487,7 +487,7 @@ public class WebdavResolverImpl implements WebdavResolver
                 }
                 else
                 {
-                    for (WebdavService.Provider p : WebdavService.getProviders())
+                    for (WebdavService.Provider p : WebdavService.get().getProviders())
                     {
                         resource = p.resolve(this, name);
                         if (null != resource)
@@ -756,6 +756,7 @@ public class WebdavResolverImpl implements WebdavResolver
             if (null != x)
                 ContainerManager.delete(x, TestContext.get().getUser());
         }
+
 
         public static Test suite()
         {

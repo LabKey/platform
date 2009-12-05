@@ -30,13 +30,15 @@ import org.apache.log4j.Category;
 import javax.servlet.ServletContext;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.net.MalformedURLException;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * Created by IntelliJ IDEA.
@@ -71,7 +73,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     // DavController has a per request cache, but we want to agressively cache static file resources
     StaticResource _root = null;
-    Map<Path, Resource> _files = Collections.synchronizedMap(new HashMap<Path,Resource>());
+    Map<Path, Resource> _allStaticFiles = Collections.synchronizedMap(new HashMap<Path,Resource>());
 
 
     public boolean requiresLogin()
@@ -96,7 +98,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     {
         Path normalized = path.normalize();
 
-        Resource r = _files.get(normalized);
+        Resource r = _allStaticFiles.get(normalized);
         if (r == null)
         {
             r = resolve(normalized);
@@ -109,7 +111,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 else
                     _log.debug(normalized + " -> {webapp}");
                 if (r instanceof _PublicResource)
-                    _files.put(normalized,r);
+                    _allStaticFiles.put(normalized,r);
             }
         }
         return r;
@@ -246,7 +248,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     {
         List<File> _files;
         Resource[] _additional; // for _webdav
-        AtomicReference<Map<String, Resource>> _children = new AtomicReference<Map<String, Resource>>();
+
+        final Object _lock = new Object();
+        Map<String, Resource> _children = null;
 
         StaticResource(Path path, List<File> files, Resource... addl)
         {
@@ -261,42 +265,87 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return false;
         }
 
+        Map<String,Resource> getChildren()
+        {
+            synchronized (_lock)
+            {
+                if (null == _children)
+                {
+                    Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<ArrayList<File>>();
+                    for (File dir : _files)
+                    {
+                        if (!dir.isDirectory())
+                            continue;
+                        File[] files = dir.listFiles();
+                        if (files == null)
+                            continue;
+                        for (File f : files)
+                        {
+                            String name = f.getName();
+                            if (name.startsWith(".") || name.equals("WEB-INF") || name.equals("META-INF"))
+                                continue;
+                            if (!map.containsKey(name))
+                                map.put(name, new ArrayList<File>());
+                            map.get(name).add(f);
+                        }
+                    }
+                     Map<String, Resource> children = new CaseInsensitiveTreeMap<Resource>();
+                    for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
+                    {
+                        Path path = getPath().append(e.getKey());
+                        children.put(e.getKey(), new StaticResource(path, e.getValue()));
+                    }
+                    for (Resource r : _additional)
+                        children.put(r.getName(),r);
+
+                    _children = children;
+                }
+                return _children;
+            }
+        }
+
+
+        @Override
+        public void createLink(String name, Path target)
+        {
+            synchronized (_lock)
+            {
+                getChildren();
+                if (null != _children.get(name))
+                    throw new IllegalArgumentException(name + " already exists");
+                // _children is not syncrhonized so don't add put, create a new map
+                Map<String,Resource> children = new CaseInsensitiveTreeMap<Resource>();
+                children.putAll(_children);
+                children.put(name, new SymbolicLink(getPath().append(name), target));
+                _children = children;
+            }
+        }
+
+
+        @Override
+        public void removeLink(String name)
+        {
+            synchronized (_lock)
+            {
+                getChildren();
+                Resource link = _children.get(name);
+                if (null == link)
+                    return; // silent?
+                if (!(link instanceof SymbolicLink))
+                    throw new IllegalArgumentException(name + " is not a link");
+                // _children is not syncrhonized so don't add put, create a new map
+                Map<String,Resource> children = new CaseInsensitiveTreeMap<Resource>();
+                children.putAll(_children);
+                children.remove(name);
+                _children = children;
+            }
+            ModuleStaticResolverImpl.this._allStaticFiles.clear();
+        }
+
+
         public List<Resource> list()
         {
-            Map<String, Resource> children = _children.get();
-
-            if (null == children)
-            {
-                Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<ArrayList<File>>();
-                for (File dir : _files)
-                {
-                    if (!dir.isDirectory())
-                        continue;
-                    File[] files = dir.listFiles();
-                    if (files == null)
-                        continue;
-                    for (File f : files)
-                    {
-                        String name = f.getName();
-                        if (name.startsWith(".") || name.equals("WEB-INF") || name.equals("META-INF"))
-                            continue;
-                        if (!map.containsKey(name))
-                            map.put(name, new ArrayList<File>());
-                        map.get(name).add(f);
-                    }
-                }
-                children = new CaseInsensitiveTreeMap<Resource>();
-                for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
-                {
-                    Path path = getPath().append(e.getKey());
-                    children.put(e.getKey(), new StaticResource(path, e.getValue()));
-                }
-                for (Resource r : _additional)
-                    children.put(r.getName(),r);
-
-                _children.compareAndSet(null, children);
-                children = _children.get();
-            }
+            Map<String, Resource> children = getChildren();
             return new ArrayList<Resource>(children.values());
         }
 
@@ -312,9 +361,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public Resource find(String name)
         {
-            if (null == _children.get())
-                list();
-            Resource r = _children.get().get(name);
+
+            Resource r = getChildren().get(name);
             if (r == null && AppProps.getInstance().isDevMode())
             {
                 for (File dir : _files)
@@ -335,9 +383,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public List<String> listNames()
         {
-            if (null == _children.get())
-                list();
-            return new ArrayList<String>(_children.get().keySet());
+            return new ArrayList<String>(getChildren().keySet());
         }
 
         public long getLastModified()
@@ -373,7 +419,10 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 _etag = "W/\"" + getLastModified() + "\"";
             return _etag;
         }
+
+        
     }
+
 
     class ServletResource extends _PublicResource
     {
@@ -445,34 +494,30 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     }
 
 
-    public static class SymbolicLink extends AbstractCollectionResource
+    public class SymbolicLink extends AbstractCollectionResource
     {
         final WebdavResolver _resolver;
-        final Resource _inner;
+        final Path _target;
 
         SymbolicLink(Path path, WebdavResolver r)
         {
-            this(path,r,Path.emptyPath);
+            super(path);
+            _resolver = r;
+            _target = null;
+        }
+
+        SymbolicLink(Path path, Path target)
+        {
+            super(path);
+            _target = target;
+            _resolver = null;
         }
         
-        SymbolicLink(Path path, WebdavResolver r, Path relativePath)
-        {
-            super(path);
-            _resolver = r;
-            _inner = r.lookup(relativePath);
-        }
-
-        SymbolicLink(Path path, WebdavResolver r, Resource inner)
-        {
-            super(path);
-            _resolver = r;
-            _inner = inner;
-        }
-
         public Resource lookup(Path relpath)
         {
-            Path full = getPath().resolve(relpath);
-            return _resolver.lookup(full);
+            Path full = null==_target ? getPath().append(relpath) : _target.append(relpath);
+            WebdavResolver resolver = null == _resolver ? ModuleStaticResolverImpl.this : _resolver;
+            return resolver.lookup(full);
         }
 
         public Resource find(String name)
@@ -509,4 +554,54 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
         return null;
     }
+
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase()
+        {
+            super();
+        }
+
+        public TestCase(String name)
+        {
+            super(name);
+        }
+
+        public void testLinks()
+        {
+            // Don't want to modify public webdavService
+            WebdavService s = new WebdavService();
+            s.setResolver(new ModuleStaticResolverImpl());
+
+            Resource rUtils = s.lookup(new Path("utils"));
+            assertNotNull(rUtils);
+            assertTrue(rUtils.isCollection());
+
+            Resource utilsJs = s.lookup(new Path("utils","dialogBox.js"));
+            assertTrue(utilsJs.isFile());
+            
+            Resource rU = s.lookup(new Path("U"));
+            assertTrue(rU == null || !rU.exists());
+            
+            // This test depends on knowing some existing webapp directories
+            s.addLink(new Path("U"), new Path("utils"));
+            rU = s.lookup(new Path("U"));
+            assertNotNull(rU);
+            assertTrue(rU.isCollection());
+
+            utilsJs = s.lookup(new Path("U","dialogBox.js"));
+            assertTrue(utilsJs.isFile());
+
+            s.removeLink(new Path("U"));
+            utilsJs = s.lookup(new Path("U","dialogBox.js"));
+            assertTrue(utilsJs == null || !utilsJs.exists());
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
+    }
+    
 }

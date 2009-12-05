@@ -204,13 +204,14 @@ public class Path implements Serializable, Iterable<String>
     }
 
     
-    @NotNull
     public Path getParent()
     {
+        if (_length == 0)
+            return null;
         Path p = _parent.get();
         if (null != p)
             return p;
-            _parent.compareAndSet(null, createPath(_path, _length-1, isAbsolute(), true));
+        _parent.compareAndSet(null, createPath(_path, _length-1, isAbsolute(), true));
         return _parent.get();
     }
     

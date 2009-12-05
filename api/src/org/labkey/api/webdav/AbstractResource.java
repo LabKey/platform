@@ -95,7 +95,7 @@ public abstract class AbstractResource implements Resource
         if (_path.getNameCount()==0)
             return null;
         Path parent = _path.getParent();
-        return WebdavService.getResolver().lookup(parent);
+        return WebdavService.get().lookup(parent);
     }
 
 
@@ -349,4 +349,15 @@ public abstract class AbstractResource implements Resource
             IOUtils.closeQuietly(_is);
         }
     }
+
+    public void createLink(String name, Path target)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public void removeLink(String name)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
 }

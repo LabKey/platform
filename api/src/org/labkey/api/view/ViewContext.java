@@ -407,6 +407,9 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
 
     public boolean isAdminMode()
     {
+        HttpSession s = getSession();
+        if (null == s)
+            return false;
         Boolean mode = (Boolean) getSession().getAttribute("adminMode");
         return null == mode ? false : mode.booleanValue();
     }
