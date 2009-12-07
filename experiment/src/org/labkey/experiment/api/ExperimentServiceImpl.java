@@ -35,8 +35,8 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -1090,12 +1090,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         if (includeProjectAndShared)
         {
-            if (container.getProject() != null && container.getProject().hasPermission(user, ACL.PERM_READ))
+            if (container.getProject() != null && container.getProject().hasPermission(user, ReadPermission.class))
             {
                 containerIds.add(container.getProject().getId());
             }
             Container shared = ContainerManager.getSharedContainer();
-            if (shared.hasPermission(user, ACL.PERM_READ))
+            if (shared.hasPermission(user, ReadPermission.class))
             {
                 containerIds.add(shared.getId());
             }
@@ -1785,9 +1785,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null == c)
             return;
 
-        String sql = "SELECT RowId FROM " + getTinfoMaterialSource() + " WHERE Container = ? ;";
-        Integer[] srcIds = Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class);
-
         try
         {
             getExpSchema().getScope().beginTransaction();
@@ -1801,15 +1798,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 OntologyManager.moveContainer(ctemp, oldParent, newParent);
             }
-
-            // delete material sources
-            // now call the specialized function to delete the Materials that belong to the Material Source,
-            // including the toplevel properties of the Materials, of which there are often many
-            for (Integer srcId : srcIds)
-            {
-//                deleteSampleSet(srcId, c);
-            }
-
 
             getExpSchema().getScope().commitTransaction();
         }
@@ -1873,18 +1861,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public MaterialSource getMaterialSource(String lsid)
     {
         SimpleFilter filter = new SimpleFilter("LSID", lsid);
-        MaterialSource source;
         try
         {
-			Class<MaterialSource> c = MaterialSource.class;
-            source = Table.selectObject(getTinfoMaterialSource(), Table.ALL_COLUMNS, (Filter)filter, (Sort)null, c);
+            return Table.selectObject(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, null, MaterialSource.class);
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
-
-        return source;
     }
     
     public String getDefaultSampleSetLsid()
@@ -2155,7 +2139,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 while (materialInputRS.next())
                 {
                     Integer appId = materialInputRS.getInt("TargetApplicationId");
-                    Integer matId = materialInputRS.getInt("MaterialId");
+                    int matId = materialInputRS.getInt("MaterialId");
                     ExpProtocolApplication pa = protStepMap.get(appId);
                     ExpMaterialImpl mat;
 
@@ -2276,10 +2260,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     dataOutputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{new Integer(runId)});
                     while (dataOutputRS.next())
                     {
-                        Integer successorRunId = dataOutputRS.getInt("RunId");
+                        int successorRunId = dataOutputRS.getInt("RunId");
                         Integer datId = dataOutputRS.getInt("DataId");
                         ExpDataImpl dat = outputDataMap.get(datId);
-                        dat.addSuccessorRunId(successorRunId.intValue());
+                        dat.addSuccessorRunId(successorRunId);
                     }
                 }
                 finally
@@ -2738,13 +2722,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
                     }
                 }
-
-                ExpRun reloadedRun = getExpRun(run.getRowId());
-//                if (reloadedRun.getDataInputs().isEmpty() && reloadedRun.getMaterialInputs().isEmpty())
-//                {
-//                    throw new IllegalArgumentException("You must have at least one input to the run");
-//                }
-
 
                 return run;
             }

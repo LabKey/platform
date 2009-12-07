@@ -108,7 +108,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         {
             return null;
         }
-        _sourceApp = ExperimentServiceImpl.get().getExpProtocolApplication(_object.getSourceApplicationId());
+        _sourceApp = ExperimentServiceImpl.get().getExpProtocolApplication(_object.getSourceApplicationId().intValue());
         return _sourceApp;
     }
 
@@ -141,7 +141,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         {
             return null;
         }
-        return ExperimentServiceImpl.get().getExpRun(_object.getRunId());
+        return ExperimentServiceImpl.get().getExpRun(_object.getRunId().intValue());
     }
 
     public void setSourceApplication(ExpProtocolApplication app)

@@ -17,7 +17,6 @@
 package org.labkey.experiment.controllers.exp;
 
 import jxl.*;
-import jxl.biff.DisplayFormat;
 import jxl.read.biff.BiffException;
 import jxl.write.*;
 import org.apache.commons.lang.StringUtils;
@@ -47,6 +46,9 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
@@ -113,12 +115,12 @@ public class ExperimentController extends SpringActionController
         return root;
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends GridViewAction
     {
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GridViewAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -149,7 +151,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -171,7 +173,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ) @ActionNames("showRunGroups, showExperiments")
+    @RequiresPermissionClass(ReadPermission.class) @ActionNames("showRunGroups, showExperiments")
     public class ShowRunGroupsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -185,7 +187,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class CreateHiddenRunGroupAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -208,7 +210,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ExperimentForm>
     {
         private ExpExperimentImpl _experiment;
@@ -241,7 +243,7 @@ public class ExperimentController extends SpringActionController
 
             ButtonBar bb = new ButtonBar();
             ActionButton b = new ActionButton(ExperimentUrlsImpl.get().getShowUpdateURL(_experiment), "Edit");
-            b.setDisplayPermission(ACL.PERM_UPDATE);
+            b.setDisplayPermission(UpdatePermission.class);
             bb.add(b);
             detailsView.getDataRegion().setButtonBar(bb);
             if (_experiment.getBatchProtocol() != null)
@@ -313,7 +315,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ListMaterialSourcesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -331,7 +333,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         private ExpSampleSetImpl _source;
@@ -382,7 +384,7 @@ public class ExperimentController extends SpringActionController
                     ActionButton deleteMaterial = new ActionButton("", "Delete");
                     deleteMaterial.setURL(deleteMaterialUrl);
                     deleteMaterial.setActionType(ActionButton.Action.POST);
-                    deleteMaterial.setDisplayPermission(ACL.PERM_DELETE);
+                    deleteMaterial.setDisplayPermission(DeletePermission.class);
                     deleteMaterial.setRequiresSelection(true);
                     bar.add(deleteMaterial);
 
@@ -390,12 +392,12 @@ public class ExperimentController extends SpringActionController
                     ActionButton deriveButton = new ActionButton("", "Derive Samples");
                     deriveButton.setURL(urlDeriveSamples);
                     deriveButton.setActionType(ActionButton.Action.POST);
-                    deriveButton.setDisplayPermission(ACL.PERM_INSERT);
+                    deriveButton.setDisplayPermission(InsertPermission.class);
                     deriveButton.setRequiresSelection(true);
                     bar.add(deriveButton);
                 }
             };
-            queryView.setShowRecordSelectors(getViewContext().hasPermission(ACL.PERM_DELETE) || getViewContext().hasPermission(ACL.PERM_INSERT));
+            queryView.setShowRecordSelectors(getContainer().hasPermission(getUser(), DeletePermission.class) || getContainer().hasPermission(getUser(), InsertPermission.class));
             queryView.setShowBorders(true);
             queryView.setShadeAlternatingRows(true);
 
@@ -415,11 +417,11 @@ public class ExperimentController extends SpringActionController
                 editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
                 ActionButton editTypeButton = new ActionButton(editTypeURL.toString(), "Edit Property List", DataRegion.MODE_DETAILS);
                 editTypeButton.setURL(editTypeURL);
-                editTypeButton.setDisplayPermission(ACL.PERM_UPDATE);
+                editTypeButton.setDisplayPermission(UpdatePermission.class);
                 detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
 
                 ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
-                deleteButton.setDisplayPermission(ACL.PERM_DELETE);
+                deleteButton.setDisplayPermission(DeletePermission.class);
                 ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
                 deleteURL.addParameter("singleObjectRowId", _source.getRowId());
                 deleteURL.addParameter("returnURL", ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
@@ -436,7 +438,7 @@ public class ExperimentController extends SpringActionController
                 urlUploadSamples.addParameter("name", sourceName);
                 urlUploadSamples.addParameter("importMoreSamples", "true");
                 ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
-                uploadButton.setDisplayPermission(ACL.PERM_UPDATE);
+                uploadButton.setDisplayPermission(UpdatePermission.class);
                 detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
             }
 
@@ -450,7 +452,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowAllMaterialsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -470,7 +472,7 @@ public class ExperimentController extends SpringActionController
                     ActionButton deriveButton = new ActionButton("", "Derive Samples");
                     deriveButton.setURL(urlDeriveSamples);
                     deriveButton.setActionType(ActionButton.Action.POST);
-                    deriveButton.setDisplayPermission(ACL.PERM_INSERT);
+                    deriveButton.setDisplayPermission(InsertPermission.class);
                     deriveButton.setRequiresSelection(true);
                     bar.add(deriveButton);
                 }
@@ -488,7 +490,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     @ApiVersion(9.2)
     @RequiresLogin
     public class SaveMaterialsAction extends ApiAction<SaveMaterialsForm>
@@ -572,7 +574,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowMaterialAction extends SimpleViewAction<MaterialForm>
     {
         private ExpMaterialImpl _material;
@@ -640,7 +642,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            if (getContainer().hasPermission(getUser(), ACL.PERM_INSERT))
+            if (getContainer().hasPermission(getUser(), InsertPermission.class))
             {
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                 deriveURL.addParameter("rowIds", _material.getRowId());
@@ -676,7 +678,7 @@ public class ExperimentController extends SpringActionController
             // enforces the permissions when we do the query
             for (Iterator<ExpMaterial> iter = materials.iterator(); iter.hasNext(); )
             {
-                if (!iter.next().getContainer().hasPermission(getUser(), ACL.PERM_READ))
+                if (!iter.next().getContainer().hasPermission(getUser(), ReadPermission.class))
                 {
                     iter.remove();
                 }
@@ -834,7 +836,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
         protected HttpView createLowerView(ExpRunImpl experimentRun)
@@ -844,7 +846,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
     {
         public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
@@ -954,7 +956,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ToggleRunExperimentMembershipAction extends SimpleViewAction<ToggleRunExperimentMembershipForm>
     {
         public NavTree appendNavTrail(NavTree root)
@@ -966,7 +968,7 @@ public class ExperimentController extends SpringActionController
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
             // Check if the user has permission to see this run
-            if (run == null || !run.getContainer().hasPermission(getUser(), ACL.PERM_READ))
+            if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
                 return HttpView.throwNotFound();
             }
@@ -982,7 +984,7 @@ public class ExperimentController extends SpringActionController
             {
                 return HttpView.throwNotFound();
             }
-            if (!exp.getContainer().hasPermission(getUser(), ACL.PERM_UPDATE))
+            if (!exp.getContainer().hasPermission(getUser(), UpdatePermission.class))
             {
                 return HttpView.throwUnauthorized();
             }
@@ -1000,7 +1002,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunTextAction extends AbstractShowRunAction
     {
         protected HttpView createLowerView(ExpRunImpl expRun)
@@ -1038,7 +1040,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphDetailAction extends AbstractShowRunAction
     {
         protected HttpView createLowerView(ExpRunImpl run)
@@ -1074,14 +1076,14 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowDataAction extends AbstractDataAction
     {
         public ModelAndView getDataView(DataForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
             String relativePath = null;
-            if (c.hasPermission(getUser(), ACL.PERM_INSERT))
+            if (c.hasPermission(getUser(), InsertPermission.class))
             {
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 if (root != null)
@@ -1135,7 +1137,7 @@ public class ExperimentController extends SpringActionController
                 bb.add(new ActionButton("View file", ExperimentUrlsImpl.get().getShowFileURL(c, _data, true)));
                 bb.add(new ActionButton("Download file", ExperimentUrlsImpl.get().getShowFileURL(c, _data, false)));
 
-                if (getContainer().hasPermission(getUser(), ACL.PERM_INSERT))
+                if (getContainer().hasPermission(getUser(), InsertPermission.class))
                 {
                     ActionURL browseURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL().toString(), relativePath);
                     bb.add(new ActionButton("Browse in pipeline", browseURL));
@@ -1163,7 +1165,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowFileAction extends AbstractDataAction
     {
         protected ModelAndView getDataView(DataForm form, BindException errors) throws IOException
@@ -1219,7 +1221,7 @@ public class ExperimentController extends SpringActionController
                             fIn = new FileInputStream(realContent);
                             WorkbookSettings settings = new WorkbookSettings();
                             settings.setGCDisabled(true);
-                            Workbook workbook = null;
+                            Workbook workbook;
                             try
                             {
                                 workbook = Workbook.getWorkbook(fIn, settings);
@@ -1328,9 +1330,8 @@ public class ExperimentController extends SpringActionController
                             headerArray.put(col.name);
                         }
                         rowsArray.put(headerArray);
-                        for (Iterator<Map<String, Object>> i = tabLoader.iterator(); i.hasNext(); )
+                        for (Map<String, Object> rowMap : tabLoader)
                         {
-                            Map<String, Object> rowMap = i.next();
                             JSONArray rowArray = new JSONArray();
                             for (ColumnDescriptor col : cols)
                             {
@@ -1400,7 +1401,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
     {
         public void export(ConvertArraysToExcelForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -1518,7 +1519,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowApplicationAction extends SimpleViewAction<ProtocolApplicationForm>
     {
         private ExpProtocolApplicationImpl _app;
@@ -1573,7 +1574,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowProtocolGridAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1587,7 +1588,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ProtocolDetailsAction extends SimpleViewAction<ProtocolForm>
     {
         private ExpProtocol _protocol;
@@ -1639,7 +1640,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ProtocolPredecessorsAction extends SimpleViewAction
     {
         private ExpProtocol _parentProtocol;
@@ -1790,7 +1791,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteSelectedExpRunsAction extends AbstractDeleteAction
     {
         public DeleteSelectedExpRunsAction()
@@ -1890,7 +1891,7 @@ public class ExperimentController extends SpringActionController
         protected abstract void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException;
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteProtocolByRowIdsAction extends AbstractDeleteAction
     {
         public DeleteProtocolByRowIdsAction()
@@ -1920,7 +1921,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteMaterialByRowIdAction extends AbstractDeleteAction
     {
         public DeleteMaterialByRowIdAction()
@@ -1932,7 +1933,7 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpRun run : getRuns(deleteForm))
             {
-                if (!run.getContainer().hasPermission(getUser(), ACL.PERM_DELETE))
+                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
                 {
                     HttpView.throwUnauthorized();
                 }
@@ -1973,7 +1974,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteSelectedDataAction extends AbstractDeleteAction
     {
         public DeleteSelectedDataAction()
@@ -2012,7 +2013,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteSelectedExperimentsAction extends AbstractDeleteAction
     {
         public DeleteSelectedExperimentsAction()
@@ -2065,7 +2066,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteMaterialSourceAction extends AbstractDeleteAction
     {
         public DeleteMaterialSourceAction()
@@ -2082,7 +2083,7 @@ public class ExperimentController extends SpringActionController
             }
             for (ExpRun run : getRuns(sampleSets))
             {
-                if (!run.getContainer().hasPermission(getUser(), ACL.PERM_DELETE))
+                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
                 {
                     HttpView.throwUnauthorized();
                 }
@@ -2209,7 +2210,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ShowUpdateMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         private ExpSampleSet _sampleSet;
@@ -2250,7 +2251,7 @@ public class ExperimentController extends SpringActionController
 
         ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
         dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
-        dr.setShowRecordSelectors(model.hasPermission(ACL.PERM_DELETE) || model.hasPermission(ACL.PERM_UPDATE));
+        dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
         dr.addDisplayColumn(0, new ActiveSampleSetColumn(model.getContainer()));
 
         ButtonBar bb = new ButtonBar();
@@ -2292,7 +2293,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
@@ -2306,7 +2307,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class UpdateMaterialSourceAction extends FormHandlerAction<MaterialSourceForm>
     {
         private MaterialSource _source;
@@ -2334,7 +2335,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class EditSampleSetTypeAction extends SimpleViewAction<MaterialSourceForm>
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
@@ -2366,7 +2367,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ShowUploadMaterialsAction extends SimpleViewAction<UploadMaterialSetForm>
     {
         public ModelAndView getView(UploadMaterialSetForm form, BindException errors) throws ServletException
@@ -2432,7 +2433,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class SetActiveSampleSetAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -2478,7 +2479,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class ShowAddXarFileAction extends SimpleViewAction<AddXarFileForm>
     {
         public ModelAndView getView(AddXarFileForm form, BindException errors) throws Exception
@@ -2497,7 +2498,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ShowUpdateAction extends SimpleViewAction<ExperimentForm>
     {
         public ModelAndView getView(ExperimentForm form, BindException errors) throws Exception
@@ -2519,7 +2520,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class UpdateAction extends FormHandlerAction<ExperimentForm>
     {
         private Experiment _exp;
@@ -2709,7 +2710,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportRunsOptionsAction extends SimpleViewAction<ExportOptionsForm>
     {
         public ModelAndView getView(ExportOptionsForm form, BindException errors) throws Exception
@@ -2798,7 +2799,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportProtocolsOptionsAction extends SimpleViewAction<ExportOptionsForm>
     {
         public ModelAndView getView(ExportOptionsForm form, BindException errors) throws Exception
@@ -2826,7 +2827,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportProtocolsAction extends AbstractExportAction
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
@@ -2885,7 +2886,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportRunsAction extends AbstractExportAction
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
@@ -2985,7 +2986,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class AddRunsToExperimentAction extends FormHandlerAction<ExperimentRunListForm>
     {
         public void validateCommand(ExperimentRunListForm target, Errors errors)
@@ -3004,7 +3005,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class RemoveSelectedExpRunsAction extends FormHandlerAction<ExperimentRunListForm>
     {
         public void validateCommand(ExperimentRunListForm target, Errors errors)
@@ -3037,7 +3038,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ResolveLSIDAction extends SimpleViewAction<LsidForm>
     {
         public ModelAndView getView(LsidForm form, BindException errors) throws Exception
@@ -3119,7 +3120,8 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    /** Require only read in the current container, but later check for update on the object itself */
+    @RequiresPermissionClass(ReadPermission.class)
     public class SetFlagAction extends SimpleViewAction<SetFlagForm>
     {
         public ModelAndView getView(SetFlagForm form, BindException errors) throws Exception
@@ -3131,7 +3133,7 @@ public class ExperimentController extends SpringActionController
             if (obj == null)
                 return HttpView.throwNotFound();
             Container container = obj.getContainer();
-            if (!container.hasPermission(getUser(), ACL.PERM_UPDATE))
+            if (!container.hasPermission(getUser(), UpdatePermission.class))
                 HttpView.throwUnauthorized();
 
             String sessionId = form.getFlagSessionId();
@@ -3139,7 +3141,7 @@ public class ExperimentController extends SpringActionController
                 throw new IllegalArgumentException("No session id");
             if (!sessionId.equals(getViewContext().getSession().getId()))
                 throw new IllegalArgumentException("Wrong session id");
-            if (!container.hasPermission(getUser(), ACL.PERM_UPDATE))
+            if (!container.hasPermission(getUser(), UpdatePermission.class))
                 HttpView.throwUnauthorized();
             obj.setComment(getUser(), form.getComment());
 
@@ -3154,7 +3156,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class DeriveSamplesChooseTargetAction extends SimpleViewAction<DeriveMaterialForm>
     {
         public NavTree appendNavTrail(NavTree root)
@@ -3263,7 +3265,7 @@ public class ExperimentController extends SpringActionController
         return sampleSets;
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class DescribeDerivedSamplesAction extends SimpleViewAction<DeriveMaterialForm>
     {
         public NavTree appendNavTrail(NavTree root)
@@ -3315,7 +3317,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class DeriveSamplesAction extends SimpleViewAction<DeriveMaterialForm>
     {
         private DescribeDerivedSamplesAction _action;
@@ -3428,7 +3430,7 @@ public class ExperimentController extends SpringActionController
                 ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
                 if (material != null)
                 {
-                    if (material.getContainer().hasPermission(_context.getUser(), ACL.PERM_READ))
+                    if (material.getContainer().hasPermission(_context.getUser(), ReadPermission.class))
                     {
                         result.add(material);
                     }
@@ -3558,7 +3560,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT) @ActionNames("createRunGroup, createExperiment")
+    @RequiresPermissionClass(InsertPermission.class) @ActionNames("createRunGroup, createExperiment")
     public class CreateRunGroupAction extends SimpleViewAction<CreateExperimentForm>
     {
         public ModelAndView getView(CreateExperimentForm form, BindException errors) throws Exception
@@ -3669,7 +3671,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class MoveRunsLocationAction extends SimpleViewAction<MoveRunsForm>
     {
         public ModelAndView getView(MoveRunsForm form, BindException errors) throws Exception
@@ -3706,7 +3708,7 @@ public class ExperimentController extends SpringActionController
 
 
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class MoveRunsAction extends FormHandlerAction<MoveRunsForm>
     {
         private Container _targetContainer;
@@ -3716,9 +3718,8 @@ public class ExperimentController extends SpringActionController
 
         public boolean handlePost(MoveRunsForm form, BindException errors) throws Exception
         {
-            getViewContext().requiresPermission(ACL.PERM_DELETE);
             _targetContainer = ContainerManager.getForId(form.getTargetContainerId());
-            if (_targetContainer == null || !_targetContainer.hasPermission(getUser(), ACL.PERM_INSERT))
+            if (_targetContainer == null || !_targetContainer.hasPermission(getUser(), InsertPermission.class))
             {
                 HttpView.throwUnauthorized();
             }
@@ -3784,7 +3785,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowExternalDocsAction extends SimpleViewAction<ShowExternalDocsForm>
     {
         public ModelAndView getView(ShowExternalDocsForm form, BindException errors) throws Exception
@@ -3812,7 +3813,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
     {
         private ExperimentRunForm _form;
@@ -3861,7 +3862,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class UploadXarFileAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -3962,7 +3963,7 @@ public class ExperimentController extends SpringActionController
         return rootFile != null && NetworkDrive.exists(rootFile) && rootFile.isDirectory();
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class ImportXarFileAction extends SimpleViewAction<AddXarFileForm>
     {
         public ModelAndView getView(AddXarFileForm form, BindException errors) throws Exception
@@ -4238,7 +4239,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SampleSetServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

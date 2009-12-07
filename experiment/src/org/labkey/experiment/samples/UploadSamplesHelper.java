@@ -378,6 +378,26 @@ public class UploadSamplesHelper
             // Map from material name to material of all materials in all sample sets visible from this location
             Map<String, List<ExpMaterialImpl>> potentialParents = ExperimentServiceImpl.get().getSamplesByName(_form.getContainer(), _form.getUser());
 
+            // We need to make sure that the set of potential parents points to the same object as our list of recently
+            // inserted materials. This is important because if creating the sample derivation run changes the material
+            // at all (setting its source run, for example), we need to be sure that we don't later save a different
+            // instance of the same material that doesn't have the edit.
+            for (ExpMaterial material : helper._materials)
+            {
+                List<ExpMaterialImpl> possibleDuplicates = potentialParents.get(material.getName());
+                assert possibleDuplicates != null && !possibleDuplicates.isEmpty() : "There should be at least one material with the same name";
+                if (possibleDuplicates != null)
+                {
+                    for (int i = 0; i < possibleDuplicates.size(); i++)
+                    {
+                        if (possibleDuplicates.get(i).getRowId() == material.getRowId())
+                        {
+                            possibleDuplicates.set(i, (ExpMaterialImpl)material);
+                        }
+                    }
+                }
+            }
+
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
             for (int i = 0; i < rows.size(); i++)
             {
@@ -488,7 +508,7 @@ public class UploadSamplesHelper
         private User _user;
         private MaterialSource _source;
         private final Set<String> _reusedMaterialLSIDs;
-        private List<ExpMaterial> _materials = new ArrayList<ExpMaterial>();
+        private List<ExpMaterialImpl> _materials = new ArrayList<ExpMaterialImpl>();
 
         MaterialImportHelper(Container container, MaterialSource source, User user, Set<String> reusedMaterialLSIDs)
         {
@@ -506,16 +526,16 @@ public class UploadSamplesHelper
             l.setObjectId(name);
             String lsid = l.toString();
 
-            ExpMaterial material;
+            ExpMaterialImpl material;
             if (!_reusedMaterialLSIDs.contains(lsid))
             {
-                material = ExperimentService.get().createExpMaterial(_container, lsid, name);
+                material = ExperimentServiceImpl.get().createExpMaterial(_container, lsid, name);
                 material.setCpasType(_source.getLSID());
                 material.save(_user);
             }
             else
             {
-                material = ExperimentService.get().getExpMaterial(lsid);
+                material = ExperimentServiceImpl.get().getExpMaterial(lsid);
                 assert material != null : "Could not find existing material with lsid " + lsid;
             }
             _materials.add(material);
