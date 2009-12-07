@@ -224,6 +224,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getPolicy().hasOneOf(user, perms, null);
     }
 
+    public boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
+    {
+        return getPolicy().hasOneOf(user, new HashSet<Class<? extends Permission>>(Arrays.asList(perms)), null);
+    }
+
     /**
      * Don't use this anymore
      * @param user the user
