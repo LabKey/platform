@@ -34,6 +34,8 @@ public interface ObjectFactory<K>
 {
     K fromMap(Map<String, ?> m);
 
+    K fromMap(K bean, Map<String, ?> m);
+
     Map<String, Object> toMap(K bean, Map<String, Object> m);
 
     K handle(ResultSet rs) throws SQLException;

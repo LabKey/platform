@@ -1802,6 +1802,11 @@ public class ContainerManager
             throw new UnsupportedOperationException();
         }
 
+        public Container fromMap(Container bean, Map<String, ?> m)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public Map<String, Object> toMap(Container bean, Map<String, Object> m)
         {
             throw new UnsupportedOperationException();

@@ -125,7 +125,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     }
     
 
-    public void fromMap(K bean, Map<String, ?> m)
+    public K fromMap(K bean, Map<String, ?> m)
     {
         for (String prop : _writeableProperties)
         {
@@ -152,6 +152,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         }
 
         this.fixupBean(bean);
+        return bean;
     }
 
 

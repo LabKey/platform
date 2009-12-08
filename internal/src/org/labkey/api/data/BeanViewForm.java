@@ -53,16 +53,15 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         {
             try
             {
+                ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
+
                 K bean;
                 if (_oldValues instanceof Map && !(_wrappedClass.isAssignableFrom(_oldValues.getClass())))
-                {
-                    ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
                     bean = factory.fromMap((Map) _oldValues);
-                }
                 else
                     bean = (K) BeanUtils.cloneBean(_oldValues);
 
-                BeanUtils.populate(bean, getStrings());
+                factory.fromMap(bean, getStrings());
                 return bean;
             }
             catch (IllegalAccessException x)
