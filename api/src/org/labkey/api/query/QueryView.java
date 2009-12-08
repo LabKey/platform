@@ -1267,6 +1267,7 @@ public class QueryView extends WebPartView<Object>
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
+        rgn.setOffset(Table.ALL_ROWS);
         rgn.setMaxRows(ExcelWriter.MAX_ROWS);
         RenderContext rc = view.getRenderContext();
         ResultSet rs = rgn.getResultSet(rc);
