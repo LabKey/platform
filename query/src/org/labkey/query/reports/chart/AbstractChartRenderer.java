@@ -22,10 +22,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.urls.XYURLGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.data.xy.XYDataset;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.*;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRenderInfo;
@@ -56,6 +53,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
         {
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
+            rgn.setMaxRows(Table.ALL_ROWS);
             RenderContext ctx = dataView.getRenderContext();
 
             return rgn.getResultSet(ctx);
