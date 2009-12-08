@@ -463,7 +463,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         //We assume this means data is loaded.
         _isDataLoaded = true;
         if (!merge)
-            _values = new HashMap<String,Object>();
+            _values = new CaseInsensitiveHashMap<Object>();
         _stringValues.clear();
 
         for (Map.Entry<String,Object> e : values.entrySet())
