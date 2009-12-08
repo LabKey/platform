@@ -133,14 +133,10 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
+    // CONSIDER: throw UnsupportedOperation()
     public V remove(Object key)
     {
-        Integer i = _findMap.remove(key);
-        if (null == i)
-            return null;
-        V o = _row.get(i.intValue());
-        _row.set(i.intValue(), null);
-        return o;
+        return put((K)key, null);
     }
 
 

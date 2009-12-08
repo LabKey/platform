@@ -220,7 +220,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (maps.length > 0)
         {
             setTypedValues(maps[0], false);
-            setOldValues(maps[0]);
+            setOldValues(new HashMap<String,Object>(getTypedValues()));
         }
     }
 
@@ -458,31 +458,23 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void setTypedValues(Map<String, Object> values, boolean merge)
     {
         assert null != _dynaClass;
+        assert null != (values = Collections.unmodifiableMap(values));
 
         //We assume this means data is loaded.
         _isDataLoaded = true;
         if (!merge)
-            _values = values;
+            _values = new HashMap<String,Object>();
         _stringValues.clear();
 
-        // Iterate a copy of the keys since we may modify the set
-        Set<String> keys = new HashSet<String>(values.keySet());
-
-        for (String propName : keys)
+        for (Map.Entry<String,Object> e : values.entrySet())
         {
-            Object o = values.get(propName);
             //fix up propNames as we go. These come out of the
             //database messed up sometimes.
+            String propName = e.getKey();
             if (Character.isUpperCase(propName.charAt(0)))
-            {
-                values.remove(propName);
                 propName = Introspector.decapitalize(propName);
-                values.put(propName, o);
-            }
-
-            if (merge)
-                _values.put(propName, o);
-            _stringValues.put(propName, ConvertUtils.convert(o));
+            _values.put(propName, e.getValue());
+            _stringValues.put(propName, ConvertUtils.convert(e.getValue()));
         }
     }
 
