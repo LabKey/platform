@@ -218,6 +218,11 @@ class VisitMapRecord
             return new VisitMapRecord(m);
         }
 
+        public VisitMapRecord fromMap(VisitMapRecord bean, Map<String, ?> m)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public Map<String, Object> toMap(VisitMapRecord bean, Map m)
         {
             throw new java.lang.UnsupportedOperationException();
