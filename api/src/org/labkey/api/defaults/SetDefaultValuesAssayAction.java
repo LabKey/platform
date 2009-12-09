@@ -15,26 +15,24 @@
  */
 package org.labkey.api.defaults;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
-import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
-import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.permissions.DesignAssayPermission;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.view.HttpView;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 /*
  * User: brittp
  * Date: Mar 2, 2009

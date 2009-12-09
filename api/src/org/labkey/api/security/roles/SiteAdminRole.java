@@ -36,6 +36,7 @@ public class SiteAdminRole extends AbstractContextualRole
                 UpdatePermission.class,
                 InsertPermission.class, 
                 DeletePermission.class,
+                AdminReadPermission.class,
                 AdminPermission.class,
                 EditSharedViewPermission.class);
     }
