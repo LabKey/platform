@@ -27,8 +27,8 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -80,7 +80,7 @@ public class AnalysisController extends SpringActionController
                 .addParameter(AnalyzeForm.Params.path, path);
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)    
+    @RequiresPermissionClass(InsertPermission.class)
     public class AnalyzeAction extends FormViewAction<AnalyzeForm>
     {
         private FileAnalysisTaskPipeline _taskPipeline;
@@ -313,7 +313,7 @@ public class AnalysisController extends SpringActionController
                 .addParameter(AnalyzeForm.Params.path, path);
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class ImportAction extends RedirectAction<AnalyzeForm>
     {
         public ActionURL getSuccessURL(AnalyzeForm analyzeForm)

@@ -31,6 +31,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -122,7 +123,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -149,7 +150,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SetCustomColumnConfigurationAction extends FormHandlerAction
     {
         public boolean handlePost(Object o, BindException errors) throws Exception
@@ -170,7 +171,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateRequiredFieldsAction extends FormHandlerAction<IssuePreferenceForm>
     {
         public boolean handlePost(IssuePreferenceForm form, BindException errors) throws Exception
@@ -243,7 +244,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ListAction extends SimpleViewAction<ListForm>
     {
 
@@ -287,7 +288,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportTsvAction extends SimpleViewAction<QueryForm>
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -311,7 +312,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<IssueIdForm>
     {
         Issue _issue = null;
@@ -365,7 +366,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DetailsListAction extends SimpleViewAction<ListForm>
     {
         public ModelAndView getView(ListForm listForm, BindException errors) throws Exception
@@ -430,7 +431,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class InsertAction extends FormViewAction<IssuesForm>
     {
         private Issue _issue = null;
@@ -700,7 +701,7 @@ public class IssuesController extends SpringActionController
     
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<_AttachmentForm>
     {
         public ModelAndView getView(final _AttachmentForm form, BindException errors) throws Exception
@@ -1042,7 +1043,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class CompleteUserAction extends AjaxCompletionAction<CompleteUserForm>
     {
         public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
@@ -1182,7 +1183,7 @@ public class IssuesController extends SpringActionController
         return sb.toString();
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class EmailPrefsAction extends FormViewAction<EmailPrefsForm>
     {
         String _message = null;
@@ -1233,7 +1234,7 @@ public class IssuesController extends SpringActionController
     public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class AdminAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1279,7 +1280,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class AddKeywordAction extends AdminFormAction
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
@@ -1305,7 +1306,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteKeywordAction extends AdminFormAction
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
@@ -1315,7 +1316,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SetKeywordDefaultAction extends AdminFormAction
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
@@ -1325,7 +1326,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ClearKeywordDefaultAction extends AdminFormAction
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
@@ -1396,7 +1397,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class RssAction extends SimpleViewAction
     {
         @Override
@@ -1465,7 +1466,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class PurgeAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1483,7 +1484,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class JumpToIssueAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1525,7 +1526,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1910,7 +1911,7 @@ public class IssuesController extends SpringActionController
             setTitle(title.toString());
 
             User u = context.getUser();
-            bean.hasPermission = c.hasPermission(u, ACL.PERM_READ);
+            bean.hasPermission = c.hasPermission(u, ReadPermission.class);
             if (!bean.hasPermission)
                 return;
 

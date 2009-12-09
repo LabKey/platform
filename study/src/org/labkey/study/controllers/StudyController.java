@@ -58,7 +58,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -133,7 +133,7 @@ public class StudyController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
@@ -173,7 +173,7 @@ public class StudyController extends BaseStudyController
 	}
 	
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
         private DataSet _def;
@@ -264,7 +264,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     @SuppressWarnings("unchecked")
     public class EditTypeAction extends SimpleViewAction<DataSetForm>
     {
@@ -310,7 +310,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DatasetDetailsAction extends SimpleViewAction<IdForm>
     {
         @Override
@@ -397,7 +397,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class OverviewAction extends SimpleViewAction<DatasetFilterForm>
     {
         private StudyImpl _study;
@@ -427,7 +427,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DatasetReportAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
     {
         Report _report;
@@ -498,7 +498,7 @@ public class StudyController extends BaseStudyController
         return newUrl.addParameters(context.getActionURL().getParameters());
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteDatasetReportAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -523,7 +523,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
         private CohortFilter _cohortFilter;
@@ -731,7 +731,7 @@ public class StudyController extends BaseStudyController
                 ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
                 insertURL.addParameter(DataSetDefinition.DATASETKEY, _datasetId);
                 ActionButton insertButton = new ActionButton(insertURL.getLocalURIString(), "Insert New", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                insertButton.setDisplayPermission(ACL.PERM_INSERT);
+                insertButton.setDisplayPermission(InsertPermission.class);
                 buttonBar.add(insertButton);
             }
 
@@ -741,7 +741,7 @@ public class StudyController extends BaseStudyController
                 {
                     // bulk import
                     ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                    uploadButton.setDisplayPermission(ACL.PERM_INSERT);
+                    uploadButton.setDisplayPermission(InsertPermission.class);
                     buttonBar.add(uploadButton);
 
                     ActionButton deleteRows = new ActionButton("button", "Delete");
@@ -749,7 +749,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setURL(deleteRowsURL);
                     deleteRows.setRequiresSelection(true, "Delete selected rows of this dataset?");
                     deleteRows.setActionType(ActionButton.Action.POST);
-                    deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+                    deleteRows.setDisplayPermission(DeletePermission.class);
                     buttonBar.add(deleteRows);
                 }
                 else if (isAssayDataset)
@@ -765,7 +765,7 @@ public class StudyController extends BaseStudyController
                         deleteRows.setURL(deleteRowsURL);
                         deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
-                        deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+                        deleteRows.setDisplayPermission(DeletePermission.class);
                         buttonBar.add(deleteRows);
                     }
                 }
@@ -776,18 +776,18 @@ public class StudyController extends BaseStudyController
             viewSamples.setURL(viewSamplesURL);
             viewSamples.setRequiresSelection(true);
             viewSamples.setActionType(ActionButton.Action.POST);
-            viewSamples.setDisplayPermission(ACL.PERM_READ);
+            viewSamples.setDisplayPermission(ReadPermission.class);
             buttonBar.add(viewSamples);
 
             if (isAssayDataset)
             {
                 // provide a link to the source assay
                 Container c = protocol.getContainer();
-                if (c.hasPermission(getUser(), ACL.PERM_READ))
+                if (c.hasPermission(getUser(), ReadPermission.class))
                 {
                     ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
                             c,
-                            protocol, 
+                            protocol,
                             new ContainerFilter.CurrentAndSubfolders(getUser()));
                     ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
                     buttonBar.add(viewAssayButton);
@@ -823,7 +823,7 @@ public class StudyController extends BaseStudyController
                     setItem.setSelected(true);
                 button.addMenuItem(setItem);
             }
-            if (getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 button.addSeparator();
                 ActionURL updateAction = new ActionURL(UpdateQCStateAction.class, getContainer());
@@ -831,7 +831,7 @@ public class StudyController extends BaseStudyController
                         view.getDataRegionName() + "\"], \"" + updateAction.getLocalURIString() + "\", \"post\", \"rows\")) document.forms[\"" +
                         view.getDataRegionName() + "\"].submit()");
                 updateItem.setId("QCState:updateSelected");
-                
+
                 button.addMenuItem("Manage states", new ActionURL(ManageQCStatesAction.class,
                         getContainer()).addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString()));
             }
@@ -872,7 +872,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
         ParticipantForm _bean;
@@ -942,7 +942,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UploadVisitMapAction extends FormViewAction<TSVForm>
     {
         public ModelAndView getView(TSVForm tsvForm, boolean reshow, BindException errors) throws Exception
@@ -980,7 +980,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ShowCreateStudyAction extends SimpleViewAction<StudyPropertiesForm>
     {
         public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
@@ -1008,7 +1008,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CreateStudyAction extends FormHandlerAction<StudyPropertiesForm>
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
@@ -1079,7 +1079,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteStudyAction extends FormViewAction<DeleteStudyForm>
     {
         public void validateCommand(DeleteStudyForm form, Errors errors)
@@ -1126,7 +1126,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateStudyPropertiesAction extends FormHandlerAction<StudyPropertiesForm>
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
@@ -1162,7 +1162,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageStudyPropertiesAction extends SimpleViewAction<StudyPropertiesForm>
     {
         public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
@@ -1183,7 +1183,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageVisitsAction extends FormViewAction<StudyPropertiesForm>
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
@@ -1240,7 +1240,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageTypesAction extends FormViewAction<ManageTypesForm>
     {
         public void validateCommand(ManageTypesForm target, Errors errors)
@@ -1322,7 +1322,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageSitesAction extends FormViewAction<BulkEditForm>
     {
         public void validateCommand(BulkEditForm target, Errors errors)
@@ -1402,7 +1402,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class VisitSummaryAction extends FormViewAction<VisitForm>
     {
         private VisitImpl _v;
@@ -1535,7 +1535,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteVisitAction extends FormHandlerAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -1562,7 +1562,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ConfirmDeleteVisitAction extends SimpleViewAction<IdForm>
     {
         private VisitImpl _visit;
@@ -1584,7 +1584,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CreateVisitAction extends FormViewAction<VisitForm>
     {
         public void validateCommand(VisitForm target, Errors errors)
@@ -1644,7 +1644,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateDatasetFormAction extends FormViewAction<DataSetForm>
     {
         DataSetDefinition _def;
@@ -1735,7 +1735,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ExportDatasetSchemaAction extends ExportAction<DataSetForm>
     {
         public void export(DataSetForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -1755,7 +1755,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class ShowImportDatasetAction extends FormViewAction<ImportDataSetForm>
     {
         public void validateCommand(ImportDataSetForm target, Errors errors)
@@ -1855,7 +1855,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class BulkImportDataTypesAction extends FormViewAction<BulkImportTypesForm>
     {
         public void validateCommand(BulkImportTypesForm target, Errors errors)
@@ -1937,7 +1937,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ShowUploadHistoryAction extends SimpleViewAction<IdForm>
     {
         String _datasetName;
@@ -1975,7 +1975,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class DownloadTsvAction extends SimpleViewAction<IdForm>
     {
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
@@ -1992,7 +1992,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DatasetItemDetailsAction extends SimpleViewAction<SourceLsidForm>
     {
         public ModelAndView getView(SourceLsidForm form, BindException errors) throws Exception
@@ -2011,7 +2011,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PublishHistoryDetailsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2048,7 +2048,7 @@ public class StudyController extends BaseStudyController
                 deleteRows.setURL(deleteURL);
                 deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
                 deleteRows.setActionType(ActionButton.Action.POST);
-                deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+                deleteRows.setDisplayPermission(DeletePermission.class);
 
                 PublishedRecordQueryView qv = new PublishedRecordQueryView(def, querySchema, qs, sourceLsid,
                         NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount));
@@ -2064,7 +2064,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
@@ -2195,7 +2195,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteDatasetRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
@@ -2934,7 +2934,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
     {
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors) throws Exception
@@ -3071,7 +3071,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteQCStateAction extends RedirectAction<DeleteQCStateForm>
     {
         public boolean doAction(DeleteQCStateForm form, BindException errors) throws Exception
@@ -3177,7 +3177,7 @@ public class StudyController extends BaseStudyController
         }
     }
     
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
         private int _datasetId;
@@ -3280,7 +3280,7 @@ public class StudyController extends BaseStudyController
     }
     
     // GWT Action
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DatasetServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -3297,7 +3297,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ResetPipelineAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -3327,7 +3327,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DefaultDatasetReportAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -3353,7 +3353,7 @@ public class StudyController extends BaseStudyController
 
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageUndefinedTypes extends SimpleViewAction
     {
         Study study;
@@ -3371,7 +3371,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class TemplateAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -3451,7 +3451,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ViewPreferencesAction extends SimpleViewAction
     {
         StudyImpl study;
@@ -3520,7 +3520,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ImportStudyBatchAction extends SimpleViewAction<PipelineForm>
     {
         private String path;
@@ -3580,7 +3580,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SubmitStudyBatchAction extends SimpleRedirectAction<PipelineForm>
     {
         public ActionURL getRedirectURL(PipelineForm form) throws Exception
@@ -3613,7 +3613,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ImportStudyAction extends FormViewAction<Object>
     {
         private ActionURL _redirect;
@@ -3709,7 +3709,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ImportStudyFromPipelineAction extends SimpleRedirectAction<ImportStudyForm>
     {
         public ActionURL getRedirectURL(ImportStudyForm form) throws Exception
@@ -3839,7 +3839,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ExportStudyAction extends FormViewAction<ExportForm>
     {
         private ActionURL _successURL = null;
@@ -3949,7 +3949,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class PurgeDatasetAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -3996,7 +3996,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class TypeNotFoundAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -4010,7 +4010,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateParticipantVisitsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -4037,7 +4037,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class VisitOrderAction extends FormViewAction<VisitReorderForm>
     {
 
@@ -4126,7 +4126,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class VisitVisibilityAction extends FormViewAction<VisitPropertyForm>
     {
         public ModelAndView getView(VisitPropertyForm visitPropertyForm, boolean reshow, BindException errors) throws Exception
@@ -4182,7 +4182,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DataSetVisibilityAction extends FormViewAction<DatasetPropertyForm>
     {
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
@@ -4308,7 +4308,7 @@ public class StudyController extends BaseStudyController
         public boolean visible;
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DataSetDisplayOrderAction extends FormViewAction<DatasetReorderForm>
     {
         public ModelAndView getView(DatasetReorderForm form, boolean reshow, BindException errors) throws Exception
@@ -4351,7 +4351,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteDatasetAction extends SimpleViewAction<IdForm>
     {
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
@@ -4382,7 +4382,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SnapshotAction extends SimpleViewAction<SnapshotForm>
     {
         public ModelAndView getView(SnapshotForm form, BindException errors) throws Exception
@@ -4602,7 +4602,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CustomizeParticipantViewAction extends FormViewAction<CustomizeParticipantViewForm>
     {
         public void validateCommand(CustomizeParticipantViewForm target, Errors errors)
@@ -4659,7 +4659,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class QuickCreateStudyAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm simpleApiJsonForm, BindException errors) throws Exception
@@ -4847,7 +4847,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CreateSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
@@ -5055,7 +5055,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class EditSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
@@ -5764,7 +5764,7 @@ public class StudyController extends BaseStudyController
                 out.print("[<a href=\"" + _nextURL + "\">Next Participant ></a>]");
 
             Container container = getViewContext().getContainer();
-            if (_showCustomizeLink && container.hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
+            if (_showCustomizeLink && container.hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, container);
                 customizeURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
@@ -5997,7 +5997,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DatasetsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6021,7 +6021,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SamplesAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6045,7 +6045,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ViewDataAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6062,7 +6062,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageReloadAction extends FormViewAction<ReloadForm>
     {
         public void validateCommand(ReloadForm target, Errors errors)
@@ -6210,7 +6210,7 @@ public class StudyController extends BaseStudyController
                 buttons.add(new NavTree("Overview", PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer())));
                 buttons.add(new NavTree("Participants", "#"));
                 buttons.add(new NavTree("View Data", new ActionURL(ViewDataAction.class, getContainer())));
-                if (getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+                if (getContainer().hasPermission(getUser(), AdminPermission.class))
                     buttons.add(new NavTree("Manage", new ActionURL(ManageStudyAction.class, getContainer())));
 
                 return new AppBar("Study: " + study.getLabel(), buttons);

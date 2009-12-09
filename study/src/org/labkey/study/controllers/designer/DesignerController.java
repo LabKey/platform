@@ -34,7 +34,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -123,7 +123,7 @@ public class DesignerController extends SpringActionController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
 
@@ -138,7 +138,7 @@ public class DesignerController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteAction extends FormHandlerAction
     {
 
@@ -160,7 +160,7 @@ public class DesignerController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CancelWizardAction extends SimpleRedirectAction<CreateRepositoryForm>
     {
         public ActionURL getRedirectURL(CreateRepositoryForm form) throws Exception
@@ -173,7 +173,7 @@ public class DesignerController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DesignerAction extends SimpleViewAction<StudyDesignForm>
     {
 
@@ -234,7 +234,7 @@ public class DesignerController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DefinitionServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -243,7 +243,7 @@ public class DesignerController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class EditTemplateAction extends SimpleRedirectAction<StudyDesignForm>
     {
         public ActionURL getRedirectURL(StudyDesignForm studyDesignForm) throws Exception
@@ -258,7 +258,7 @@ public class DesignerController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class GetParticipantExcelAction extends ExportAction<CreateRepositoryForm>
     {
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -341,7 +341,7 @@ public class DesignerController extends SpringActionController
             this.includeSubfolders = includeSubfolders;
         }
     }
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetSpecimenExcelAction extends ExportAction<CreateRepositoryForm>
     {
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -389,7 +389,7 @@ public class DesignerController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CreateRepository extends SimpleViewAction<CreateRepositoryForm>
     {
         String titleForNav;

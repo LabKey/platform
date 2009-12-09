@@ -37,6 +37,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -102,7 +103,7 @@ public class AssayController extends SpringActionController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends BaseAssayAction<ProtocolIdForm>
     {
         public ModelAndView getView(ProtocolIdForm o, BindException errors) throws Exception
@@ -167,7 +168,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class AssayListAction extends ApiAction<AssayListForm>
     {
         public ApiResponse execute(AssayListForm form, BindException errors) throws Exception
@@ -293,7 +294,7 @@ public class AssayController extends SpringActionController
         return propertyList;
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ChooseCopyDestinationAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
@@ -333,7 +334,7 @@ public class AssayController extends SpringActionController
                     tree.render().toString() + "</table>");
             HtmlView bbar = new HtmlView(
                     PageFlowUtil.generateButton("Cancel", new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
-                    (form.getContainer().hasPermission(getUser(), ACL.PERM_INSERT) ? PageFlowUtil.generateButton("Copy to Current Folder", copyHereURL) : ""));
+                    (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.generateButton("Copy to Current Folder", copyHereURL) : ""));
             return new VBox(bbar, fileTree, bbar);
         }
 
@@ -349,7 +350,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
     {
         ExpProtocol _protocol;
@@ -510,7 +511,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadFileAction extends SimpleViewAction<DownloadFileForm>
     {
         public ModelAndView getView(DownloadFileForm form, BindException errors) throws Exception
@@ -551,7 +552,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
         private ExpProtocol _protocol;
@@ -580,7 +581,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class AssayFileUploadAction extends AbstractFileUploadAction
     {
         protected File getTargetFile(String filename) throws IOException
@@ -612,7 +613,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
     {
         private ExpProtocol _protocol;
@@ -646,7 +647,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class DownloadSampleQCDataAction extends SimpleViewAction<ProtocolIdForm>
     {
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception

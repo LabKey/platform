@@ -26,13 +26,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();
     StudyImpl s = view.getModelBean();
     User user = (User)request.getUserPrincipal();
     SiteImpl[] sites = s.getSites();
-    boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, ACL.PERM_ADMIN);
+    boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, AdminPermission.class);
  %>
 
 <div width="600px">

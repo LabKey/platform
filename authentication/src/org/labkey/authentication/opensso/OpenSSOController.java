@@ -19,10 +19,10 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -69,7 +69,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ConfigureAction extends FormViewAction<ConfigProperties>
     {
         public ActionURL getSuccessURL(ConfigProperties form)
@@ -113,7 +113,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CurrentSettingsAction extends SimpleViewAction<ConfigProperties>
     {
         public ModelAndView getView(ConfigProperties form, BindException errors) throws Exception
@@ -145,7 +145,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class PickAuthLogoAction extends AuthenticationManager.PickAuthLogoAction
     {
         @Override
@@ -172,7 +172,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class PickReferrerAction extends FormViewAction<PickReferrerForm>
     {
         public void validateCommand(PickReferrerForm target, Errors errors)

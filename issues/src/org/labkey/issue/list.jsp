@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -36,10 +37,12 @@
 
 <table><tr>
     <%
-    if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_INSERT))
-	{
-	%><td><%=PageFlowUtil.generateButton("New " + names.singularName, "insert.view")%></td><td>&nbsp;</td><%
-	}
+        if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
+        {
+    %>
+            <td><%=PageFlowUtil.generateButton("New " + names.singularName, "insert.view")%></td><td>&nbsp;</td>
+    <%
+        }
     %>
     <td nowrap><form name="jumpToIssue" action="jumpToIssue.view" method="get">
         <input type="text" size="5" name="issueId"/>

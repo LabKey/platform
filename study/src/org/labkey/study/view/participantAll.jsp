@@ -47,6 +47,7 @@
 <%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -123,7 +124,7 @@
     User user = (User) request.getUserPrincipal();
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
-    boolean updateAccess = study.getContainer().hasPermission(user, ACL.PERM_UPDATE);
+    boolean updateAccess = study.getContainer().hasPermission(user, UpdatePermission.class);
 
     int totalSeqKeyCount = 0;
 %>

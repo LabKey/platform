@@ -37,6 +37,8 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
@@ -225,7 +227,7 @@ public class WikiController extends SpringActionController
             {
                 //does user have permissions to read this container?
                 //add this container if it contains any wiki pages or if it's the current container
-                if (cChild.hasPermission(context.getUser(), ACL.PERM_READ) &&
+                if (cChild.hasPermission(context.getUser(), ReadPermission.class) &&
                         (cChild.getId().equals(context.getContainer().getId()) || WikiManager.getPageList(cChild).size() > 0))
                 {
                     children.add(cChild);
@@ -247,7 +249,7 @@ public class WikiController extends SpringActionController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -285,7 +287,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) //will test explicitly below
+    @RequiresPermissionClass(ReadPermission.class) //will test explicitly below
     public class DeleteAction extends ConfirmAction<WikiNameForm>
     {
         Wiki _wiki = null;
@@ -346,7 +348,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) //will test explcitly below
+    @RequiresPermissionClass(ReadPermission.class) //will test explcitly below
     public class ManageAction extends FormViewAction<WikiManageForm>
     {
         Wiki _wiki = null;
@@ -578,7 +580,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(final AttachmentForm form, final Wiki wiki) throws Exception
@@ -593,7 +595,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ShowConfirmDeleteAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(AttachmentForm form, Wiki wiki) throws Exception
@@ -602,7 +604,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PrintAllAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -631,7 +633,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PrintBranchAction extends SimpleViewAction<WikiNameForm>
     {
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
@@ -687,7 +689,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PrintRawAction extends SimpleViewAction<WikiNameForm>
     {
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
@@ -715,7 +717,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PrintAllRawAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -942,7 +944,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CopyWikiAction extends FormViewAction<CopyWikiForm>
     {
         public ModelAndView getView(CopyWikiForm copyWikiForm, boolean reshow, BindException errors) throws Exception
@@ -993,7 +995,7 @@ public class WikiController extends SpringActionController
             //UNDONE: currently overwrite option is not exposed in UI
             boolean overwrite = form.isOverwrite();
 
-            if (cDest != null && cDest.hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (cDest != null && cDest.hasPermission(getUser(), AdminPermission.class))
             {
                 //get existing destination wiki pages
                 Map<HString, Wiki> destPageMap = WikiManager.getPageMap(cDest);
@@ -1031,7 +1033,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CopySinglePageAction extends FormViewAction<CopyWikiForm>
     {
         public ModelAndView getView(CopyWikiForm copyWikiForm, boolean reshow, BindException errors) throws Exception
@@ -1049,7 +1051,7 @@ public class WikiController extends SpringActionController
             Container cDest = getDestContainer(form.getDestContainer(), form.getPath());
             if (pageName == null || cSrc == null || cDest == null)
                 HttpView.throwNotFound();
-            if (!cDest.hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (!cDest.hasPermission(getUser(), AdminPermission.class))
                 HttpView.throwUnauthorized();
             Wiki srcPage = WikiManager.getWiki(cSrc, pageName);
             if (srcPage == null)
@@ -1084,7 +1086,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CopyWikiLocationAction extends SimpleViewAction<CopyWikiForm>
     {
         public ModelAndView getView(CopyWikiForm form, BindException errors) throws Exception
@@ -1124,7 +1126,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SourceAction extends PageAction
     {
         public SourceAction()
@@ -1135,7 +1137,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PageAction extends SimpleViewAction<WikiNameForm>
     {
         boolean _source=false;
@@ -1277,7 +1279,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class VersionAction extends SimpleViewAction<WikiNameForm>
     {
         Wiki _wiki = null;
@@ -1385,7 +1387,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class CompareVersionsAction extends SimpleViewAction<CompareForm>
     {
         private Wiki _wiki = null;
@@ -1485,7 +1487,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) //requires update or update_own; will check below
+    @RequiresPermissionClass(ReadPermission.class) //requires update or update_own; will check below
     public class VersionsAction extends SimpleViewAction<WikiNameForm>
     {
         Wiki _wiki;
@@ -1585,7 +1587,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) //will check in code below
+    @RequiresPermissionClass(ReadPermission.class) //will check in code below
     public class MakeCurrentAction extends FormViewAction<WikiNameForm>
     {
         Wiki _wiki;
@@ -2160,7 +2162,7 @@ public class WikiController extends SpringActionController
                 }
             }
 
-            if (!c.hasPermission(user, ACL.PERM_READ))
+            if (!c.hasPermission(user, ReadPermission.class))
             {
                 if (user.isGuest())
                 {
@@ -2273,9 +2275,9 @@ public class WikiController extends SpringActionController
             }
 
             //output only this one if wiki contains no pages
-            boolean bHasInsert = cToc.hasPermission(user, ACL.PERM_INSERT),
-                    bHasCopy = (cToc.hasPermission(user, ACL.PERM_ADMIN) && getElements().length > 0),
-                    bHasPrint = ((!isInWebPart || cToc.hasPermission(user, ACL.PERM_INSERT)) && getElements().length > 0);
+            boolean bHasInsert = cToc.hasPermission(user, InsertPermission.class),
+                    bHasCopy = (cToc.hasPermission(user, AdminPermission.class) && getElements().length > 0),
+                    bHasPrint = ((!isInWebPart || cToc.hasPermission(user, InsertPermission.class)) && getElements().length > 0);
 
             if (bHasInsert || bHasCopy || bHasPrint)
             {
@@ -2357,7 +2359,7 @@ public class WikiController extends SpringActionController
     /**
      * Search Action Implementation
      */
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2409,7 +2411,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CheckForBrokenLinksAction extends SimpleViewAction<BrokenLinkForm>
     {
         public ModelAndView getView(BrokenLinkForm form, BindException errors) throws Exception
@@ -2590,7 +2592,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetPagesAction extends ApiAction<ContainerForm>
     {
         public ApiResponse execute(ContainerForm form, BindException errors) throws Exception
@@ -2701,7 +2703,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ) //will check below
+    @RequiresPermissionClass(ReadPermission.class) //will check below
     public class EditWikiAction extends SimpleViewAction<EditWikiForm>
     {
         private WikiVersion _wikiVer = null;
@@ -2899,7 +2901,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ) //will check below
+    @RequiresPermissionClass(ReadPermission.class) //will check below
     public class SaveWikiAction extends ExtFormAction<SaveWikiForm>
     {
         public final static String PROP_DEFAULT_FORMAT = "defaultFormat";
@@ -2924,7 +2926,7 @@ public class WikiController extends SpringActionController
             //if new, must be unique
             if (null == name || name.length() <= 0)
                 errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
-            else if (name.startsWith("_") && !container.hasPermission(getUser(), ACL.PERM_ADMIN))
+            else if (name.startsWith("_") && !container.hasPermission(getUser(), AdminPermission.class))
                 errors.rejectValue("name", ERROR_MSG, "Wiki names starting with underscore are reserved for administrators.");
 
             //check to ensure that there is not an existing wiki with the same name
@@ -3102,7 +3104,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class AttachFilesAction extends ApiAction<AttachFilesForm>
     {
         public AttachFilesAction()
@@ -3271,7 +3273,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetWikiTocAction extends ApiAction<GetWikiTocForm>
     {
         public ApiResponse execute(GetWikiTocForm form, BindException errors) throws Exception

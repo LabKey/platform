@@ -300,7 +300,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class StandardDeleteGroupAction extends FormHandlerAction<GroupForm>
     {
         public void validateCommand(GroupForm form, Errors errors) {}
@@ -323,7 +323,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class GroupsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -434,7 +434,7 @@ public class SecurityController extends SpringActionController
         }
 
         // Display groups only if user has permissions in this project (or the root)
-        if (project.hasPermission(getUser(), ACL.PERM_ADMIN))
+        if (project.hasPermission(getUser(), AdminPermission.class))
         {
             projectViews.addView(getGroupsView(c, expandedGroup, errors, messages));
 
@@ -466,7 +466,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-//    @RequiresPermission(ACL.PERM_ADMIN)
+//    @RequiresPermissionClass(AdminPermission.class)
 //    private abstract class ProjectActionOldSChool extends SimpleViewAction<PermissionsForm>
 //    {
 //        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
@@ -482,7 +482,7 @@ public class SecurityController extends SpringActionController
 //    }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ProjectAction extends ProjectActionExtStyle
     {
     }
@@ -539,7 +539,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class NewGroupAction extends FormViewAction<NewGroupForm>
     {
         public ModelAndView getView(NewGroupForm form, boolean reshow, BindException errors) throws Exception
@@ -627,7 +627,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateMembersAction extends SimpleViewAction<UpdateMembersForm>
     {
         private Group _group;
@@ -883,7 +883,7 @@ public class SecurityController extends SpringActionController
         return view;
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class GroupAction extends SimpleViewAction<GroupForm>
     {
         private Group _group;
@@ -917,7 +917,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CompleteUserAction extends SimpleViewAction<CompleteUserForm>
     {
         public ModelAndView getView(CompleteUserForm form, BindException errors) throws Exception
@@ -933,7 +933,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class GroupExportAction extends ExportAction<GroupForm>
     {
         public void export(GroupForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -965,7 +965,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class GroupPermissionAction extends SimpleViewAction<GroupForm>
     {
         private Group _requestedGroup;
@@ -1026,7 +1026,7 @@ public class SecurityController extends SpringActionController
         toInherited,
     }
    
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdatePermissionsAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors) {}
@@ -1542,7 +1542,7 @@ public class SecurityController extends SpringActionController
             assertPermission(admin, BeginAction.class);
             assertPermission(site, BeginAction.class);
 
-            // @RequiresPermission(ACL.PERM_ADMIN)
+            // @RequiresPermissionClass(AdminPermission.class)
             assertNoPermission(guest, GroupsAction.class);
             assertNoPermission(user, GroupsAction.class);
             assertPermission(admin, GroupsAction.class);

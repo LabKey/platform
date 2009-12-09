@@ -17,9 +17,9 @@ package org.labkey.experiment;
 
 import org.labkey.api.view.*;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -120,18 +120,18 @@ public class RunGroupWebPart extends QueryView
             ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getViewContext().getContainer(), getReturnURL());
             deleteExperiment.setURL(deleteExpUrl);
             deleteExperiment.setActionType(ActionButton.Action.POST);
-            deleteExperiment.setDisplayPermission(ACL.PERM_DELETE);
+            deleteExperiment.setDisplayPermission(DeletePermission.class);
             deleteExperiment.setRequiresSelection(true);
             bb.add(deleteExperiment);
 
             ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getShowAddXarFileURL(getViewContext().getContainer(), null), "Upload XAR");
             addXarFile.setActionType(ActionButton.Action.LINK);
-            addXarFile.setDisplayPermission(ACL.PERM_INSERT);
+            addXarFile.setDisplayPermission(InsertPermission.class);
             bb.add(addXarFile);
 
             ActionButton createExperiment = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), false), "Create Run Group");
             createExperiment.setActionType(ActionButton.Action.LINK);
-            createExperiment.setDisplayPermission(ACL.PERM_INSERT);
+            createExperiment.setDisplayPermission(InsertPermission.class);
             bb.add(createExperiment);
         }
     }

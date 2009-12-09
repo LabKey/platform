@@ -26,6 +26,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.JspView;
@@ -203,7 +204,7 @@ public class FtpController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class DropAction extends SimpleViewAction<FtpPage>
     {
         public ModelAndView getView(FtpPage form, BindException errors) throws Exception
@@ -220,7 +221,7 @@ public class FtpController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class InfoAction extends SimpleViewAction<FtpPage>
     {
         public ModelAndView getView(FtpPage form, BindException errors) throws Exception

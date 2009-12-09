@@ -18,6 +18,7 @@ package org.labkey.wiki.model;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.BaseWikiPermissions;
@@ -201,7 +202,7 @@ public class WikiEditModel
     public boolean canUserDelete()
     {
         if(null == _wiki)
-            return _container.hasPermission(_user, ACL.PERM_DELETE);
+            return _container.hasPermission(_user, DeletePermission.class);
         else
         {
             BaseWikiPermissions perms = new BaseWikiPermissions(_user, _container);

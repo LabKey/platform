@@ -28,8 +28,8 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.reader.BeanTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -71,7 +71,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public static class BeginAction extends SimpleViewAction
     {
         public BeginAction(){}
@@ -93,7 +93,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public static class ImportVocabularyAction extends FormViewAction<ImportVocabularyForm>
     {
         ModelAndView successView = null;
@@ -154,7 +154,7 @@ public class TypesController extends SpringActionController
     }
     
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public static class TypesAction extends SimpleViewAction
     {
         public TypesAction(){}
@@ -205,7 +205,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public static class TypeDetailsAction extends SimpleViewAction<TypeForm>
     {
         String typeName;
@@ -245,7 +245,7 @@ public class TypesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class FindConceptsAction extends SimpleViewAction<SearchForm>
     {
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
@@ -453,8 +453,6 @@ public class TypesController extends SpringActionController
 
         try
         {
-            int count = 0;
-
             expSchema.getScope().beginTransaction();
 
             Map propertyMap = Table.executeValueMap(ExperimentService.get().getSchema(),

@@ -45,8 +45,8 @@ LABKEY.requiresCss("SecurityAdmin.css");
 LABKEY.requiresScript("SecurityAdmin.js", true);
 </script>
 <script type="text/javascript">
-var isFolderAdmin = <%=c.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
-var isProjectAdmin = <%=project != null && project.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
+var isFolderAdmin = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
+var isProjectAdmin = <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;
 var isSiteAdmin = <%= user.isAdministrator() ? "true" : "false" %>;
 var isRoot = <%= c.isRoot() ? "true" : "false" %>;
 

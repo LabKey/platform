@@ -20,11 +20,12 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.PlateTemplate" %>
 <%@ page import="org.labkey.study.controllers.plate.PlateController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.study.PlateTypeHandler" %>
 <%@ page import="org.labkey.study.plate.PlateManager" %>
+<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
@@ -40,20 +41,20 @@
     <tr>
         <td><%= h(template.getName()) %></td>
         <%
-            if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_UPDATE))
+            if (context.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
             {
         %>
         <td><%= textLink("edit", "designer.view?templateName=" + PageFlowUtil.encode(template.getName())) %></td>
         <%
             }
-            if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_INSERT))
+            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             {
         %>
         <td><%= textLink("edit a copy", "designer.view?copy=true&templateName=" + PageFlowUtil.encode(template.getName())) %></td>
         <td><%= textLink("copy to another folder", "copyTemplate.view?templateName=" + PageFlowUtil.encode(template.getName())) %></td>
         <%
             }
-            if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_DELETE))
+            if (context.getContainer().hasPermission(context.getUser(), DeletePermission.class))
             {
         %>
         <td><%= ((plateTemplates !=null && plateTemplates.length > 1) ?
@@ -66,7 +67,7 @@
     </tr>
 <%
     }
-    if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_INSERT))
+    if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
     {
 %>
     <tr><td><br></td></tr>

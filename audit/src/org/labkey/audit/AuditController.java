@@ -22,8 +22,8 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.*;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
@@ -56,7 +56,7 @@ public class AuditController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()
@@ -135,7 +135,7 @@ public class AuditController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ShowSiteSettingsAuditDetailsAction extends SimpleViewAction<SiteSettingsAuditDetailsForm>
     {
         public ModelAndView getView(SiteSettingsAuditDetailsForm form, BindException errors) throws Exception

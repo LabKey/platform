@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <!--wiki-->
 <%
     HttpView me = HttpView.currentView();
@@ -47,7 +48,7 @@
     boolean isEmbedded = (Boolean)context.get("isEmbedded");
     int wikiPageCount = ((Integer)context.get("wikiPageCount")).intValue();
 
-if (!c.hasPermission(user, ACL.PERM_READ))
+if (!c.hasPermission(user, ReadPermission.class))
 {
     %><table width="100%"><tr><td align=left><%
     if (user.isGuest())

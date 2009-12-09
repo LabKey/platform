@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView me = (JspView)HttpView.currentView();
@@ -43,7 +44,7 @@ DataSetDefinition[] datasets = manager.getDataSetDefinitions(study);
 if (null == datasets || datasets.length == 0)
 {
     out.print("No datasets defined<br><br>");
-    if (container.hasPermission(user, ACL.PERM_ADMIN))
+    if (container.hasPermission(user, AdminPermission.class))
     {
         out.print(textLink("Manage Datasets", ctx.getActionURL().relativeUrl("manageTypes.view", null, "Study")));
     }
@@ -68,7 +69,7 @@ int datasetsPerCol = userDatasets.size() / 3;
     <td valign=top><%=renderDatasets(ctx, userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size())%></td>
 </tr></table>
 <%
-    if (container.hasPermission(user, ACL.PERM_ADMIN))
+    if (container.hasPermission(user, AdminPermission.class))
         out.print("<br>" + textLink("Manage Datasets", ctx.getActionURL().relativeUrl("manageTypes.view", null, "Study")));
 %>
     <%!

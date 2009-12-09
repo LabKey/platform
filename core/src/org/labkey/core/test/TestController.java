@@ -22,6 +22,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
@@ -64,7 +66,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -96,7 +98,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SimpleFormAction extends FormViewAction<SimpleForm>
     {
         String _enctype = "application/x-www-form-urlencoded";
@@ -132,7 +134,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class TagsAction extends FormViewAction<SimpleForm>
     {
         public void validateCommand(SimpleForm target, Errors errors)
@@ -165,7 +167,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class MultipartFormAction extends SimpleFormAction
     {
         public MultipartFormAction()
@@ -180,7 +182,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ComplexFormAction extends FormViewAction<ComplexForm>
     {
         public void validateCommand(ComplexForm target, Errors errors)
@@ -438,7 +440,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PermReadAction extends PermAction
     {
         public PermReadAction()
@@ -447,7 +449,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class PermUpdateAction extends PermAction
     {
         public PermUpdateAction()
@@ -456,7 +458,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class PermInsertAction extends PermAction
     {
         public PermInsertAction()
@@ -465,7 +467,7 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class PermDeleteAction extends PermAction
     {
         public PermDeleteAction()
@@ -475,7 +477,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class PermAdminAction extends PermAction
     {
         public PermAdminAction()

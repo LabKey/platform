@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.data.*" %>
 <%@ page import="org.labkey.biotrue.controllers.BtController" %>
 <%@ page import="org.labkey.api.view.DetailsView" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <% ServerForm form = (ServerForm) __form;
     BtServer server = form.getServer();
@@ -36,7 +37,7 @@
             table.getColumn("PhysicalRoot")
     });
     ButtonBar bb = new ButtonBar();
-    if (getContainer().hasPermission(getUser(), ACL.PERM_UPDATE))
+    if (getContainer().hasPermission(getUser(), UpdatePermission.class))
     {
         bb.add(new ActionButton("Synchronize", server.urlFor(BtController.SynchronizeServerAction.class)));
     }

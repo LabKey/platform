@@ -21,6 +21,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -294,7 +295,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         try
         {
-            if (user == null || !getContainer().hasPermission(user, ACL.PERM_DELETE))
+            if (user == null || !getContainer().hasPermission(user, DeletePermission.class))
             {
                 throw new SQLException("Attempting to delete an ExperimentRun without having delete permissions for its container");
             }

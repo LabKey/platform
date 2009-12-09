@@ -23,7 +23,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.UpdatePermission;
 
 /**
  * User: jeckels
@@ -45,7 +45,7 @@ public class ExperimentRunGroupsView extends VBox
             protected void populateButtonBar(DataView view, ButtonBar bar)
             {
                 ActionButton createButton = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(c, currentURL, false), "Create new group");
-                createButton.setDisplayPermission(ACL.PERM_UPDATE);
+                createButton.setDisplayPermission(UpdatePermission.class);
                 createButton.setActionType(ActionButton.Action.LINK);
                 bar.add(createButton);
 

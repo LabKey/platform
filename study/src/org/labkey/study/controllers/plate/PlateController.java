@@ -18,8 +18,9 @@ package org.labkey.study.controllers.plate;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.*;
 import org.labkey.api.study.*;
 import org.labkey.api.study.assay.PlateUrls;
@@ -71,7 +72,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -114,7 +115,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PlateTemplateListAction extends SimpleViewAction<PlateTemplateListForm>
     {
         public ModelAndView getView(PlateTemplateListForm plateTemplateListForm, BindException errors) throws Exception
@@ -130,7 +131,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DesignerServiceAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -161,7 +162,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PlateDetailsAction extends SimpleViewAction<RowIdForm>
     {
         public ModelAndView getView(RowIdForm form, BindException errors) throws Exception
@@ -211,7 +212,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class DesignerAction extends SimpleViewAction<NameForm>
     {
         public ModelAndView getView(NameForm form, BindException errors) throws Exception
@@ -251,7 +252,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class DeleteAction extends SimpleViewAction<NameForm>
     {
         public ModelAndView getView(NameForm form, BindException errors) throws Exception
@@ -344,7 +345,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class CopyTemplateAction extends FormViewAction<CopyForm>
     {
         public void validateCommand(CopyForm form, Errors errors)
@@ -376,13 +377,13 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class HandleCopyAction extends CopyTemplateAction
     {
         public void validateCommand(CopyForm form, Errors errors)
         {
             Container destination = ContainerManager.getForPath(form.getDestination());
-            if (destination == null || !destination.hasPermission(getUser(), ACL.PERM_INSERT))
+            if (destination == null || !destination.hasPermission(getUser(), InsertPermission.class))
                 errors.reject("copyForm", "Destination container does not exist or permission is denied.");
 
             PlateTemplate destinationTemplate = null;
@@ -404,7 +405,7 @@ public class PlateController extends SpringActionController
         {
             Container destination = ContainerManager.getForPath(form.getDestination());
             // earlier validation should prevent a null or inaccessible destination container:
-            if (destination == null || !destination.hasPermission(getUser(), ACL.PERM_INSERT))
+            if (destination == null || !destination.hasPermission(getUser(), InsertPermission.class))
             {
                 errors.reject("copyForm", "The destination is invalid or you do not have INSERT privileges on the specified container");
                 return false;

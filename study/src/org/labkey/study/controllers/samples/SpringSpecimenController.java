@@ -48,6 +48,8 @@ import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.query.*;
 import org.labkey.study.requirements.RequirementProvider;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.ByteArrayAttachmentFile;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
@@ -106,7 +108,7 @@ public class SpringSpecimenController extends BaseStudyController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o)
@@ -179,7 +181,7 @@ public class SpringSpecimenController extends BaseStudyController
 
     private static final String SELECTED_SAMPLES_SESSION_ATTRIB_KEY = SpringSpecimenController.class.getName() + "/SelectedSamples";
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SelectedSamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>
     {
         private boolean _vialView;
@@ -241,7 +243,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>
     {
         private boolean _vialView;
@@ -494,7 +496,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SampleEventsAction extends SimpleViewAction<ViewEventForm>
     {
         private boolean _showingSelectedSamples;
@@ -602,7 +604,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class HandleAddRequestSamplesAction extends RedirectAction<AddToSampleRequestForm>
     {
         public boolean doAction(AddToSampleRequestForm addToSampleRequestForm, BindException errors) throws Exception
@@ -1013,7 +1015,7 @@ public class SpringSpecimenController extends BaseStudyController
             if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
             {
                 ActionButton insertButton = new ActionButton("showCreateSampleRequest.view", "Create New Request", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                insertButton.setDisplayPermission(ACL.PERM_INSERT);
+                insertButton.setDisplayPermission(InsertPermission.class);
                 grid.setButtons(Collections.singletonList((DisplayElement) insertButton));
             }
             else
@@ -1031,7 +1033,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class HandleRemoveRequestSamplesAction extends FormHandlerAction<AddToSampleRequestForm>
     {
         public void validateCommand(AddToSampleRequestForm target, Errors errors)
@@ -1649,7 +1651,7 @@ public class SpringSpecimenController extends BaseStudyController
             HttpView.throwUnauthorized();
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class ShowAddToSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
         public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
@@ -1960,7 +1962,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class RequestHistoryAction extends SimpleViewAction<IdForm>
     {
         private int _requestId;
@@ -2082,7 +2084,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SpecimenRequestConfigRequired extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2713,7 +2715,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class TypeSummaryReportAction extends SpecimenVisitReportAction<TypeSummaryReportFactory>
     {
         public TypeSummaryReportAction()
@@ -2724,7 +2726,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class TypeParticipantReportAction extends SpecimenVisitReportAction<TypeParticipantReportFactory>
     {
         public TypeParticipantReportAction()
@@ -2735,7 +2737,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class RequestReportAction extends SpecimenVisitReportAction<RequestReportFactory>
     {
         public RequestReportAction()
@@ -2746,7 +2748,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class TypeCohortReportAction extends SpecimenVisitReportAction<TypeCohortReportFactory>
     {
         public TypeCohortReportAction()
@@ -2757,7 +2759,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class RequestSiteReportAction extends SpecimenVisitReportAction<RequestSiteReportFactory>
     {
         public RequestSiteReportAction()
@@ -2768,7 +2770,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantSummaryReportAction extends SpecimenVisitReportAction<ParticipantSummaryReportFactory>
     {
         public ParticipantSummaryReportAction()
@@ -2779,7 +2781,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantTypeReportAction extends SpecimenVisitReportAction<ParticipantTypeReportFactory>
     {
         public ParticipantTypeReportAction()
@@ -2790,7 +2792,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantSiteReportAction extends SpecimenVisitReportAction<ParticipantSiteReportFactory>
     {
         public ParticipantSiteReportAction()
@@ -2801,7 +2803,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class RequestEnrollmentSiteReportAction extends SpecimenVisitReportAction<RequestEnrollmentSiteReportFactory>
     {
         public RequestEnrollmentSiteReportAction()
@@ -2812,7 +2814,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class RequestParticipantReportAction extends SpecimenVisitReportAction<RequestParticipantReportFactory>
     {
         public RequestParticipantReportAction()
@@ -2894,7 +2896,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class AutoReportListAction extends SimpleViewAction
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -3305,7 +3307,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ImportSpecimenData extends SimpleViewAction<PipelineForm>
     {
         private String _path = null;
@@ -3360,7 +3362,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SubmitSpecimenImport extends FormHandlerAction<PipelineForm>
     {
         public void validateCommand(PipelineForm target, Errors errors)
@@ -3454,7 +3456,7 @@ public class SpringSpecimenController extends BaseStudyController
 
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<AttachmentForm>
     {
         public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception

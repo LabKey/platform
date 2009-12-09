@@ -18,6 +18,7 @@ package org.labkey.experiment;
 import org.labkey.api.view.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -68,7 +69,7 @@ public class ProtocolWebPart extends WebPartView
             deleteProtUrl.setAction(ExperimentController.DeleteProtocolByRowIdsAction.class);
             deleteProtocol.setURL(deleteProtUrl);
             deleteProtocol.setActionType(ActionButton.Action.POST);
-            deleteProtocol.setDisplayPermission(ACL.PERM_DELETE);
+            deleteProtocol.setDisplayPermission(DeletePermission.class);
             deleteProtocol.setRequiresSelection(true);
             bb.add(deleteProtocol);
 
@@ -77,7 +78,7 @@ public class ProtocolWebPart extends WebPartView
             exportURL.setAction(ExperimentController.ExportProtocolsOptionsAction.class);
             exportProtocols.setURL(exportURL);
             exportProtocols.setActionType(ActionButton.Action.POST);
-            exportProtocols.setDisplayPermission(ACL.PERM_DELETE);
+            exportProtocols.setDisplayPermission(DeletePermission.class);
             exportProtocols.setRequiresSelection(true);
             bb.add(exportProtocols);
 

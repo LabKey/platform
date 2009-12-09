@@ -24,6 +24,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -58,7 +59,7 @@ public class SecurityController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -77,7 +78,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SaveStudyPermissionsAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -152,7 +153,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ApplyDatasetPermissionsAction extends FormHandlerAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -297,7 +298,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ReportPermissionsAction extends FormViewAction<PermissionsForm>
     {
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors) throws Exception
@@ -411,7 +412,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class StudySecurityAction extends FormHandlerAction<StudySecurityForm>
     {
         public void validateCommand(StudySecurityForm target, Errors errors)

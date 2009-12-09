@@ -46,8 +46,8 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -119,7 +119,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object form, BindException errors) throws Exception
@@ -190,7 +190,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DefineAndImportListAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -235,7 +235,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CancelDefineAndImportListAction extends SimpleViewAction<ListDefinitionForm>
     {
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
@@ -253,7 +253,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -263,7 +263,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -281,7 +281,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class EditListDefinitionAction extends FormViewAction<EditListDefinitionForm>
     {
         private ListDefinition _list;
@@ -331,7 +331,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteListDefinitionAction extends FormViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -365,7 +365,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GridAction extends SimpleViewAction<ListQueryForm>
     {
         private ListDefinition _list;
@@ -561,7 +561,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
         @Override
@@ -599,7 +599,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class UpdateAction extends InsertUpdateAction
     {
         @Override
@@ -666,7 +666,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -773,7 +773,7 @@ public class ListController extends SpringActionController
     // Users can change the PK of a list item, so we don't want to store PK in discussion source URL (back link
     // from announcements to the object).  Instead, we tell discussion service to store a URL with ListId and
     // EntityId.  This action resolves to the current details URL for that item.
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ResolveAction extends SimpleRedirectAction<ListDefinitionForm>
     {
         public ActionURL getRedirectURL(ListDefinitionForm form) throws Exception
@@ -789,7 +789,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class UploadListItemsAction extends FormViewAction<UploadListItemsForm>
     {
         private ListDefinition _list;
@@ -838,7 +838,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class HistoryAction extends SimpleViewAction<ListQueryForm>
     {
         private ListDefinition _list;
@@ -856,7 +856,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class HistoryDetailAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -880,7 +880,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ListItemDetailsAction extends SimpleViewAction
     {
         private ListDefinition _list;
@@ -1051,7 +1051,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<AttachmentForm>
     {
         public ModelAndView getView(final AttachmentForm form, BindException errors) throws Exception

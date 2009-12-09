@@ -20,7 +20,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
@@ -99,7 +101,7 @@ public class SampleSetWebPart extends QueryView
     public static void populateButtonBar(ViewContext model, ButtonBar bb, boolean detailsView)
     {
         ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
-        deleteButton.setDisplayPermission(ACL.PERM_DELETE);
+        deleteButton.setDisplayPermission(DeletePermission.class);
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
         deleteURL.addParameter("returnURL", model.getActionURL().toString());
         deleteButton.setURL(deleteURL);
@@ -110,7 +112,7 @@ public class SampleSetWebPart extends QueryView
         ActionButton uploadMaterialsButton = new ActionButton(ExperimentController.ShowUploadMaterialsAction.class, "Import Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);
         ActionURL uploadURL = new ActionURL(ExperimentController.ShowUploadMaterialsAction.class, model.getContainer());
         uploadMaterialsButton.setURL(uploadURL);
-        uploadMaterialsButton.setDisplayPermission(ACL.PERM_UPDATE);
+        uploadMaterialsButton.setDisplayPermission(UpdatePermission.class);
         bb.add(uploadMaterialsButton);
 
         bb.add(new ActionButton(ExperimentController.UpdateMaterialSourceAction.class, "Submit", DataRegion.MODE_UPDATE));
@@ -120,7 +122,7 @@ public class SampleSetWebPart extends QueryView
         ActionButton setAsActiveButton = new ActionButton(setAsActiveURL.toString(), "Set as Active", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
         setAsActiveButton.setURL(setAsActiveURL);
         setAsActiveButton.setActionType(ActionButton.Action.POST);
-        setAsActiveButton.setDisplayPermission(ACL.PERM_UPDATE);
+        setAsActiveButton.setDisplayPermission(UpdatePermission.class);
         setAsActiveButton.setRequiresSelection(!detailsView);
         bb.add(setAsActiveButton);
 
@@ -128,7 +130,7 @@ public class SampleSetWebPart extends QueryView
         showAllURL.setAction(ExperimentController.ShowAllMaterialsAction.class);
         ActionButton showAllButton = new ActionButton(showAllURL.toString(), "Show All Materials", DataRegion.MODE_GRID);
         showAllButton.setURL(showAllURL);
-        showAllButton.setDisplayPermission(ACL.PERM_READ);
+        showAllButton.setDisplayPermission(ReadPermission.class);
         bb.add(showAllButton);
     }
 

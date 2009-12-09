@@ -30,6 +30,7 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.*;
@@ -202,7 +203,7 @@ public class AssayManager implements AssayService.Interface
         for (Iterator<Container> iter = containers.iterator(); iter.hasNext();)
         {
             Container container = iter.next();
-            boolean hasPermission = container.hasPermission(user, ACL.PERM_INSERT);
+            boolean hasPermission = container.hasPermission(user, InsertPermission.class);
             boolean hasPipeline = PipelineService.get().hasValidPipelineRoot(container);
             if (!hasPermission || !hasPipeline)
             {

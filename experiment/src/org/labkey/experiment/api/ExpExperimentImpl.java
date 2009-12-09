@@ -28,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
 
 import java.sql.SQLException;
 import java.util.Set;
@@ -187,7 +188,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     {
         try
         {
-            if (!getContainer().hasPermission(user, ACL.PERM_DELETE))
+            if (!getContainer().hasPermission(user, DeletePermission.class))
             {
                 throw new IllegalStateException("Not permitted");
             }

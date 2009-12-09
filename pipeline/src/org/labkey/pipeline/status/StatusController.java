@@ -23,7 +23,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
@@ -105,7 +106,7 @@ public class StatusController extends SpringActionController
         return c;
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -185,7 +186,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowListAction extends ShowListBaseAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -199,7 +200,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowListRegionAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -210,7 +211,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowPartRegionAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -273,7 +274,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DetailsAction extends DetailsBaseAction<RowIdForm>
     {
         public void validateCommand(RowIdForm target, Errors errors)
@@ -304,7 +305,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowDataAction extends SimpleRedirectAction<RowIdForm>
     {
         public ActionURL getRedirectURL(RowIdForm form) throws Exception
@@ -326,7 +327,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowFolderAction extends SimpleRedirectAction<RowIdForm>
     {
         public ActionURL getRedirectURL(RowIdForm form) throws Exception
@@ -347,7 +348,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class ProviderActionAction extends DetailsBaseAction<ProviderActionForm>
     {
         ActionURL _urlSuccess;
@@ -420,7 +421,7 @@ public class StatusController extends SpringActionController
                 .addParameter(ShowFileForm.Params.filename, filename);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowFileAction extends SimpleStreamAction<ShowFileForm>
     {
         public void render(ShowFileForm form, BindException errors, PrintWriter out) throws Exception
@@ -555,7 +556,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class RunActionAction extends PerformStatusActionBase<ActionForm>
     {
         public boolean handlePost(ActionForm form, BindException errors) throws Exception
@@ -597,7 +598,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DeleteStatusAction extends PerformStatusActionBase
     {
         public void handleSelect(SelectStatusForm form) throws Exception
@@ -606,7 +607,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class CompleteStatusAction extends PerformStatusActionBase
     {
         public void handleSelect(SelectStatusForm form) throws Exception
@@ -615,7 +616,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class EscalateJobFailureAction extends SimpleViewAction<RowIdForm>
     {
         public ModelAndView getView(RowIdForm form, BindException errors) throws Exception
@@ -648,7 +649,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class EscalateAction extends ShowListBaseAction<EscalateMessageForm>
     {
         public void validateCommand(EscalateMessageForm target, Errors errors)
@@ -854,7 +855,7 @@ public class StatusController extends SpringActionController
         String referer = PipelineController.RefererValues.portal.toString();
         ButtonBar bb = new ButtonBar();
 
-        if (c.hasPermission(user, ACL.PERM_INSERT) && uriRoot != null)
+        if (c.hasPermission(user, InsertPermission.class) && uriRoot != null)
         {
             ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, referer);
             ActionButton button = new ActionButton(url, "Process and Import Data");
@@ -918,7 +919,7 @@ public class StatusController extends SpringActionController
 
         ButtonBar bb = new ButtonBar();
 
-        if (c.hasPermission(user, ACL.PERM_INSERT) && uriRoot != null)
+        if (c.hasPermission(user, InsertPermission.class) && uriRoot != null)
         {
             ActionButton button = new ActionButton("browse.view", "Process and Import Data");
             button.setActionType(ActionButton.Action.LINK);
@@ -938,7 +939,7 @@ public class StatusController extends SpringActionController
         retryStatus.setRequiresSelection(true);
         retryStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())
-            retryStatus.setDisplayPermission(ACL.PERM_UPDATE);
+            retryStatus.setDisplayPermission(UpdatePermission.class);
         retryStatus.setVisible(false);
         bb.add(retryStatus);
 
@@ -946,14 +947,14 @@ public class StatusController extends SpringActionController
         deleteStatus.setRequiresSelection(true);
         deleteStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())
-            deleteStatus.setDisplayPermission(ACL.PERM_DELETE);
+            deleteStatus.setDisplayPermission(DeletePermission.class);
         bb.add(deleteStatus);
 
         ActionButton completeStatus = new ActionButton("completeStatus.view", "Complete");
         completeStatus.setRequiresSelection(true);
         completeStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())
-            completeStatus.setDisplayPermission(ACL.PERM_UPDATE);
+            completeStatus.setDisplayPermission(UpdatePermission.class);
         bb.add(completeStatus);
 
         // Display the "Show Queue" button, if this is not the Enterprise Pipeline,
@@ -1008,7 +1009,7 @@ public class StatusController extends SpringActionController
 
         ActionButton showGrid = new ActionButton("showList.view?.lastFilter=true", "Show Grid");
         showGrid.setActionType(ActionButton.Action.LINK);
-        showGrid.setDisplayPermission(ACL.PERM_READ);
+        showGrid.setDisplayPermission(ReadPermission.class);
         bb.add(showGrid);
 
         if (c == null || c.isRoot())

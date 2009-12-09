@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.attachments.AttachmentService" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -120,10 +122,10 @@ function renderBrowser(rootPath, dir)
         ,allowChangeDirectory:false
         ,actions:{drop:dropAction, configure:configureAction}
         ,tbar:['download','deletePath','refresh'
-        <%=c.hasPermission(context.getUser(),ACL.PERM_INSERT)?",'uploadTool'":""%>
+        <%=c.hasPermission(context.getUser(), InsertPermission.class) ? ",'uploadTool'" : ""%>
         ,'->'
         , new Ext.form.Label({html:'File Set:&nbsp;'}), combo
-        <%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>
+        <%=c.hasPermission(context.getUser(), AdminPermission.class) ? ",'configure'" : ""%>
         ]
     });
 
@@ -163,10 +165,10 @@ var fileSets = [
         if (StringUtils.equals(me.getFileSet(),name))
             selectedValue = value;
     }
-    if (c.hasPermission(context.getUser(),ACL.PERM_ADMIN))
-    {
+        if (c.hasPermission(context.getUser(), AdminPermission.class))
+        {
 //        out.write(",[" + q(new ActionURL(FileContentController.ShowAdminAction.class,c).getLocalURIString()) + ",'[configure]']");
-    }
+        }
 %>
 ];
 var selectedValue = <%=q(selectedValue)%>;

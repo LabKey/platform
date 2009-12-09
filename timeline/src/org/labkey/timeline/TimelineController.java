@@ -18,8 +18,8 @@ package org.labkey.timeline;
 
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
@@ -34,7 +34,7 @@ public class TimelineController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

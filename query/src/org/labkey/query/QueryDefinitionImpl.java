@@ -27,6 +27,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
@@ -100,8 +101,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     public boolean canEdit(User user)
-    {    
-        return getContainer().hasPermission(user, ACL.PERM_ADMIN);
+    {
+        return getContainer().hasPermission(user, AdminPermission.class);
     }
 
     public CustomView getCustomView(User user, HttpServletRequest request, String name)

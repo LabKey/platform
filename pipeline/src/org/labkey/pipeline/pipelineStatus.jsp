@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 private Object outputJob(String status, PipelineJob job,
@@ -70,7 +71,7 @@ private Object outputJob(String status, PipelineJob job,
     Container c = getViewContext().getContainer();
     User user = getViewContext().getUser();
 
-    boolean canCancel = c.hasPermission(user, ACL.PERM_DELETE);
+    boolean canCancel = c.hasPermission(user, DeletePermission.class);
     boolean canClear = canCancel;
     boolean isAdmin = user.isAdministrator();
 

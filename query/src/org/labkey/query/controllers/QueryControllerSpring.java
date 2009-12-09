@@ -31,10 +31,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
-import org.labkey.api.security.permissions.EditSharedViewPermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -171,7 +168,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends QueryViewAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -187,7 +184,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SchemaAction extends QueryViewAction
     {
         public SchemaAction() {}
@@ -216,7 +213,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class NewQueryAction extends FormViewAction<NewQueryForm>
     {
         NewQueryForm _form;
@@ -313,7 +310,7 @@ public class QueryControllerSpring extends SpringActionController
 
 
 /*
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class RenameQueryAction extends FormViewAction<NewQueryForm>
     {
         NewQueryForm _form;
@@ -349,7 +346,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 */
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SourceQueryAction extends FormViewAction<SourceForm>
     {
         SourceForm _form;
@@ -449,7 +446,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteQueryAction extends ConfirmAction<QueryForm>
     {
         QueryForm _form;
@@ -480,7 +477,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExecuteQueryAction extends QueryViewAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -519,7 +516,7 @@ public class QueryControllerSpring extends SpringActionController
 
 
     // for backwards compat same as _executeQuery.view ?_print=1
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PrintRowsAction extends ExecuteQueryAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -571,7 +568,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
@@ -588,7 +585,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportRowsExcelAction extends _ExportQuery
     {
         void _export(QueryForm form, QueryView view) throws Exception
@@ -598,7 +595,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportExcelTemplateAction extends _ExportQuery
     {
         void _export(QueryForm form, QueryView view) throws Exception
@@ -608,7 +605,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExportRowsTsvAction extends _ExportQuery
     {
         void _export(QueryForm form, QueryView view) throws Exception
@@ -623,7 +620,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            if (!getContainer().hasPermission(getUser(), ACL.PERM_READ))
+            if (!getContainer().hasPermission(getUser(), ReadPermission.class))
             {
                 if (!getUser().isGuest())
                     HttpView.throwUnauthorized();
@@ -648,7 +645,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ExcelWebQueryDefinitionAction extends SimpleViewAction<QueryForm>
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -684,7 +681,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CreateSnapshotAction extends FormViewAction<QuerySnapshotForm>
     {
         ActionURL _successURL;
@@ -741,7 +738,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class EditSnapshotAction extends FormViewAction<QuerySnapshotForm>
     {
         ActionURL _successURL;
@@ -810,7 +807,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateSnapshotAction extends SimpleViewAction<QuerySnapshotForm>
     {
         public ModelAndView getView(QuerySnapshotForm form, BindException errors) throws Exception
@@ -828,7 +825,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class MetadataServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -837,7 +834,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class MetadataQueryAction extends FormViewAction<QueryForm>
     {
         QueryDefinition _query = null;
@@ -884,7 +881,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DesignQueryAction extends FormViewAction<DesignForm>
     {
         DesignForm _form;
@@ -980,7 +977,7 @@ public class QueryControllerSpring extends SpringActionController
 //    }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ChooseColumnsAction extends FormViewAction<ChooseColumnsForm>
     {
         ActionURL _returnURL = null;
@@ -1124,7 +1121,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
     {
         PropertiesForm _form = null;
@@ -1210,7 +1207,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteQueryRowsAction extends FormHandlerAction<QueryForm>
     {
         ActionURL _url = null;
@@ -1550,7 +1547,7 @@ public class QueryControllerSpring extends SpringActionController
 
 
     @ActionNames("selectRows, getQuery")
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
     public class SelectRowsAction extends ApiAction<APIQueryForm>
     {
@@ -1623,7 +1620,7 @@ public class QueryControllerSpring extends SpringActionController
 
     protected boolean isQueryEditable(TableInfo table)
     {
-        if (!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_UPDATE | ACL.PERM_INSERT | ACL.PERM_DELETE))
+        if (!getViewContext().getContainer().hasPermission(getUser(), DeletePermission.class))
             return false;
         return table != null && table.getUpdateService() != null;
     }
@@ -1697,7 +1694,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.1)
     public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
     {
@@ -2004,7 +2001,7 @@ public class QueryControllerSpring extends SpringActionController
 
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     @ApiVersion(8.3)
     public class UpdateRowsAction extends BaseSaveRowsAction
     {
@@ -2032,7 +2029,7 @@ public class QueryControllerSpring extends SpringActionController
 
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     @ApiVersion(8.3)
     public class InsertRowsAction extends BaseSaveRowsAction
     {
@@ -2061,7 +2058,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @ActionNames("deleteRows, delRows")
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     @ApiVersion(8.3)
     public class DeleteRowsAction extends BaseSaveRowsAction
     {
@@ -2115,7 +2112,7 @@ public class QueryControllerSpring extends SpringActionController
 
             if("insert".equalsIgnoreCase(command))
             {
-                if(!container.hasPermission(user, ACL.PERM_INSERT))
+                if(!container.hasPermission(user, InsertPermission.class))
                     throw new UnauthorizedException("You do not have permissions to insert data into this folder.");
                 if (!table.hasPermission(user, ACL.PERM_INSERT))
                     throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -2128,7 +2125,7 @@ public class QueryControllerSpring extends SpringActionController
             }
             else if("update".equalsIgnoreCase(command))
             {
-                if(!container.hasPermission(user, ACL.PERM_UPDATE))
+                if(!container.hasPermission(user, UpdatePermission.class))
                     throw new UnauthorizedException("You do not have permissions to update data into this folder.");
                 if (!table.hasPermission(user, ACL.PERM_UPDATE))
                     throw new UnauthorizedException("You do not have permission to update data into this table.");
@@ -2141,7 +2138,7 @@ public class QueryControllerSpring extends SpringActionController
             }
             else if("delete".equalsIgnoreCase(command))
             {
-                if(!container.hasPermission(user, ACL.PERM_DELETE))
+                if(!container.hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException("You do not have permissions to delete data into this folder.");
                 if (!table.hasPermission(user, ACL.PERM_DELETE))
                     throw new UnauthorizedException("You do not have permission to delete data into this table.");
@@ -2161,7 +2158,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ApiTestAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2176,7 +2173,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class AdminAction extends SimpleViewAction<QueryForm>
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -2344,7 +2341,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class EditExternalSchemaAction extends FormViewAction<DbUserSchemaForm>
     {
 		public void validateCommand(DbUserSchemaForm form, Errors errors)
@@ -2447,7 +2444,7 @@ public class QueryControllerSpring extends SpringActionController
 
 
     // UNDONE: should use POST, change to FormHandlerAction
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class AdminReloadDbUserSchemaAction extends SimpleViewAction<DbUserSchemaForm>
     {
         public ModelAndView getView(DbUserSchemaForm form, BindException errors) throws Exception
@@ -2481,7 +2478,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class TableInfoAction extends SimpleViewAction<TableInfoForm>
     {
         public ModelAndView getView(TableInfoForm form, BindException errors) throws Exception
@@ -2516,7 +2513,7 @@ public class QueryControllerSpring extends SpringActionController
 
     
     // UNDONE: should use POST, change to FormHandlerAction
-    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class DeleteViewAction extends SimpleViewAction<DeleteViewForm>
     {
         public ModelAndView getView(DeleteViewForm form, BindException errors) throws Exception
@@ -2592,7 +2589,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class ManageViewsAction extends SimpleViewAction<QueryForm>
     {
         QueryForm _form;
@@ -2612,7 +2609,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class InternalDeleteView extends ConfirmAction<InternalViewForm>
     {
         public ModelAndView getConfirmView(InternalViewForm form, BindException errors) throws Exception
@@ -2638,7 +2635,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
     {
         public void validateCommand(InternalSourceViewForm target, Errors errors)
@@ -2676,7 +2673,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class InternalNewViewAction extends FormViewAction<InternalNewViewForm>
     {
         int _customViewId = 0;
@@ -2702,7 +2699,7 @@ public class QueryControllerSpring extends SpringActionController
         {
             if (form.ff_share)
             {
-                if (!getContainer().hasPermission(getUser(),ACL.PERM_ADMIN))
+                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
                     HttpView.throwUnauthorized();
             }
             CstmView[] existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
@@ -2762,7 +2759,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class SelectNoneAction extends ApiAction<SelectForm>
     {
         public SelectNoneAction()
@@ -2792,7 +2789,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class SelectAllAction extends ApiAction<SelectAllForm>
     {
         public SelectAllAction()
@@ -2832,7 +2829,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class SetCheckAction extends ApiAction<SetCheckForm>
     {
         public SetCheckAction()
@@ -2902,7 +2899,7 @@ public class QueryControllerSpring extends SpringActionController
         return x.getMessage();
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.3)
     public class GetSchemasAction extends ApiAction
     {
@@ -2974,7 +2971,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetQueriesAction extends ApiAction<GetQueriesForm>
     {
         public ApiResponse execute(GetQueriesForm form, BindException errors) throws Exception
@@ -3093,7 +3090,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetQueryViewsAction extends ApiAction<GetQueryViewsForm>
     {
         public ApiResponse execute(GetQueryViewsForm form, BindException errors) throws Exception

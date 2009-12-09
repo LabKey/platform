@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Pair;
 
@@ -95,7 +96,7 @@ public class SampleSetDomainType extends DomainKind
 
     public boolean canEditDefinition(User user, Domain domain)
     {
-        return domain.getContainer().hasPermission(user, ACL.PERM_UPDATE);
+        return domain.getContainer().hasPermission(user, UpdatePermission.class);
     }
 
     public Set<String> getReservedPropertyNames(Domain domain)

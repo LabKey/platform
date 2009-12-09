@@ -33,8 +33,10 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
@@ -100,7 +102,7 @@ public class PropertyController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class PropertyServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -109,7 +111,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class GetDomainAction extends ApiAction<GetForm>
     {
         public ApiResponse execute(GetForm form, BindException errors) throws Exception
@@ -121,7 +123,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SaveDomainAction extends ApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
@@ -144,7 +146,7 @@ public class PropertyController extends SpringActionController
      * Stores a file sent by the client in a temp file and puts it in the session
      * for later use by gwt services
      */
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UploadFileForInferencingAction extends AbstractFileUploadAction
     {
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
@@ -181,7 +183,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class InferPropertiesAction extends ExportAction<InferForm>
     {
         public void export(InferForm inferForm, HttpServletResponse response, BindException errors) throws Exception

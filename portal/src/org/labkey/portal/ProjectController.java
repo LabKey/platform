@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchResultsView;
@@ -143,7 +144,7 @@ public class ProjectController extends SpringActionController
                 // message within the frame.  If the user isn't logged on, we simply show an
                 // access-denied error.  This is necessary to force the login prompt to show up
                 // for users with access who simply haven't logged on yet.  (brittp, 5.4.2007)
-                if (!c.hasPermission(getUser(), ACL.PERM_READ))
+                if (!c.hasPermission(getUser(), ReadPermission.class))
                 {
                     if (getUser().isGuest())
                         HttpView.throwUnauthorized();
@@ -161,7 +162,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -230,7 +231,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class MoveWebPartAction extends FormViewAction<MovePortletForm>
     {
         public void validateCommand(MovePortletForm target, Errors errors)
@@ -306,7 +307,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class AddWebPartAction extends FormViewAction<AddWebPartForm>
     {
         WebPartFactory _desc = null;
@@ -352,7 +353,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteWebPartAction extends FormViewAction<CustomizePortletForm>
     {
         public void validateCommand(CustomizePortletForm target, Errors errors)
@@ -479,7 +480,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CustomizeWebPartAction extends FormViewAction<CustomizePortletForm>
     {
         Portal.WebPart _webPart;
@@ -591,7 +592,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SearchResultsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -701,7 +702,7 @@ public class ProjectController extends SpringActionController
         _frameTypeMap.put("title", WebPartView.FrameType.TITLE);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetWebPartAction extends ApiAction
     {
         public static final String PARAM_WEBPART = "webpart.name";
@@ -786,7 +787,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends ApiAction<SearchForm>
     {
         public ApiResponse execute(SearchForm form, BindException errors) throws Exception
@@ -910,7 +911,7 @@ public class ProjectController extends SpringActionController
             List<Map<String,Object>> containersProps = new ArrayList<Map<String,Object>>();
             for(Container child : parent.getChildren())
             {
-                if (!child.hasPermission(user, ACL.PERM_READ))
+                if (!child.hasPermission(user, ReadPermission.class))
                     continue;
 
                 containersProps.add(getContainerProps(child, user, recurse, depth));

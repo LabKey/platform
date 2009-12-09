@@ -19,7 +19,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DisplayElement;
 
@@ -92,7 +92,7 @@ public class ProviderButtonBar extends ButtonBar
                                         "rowId=${rowId}", action.getLabel());
                                 button.setActionType(ActionButton.Action.LINK);
                                 if (!ctx.getViewContext().getUser().isAdministrator())
-                                    button.setDisplayPermission(ACL.PERM_UPDATE);
+                                    button.setDisplayPermission(UpdatePermission.class);
 
                                 elements.add(button);
                             }

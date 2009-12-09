@@ -18,13 +18,14 @@ package org.labkey.issue.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.issue.IssuesController;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -76,19 +77,19 @@ public class IssuesQueryView extends QueryView
 
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
         {
-            String viewDetailsURL = _context.cloneActionURL().setAction("detailsList.view").getEncodedLocalURIString();
+            String viewDetailsURL = _context.cloneActionURL().setAction(IssuesController.DetailsListAction.class).getEncodedLocalURIString();
             ActionButton listDetailsButton = new ActionButton("button", "View Details");
             listDetailsButton.setURL(viewDetailsURL);
             listDetailsButton.setActionType(ActionButton.Action.POST);
             listDetailsButton.setRequiresSelection(true);
-            listDetailsButton.setDisplayPermission(ACL.PERM_READ);
+            listDetailsButton.setDisplayPermission(ReadPermission.class);
             bar.add(listDetailsButton);
 
-            ActionButton adminButton = new ActionButton(_context.cloneActionURL().setAction("admin.view").getEncodedLocalURIString(), "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-            adminButton.setDisplayPermission(ACL.PERM_ADMIN);
+            ActionButton adminButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.AdminAction.class).getEncodedLocalURIString(), "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            adminButton.setDisplayPermission(AdminPermission.class);
             bar.add(adminButton);
 
-            ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction("emailPrefs.view").getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.EmailPrefsAction.class).getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             bar.add(prefsButton);
         }
     }
@@ -189,11 +190,11 @@ public class IssuesQueryView extends QueryView
     {
         super.populateReportButtonBar(bar);
 
-        ActionButton adminButton = new ActionButton(_context.cloneActionURL().setAction("admin.view").getEncodedLocalURIString(), "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-        adminButton.setDisplayPermission(ACL.PERM_ADMIN);
+        ActionButton adminButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.AdminAction.class).getEncodedLocalURIString(), "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        adminButton.setDisplayPermission(AdminPermission.class);
         bar.add(adminButton);
 
-        ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction("emailPrefs.view").getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.EmailPrefsAction.class).getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
         bar.add(prefsButton);
     }
 
@@ -215,7 +216,7 @@ public class IssuesQueryView extends QueryView
         switch (action)
         {
             case exportRowsTsv:
-                final ActionURL url =  _context.cloneActionURL().setAction("exportTsv.view");
+                final ActionURL url =  _context.cloneActionURL().setAction(IssuesController.ExportTsvAction.class);
                 for (Pair<String, String> param : super.urlFor(action).getParameters())
                 {
                     url.addParameter(param.getKey(), param.getValue());

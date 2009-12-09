@@ -36,8 +36,8 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -217,7 +217,7 @@ public class LuceneSearch
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SearchLuceneAction extends SimpleViewAction<LuceneSearchForm>
     {
         public ModelAndView getView(LuceneSearchForm form, BindException errors) throws Exception

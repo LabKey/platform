@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.ReturnURLString;
@@ -127,7 +128,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         for (ExpRun run : runs)
         {
             Container c = run.getContainer();
-            if (c.hasPermission(getViewContext().getUser(), ACL.PERM_DELETE))
+            if (c.hasPermission(getViewContext().getUser(), DeletePermission.class))
             {
                 runsWithPermission.put(run, c);
             }

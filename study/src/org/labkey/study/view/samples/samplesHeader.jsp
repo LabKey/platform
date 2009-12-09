@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="java.util.Iterator" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script>LABKEY.requiresScript('util.js');</script>
 <script>LABKEY.requiresClientAPI();</script>
@@ -41,10 +42,10 @@
    // boolean enableRequests = SampleManager.getInstance().getRepositorySettings(me.getViewContext().getContainer()).isEnableRequests();
     String vialLinkText = bean.isShowingVials() ? "Hide Vial Info" : "Show Vial Info";
 
-    if (bean.getViewContext().getContainer().hasPermission(bean.getViewContext().getUser(), ACL.PERM_ADMIN))
+    if (bean.getViewContext().getContainer().hasPermission(bean.getViewContext().getUser(), AdminPermission.class))
     {
 %>
-<%= this.textLink("Manage Study",
+<%=this.textLink("Manage Study",
         new ActionURL(StudyController.ManageStudyAction.class, bean.getViewContext().getContainer()))%>&nbsp;
 <%
     }

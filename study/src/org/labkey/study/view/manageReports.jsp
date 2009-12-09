@@ -29,6 +29,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -105,7 +106,7 @@
     else if (bean.getAdminView())
         out.println("</table>");
 
-    if (user.isAdministrator() || context.getContainer().hasPermission(user, ACL.PERM_ADMIN)) {
+    if (user.isAdministrator() || context.getContainer().hasPermission(user, AdminPermission.class)) {
 %>
         <table>
             <tr><td>&nbsp;</td></tr>

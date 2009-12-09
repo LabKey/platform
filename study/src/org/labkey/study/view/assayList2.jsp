@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();
@@ -52,9 +53,9 @@
      <% }  %>
         <br>
 <%  }
-    if (ctx.getContainer().getProject().hasPermission(ctx.getUser(), ACL.PERM_ADMIN))
+    if (ctx.getContainer().getProject().hasPermission(ctx.getUser(), AdminPermission.class))
     {
-        ActionURL actionURL = new ActionURL(AssayController.BeginAction.class,  ctx.getContainer().getProject());
+        ActionURL actionURL = new ActionURL(AssayController.BeginAction.class, ctx.getContainer().getProject());
 %>
 <%=generateButton("Manage Assays", actionURL)%>
 <%

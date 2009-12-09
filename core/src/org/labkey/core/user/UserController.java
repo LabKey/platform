@@ -27,6 +27,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -117,7 +118,7 @@ public class UserController extends SpringActionController
     {
         String columnNames = "Email, DisplayName, FirstName, LastName, Phone, Mobile, Pager, IM, Description";
 
-        if (user != null && (user.isAdministrator() || c.hasPermission(user, ACL.PERM_ADMIN)))
+        if (user != null && (user.isAdministrator() || c.hasPermission(user, AdminPermission.class)))
             columnNames = columnNames + ", UserId, Created, LastLogin, Active";
 
         return columnNames;
@@ -143,7 +144,7 @@ public class UserController extends SpringActionController
         final User user = getUser();
         Container c = getContainer();
         boolean isSiteAdmin = user.isAdministrator();
-        boolean isAnyAdmin = isSiteAdmin || c.hasPermission(user, ACL.PERM_ADMIN);
+        boolean isAnyAdmin = isSiteAdmin || c.hasPermission(user, AdminPermission.class);
 
         assert isOwnRecord || isAnyAdmin;
 
@@ -258,7 +259,7 @@ public class UserController extends SpringActionController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -481,7 +482,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)   // Root requires site admin; any other container requires PERM_ADMIN (see below)
+    @RequiresPermissionClass(AdminPermission.class)   // Root requires site admin; any other container requires PERM_ADMIN (see below)
     public class ShowUsersAction extends QueryViewAction<ShowUsersForm, QueryView>
     {
         private static final String DATA_REGION_NAME = "Users";
@@ -520,7 +521,7 @@ public class UserController extends SpringActionController
                 {
                     super.populateButtonBar(view, bar);
                     boolean isSiteAdmin = getUser().isAdministrator();
-                    boolean isAnyAdmin = isSiteAdmin || getContainer().hasPermission(getUser(), ACL.PERM_ADMIN);
+                    boolean isAnyAdmin = isSiteAdmin || getContainer().hasPermission(getUser(), AdminPermission.class);
                     populateUserGridButtonBar(bar, isSiteAdmin, isAnyAdmin);
                 }
             };
@@ -588,7 +589,7 @@ public class UserController extends SpringActionController
         else
         {
             // Must be project admin to view outside the root...
-            if (!c.hasPermission(user, ACL.PERM_ADMIN))
+            if (!c.hasPermission(user, AdminPermission.class))
                 HttpView.throwUnauthorized();
 
             // ...and user must be a project member
@@ -627,7 +628,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ShowUserHistoryAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -860,7 +861,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UserAccessAction extends SimpleViewAction<UserForm>
     {
         private boolean _showNavTrail;
@@ -946,7 +947,7 @@ public class UserController extends SpringActionController
         }
         else
         {
-            if (c.hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (c.hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Project Members", new UserUrlsImpl().getProjectMembersURL(c));
         }
 
@@ -980,7 +981,7 @@ public class UserController extends SpringActionController
 
             Container c = getContainer();
             boolean isSiteAdmin = user.isAdministrator();
-            boolean hasAdminPerm = c.hasPermission(user, ACL.PERM_ADMIN);
+            boolean hasAdminPerm = c.hasPermission(user, AdminPermission.class);
             boolean isAnyAdmin = isSiteAdmin || hasAdminPerm;
 
             DataRegion rgn = getGridRegion(isOwnRecord);
@@ -1421,7 +1422,7 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class GetUsersAction extends ApiAction<GetUsersForm>
     {
         protected static final String PROP_USER_ID = "userId";
@@ -1568,7 +1569,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ImpersonateAction extends SimpleRedirectAction<ImpersonateForm>
     {
         public ActionURL getRedirectURL(ImpersonateForm form) throws Exception

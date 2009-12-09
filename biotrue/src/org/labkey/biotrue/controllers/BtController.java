@@ -26,8 +26,8 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.biotrue.datamodel.BtManager;
@@ -65,7 +65,7 @@ public class BtController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -90,7 +90,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BrowseAction extends SimpleViewAction<ServerForm>
     {
         public ModelAndView getView(ServerForm form, BindException errors) throws Exception
@@ -132,7 +132,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class DownloadAction extends SimpleViewAction<ServerForm>
     {
         public ModelAndView getView(ServerForm form, BindException errors) throws Exception
@@ -153,7 +153,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class SynchronizeServerAction extends SimpleViewAction<ServerForm>
     {
         public ModelAndView getView(ServerForm form, BindException errors) throws Exception
@@ -178,7 +178,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowServersAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -198,7 +198,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ShowServerAction extends SimpleViewAction<ServerForm>
     {
         String _label;
@@ -217,7 +217,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class NewServerAction extends FormViewAction<NewServerForm>
     {
         private ActionURL _detailsURL;
@@ -340,7 +340,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class AdminAction extends FormViewAction
     {
         public void validateCommand(Object target, Errors errors)
@@ -387,7 +387,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ScheduledSyncAction extends FormViewAction<ServerUpdateForm>
     {
         public void validateCommand(ServerUpdateForm target, Errors errors)
@@ -423,7 +423,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ConfigurePasswordAction extends FormViewAction<ServerUpdateForm>
     {
         public void validateCommand(ServerUpdateForm target, Errors errors)
@@ -456,7 +456,7 @@ public class BtController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CancelSynchronizationAction extends SimpleViewAction<ServerForm>
     {
         public ModelAndView getView(ServerForm form, BindException errors) throws Exception

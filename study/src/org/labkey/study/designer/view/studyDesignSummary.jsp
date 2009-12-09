@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.designer.client.model.*" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = HttpView.currentContext().getContainer();
@@ -45,7 +46,7 @@
         return;
     }
     //Shouldn't happen, but being defensive
-    if (!info.getContainer().equals(study.getContainer()) && !info.getContainer().hasPermission(HttpView.currentContext().getUser(), ACL.PERM_READ))
+    if (!info.getContainer().equals(study.getContainer()) && !info.getContainer().hasPermission(HttpView.currentContext().getUser(), ReadPermission.class))
     {%>
         Study protocol is in another folder you do not have permission to read.
 <%

@@ -30,8 +30,8 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataValidator;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -53,7 +53,7 @@ import java.io.File;
  * User: jeckels
  * Date: Jan 14, 2009
  */
-@RequiresPermission(ACL.PERM_INSERT)
+@RequiresPermissionClass(InsertPermission.class)
 @ApiVersion(9.1)
 public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
 {

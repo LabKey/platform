@@ -25,8 +25,7 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
@@ -92,7 +91,7 @@ public class PipelineController extends SpringActionController
         return p;
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o)
@@ -101,7 +100,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ReturnToRefererAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o)
@@ -414,7 +413,7 @@ public class PipelineController extends SpringActionController
         }        
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BrowseAction extends SimpleViewAction<PathForm>
     {
         public BrowseAction()
@@ -476,7 +475,7 @@ public class PipelineController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ActionsAction extends ApiAction<PathForm>
     {
         public ApiResponse execute(PathForm form, BindException errors) throws Exception
@@ -785,7 +784,7 @@ public class PipelineController extends SpringActionController
     /////////////////////////////////////////////////////////////////////////
     //  Email notifications
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UpdateEmailNotificationAction extends AbstractSetupAction<EmailNotificationForm>
     {
         protected SetupField getFormField()
@@ -1006,7 +1005,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ResetEmailNotificationAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -1017,7 +1016,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CompleteUserAction extends AjaxCompletionAction<CompleteUserForm>
     {
         public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
@@ -1104,7 +1103,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class CancelJobAction extends SimpleRedirectAction<JobIdForm>
     {
         public ActionURL getRedirectURL(JobIdForm form) throws Exception
@@ -1165,7 +1164,7 @@ public class PipelineController extends SpringActionController
 /////////////////////////////////////////////////////////////////////////////
 //  File download support
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<PathForm>
     {
         public ModelAndView getView(PathForm form, BindException errors) throws Exception

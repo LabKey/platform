@@ -21,6 +21,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.designer.StudyDesignManager;
@@ -80,14 +84,14 @@ public class StudyDesignsWebPart extends GridView
             }
         });
         ButtonBar bb = new ButtonBar();
-        if (ctx.getContainer().hasPermission(ctx.getUser(), ACL.PERM_INSERT))
+        if (ctx.getContainer().hasPermission(ctx.getUser(), InsertPermission.class))
         {
             helper.addParameter("edit", "true");
             bb.add(new ActionButton("New Protocol", helper));
         }
         if (inPortal)
         {
-            if (ctx.getContainer().hasPermission(ctx.getUser(), ACL.PERM_UPDATE))
+            if (ctx.getContainer().hasPermission(ctx.getUser(), UpdatePermission.class))
             {
                 ActionURL adminURL = new ActionURL(DesignerController.BeginAction.class, ctx.getContainer());
                 bb.add(new ActionButton("Manage Protocols", adminURL));
@@ -95,15 +99,15 @@ public class StudyDesignsWebPart extends GridView
         }
         else
         {
-            if (ctx.getContainer().hasPermission(ctx.getUser(), ACL.PERM_DELETE))
+            if (ctx.getContainer().hasPermission(ctx.getUser(), DeletePermission.class))
             {
                 dr.setShowRecordSelectors(true);
                 bb.add(ActionButton.BUTTON_DELETE);
             }
             else
                 dr.setShowRecordSelectors(false);
-            
-            if (ctx.getContainer().getProject().hasPermission(ctx.getUser(), ACL.PERM_ADMIN))
+
+            if (ctx.getContainer().getProject().hasPermission(ctx.getUser(), AdminPermission.class))
             {
                 ActionURL templateHelper = helper.clone();
                 templateHelper.setAction(DesignerController.EditTemplateAction.class);

@@ -22,9 +22,10 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HelpTopic;
@@ -63,7 +64,7 @@ public class caBIGController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -99,7 +100,7 @@ public class caBIGController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class PublishAction extends AbstractPublishAction
     {
         protected void doAction() throws Exception
@@ -109,7 +110,7 @@ public class caBIGController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UnpublishAction extends AbstractPublishAction
     {
         protected void doAction() throws Exception
@@ -120,7 +121,7 @@ public class caBIGController extends SpringActionController
 
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class PublishAllAction extends AbstractPublishAction
     {
         protected void doAction() throws Exception
@@ -130,7 +131,7 @@ public class caBIGController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class UnpublishAllAction extends AbstractPublishAction
     {
         protected void doAction() throws Exception
@@ -168,7 +169,7 @@ public class caBIGController extends SpringActionController
         for (String id : containerIds)
         {
             Container c = ContainerManager.getForId(id);
-            if (!c.hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (!c.hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException();
 
             state.setState(c);
@@ -176,7 +177,7 @@ public class caBIGController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class AdminAction extends SimpleViewAction<ReturnUrlForm>
     {
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception

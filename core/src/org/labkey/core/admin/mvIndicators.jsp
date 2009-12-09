@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -56,7 +57,7 @@
                             linkContainer = linkContainer.getParent();
                     }
 
-                    boolean hasLinkPermission = linkContainer.hasPermission(HttpView.currentContext().getUser(), ACL.PERM_ADMIN);
+                    boolean hasLinkPermission = linkContainer.hasPermission(HttpView.currentContext().getUser(), AdminPermission.class);
 
                     ActionURL inheritURL = HttpView.currentContext().cloneActionURL();
                     inheritURL.setContainer(linkContainer);

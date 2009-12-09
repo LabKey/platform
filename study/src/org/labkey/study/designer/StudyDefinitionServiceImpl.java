@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
@@ -49,7 +50,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
 
     public GWTStudyDesignVersion save(GWTStudyDefinition def)
     {
-        if (!getContainer().hasPermission(getUser(), ACL.PERM_UPDATE))
+        if (!getContainer().hasPermission(getUser(), UpdatePermission.class))
         {
             GWTStudyDesignVersion result = new GWTStudyDesignVersion();
             result.setSaveSuccessful(false);

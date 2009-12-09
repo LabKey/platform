@@ -33,6 +33,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
@@ -144,7 +145,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             assert orig.getDomainURI().equals(update.getDomainURI());
             List<String> errors = new ArrayList<String>();
 
-            if (!getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (!getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 errors.add("Unauthorized");
                 return errors;
@@ -265,7 +266,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         {
             List<String> errors = new ArrayList<String>();
 
-            if (!getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (!getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 errors.add("Unauthorized");
                 return errors;

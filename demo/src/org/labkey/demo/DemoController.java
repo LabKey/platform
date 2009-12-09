@@ -21,7 +21,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.demo.model.DemoManager;
@@ -63,7 +64,7 @@ public class DemoController extends SpringActionController
     /**
      * This is a minimal Spring controller, so it doesn't have getViewContext()
      */
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends AbstractController implements NavTrailAction
     {
         public ModelAndView handleRequestInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
@@ -90,7 +91,7 @@ public class DemoController extends SpringActionController
      * Here is another Spring controller using a Spring base class
      */
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class InsertAction extends SimpleFormController implements NavTrailAction, Validator
     {
         public InsertAction()
@@ -111,8 +112,7 @@ public class DemoController extends SpringActionController
 
         protected ModelAndView showForm(HttpServletRequest request, HttpServletResponse response, BindException errors, Map controlModel) throws Exception
         {
-            InsertView insertView = new InsertView(getDataRegion(), errors);
-            return insertView;
+            return new InsertView(getDataRegion(), errors);
         }
 
         protected ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response, Object command, BindException errors) throws Exception
@@ -150,7 +150,7 @@ public class DemoController extends SpringActionController
      *
      * Using PersonForm (rather than Person) to make UpdateView reshow work  
      */
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class UpdateAction extends FormViewAction<PersonForm>
     {
         Person _person = null;
@@ -187,8 +187,7 @@ public class DemoController extends SpringActionController
                 form.refreshFromDb();
             _person = form.getBean();
 
-            UpdateView updateView = new UpdateView(form, errors);
-            return updateView;
+            return new UpdateView(form, errors);
         }
 
         public ActionURL getSuccessURL(PersonForm personForm)
@@ -227,7 +226,7 @@ public class DemoController extends SpringActionController
      *
      * Note this returns a true ModelAndView.  bulkUpdate.jsp looks like a typical Spring jsp
      */
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermissionClass(UpdatePermission.class)
     public class BulkUpdateAction extends FormViewAction<BulkUpdateForm> implements NavTrailAction
     {
         public ModelAndView getView(BulkUpdateForm form, boolean reshow, BindException errors) throws Exception
@@ -291,7 +290,7 @@ public class DemoController extends SpringActionController
      * This pattern is actually a little different than a typical form.  Should have a ConfirmViewAction
      * base class
      */
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteAction extends FormViewAction
     {
         public HttpView getView(Object o, boolean reshow, BindException errors) throws Exception
@@ -335,24 +334,24 @@ public class DemoController extends SpringActionController
 
         DisplayColumn col = rgn.getDisplayColumn("RowId");
         col.setURL("update.view?rowId=${RowId}");
-        col.setDisplayPermission(ACL.PERM_UPDATE);
+        col.setDisplayPermission(UpdatePermission.class);
 
         ButtonBar gridButtonBar = new ButtonBar();
         rgn.setShowRecordSelectors(true);
 
         ActionButton delete = new ActionButton("delete.post", "Delete");
         delete.setActionType(ActionButton.Action.POST);
-        delete.setDisplayPermission(ACL.PERM_DELETE);
+        delete.setDisplayPermission(DeletePermission.class);
         gridButtonBar.add(delete);
 
         ActionButton insert = new ActionButton("insert.view", "Add Person");
         insert.setURL(new InsertAction().getURL().getLocalURIString());
-        insert.setDisplayPermission(ACL.PERM_INSERT);
+        insert.setDisplayPermission(InsertPermission.class);
         gridButtonBar.add(insert);
 
         ActionButton update = new ActionButton("bulkUpdate.view", "Bulk Update");
         update.setURL(new BulkUpdateAction().getURL().getLocalURIString());
-        update.setDisplayPermission(ACL.PERM_UPDATE);
+        update.setDisplayPermission(UpdatePermission.class);
         gridButtonBar.add(update);
 
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
@@ -638,7 +637,7 @@ public class DemoController extends SpringActionController
 
 
     /** Test action not related to demo data */
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BindAction extends SimpleViewAction<BindActionBean>
     {
         public BindAction()

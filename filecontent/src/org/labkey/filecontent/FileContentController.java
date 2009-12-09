@@ -27,10 +27,8 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
@@ -86,7 +84,7 @@ public class FileContentController extends SpringActionController
    }
 */
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
         File file;
@@ -161,8 +159,7 @@ public class FileContentController extends SpringActionController
                 {
                     URLHelper url = new URLHelper(HttpView.getContextURL());
                     url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
-                    HttpView iframeView = new IFrameView(url.getLocalURIString());
-                    return iframeView;
+                    return new IFrameView(url.getLocalURIString());
                 }
                 case INCLUDE:
                 case INLINE:
@@ -214,8 +211,7 @@ public class FileContentController extends SpringActionController
                 {
                     URLHelper url = new URLHelper(HttpView.getContextURL());
                     url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
-                    HttpView imgView = new ImgView(url.getLocalURIString());
-                    return imgView;
+                    return new ImgView(url.getLocalURIString());
                 }
                 default:
                     return null;
@@ -247,7 +243,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresPermission(ACL.PERM_READ)
+   @RequiresPermissionClass(ReadPermission.class)
    public class FrameAction extends SimpleViewAction<SrcForm>
    {
        public ModelAndView getView(SrcForm srcForm, BindException errors) throws Exception
@@ -263,7 +259,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<FileContentForm>
     {
         public ModelAndView getView(FileContentForm form, BindException errors) throws Exception
@@ -312,7 +308,7 @@ public class FileContentController extends SpringActionController
 
 
 
-   @RequiresPermission(ACL.PERM_INSERT)
+   @RequiresPermissionClass(InsertPermission.class)
    public class AddAttachmentAction extends FormViewAction<AttachmentForm>
    {
        HttpView _closeView = null;
@@ -392,7 +388,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresPermission(ACL.PERM_DELETE)
+   @RequiresPermissionClass(DeletePermission.class)
    public class DeleteAttachmentAction extends ConfirmAction<AttachmentForm>
    {
        HttpView _closeView = null;
@@ -418,7 +414,6 @@ public class FileContentController extends SpringActionController
 
        public boolean handlePost(AttachmentForm form, BindException errors) throws Exception
        {
-           AttachmentDirectory dir;
            try
            {
                _closeView = AttachmentService.get().delete(getUser(), getAttachmentParent(form), form.getName());
@@ -480,8 +475,7 @@ public class FileContentController extends SpringActionController
                }
                form.setRootPath(path);
            }
-           JspView adminView = new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form, errors);
-           return adminView;
+           return new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form, errors);
        }
 
 

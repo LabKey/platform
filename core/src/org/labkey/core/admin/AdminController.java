@@ -39,6 +39,7 @@ import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.*;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
@@ -566,7 +567,7 @@ public class AdminController extends SpringActionController
 
 /*
     @ActionNames("projectSettings, lookAndFeelSettings")
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ProjectSettingsAction extends FormViewAction<ProjectSettingsForm>
     {
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
@@ -851,7 +852,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ResetLogoAction extends SimpleRedirectAction
     {
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
@@ -871,7 +872,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ResetPropertiesAction extends SimpleRedirectAction
     {
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
@@ -910,7 +911,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ResetFaviconAction extends SimpleRedirectAction
     {
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
@@ -939,7 +940,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteCustomStylesheetAction extends SimpleRedirectAction
     {
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
@@ -2503,7 +2504,7 @@ public class AdminController extends SpringActionController
 
 
     // TODO: Check permissions, what if guests have read perm?, different containers?
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SetAdminModeAction extends SimpleRedirectAction<UserPrefsForm>
     {
         public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
@@ -2516,7 +2517,7 @@ public class AdminController extends SpringActionController
 
 
     // TODO: Check permissions, what if guests have read perm?, different containers?
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class SetShowFoldersAction extends SimpleRedirectAction<UserPrefsForm>
     {
         public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
@@ -2576,7 +2577,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DefineWebThemesAction extends SimpleViewAction<WebThemeForm>
     {
         public ModelAndView getView(WebThemeForm form, BindException errors) throws Exception
@@ -2629,7 +2630,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SaveWebThemeAction extends AbstractWebThemeAction
     {
         protected void handleTheme(WebThemeForm form, ActionURL successURL) throws SQLException
@@ -2654,7 +2655,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteWebThemeAction extends AbstractWebThemeAction
     {
         protected void handleTheme(WebThemeForm form, ActionURL redirectURL) throws SQLException
@@ -3167,7 +3168,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class FolderAliasesAction extends FormViewAction<FolderAliasesForm>
     {
         public void validateCommand(FolderAliasesForm target, Errors errors)
@@ -3287,7 +3288,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteCustomEmailAction extends SimpleRedirectAction<CustomEmailForm>
     {
         public ActionURL getRedirectURL(CustomEmailForm form) throws Exception
@@ -3332,7 +3333,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ManageFoldersAction extends SimpleViewAction<ManageFoldersForm>
     {
         public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
@@ -3451,7 +3452,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class RenameFolderAction extends FormViewAction<ManageFoldersForm>
     {
         private ActionURL _returnURL;
@@ -3522,7 +3523,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ShowMoveFolderTreeAction extends SimpleViewAction<ManageFoldersForm>
     {
         public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
@@ -3557,7 +3558,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class MoveFolderAction extends SimpleViewAction<ManageFoldersForm>
     {
         public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
@@ -3574,7 +3575,7 @@ public class AdminController extends SpringActionController
                 return new MoveFolderTreeView(form, errors);    // Redisplay the move folder tree
             }
 
-            if (!newParent.hasPermission(getUser(), ACL.PERM_ADMIN))
+            if (!newParent.hasPermission(getUser(), AdminPermission.class))
                 HttpView.throwUnauthorized();
 
             if (newParent.hasChild(c.getName()))
@@ -3615,7 +3616,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ConfirmProjectMoveAction extends SimpleViewAction<ManageFoldersForm>
     {
         public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
@@ -3631,7 +3632,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CreateFolderAction extends FormViewAction<ManageFoldersForm>
     {
         private ActionURL _successURL;
@@ -3726,7 +3727,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     @ActionNames("folderSettings, customize")
     public class FolderSettingsAction extends FormViewAction<FolderSettingsForm>
     {
@@ -3946,7 +3947,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
     {
         public void validateCommand(ManageFoldersForm target, Errors errors)
@@ -4000,7 +4001,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class ReorderFoldersAction extends FormViewAction<FolderReorderForm>
     {
         public void validateCommand(FolderReorderForm target, Errors errors)
@@ -4151,7 +4152,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class EmailTestAction extends SimpleViewAction<EmailTestForm>
     {
         public ModelAndView getView(EmailTestForm form, BindException errors) throws Exception

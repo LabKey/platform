@@ -24,6 +24,7 @@ import org.labkey.api.gwt.client.model.GWTMaterial;
 import org.labkey.api.gwt.client.model.GWTSampleSet;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.samplechooser.client.SampleSetService;
 
@@ -68,7 +69,7 @@ public class SampleSetServiceImpl extends BaseRemoteService implements SampleSet
             return null;
         }
 
-        if (!set.getContainer().hasPermission(getUser(), ACL.PERM_READ))
+        if (!set.getContainer().hasPermission(getUser(), ReadPermission.class))
         {
             return null;
         }

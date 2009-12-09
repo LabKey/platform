@@ -27,6 +27,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
@@ -128,7 +129,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
 
     public boolean canEdit(User user)
     {
-        return getContainer().hasPermission(user, ACL.PERM_ADMIN);
+        return getContainer().hasPermission(user, AdminPermission.class);
     }
 
     public void delete(User user) throws Exception

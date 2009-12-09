@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -82,17 +84,19 @@ var discussionMenu = {};
                 %>{text:'Show discussion',url:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
         }
-        if ((me.allowMultipleDiscussions || announcements.length == 0) && c.hasPermission(context.getUser(), ACL.PERM_INSERT))
+        if ((me.allowMultipleDiscussions || announcements.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
         {
             %>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',url:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},
             <%
         }
         %>],[{text:'Email preferences',url:discussionMenu.emailPreferencesUrl}<%
-        if (c.hasPermission(context.getUser(), ACL.PERM_ADMIN))
+        if (c.hasPermission(context.getUser(), AdminPermission.class))
         {
-            %>,
+            %>
+        ,
     {text:'Email admin',url:discussionMenu.adminEmailUrl},
-    {text:'Customize',url:discussionMenu.customizeUrl}<%
+    {text:'Customize',url:discussionMenu.customizeUrl}
+        <%
         }
         %>]];
 

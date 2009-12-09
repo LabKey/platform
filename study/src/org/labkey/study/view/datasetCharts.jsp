@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -36,7 +37,7 @@
     User user = ctx.getUser();
     Container c = ctx.getContainer();
 
-    boolean updateAccess = c.hasPermission(user, ACL.PERM_READ);
+    boolean updateAccess = c.hasPermission(user, ReadPermission.class);
     int columns = bean.getChartsPerRow();
     int columnCount = 0;
     String plotAction = bean.getAction() == null ? "plot" : bean.getAction();

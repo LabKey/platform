@@ -33,13 +33,11 @@ import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -146,7 +144,7 @@ public class AnnouncementsController extends SpringActionController
 
     // Anyone with read permission can attempt to view the list.  AnnouncementWebPart will do further permission checking.  For example,
     //   in a secure message board, those without Editor permissions will only see messages when they are on the member list
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -173,7 +171,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ListAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -215,7 +213,7 @@ public class AnnouncementsController extends SpringActionController
                 {
                     User user = UserManager.getUser(((Integer)ctx.get("userId")).intValue());
 
-                    if (ctx.getContainer().hasPermission(user, ACL.PERM_READ))
+                    if (ctx.getContainer().hasPermission(user, ReadPermission.class))
                         super.renderTableRow(ctx, out, renderers, realRowIndex++);  // rowIndex doesn't know anything about filtering  TODO: Change DataRegion to handle this better in 8.2
                 }
             };
@@ -306,7 +304,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class BulkEditAction extends FormViewAction<BulkEditEmailPrefsForm>
     {
         private URLHelper _returnUrl;
@@ -340,7 +338,7 @@ public class AnnouncementsController extends SpringActionController
                     int userId = rs.getInt("UserId");
                     User user = UserManager.getUser(userId);
 
-                    if (!c.hasPermission(user, ACL.PERM_READ))
+                    if (!c.hasPermission(user, ReadPermission.class))
                         continue;
 
                     AnnouncementManager.EmailPref emailPref = new AnnouncementManager.EmailPref();
@@ -461,7 +459,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_DELETE)
+    @RequiresPermissionClass(DeletePermission.class)
     public class DeleteThreadsAction extends RedirectAction
     {
         public boolean doAction(Object o, BindException errors) throws Exception
@@ -808,7 +806,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class DownloadAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(final AttachmentForm form, final AttachmentParent parent) throws Exception
@@ -894,7 +892,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class CustomizeAction extends FormViewAction<DiscussionService.Settings>
     {
         public ActionURL getSuccessURL(DiscussionService.Settings form)
@@ -957,7 +955,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
         private URLHelper _returnURL;
@@ -1081,7 +1079,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class InsertAction extends BaseInsertAction
     {
         public void validateCommand(AnnouncementForm form, Errors errors)
@@ -1126,7 +1124,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class RespondAction extends BaseInsertAction
     {
         private Announcement _parent;
@@ -1172,7 +1170,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     // Different action to prevent validation and add a different NavTrail
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class InsertNoteAction extends InsertAction
     {
         @Override
@@ -1273,7 +1271,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(InsertPermission.class)
     public class CompleteUserAction extends AjaxCompletionAction<AjaxCompletionForm>
     {
         public List<AjaxCompletion> getCompletions(AjaxCompletionForm form, BindException errors) throws Exception
@@ -1535,7 +1533,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ThreadAction extends SimpleViewAction<AnnouncementForm>
     {
         private String _title;
@@ -1725,7 +1723,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(AdminPermission.class)
     public class SetDefaultEmailOptionsAction extends RedirectAction<EmailDefaultSettingsForm>
     {
         public boolean doAction(EmailDefaultSettingsForm form, BindException errors) throws Exception
@@ -2260,9 +2258,9 @@ public class AnnouncementsController extends SpringActionController
         {
             this.settings = settings;
             filterText = getFilterText(settings, displayAll, isFiltered, rowLimit);
-            customizeURL = c.hasPermission(user, ACL.PERM_ADMIN) ? getCustomizeURL(c, url) : null;
+            customizeURL = c.hasPermission(user, AdminPermission.class) ? getCustomizeURL(c, url) : null;
             emailPrefsURL = user.isGuest() ? null : getEmailPreferencesURL(c, url);
-            emailManageURL = c.hasPermission(user, ACL.PERM_ADMIN) ? getAdminEmailURL(c, url) : null;
+            emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
             insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
             includeGroups = perm.includeGroups();
         }
@@ -2539,7 +2537,7 @@ public class AnnouncementsController extends SpringActionController
                 String conversations = settings.getConversationName().toLowerCase() + "s";
                 ActionButton delete = new ActionButton("deleteThreads.post", "Delete");
                 delete.setActionType(ActionButton.Action.GET);
-                delete.setDisplayPermission(ACL.PERM_DELETE);
+                delete.setDisplayPermission(DeletePermission.class);
                 delete.setRequiresSelection(true, "Are you sure you want to delete these " + conversations + "?");
                 bb.add(delete);
 

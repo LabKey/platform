@@ -23,13 +23,14 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ViewRequestsHeaderBean> me = (JspView<SpringSpecimenController.ViewRequestsHeaderBean>) HttpView.currentView();
     ViewContext context = me.getViewContext();
     SpringSpecimenController.ViewRequestsHeaderBean bean = me.getModelBean();
     ActionURL userLink = context.cloneActionURL();
-    if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN) || context.getUser().isAdministrator())
+    if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class) || context.getUser().isAdministrator())
     {
 %>
 <%= textLink("Customize View", bean.getView().getCustomizeURL()) %>
