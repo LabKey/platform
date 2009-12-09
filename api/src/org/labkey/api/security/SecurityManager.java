@@ -1252,6 +1252,9 @@ public class SecurityManager
     }
 
 
+    // Marker to cache misses
+    private static final Group NULL_GROUP = new Group();
+
     public static Group getGroup(int groupId)
     {
         Group group = (Group) Cache.getShared().get(GROUP_CACHE_PREFIX + groupId);
@@ -1266,7 +1269,8 @@ public class SecurityManager
                         new Object[] {groupId},
                         Group.class);
                 assert groups.length <= 1;
-                group = groups.length == 0 ? null : groups[0];
+                group = groups.length == 0 ? NULL_GROUP : groups[0];
+
                 Cache.getShared().put(GROUP_CACHE_PREFIX + groupId, group);
             }
             catch (SQLException e)
@@ -1276,7 +1280,7 @@ public class SecurityManager
             }
         }
 
-        return group;
+        return NULL_GROUP != group ? group : null;
     }
 
     public static UserPrincipal getPrincipal(int id)

@@ -216,11 +216,8 @@ public class DatabaseCache<ValueType>
             scope.beginTransaction();
             assertTrue(scope.isTransactionActive());
 
-            if (TransactionCacheMap.ENABLE_READ_THROUGH)
-            {
-                // Test read-through transaction cache
-                assertTrue(cache.get("key_11") == values[11]);
-            }
+            // Test read-through transaction cache
+            assertTrue(cache.get("key_11") == values[11]);
 
             cache.remove("key_" + 11);
             assertTrue(null == cache.get("key_11"));

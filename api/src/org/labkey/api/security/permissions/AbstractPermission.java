@@ -18,12 +18,11 @@ package org.labkey.api.security.permissions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.security.UserPrincipal;
 
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /*
 * User: Dave

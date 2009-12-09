@@ -19,22 +19,24 @@ package org.labkey.api.collections;
 public class CacheStats implements Comparable<CacheStats>
 {
     private final String _description;
-    private final long _hits;
+    private final long _gets;
     private final long _misses;
     private final long _puts;
     private final long _expirations;
     private final long _removes;
+    private final long _clears;
     private final long _size;
 
 
-    public CacheStats(String description, long hits, long misses, long puts, long expirations, long removes, long size)
+    public CacheStats(String description, long gets, long misses, long puts, long expirations, long removes, long clears, long size)
     {
         _description = description;
-        _hits = hits;
+        _gets = gets;
         _misses = misses;
         _puts = puts;
         _expirations = expirations;
         _removes = removes;
+        _clears = clears;
         _size = size;
     }
 
@@ -43,9 +45,14 @@ public class CacheStats implements Comparable<CacheStats>
         return _description;
     }
 
-    public long getHits()
+    public long getSize()
     {
-        return _hits;
+        return _size;
+    }
+
+    public long getGets()
+    {
+        return _gets;
     }
 
     public long getMisses()
@@ -58,20 +65,14 @@ public class CacheStats implements Comparable<CacheStats>
         return _puts;
     }
 
-    public long getTotal()
+    public long getRemoves()
     {
-        return _hits + _misses;
+        return _removes;
     }
 
-    public double getMissRatio()
+    public long getClears()
     {
-        long total = getTotal();
-        return 0 != total ? getMisses() / (double)total : 0;
-    }
-
-    public long getSize()
-    {
-        return _size;
+        return _clears;
     }
 
     public long getExpirations()
@@ -79,9 +80,10 @@ public class CacheStats implements Comparable<CacheStats>
         return _expirations;
     }
 
-    public long getRemoves()
+    public double getMissRatio()
     {
-        return _removes;
+        long gets = getGets();
+        return 0 != gets ? getMisses() / (double)gets : 0;
     }
 
     public int compareTo(CacheStats cs2)

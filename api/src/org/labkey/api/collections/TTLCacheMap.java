@@ -133,6 +133,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
         Entry<K, V> e = findOrAddEntry(key);
         V prev = e.setValue(value);
+        trackPut(value);
         ((TTLCacheEntry) e)._expires = timeToLive == -1 ? -1 : System.currentTimeMillis() + timeToLive;
         testOldestEntry();
         return prev;

@@ -245,11 +245,12 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected static class Stats
     {
-        private AtomicLong puts = new AtomicLong(0);
+        private AtomicLong gets = new AtomicLong(0);
         private AtomicLong misses = new AtomicLong(0);
-        private AtomicLong hits = new AtomicLong(0);
+        private AtomicLong puts = new AtomicLong(0);
         private AtomicLong expirations = new AtomicLong(0);
         private AtomicLong removes = new AtomicLong(0);
+        private AtomicLong clears = new AtomicLong(0);
     }
 
     //
@@ -314,6 +315,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         size = 0;
         head.prev = head;
         head.next = head;
+        trackClear();
     }
 
 
@@ -330,6 +332,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     {
         Entry<K, V> e = findOrAddEntry(key);
         V prev = e.setValue(value);
+        trackPut(value);
         testOldestEntry();
         return prev;
     }
@@ -345,14 +348,22 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    public V trackGet(V value)
+    protected V trackGet(V value)
     {
+        stats.gets.incrementAndGet();
+
         if (value == null)
             stats.misses.incrementAndGet();
-        else
-            stats.hits.incrementAndGet();
 
         return value;
+    }
+
+
+    protected void trackPut(V value)
+    {
+        //assert null != value;
+
+        stats.puts.incrementAndGet();
     }
 
 
@@ -362,9 +373,15 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    public void trackRemove()
+    protected void trackRemove()
     {
         stats.removes.incrementAndGet();
+    }
+
+
+    protected void trackClear()
+    {
+        stats.clears.incrementAndGet();
     }
 
 
@@ -382,7 +399,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     private CacheStats getCacheStats(Stats stats, int size)
     {
-        return new CacheStats(getDebugName(), stats.hits.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), size);
+        return new CacheStats(getDebugName(), stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size);
     }
 
 

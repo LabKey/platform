@@ -16,9 +16,9 @@
 package org.labkey.api.security.permissions;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.UserPrincipal;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,7 +32,12 @@ public class AdminPermission extends AbstractPermission
 {
     public AdminPermission()
     {
-        super("Administrate", "Users may perform general administration");
+        this("Administrate", "Users may perform general administration");
+    }
+
+    protected AdminPermission(String name, String description)
+    {
+        super(name, description);
     }
 
     @NotNull

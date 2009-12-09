@@ -15,12 +15,9 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Set;
+import org.labkey.api.security.permissions.*;
 
 /*
 * User: Dave

@@ -25,10 +25,7 @@ import org.labkey.api.collections.TTLCacheMap;
 */
 public class TransactionCacheMap<K, V> extends TTLCacheMap<K, V>
 {
-    // TODO: Remove this flag once we've tested read-through capability
-    static final boolean ENABLE_READ_THROUGH = true;
-
-    private boolean _hasWritten = !ENABLE_READ_THROUGH;
+    private boolean _hasWritten = false;
     private final TTLCacheMap<K, V> _sharedCacheMap;
 
     // A read-through transaction cache.  Reads through to the passed-in shared cache map until any write occurs, at which
