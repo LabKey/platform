@@ -50,12 +50,12 @@
     <table>
         <% for (AssayProvider provider : providers) { %>
         <tr>
-            <td><input name="providerName" type="radio" value="<%= h(provider.getName()) %>"/></td>
-            <td><strong><%= h(provider.getName())%></strong></td>
+            <td><input id="providerName_<%=provider.getName()%>" name="providerName" type="radio" value="<%= h(provider.getName()) %>"/></td>
+            <td><label for="providerName_<%=provider.getName()%>"><strong><%= h(provider.getName())%></strong></label></td>
         </tr>
         <tr>
             <td />
-            <td><%= provider.getDescription() %></td>
+            <td><label for="providerName_<%=provider.getName()%>"><%= provider.getDescription() %></label></td>
         </tr>
         <% } %>
         <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
@@ -66,10 +66,10 @@
                 boolean canCreateInProject = project.hasPermission(getViewContext().getUser(), DesignAssayPermission.class);
         %>
         <tr>
-            <td><input name="createInProject" type="checkbox" value="true" <%=canCreateInProject ? "checked" : ""%> <%=canCreateInProject ? "" : "disabled"%>></td>
-            <td><span class="<%=canCreateInProject ? "" : "labkey-disabled"%>">
+            <td><input id="createInProject" name="createInProject" type="checkbox" value="true" <%=canCreateInProject ? "checked" : ""%> <%=canCreateInProject ? "" : "disabled"%>></td>
+            <td><label for="createInProject"><span class="<%=canCreateInProject ? "" : "labkey-disabled"%>">
                 Create assay in project folder so it can be shared in sub-folders?
-                </span>
+                </span></label>
                 <% if (!canCreateInProject) { %>
                     <br><em>Requires project administrator permission.</em>
                 <% } %>
