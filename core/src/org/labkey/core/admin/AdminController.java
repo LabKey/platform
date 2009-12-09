@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
@@ -27,7 +28,9 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CacheMap;
 import org.labkey.api.collections.CacheStats;
 import org.labkey.api.collections.TTLCacheMap;
@@ -39,7 +42,8 @@ import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.*;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
@@ -57,7 +61,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.jetbrains.annotations.Nullable;
 
 import javax.mail.MessagingException;
 import javax.net.ssl.HttpsURLConnection;
@@ -67,7 +70,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
 import java.io.*;
 import java.lang.management.*;
-import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
@@ -2123,35 +2125,39 @@ public class AdminController extends SpringActionController
             html.append("<tr><td colspan=4>&nbsp;</td></tr>");
 
             html.append("<tr><th>Debug Name</th>");
-            html.append("<th>Size</th><th>Expirations</th><th>Removes</th><th>Misses</th><th>Requests</th><th>Miss Percentage</th></tr>");
+            html.append("<th>Size</th><th>Gets</th><th>Misses</th><th>Puts</th><th>Expirations</th><th>Removes</th><th>Clears</th><th>Miss Percentage</th></tr>");
 
-            long misses = 0;
-            long total = 0;
             long size = 0;
+            long gets = 0;
+            long misses = 0;
+            long puts = 0;
             long expirations = 0;
             long removes = 0;
+            long clears = 0;
 
             for (CacheStats stat : stats)
             {
                 size += stat.getSize();
+                gets += stat.getGets();
+                misses += stat.getMisses();
+                puts += stat.getPuts();
                 expirations += stat.getExpirations();
                 removes += stat.getRemoves();
-                misses += stat.getMisses();
-                total += stat.getTotal();
+                clears += stat.getClears();
 
                 html.append("<tr><td>").append(stat.getDescription()).append("</td>");
 
-                appendLongs(html, stat.getSize(), stat.getExpirations(), stat.getRemoves(), stat.getMisses(), stat.getTotal());
+                appendLongs(html, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
 
                 html.append("</tr>\n");
             }
 
-            double ratio = 0 != total ? misses / (double)total : 0;
+            double ratio = 0 != gets ? misses / (double)gets : 0;
             html.append("<tr><td colspan=4>&nbsp;</td></tr>");
             html.append("<tr><td>Total</td>");
 
-            appendLongs(html, size, expirations, removes, misses, total);
+            appendLongs(html, size, gets, misses, puts, expirations, removes, clears);
             appendDoubles(html, ratio);
 
             html.append("</tr>\n</table>\n");

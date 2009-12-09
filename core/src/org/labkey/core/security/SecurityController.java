@@ -31,7 +31,6 @@ import org.labkey.api.util.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
