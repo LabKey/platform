@@ -21,10 +21,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.RReport;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.PublishStartAction;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.PageFlowUtil;
@@ -108,7 +106,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                 {
                     ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(),
                             "Copy to Study", DataRegion.MODE_GRID, ActionButton.Action.POST);
-                    publishButton.setDisplayPermission(ACL.PERM_INSERT);
+                    publishButton.setDisplayPermission(InsertPermission.class);
                     publishButton.setRequiresSelection(true);
                     publishButton.setActionType(ActionButton.Action.POST);
 

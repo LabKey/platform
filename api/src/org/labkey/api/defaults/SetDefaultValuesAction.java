@@ -211,7 +211,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             headerHtml.append("Defaults are currently defined for this table in this folder.");
         headerHtml.append("</span>");
         if (!domain.getContainer().equals(getViewContext().getContainer()) &&
-                domain.getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
+                domain.getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
         {
             ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
             url.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());

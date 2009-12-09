@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
 
 import java.util.Collections;
@@ -63,7 +64,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (container == null)
             return null;
 
-        if (!container.hasPermission(_user, ACL.PERM_READ))
+        if (!container.hasPermission(_user, ReadPermission.class))
             return null;
 
         QuerySchema qSchema = DefaultSchema.get(_user, container).getSchema(_pd.getLookupSchema());

@@ -18,8 +18,8 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -42,7 +42,7 @@ import java.sql.SQLException;
 * Date: Jul 26, 2007
 * Time: 7:09:28 PM
 */
-@RequiresPermission(ACL.PERM_INSERT)
+@RequiresPermissionClass(InsertPermission.class)
 public class PublishStartAction extends BaseAssayAction<PublishStartAction.PublishForm>
 {
     private ExpProtocol _protocol;
@@ -232,7 +232,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                 nullsFound = true;
             else
             {
-                if (!studyContainer.hasPermission(getViewContext().getUser(), ACL.PERM_INSERT))
+                if (!studyContainer.hasPermission(getViewContext().getUser(), InsertPermission.class))
                     insufficientPermissions = true;
                 containers.add(studyContainer);
             }

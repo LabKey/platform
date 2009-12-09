@@ -19,6 +19,9 @@ package org.labkey.api.data;
 
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
@@ -67,20 +70,20 @@ public class ActionButton extends DisplayElement implements Cloneable
     static
     {
         BUTTON_DELETE = new ActionButton("delete.post", "Delete");
-        BUTTON_DELETE.setDisplayPermission(ACL.PERM_DELETE);
+        BUTTON_DELETE.setDisplayPermission(DeletePermission.class);
         BUTTON_DELETE.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
         BUTTON_DELETE.lock();
         assert MemTracker.remove(BUTTON_DELETE);
 
         BUTTON_SHOW_INSERT = new ActionButton("showInsert.view", "Insert New");
         BUTTON_SHOW_INSERT.setActionType(Action.LINK);
-        BUTTON_SHOW_INSERT.setDisplayPermission(ACL.PERM_INSERT);
+        BUTTON_SHOW_INSERT.setDisplayPermission(InsertPermission.class);
         BUTTON_SHOW_INSERT.lock();
         assert MemTracker.remove(BUTTON_SHOW_INSERT);
 
         BUTTON_SHOW_UPDATE = new ActionButton("showUpdate.view", "Edit");
         BUTTON_SHOW_UPDATE.setActionType(Action.GET);
-        BUTTON_SHOW_UPDATE.setDisplayPermission(ACL.PERM_UPDATE);
+        BUTTON_SHOW_UPDATE.setDisplayPermission(UpdatePermission.class);
         BUTTON_SHOW_UPDATE.lock();
         assert MemTracker.remove(BUTTON_SHOW_UPDATE);
 

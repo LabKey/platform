@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
@@ -42,7 +43,7 @@ abstract public class DomainKind
     
     public boolean canEditDefinition(User user, Domain domain)
     {
-        return domain.getContainer().hasPermission(user, ACL.PERM_ADMIN);
+        return domain.getContainer().hasPermission(user, AdminPermission.class);
     }
 
     // Do any special handling before a PropertyDescriptor is deleted -- do nothing by default

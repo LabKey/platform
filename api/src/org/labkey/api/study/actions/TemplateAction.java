@@ -16,8 +16,8 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -38,7 +38,7 @@ import java.util.Map;
 * Date: Jul 26, 2007
 * Time: 7:23:37 PM
 */
-@RequiresPermission(ACL.PERM_INSERT)
+@RequiresPermissionClass(InsertPermission.class)
 public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 {
     ExpProtocol _protocol;

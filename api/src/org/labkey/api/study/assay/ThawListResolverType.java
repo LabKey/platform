@@ -28,6 +28,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.GWTView;
@@ -244,7 +245,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 container = ContainerManager.getForPath(containerName);
             }
 
-            if (container == null || !container.hasPermission(context.getUser(), ACL.PERM_READ))
+            if (container == null || !container.hasPermission(context.getUser(), ReadPermission.class))
             {
                 throw new ExperimentException("Could not reference container " + containerName);
             }

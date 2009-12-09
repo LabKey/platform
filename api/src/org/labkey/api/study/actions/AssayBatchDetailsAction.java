@@ -29,8 +29,8 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -38,7 +38,7 @@ import org.springframework.validation.BindException;
  * User: kevink
  * Date: Feb 11, 2009
  */
-@RequiresPermission(ACL.PERM_READ)
+@RequiresPermissionClass(ReadPermission.class)
 public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAction.AssayBatchDetailsForm>
 {
     public static class AssayBatchDetailsForm extends ProtocolIdForm
@@ -82,8 +82,8 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
         ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
         return super.appendNavTrail(root)
-            .addChild(_protocol.getName() + " Batches", batchListURL)
-            .addChild(_exp.getName() + " Details");
+                .addChild(_protocol.getName() + " Batches", batchListURL)
+                .addChild(_exp.getName() + " Details");
     }
 
     public AppBar getAppBar()

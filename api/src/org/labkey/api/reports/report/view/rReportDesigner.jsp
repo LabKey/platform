@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -47,7 +48,7 @@
             replaceParameter(RunReportView.CACHE_PARAM, String.valueOf(bean.getReportId()));
 
     boolean readOnly = (Boolean)HttpView.currentRequest().getAttribute("readOnly");
-    boolean isAdmin = context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN);
+    boolean isAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
 
     // is this report associated with a query view
     boolean hasData = bean.getQueryName() != null || bean.getSchemaName() != null;

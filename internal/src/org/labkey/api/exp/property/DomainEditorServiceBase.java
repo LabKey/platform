@@ -29,6 +29,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ViewContext;
 
@@ -151,7 +152,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
         {
             throw new IllegalArgumentException(containerId);
         }
-        else if (!container.hasPermission(getUser(), ACL.PERM_READ))
+        else if (!container.hasPermission(getUser(), ReadPermission.class))
         {
             throw new IllegalStateException("You do not have permissions to see this folder.");
         }

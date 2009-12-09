@@ -24,13 +24,13 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.PublishResultsQueryView;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
@@ -44,7 +44,7 @@ import java.util.*;
  * Date: Jul 27, 2007
  * Time: 11:02:04 AM
  */
-@RequiresPermission(ACL.PERM_INSERT)
+@RequiresPermissionClass(InsertPermission.class)
 public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.PublishConfirmForm>
 {
     private ExpProtocol _protocol;

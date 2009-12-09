@@ -297,7 +297,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (c == '_' || c == '.')
         {
             User user = HttpView.currentContext().getUser();
-            return user != null && (user.isAdministrator() || this.hasPermission(user, ACL.PERM_ADMIN));
+            return user != null && (user.isAdministrator() || this.hasPermission(user, AdminPermission.class));
         }
         else
         {

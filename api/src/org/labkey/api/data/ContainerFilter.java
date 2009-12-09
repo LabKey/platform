@@ -192,7 +192,7 @@ public abstract class ContainerFilter
             containers.add(currentContainer);
             for (Container extraContainer : _extraContainers)
             {
-                if (extraContainer.hasPermission(_user, ACL.PERM_READ))
+                if (extraContainer.hasPermission(_user, ReadPermission.class))
                 {
                     containers.add(extraContainer);
                 }
@@ -238,7 +238,7 @@ public abstract class ContainerFilter
             Set<Container> containers = new HashSet<Container>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, ACL.PERM_READ))
+            if (project != null && project.hasPermission(_user, ReadPermission.class))
             {
                 containers.add(project);
             }
@@ -263,7 +263,7 @@ public abstract class ContainerFilter
             Set<Container> containers = new HashSet<Container>();
             do
             {
-                if (currentContainer.hasPermission(_user, ACL.PERM_READ))
+                if (currentContainer.hasPermission(_user, ReadPermission.class))
                 {
                     containers.add(currentContainer);
                 }
@@ -292,12 +292,12 @@ public abstract class ContainerFilter
             Set<Container> containers = new HashSet<Container>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, ACL.PERM_READ))
+            if (project != null && project.hasPermission(_user, ReadPermission.class))
             {
                 containers.add(project);
             }
             Container shared = ContainerManager.getSharedContainer();
-            if (shared.hasPermission(_user, ACL.PERM_READ))
+            if (shared.hasPermission(_user, ReadPermission.class))
             {
                 containers.add(shared);
             }

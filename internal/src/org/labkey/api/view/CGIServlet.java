@@ -28,6 +28,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.*;
@@ -590,7 +593,7 @@ public final class CGIServlet extends HttpServlet {
             return;
         }
         User u = (User) req.getUserPrincipal();
-        if (!c.hasPermission(u, ACL.PERM_READ))
+        if (!c.hasPermission(u, ReadPermission.class))
         {
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
@@ -1133,10 +1136,10 @@ public final class CGIServlet extends HttpServlet {
 
             /** Put in labkey specific variables **/
             String perm = "READ"; //Wouldn't get this far if couldn't read
-            if (container.hasPermission(user, ACL.PERM_UPDATE))
-                    perm += ",UPDATE";
-            if (container.hasPermission(user, ACL.PERM_ADMIN))
-                    perm += ",ADMIN";
+            if (container.hasPermission(user, UpdatePermission.class))
+                perm += ",UPDATE";
+            if (container.hasPermission(user, AdminPermission.class))
+                perm += ",ADMIN";
             envp.put("LABKEY_PERM", perm);
             envp.put("LABKEY_CONTAINER_PATH", container.getPath());
             envp.put("LABKEY_CONTAINER_ID", container.getId());

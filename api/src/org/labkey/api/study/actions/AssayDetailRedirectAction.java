@@ -15,9 +15,8 @@
  */
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpRun;
@@ -25,15 +24,13 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.validation.BindException;
 /*
  * User: brittp
  * Date: Mar 17, 2009
  * Time: 1:47:38 PM
  */
 
-@RequiresPermission(ACL.PERM_READ)
+@RequiresPermissionClass(ReadPermission.class)
 public class AssayDetailRedirectAction extends SimpleRedirectAction<AssayDetailRedirectAction.AssayDetailsForm>
 {
     public static class AssayDetailsForm

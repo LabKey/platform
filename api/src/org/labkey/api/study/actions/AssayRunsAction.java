@@ -18,17 +18,16 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.study.assay.AssayRunsView;
-import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -37,7 +36,7 @@ import org.springframework.web.servlet.ModelAndView;
 * Date: Jul 26, 2007
 * Time: 7:30:05 PM
 */
-@RequiresPermission(ACL.PERM_READ)
+@RequiresPermissionClass(ReadPermission.class)
 public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsForm>
 {
     public static class AssayRunsForm extends ProtocolIdForm

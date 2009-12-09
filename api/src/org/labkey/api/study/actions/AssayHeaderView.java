@@ -27,6 +27,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -90,7 +91,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
             ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolOptionsURL(_protocol.getContainer(), _protocol);
             manageMenu.addChild("export assay design", exportURL.toString());
 
-            if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
+            if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
                 List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos = _provider.getDomains(_protocol);
                 if (!domainInfos.isEmpty())

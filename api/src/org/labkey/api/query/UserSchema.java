@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -149,7 +150,7 @@ abstract public class UserSchema extends AbstractSchema
 
     public boolean canCreate()
     {
-        return getContainer().hasPermission(getUser(), ACL.PERM_UPDATE);
+        return getContainer().hasPermission(getUser(), UpdatePermission.class);
     }
 
     public ActionURL urlFor(QueryAction action)

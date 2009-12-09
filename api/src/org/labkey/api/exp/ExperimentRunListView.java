@@ -20,7 +20,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 
@@ -110,7 +111,7 @@ public class ExperimentRunListView extends QueryView
             removeRunAction.setActionType(ActionButton.Action.POST);
             removeRunAction.setRequiresSelection(true);
 
-            removeRunAction.setDisplayPermission(ACL.PERM_DELETE);
+            removeRunAction.setDisplayPermission(DeletePermission.class);
             bar.add(removeRunAction);
         }
 
@@ -121,11 +122,11 @@ public class ExperimentRunListView extends QueryView
             deleteButton.setURL(url);
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
-            deleteButton.setDisplayPermission(ACL.PERM_DELETE);
+            deleteButton.setDisplayPermission(DeletePermission.class);
             bar.add(deleteButton);
         }
 
-        if (_showAddToExperimentButton && c.hasPermission(context.getUser(), ACL.PERM_INSERT))
+        if (_showAddToExperimentButton && c.hasPermission(context.getUser(), InsertPermission.class))
         {
             MenuButton addToExperimentButton = new MenuButton("Add to run group");
 
@@ -156,7 +157,7 @@ public class ExperimentRunListView extends QueryView
             deleteButton.setURL(url);
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
-            deleteButton.setDisplayPermission(ACL.PERM_DELETE);
+            deleteButton.setDisplayPermission(DeletePermission.class);
             bar.add(deleteButton);
         }
 

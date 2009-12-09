@@ -23,6 +23,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -79,7 +80,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
 
         // even if we don't validate that the protocol is from the current or project container,
         // but we still make sure that the current user can read from the protocol container:
-        if (!protocol.getContainer().hasPermission(form.getViewContext().getUser(), ACL.PERM_READ))
+        if (!protocol.getContainer().hasPermission(form.getViewContext().getUser(), ReadPermission.class))
             throw new NotFoundException();
 
         AssayProvider provider = AssayService.get().getProvider(protocol);

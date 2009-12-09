@@ -33,8 +33,8 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.qc.*;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.*;
@@ -1379,7 +1379,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Set<String> usedColumnNames = new HashSet<String>();
         for (final Container studyContainer : StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId()))
         {
-            if (!studyContainer.hasPermission(user, ACL.PERM_READ))
+            if (!studyContainer.hasPermission(user, ReadPermission.class))
                 continue;
 
             // We need the dataset ID as a separate column in order to display the URL

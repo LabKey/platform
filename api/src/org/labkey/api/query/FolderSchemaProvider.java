@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
 
 import java.util.*;
@@ -90,7 +91,7 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 
             QuerySchema fallback = null;
 
-            if (_user != null && child.hasPermission(_user, ACL.PERM_READ))
+            if (_user != null && child.hasPermission(_user, ReadPermission.class))
             {
                 fallback = DefaultSchema.get(_user, child);
             }

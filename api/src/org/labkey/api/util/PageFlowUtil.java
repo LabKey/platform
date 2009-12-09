@@ -34,6 +34,10 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
@@ -1645,12 +1649,12 @@ public class PageFlowUtil
         sb.append(",displayName:").append(jsString(user.getDisplayName(context)));
         sb.append(",email:").append(PageFlowUtil.jsString(user.getEmail()));
         sb.append(",sessionid:").append(jsString(getSessionId(context.getRequest())));
-        sb.append(",canInsert:").append(container.hasPermission(user, ACL.PERM_INSERT) ? "true" : "false");
-        sb.append(",canUpdate:").append(container.hasPermission(user, ACL.PERM_UPDATE) ? "true" : "false");
+        sb.append(",canInsert:").append(container.hasPermission(user, InsertPermission.class) ? "true" : "false");
+        sb.append(",canUpdate:").append(container.hasPermission(user, UpdatePermission.class) ? "true" : "false");
         sb.append(",canUpdateOwn:").append(container.hasPermission(user, ACL.PERM_UPDATEOWN) ? "true" : "false");
-        sb.append(",canDelete:").append(container.hasPermission(user, ACL.PERM_DELETE) ? "true" : "false");
+        sb.append(",canDelete:").append(container.hasPermission(user, DeletePermission.class) ? "true" : "false");
         sb.append(",canDeleteOwn:").append(container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
-        sb.append(",isAdmin:").append(container.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false");
+        sb.append(",isAdmin:").append(container.hasPermission(user, AdminPermission.class) ? "true" : "false");
         sb.append(",isSystemAdmin:").append(user.isAdministrator() ? "true" : "false");
         sb.append(",isGuest:").append(user.isGuest() ? "true" : "false");
         sb.append("}"); //end user object

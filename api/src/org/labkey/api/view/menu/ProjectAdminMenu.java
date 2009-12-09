@@ -22,6 +22,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -57,6 +58,6 @@ public class ProjectAdminMenu extends NavTreeMenu
         Container c = getViewContext().getContainer();
         Container project = c.getProject();
         User user = getViewContext().getUser();
-        return (null != project && project.isProject() && c.hasPermission(user, ACL.PERM_ADMIN));
+        return (null != project && project.isProject() && c.hasPermission(user, AdminPermission.class));
     }
 }

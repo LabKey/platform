@@ -18,6 +18,8 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
@@ -39,7 +41,7 @@ import org.springframework.validation.BindException;
  * User: kevink
  * Date: Dec 12, 2008
  */
-@RequiresPermission(ACL.PERM_READ)
+@RequiresPermissionClass(ReadPermission.class)
 public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
 {
     private ExpProtocol _protocol;
@@ -56,7 +58,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         if (!(provider instanceof AbstractAssayProvider))
             throw new RuntimeException("Assay must be derived from AbstractAssayProvider to use the AssayResultDetailsAction");
 
-        AbstractAssayProvider aap = (AbstractAssayProvider)provider;
+        AbstractAssayProvider aap = (AbstractAssayProvider) provider;
         _data = aap.getDataForDataRow(_dataRowId);
         if (_data == null)
             HttpView.throwNotFound("Assay ExpData not found for dataRowId: " + _dataRowId);
@@ -78,10 +80,10 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         ActionURL resultsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol, run.getRowId());
 
         return super.appendNavTrail(root)
-            .addChild(_protocol.getName() + " Batches", batchListURL)
-            .addChild(_protocol.getName() + " Runs", runListURL)
-            .addChild(run.getName() + " Results", resultsURL)
-            .addChild(_dataRowId + " Details");
+                .addChild(_protocol.getName() + " Batches", batchListURL)
+                .addChild(_protocol.getName() + " Runs", runListURL)
+                .addChild(run.getName() + " Results", resultsURL)
+                .addChild(_dataRowId + " Details");
     }
 
     public AppBar getAppBar()

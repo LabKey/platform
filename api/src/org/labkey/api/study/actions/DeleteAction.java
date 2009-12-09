@@ -18,31 +18,24 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
-import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.util.Set;
-import java.util.HashSet;
 
 /**
  * User: brittp
 * Date: Jul 26, 2007
 * Time: 7:23:24 PM
 */
-@RequiresPermission(ACL.PERM_READ) //will check explicity in code below
+@RequiresPermissionClass(ReadPermission.class) //will check explicity in code below
 public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
 {
     public ModelAndView getView(ProtocolIdForm protocolIdForm, BindException errors) throws Exception

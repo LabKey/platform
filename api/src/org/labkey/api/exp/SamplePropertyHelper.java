@@ -19,6 +19,7 @@ package org.labkey.api.exp;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayRunUploadContext;
@@ -109,7 +110,7 @@ public abstract class SamplePropertyHelper<ObjectType>
                     Container targetStudy = null;
                     if (defaultValueContext.getTargetStudy() != null)
                         targetStudy = ContainerManager.getForId(defaultValueContext.getTargetStudy());
-                    if (targetStudy != null && targetStudy.hasPermission(defaultValueContext.getUser(), ACL.PERM_READ))
+                    if (targetStudy != null && targetStudy.hasPermission(defaultValueContext.getUser(), ReadPermission.class))
                     {
                         if (sampleProperty.getName().equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME))
                             autoCompletePrefix = SpecimenService.get().getCompletionURLBase(targetStudy, SpecimenService.CompletionType.ParticipantId);

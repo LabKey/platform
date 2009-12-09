@@ -26,6 +26,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -488,7 +489,7 @@ public class Portal
     public static void populatePortalView(ViewContext context, String id, HttpView template)
             throws Exception
     {
-        populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN));
+        populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), AdminPermission.class));
     }
 
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean canCustomize)

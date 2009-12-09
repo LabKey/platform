@@ -17,27 +17,25 @@
 package org.labkey.api.study.actions;
 
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayResultsView;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.assay.AssayResultsView;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: brittp
-* Date: Jul 26, 2007
-* Time: 7:30:05 PM
-*/
-@RequiresPermission(ACL.PERM_READ)
-@ActionNames( "assayResults, assayData" )
+ * Date: Jul 26, 2007
+ * Time: 7:30:05 PM
+ */
+@RequiresPermissionClass(ReadPermission.class)
 public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
 {
     private ExpProtocol _protocol;

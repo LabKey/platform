@@ -15,8 +15,8 @@
  */
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.DataRegionSelection;
@@ -32,7 +32,7 @@ import java.util.Set;
  * User: jeckels
 * Date: Dec 30, 2008
 */
-@RequiresPermission(ACL.PERM_READ)
+@RequiresPermissionClass(ReadPermission.class)
 public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataAction.ShowSelectedForm>
 {
     public static class ShowSelectedForm extends ProtocolIdForm

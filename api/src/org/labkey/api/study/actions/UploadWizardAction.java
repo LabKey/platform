@@ -16,50 +16,51 @@
 
 package org.labkey.api.study.actions;
 
-    import org.labkey.api.action.SpringActionController;
-    import org.labkey.api.data.*;
-    import org.labkey.api.exp.ExperimentException;
-    import org.labkey.api.exp.api.ExpExperiment;
-    import org.labkey.api.exp.api.ExpProtocol;
-    import org.labkey.api.exp.api.ExpRun;
-    import org.labkey.api.exp.api.ExperimentService;
-    import org.labkey.api.exp.property.Domain;
-    import org.labkey.api.exp.property.DomainProperty;
-    import org.labkey.api.exp.query.ExpRunTable;
-    import org.labkey.api.gwt.client.DefaultValueType;
-    import org.labkey.api.pipeline.PipeRoot;
-    import org.labkey.api.pipeline.PipelineService;
-    import org.labkey.api.pipeline.PipelineUrls;
-    import org.labkey.api.query.PropertyValidationError;
-    import org.labkey.api.query.ValidationError;
-    import org.labkey.api.query.ValidationException;
-    import org.labkey.api.security.ACL;
-    import org.labkey.api.security.RequiresPermission;
-    import org.labkey.api.study.assay.*;
-    import org.labkey.api.util.NetworkDrive;
-    import org.labkey.api.util.PageFlowUtil;
-    import org.labkey.api.util.Pair;
-    import org.labkey.api.view.*;
-    import org.labkey.api.view.template.AppBar;
-    import org.springframework.context.MessageSourceResolvable;
-    import org.springframework.validation.BindException;
-    import org.springframework.validation.FieldError;
-    import org.springframework.validation.ObjectError;
-    import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.*;
+import org.labkey.api.study.assay.*;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.*;
+import org.labkey.api.view.template.AppBar;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.servlet.ModelAndView;
 
-    import javax.servlet.ServletException;
-    import java.io.File;
-    import java.io.IOException;
-    import java.io.Writer;
-    import java.sql.SQLException;
-    import java.util.*;
+import javax.servlet.ServletException;
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: brittp
 * Date: Jul 26, 2007
 * Time: 7:01:17 PM
 */
-@RequiresPermission(ACL.PERM_INSERT)
+@RequiresPermissionClass(InsertPermission.class)
 public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType>, ProviderType extends AssayProvider> extends BaseAssayAction<FormType>
 {
     protected ExpProtocol _protocol;

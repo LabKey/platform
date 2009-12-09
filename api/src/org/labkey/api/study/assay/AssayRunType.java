@@ -25,7 +25,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.actions.ShowSelectedDataAction;
 import org.labkey.api.study.actions.PublishStartAction;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.InsertPermission;
 
 import java.util.List;
 
@@ -67,7 +67,7 @@ public class AssayRunType extends ExperimentRunType
             if (table.getContainerFilter() != null)
                 copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
             ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
-            copySelectedButton.setDisplayPermission(ACL.PERM_INSERT);
+            copySelectedButton.setDisplayPermission(InsertPermission.class);
             copySelectedButton.setURL(copyURL);
             copySelectedButton.setRequiresSelection(true);
             copySelectedButton.setActionType(ActionButton.Action.POST);
