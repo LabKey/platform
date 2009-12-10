@@ -62,7 +62,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     /** Used to arbitrarily reorder siblings within a container. */
     private int _sortOrder;
-    private int _experimentId = -1;
     private String _description;
 
     private transient Module _defaultModule;
@@ -195,16 +194,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _sortOrder = sortOrder;
     }
 
-    public int getExperimentId()
-    {
-        return _experimentId;
-    }
-
-    public void setExperimentId(int experimentId)
-    {
-        _experimentId = experimentId;
-    }
-
     public String getDescription()
     {
         return _description;
@@ -213,11 +202,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setDescription(String description)
     {
         _description = description;
-    }
-
-    public boolean isExperiment()
-    {
-        return _experimentId > 0;
     }
 
     public Container getProject()
