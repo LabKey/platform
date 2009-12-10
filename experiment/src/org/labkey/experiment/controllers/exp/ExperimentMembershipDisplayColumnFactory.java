@@ -98,6 +98,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             {
                 ActionURL url = new ActionURL(ExperimentController.ToggleRunExperimentMembershipAction.class, ctx.getContainer());
                 out.write("<script language=\"javascript\">\n" +
+                        "LABKEY.requiresYahoo('yahoo', true);\n" +
                         "LABKEY.requiresYahoo('connection');\n" +
                         "function toggleRunExperimentMembership(expId, runId, included, dataRegionName)\n" +
                         "{\n" +

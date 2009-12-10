@@ -46,9 +46,6 @@
             longFormat |= !menuItems.add(a.getCreatedByName(me.getViewContext()) + "|" + DateUtil.formatDate(a.getCreated()));
     }
 %>
-<script type="text/javascript">
-LABKEY.requiresMenu();
-</script>
 
 <script type="text/javascript">
 if (discussionMenu)
@@ -61,7 +58,11 @@ var discussionMenu = {};
     discussionMenu.adminEmailUrl = <%=PageFlowUtil.jsString(me.adminEmailURL.getLocalURIString())%>;
     discussionMenu.customizeUrl = <%=PageFlowUtil.jsString(me.customizeURL.getLocalURIString())%>;
     discussionMenu.hideUrl = <%=PageFlowUtil.jsString(pageURL.deleteScopeParameters("discussion").addParameter("discussion.hide", "true").getLocalURIString())%>
-    discussionMenu.model = [[<%
+    discussionMenu.config =
+    {
+        id:'menuDiscussionMenu',
+        cls:'extContainer',
+        items:[<%
 
         if (me.allowMultipleDiscussions)
         {
@@ -69,64 +70,45 @@ var discussionMenu = {};
             {
                 String title = a.getTitle();
                 String help = a.getCreatedByName(me.getViewContext()) + ' ' + (longFormat ? DateUtil.formatDateTime(a.getCreated()) : DateUtil.formatDate(a.getCreated()));
-                %>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,url:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                %>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
         }
         else if (announcements.length > 0)
         {
             if (me.isDiscussionVisible)
             {
-                %>{text:'Hide discussion',url:discussionMenu.hideUrl},<%
+                %>{text:'Hide discussion',href:discussionMenu.hideUrl},<%
             }
             else
             {
                 Announcement a = announcements[0];
-                %>{text:'Show discussion',url:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
+                %>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
         }
         if ((me.allowMultipleDiscussions || announcements.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
         {
-            %>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',url:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},
-            <%
+            %>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
         }
-        %>],[{text:'Email preferences',url:discussionMenu.emailPreferencesUrl}<%
+        %>'-',{text:'Email preferences',href:discussionMenu.emailPreferencesUrl}<%
         if (c.hasPermission(context.getUser(), AdminPermission.class))
         {
-            %>
-        ,
-    {text:'Email admin',url:discussionMenu.adminEmailUrl},
-    {text:'Customize',url:discussionMenu.customizeUrl}
-        <%
+            %>,{text:'Email admin',href:discussionMenu.adminEmailUrl},
+            {text:'Customize',href:discussionMenu.customizeUrl}<%
         }
-        %>]];
-
-    discussionMenu.showEvent = function(event)
-    {
-        YAHOO.util.Event.stopPropagation(event);
-        var span = document.getElementById("discussionMenuToggle");
-        var xy = YAHOO.util.Dom.getXY(span);
-        discussionMenu.menu.moveTo(xy[0] + span.offsetWidth, xy[1]);
-        discussionMenu.menu.show();
+        %>]
     };
 
-    discussionMenu.init = function()
+    function onShow()
     {
-        YAHOO.widget.MenuItem.prototype.IMG_ROOT = LABKEY.yahooRoot + "/menu/assets/";
-        discussionMenu.menu = new YAHOO.widget.ContextMenu("menuDiscussionMenu", {context:['discussionMenuToggle','tl','tr'], position:'dynamic', visible:false});
-        discussionMenu.menu.addItems(discussionMenu.model);
-        discussionMenu.menu.render(document.body);
-        YAHOO.util.Event.addListener("discussionMenuToggle", "mousedown", discussionMenu.showEvent);
-    };
+        if (!discussionMenu.menu)
+            discussionMenu.menu = new Ext.menu.Menu(discussionMenu.config);
+        discussionMenu.menu.show('discussionMenuToggle');
+    }
+
+    Ext.onReady(function(){Ext.get("discussionMenuToggle").on("click", onShow)});
 })();
-
-    if (LABKEY.isDocumentClosed)
-        discussionMenu.init();
-    else
-        YAHOO.util.Event.addListener(window, "load", discussionMenu.init);
-
 </script>
 <span id=discussionMenuToggle>[<a href="#" onclick="return false;"><%
-
     if (announcements.length > 0)
     {
         if (me.allowMultipleDiscussions)
@@ -142,4 +124,4 @@ var discussionMenu = {};
     {
         %>discuss this<%
     }
-    %></a>]</span>
+%></a>]</span>
