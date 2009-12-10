@@ -181,14 +181,16 @@ if (null != me.getView("moduleNav"))
         anchor = StringUtils.trimToNull(request.getParameter("_anchor"));
 
     if (null != anchor && !"httpunit/1.5".equals(request.getHeader("user-agent")))
-    {%>
-    <script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script><%
+    {
+        %><script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script><%
     }
 %>
     <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
     <%=AnalyticsService.getTrackingScript()%>
+    <script type="text/javascript">
+    Ext.onReady(function(){Ext.DomHelper.insertHtml("beforeend",document.body,"<input id=seleniumExtReady name=seleniumExtReady type=hidden>");});
+    </script>
     <!--<%= request.getHeader("User-Agent") %>--><%
-
     if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
     { %>
     <!--<%= "time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms" %> --><%

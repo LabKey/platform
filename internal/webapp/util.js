@@ -271,11 +271,6 @@ function getHelpDiv()
     return _helpDiv;
 }
 
-LABKEY.requiresYahoo('yahoo', false);
-LABKEY.requiresYahoo('dom', false);
-LABKEY.requiresYahoo('event', false);
-LABKEY.requiresYahoo('dragdrop', false);
-
 function showHelpDivDelay(elem, titleText, bodyText, width)
 {
     // IE support
@@ -306,13 +301,16 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     var div = getHelpDiv();
 
-    document.getElementById("helpDivTitle").innerHTML = titleText;
-    document.getElementById("helpDivBody").innerHTML = bodyText;
+    Ext.get("helpDivTitle").update(titleText);
+    Ext.get("helpDivBody").update(bodyText);
 
-    var viewportWidth = YAHOO.util.Dom.getViewportWidth();
-    var viewportHeight = YAHOO.util.Dom.getViewportHeight();
-    var leftScroll = YAHOO.util.DragDropMgr.getScrollLeft();
-    var topScroll = YAHOO.util.DragDropMgr.getScrollTop();
+    var bd = Ext.get(document.body);
+    var sz = bd.getViewSize();
+    var viewportWidth = sz.width;
+    var viewportHeight = sz.height;
+    var pos = bd.getScroll();
+    var leftScroll = pos.left;
+    var topScroll = pos.top;;
 
     div.style.top = posTop;
     div.style.display = "block";

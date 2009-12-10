@@ -21,7 +21,7 @@
 /**
  * Constructs a LABKEY.Form object. This object may be used to track the dirty state of an HTML form
  * and warn the user about unsaved changes if the user leaves the page before saving.
- * @class A utility class for tracking HTML form dirty state and warning the user about unsaved changes.
+ * @class LABKEY.Form A utility class for tracking HTML form dirty state and warning the user about unsaved changes.
  * @constructor
  * @param {Object} config A configuration ojbect containing the following properties:
  * @param {Element} config.formElement A reference to the HTML form element you want to track.

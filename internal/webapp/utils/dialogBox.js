@@ -4,6 +4,9 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
+ *
+ * DEPRACATED use Ext.MessageBox or Ext.Window 
+ *
  * A Dialog box widget that extends the yahoo Panel class in order to show the dialog box with
  * special animation effects like fading and adjusting the opacity of the background.
  *

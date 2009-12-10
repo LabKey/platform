@@ -144,9 +144,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         if (!this.table) return;
         var viewportWidth = Number.MAX_VALUE;
         //yahoo version seems to handle vertical scrollbar, while Ext does not, so favor that one
-        if (YAHOO && YAHOO.util && YAHOO.util.Dom)
+        if ('YAHOO' in window && YAHOO && YAHOO.util && YAHOO.util.Dom)
             viewportWidth = YAHOO.util.Dom.getViewportWidth() - YAHOO.util.Dom.getX(this.table.dom.parentNode);
-        else if (Ext && Ext.lib && Ext.lib.Dom)
+        else if ('Ext' in window && Ext && Ext.lib && Ext.lib.Dom)
             viewportWidth = Ext.lib.Dom.getViewWidth() - Ext.lib.Dom.getX(this.table.dom.parentNode);
         var newWidth = Math.min(this.table.getWidth(true), viewportWidth);
 
