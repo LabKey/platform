@@ -502,7 +502,7 @@ public class DavCrawler
         finally
         {
             ResultSetUtil.close(rs);
-            delay = (fullCrawl || count > 0) ? 0 : TimeUnit.MINUTES.toMillis(1);
+            delay = (fullCrawl || count > 0) ? 0 : TimeUnit.SECONDS.toMillis(60);
         }
         return delay;
     }
