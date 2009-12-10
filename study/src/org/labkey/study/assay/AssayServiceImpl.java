@@ -109,7 +109,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
             if (provider.allowDefaultValues(domain))
-                gwtDomain.setDefaultValueOptions(DefaultValueType.values(), DefaultValueType.LAST_ENTERED);
+                gwtDomain.setDefaultValueOptions(provider.getDefaultValueOptions(domain), provider.getDefaultValueDefault(domain));
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
             if (!copy)
             {

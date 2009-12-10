@@ -47,7 +47,7 @@ public class AssayFolderType extends DefaultFolderType
     AssayFolderType(StudyModule module)
     {
         super(NAME,
-                "Design and manage specialized assays." +
+                "Design and manage specialized assays. " +
                 "Analyze, visualize and share results.",
                 Collections.<Portal.WebPart>emptyList(),
                 Arrays.asList(StudyModule.assayListWebPartFactory.createWebPart()),
