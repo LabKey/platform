@@ -30,6 +30,8 @@
 
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
 <script type="text/javascript">LABKEY.requiresYahoo("event");</script>
+<script type="text/javascript">LABKEY.requiresYahoo("util");</script>
+<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
 
 <%
     JspView<ReportsController.CreateQueryReportBean> me = (JspView<org.labkey.study.controllers.reports.ReportsController.CreateQueryReportBean>) HttpView.currentView();
