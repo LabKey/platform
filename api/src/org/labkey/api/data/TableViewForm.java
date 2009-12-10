@@ -220,7 +220,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (maps.length > 0)
         {
             setTypedValues(maps[0], false);
-            setOldValues(new HashMap<String,Object>(getTypedValues()));
+            setOldValues(getTypedValues());
         }
     }
 
