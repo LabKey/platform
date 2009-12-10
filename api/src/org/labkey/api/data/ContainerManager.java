@@ -1272,6 +1272,7 @@ public class ContainerManager
 
         //now find the root and build a MultiMap of it and its descendants
         MultiMap<Container,Container> mm = new MultiHashMap<Container,Container>();
+        mm.put(null, root);
         addChildren(root, mmIds, mm);
         for (Object key : mm.keySet())
         {
