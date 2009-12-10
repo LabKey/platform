@@ -77,7 +77,7 @@ public class CoreModule extends SpringModule
 
     public double getVersion()
     {
-        return 9.31;
+        return 9.32;
     }
 
     @Override
