@@ -37,6 +37,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -109,6 +110,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
     boolean isMandatoryDomainProperty(Domain domain, String propertyName);
 
     boolean allowDefaultValues(Domain domain);
+
+    DefaultValueType[] getDefaultValueOptions(Domain domain);
+
+    DefaultValueType getDefaultValueDefault(Domain domain);
 
     ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol);
 

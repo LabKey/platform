@@ -458,16 +458,19 @@ public abstract class AbstractAssayProvider implements AssayProvider
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(description);
 
-        if (AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(prop.getName()) ||
-            AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(prop.getName()) ||
-            AbstractAssayProvider.VISITID_PROPERTY_NAME.equals(prop.getName()) ||
-            AbstractAssayProvider.DATE_PROPERTY_NAME.equals(prop.getName()))
+        if (allowDefaultValues(domain))
         {
-            prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
-        }
-        else
-        {
-            prop.setDefaultValueTypeEnum(DefaultValueType.LAST_ENTERED);
+            if (AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(prop.getName()) ||
+                AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(prop.getName()) ||
+                AbstractAssayProvider.VISITID_PROPERTY_NAME.equals(prop.getName()) ||
+                AbstractAssayProvider.DATE_PROPERTY_NAME.equals(prop.getName()))
+            {
+                prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
+            }
+            else
+            {
+                prop.setDefaultValueTypeEnum(getDefaultValueDefault(domain));
+            }
         }
         return prop;
     }
@@ -1214,6 +1217,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Lsid domainLsid = new Lsid(domain.getTypeURI());
         return !ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix());
+    }
+
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return DefaultValueType.values();
+    }
+
+    public DefaultValueType getDefaultValueDefault(Domain domain)
+    {
+        return DefaultValueType.LAST_ENTERED;
     }
 
     public static ExpData createData(Container c, File file, String name, DataType dataType) throws ExperimentException

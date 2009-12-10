@@ -28,6 +28,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.VBox;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: jeckels
@@ -37,7 +38,6 @@ public class AbstractAssayView extends VBox
 {
     protected void setupViews(QueryView queryView, boolean minimizeLinks, AssayProvider provider, ExpProtocol protocol)
     {
-        AssayHeaderView headerView = new AssayHeaderView(protocol, provider, minimizeLinks, queryView.getTable().getContainerFilter());
         if (minimizeLinks)
         {
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
@@ -48,6 +48,7 @@ public class AbstractAssayView extends VBox
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         }
 
+        ModelAndView headerView = createHeaderView(queryView, minimizeLinks, provider, protocol);
         addView(headerView);
 
         Container container = getViewContext().getContainer();
@@ -67,5 +68,10 @@ public class AbstractAssayView extends VBox
 
         addView(queryView);
     }
-    
+
+    protected ModelAndView createHeaderView(QueryView queryView, boolean minimizeLinks, AssayProvider provider, ExpProtocol protocol)
+    {
+        return new AssayHeaderView(protocol, provider, minimizeLinks, queryView.getTable().getContainerFilter());
+    }
+
 }
