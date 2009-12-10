@@ -898,8 +898,6 @@ public class ProjectController extends SpringActionController
             containerProps.put("sortOrder", container.getSortOrder());
             containerProps.put("userPermissions", container.getPolicy().getPermsAsOldBitMask(user));
             containerProps.put("effectivePermissions", container.getPolicy().getPermissionNames(user));
-            if (container.isExperiment())
-                containerProps.put("experimentId", container.getExperimentId());
             if (null != container.getDescription())
                 containerProps.put("description", container.getDescription());
 

@@ -29,7 +29,6 @@
       <ns:column columnName="Name"/>
       <ns:column columnName="SortOrder"/>
       <ns:column columnName="CaBIGPublished"/>
-      <ns:column columnName="ExperimentID"/>
       <ns:column columnName="Description"/>
     </ns:columns>
   </ns:table>
