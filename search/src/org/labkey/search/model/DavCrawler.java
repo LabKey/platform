@@ -15,26 +15,25 @@
  */
 package org.labkey.search.model;
 
-import org.labkey.api.search.SearchService;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
-import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.webdav.Resource;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.log4j.Category;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.*;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavService;
 
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
-import static java.util.concurrent.TimeUnit.*;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -401,7 +400,7 @@ public class DavCrawler
         @Override
         public void run()
         {
-            long defaultDelay = SECONDS.toMillis(1);
+            long defaultDelay = TimeUnit.SECONDS.toMillis(1);
             long delay = defaultDelay;
             
             while (1==1)
@@ -414,7 +413,7 @@ public class DavCrawler
                         SearchService ss = getSearchService();
                         if (ss.isBusy())
                         {
-                            delay = SECONDS.toMillis(1);
+                            delay = TimeUnit.SECONDS.toMillis(1);
                             continue;
                         }
                     }
@@ -503,7 +502,7 @@ public class DavCrawler
         finally
         {
             ResultSetUtil.close(rs);
-            delay = (fullCrawl || count > 0) ? 0 : MINUTES.toMillis(1);
+            delay = (fullCrawl || count > 0) ? 0 : TimeUnit.MINUTES.toMillis(1);
         }
         return delay;
     }
