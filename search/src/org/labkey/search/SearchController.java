@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -118,7 +119,7 @@ public class SearchController extends SpringActionController
     static SearchService.IndexTask _lastIncrementalTask = null;
 
     
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
     public class SearchAction extends SimpleViewAction<SearchForm>
     {
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
