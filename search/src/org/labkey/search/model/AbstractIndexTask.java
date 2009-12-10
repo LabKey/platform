@@ -18,6 +18,9 @@ package org.labkey.search.model;
 import org.labkey.api.search.SearchService;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.Map;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -40,7 +43,9 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     final StringWriter _sw = new StringWriter();
     final PrintWriter _out = new PrintWriter(_sw);
 
+    final Object _completeEvent = new Object(){public String toString() {return "complete event";}};
 
+    
     public AbstractIndexTask(String description)
     {
         _description = description;
@@ -51,19 +56,6 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     public String getDescription()
     {
         return _description;
-    }
-
-
-    public void cancel()
-    {
-        _cancelled = true;
-        _complete = System.currentTimeMillis();
-    }
-
-
-    public boolean isCancelled()
-    {
-        return _cancelled;
     }
 
 
@@ -146,13 +138,43 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
         Object remove =  _subtasks.remove(item);
         assert null != remove;
         assert remove == item;
-        checkDone();
+        if (checkDone())
+        {
+            _complete = System.currentTimeMillis();
+            synchronized (_completeEvent)
+            {
+                _completeEvent.notifyAll();
+            }
+        }
     }
 
+    public boolean isCancelled()
+    {
+        return _cancelled;
+    }
 
-    //
-    // add items to index
-    //
+    public boolean cancel(boolean mayInterruptIfRunning)
+    {
+        _cancelled = true;
+        return true;
+    }
 
-    protected abstract void checkDone();
+    public boolean isDone()
+    {
+        return _complete != 0;
+    }
+
+    public SearchService.IndexTask get() throws InterruptedException, ExecutionException
+    {
+        _completeEvent.wait();
+        return this;
+    }
+
+    public SearchService.IndexTask get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+    {
+        _completeEvent.wait(unit.toMillis(timeout));
+        return this;
+    }
+
+    protected abstract boolean checkDone();
 }

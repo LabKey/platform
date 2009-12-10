@@ -43,7 +43,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.01;
+        return 0.02;
     }
 
     public boolean hasScripts()
@@ -74,15 +74,18 @@ public class SearchModule extends DefaultModule
                 return WebdavService.get().lookup(path);
             }
         });
-        ss.start();
         ServiceRegistry.get().registerService(SearchService.class, ss);
     }
 
+
     public void startup(ModuleContext moduleContext)
     {
+        ((LuceneSearchServiceImpl)ServiceRegistry.get().getService(SearchService.class)).start();
+
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new SearchContainerListener());
     }
+
 
     @Override
     public Collection<String> getSummary(Container c)

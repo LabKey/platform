@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  */
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
-    final static Category _log = Category.getInstance(SearchService.class);
+    final static Category _log = Category.getInstance(AbstractSearchService.class);
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
     PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
@@ -53,6 +53,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final List<IndexTask> _tasks = Collections.synchronizedList(new ArrayList<IndexTask>());
 
     final _IndexTask _defaultTask = new _IndexTask("default");
+
 
     enum OPERATION
     {
@@ -133,16 +134,25 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
         
-        protected void checkDone()
+        protected boolean checkDone()
         {
             if (_isReady && _subtasks.size() == 0)
             {
                 if (_tasks.remove(this))
                 {
-                    _complete = System.currentTimeMillis();
-                    // onComplete()
+                    return true;
                 }
             }
+            return false;
+        }
+        
+
+        @Override
+        public void setReady()
+        {
+            if (this == _defaultTask)
+                throw new IllegalStateException();
+            super.setReady();
         }
     }
 
@@ -194,16 +204,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public AbstractSearchService()
-    {
-    }
-
-
     public void start()
     {
         startThreads();
+//        _crawler.startContinuous(this, new Path(WebdavService.getServletPath()));
+//        _crawler.startFull(this.defaultTask(), new Path(WebdavService.getServletPath()), null);
     }
 
+
+    public boolean isBusy()
+    {
+        int n = _itemQueue.size() + _indexQueue.size() + 10 * _runQueue.size();
+        return n > 1000;
+    }
+    
 
     private void queueItem(Item i)
     {
@@ -356,7 +370,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 catch (Exception x)
                 {
-                    Category.getInstance(SearchService.class).error("Error running " + (null != i ? i._id : ""), x);
+                    _log.error("Error running " + (null != i ? i._id : ""), x);
                 }
                 finally
                 {
@@ -376,6 +390,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (null == r || !r.exists())
             return false;
         assert MemTracker.put(r);
+        _log.debug("preprocess(" + r.getDocumentId() + ")");
         i._preprocessMap = preprocess(i._id, i._res);
         if (null == i._preprocessMap)
         {
@@ -408,7 +423,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 catch (Exception x)
                 {
-                    Category.getInstance(SearchService.class).error("Error processing " + (null != i ? i._id : ""), x);
+                    _log.error("Error processing " + (null != i ? i._id : ""), x);
                 }
                 finally
                 {
@@ -472,6 +487,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     synchronized (_commitLock)
                     {
                         _countIndexedSinceCommit++;
+                        if (_countIndexedSinceCommit > 10000)
+                        {
+                            commit();
+                            _countIndexedSinceCommit = 0;
+                        }
                     }
                 }
                 catch (InterruptedException x)
@@ -479,7 +499,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 catch (Exception x)
                 {
-                    Category.getInstance(SearchService.class).error("Error indexing " + (null != i ? i._id : ""), x);
+                    _log.error("Error indexing " + (null != i ? i._id : ""), x);
                 }
                 finally
                 {

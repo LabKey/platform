@@ -416,6 +416,5 @@ public class CoreModule extends SpringModule
     @Override
     public void enumerateDocuments(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
-        //ss.addResource(DavCrawler.start(ss,"/"), SearchService.PRIORITY.crawl);
     }
 }

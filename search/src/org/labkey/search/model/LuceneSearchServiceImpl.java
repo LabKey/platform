@@ -101,9 +101,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String title = (String)props.get("title");
             String type = r.getContentType();
 
-            if ("text/html".equals(type))
+            if (type.startsWith("image/"))
             {
-                String html = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
+                return null;
+            }
+            else if ("text/html".equals(type))
+            {
+                String html="";
+                InputStream in = r.getInputStream(User.getSearchUser());
+                if (null != in)
+                    html = PageFlowUtil.getStreamContentsAsString(in);
 
                 // TODO: Need better check for issue HTML vs. rendered page HTML
                 if (r instanceof ActionResource)
@@ -120,7 +127,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             else if (type.startsWith("text/") && !type.contains("xml"))
             {
-                body = PageFlowUtil.getStreamContentsAsString(r.getInputStream(User.getSearchUser()));
+                InputStream in = r.getInputStream(User.getSearchUser());
+                if (null != in)
+                    body = PageFlowUtil.getStreamContentsAsString(in);
             }
             else
             {
@@ -147,10 +156,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String url = r.getExecuteHref(null);
             assert null != url;
             if (StringUtils.isBlank(title))
-            {
-                _log.error("No title for: " + id);
-                title = url;
-            }
+                title = r.getName();
 
             String summary = extractSummary(body, title);
 
@@ -188,7 +194,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch(Exception e)
         {
-            _log.error("Indexing error with " + id + ": " + e.getMessage());
+            _log.error("Indexing error with " + id, e);
         }
 
         return null;

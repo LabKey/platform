@@ -23,6 +23,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.io.Reader;
 
 /**
@@ -110,6 +113,26 @@ public class NoopSearchService implements SearchService
         public void addToEstimate(int i)
         {
         }
+
+        public boolean cancel(boolean mayInterruptIfRunning)
+        {
+            return false;
+        }
+
+        public boolean isDone()
+        {
+            return false;
+        }
+
+        public IndexTask get() throws InterruptedException, ExecutionException
+        {
+            return null;
+        }
+
+        public IndexTask get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+        {
+            return null;
+        }
     };
 
 
@@ -161,5 +184,10 @@ public class NoopSearchService implements SearchService
 
     public void addTask(IndexTask task)
     {
+    }
+
+    public boolean isBusy()
+    {
+        return false;
     }
 }
