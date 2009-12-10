@@ -372,19 +372,29 @@ public class Path implements Serializable, Iterable<String>
 
     public String toString()
     {
+        return toString(null, null);
+    }
+
+
+    public String toString(String start, String end)
+    {
+        if (start == null)
+            start = isAbsolute() ? "/" : "";
+        if (end == null)
+            end = isDirectory() ? "/" : "";
+        
         if (_length == 0)
-            return isAbsolute() ? "/" : "";
+            return start;
 
         StringBuilder sb = new StringBuilder();
-        String slash = isAbsolute() ? "/" : "";
+        String slash = start;
         for (int i=0 ; i<_length ; i++)
         {
             sb.append(slash);
             sb.append(defaultEncodeName(_path[i]));
             slash = "/";
         }
-        if (isDirectory())
-            sb.append('/');
+        sb.append(end);
         return sb.toString();
     }
 

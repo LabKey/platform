@@ -46,10 +46,13 @@ import java.util.*;
  */
 public class WebdavResolverImpl implements WebdavResolver
 {
-    static WebdavResolverImpl _instance = new WebdavResolverImpl();
+    static WebdavResolverImpl _instance = new WebdavResolverImpl(new Path(WebdavService.getServletPath()));
 
-    private WebdavResolverImpl()
+    final Path _rootPath;
+
+    private WebdavResolverImpl(Path path)
     {
+        _rootPath = path;
     }
 
     public static WebdavResolver get()
@@ -68,7 +71,6 @@ public class WebdavResolverImpl implements WebdavResolver
     }
 
 
-    Path _rootPath = new Path(WebdavService.getServletPath());
 
     public Path getRootPath()
     {

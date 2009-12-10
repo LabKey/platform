@@ -603,5 +603,4 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return new TestSuite(TestCase.class);
         }
     }
-    
 }

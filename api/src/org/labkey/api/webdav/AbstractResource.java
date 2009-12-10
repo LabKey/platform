@@ -29,6 +29,8 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.io.File;
 import java.io.IOException;
@@ -123,6 +125,8 @@ public abstract class AbstractResource implements Resource
 
     public void setLastIndexed(long ms)
     {
+        // DavCrawler uses this information
+        //ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
     }
 
     public String getModifiedBy()
@@ -216,6 +220,8 @@ public abstract class AbstractResource implements Resource
     public boolean canRead(User user)
     {
         if ("/".equals(_path))
+            return true;
+        if (user == User.getSearchUser())
             return true;
         return hasAccess(user) && getPermissions(user).contains(ReadPermission.class);
     }

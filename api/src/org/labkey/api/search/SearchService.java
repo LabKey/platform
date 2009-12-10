@@ -23,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import org.apache.log4j.Category;
 
 import java.util.*;
+import java.util.concurrent.Future;
 import java.io.*;
 
 /**
@@ -51,6 +52,7 @@ public interface SearchService
         title("title"),
         category("searchCategory"),
         securableResourceId(SecurableResource.class.getName()),
+        participantId("org.labkey.study#StudySubject"),
         container(Container.class.getName());
 
         final String _propName;
@@ -67,11 +69,9 @@ public interface SearchService
     }
 
 
-    public interface IndexTask
+    public interface IndexTask extends Future<IndexTask>
     {
         String getDescription();
-
-        void cancel();
 
         boolean isCancelled();
 
@@ -91,6 +91,10 @@ public interface SearchService
 
         void addToEstimate(int i);// indicates that caller is done adding Resources to this task
 
+        /**
+         * indicates that we're done adding the initial set of resources/runnables to this task
+         * the task be considered done after calling setReady() and there is no more work to do.
+         */
         void setReady();
 
         void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
@@ -131,6 +135,7 @@ public interface SearchService
         }
     }
 
+
     //
     // search
     //
@@ -149,6 +154,10 @@ public interface SearchService
     void deleteResource(String identifier, PRIORITY pri);
 
     List<IndexTask> getTasks();
+
+    /** an indicator that there are a lot of things in the queue */
+    boolean isBusy();
+
 
     //
     // configuration
@@ -221,6 +230,7 @@ public interface SearchService
     }
 }
 
+
 //
 // TODO Index Users
 // TODO Index Study descriptions
@@ -228,4 +238,5 @@ public interface SearchService
 // TODO consider Files table (Attachments?) and attached properties
 // TODO participantid and sampleid
 // TODO Resource.shouldCrawl()
+// TODO: resource.shouldIndex()
 //
