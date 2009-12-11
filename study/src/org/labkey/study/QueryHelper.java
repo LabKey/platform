@@ -18,6 +18,7 @@ package org.labkey.study;
 
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.util.MemTracker;
 import org.labkey.study.model.StudyCachable;
 
 import java.sql.SQLException;
@@ -44,6 +45,7 @@ public class QueryHelper<K extends StudyCachable>
         try
         {
             _missMarker = objectClass.newInstance();
+            MemTracker.remove(_missMarker);
         }
         catch (Exception e)
         {
