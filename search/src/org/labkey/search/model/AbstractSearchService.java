@@ -497,7 +497,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 catch (InterruptedException x)
                 {
                 }
-                catch (Exception x)
+                catch (Throwable x)
                 {
                     _log.error("Error indexing " + (null != i ? i._id : ""), x);
                 }
