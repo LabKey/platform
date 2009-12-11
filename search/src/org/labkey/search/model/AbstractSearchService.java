@@ -298,7 +298,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (_shuttingDown)
             return;
 
-        for (int i=0 ; i<getCountIndexingThreads() ; i++)
+        for (int i=0 ; i<Math.max(1, getCountIndexingThreads()) ; i++)
         {
             Thread t = new Thread(indexRunnable, "SearchService:index");
             t.setDaemon(true);
@@ -307,7 +307,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _threads.add(t);
         }
 
-        for (int i=0 ; i<Math.max(1,getCountPreprocessorThreads()) ; i++)
+        for (int i=0 ; i<getCountPreprocessorThreads() ; i++)
         {
             Thread t = new Thread(preprocessRunnable, "SearchService:preprocess " + i);
             t.setDaemon(true);

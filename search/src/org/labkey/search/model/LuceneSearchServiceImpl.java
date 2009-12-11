@@ -101,7 +101,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String title = (String)props.get("title");
             String type = r.getContentType();
 
-            if (type.startsWith("image/"))
+            // Skip XML for now
+            if (type.startsWith("image/") || type.contains("xml"))
             {
                 return null;
             }
