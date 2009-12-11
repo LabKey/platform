@@ -17,15 +17,15 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.LabSpecimenListsBean> me = (JspView<SpringSpecimenController.LabSpecimenListsBean>) HttpView.currentView();
-    SpringSpecimenController.LabSpecimenListsBean bean = me.getModelBean();
-    boolean originating = bean.getType() == SpringSpecimenController.LabSpecimenListsBean.Type.ORIGINATING;
+    JspView<SpecimenController.LabSpecimenListsBean> me = (JspView<SpecimenController.LabSpecimenListsBean>) HttpView.currentView();
+    SpecimenController.LabSpecimenListsBean bean = me.getModelBean();
+    boolean originating = bean.getType() == SpecimenController.LabSpecimenListsBean.Type.ORIGINATING;
 %>
 <form action="emailLabSpecimenLists.post" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId() %>">

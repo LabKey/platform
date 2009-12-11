@@ -24,13 +24,13 @@
 <%@ page import="org.labkey.study.SampleManager"%>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.api.study.Site" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.ManageRequestBean> me = (JspView<SpringSpecimenController.ManageRequestBean>) HttpView.currentView();
-    SpringSpecimenController.ManageRequestBean bean = me.getModelBean();
+    JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
+    SpecimenController.ManageRequestBean bean = me.getModelBean();
     String comments = bean.getSampleRequest().getComments();
     ViewContext context = me.getViewContext();
     if (comments == null)
@@ -227,9 +227,9 @@
                 This request's requirements are complete. Next steps include:<br>
                 <ul>
                     <li>Email specimen lists to their originating locations: <%= textLink("Originating Location Specimen Lists",
-                        "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpringSpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) %></li>
+                        "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) %></li>
                     <li>Email specimen lists to their providing locations: <%= textLink("Providing Location Specimen Lists",
-                        "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpringSpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) %></li>
+                        "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) %></li>
                     <li>Update request status to indicate completion: <%= textLink("Update Status", "manageRequestStatus.view?id=" + bean.getSampleRequest().getRowId()) %></li>
                 </ul>
 <%
@@ -256,7 +256,7 @@
 %>
                 Request processing will begin after the request has been submitted.<br><br>
                 <%= generateButton("Submit Request", "submitRequest.view?id=" + bean.getSampleRequest().getRowId(),
-                        "return confirm('" + SpringSpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")%>
+                        "return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")%>
 <%
             }
             else
@@ -269,7 +269,7 @@
             }
 %>
                 <%= generateButton("Cancel Request", "deleteRequest.view?id=" + bean.getSampleRequest().getRowId(),
-                        "return confirm('" + SpringSpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")%>
+                        "return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")%>
 <%
             if (bean.getReturnUrl() != null)
             {
@@ -322,9 +322,9 @@
                             <%= textLink("View History", "requestHistory.view?id=" + bean.getSampleRequest().getRowId()) %>&nbsp;
                             <%= bean.isRequestManager() ? textLink("Update Status", "manageRequestStatus.view?id=" + bean.getSampleRequest().getRowId()) : "" %>
                             <%= bean.isRequestManager() ? textLink("Originating Location Specimen Lists",
-                                    "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpringSpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) : "" %>
+                                    "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) : "" %>
                             <%= bean.isRequestManager() ? textLink("Providing Location Specimen Lists",
-                                    "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpringSpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) : "" %>
+                                    "labSpecimenLists.view?id=" + bean.getSampleRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) : "" %>
                         </td>
                     </tr>
                 </table>

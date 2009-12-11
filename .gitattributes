@@ -1634,7 +1634,7 @@ query/src/org/labkey/query/controllers/InternalViewForm.java -text
 query/src/org/labkey/query/controllers/NewQueryForm.java -text
 query/src/org/labkey/query/controllers/Page.java -text
 query/src/org/labkey/query/controllers/PropertiesForm.java -text
-query/src/org/labkey/query/controllers/QueryControllerSpring.java -text
+query/src/org/labkey/query/controllers/QueryController.java -text
 query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text
 query/src/org/labkey/query/controllers/TableInfoForm.java -text
@@ -2171,8 +2171,8 @@ study/src/org/labkey/study/controllers/samples/ShowGroupMembersAction.java -text
 study/src/org/labkey/study/controllers/samples/ShowSearchAction.java -text
 study/src/org/labkey/study/controllers/samples/ShowUploadSpecimensAction.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenApiController.java -text
+study/src/org/labkey/study/controllers/samples/SpecimenController.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
-study/src/org/labkey/study/controllers/samples/SpringSpecimenController.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text

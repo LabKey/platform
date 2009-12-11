@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.biotrue.controllers.ServerForm" %>
-<%@ page import="org.labkey.biotrue.objectmodel.BtServer" %>
-<%@ page import="org.labkey.biotrue.datamodel.BtManager" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.data.*" %>
-<%@ page import="org.labkey.biotrue.controllers.BtController" %>
-<%@ page import="org.labkey.api.view.DetailsView" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.view.DetailsView" %>
+<%@ page import="org.labkey.biotrue.controllers.BtController" %>
+<%@ page import="org.labkey.biotrue.controllers.ServerForm" %>
+<%@ page import="org.labkey.biotrue.datamodel.BtManager" %>
+<%@ page import="org.labkey.biotrue.objectmodel.BtServer" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <% ServerForm form = (ServerForm) __form;
     BtServer server = form.getServer();

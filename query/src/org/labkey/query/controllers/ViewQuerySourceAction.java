@@ -50,7 +50,7 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
 
     public NavTree appendNavTrail(NavTree root)
     {
-        ActionURL urlQ = new ActionURL(QueryControllerSpring.BeginAction.class, _form.getViewContext().getContainer());
+        ActionURL urlQ = new ActionURL(QueryController.BeginAction.class, _form.getViewContext().getContainer());
         urlQ.addParameter("schemaName", _form.getSchemaName());
         urlQ.addParameter("queryName", _form.getQueryName());
         return root.addChild("Query '" + _form.getSchemaName() + "." + _form.getQueryName() + "'", urlQ).addChild("Query Source");

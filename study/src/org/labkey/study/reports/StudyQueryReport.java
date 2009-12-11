@@ -26,7 +26,6 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;

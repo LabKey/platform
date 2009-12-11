@@ -19,19 +19,18 @@
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.actions.PublishStartAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
+<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();

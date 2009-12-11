@@ -70,16 +70,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public class QueryControllerSpring extends SpringActionController
+public class QueryController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(QueryControllerSpring.class);
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
+    private static final Logger LOG = Logger.getLogger(QueryController.class);
+
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
             GetSchemaQueryTreeAction.class,
             GetQueryDetailsAction.class,
             ViewQuerySourceAction.class);
 
-    public QueryControllerSpring() throws Exception
+    public QueryController() throws Exception
     {
         setActionResolver(_actionResolver);
     }
@@ -159,7 +160,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<Object>(QueryControllerSpring.class, "browse.jsp", null);
+            return new JspView<Object>(QueryController.class, "browse.jsp", null);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -173,7 +174,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return new JspView<QueryForm>(QueryControllerSpring.class, "browse.jsp", form);
+            return new JspView<QueryForm>(QueryController.class, "browse.jsp", form);
 
         }
 
@@ -197,7 +198,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return new JspView<QueryForm>(QueryControllerSpring.class, "browse.jsp", form);
+            return new JspView<QueryForm>(QueryController.class, "browse.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -242,7 +243,7 @@ public class QueryControllerSpring extends SpringActionController
             getPageConfig().setFocus("forms[0].ff_newQueryName");
             _form = form;
             setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
-            return new JspView<NewQueryForm>(QueryControllerSpring.class, "newQuery.jsp", form, errors);
+            return new JspView<NewQueryForm>(QueryController.class, "newQuery.jsp", form, errors);
         }
 
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
@@ -339,7 +340,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root)
+            (new QueryController.SchemaAction(_form)).appendNavTrail(root)
                     .addChild("Rename Query", actionURL(QueryAction.newQuery));
             return root;
         }
@@ -387,10 +388,10 @@ public class QueryControllerSpring extends SpringActionController
                     //
                 }
                 errors.reject("ERROR_MSG", e.toString());
-                Logger.getLogger(QueryControllerSpring.class).error("Error", e);
+                Logger.getLogger(QueryController.class).error("Error", e);
             }
 
-            return new JspView<SourceForm>(QueryControllerSpring.class, "sourceQuery.jsp", form, errors);
+            return new JspView<SourceForm>(QueryController.class, "sourceQuery.jsp", form, errors);
         }
 
         public boolean handlePost(SourceForm form, BindException errors) throws Exception
@@ -425,7 +426,7 @@ public class QueryControllerSpring extends SpringActionController
             catch (SQLException e)
             {
                 errors.reject("An exception occurred: " + e);
-                Logger.getLogger(QueryControllerSpring.class).error("Error", e);
+                Logger.getLogger(QueryController.class).error("Error", e);
                 return false;
             }
         }
@@ -453,7 +454,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getConfirmView(QueryForm queryForm, BindException errors) throws Exception
         {
-            return new JspView<QueryForm>(QueryControllerSpring.class, "deleteQuery.jsp", queryForm, errors);
+            return new JspView<QueryForm>(QueryController.class, "deleteQuery.jsp", queryForm, errors);
         }
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
@@ -916,7 +917,7 @@ public class QueryControllerSpring extends SpringActionController
                 form.ff_designXML = queryDoc.toString();
             }
             setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
-            return new JspView<DesignForm>(QueryControllerSpring.class, "designQuery.jsp", form, errors);
+            return new JspView<DesignForm>(QueryController.class, "designQuery.jsp", form, errors);
         }
 
         public boolean handlePost(DesignForm form, BindException errors) throws Exception
@@ -1041,7 +1042,7 @@ public class QueryControllerSpring extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' doesn't exist.");
                 }
             }
-            return new JspView<ChooseColumnsForm>(QueryControllerSpring.class, "chooseColumns.jsp", form, errors);
+            return new JspView<ChooseColumnsForm>(QueryController.class, "chooseColumns.jsp", form, errors);
         }
         
         public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
@@ -1148,7 +1149,7 @@ public class QueryControllerSpring extends SpringActionController
             setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
             _queryName = form.getQueryName();
             
-            return new JspView<PropertiesForm>(QueryControllerSpring.class, "propertiesQuery.jsp", form, errors);
+            return new JspView<PropertiesForm>(QueryController.class, "propertiesQuery.jsp", form, errors);
         }
 
         public boolean handlePost(PropertiesForm form, BindException errors) throws Exception
@@ -2204,7 +2205,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
-            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
@@ -2361,7 +2362,7 @@ public class QueryControllerSpring extends SpringActionController
                 throw new UnauthorizedException();
 
             setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
-            return new JspView<ExternalSchemaBean>(QueryControllerSpring.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
+            return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
@@ -2567,7 +2568,7 @@ public class QueryControllerSpring extends SpringActionController
             }
             catch (Throwable t)
             {
-                Logger.getInstance(QueryControllerSpring.class).error("Error", t);
+                Logger.getInstance(QueryController.class).error("Error", t);
                 errors.add(new QueryParseException("Unhandled exception: " + t, null, 0, 0));
             }
             for (QueryParseException e : errors)
@@ -2597,13 +2598,13 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return new JspView<QueryForm>(QueryControllerSpring.class, "manageViews.jsp", form, errors);
+            return new JspView<QueryForm>(QueryController.class, "manageViews.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction().appendNavTrail(root);
-            root.addChild("Manage Views", QueryControllerSpring.this.getViewContext().getActionURL());
+            root.addChild("Manage Views", QueryController.this.getViewContext().getActionURL());
             return root;
         }
     }
@@ -2614,7 +2615,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getConfirmView(InternalViewForm form, BindException errors) throws Exception
         {
-            return new JspView<InternalViewForm>(QueryControllerSpring.class, "internalDeleteView.jsp", form, errors);
+            return new JspView<InternalViewForm>(QueryController.class, "internalDeleteView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalViewForm form, BindException errors) throws Exception
@@ -2647,7 +2648,7 @@ public class QueryControllerSpring extends SpringActionController
             CstmView view = form.getViewAndCheckPermission();
             form.ff_columnList = view.getColumns();
             form.ff_filter = view.getFilter();
-            return new JspView<InternalSourceViewForm>(QueryControllerSpring.class, "internalSourceView.jsp", form, errors);
+            return new JspView<InternalSourceViewForm>(QueryController.class, "internalSourceView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalSourceViewForm form, BindException errors) throws Exception
@@ -2692,7 +2693,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<InternalNewViewForm>(QueryControllerSpring.class, "internalNewView.jsp", form, errors);
+            return new JspView<InternalNewViewForm>(QueryController.class, "internalNewView.jsp", form, errors);
         }
 
         public boolean handlePost(InternalNewViewForm form, BindException errors) throws Exception
@@ -2734,7 +2735,7 @@ public class QueryControllerSpring extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    Logger.getInstance(QueryControllerSpring.class).error("Error", e);
+                    Logger.getInstance(QueryController.class).error("Error", e);
                     errors.reject(ERROR_MSG, "An exception occurred: " + e);
                     return false;
                 }

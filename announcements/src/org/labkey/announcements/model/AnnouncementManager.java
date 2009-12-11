@@ -20,23 +20,22 @@ import junit.framework.TestSuite;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Category;
+import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.*;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.Pair;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.ActionResource;
-import org.labkey.announcements.AnnouncementsController;
+import org.labkey.api.webdav.Resource;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -832,6 +831,8 @@ public class AnnouncementManager
         if (null == ss)
             return;
         ResultSet rs = null;
+        ResultSet rs2 = null;
+
         try
         {
             SQLFragment sql = new SQLFragment("SELECT container, entityId FROM " + _comm.getTableInfoThreads());
@@ -856,6 +857,68 @@ public class AnnouncementManager
                 if (Thread.interrupted())
                     return;
             }
+
+            // Get the attachments... unfortunately, they're attached to individual announcements, not to the thread,
+            // so we need a different query.
+            sql = new SQLFragment("SELECT a.Container, EntityId, Title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent\n");
+
+            and = " WHERE ";
+            if (null != c)
+            {
+                sql.append(and).append("a.container = ?");
+                sql.add(c);
+                and = " AND ";
+            }
+            modified = new SearchService.LastIndexedClause(_comm.getTableInfoAnnouncements(), modifiedSince, "a").toSQLFragment(null, null);
+            if (!modified.isEmpty())
+                sql.append(and).append(modified);
+
+            sql.append(" GROUP BY a.container, entityid, title");
+
+            Collection<String> annIds = new HashSet<String>();
+            Map<String, Announcement> map = new HashMap<String, Announcement>();
+
+            rs2 = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());
+
+            while (rs2.next())
+            {
+                String containerId = rs2.getString(1);
+                String entityId = rs2.getString(2);
+                String title = rs2.getString(3);
+                annIds.add(entityId);
+                Announcement ann = new Announcement();
+                ann.setEntityId(entityId);
+                ann.setContainer(containerId);
+                ann.setTitle(title);
+                map.put(entityId, ann);
+            }
+
+            if (!annIds.isEmpty())
+            {
+                List<Pair<String, String>> list = AttachmentService.get().listAttachments(annIds, modifiedSince);
+                ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, c);
+
+                for (Pair<String, String> pair : list)
+                {
+                    String entityId = pair.first;
+                    String documentName = pair.second;
+                    Announcement ann = map.get(entityId);
+                    ActionURL attachmentUrl = url.clone()
+                            .replaceParameter("entityId", entityId)
+                            .replaceParameter("name", documentName);
+                    attachmentUrl.setExtraPath(ann.getContainerId());
+                    // UNDONE: set title to make LuceneSearchServiceImpl work
+                    String title = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
+                    Resource attachmentRes = AttachmentService.get().getDocumentResource(
+                            new Path(entityId, documentName),
+                            attachmentUrl, title,
+                            ann,
+                            documentName);
+                    task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                }
+
+                Logger.getLogger("Indexed " + list.size() + " message attachments");
+            }
         }
         catch (SQLException x)
         {
@@ -865,6 +928,7 @@ public class AnnouncementManager
         finally
         {
             ResultSetUtil.close(rs);
+            ResultSetUtil.close(rs2);
         }
     }
 

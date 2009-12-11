@@ -18,7 +18,8 @@
 <%@ page import="org.labkey.announcements.model.Announcement" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
@@ -26,8 +27,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();

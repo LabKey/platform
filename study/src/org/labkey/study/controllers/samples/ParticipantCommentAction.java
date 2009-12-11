@@ -42,11 +42,11 @@ import java.util.Map;
  * Date: Oct 7, 2009
  */
 @RequiresPermissionClass(ReadPermission.class)
-public abstract class ParticipantCommentAction extends InsertUpdateAction<SpringSpecimenController.ParticipantCommentForm>
+public abstract class ParticipantCommentAction extends InsertUpdateAction<SpecimenController.ParticipantCommentForm>
 {
     public ParticipantCommentAction()
     {
-        super(SpringSpecimenController.ParticipantCommentForm.class);
+        super(SpecimenController.ParticipantCommentForm.class);
     }
 
     protected NavTree appendExtraNavTrail(NavTree root)
@@ -55,7 +55,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
     }
 
     @Override
-    public boolean handlePost(SpringSpecimenController.ParticipantCommentForm form, BindException errors) throws Exception
+    public boolean handlePost(SpecimenController.ParticipantCommentForm form, BindException errors) throws Exception
     {
         if (super.handlePost(form, errors))
         {
@@ -84,7 +84,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
         private DataView _dataView;
 
         @Override
-        public ModelAndView getView(final SpringSpecimenController.ParticipantCommentForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(final SpecimenController.ParticipantCommentForm form, boolean reshow, BindException errors) throws Exception
         {
            ModelAndView view = super.getView(form, reshow, errors);
             if (!reshow && _dataView instanceof InsertView)
@@ -101,13 +101,13 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
                     ((InsertView)_dataView).setInitialValue(ColumnInfo.legalNameFromName(commentProperty), form.getComment());
                 }
                 for (int rowId : form.getVialCommentsToClear())
-                    _dataView.getDataRegion().addHiddenFormField(SpringSpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
+                    _dataView.getDataRegion().addHiddenFormField(SpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
             }
             return view;
         }
 
         @Override
-        protected DataView createNewView(SpringSpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
+        protected DataView createNewView(SpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
         {
             _dataView = super.createNewView(form, updateForm, errors);
             return _dataView;
@@ -123,7 +123,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
     public static class SpecimenCommentUpdateAction extends ParticipantCommentAction
     {
         @Override
-        protected DataView createNewView(final SpringSpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
+        protected DataView createNewView(final SpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
         {
             try {
                 if (!StringUtils.isBlank(form.getComment()))
@@ -150,7 +150,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Spring
                 DataView view = new UpdateView(updateForm, errors);
 
                 for (int rowId : form.getVialCommentsToClear())
-                    view.getDataRegion().addHiddenFormField(SpringSpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
+                    view.getDataRegion().addHiddenFormField(SpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
 
                 return view;
             }

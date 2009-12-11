@@ -3,20 +3,17 @@ package org.labkey.study.samples.report;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -407,7 +404,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return true;
     }
 
-    public abstract Class<? extends SpringSpecimenController.SpecimenVisitReportAction> getAction();
+    public abstract Class<? extends SpecimenController.SpecimenVisitReportAction> getAction();
 
     public List<? extends SpecimenVisitReport> getReports()
     {

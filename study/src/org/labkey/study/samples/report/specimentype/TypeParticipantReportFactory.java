@@ -4,7 +4,7 @@ import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.model.*;
 import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Study;
@@ -115,9 +115,9 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         return reports;
     }
 
-    public Class<? extends SpringSpecimenController.SpecimenVisitReportAction> getAction()
+    public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
-        return SpringSpecimenController.TypeParticipantReportAction.class;
+        return SpecimenController.TypeParticipantReportAction.class;
     }
 
     public List<Pair<String, String>> getAdditionalFormInputHtml()

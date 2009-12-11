@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.persist.DbUserSchemaDef" %>
 <%@ page import="org.labkey.query.persist.QueryManager" %>
-<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <p>
@@ -48,12 +48,12 @@ if (null != StringUtils.trimToNull(reloadedSchema))
     <%
     for (DbUserSchemaDef def : defs)
     {
-        ActionURL urlEdit = new ActionURL(QueryControllerSpring.EditExternalSchemaAction.class, getContainer());
+        ActionURL urlEdit = new ActionURL(QueryController.EditExternalSchemaAction.class, getContainer());
         urlEdit.addParameter("dbUserSchemaId", Integer.toString(def.getDbUserSchemaId()));
-        ActionURL urlView = new ActionURL(QueryControllerSpring.SchemaAction.class, getContainer());
+        ActionURL urlView = new ActionURL(QueryController.SchemaAction.class, getContainer());
         urlView.addParameter("schemaName", def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
-        urlReload.setAction(QueryControllerSpring.AdminReloadDbUserSchemaAction.class);
+        urlReload.setAction(QueryController.AdminReloadDbUserSchemaAction.class);
 %>
         <tr>
             <td><a href="<%=urlView%>"><%=h(def.getUserSchemaName())%></a></td>
@@ -64,4 +64,4 @@ if (null != StringUtils.trimToNull(reloadedSchema))
     </table>
 <% } %>
 <br>
-<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL(QueryControllerSpring.InsertExternalSchemaAction.class, getContainer())%>" text="define new schema"/><%}%>
+<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, getContainer())%>" text="define new schema"/><%}%>

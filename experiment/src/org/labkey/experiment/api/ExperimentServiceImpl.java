@@ -342,17 +342,25 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+    private static final MaterialSource MISS_MARKER = new MaterialSource();
+
     public ExpSampleSetImpl getSampleSet(int rowId)
     {
         MaterialSource ms = getMaterialSourceCache().get(String.valueOf(rowId));
+
         if (null == ms)
         {
             ms = Table.selectObject(getTinfoMaterialSource(), rowId, MaterialSource.class);
+
+            if (null == ms)
+                ms = MISS_MARKER;
+
             getMaterialSourceCache().put(String.valueOf(rowId), ms);
         }
 
-        if (ms == null)
+        if (MISS_MARKER == ms)
             return null;
+
         return new ExpSampleSetImpl(ms);
     }
 

@@ -18,10 +18,10 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%
     JspView me = (JspView) HttpView.currentView();
-    ActionURL defGetUrl = new ActionURL(QueryControllerSpring.SelectRowsAction.class, me.getViewContext().getContainer());
+    ActionURL defGetUrl = new ActionURL(QueryController.SelectRowsAction.class, me.getViewContext().getContainer());
     String schemaName = HttpView.currentRequest().getParameter("schemaName");
     if (schemaName == null)
         schemaName = "**schema**";
@@ -32,7 +32,7 @@
         queryName = "**query**";
     defGetUrl.addParameter("query.queryName", queryName);
 
-    ActionURL defPostUrl = new ActionURL(QueryControllerSpring.UpdateRowsAction.class, me.getViewContext().getContainer());
+    ActionURL defPostUrl = new ActionURL(QueryController.UpdateRowsAction.class, me.getViewContext().getContainer());
 %>
 <style type="text/css">
     .error
@@ -265,7 +265,7 @@
                         onError(req.statusText, req.responseText);
                 }
             };
-            req.open("POST", "<%=new ActionURL(QueryControllerSpring.SaveApiTestAction.class, HttpView.currentContext().getContainer()).getLocalURIString()%>", true);
+            req.open("POST", "<%=new ActionURL(QueryController.SaveApiTestAction.class, HttpView.currentContext().getContainer()).getLocalURIString()%>", true);
             req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
             req.send(pairs.join('&'));
         }

@@ -4,7 +4,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
@@ -102,8 +102,8 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = new ActionURL(SpringSpecimenController.SamplesAction.class, _container);
-        link.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+        ActionURL link = new ActionURL(SpecimenController.SamplesAction.class, _container);
+        link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
         link = updateURLFilterParameter(link, "SpecimenDetail.ParticipantId", summary.getParticipantId());
         String linkHtml = link.getLocalURIString();

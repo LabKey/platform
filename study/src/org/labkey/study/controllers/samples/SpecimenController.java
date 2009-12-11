@@ -90,10 +90,11 @@ import java.util.*;
  * Date: Dec 20, 2007
  * Time: 11:08:31 AM
  */
-public class SpringSpecimenController extends BaseStudyController
+public class SpecimenController extends BaseStudyController
 {
-    private static final Logger _log = Logger.getLogger(SpringSpecimenController.class);
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SpringSpecimenController.class,
+    private static final Logger _log = Logger.getLogger(SpecimenController.class);
+
+    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SpecimenController.class,
             ShowUploadSpecimensAction.class,
             ShowUploadSpecimensAction.ImportCompleteAction.class,
             ShowGroupMembersAction.class,
@@ -103,7 +104,7 @@ public class SpringSpecimenController extends BaseStudyController
             ParticipantCommentAction.SpecimenCommentUpdateAction.class
     );
 
-    public SpringSpecimenController()
+    public SpecimenController()
     {
         setActionResolver(_actionResolver);
     }
@@ -179,7 +180,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    private static final String SELECTED_SAMPLES_SESSION_ATTRIB_KEY = SpringSpecimenController.class.getName() + "/SelectedSamples";
+    private static final String SELECTED_SAMPLES_SESSION_ATTRIB_KEY = SpecimenController.class.getName() + "/SelectedSamples";
 
     @RequiresPermissionClass(ReadPermission.class)
     public class SelectedSamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>

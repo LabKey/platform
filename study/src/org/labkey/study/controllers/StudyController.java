@@ -75,7 +75,7 @@ import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.*;
@@ -772,7 +772,7 @@ public class StudyController extends BaseStudyController
             }
 
             ActionButton viewSamples = new ActionButton("button", "View Specimens");
-            ActionURL viewSamplesURL = new ActionURL(SpringSpecimenController.SelectedSamplesAction.class, getContainer());
+            ActionURL viewSamplesURL = new ActionURL(SpecimenController.SelectedSamplesAction.class, getContainer());
             viewSamples.setURL(viewSamplesURL);
             viewSamples.setRequiresSelection(true);
             viewSamples.setActionType(ActionButton.Action.POST);

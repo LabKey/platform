@@ -29,7 +29,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -38,7 +37,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.*;
 
 import javax.servlet.ServletException;
@@ -379,13 +378,13 @@ public class ReportManager implements StudyManager.UnmaterializeListener
             // any specimen views
             if ("SpecimenDetail".equals(view.getQueryName()))
             {
-                return new ActionURL(SpringSpecimenController.SamplesAction.class, c).
+                return new ActionURL(SpecimenController.SamplesAction.class, c).
                         addParameter("showVials", "true").
                         addParameter("SpecimenDetail." + QueryParam.viewName, view.getName());
             }
             else if ("SpecimenSummary".equals(view.getQueryName()))
             {
-                return new ActionURL(SpringSpecimenController.SamplesAction.class, c).
+                return new ActionURL(SpecimenController.SamplesAction.class, c).
                         addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
 

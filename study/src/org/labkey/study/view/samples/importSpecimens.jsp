@@ -19,15 +19,15 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.pipeline.SpecimenBatch"%>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.pipeline.SpecimenArchive" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.ImportSpecimensBean> me =
-            (JspView<SpringSpecimenController.ImportSpecimensBean>) HttpView.currentView();
-    SpringSpecimenController.ImportSpecimensBean bean = me.getModelBean();
+    JspView<SpecimenController.ImportSpecimensBean> me =
+            (JspView<SpecimenController.ImportSpecimensBean>) HttpView.currentView();
+    SpecimenController.ImportSpecimensBean bean = me.getModelBean();
     boolean hasError = !bean.getErrors().isEmpty();
     List<SpecimenArchive.EntryDescription> entries = bean.getArchive().getEntryDescriptions();
 %>

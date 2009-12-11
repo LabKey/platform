@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="static org.labkey.api.data.ContainerManager.*" %>
-<%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
-<%@ page import="org.labkey.api.wiki.WikiService" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.workbook.WorkbookModule" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.wiki.WikiService" %>
 <%@ page import="org.labkey.workbook.WorkbookController" %>
+<%@ page import="org.labkey.workbook.WorkbookModule" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();

@@ -16,13 +16,12 @@
 
 package org.labkey.filecontent;
 
-import org.labkey.api.view.*;
-import org.labkey.api.data.Container;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.view.*;
 
 /**
  * User: Mark Igra

@@ -31,6 +31,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -156,7 +157,7 @@ public class SearchController extends SpringActionController
                     html += "Indexing complete: ";
                 else
                     html += "Indexing in progress: ";
-                html += count + " documents (" + DateUtil.formatDuration(end-start) + ") " + skipped + " skipped or failed <br>";
+                html += Formats.commaf0.format(count) + " documents (" + DateUtil.formatDuration(end-start) + ") " + "<br>"; // Remove for demo: Formats.commaf0.format(skipped) + " skipped or failed <br>";
             }
             html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer()).addParameter("full","1")) + "\">reindex (full)</a>]<br>";
             html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex (incremental)</a>]<br>";

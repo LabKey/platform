@@ -152,14 +152,14 @@ public class SpecimenUtils
         if (settings.isEnableRequests())
         {
             MenuButton requestMenuButton = new MenuButton("Request Options");
-            requestMenuButton.addMenuItem("View Existing Requests", urlFor(SpringSpecimenController.ViewRequestsAction.class));
+            requestMenuButton.addMenuItem("View Existing Requests", urlFor(SpecimenController.ViewRequestsAction.class));
             if (!commentsMode)
             {
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     String dataRegionName = gridView.getSettings().getDataRegionName();
-                    String createRequestURL = urlFor(SpringSpecimenController.ShowCreateSampleRequestAction.class,
-                            Collections.<Enum, String>singletonMap(SpringSpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
+                    String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class,
+                            Collections.<Enum, String>singletonMap(SpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
                                     getViewContext().getActionURL().getLocalURIString()));
 
                     requestMenuButton.addMenuItem("Create New Request", "#",
@@ -180,7 +180,7 @@ public class SpecimenUtils
             else
             {
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
+                endCommentsURL.replaceParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 requestMenuButton.addMenuItem("Enable Request Mode", endCommentsURL);
             }
 
@@ -194,13 +194,13 @@ public class SpecimenUtils
             {
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
                 String dataRegionName = gridView.getSettings().getDataRegionName();
-                String setCommentsURL = urlFor(SpringSpecimenController.UpdateCommentsAction.class);
+                String setCommentsURL = urlFor(SpecimenController.UpdateCommentsAction.class);
                 NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected", "#",
                         "if (verifySelected(document.forms['" + dataRegionName + "'], '" + setCommentsURL +
                         "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
                 setItem.setId("Comments:Set");
 
-                String clearCommentsURL = urlFor(SpringSpecimenController.ClearCommentsAction.class);
+                String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class);
                 NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected", "#",
                         "if (verifySelected(document.forms['" + dataRegionName + "'], '" + clearCommentsURL +
                         "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials.  " +
@@ -209,7 +209,7 @@ public class SpecimenUtils
                 clearItem.setId("Comments:Clear");
 
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
+                endCommentsURL.replaceParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 NavTree exitItem = commentsMenuButton.addMenuItem("Exit Comments " + (manualQCEnabled ? "and QC " : "") + "mode", endCommentsURL);
                 exitItem.setId("Comments:Exit");
 
@@ -251,7 +251,7 @@ public class SpecimenUtils
             else
             {
                 ActionURL enableCommentsURL = getViewContext().getActionURL().clone();
-                enableCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
+                enableCommentsURL.replaceParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
                 ActionButton commentsButton = new ActionButton("Enable Comments" + (manualQCEnabled ? "/QC" : ""), enableCommentsURL);
                 buttons.add(commentsButton);
             }
@@ -574,7 +574,7 @@ public class SpecimenUtils
     {
         SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
         if (statuses == null || statuses.length == 1)
-            HttpView.throwRedirect(new ActionURL(SpringSpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
+            HttpView.throwRedirect(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 
 
@@ -839,9 +839,9 @@ public class SpecimenUtils
     }
 
     public SimpleFilter getSpecimenListFilter(SampleRequest sampleRequest, SiteImpl srcSite,
-                                              SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException
+                                              SpecimenController.LabSpecimenListsBean.Type type) throws SQLException
     {
-        SpringSpecimenController.LabSpecimenListsBean bean = new SpringSpecimenController.LabSpecimenListsBean(this, sampleRequest, type);
+        SpecimenController.LabSpecimenListsBean bean = new SpecimenController.LabSpecimenListsBean(this, sampleRequest, type);
         List<Specimen> specimens = bean.getSpecimens(srcSite);
         Object[] params = new Object[specimens.size() + 1];
         params[params.length - 1] = sampleRequest.getContainer().getId();
@@ -871,7 +871,7 @@ public class SpecimenUtils
     }
 
     public TSVGridWriter getSpecimenListTsvWriter(SampleRequest sampleRequest, SiteImpl srcSite,
-                                                   SiteImpl destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+                                                   SiteImpl destSite, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());
@@ -890,7 +890,7 @@ public class SpecimenUtils
     }
 
     public ExcelWriter getSpecimenListXlsWriter(SampleRequest sampleRequest, SiteImpl srcSite,
-                                                 SiteImpl destSite, SpringSpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+                                                 SiteImpl destSite, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
     {
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimenDetail());

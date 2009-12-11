@@ -18,15 +18,13 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
 <%@ page import="org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="java.util.*" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%
     DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();
     Container container = HttpView.currentContext().getContainer();

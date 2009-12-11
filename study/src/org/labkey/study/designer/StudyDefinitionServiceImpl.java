@@ -19,7 +19,6 @@ package org.labkey.study.designer;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;

@@ -17,20 +17,23 @@
 %>
 <%@ page import="org.apache.commons.beanutils.ConvertUtils"%>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.collections.CsvSet"%>
 <%@ page import="org.labkey.api.data.SimpleFilter"%>
 <%@ page import="org.labkey.api.data.Sort"%>
 <%@ page import="org.labkey.api.data.Table"%>
 <%@ page import="org.labkey.api.data.TableInfo"%>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
-<%@ page import="org.labkey.api.query.QueryService"%>
+<%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.ChartDesignerBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -41,15 +44,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.collections.CsvSet" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%

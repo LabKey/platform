@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -33,8 +33,8 @@
 <%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.ReportConfigurationBean> me = (JspView<SpringSpecimenController.ReportConfigurationBean>) HttpView.currentView();
-    SpringSpecimenController.ReportConfigurationBean bean = me.getModelBean();
+    JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
+    SpecimenController.ReportConfigurationBean bean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
     User user = me.getViewContext().getUser();
     boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);

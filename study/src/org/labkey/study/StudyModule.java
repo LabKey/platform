@@ -58,7 +58,7 @@ import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpecimenApiController;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -118,7 +118,7 @@ public class StudyModule extends SpringModule
     {
         addController("study", StudyController.class);
         addController("study-reports", ReportsController.class);
-        addController("study-samples", SpringSpecimenController.class);
+        addController("study-samples", SpecimenController.class);
         addController("study-samples-api", SpecimenApiController.class);
         addController("study-security", SecurityController.class);
         addController("study-designer", DesignerController.class);

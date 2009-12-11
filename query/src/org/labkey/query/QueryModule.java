@@ -34,7 +34,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.study.StudySerializationRegistry;
-import org.labkey.query.controllers.QueryControllerSpring;
+import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.*;
@@ -65,7 +65,7 @@ public class QueryModule extends DefaultModule
 
     protected void init()
     {
-        addController("query", QueryControllerSpring.class);
+        addController("query", QueryController.class);
         addController("reports", ReportsController.class);
         addController("dbuserschema", DbUserSchemaController.class);
 

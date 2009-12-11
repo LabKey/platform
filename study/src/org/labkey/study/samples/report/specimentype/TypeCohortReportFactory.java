@@ -7,7 +7,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.PageFlowUtil;
@@ -40,9 +40,9 @@ public class TypeCohortReportFactory extends TypeReportFactory
         return false;
     }
 
-    public Class<? extends SpringSpecimenController.SpecimenVisitReportAction> getAction()
+    public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
-        return SpringSpecimenController.TypeCohortReportAction.class;
+        return SpecimenController.TypeCohortReportAction.class;
     }
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {

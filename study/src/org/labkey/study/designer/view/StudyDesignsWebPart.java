@@ -16,19 +16,18 @@
 
 package org.labkey.study.designer.view;
 
-import org.labkey.api.view.GridView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.study.designer.StudyDesignManager;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.designer.DesignerController;
+import org.labkey.study.designer.StudyDesignManager;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;

@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -25,7 +26,6 @@
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>

@@ -17,13 +17,13 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.SiteImpl" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.SelectSpecimenProviderBean> me = (JspView<SpringSpecimenController.SelectSpecimenProviderBean>) HttpView.currentView();
-    SpringSpecimenController.SelectSpecimenProviderBean bean = me.getModelBean();
+    JspView<SpecimenController.SelectSpecimenProviderBean> me = (JspView<SpecimenController.SelectSpecimenProviderBean>) HttpView.currentView();
+    SpecimenController.SelectSpecimenProviderBean bean = me.getModelBean();
 %>
 <labkey:errors/>
 <p>Vials from the selected specimens can be shipped to you from multiple locations.  Please select your preferred location:</p>

@@ -16,15 +16,16 @@
 
 package org.labkey.study.assay.query;
 
-import org.labkey.api.query.QueryView;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.assay.AssayController;
 
 /**

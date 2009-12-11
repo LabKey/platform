@@ -64,7 +64,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public ActionURL getSuccessURL(SearchForm form)
     {
-        ActionURL url = new ActionURL(SpringSpecimenController.SamplesAction.class, getViewContext().getContainer());
+        ActionURL url = new ActionURL(SpecimenController.SamplesAction.class, getViewContext().getContainer());
         url.addParameter("showVials", Boolean.toString(form.isShowVials()));
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {

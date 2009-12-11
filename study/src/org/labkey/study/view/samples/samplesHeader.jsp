@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.ACL"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.util.Pair"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script>LABKEY.requiresScript('util.js');</script>
 <script>LABKEY.requiresClientAPI();</script>
 <%
-    JspView<SpringSpecimenController.SpecimenHeaderBean> me = (JspView<SpringSpecimenController.SpecimenHeaderBean>) HttpView.currentView();
-    SpringSpecimenController.SpecimenHeaderBean bean = me.getModelBean();
-    ActionURL createRequestURL = new ActionURL(SpringSpecimenController.ShowAPICreateSampleRequestAction.class, getViewContext().getContainer());
+    JspView<SpecimenController.SpecimenHeaderBean> me = (JspView<SpecimenController.SpecimenHeaderBean>) HttpView.currentView();
+    SpecimenController.SpecimenHeaderBean bean = me.getModelBean();
+    ActionURL createRequestURL = new ActionURL(SpecimenController.ShowAPICreateSampleRequestAction.class, getViewContext().getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
     createRequestURL.addParameter("returnUrl", getViewContext().getActionURL().toString());
 %>

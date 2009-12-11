@@ -220,8 +220,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getViewContext().getContainer());
-            ActionURL samplesLink = new ActionURL(SpringSpecimenController.BeginAction.class, getViewContext().getContainer());
-            samplesLink.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+            ActionURL samplesLink = new ActionURL(SpecimenController.BeginAction.class, getViewContext().getContainer());
+            samplesLink.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
             return new HtmlView("Specimens uploaded successfully.<br><br>" +
                     PageFlowUtil.textLink("study home", homeLink) + " " +
                     PageFlowUtil.textLink("specimens", samplesLink));

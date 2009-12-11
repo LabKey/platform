@@ -33,7 +33,7 @@ import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.controllers.samples.SpecimenUtils;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.Specimen;
@@ -194,7 +194,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     protected static String getHistoryLinkBase(ViewContext ctx)
     {
-        ActionURL historyLink = new ActionURL(SpringSpecimenController.SampleEventsAction.class, ctx.getContainer());
+        ActionURL historyLink = new ActionURL(SpecimenController.SampleEventsAction.class, ctx.getContainer());
         historyLink.addParameter("returnUrl", ctx.getActionURL().getLocalURIString());
         return historyLink.toString() + "&id=";
     }

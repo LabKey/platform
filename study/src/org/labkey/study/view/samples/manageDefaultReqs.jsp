@@ -19,13 +19,13 @@
 <%@ page import="org.labkey.study.model.SampleRequestRequirement" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<org.labkey.study.controllers.samples.SpringSpecimenController.ManageReqsBean> me = (JspView<SpringSpecimenController.ManageReqsBean>) HttpView.currentView();
-    SpringSpecimenController.ManageReqsBean bean = me.getModelBean();
+    JspView<SpecimenController.ManageReqsBean> me = (JspView<SpecimenController.ManageReqsBean>) HttpView.currentView();
+    SpecimenController.ManageReqsBean bean = me.getModelBean();
     SampleRequestRequirement[] providerRequirements = bean.getProviderRequirements();
     SampleRequestRequirement[] originatingRequirements = bean.getOriginatorRequirements();
     SampleRequestRequirement[] receiverRequirements = bean.getReceiverRequirements();
@@ -240,6 +240,6 @@ function verifyNewRequirement(prefix)
             </td>
         </tr>
     </table>
-    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpringSpecimenController.ManageDefaultReqsAction.class, getViewContext().getContainer()).getLocalURIString()%>">
+    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getViewContext().getContainer()).getLocalURIString()%>">
 </form>
 <%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer())) %>

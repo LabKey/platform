@@ -19,7 +19,6 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;

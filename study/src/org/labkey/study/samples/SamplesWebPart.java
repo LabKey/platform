@@ -23,7 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.SpecimenTypeSummary;
 
 import java.util.List;
@@ -121,8 +121,8 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
 
         private String getTypeListHtml(List<? extends SpecimenTypeSummary.TypeCount> types)
         {
-            ActionURL baseURL = new ActionURL(SpringSpecimenController.SamplesAction.class, _viewContext.getContainer());
-            baseURL.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+            ActionURL baseURL = new ActionURL(SpecimenController.SamplesAction.class, _viewContext.getContainer());
+            baseURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
             return getTypeListInnerHtml(types, baseURL);
 
         }

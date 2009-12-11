@@ -40,6 +40,7 @@ import org.labkey.api.webdav.Resource;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
@@ -912,6 +913,8 @@ public class WikiManager
                             documentName);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
+
+                Logger.getLogger("Indexed " + list.size() + " wiki attachments");
             }
         }
         catch (SQLException x)

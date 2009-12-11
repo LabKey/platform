@@ -25,13 +25,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.CohortFilter;
 
 import java.io.PrintWriter;
 import java.util.Collections;

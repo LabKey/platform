@@ -2,7 +2,7 @@ package org.labkey.study.samples.report.participant;
 
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.api.data.SimpleFilter;
@@ -49,8 +49,8 @@ public class ParticipantSummaryReportFactory extends SpecimenVisitReportParamete
         return false;
     }
     
-    public Class<? extends SpringSpecimenController.SpecimenVisitReportAction> getAction()
+    public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
-        return SpringSpecimenController.ParticipantSummaryReportAction.class;
+        return SpecimenController.ParticipantSummaryReportAction.class;
     }
 }

@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.Specimen" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -29,8 +29,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.UpdateSpecimenCommentsBean> me = (JspView<SpringSpecimenController.UpdateSpecimenCommentsBean>) HttpView.currentView();
-    SpringSpecimenController.UpdateSpecimenCommentsBean bean = me.getModelBean();
+    JspView<SpecimenController.UpdateSpecimenCommentsBean> me = (JspView<SpecimenController.UpdateSpecimenCommentsBean>) HttpView.currentView();
+    SpecimenController.UpdateSpecimenCommentsBean bean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
 
     NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container), getViewContext().getUser());

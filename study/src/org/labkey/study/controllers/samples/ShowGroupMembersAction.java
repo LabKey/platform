@@ -103,7 +103,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 // Ignore lines of all whitespace, otherwise show an error.
                 if (!"".equals(rawEmail.trim()))
                 {
-                    errors.rejectValue(SpringSpecimenController.ERROR_MSG, "Could not add user " + rawEmail.trim() + ": Invalid email address");
+                    errors.rejectValue(SpecimenController.ERROR_MSG, "Could not add user " + rawEmail.trim() + ": Invalid email address");
                 }
             }
 
@@ -119,7 +119,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 {
                     User user = UserManager.getUser(email);
                     if (user == null)
-                        errors.rejectValue(SpringSpecimenController.ERROR_MSG, email.getEmailAddress() + " is not a registered system user.");
+                        errors.rejectValue(SpecimenController.ERROR_MSG, email.getEmailAddress() + " is not a registered system user.");
                     else
                     {
                         newMembers.add(UserManager.getUser(email));
@@ -140,7 +140,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return new ActionURL(returnURL.getSource());
         else
         {
-            return new ActionURL(SpringSpecimenController.ManageActorsAction.class, getViewContext().getContainer());
+            return new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer());
         }
     }
 
@@ -152,9 +152,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getViewContext().getContainer()));
 
         if (_site != null)
-            root.addChild("Manage Actors", new ActionURL(SpringSpecimenController.ManageActorsAction.class, getViewContext().getContainer()).addParameter("showMemberSites", _actor.getRowId()));
+            root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer()).addParameter("showMemberSites", _actor.getRowId()));
         else
-            root.addChild("Manage Actors", new ActionURL(SpringSpecimenController.ManageActorsAction.class, getViewContext().getContainer()));
+            root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getViewContext().getContainer()));
 
         String title = _actor.getLabel();
         if (_site != null)
@@ -181,7 +181,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         return _site;
     }
 
-    public static class UpdateGroupForm extends SpringSpecimenController.IdForm
+    public static class UpdateGroupForm extends SpecimenController.IdForm
     {
         private Integer _siteId;
         private String[] _delete;

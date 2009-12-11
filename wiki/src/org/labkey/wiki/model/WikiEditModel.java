@@ -16,7 +16,6 @@
 package org.labkey.wiki.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;

@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
@@ -30,8 +30,8 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.NewRequestBean> me = (JspView<SpringSpecimenController.NewRequestBean>) HttpView.currentView();
-    SpringSpecimenController.NewRequestBean bean = me.getModelBean();
+    JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
+    SpecimenController.NewRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
     SiteImpl[] sites = StudyManager.getInstance().getSites(context.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
@@ -172,7 +172,7 @@ function setDefaults()
         %>
         <tr>
             <td>
-                <input type="hidden" name="<%= SpringSpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() %>" value="false">
+                <input type="hidden" name="<%= SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() %>" value="false">
                 <%
                     boolean hasReturnURL = bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty();
                     if (hasReturnURL)
@@ -183,7 +183,7 @@ function setDefaults()
                     }
                 %>
                 <%= buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details", 
-                        "document.CreateSampleRequest." + SpringSpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;")%>
+                        "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;")%>
                 <%= hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", "viewRequests.view")%>
             </td>
         </tr>

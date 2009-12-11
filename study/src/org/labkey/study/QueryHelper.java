@@ -34,11 +34,22 @@ public class QueryHelper<K extends StudyCachable>
     private Class<K> _objectClass;
     private Set<String> _cachedFilters = new HashSet<String>();
     private final TableInfoGetter _tableInfoGetter;
+    private final K _missMarker;
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
     {
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
+
+        try
+        {
+            _missMarker = objectClass.newInstance();
+        }
+        catch (Exception e)
+        {
+            // Something has gone horribly wrong
+            throw new RuntimeException(e);
+        }
     }
 
     public K[] get(Container c) throws SQLException
@@ -81,40 +92,37 @@ public class QueryHelper<K extends StudyCachable>
 
     public K get(Container c, double rowId) throws SQLException
     {
-        return get(c, rowId, "RowId");
+        return get(c, (Object)rowId, "RowId");
     }
 
     public K get(Container c, int rowId) throws SQLException
     {
-        return get(c, rowId, "RowId");
-    }
-
-    public K get(Container c, int rowId, String rowIdColumnName) throws SQLException
-    {
-        K obj = (K) StudyCache.getCached(getTableInfo(), c.getId(), rowId);
-        if (obj == null)
-        {
-            SimpleFilter filter = new SimpleFilter("Container", c.getId());
-            filter.addCondition(rowIdColumnName, rowId);
-            obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS,
-                    filter, null, _objectClass);
-            StudyCache.cache(getTableInfo(), c.getId(), rowId, obj);
-        }
-        return obj;
+        return get(c, (Object)rowId, "RowId");
     }
 
     public K get(Container c, double rowId, String rowIdColumnName) throws SQLException
     {
+        return get(c, (Object)rowId, rowIdColumnName);
+    }
+
+    public K get(Container c, int rowId, String rowIdColumnName) throws SQLException
+    {
+        return get(c, (Object)rowId, rowIdColumnName);
+    }
+
+    private K get(Container c, Object rowId, String rowIdColumnName) throws SQLException
+    {
         K obj = (K) StudyCache.getCached(getTableInfo(), c.getId(), rowId);
         if (obj == null)
         {
             SimpleFilter filter = new SimpleFilter("Container", c.getId());
             filter.addCondition(rowIdColumnName, rowId);
-            obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS,
-                    filter, null, _objectClass);
+            obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS, filter, null, _objectClass);
+            if (null == obj)
+                obj = _missMarker;
             StudyCache.cache(getTableInfo(), c.getId(), rowId, obj);
         }
-        return obj;
+        return (_missMarker == obj ? null : obj);
     }
 
     public K create(User user, K obj) throws SQLException

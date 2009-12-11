@@ -210,5 +210,4 @@ public class AnnouncementModule extends DefaultModule
             };
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
-
 }

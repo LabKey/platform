@@ -22,11 +22,11 @@
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.ManageRequestBean> me = (JspView<SpringSpecimenController.ManageRequestBean>) HttpView.currentView();
-    SpringSpecimenController.ManageRequestBean bean = me.getModelBean();
+    JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
+    SpecimenController.ManageRequestBean bean = me.getModelBean();
     ViewContext context = me.getViewContext();
     SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(context.getContainer(), context.getUser());
 %>

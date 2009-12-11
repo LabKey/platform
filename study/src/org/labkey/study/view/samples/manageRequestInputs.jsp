@@ -21,11 +21,11 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.ManageRequestInputsBean> me = (JspView<SpringSpecimenController.ManageRequestInputsBean>) HttpView.currentView();
-    SpringSpecimenController.ManageRequestInputsBean bean = me.getModelBean();
+    JspView<SpecimenController.ManageRequestInputsBean> me = (JspView<SpecimenController.ManageRequestInputsBean>) HttpView.currentView();
+    SpecimenController.ManageRequestInputsBean bean = me.getModelBean();
     String contextPath = bean.getContextPath();
 
     String tdButtons = "<a href=\"#\" onClick=\"return moveRow(this, true);\">" +

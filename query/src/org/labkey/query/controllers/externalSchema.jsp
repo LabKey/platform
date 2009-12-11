@@ -19,11 +19,11 @@
 <%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.query.persist.DbUserSchemaDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    QueryControllerSpring.ExternalSchemaBean bean = (QueryControllerSpring.ExternalSchemaBean)HttpView.currentModel();
+    QueryController.ExternalSchemaBean bean = (QueryController.ExternalSchemaBean)HttpView.currentModel();
     DbUserSchemaDef def = bean.getSchemaDef();
     DbScope initialScope = null;
 

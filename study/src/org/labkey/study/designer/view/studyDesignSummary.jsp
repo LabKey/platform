@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.designer.StudyDesignInfo" %>
 <%@ page import="org.labkey.study.designer.StudyDesignManager" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.study.designer.client.model.GWTAntigen" %>
+<%@ page import="org.labkey.study.designer.client.model.GWTCohort" %>
+<%@ page import="org.labkey.study.designer.client.model.GWTImmunogen" %>
+<%@ page import="org.labkey.study.designer.client.model.GWTStudyDefinition" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.designer.client.model.*" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = HttpView.currentContext().getContainer();

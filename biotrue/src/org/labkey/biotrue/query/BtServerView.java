@@ -22,7 +22,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.DataView;
 

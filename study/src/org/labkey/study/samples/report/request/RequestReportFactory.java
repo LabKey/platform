@@ -3,7 +3,7 @@ package org.labkey.study.samples.report.request;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.Site;
 
@@ -74,8 +74,8 @@ public class RequestReportFactory extends BaseRequestReportFactory
         }
     }
 
-    public Class<? extends SpringSpecimenController.SpecimenVisitReportAction> getAction()
+    public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
-        return SpringSpecimenController.RequestReportAction.class;
+        return SpecimenController.RequestReportAction.class;
     }
 }

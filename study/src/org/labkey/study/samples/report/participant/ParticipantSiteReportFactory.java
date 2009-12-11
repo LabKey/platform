@@ -4,11 +4,10 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 
@@ -117,8 +116,8 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         return "By Enrollment Site";
     }
 
-    public Class<? extends SpringSpecimenController.SpecimenVisitReportAction> getAction()
+    public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
-        return SpringSpecimenController.ParticipantSiteReportAction.class;
+        return SpecimenController.ParticipantSiteReportAction.class;
     }
 }

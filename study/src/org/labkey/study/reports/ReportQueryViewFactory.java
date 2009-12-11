@@ -17,6 +17,7 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
@@ -27,12 +28,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -43,7 +43,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.util.Map;

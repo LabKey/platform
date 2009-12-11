@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="org.labkey.study.model.Specimen"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.AddToExistingRequestBean> me = (JspView<org.labkey.study.controllers.samples.SpringSpecimenController.AddToExistingRequestBean>) HttpView.currentView();
-    SpringSpecimenController.AddToExistingRequestBean bean = me.getModelBean();
+    JspView<SpecimenController.AddToExistingRequestBean> me = (JspView<SpecimenController.AddToExistingRequestBean>) HttpView.currentView();
+    SpecimenController.AddToExistingRequestBean bean = me.getModelBean();
 %>
 <%
     if (bean.getSpecimenQueryView() == null)

@@ -19,15 +19,15 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.SampleRequestRequirement"%>
 <%@ page import="org.labkey.study.model.SiteImpl"%>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.study.Site" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.ManageRequirementBean> me = (JspView<SpringSpecimenController.ManageRequirementBean>) HttpView.currentView();
-    org.labkey.study.controllers.samples.SpringSpecimenController.ManageRequirementBean bean = me.getModelBean();
+    JspView<SpecimenController.ManageRequirementBean> me = (JspView<SpecimenController.ManageRequirementBean>) HttpView.currentView();
+    SpecimenController.ManageRequirementBean bean = me.getModelBean();
     SampleRequestRequirement requirement = bean.getRequirement();
     Site site = requirement.getSite();
     String siteLabel = site != null ? site.getDisplayName() : "N/A";

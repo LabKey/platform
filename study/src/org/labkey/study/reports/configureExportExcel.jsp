@@ -15,18 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.WebPartView"%>
-<%@ page import="org.labkey.study.model.SiteImpl"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.study.model.SiteImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();

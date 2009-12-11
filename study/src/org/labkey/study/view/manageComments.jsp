@@ -24,14 +24,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<SpringSpecimenController.ManageCommentsForm> me = (JspView<SpringSpecimenController.ManageCommentsForm>) HttpView.currentView();
-    SpringSpecimenController.ManageCommentsForm bean = me.getModelBean();
+    JspView<SpecimenController.ManageCommentsForm> me = (JspView<SpecimenController.ManageCommentsForm>) HttpView.currentView();
+    SpecimenController.ManageCommentsForm bean = me.getModelBean();
 
     StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();

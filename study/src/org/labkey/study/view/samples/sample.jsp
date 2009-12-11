@@ -22,16 +22,16 @@
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.model.SpecimenComment" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.api.study.Site" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.SpecimenEventBean> me = (JspView<SpringSpecimenController.SpecimenEventBean>) HttpView.currentView();
-    SpringSpecimenController.SpecimenEventBean bean = me.getModelBean();
+    JspView<SpecimenController.SpecimenEventBean> me = (JspView<SpecimenController.SpecimenEventBean>) HttpView.currentView();
+    SpecimenController.SpecimenEventBean bean = me.getModelBean();
     Specimen sample = bean.getSpecimen();
     Site originatingLocation = SampleManager.getInstance().getOriginatingSite(sample);
     SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(sample);
-    ActionURL commentsLink = new ActionURL(SpringSpecimenController.UpdateCommentsAction.class, sample.getContainer());
+    ActionURL commentsLink = new ActionURL(SpecimenController.UpdateCommentsAction.class, sample.getContainer());
     commentsLink.addParameter("rowId", sample.getRowId());
     commentsLink.addParameter("referrer", getViewContext().getActionURL().getLocalURIString());
 %>

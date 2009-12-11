@@ -16,24 +16,23 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.model.StudyManager;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
+import org.labkey.study.SampleManager;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.SampleRequestStatus;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.SampleManager;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -126,9 +125,9 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                         String cancelLink = ctx.getViewContext().getActionURL().relativeUrl("deleteRequest", "id=${requestId}");
 
                         content.append(PageFlowUtil.generateButton("Submit", submitLink,
-                                "return confirm('" + SpringSpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")).append(" ");
+                                "return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")).append(" ");
                         content.append(PageFlowUtil.generateButton("Cancel", cancelLink,
-                                "return confirm('" + SpringSpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")).append(" ");
+                                "return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")).append(" ");
                     }
                 }
                 String detailsLink = ctx.getViewContext().getActionURL().relativeUrl("manageRequest", "id=${requestId}");

@@ -15,20 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.study.model.SampleRequestStatus" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.model.SampleRequestStatus" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpringSpecimenController.ViewRequestsHeaderBean> me = (JspView<SpringSpecimenController.ViewRequestsHeaderBean>) HttpView.currentView();
+    JspView<SpecimenController.ViewRequestsHeaderBean> me = (JspView<SpecimenController.ViewRequestsHeaderBean>) HttpView.currentView();
     ViewContext context = me.getViewContext();
-    SpringSpecimenController.ViewRequestsHeaderBean bean = me.getModelBean();
+    SpecimenController.ViewRequestsHeaderBean bean = me.getModelBean();
     ActionURL userLink = context.cloneActionURL();
     if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class) || context.getUser().isAdministrator())
     {
@@ -37,19 +35,19 @@
 <%
     }
 %>
-<%= textLink("All User Requests", userLink.deleteParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
-<%= textLink("My Requests", userLink.replaceParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
+<%= textLink("All User Requests", userLink.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
+<%= textLink("My Requests", userLink.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
         context.getUser().getDisplayName(context))) %>
 Filter by status: <select onChange="document.location=options[selectedIndex].value;">
 <%
     ActionURL current = context.cloneActionURL();
-    current.deleteParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL);
+    current.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL);
 %>
     <option value="<%= current.getLocalURIString() %>">All Statuses</option>
 <%
     for (SampleRequestStatus status : bean.getStauses())
     {
-        current.replaceParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL, status.getLabel());
+        current.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL, status.getLabel());
 %>
     <option value="<%= current.getLocalURIString() %>" <%= bean.isFilteredStatus(status) ? "SELECTED" : "" %>><%= h(status.getLabel()) %></option>
 <%
@@ -57,7 +55,7 @@ Filter by status: <select onChange="document.location=options[selectedIndex].val
 %>
 </select>
 <%
-    String userFilter = context.getActionURL().getParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY);
+    String userFilter = context.getActionURL().getParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY);
     if (userFilter != null)
     {
 %>

@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.samples.settings.StatusSettings" %>
-<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -132,8 +132,8 @@ function showSystemRows(value)
                     <%= generateSubmitButton("Save")%>&nbsp;
                     <%= buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;")%>
                     <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
-                    <%= buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpringSpecimenController.ManageStatusOrderAction.class, getViewContext().getContainer()).getLocalURIString() + "'; return true;")%>
-                    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpringSpecimenController.ManageStatusesAction.class, getViewContext().getContainer()).getLocalURIString()%>">
+                    <%= buttonImg("Change Order", "document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getViewContext().getContainer()).getLocalURIString() + "'; return true;")%>
+                    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageStatusesAction.class, getViewContext().getContainer()).getLocalURIString()%>">
                 </td>
             </tr>
         </table>

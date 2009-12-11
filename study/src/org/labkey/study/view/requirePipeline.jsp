@@ -16,9 +16,9 @@
  */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 Before uploading datasets, an administrator must set up a "pipeline"
 directory where uploaded data will be stored.<br><br>

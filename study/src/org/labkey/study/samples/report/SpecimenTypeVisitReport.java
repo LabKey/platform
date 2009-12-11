@@ -1,7 +1,7 @@
 package org.labkey.study.samples.report;
 
 import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.SimpleFilter;
@@ -112,8 +112,8 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = new ActionURL(SpringSpecimenController.SamplesAction.class, _container);
-        link.addParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+        ActionURL link = new ActionURL(SpecimenController.SamplesAction.class, _container);
+        link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
@@ -143,7 +143,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
                 for (Iterator<String> it = summary.getParticipantIds().iterator(); it.hasNext();)
                 {
                     String participantId = it.next();
-                    ActionURL url = new ActionURL(SpringSpecimenController.TypeParticipantReportAction.class, _container);
+                    ActionURL url = new ActionURL(SpecimenController.TypeParticipantReportAction.class, _container);
                     url.addParameter("participantId", participantId);
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.typeLevel, getTypeLevelEnum().name());
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.statusFilterName, getStatusFilterName());

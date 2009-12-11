@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.query.QueryParam"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.query.controllers.NewQueryForm" %>
-<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -34,7 +34,7 @@
 <% if (tableAndQueryNames.size() == 0) { %>
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
-    <form action="<%=urlFor(QueryControllerSpring.NewQueryAction.class)%>" method="POST">
+    <form action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
         <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(form.getSchemaName())%>" />
         <input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
 
