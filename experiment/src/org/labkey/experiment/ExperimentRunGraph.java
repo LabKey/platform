@@ -522,6 +522,10 @@ public class ExperimentRunGraph
                         (outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = rowIdPA;
 
+                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
+                else
+                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
                 dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
                 dg.connectProtocolAppToMaterial(rowIdPA, material.getRowId());
             }
@@ -534,6 +538,10 @@ public class ExperimentRunGraph
                         (outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = rowIdPA;
 
+                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
+                else
+                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
                 dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
                 dg.connectProtocolAppToData(rowIdPA, data.getRowId());
 
@@ -615,6 +623,7 @@ public class ExperimentRunGraph
                 groupId = null;
                 if ((outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = 1;
+                dg.addExpRun(runId, expRun.getName());
                 dg.addMaterial(material, groupId, null, expRun.getMaterialOutputs().contains(material));
                 dg.connectRunToMaterial(runId, material.getRowId());
                 for (ExpRun successorRun : material.getSuccessorRuns())
@@ -634,6 +643,7 @@ public class ExperimentRunGraph
                 groupId = null;
                 if ((outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = 1;
+                dg.addExpRun(runId, expRun.getName());
                 dg.addData(data, groupId, null, expRun.getDataOutputs().contains(data));
                 dg.connectRunToData(runId, data.getRowId());
                 for (ExpRun successorRun : data.getSuccessorRuns())
