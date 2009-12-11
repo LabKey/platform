@@ -914,7 +914,7 @@ public class WikiManager
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
 
-                Logger.getLogger("Indexed " + list.size() + " wiki attachments");
+                Logger.getLogger(WikiManager.class).info("Indexed " + list.size() + " wiki attachments");
             }
         }
         catch (SQLException x)

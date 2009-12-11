@@ -240,8 +240,10 @@ public class LoginController extends SpringActionController
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
 
-            // Check to see if any authentication credentials already exist (passed as URL param, in a cookie, etc.)
-            if (!reshow && authenticate(form, request, response))
+            // If user is already logged in, then redirect immediately.  This is necessary because of Excel's link
+            // behavior (see #9246).  Next, check to see if any authentication credentials already exist (passed as URL
+            // param, in a cookie, etc.)
+            if (!reshow && (isLoggedIn() || authenticate(form, request, response)))
                 return HttpView.redirect(getSuccessURLAsString(form));
             else
                 return showLogin(form, request, getPageConfig(), false);
@@ -315,6 +317,15 @@ public class LoginController extends SpringActionController
 
             // should never get here, as the success options throw RedirectExceptions
             throw new IllegalStateException("Should have redirected");
+        }
+
+        private boolean isLoggedIn()
+        {
+            if (getUser().isGuest())
+                return false;
+
+            _user = getUser();
+            return true;
         }
 
         private boolean authenticate(LoginForm form, HttpServletRequest request, HttpServletResponse response)
