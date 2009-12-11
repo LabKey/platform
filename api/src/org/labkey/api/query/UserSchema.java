@@ -16,21 +16,20 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.BoundMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.collections.BoundMap;
-import org.labkey.api.util.StringExpression;
 import org.springframework.beans.PropertyValues;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import java.util.*;

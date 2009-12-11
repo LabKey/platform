@@ -17,7 +17,6 @@
 package org.labkey.api.view.menu;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;

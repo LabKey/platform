@@ -17,14 +17,13 @@
 package org.labkey.api.exp;
 
 import org.labkey.api.data.*;
-import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.view.InsertView;
 
 import javax.servlet.http.HttpServletRequest;

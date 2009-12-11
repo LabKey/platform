@@ -97,6 +97,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     public TTLCacheMap(int maxSize, long defaultExpires, String debugName)
     {
+        // Limit the initial size of the underlying map (it will grow if necessary)
         super(Math.min(10000, maxSize), debugName);
         this.lru = true;
         this.maxSize = maxSize;

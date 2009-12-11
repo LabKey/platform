@@ -15,6 +15,8 @@
  */
 package org.labkey.api.collections;
 
+import org.apache.log4j.Logger;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -361,7 +363,13 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected void trackPut(V value)
     {
-        //assert null != value;
+        //assert null != value;       TODO: Enable once null puts are eliminated
+
+        if (null == value)
+        {
+            //noinspection ThrowableInstanceNeverThrown
+            Logger.getLogger(CacheMap.class).info("Attempting to cache NULL -- should use marker for misses", new Exception());
+        }
 
         stats.puts.incrementAndGet();
     }

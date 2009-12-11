@@ -16,13 +16,17 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
 
 abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 {

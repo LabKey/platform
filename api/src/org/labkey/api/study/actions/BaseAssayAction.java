@@ -16,23 +16,22 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.action.SimpleViewAction;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.AppBarAction;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.ACL;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.util.PageFlowUtil;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;

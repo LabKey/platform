@@ -20,12 +20,9 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.query.DetailsURL;
 import org.springframework.validation.BindException;
 
 import java.io.PrintWriter;
-import java.util.Map;
-import java.util.Collections;
 
 /**
  * User: Mark Igra

@@ -19,7 +19,6 @@ package org.labkey.api.util;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SimpleFilter.OperationClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.*;
 import org.springframework.beans.PropertyValues;

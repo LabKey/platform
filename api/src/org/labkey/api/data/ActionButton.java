@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
