@@ -193,7 +193,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             return Collections.singletonMap(Document.class, doc);
         }
-        catch(Exception e)
+        catch(Throwable e)
         {
             _log.error("Indexing error with " + id, e);
         }
@@ -231,7 +231,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Document doc = (Document)preprocessMap.get(Document.class);
             getIndexWriter().addDocument(doc);
         }
-        catch(Exception e)
+        catch(Throwable e)
         {
             _log.error("Indexing error with " + id, e);
         }
