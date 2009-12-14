@@ -52,11 +52,11 @@ public class ReturnUrlForm
                 return null;
             return new ActionURL(_returnUrl);
         }
-        catch(IllegalArgumentException e)
+        catch (IllegalArgumentException e)
         {
             throw new ActionURLException(_returnUrl.getSource(), "returnUrl parameter", e);
         }
-        catch(NullPointerException e)
+        catch (NullPointerException e)
         {
             throw new ActionURLException(null, "returnUrl parameter", e);
         }
@@ -67,11 +67,13 @@ public class ReturnUrlForm
     {
         try
         {
-            return getReturnActionURL();
+            ActionURL url = getReturnActionURL();
+            if (null != url)
+                return url;
         }
         catch (ActionURLException e)
         {
-            return defaultURL;
         }
+        return defaultURL;
     }
 }
