@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.VerifyBean bean = ((JspView<LoginController.VerifyBean>)HttpView.currentView()).getModelBean();
@@ -36,7 +36,7 @@
     if (!bean.unrecoverableError)
     { %>
     <tr><td colspan=2><%=h(bean.email)%>:</td></tr>
-    <tr><td colspan=2>Type in a new password twice.  After setting your password you will be automatically sign in.</td></tr>
+    <tr><td colspan=2>Choose a password you'll use to access this server.</td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
     <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:150;"></td></tr>
     <tr><td>Retype Password:</td><td><input type="password" name="password2" style="width:150;"></td></tr>
