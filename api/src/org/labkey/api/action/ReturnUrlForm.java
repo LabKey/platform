@@ -56,10 +56,6 @@ public class ReturnUrlForm
         {
             throw new ActionURLException(_returnUrl.getSource(), "returnUrl parameter", e);
         }
-        catch (NullPointerException e)
-        {
-            throw new ActionURLException(null, "returnUrl parameter", e);
-        }
     }
 
     // Return the passed-in default URL if returnURL param is missing or unparseable
