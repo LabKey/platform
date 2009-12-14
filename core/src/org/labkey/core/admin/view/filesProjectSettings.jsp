@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -30,7 +32,7 @@
 
     // the default project file root based on the site default root
     String projectDefaultRoot = "";
-    File siteRoot = AppProps.getInstance().getFileSystemRoot();
+    File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
     if (siteRoot != null)
     {
         File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());

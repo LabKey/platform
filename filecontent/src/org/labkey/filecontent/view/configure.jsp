@@ -25,13 +25,16 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<FileContentController.FileContentForm> me = (JspView<FileContentController.FileContentForm>) HttpView.currentView();
     FileContentController.FileContentForm form = me.getModelBean();
+    FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
     ViewContext ctx = me.getViewContext();
-    AttachmentDirectory[] attachmentDirs = AttachmentService.get().getRegisteredDirectories(ctx.getContainer());
+    AttachmentDirectory[] attachmentDirs = service.getRegisteredDirectories(ctx.getContainer());
 
     String fileSetHelp = "A file set enables web file sharing of data in subdirectories that do not correspond " +
     "exactly to LabKey containers. It is important to remember that when you request a file from a file set, " +
@@ -48,7 +51,7 @@
 
     if (ctx.getUser().isAdministrator())
     {
-        File rootFile = AttachmentService.get().getWebRoot(ctx.getContainer().getProject());
+        File rootFile = service.getFileRoot(ctx.getContainer().getProject());
         ActionURL configureHelper = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
         if (null == rootFile)
         { %>
@@ -60,7 +63,7 @@
             The directory containing web files for this folder is
         <%
             String path = "<unset>";
-            AttachmentDirectory attachDir = AttachmentService.get().getMappedAttachmentDirectory(ctx.getContainer(), false);
+            AttachmentDirectory attachDir = service.getMappedAttachmentDirectory(ctx.getContainer(), false);
             if (attachDir != null)
             {
                 File fileSystemDir = attachDir.getFileSystemDirectory();

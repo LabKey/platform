@@ -32,6 +32,9 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.files.UnsetRootDirectoryException" %>
+<%@ page import="org.labkey.api.files.MissingRootDirectoryException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = HttpView.currentContext();
@@ -52,11 +55,11 @@
         //Ensure that we can actually upload files
         File dir = parent.getFileSystemDirectory();
     }
-    catch (AttachmentService.UnsetRootDirectoryException e)
+    catch (UnsetRootDirectoryException e)
     {
             %>In order to use this module, a root directory must be set for the project.<br><%=adminError(context)%><%
     }
-    catch (AttachmentService.MissingRootDirectoryException e)
+    catch (MissingRootDirectoryException e)
     {
         %>The root directory expected for this project does not exist.<br><%=adminError(context)%><%
          return;

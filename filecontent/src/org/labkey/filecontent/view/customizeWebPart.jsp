@@ -24,13 +24,16 @@
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
     FileContentController.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     ActionURL postUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
-    AttachmentDirectory [] attDirs = AttachmentService.get().getRegisteredDirectories(ctx.getContainer());
+    FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+    AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(ctx.getContainer());
 
 %>
 <form action="<%=postUrl%>" method="post">

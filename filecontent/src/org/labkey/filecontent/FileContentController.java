@@ -32,6 +32,10 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.files.MissingRootDirectoryException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -96,10 +100,12 @@ public class FileContentController extends SpringActionController
 
             String fileSet = StringUtils.trimToNull(form.getFileSet());
             AttachmentDirectory p;
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+
             if (null == fileSet)
-                p = AttachmentService.get().getMappedAttachmentDirectory(getContainer(), false);
+                p = svc.getMappedAttachmentDirectory(getContainer(), false);
             else
-                p = AttachmentService.get().getRegisteredDirectory(getContainer(), form.getFileSet());
+                p = svc.getRegisteredDirectory(getContainer(), form.getFileSet());
 
             if (null == p)
                 throw new NotFoundException();
@@ -294,11 +300,12 @@ public class FileContentController extends SpringActionController
        @Override
        protected void renderView(Object model, PrintWriter out) throws Exception
        {
-           AttachmentDirectory main = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+           FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+           AttachmentDirectory main = svc.getMappedAttachmentDirectory(c, false);
            if (null != main && null != main.getFileSystemDirectory())
                out.write("<a href='begin.view'>Default</a><br>");
 
-           for (AttachmentDirectory attDir : AttachmentService.get().getRegisteredDirectories(c))
+           for (AttachmentDirectory attDir : svc.getRegisteredDirectories(c))
                out.write("<a href='begin.view?fileSetName=" + PageFlowUtil.filter(attDir.getLabel()) + "'>" + PageFlowUtil.filter(attDir.getLabel()) + "</a><br>");
 
            if (HttpView.currentContext().getUser().isAdministrator())
@@ -460,20 +467,25 @@ public class FileContentController extends SpringActionController
 
        public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors) throws Exception
        {
-           File attachmentServiceRoot = AttachmentService.get().getWebRoot(getContainer());
-           if (null == form.getRootPath() && null != attachmentServiceRoot)
+           FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+
+           if (service != null)
            {
-               String path = attachmentServiceRoot.getPath();
-               try
+               File root = service.getFileRoot(getContainer());
+               if (null == form.getRootPath() && null != root)
                {
-                   NetworkDrive.ensureDrive(path);
-                   path = attachmentServiceRoot.getCanonicalPath();
+                   String path = root.getPath();
+                   try
+                   {
+                       NetworkDrive.ensureDrive(path);
+                       path = root.getCanonicalPath();
+                   }
+                   catch (Exception e)
+                   {
+                       logger.error("Could not get canonical path for " + root.getPath() + ", using path as entered.", e);
+                   }
+                   form.setRootPath(path);
                }
-               catch (Exception e)
-               {
-                   logger.error("Could not get canonical path for " + attachmentServiceRoot.getPath() + ", using path as entered.", e);
-               }
-               form.setRootPath(path);
            }
            return new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form, errors);
        }
@@ -510,6 +522,7 @@ public class FileContentController extends SpringActionController
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
            String path = StringUtils.trimToNull(form.getPath());
+           FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
 
            if (null == name)
               	errors.reject(SpringActionController.ERROR_MSG, "Please enter a label for the file set. ");
@@ -517,7 +530,7 @@ public class FileContentController extends SpringActionController
                 errors.reject(SpringActionController.ERROR_MSG, "Name is too long, should be less than " + MAX_NAME_LENGTH +" characters.");
            else
            {
-               AttachmentDirectory attDir = AttachmentService.get().getRegisteredDirectory(getContainer(), name);
+               AttachmentDirectory attDir = service.getRegisteredDirectory(getContainer(), name);
                if (null != attDir)
                    errors.reject(SpringActionController.ERROR_MSG, "A file set named "  + name + " already exists.");
            }
@@ -529,7 +542,7 @@ public class FileContentController extends SpringActionController
 		   String message = "";
            if (errors.getErrorCount() == 0)
            {
-               AttachmentService.get().registerDirectory(getContainer(), name, path, false);
+               service.registerDirectory(getContainer(), name, path, false);
                message = "Directory successfully registered.";
                File dir = new File(path);
                if (!dir.exists())
@@ -537,7 +550,10 @@ public class FileContentController extends SpringActionController
                form.setPath(null);
                form.setFileSetName(null);
            }
-           File webRoot = AttachmentService.get().getWebRoot(getContainer().getProject());
+           File webRoot = null;
+
+           if (service != null)
+               webRoot = service.getFileRoot(getContainer().getProject());
            form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
            form.setMessage(StringUtils.trimToNull(message));
            setReshow(true);
@@ -552,26 +568,29 @@ public class FileContentController extends SpringActionController
        public boolean handlePost(FileContentForm form, BindException errors) throws Exception
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
+           FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+
            if (null == name)
-		   {
-               errors.reject(SpringActionController.ERROR_MSG, "No name for fileset supplied.");
-		       return false;
-		   }
-           AttachmentDirectory attDir = AttachmentService.get().getRegisteredDirectory(getContainer(), name);
-           if (null == attDir)
-		   {
-               form.setMessage("Attachment directory named " + name + " not found");
-		   }
-		   else
            {
-               AttachmentService.get().unregisterDirectory(getContainer(), form.getFileSetName());
+               errors.reject(SpringActionController.ERROR_MSG, "No name for fileset supplied.");
+               return false;
+           }
+           AttachmentDirectory attDir = service.getRegisteredDirectory(getContainer(), name);
+           if (null == attDir)
+           {
+               form.setMessage("Attachment directory named " + name + " not found");
+           }
+           else
+           {
+               service.unregisterDirectory(getContainer(), form.getFileSetName());
                form.setMessage("Directory was removed from list. Files were not deleted.");
                form.setPath(null);
                form.setFileSetName(null);
            }
-           File webRoot = AttachmentService.get().getWebRoot(getContainer().getProject());
+           File webRoot = service.getFileRoot(getContainer().getProject());
            form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
            setReshow(true);
+
 		   return true;
        }
    }
@@ -771,18 +790,19 @@ public class FileContentController extends SpringActionController
     private AttachmentDirectory getAttachmentParent(AttachmentForm form) throws NotFoundException
     {
         AttachmentDirectory attachmentParent;
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         try
         {
             if (null == form.getEntityId() || form.getEntityId().equals(getContainer().getId()))
-                attachmentParent = AttachmentService.get().getMappedAttachmentDirectory(getContainer(), true);
+                attachmentParent = svc.getMappedAttachmentDirectory(getContainer(), true);
             else
-                attachmentParent = AttachmentService.get().getRegisteredDirectoryFromEntityId(getContainer(), form.getEntityId());
+                attachmentParent = svc.getRegisteredDirectoryFromEntityId(getContainer(), form.getEntityId());
         }
-        catch (AttachmentService.UnsetRootDirectoryException e)
+        catch (UnsetRootDirectoryException e)
         {
             throw new NotFoundException("The web root for this project is not set. Please contact an administrator.", e);
         }
-        catch (AttachmentService.MissingRootDirectoryException e)
+        catch (MissingRootDirectoryException e)
         {
             throw new NotFoundException("The web root for this project is set to a non-existent directory. Please contact an administrator", e);
         }
@@ -792,7 +812,7 @@ public class FileContentController extends SpringActionController
         {
             exists = attachmentParent.getFileSystemDirectory().exists();
         }
-        catch (AttachmentService.MissingRootDirectoryException ex)
+        catch (MissingRootDirectoryException ex)
         {
             /* */
         }

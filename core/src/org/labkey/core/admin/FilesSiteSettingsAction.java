@@ -27,6 +27,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.files.FileContentService;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -61,7 +63,7 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
     {
         if (!reshow)
         {
-            File root = AppProps.getInstance().getFileSystemRoot();
+            File root = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
             if (root != null && root.exists())
                 form.setRootPath(root.getCanonicalPath());
         }
@@ -70,11 +72,7 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
 
     public boolean handlePost(FileSettingsForm form, BindException errors) throws Exception
     {
-        WriteableAppProps props = AppProps.getWriteableInstance();
-
-        props.setFileSystemRoot(form.getRootPath());
-        props.save();
-        props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+        ServiceRegistry.get().getService(FileContentService.class).setSiteDefaultRoot(new File(form.getRootPath()));
         return true;
     }
 

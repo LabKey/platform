@@ -31,6 +31,8 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.services.ServiceRegistry;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -247,18 +249,23 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private boolean handleFilesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors)
     {
-        if (form.isDisableFileSharing())
-            AttachmentService.get().disableFileRoot(c);
-        else if (form.hasSiteDefaultRoot())
-            AttachmentService.get().setWebRoot(c.getProject(), null);
-        else
-        {
-            String root = StringUtils.trimToNull(form.getProjectRootPath());
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
 
-            if (root != null)
-                AttachmentService.get().setWebRoot(c.getProject(), new File(root));
+        if (service != null)
+        {
+            if (form.isDisableFileSharing())
+                service.disableFileRoot(c);
+            else if (form.hasSiteDefaultRoot())
+                service.setFileRoot(c.getProject(), null);
             else
-                AttachmentService.get().setWebRoot(c.getProject(), null);
+            {
+                String root = StringUtils.trimToNull(form.getProjectRootPath());
+
+                if (root != null)
+                    service.setFileRoot(c.getProject(), new File(root));
+                else
+                    service.setFileRoot(c.getProject(), null);
+            }
         }
         return true;
     }
@@ -402,17 +409,22 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
                     if (!_reshow)
                     {
-                        if (AttachmentService.get().isFileRootDisabled(c))
-                            _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.disable.name());
-                        else if (AttachmentService.get().hasSiteDefaultRoot(c))
-                            _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
-                        else
+                        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+
+                        if (service != null)
                         {
-                            _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
-                            File root = AttachmentService.get().getWebRoot(getViewContext().getContainer());
-                            if (root != null && root.exists())
+                            if (service.isFileRootDisabled(c))
+                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.disable.name());
+                            else if (service.hasSiteDefaultRoot(c))
+                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
+                            else
                             {
-                                _form.setProjectRootPath(root.getCanonicalPath());
+                                _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
+                                File root = service.getFileRoot(getViewContext().getContainer());
+                                if (root != null && root.exists())
+                                {
+                                    _form.setProjectRootPath(root.getCanonicalPath());
+                                }
                             }
                         }
                     }

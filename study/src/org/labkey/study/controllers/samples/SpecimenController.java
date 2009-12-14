@@ -50,6 +50,8 @@ import org.labkey.study.query.*;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.files.FileContentService;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.ByteArrayAttachmentFile;
 import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
@@ -4299,7 +4301,8 @@ public class SpecimenController extends BaseStudyController
             Workbook inputWorkbook = null;
             while (!c.equals(ContainerManager.getRoot()))
             {
-                AttachmentDirectory dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(c, false);
                 if (null != dir && dir.getFileSystemDirectory().exists())
                 {
                     if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())

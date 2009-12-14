@@ -44,6 +44,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.designer.*;
 import org.labkey.study.designer.client.model.GWTCohort;
 import org.labkey.study.designer.client.model.GWTStudyDefinition;
@@ -352,7 +354,8 @@ public class DesignerController extends SpringActionController
             Workbook inputWorkbook = null;
             while (!c.equals(ContainerManager.getRoot()))
             {
-                AttachmentDirectory dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(c, false);
                 if (null != dir && dir.getFileSystemDirectory().exists())
                 {
                     if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())

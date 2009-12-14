@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="org.labkey.filecontent.FilesWebPart" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -147,7 +149,8 @@ var fileSets = [
     boolean navigate = false;
     String selectedValue = null;
     ActionURL url = new ActionURL(FileContentController.BeginAction.class, c);
-    AttachmentDirectory main = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+    FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+    AttachmentDirectory main = svc.getMappedAttachmentDirectory(c, false);
     if (null != main && null != main.getFileSystemDirectory())
     {
         String value = navigate ? url.getLocalURIString() : "/";
@@ -155,7 +158,7 @@ var fileSets = [
         if (StringUtils.isEmpty(me.getFileSet()) || StringUtils.equals(me.getFileSet(),"Default"))
             selectedValue = value;
     }
-    for (AttachmentDirectory attDir : AttachmentService.get().getRegisteredDirectories(c))
+    for (AttachmentDirectory attDir : svc.getRegisteredDirectories(c))
     {
         String name = attDir.getLabel();
         url.replaceParameter("fileSetName",name);

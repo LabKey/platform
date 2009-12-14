@@ -23,6 +23,8 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.services.ServiceRegistry;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang.StringUtils;
@@ -47,7 +49,8 @@ public class FileWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
 
-        AttachmentDirectory[] dirs = AttachmentService.get().getRegisteredDirectories(c);
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        AttachmentDirectory[] dirs = svc.getRegisteredDirectories(c);
         if (null != dirs)
             for (AttachmentDirectory dir : dirs)
             {
@@ -85,7 +88,8 @@ public class FileWebdavProvider implements WebdavService.Provider
             _c = c;
             _policy = _c.getPolicy();
             
-            AttachmentDirectory[] dirs = AttachmentService.get().getRegisteredDirectories(_c);
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            AttachmentDirectory[] dirs = svc.getRegisteredDirectories(_c);
             if (dirs != null)
                 for (AttachmentDirectory dir : dirs)
                 {

@@ -18,15 +18,17 @@ package org.labkey.filecontent;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Arrays;
 
 
 public class FileContentModule extends DefaultModule
@@ -67,5 +69,6 @@ public class FileContentModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
         WebdavService.get().addProvider(new FileWebdavProvider());
+        ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
     }
 }

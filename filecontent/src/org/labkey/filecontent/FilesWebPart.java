@@ -18,9 +18,11 @@ package org.labkey.filecontent;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.*;
 
 /**
@@ -59,7 +61,7 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
 
     protected FilesWebPart(String jsp, Container c, String fileSet)
     {
-        super(jsp, AttachmentService.get().getRegisteredDirectory(c, fileSet));
+        super(jsp, ServiceRegistry.get().getService(FileContentService.class).getRegisteredDirectory(c, fileSet));
         container = c;
         this.fileSet = fileSet;
         setTitle(fileSet);
@@ -74,7 +76,8 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
         fileSet = StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet"));
         if (null != fileSet)
         {
-            AttachmentDirectory dir = AttachmentService.get().getRegisteredDirectory(ctx.getContainer(), fileSet);
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            AttachmentDirectory dir = svc.getRegisteredDirectory(ctx.getContainer(), fileSet);
             setModelBean(dir);
         }
         String path = webPartDescriptor.getPropertyMap().get("path");
@@ -108,19 +111,20 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
     public void setFileSet(String fileSet)
     {
         this.fileSet = fileSet;
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         if (null == fileSet)
         {
             try
             {
-                setModelBean(AttachmentService.get().getMappedAttachmentDirectory(container, false));
+                setModelBean(svc.getMappedAttachmentDirectory(container, false));
             }
-            catch (AttachmentService.MissingRootDirectoryException ex)
+            catch (MissingRootDirectoryException ex)
             {
                 setModelBean(null);
             }
         }
         else
-            setModelBean(AttachmentService.get().getRegisteredDirectory(container, fileSet));
+            setModelBean(svc.getRegisteredDirectory(container, fileSet));
     }
 
     public static class Factory extends AlwaysAvailableWebPartFactory
