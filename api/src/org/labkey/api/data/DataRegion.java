@@ -2181,7 +2181,7 @@ public class DataRegion extends DisplayElement
         urlhelp.deleteParameter("_dc");
 
         out.write("<script type=\"text/javascript\">\n");
-        out.write("LABKEY.requiresScript('filter.js');\n");
+        out.write("LABKEY.requiresScript('DataRegion.js');\n");
         out.write("</script>\n");
         request.setAttribute(FILTER_WRITTEN_KEY, "true");
     }
