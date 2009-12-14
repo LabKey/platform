@@ -378,12 +378,11 @@ public class LoginController extends SpringActionController
             // If this is user's first log in or some required field isn't filled in then go to update page
             if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
             {
-                return new ReturnURLString(PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(form.getReturnActionURL(), _user.getUserId()).getLocalURIString());
+                ActionURL url = form.getReturnActionURL();
+                if (null != url)
+                    return new ReturnURLString(PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(url, _user.getUserId()).getLocalURIString());
             }
-            else
-            {
-                 return form.getReturnUrl();
-            }
+            return form.getReturnUrl();
         }
 
         public NavTree appendNavTrail(NavTree root)
