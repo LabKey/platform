@@ -30,7 +30,6 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -62,59 +61,6 @@ public class AttachmentService
         public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files);
         public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
-        public File getWebRoot(Container project);
-        public void setWebRoot(Container project, File webRoot);
-        public void disableFileRoot(Container container);
-        public boolean isFileRootDisabled(Container container);
-        public boolean hasSiteDefaultRoot(Container container);
-
-        /**
-         * Return an AttachmentParent for files in the directory mapped to this container
-         * @param c Container in the file system
-         * @param createDir Create the mapped directory if it doesn't exist
-         * @return AttachmentParent that can be passed to other methods of this interface
-         */
-        public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
-
-        /**
-         * Return a named AttachmentParent for files in the directory mapped to this container
-         * @param c Container in the file system
-         * @return AttachmentParent that can be passed to other methods of this interface
-         */
-        public AttachmentDirectory getRegisteredDirectory(Container c, String label);
-
-        /**
-         * Return a named AttachmentParent for files in the directory mapped to this container
-         * @param c Container in the file system
-         * @return AttachmentParent that can be passed to other methods of this interface
-         */
-        public AttachmentDirectory getRegisteredDirectoryFromEntityId(Container c, String entityId);
-
-        /**
-         * Return a named AttachmentParent for files in the directory mapped to this container
-         * @param c Container in the file system
-         * @return Array of attachment directories that have previously been registered
-         */
-        public AttachmentDirectory[] getRegisteredDirectories(Container c);
-
-        /**
-         * Create an attachmentParent object that will allow storing files in the file system
-         * @param c Container this will be attached to
-         * @param name Name of the parent used in getMappedAttachmentDirectory
-         * @param path Path to the file. If relative is true, this is the name of a subdirectory of the directory mapped to this c
-         * container. If relative is false, this is a fully qualified path name
-         * @param relative if true, path is a relative path from the directory mapped from the container
-         * @return the created attachment parent
-         */
-        public AttachmentDirectory registerDirectory(Container c, String name, String path, boolean relative);
-
-        /**
-         * Forget about a named directory
-         * @param c Container for this attachmentParent
-         * @param label Name of the parent used in registerDirectory
-         */
-        public void unregisterDirectory(Container c, String label);
-
         public void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException;
         public void insertAttachmentRecord(User user, AttachmentDirectory parent, AttachmentFile file) throws SQLException;
         public void deleteAttachments(AttachmentParent parent) throws SQLException;
@@ -130,6 +76,7 @@ public class AttachmentService
         public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
         public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
+        public void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
     }
 
     public static void register(Service serviceImpl)
@@ -144,60 +91,6 @@ public class AttachmentService
         if (_serviceImpl == null)
             throw new IllegalStateException("Service has not been set.");
         return _serviceImpl;
-    }
-
-    public static class MissingRootDirectoryException extends java.io.FileNotFoundException
-    {
-        private Container project;
-        private File expectedPath;
-
-        public MissingRootDirectoryException(Container project, File expectedPath)
-        {
-            super("The expected root directory for project: " + project.getName() + " did not exist on the server");
-            this.project = project;
-            this.expectedPath = expectedPath;
-        }
-
-        public Container getProject()
-        {
-            return project;
-        }
-
-        public void setProject(Container project)
-        {
-            this.project = project;
-        }
-
-        public File getExpectedPath()
-        {
-            return expectedPath;
-        }
-
-        public void setExpectedPath(File expectedPath)
-        {
-            this.expectedPath = expectedPath;
-        }
-    }
-
-    public static class UnsetRootDirectoryException extends IllegalStateException
-    {
-        private Container project;
-
-        public UnsetRootDirectoryException(Container project)
-        {
-            super("No file root has been set for the project " + project.getName());
-            this.project = project;
-        }
-
-        public Container getProject()
-        {
-            return project;
-        }
-
-        public void setProject(Container project)
-        {
-            this.project = project;
-        }
     }
 
     public static class DuplicateFilenameException extends IOException

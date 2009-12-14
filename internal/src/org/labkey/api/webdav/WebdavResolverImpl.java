@@ -30,6 +30,10 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.TTLCacheMap;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -471,17 +475,18 @@ public class WebdavResolverImpl implements WebdavResolver
                     {
                         try
                         {
+                            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
                             if (c.isRoot())
-                                dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+                                dir = svc.getMappedAttachmentDirectory(c, false);
                             else
-                                dir = AttachmentService.get().getMappedAttachmentDirectory(c, true);
+                                dir = svc.getMappedAttachmentDirectory(c, true);
                         }
-                        catch (AttachmentService.MissingRootDirectoryException  ex)
+                        catch (MissingRootDirectoryException ex)
                         {
                             /* */
                         }
                     }
-                    catch (AttachmentService.UnsetRootDirectoryException x)
+                    catch (UnsetRootDirectoryException x)
                     {
                         /* */
                     }

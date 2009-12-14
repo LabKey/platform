@@ -16,7 +16,11 @@
 
 package org.labkey.api.attachments;
 
+import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.security.User;
+
 import java.io.File;
+import java.io.IOException;
 
 /**
  * User: Mark Igra
@@ -26,5 +30,9 @@ import java.io.File;
 public interface AttachmentDirectory extends AttachmentParent
 {
     public String getLabel();
-    public File getFileSystemDirectory() throws AttachmentService.MissingRootDirectoryException;
+    public String getName(); 
+    public File getFileSystemDirectory() throws MissingRootDirectoryException;
+
+    public void addAttachment(User user, AttachmentFile attachment) throws IOException;
+    public void deleteAttachment(User user, String name);
 }
