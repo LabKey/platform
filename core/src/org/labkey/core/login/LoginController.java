@@ -383,7 +383,7 @@ public class LoginController extends SpringActionController
                     return new ReturnURLString(PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(url, _user.getUserId()).getLocalURIString());
             }
             ReturnURLString ret = form.getReturnUrl();
-            if (null == ret || !ret.isEmpty())
+            if (null != ret && !ret.isEmpty())
                 return ret;
             return new ReturnURLString(AppProps.getInstance().getHomePageActionURL().toLocalString(false), false);
         }
