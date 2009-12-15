@@ -86,7 +86,7 @@ import java.util.Map;
  */
 public class ListController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class,
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class,
             SetDefaultValuesListAction.class,
             ClearDefaultValuesAction.class
             );
