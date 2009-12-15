@@ -435,7 +435,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public boolean isMailRecorderEnabled()
     {
-        return isDevMode() && lookupBooleanValue(MAIL_RECORDER_ENABLED, false);
+        return lookupBooleanValue(MAIL_RECORDER_ENABLED, false);
     }
 
     public boolean isDevMode()
