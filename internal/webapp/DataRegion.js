@@ -541,13 +541,6 @@ function doChange(obj)
     }
 }
 
-if (navigator.userAgent.toLowerCase().indexOf("httpunit") < 0)
-{
-    LABKEY.requiresYahoo('yahoo');
-    LABKEY.requiresYahoo('dom');
-    LABKEY.requiresYahoo('event');
-    LABKEY.requiresYahoo('dragdrop');
-}
 
 function showFilterPanel(elem, tableName, colName, caption, dataType, mvEnabled)
 {
