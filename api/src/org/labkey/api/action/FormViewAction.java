@@ -18,6 +18,7 @@ package org.labkey.api.action;
 
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -92,7 +93,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
 
             if (success)
             {
-                ActionURL url = getSuccessURL(form);
+                URLHelper url = getSuccessURL(form);
                 if (null != url)
                     return HttpView.redirect(url);
                 ModelAndView successView = getSuccessView(form);
@@ -143,7 +144,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
      */
     public abstract boolean handlePost(FORM form, BindException errors) throws Exception;
 
-    public abstract ActionURL getSuccessURL(FORM form);
+    public abstract URLHelper getSuccessURL(FORM form);
 
     // not usually used but some actions return views that close the current window etc...
     public ModelAndView getSuccessView(FORM form)

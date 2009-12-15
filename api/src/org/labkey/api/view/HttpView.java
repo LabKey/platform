@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.Debug;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
@@ -625,7 +626,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
-    public static ModelAndView redirect(ActionURL url)
+    public static ModelAndView redirect(URLHelper url)
     {
         return new ModelAndView(new RedirectView(url.getLocalURIString(), false));
     }
