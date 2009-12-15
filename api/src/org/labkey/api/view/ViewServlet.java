@@ -25,6 +25,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -60,6 +61,7 @@ public class ViewServlet extends HttpServlet
     public static final String REQUEST_CONTAINER = "LABKEY.container";
 
     private static ServletContext _servletContext = null;
+    private static String _serverHeader = null;
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
 
@@ -92,8 +94,10 @@ public class ViewServlet extends HttpServlet
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
-        long startTime = System.currentTimeMillis(); 
+        long startTime = System.currentTimeMillis();
+
         request.setAttribute(REQUEST_STARTTIME, startTime);
+        response.setHeader("Server", _serverHeader); 
         HttpSession session = request.getSession(true);
 
         if (_debug)
@@ -214,6 +218,7 @@ public class ViewServlet extends HttpServlet
     {
         initializeControllerMaps();
         initializeAllSpringControllers();
+        _serverHeader =  "Labkey/" + AppProps.getInstance().getLabkeyVersionString();
     }
 
 

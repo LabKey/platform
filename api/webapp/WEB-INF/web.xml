@@ -40,31 +40,6 @@
         <filter-class>org.labkey.api.module.ModuleLoader</filter-class>
     </filter>
 
-    <filter>
-        <filter-name>Static Content Caching Filter</filter-name>
-        <filter-class>org.labkey.api.view.StaticContentCachingFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>Static Content Caching Filter</filter-name>
-        <url-pattern>*.gif</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Static Content Caching Filter</filter-name>
-        <url-pattern>*.jpg</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Static Content Caching Filter</filter-name>
-        <url-pattern>*.jpeg</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Static Content Caching Filter</filter-name>
-        <url-pattern>*.png</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Static Content Caching Filter</filter-name>
-        <url-pattern>*.js</url-pattern>
-    </filter-mapping>
-
     <filter-mapping>
         <filter-name>Form Authentication Filter</filter-name>
         <url-pattern>/*</url-pattern>

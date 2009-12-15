@@ -71,7 +71,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     AtomicBoolean initialized = new AtomicBoolean(false);
 
 
-    // DavController has a per request cache, but we want to agressively cache static file resources
+    // DavController has a per request cache, but we want to aggressively cache static file resources
     StaticResource _root = null;
     Map<Path, Resource> _allStaticFiles = Collections.synchronizedMap(new HashMap<Path,Resource>());
 
@@ -419,8 +419,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 _etag = "W/\"" + getLastModified() + "\"";
             return _etag;
         }
-
-        
     }
 
 

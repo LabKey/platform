@@ -52,8 +52,10 @@ if (typeof LABKEY == "undefined")
         for (var f in nullConsole)
             if (!(f in console))
                 console[f] = nullConsole[f];
-        if (console.debug == LABKEY._emptyFunction())
+        if (console.debug == LABKEY._emptyFunction)
             console.debug = console.warn;
+        if (console.dir == LABKEY._emptyFunction)
+            console.dir = function (o) {for (var p in o) console.debug(p + ": " + o[o]);};
     }
 }
 

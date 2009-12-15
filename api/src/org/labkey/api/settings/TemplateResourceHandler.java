@@ -121,11 +121,10 @@ public enum TemplateResourceHandler
 
     public static final CacheableWriter noDocument = new CacheableWriter();
 
-    // Expire all resources 10 days from now
     private Calendar getExpiration()
     {
         Calendar cal = new GregorianCalendar();
-        cal.add(Calendar.DATE, 10);
+        cal.add(Calendar.DATE, 35);
         return cal;
     }
 
