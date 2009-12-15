@@ -20,8 +20,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,6 +104,10 @@ abstract public class PipelineService
 
     abstract public BrowseView getBrowseView(BrowseForm form);
 
+    abstract public HttpView getSetupView(SetupForm form);
+
+    abstract public boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception;
+
     // TODO: This should be on PipelineProtocolFactory
     abstract public String getLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user);
 
@@ -117,4 +125,5 @@ abstract public class PipelineService
     abstract public void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container,
                                                             User user, List<String> sequenceDbPaths);
 
+    abstract public boolean hasSiteDefaultRoot(Container container);
 }

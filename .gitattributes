@@ -437,6 +437,7 @@ api/src/org/labkey/api/pipeline/file/FileAnalysisJobSupport.java -text
 api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipeline.java -text
 api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipelineSettings.java -text
 api/src/org/labkey/api/pipeline/file/PathMapper.java -text
+api/src/org/labkey/api/pipeline/view/SetupForm.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/qc/DataExchangeHandler.java -text
 api/src/org/labkey/api/qc/DataTransformer.java -text
