@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -261,6 +262,18 @@ public class DavController extends SpringActionController
         String getMessage()
         {
             return _message;
+        }
+
+        void setExpires(long expires, String cache)
+        {
+            response.setDateHeader("Expires", expires);
+            response.setHeader("Cache-Control", cache);
+        }
+
+        void setContentEncoding(String value)
+        {
+            response.setHeader("Content-Encoding", value);
+            response.setHeader("Vary", "Accept-Encoding");
         }
 
         void setContentDisposition(String value)
@@ -2374,6 +2387,42 @@ public class DavController extends SpringActionController
     }
 
 
+    final static Path servletPath = Path.parse(WebdavService.getServletPath());
+    final static Map<Path,Resource> compressedResources = Collections.synchronizedMap(new HashMap<Path,Resource>());
+    boolean supportStaticGzFiles = false;
+
+    boolean isStaticContent(Path path)
+    {
+        return !path.startsWith(servletPath);
+    }
+
+    Resource getGzipResource(Path path) throws DavException
+    {
+        assert isStaticContent(path);
+        Resource gzResource = compressedResources.get(path);
+        if (gzResource == null)
+        {
+            Path gz = path.getParent().append(path.getName() + ".gz");
+            // TODO : causes a lot of cache misses
+            gzResource = resolvePath(gz);
+            if (null != gzResource && gzResource.exists())
+                gzResource = nullDavFileInfo;
+            compressedResources.put(path,gzResource);
+        }
+        return nullDavFileInfo == gzResource ? null : gzResource;
+    }
+
+
+    Path extPath = new Path("ext-2.2");
+    Path yuiPath = new Path("_yui");
+    Path mcePath = new Path("timymce3");
+    
+    boolean alwaysCacheFile(Path p)
+    {
+        return p.startsWith(extPath) || p.startsWith(yuiPath) || p.startsWith(mcePath);
+    }
+    
+
     private WebdavStatus serveResource(Resource resource, boolean content)
             throws DavException, IOException
     {
@@ -2402,6 +2451,17 @@ public class DavController extends SpringActionController
         long modified = resource.getLastModified();
         if (modified != Long.MIN_VALUE)
             getResponse().setLastModified(modified);
+
+
+        boolean isStatic = isStaticContent(resource.getPath());
+        boolean isDevMode = AppProps.getInstance().isDevMode();
+
+        if (isStatic)
+        {
+            boolean allowCaching = AppProps.getInstance().isCachingAllowed();
+            if (allowCaching || alwaysCacheFile(resource.getPath()))
+                getResponse().setExpires(System.currentTimeMillis() + 35*24*60*60*1000L, "public");
+        }
 
         // Get content length
         long contentLength = resource.getContentLength();
@@ -2443,6 +2503,25 @@ public class DavController extends SpringActionController
             {
                 getResponse().setContentType(contentType);
             }
+
+            // if static content look for gzip version
+            if (isStatic && supportStaticGzFiles)
+            {
+                String accept = getRequest().getHeader("accept-encoding");
+                if (null != accept && -1 != accept.indexOf("gzip"))
+                {
+                    Resource gzResource = getGzipResource(resource.getPath());
+                    if (null != gzResource)
+                    {
+                        if (!isDevMode || gzResource.getLastModified() >= resource.getLastModified())
+                        {
+                            resource = gzResource;
+                            getResponse().setContentEncoding("gzip");
+                        }
+                    }
+                }
+            }
+
             if (ostream != null)
                 copy(resource.getInputStream(getUser()), ostream);
             else

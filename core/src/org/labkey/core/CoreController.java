@@ -142,7 +142,7 @@ public class CoreController extends SpringActionController
 
             response.setContentType("text/css");
 
-            response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 5);
+            response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 35);
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.setDateHeader("Last-Modified", content.modified);
