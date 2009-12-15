@@ -32,6 +32,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -99,6 +100,7 @@ public class SearchController extends SpringActionController
                 }
 
 //                if (full) DavCrawler.start(task, Path.rootPath, since);
+//                if (full) ss.addPathToCrawl(new Path("_webdav", "home", "source", "@pipeline"));
 
                 task.setReady();
             }
@@ -162,7 +164,11 @@ public class SearchController extends SpringActionController
             html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer()).addParameter("full","1")) + "\">reindex (full)</a>]<br>";
             html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex (incremental)</a>]<br>";
 
-            html += "<form><input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">&nbsp;" + PageFlowUtil.generateSubmitButton("Search") + "</form>";
+            html += "<form>";
+            if (isPrint())
+                html += "<input type=hidden name=_print value=1>";
+            html += "<input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">&nbsp;" + PageFlowUtil.generateSubmitButton("Search");
+            html += "</form>";
             HtmlView searchBox = new HtmlView(html);
             getPageConfig().setFocusId("query");
 
