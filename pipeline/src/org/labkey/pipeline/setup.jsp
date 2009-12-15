@@ -15,22 +15,40 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.pipeline.PipelineService" %>
-<%@ page import="java.security.cert.X509Certificate" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
+<%@ page import="org.labkey.api.pipeline.view.SetupForm" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.pipeline.mule.PipelineJobRunnerGlobus" %>
+<%@ page import="java.security.cert.X509Certificate" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<PipelineController.SetupBean> thisView = (JspView<PipelineController.SetupBean>) HttpView.currentView();
-    PipelineController.SetupBean bean = thisView.getModelBean();
+    JspView<SetupForm> thisView = (JspView<SetupForm>) HttpView.currentView();
+    SetupForm bean = thisView.getModelBean();
+
+    // the default project pipeline root based on the site default root
+    String projectDefaultRoot = "";
+    String folderRadioBtnLabel = "Use a project specific pipeline root";
+    if (!getViewContext().getContainer().isProject())
+        folderRadioBtnLabel = "Use a folder specific pipeline root";
+
+    File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
+    if (siteRoot != null)
+    {
+        File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());
+        if (projRoot != null)
+        {
+            projectDefaultRoot = projRoot.getCanonicalPath();
+        }
+    }
 
     if (bean.getConfirmMessage() != null)
     { %>
@@ -41,28 +59,66 @@
 <labkey:errors />
 
 <script type="text/javascript">
-function toggleGlobusVisible()
-{
-    var newDisplay;
-    if (document.getElementById('keyFileRow').style.display == 'none')
+    Ext.onReady(function()
     {
-        newDisplay = '';
-    }
-    else
+        updatePipelineSelection();
+    });
+
+    function updatePipelineSelection()
     {
-        newDisplay = 'none';
+        if (document.getElementById('pipeOptionSiteDefault').checked)
+        {
+            document.getElementById('pipeProjectRootPath').style.display = 'none';
+            document.getElementById('pipeRootPath').style.display = '';
+        }
+        if (document.getElementById('pipeOptionProjectSpecified').checked)
+        {
+            document.getElementById('pipeProjectRootPath').style.display = '';
+            document.getElementById('pipeRootPath').style.display = 'none';
+        }
     }
-    document.getElementById('keyPasswordRow').style.display = newDisplay;
-    document.getElementById('keyFileRow').style.display = newDisplay;
-    document.getElementById('certFileRow').style.display = newDisplay;
-}
+
+    function toggleGlobusVisible()
+    {
+        var newDisplay;
+        if (document.getElementById('keyFileRow').style.display == 'none')
+        {
+            newDisplay = '';
+        }
+        else
+        {
+            newDisplay = 'none';
+        }
+        document.getElementById('keyPasswordRow').style.display = newDisplay;
+        document.getElementById('keyFileRow').style.display = newDisplay;
+        document.getElementById('certFileRow').style.display = newDisplay;
+    }
 </script>
-<form enctype="multipart/form-data" method="POST" action="setup.post">
+
+<form enctype="multipart/form-data" method="POST" action="">
     <table>
-        <tr>
-            <td class="labkey-form-label">Pipeline root directory:</td>
-            <td><input type="text" name="path" size="70" value="<%= PageFlowUtil.filter(bean.getStrValue()) %>"></td>
-        </tr><%
+        <tr><td class="labkey-form-label">Pipeline root <%=PageFlowUtil.helpPopup("Pipeline root", "Set a project level pipeline root. " +
+                "When a project level pipeline root is set, each folder for that project can share the same root or can override with a folder specific location.")%></td>
+            <td>
+                <table>
+                    <tr>
+                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="siteDefault"
+                            <%="siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
+                                   onclick="updatePipelineSelection();">
+                            Use a default based on the site wide root</td>
+                        <td><input type="text" id="pipeRootPath" size="50" disabled="true" value="<%=h(projectDefaultRoot)%>"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionProjectSpecified" value="projectSpecified"
+                            <%="projectSpecified".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
+                                   onclick="updatePipelineSelection();">
+                            <%=h(folderRadioBtnLabel)%></td>
+                        <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getStrValue())%>"></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <%
         if (PipelineService.get().isEnterprisePipeline() &&
                 PipelineJobService.get().getGlobusClientProperties() != null)
         {
@@ -114,7 +170,8 @@ function toggleGlobusVisible()
         %>
         <tr><td colspan="3" style="font-size: 4px">&nbsp;</td></tr>
         <tr>
-            <td colspan="2"><labkey:button text="Set"/></td>
+            <td colspan="2"><labkey:button text="Save"/></td>
         </tr>
     </table>
+    <input type="hidden" name="pipelineRootForm" value="true">
 </form>

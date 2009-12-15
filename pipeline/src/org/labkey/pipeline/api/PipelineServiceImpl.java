@@ -19,19 +19,23 @@ package org.labkey.pipeline.api;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.*;
+import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.browse.BrowseViewImpl;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
@@ -39,6 +43,7 @@ import org.mule.MuleManager;
 import org.mule.umo.UMODescriptor;
 import org.mule.umo.UMOException;
 import org.mule.umo.model.UMOModel;
+import org.springframework.validation.BindException;
 
 import javax.jms.ConnectionFactory;
 import javax.naming.Context;
@@ -100,7 +105,53 @@ public class PipelineServiceImpl extends PipelineService
                 _log.error("unexpected error", x);
             }
         }
+
+        // if we haven't found a 'real' root, default to a root off the site wide default
+        return getDefaultPipelineRoot(container);
+    }
+
+    /**
+     * Try to locate a default pipeline root from the site file root. Default pipeline roots only
+     * extend to the project level and are inherited by sub folders.
+     *
+     * @param container
+     * @return
+     */
+    private PipeRoot getDefaultPipelineRoot(Container container)
+    {
+        try {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            File root = svc.getFileRoot(container.getProject());
+            if (root != null)
+            {
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container.getProject(), true);
+                PipelineRoot p = new PipelineRoot();
+
+                p.setContainer(container.getProject().getId());
+                p.setPath(dir.getFileSystemDirectory().toURI().toString());
+                //p.setType("Default");
+
+                return new PipeRootImpl(p);
+            }
+        }
+        catch (MissingRootDirectoryException e)
+        {
+            return null;
+        }
+        catch (Exception e)
+        {
+            _log.error("unexpected error", e);
+        }
         return null;
+    }
+
+    public boolean hasSiteDefaultRoot(Container container)
+    {
+        PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
+
+        if (pipelineRoot == null)
+            return getDefaultPipelineRoot(container) != null;
+        return false;
     }
 
     @Override
@@ -161,7 +212,11 @@ public class PipelineServiceImpl extends PipelineService
         {
             PipelineRoot r = PipelineManager.getPipelineRootObject(container, PipelineRoot.PRIMARY_ROOT);
             if (null == r)
+            {
+                if (container != null && container.isProject())
+                    return getDefaultPipelineRoot(container);
                 return null;
+            }
             return new PipeRootImpl(r);
         }
         catch (URISyntaxException x)
@@ -178,7 +233,15 @@ public class PipelineServiceImpl extends PipelineService
     {
         String root = PipelineManager.getPipelineRoot(container, type);
         if (root == null)
+        {
+            if (container != null && container.isProject())
+            {
+                PipeRoot pipeRoot = getDefaultPipelineRoot(container);
+                if (pipeRoot != null)
+                    return pipeRoot.getUri();
+            }
             return null;
+        }
 
         try
         {
@@ -306,6 +369,19 @@ public class PipelineServiceImpl extends PipelineService
     public BrowseView getBrowseView(BrowseForm form)
     {
         return new BrowseViewImpl(form);
+    }
+
+    public HttpView getSetupView(SetupForm form)
+    {
+        if (form.getErrors() != null)
+            return new JspView<SetupForm>("/org/labkey/pipeline/setup.jsp", form, form.getErrors());
+        else
+            return new JspView<SetupForm>("/org/labkey/pipeline/setup.jsp", form);
+    }
+
+    public boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception
+    {
+        return PipelineController.savePipelineSetup(context, form, errors);
     }
 
     private String getLastProtocolKey(PipelineProtocolFactory factory)

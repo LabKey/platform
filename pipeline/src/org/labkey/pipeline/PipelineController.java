@@ -21,11 +21,15 @@ import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
@@ -33,15 +37,15 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.module.Module;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
-import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.api.PipelineManager;
+import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
@@ -148,87 +152,7 @@ public class PipelineController extends SpringActionController
 
         public boolean handlePost(SetupForm form, BindException errors) throws Exception
         {
-            URI root = null;
-
-            String path = form.getPath();
-            if (path != null && path.length() > 0)
-            {
-                if (path.startsWith("\\\\"))
-                {
-                    error(errors, "UNC paths are not supported for pipline roots");
-                    return false;
-                }
-                File fileRoot = new File(path);
-                try
-                {
-                    // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
-                    // links on Unix so don't replace the path if it's pointing at a different location.
-                    if (fileRoot.getCanonicalPath().equalsIgnoreCase(fileRoot.getAbsolutePath()))
-                    {
-                        fileRoot = fileRoot.getCanonicalFile();
-                    }
-                }
-                catch (IOException e)
-                {
-                    // OK, just use the path the user entered
-                }
-                if (!NetworkDrive.exists(fileRoot))
-                {
-                    error(errors, "The directory '" + fileRoot + "' does not exist.");
-                    return false;
-                }
-                else if (!fileRoot.isDirectory())
-                {
-                    error(errors, "The file '" + fileRoot + "' is not a directory.");
-                    return false;
-                }
-
-                root = fileRoot.toURI();
-                if (URIUtil.resolve(root, root, "test") == null)
-                {
-                    error(errors, "The pipeline root '" + fileRoot + "' is not valid.");
-                    return false;
-                }
-            }
-
-            Map<String, MultipartFile> files = getFileMap();
-            byte[] keyBytes = null;
-            String keyPassword = form.getKeyPassword();
-            byte[] certBytes = null;
-            if (files.get("keyFile") != null)
-            {
-                keyBytes = files.get("keyFile").getBytes();
-            }
-            if (files.get("certFile") != null)
-            {
-                certBytes = files.get("certFile").getBytes();
-            }
-            GlobusKeyPair keyPair = null;
-            if (!form.isUploadNewGlobusKeys())
-            {
-                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-                if (pipeRoot != null)
-                {
-                    keyPair = pipeRoot.getGlobusKeyPair();
-                }
-            }
-            else if ((keyBytes != null && keyBytes.length > 0) || (certBytes != null && certBytes.length > 0) || keyPassword != null)
-            {
-                keyPair = new GlobusKeyPairImpl(keyBytes, keyPassword, certBytes);
-                try
-                {
-                    keyPair.validateMatch();
-                }
-                catch (GeneralSecurityException e)
-                {
-                    errors.addError(new LabkeyError("Invalid Globus SSL configration: " + e.getMessage()));
-                    return false;
-                }
-            }
-
-            PipelineService.get().setPipelineRoot(getUser(), getContainer(), root, PipelineRoot.PRIMARY_ROOT,
-                    keyPair);
-            return true;
+            return savePipelineSetup(getViewContext(), form, errors);
         }
 
         public ActionURL getSuccessURL(SetupForm form)
@@ -239,40 +163,93 @@ public class PipelineController extends SpringActionController
 
     enum SetupField { path, email }
 
-    public static class SetupBean
+    public static boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception
     {
-        private String _confirmMessage;
-        private String _strValue;
-        private ActionURL _doneURL;
-        private GlobusKeyPair _globusKeyPair;
+        URI root = null;
 
-        public SetupBean(String confirmMessage, String strValue, ActionURL doneURL, GlobusKeyPair globusKeyPair)
+        String path = form.hasSiteDefaultPipelineRoot() ? null : form.getPath();
+        if (path != null && path.length() > 0)
         {
-            _confirmMessage = confirmMessage;
-            _strValue = strValue;
-            _doneURL = doneURL;
-            _globusKeyPair = globusKeyPair;
+            if (path.startsWith("\\\\"))
+            {
+                errors.reject(ERROR_MSG, "UNC paths are not supported for pipline roots");
+                return false;
+            }
+            File fileRoot = new File(path);
+            try
+            {
+                // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
+                // links on Unix so don't replace the path if it's pointing at a different location.
+                if (fileRoot.getCanonicalPath().equalsIgnoreCase(fileRoot.getAbsolutePath()))
+                {
+                    fileRoot = fileRoot.getCanonicalFile();
+                }
+            }
+            catch (IOException e)
+            {
+                // OK, just use the path the user entered
+            }
+            if (!NetworkDrive.exists(fileRoot))
+            {
+                errors.reject(ERROR_MSG, "The directory '" + fileRoot + "' does not exist.");
+                return false;
+            }
+            else if (!fileRoot.isDirectory())
+            {
+                errors.reject(ERROR_MSG, "The file '" + fileRoot + "' is not a directory.");
+                return false;
+            }
+
+            root = fileRoot.toURI();
+            if (URIUtil.resolve(root, root, "test") == null)
+            {
+                errors.reject(ERROR_MSG, "The pipeline root '" + fileRoot + "' is not valid.");
+                return false;
+            }
         }
 
-        public ActionURL getDoneURL()
+        Map<String, MultipartFile> files = Collections.emptyMap();
+        byte[] keyBytes = null;
+        String keyPassword = form.getKeyPassword();
+        byte[] certBytes = null;
+
+        if (context.getRequest() instanceof MultipartHttpServletRequest)
+            files = (Map<String, MultipartFile>)((MultipartHttpServletRequest)context.getRequest()).getFileMap();
+
+        if (files.get("keyFile") != null)
         {
-            return _doneURL;
+            keyBytes = files.get("keyFile").getBytes();
+        }
+        if (files.get("certFile") != null)
+        {
+            certBytes = files.get("certFile").getBytes();
+        }
+        GlobusKeyPair keyPair = null;
+        if (!form.isUploadNewGlobusKeys())
+        {
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(context.getContainer());
+            if (pipeRoot != null)
+            {
+                keyPair = pipeRoot.getGlobusKeyPair();
+            }
+        }
+        else if ((keyBytes != null && keyBytes.length > 0) || (certBytes != null && certBytes.length > 0) || keyPassword != null)
+        {
+            keyPair = new GlobusKeyPairImpl(keyBytes, keyPassword, certBytes);
+            try
+            {
+                keyPair.validateMatch();
+            }
+            catch (GeneralSecurityException e)
+            {
+                errors.addError(new LabkeyError("Invalid Globus SSL configration: " + e.getMessage()));
+                return false;
+            }
         }
 
-        public String getConfirmMessage()
-        {
-            return _confirmMessage;
-        }
-
-        public String getStrValue()
-        {
-            return _strValue;
-        }
-
-        public GlobusKeyPair getGlobusKeyPair()
-        {
-            return _globusKeyPair;
-        }
+        PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), root, PipelineRoot.PRIMARY_ROOT,
+                keyPair);
+        return true;
     }
 
     abstract public class AbstractSetupAction<FORM> extends FormViewAction<FORM>
@@ -313,69 +290,44 @@ public class PipelineController extends SpringActionController
 
             Container c = getContainer();
             VBox view = new VBox();
-            String strValue = "";
-            PipeRoot pipeRoot = null;
 
             if (!c.isRoot())
             {
                 saveReferer();
+                SetupForm bean = SetupForm.init(c);
+                bean.setErrors(errors);
+                bean.setDoneURL(new ActionURL(ReturnToRefererAction.class, getContainer()));
 
-                File fileRoot = null;
+                PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
                 URI root = null;
-                try
+
+                if (pipeRoot != null)
                 {
-                    pipeRoot = getPipelineRoot(getContainer());
-                    if (pipeRoot != null)
+                    root = pipeRoot.getUri();
+                    File fileRoot = pipeRoot.getRootPath();
+
+                    if (root != null && fileRoot != null)
                     {
-                        root = pipeRoot.getUri();
-                        if (root != null)
+                        if (!NetworkDrive.exists(fileRoot))
                         {
-                            fileRoot = pipeRoot.getRootPath();
-                            strValue = fileRoot.getPath();
+                            errors.addError(new LabkeyError("Pipeline root does not exist."));
+                            root = null;
+                        }
+                        else if (URIUtil.resolve(root, root, "test") == null)
+                        {
+                            errors.addError(new LabkeyError("Pipeline root is invalid."));
+                            root = null;
+                        }
+
+                        if (root != null && fileRoot != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
+                        {
+                            bean.setConfirmMessage("The pipeline root was set to '" + fileRoot.getPath() + "'.");
                         }
                     }
                 }
-                catch (Exception e)
-                {
-                    _log.error("Error", e);
-                    // TODO: Redirect somewhere, or show error
-                }
-
-                if (root != null && fileRoot != null)
-                {
-                    if (!NetworkDrive.exists(fileRoot))
-                    {
-                        errors.addError(new LabkeyError("Pipeline root does not exist."));
-                        root = null;
-                    }
-                    else if (URIUtil.resolve(root, root, "test") == null)
-                    {
-                        errors.addError(new LabkeyError("Pipeline root is invalid."));
-                        root = null;
-                    }
-                }
-
-                ActionURL doneURL = new ActionURL(ReturnToRefererAction.class, getContainer());
-
-                String confirmMessage = null;
-                if (root != null && fileRoot != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
-                {
-                    confirmMessage = "The pipeline root was set to '" + fileRoot.getPath() + "'.";
-                }
-
-                GlobusKeyPair keyPair = null;
-                if (pipeRoot != null)
-                {
-                    keyPair = pipeRoot.getGlobusKeyPair();
-                }
-
-                SetupBean bean = new SetupBean(confirmMessage, strValue, doneURL, keyPair);                
-                JspView<SetupBean> jspView = new JspView<SetupBean>("/org/labkey/pipeline/setup.jsp", bean, errors);
-
-                PipelineService service = PipelineService.get();
 
                 HBox main = new HBox();
-                VBox leftBox = new VBox(jspView);
+                VBox leftBox = new VBox(PipelineService.get().getSetupView(bean));
 
                 main.addView(leftBox);
 
@@ -391,7 +343,7 @@ public class PipelineController extends SpringActionController
                 if (root != null)
                 {
                     Set<Module> activeModules = c.getActiveModules();
-                    for (PipelineProvider provider : service.getPipelineProviders())
+                    for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
                     {
                         if (activeModules.contains(provider.getOwningModule()))
                         {
@@ -402,7 +354,6 @@ public class PipelineController extends SpringActionController
                     }
                 }
             }
-
             view.addView(new JspView<FORM>("/org/labkey/pipeline/emailNotificationSetup.jsp", form));
             return view;
         }
@@ -1257,32 +1208,6 @@ public class PipelineController extends SpringActionController
         public void setPath(String path)
         {
             _path = path;
-        }
-    }
-
-    public static class SetupForm extends PathForm
-    {
-        private String _keyPassword;
-        private boolean _uploadNewGlobusKeys;
-
-        public boolean isUploadNewGlobusKeys()
-        {
-            return _uploadNewGlobusKeys;
-        }
-
-        public void setUploadNewGlobusKeys(boolean uploadNewGlobusKeys)
-        {
-            _uploadNewGlobusKeys = uploadNewGlobusKeys;
-        }
-
-        public String getKeyPassword()
-        {
-            return _keyPassword;
-        }
-
-        public void setKeyPassword(String keyPassword)
-        {
-            _keyPassword = keyPassword;
         }
     }
 

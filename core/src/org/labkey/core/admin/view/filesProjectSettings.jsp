@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.attachments.AttachmentService"%>
+<%@ page import="org.labkey.api.files.FileContentService"%>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -46,8 +45,11 @@
 <labkey:errors/>
 
 <form action="" method="post">
+    <%
+        WebPartView.startTitleFrame(out, "Configure Web File Root");
+    %>
+    
     <table>
-        <tr><td colspan=2>Configure file system</td></tr>
         <tr><td class="labkey-form-label">File root <%=PageFlowUtil.helpPopup("File root", "Set a project level file root. " +
                 "When a project level file root is set, each folder for that project has a corresponding subdirectory in the file system.")%></td>
             <td>
@@ -60,7 +62,7 @@
                         <td><input type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
                                    <%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? " checked" : ""%>
                                    onclick="updateSelection();">
-                            Use the site default for the file root</td>
+                            Use a default based on the site wide root</td>
                         <td><input type="text" id="rootPath" size="64" disabled="true" value="<%=h(projectDefaultRoot)%>"></td>
                     </tr>
                     <tr>
@@ -78,6 +80,9 @@
             <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
         </tr>
     </table>
+    <%
+        WebPartView.endTitleFrame(out);
+    %>
 </form>
 
 <script type="text/javascript">

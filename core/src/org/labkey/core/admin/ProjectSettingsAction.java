@@ -22,17 +22,21 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.services.ServiceRegistry;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +45,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -66,7 +71,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     {
         if (form.isFilesTab())
         {
-            if (!form.isDisableFileSharing() && !form.hasSiteDefaultRoot())
+            if (!form.isPipelineRootForm() && !form.isDisableFileSharing() && !form.hasSiteDefaultRoot())
             {
                 String root = StringUtils.trimToNull(form.getProjectRootPath());
                 if (root != null)
@@ -247,24 +252,29 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     }
 
-    private boolean handleFilesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors)
+    private boolean handleFilesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors) throws Exception
     {
         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
 
         if (service != null)
         {
-            if (form.isDisableFileSharing())
-                service.disableFileRoot(c);
-            else if (form.hasSiteDefaultRoot())
-                service.setFileRoot(c.getProject(), null);
+            if (form.isPipelineRootForm())
+                return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
             else
             {
-                String root = StringUtils.trimToNull(form.getProjectRootPath());
-
-                if (root != null)
-                    service.setFileRoot(c.getProject(), new File(root));
-                else
+                if (form.isDisableFileSharing())
+                    service.disableFileRoot(c);
+                else if (form.hasSiteDefaultRoot())
                     service.setFileRoot(c.getProject(), null);
+                else
+                {
+                    String root = StringUtils.trimToNull(form.getProjectRootPath());
+
+                    if (root != null)
+                        service.setFileRoot(c.getProject(), new File(root));
+                    else
+                        service.setFileRoot(c.getProject(), null);
+                }
             }
         }
         return true;
@@ -277,6 +287,8 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             return new AdminController.AdminUrlsImpl().getLookAndFeelResourcesURL(c);
         else if (form.isMenuTab())
             return new AdminController.AdminUrlsImpl().getProjectSettingsMenuURL(c);
+        else if (form.isFilesTab())
+            return new AdminController.AdminUrlsImpl().getProjectSettingsFileURL(c);
         else
             return new AdminController.AdminUrlsImpl().getProjectSettingsURL(c);
     }
@@ -407,7 +419,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     if (c.isRoot())
                         throw new NotFoundException("Files must be configured for each project separately.");
 
-                    if (!_reshow)
+                    if (!_reshow || _form.isPipelineRootForm())
                     {
                         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
 
@@ -428,7 +440,35 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                             }
                         }
                     }
-                    return new JspView<AdminController.ProjectSettingsForm>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors);
+                    VBox box = new VBox();
+                    box.addView(new JspView<AdminController.ProjectSettingsForm>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
+
+                    // only site admins can configure the pipeline root
+                    if (getViewContext().getUser().isAdministrator())
+                    {
+                        box.addView(new HttpView() {
+                            protected void renderInternal(Object model, PrintWriter out) throws Exception {
+                                WebPartView.startTitleFrame(out, "Configure Pipeline Root");
+                            }
+                        });
+
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("<tr><td colspan='10'>");
+                        sb.append("The root for the data pipeline can be set here for the project and all child folders. For additional pipeline options ");
+                        sb.append("<a href='").append(PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c).getLocalURIString()).append("'>click here</a>");
+                        sb.append("</td></tr>");
+                        box.addView(new HtmlView(sb.toString()));
+
+                        SetupForm form = SetupForm.init(c);
+                        box.addView(PipelineService.get().getSetupView(form));
+                        box.addView(new HttpView() {
+                            protected void renderInternal(Object model, PrintWriter out) throws Exception {
+                                WebPartView.endTitleFrame(out);
+                            }
+                        });
+
+                    }
+                    return box;
                 }
                 else
                     throw new NotFoundException("Unknown tab id");

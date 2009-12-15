@@ -56,6 +56,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -268,6 +269,13 @@ public class AdminController extends SpringActionController
         {
             ActionURL url = getProjectSettingsURL(c);
             url.addParameter("tabId", "menubar");
+            return url;
+        }
+
+        public ActionURL getProjectSettingsFileURL(Container c)
+        {
+            ActionURL url = getProjectSettingsURL(c);
+            url.addParameter("tabId", "files");
             return url;
         }
 
@@ -1192,7 +1200,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class ProjectSettingsForm
+    public static class ProjectSettingsForm extends SetupForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
