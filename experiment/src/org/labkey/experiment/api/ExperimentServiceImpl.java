@@ -883,7 +883,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sql.append(table);
             sql.append(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
             sql.append(getTinfoProtocolApplication(), "pa");
-            if (types.length > 0)
+            if (types != null && types.length > 0)
             {
                 sql.append(", ");
                 sql.append(getTinfoProtocol(), "p");
