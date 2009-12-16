@@ -701,15 +701,7 @@ public class StudyController extends BaseStudyController
             if (StudyManager.getInstance().showQCStates(queryView.getContainer()))
                 createQCStateButton(queryView, buttonBar, currentStates);
 
-            // TODO: Consolidate this with QueryView.createExportMenuButton()
-            MenuButton exportMenuButton = new MenuButton("Export");
-
-            exportMenuButton.addMenuItem("Export all to Excel (.xls)", getViewContext().cloneActionURL().replaceParameter("export", "xls"));
-            exportMenuButton.addMenuItem("Export all to text file (.tsv)", getViewContext().cloneActionURL().replaceParameter("export", "tsv"));
-            exportMenuButton.addMenuItem("Excel Web Query (.iqy)", queryView.urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
-            exportMenuButton.addSeparator();
-            queryView.addExportScriptItems(exportMenuButton);
-            buttonBar.add(exportMenuButton);
+            buttonBar.add(queryView.createExportButton(false));
 
             buttonBar.add(queryView.createPageSizeMenuButton());
 

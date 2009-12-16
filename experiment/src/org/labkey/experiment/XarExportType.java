@@ -22,8 +22,8 @@ package org.labkey.experiment;
  */
 public enum XarExportType
 {
-    BROWSER_DOWNLOAD("Browser download"),
-    PIPELINE_FILE("Write to exportedXars directory in pipeline root");
+    BROWSER_DOWNLOAD("Download to web browser"),
+    PIPELINE_FILE("Write to exportedXars directory in pipeline");
 
     private final String _description;
 

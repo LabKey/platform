@@ -256,7 +256,6 @@ public class DataSetQueryView extends QueryView
 
     public ActionURL urlFor(QueryAction action)
     {
-        ActionURL url = super.urlFor(action);
         switch (action)
         {
             case createRReport:
@@ -268,10 +267,13 @@ public class DataSetQueryView extends QueryView
                 bean.setDataRegionName(getDataRegionName());
 
                 bean.setRedirectUrl(getViewContext().getActionURL().toString());
-                url = ReportUtil.getRReportDesignerURL(_viewContext, bean);
-                break;
+                return ReportUtil.getRReportDesignerURL(_viewContext, bean);
+            case exportRowsExcel:
+                return getViewContext().cloneActionURL().replaceParameter("export", "xls");
+            case exportRowsTsv:
+                return getViewContext().cloneActionURL().replaceParameter("export", "tsv");
         }
-        return url;
+        return super.urlFor(action);
     }
 
     public void setButtons(List<ActionButton> buttons)

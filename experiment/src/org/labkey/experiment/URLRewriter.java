@@ -36,11 +36,28 @@ public abstract class URLRewriter
 {
     protected Map<File, FileInfo> _files = new HashMap<File, FileInfo>();
 
-    public abstract String rewriteURL(File f, ExpData data, ExpRun experimentRun) throws ExperimentException;
+    private boolean _includeXarXml;
+
+    public URLRewriter()
+    {
+        this(true);
+    }
+
+    public URLRewriter(boolean includeXarXml)
+    {
+        _includeXarXml = includeXarXml;
+    }
+
+    public abstract String rewriteURL(File f, ExpData data, String role, ExpRun experimentRun) throws ExperimentException;
 
     public Collection<FileInfo> getFileInfos()
     {
         return _files.values();
+    }
+
+    public boolean isIncludeXarXml()
+    {
+        return _includeXarXml;
     }
 
     protected static class FileInfo

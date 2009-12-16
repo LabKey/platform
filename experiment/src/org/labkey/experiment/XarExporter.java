@@ -74,18 +74,20 @@ public class XarExporter
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, DataURLRelativizer urlRelativizer)
+    private boolean _includeXML = true;
+
+    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter)
     {
         _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer);
-        _urlRewriter = urlRelativizer.createURLRewriter();
+        _urlRewriter = urlRewriter;
 
         _document = ExperimentArchiveDocument.Factory.newInstance();
         _archive = _document.addNewExperimentArchive();
     }
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, DataURLRelativizer urlRelativizer, XarExportSelection selection, String xarXmlFileName, Logger log) throws SQLException, ExperimentException
+    public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName, Logger log) throws SQLException, ExperimentException
     {
-        this(lsidRelativizer, urlRelativizer);
+        this(lsidRelativizer, selection.createURLRewriter());
         _log = log;
 
         selection.addContent(this);
@@ -94,6 +96,7 @@ public class XarExporter
         {
             setXarXmlFileName(xarXmlFileName);
         }
+        setFileIncludes(selection.isIncludeXarXml());
     }
 
     private void logProgress(String message)
@@ -104,8 +107,14 @@ public class XarExporter
         }
     }
 
-    public void setXarXmlFileName(String fileName) {
-        this._xarXmlFileName = fileName;
+    public void setFileIncludes(boolean xarXML)
+    {
+        _includeXML = xarXML;
+    }
+
+    public void setXarXmlFileName(String fileName)
+    {
+        _xarXmlFileName = fileName;
     }
 
     public void addExperimentRun(ExpRunImpl run) throws ExperimentException
@@ -150,20 +159,21 @@ public class XarExporter
 
         addProtocol(protocol, true);
 
-        Collection<ExpData> inputData = run.getDataInputs().keySet();
+        Set<Map.Entry<ExpData, String>> inputData = run.getDataInputs().entrySet();
         ExperimentArchiveType.StartingInputDefinitions inputDefs = _archive.getStartingInputDefinitions();
         if (inputData.size() > 0 && inputDefs == null)
         {
             inputDefs = _archive.addNewStartingInputDefinitions();
         }
-        for (ExpData data : inputData)
+        for (Map.Entry<ExpData, String> entry : inputData)
         {
+            ExpData data = entry.getKey();
             if (!_inputDataLSIDs.contains(data.getLSID()))
             {
                 _inputDataLSIDs.add(data.getLSID());
 
                 DataBaseType xData = inputDefs.addNewData();
-                populateData(xData, data, run);
+                populateData(xData, data, entry.getValue(), run);
             }
         }
 
@@ -222,15 +232,6 @@ public class XarExporter
             }
             InputOutputRefsType.DataLSID dataLSID = inputRefs.addNewDataLSID();
             dataLSID.setStringValue(_relativizedLSIDs.relativize(data.getLSID()));
-            if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
-            {
-                ExpDataImpl expData = new ExpDataImpl(data);
-                String url = _urlRewriter.rewriteURL(expData.getFile(), expData, run);
-                if (url != null && !"".equals(url))
-                {
-                    dataLSID.setDataFileUrl(url);
-                }
-            }
             String roleName = null;
             for (DataInput dataInput : dataInputs)
             {
@@ -243,6 +244,16 @@ public class XarExporter
             if (roleName != null)
             {
                 dataLSID.setRoleName(roleName);
+            }
+
+            ExpDataImpl expData = new ExpDataImpl(data);
+            String url = _urlRewriter.rewriteURL(expData.getFile(), expData, roleName, run);
+            if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
+            {
+                if (url != null && !"".equals(url))
+                {
+                    dataLSID.setDataFileUrl(url);
+                }
             }
         }
 
@@ -281,7 +292,7 @@ public class XarExporter
             for (ExpData data : outputData)
             {
                 DataBaseType xData = outputDataObjects.addNewData();
-                populateData(xData, data, run);
+                populateData(xData, data, null, run);
             }
         }
 
@@ -566,7 +577,7 @@ public class XarExporter
         return properties;
     }
 
-    private void populateData(DataBaseType xData, ExpData data, ExpRun run) throws ExperimentException
+    private void populateData(DataBaseType xData, ExpData data, String role, ExpRun run) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
         xData.setAbout(_relativizedLSIDs.relativize(data));
@@ -576,7 +587,7 @@ public class XarExporter
         String url = null;
         if (f != null)
         {
-            url = _urlRewriter.rewriteURL(f, data, run);
+            url = _urlRewriter.rewriteURL(f, data, role, run);
         }
         xData.setName(data.getName());
         PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
@@ -829,7 +840,7 @@ public class XarExporter
                                     File f = new File(uri);
                                     if (f.exists())
                                     {
-                                        link = _urlRewriter.rewriteURL(f, null, null);
+                                        link = _urlRewriter.rewriteURL(f, null, null, null);
                                     }
                                 }
                             }
@@ -910,12 +921,14 @@ public class XarExporter
         try
         {
             zOut = new ZipOutputStream(out);
-            ZipEntry xmlEntry = new ZipEntry(_xarXmlFileName);
-            zOut.putNextEntry(xmlEntry);
-            logProgress("Adding XAR XML to archive");
-            dumpXML(zOut);
-
-            zOut.closeEntry();
+            if (_includeXML)
+            {
+                ZipEntry xmlEntry = new ZipEntry(_xarXmlFileName);
+                zOut.putNextEntry(xmlEntry);
+                logProgress("Adding XAR XML to archive");
+                dumpXML(zOut);
+                zOut.closeEntry();
+            }
 
             for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
             {

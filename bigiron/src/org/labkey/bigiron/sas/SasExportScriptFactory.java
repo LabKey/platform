@@ -35,7 +35,7 @@ public class SasExportScriptFactory implements ExportScriptFactory
 
     public String getMenuText()
     {
-        return "Create SAS Script";
+        return "SAS";
     }
 
     public WebPartView getView(QueryView queryView)

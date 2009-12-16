@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,9 +32,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
 
 <p class="labkey-error"><b><%= h(bean.getError()) %></b></p>
 
-<form action="<%= bean.getPostURL().toString() %>" method="post">
-
-<table>
+<table cellspacing="4">
     <tr>
         <td>LSID output type:</td>
         <td>
@@ -56,19 +55,15 @@ ExperimentController.ExportBean bean = me.getModelBean();
     </tr>
     <tr>
         <td>Filename:</td>
-        <td><input type="text" size="45" name="fileName" value="<%= h(bean.getFileName()) %>" /></td>
+        <td><input type="text" size="45" name="xarFileName" value="<%= h(bean.getFileName()) %>" /></td>
+    </tr>
+    <tr>
+        <td/>
+        <td><%= PageFlowUtil.generateSubmitButton("Export", "return verifySelected(this.form, '" + bean.getPostURL() + "', 'POST', 'runs');") %></td>
     </tr>
 </table>
 
-<input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
-<% for (String selectIds : request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) == null ? new String[0] : request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME))
-{ %>
-    <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME %>" value="<%= h(selectIds)%>" />
-<% }
-if (bean.getExpRowId() != null)
+<% if (bean.getExpRowId() != null)
 { %>
     <input type="hidden" name="expRowId" value="<%= bean.getExpRowId() %>" />
 <% } %>
-<input type="hidden" name="protocolId" value="<%= bean.getProtocolId() == null ? "" : bean.getProtocolId() %>" />
-<%= generateSubmitButton("Export") %>
-</form>

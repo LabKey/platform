@@ -874,6 +874,7 @@ experiment/src/org/labkey/experiment/controllers/property/PropertyController.jav
 experiment/src/org/labkey/experiment/defaults/DefaultValueServiceImpl.java -text
 experiment/src/org/labkey/experiment/deriveSamplesChooseTarget.jsp -text
 experiment/src/org/labkey/experiment/experimentRunQueryHeader.jsp -text
+experiment/src/org/labkey/experiment/fileExportOptions.jsp -text
 experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineJob.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineProvider.java -text

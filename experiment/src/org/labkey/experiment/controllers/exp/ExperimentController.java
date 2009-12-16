@@ -300,7 +300,7 @@ public class ExperimentController extends SpringActionController
             runListView.setShowRemoveFromExperimentButton(true);
             runListView.setShowDeleteButton(true);
             runListView.setShowAddToRunGroupButton(true);
-            runListView.setShowExportXARButton(true);
+            runListView.setShowExportButtons(true);
             runListView.setShowMoveRunsButton(true);
             chooserView.setTitle("Experiment Runs");
             vbox.addView(chooserView);
@@ -2550,8 +2550,9 @@ public class ExperimentController extends SpringActionController
         private final Integer _expRowId;
         private final Integer _protocolId;
         private final ActionURL _postURL;
+        private final Set<String> _roles;
 
-        public ExportBean(LSIDRelativizer selectedRelativizer, XarExportType selectedExportType, String fileName, ExportOptionsForm form, ActionURL postURL)
+        public ExportBean(LSIDRelativizer selectedRelativizer, XarExportType selectedExportType, String fileName, ExportOptionsForm form, Set<String> roles, ActionURL postURL)
         {
             _selectedRelativizer = selectedRelativizer;
             _selectedExportType = selectedExportType;
@@ -2560,6 +2561,7 @@ public class ExperimentController extends SpringActionController
             _error = form.getError();
             _expRowId = form.getExpRowId();
             _postURL = postURL;
+            _roles = roles;
             _protocolId = form.getProtocolId();
         }
 
@@ -2581,6 +2583,11 @@ public class ExperimentController extends SpringActionController
         public String getFileName()
         {
             return _fileName;
+        }
+
+        public Set<String> getRoles()
+        {
+            return _roles;
         }
 
         public String getDataRegionSelectionKey()
@@ -2617,8 +2624,11 @@ public class ExperimentController extends SpringActionController
         private String _error;
         private String _exportType;
         private String _lsidOutputType;
-        private String _fileName;
+        private String _xarFileName;
+        private String _zipFileName;
+        private String _fileExportType;
         private Integer _protocolId;
+        private String[] _roles = new String[0];
 
         public String getError()
         {
@@ -2640,14 +2650,34 @@ public class ExperimentController extends SpringActionController
             return _lsidOutputType;
         }
 
-        public String getFileName()
+        public String getFileExportType()
         {
-            return _fileName;
+            return _fileExportType;
         }
 
-        public void setFileName(String fileName)
+        public void setFileExportType(String fileExportType)
         {
-            _fileName = fileName;
+            _fileExportType = fileExportType;
+        }
+
+        public String getXarFileName()
+        {
+            return _xarFileName;
+        }
+
+        public void setXarFileName(String xarFileName)
+        {
+            _xarFileName = xarFileName;
+        }
+
+        public String getZipFileName()
+        {
+            return _zipFileName;
+        }
+
+        public void setZipFileName(String zipFileName)
+        {
+            _zipFileName = zipFileName;
         }
 
         public void setExportType(String exportType)
@@ -2668,6 +2698,16 @@ public class ExperimentController extends SpringActionController
         public void setProtocolId(Integer protocolId)
         {
             _protocolId = protocolId;
+        }
+
+        public String[] getRoles()
+        {
+            return _roles;
+        }
+
+        public void setRoles(String[] roles)
+        {
+            _roles = roles;
         }
 
         public List<ExpProtocol> lookupProtocols(ViewContext context, boolean clearSelection)
@@ -2710,56 +2750,32 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ExportRunsOptionsAction extends SimpleViewAction<ExportOptionsForm>
-    {
-        public ModelAndView getView(ExportOptionsForm form, BindException errors) throws Exception
-        {
-            Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), false);
-
-            ExpRun run = null;
-            if (runIds != null && !runIds.isEmpty())
-            {
-                run = ExperimentService.get().getExpRun(Integer.parseInt(runIds.iterator().next()));
-            }
-
-            String fileName = "exported.xar";
-            if (run != null)
-            {
-                if (run.getName().endsWith("..."))
-                {
-                    fileName = run.getName().substring(0, run.getName().length() - "...".length());
-                }
-                else
-                {
-                    fileName = run.getName();
-                }
-                fileName = fileName + ".xar";
-            }
-            fileName = fixupExportName(fileName);
-
-            ActionURL postURL = new ActionURL(ExportRunsAction.class, getContainer());
-            return new JspView<ExportBean>("/org/labkey/experiment/XARExportOptions.jsp", new ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, fileName, form, postURL));
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("XAR Export Options");
-        }
-    }
-
-    private ActionURL exportXAR(XarExportSelection selection, String lsidRelativizerName, String exportTypeName, String fileName, ActionURL errorURL)
+    private ActionURL exportXAR(XarExportSelection selection, String lsidRelativizerName, String exportTypeName, String fileName)
             throws SQLException, ExperimentException, ServletException, IOException
     {
-        if (lsidRelativizerName == null || exportTypeName == null)
+        final LSIDRelativizer lsidRelativizer;
+        final XarExportType exportType;
+        if (lsidRelativizerName == null)
         {
-            errorURL.addParameter("error", "Must specify an LSID relativizer and an export type");
-            return errorURL;
+            lsidRelativizer = LSIDRelativizer.FOLDER_RELATIVE;
+        }
+        else
+        {
+            lsidRelativizer = LSIDRelativizer.valueOf(lsidRelativizerName);
+        }
+        if (exportTypeName == null)
+        {
+            exportType = XarExportType.BROWSER_DOWNLOAD;
+        }
+        else
+        {
+            exportType = XarExportType.valueOf(exportTypeName);
         }
 
-        LSIDRelativizer lsidRelativizer = LSIDRelativizer.valueOf(lsidRelativizerName);
-        XarExportType exportType = XarExportType.valueOf(exportTypeName);
-
+        if (fileName == null || fileName.equals(""))
+        {
+            fileName = "export.xar";
+        }
         fileName = fixupExportName(fileName);
         String xarXmlFileName = null;
         if (fileName.endsWith(".xar") || fileName.endsWith(".XAR") || fileName.endsWith("Xar"))
@@ -2768,28 +2784,19 @@ public class ExperimentController extends SpringActionController
         switch (exportType)
         {
             case BROWSER_DOWNLOAD:
-                XarExporter exporter = new XarExporter(lsidRelativizer, DataURLRelativizer.ARCHIVE, selection, xarXmlFileName, null);
+                XarExporter exporter = new XarExporter(lsidRelativizer, selection, xarXmlFileName, null);
 
                 getViewContext().getResponse().setContentType("application/zip");
                 getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
 
-                try
-                {
-                    exporter.write(getViewContext().getResponse().getOutputStream());
-                    return null;
-                }
-                catch (Exception e)
-                {
-                    errorURL.addParameter("error", e.getMessage());
-                    return errorURL;
-                }
+                exporter.write(getViewContext().getResponse().getOutputStream());
+                return null;
             case PIPELINE_FILE:
                 PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
                 File pipeRootDir = pipeRoot == null ? null : pipeRoot.getRootPath();
                 if (pipeRootDir == null || !pipeRootDir.exists())
                 {
-                    errorURL.addParameter("error", "You must set a valid pipeline root before you can export a XAR to it.");
-                    HttpView.throwRedirect(errorURL);
+                    throw new IllegalStateException("You must set a valid pipeline root before you can export a XAR to it.");
                 }
                 XarExportPipelineJob job = new XarExportPipelineJob(getViewBackgroundInfo(), pipeRootDir, fileName, lsidRelativizer, selection, xarXmlFileName);
                 PipelineService.get().queueJob(job);
@@ -2800,36 +2807,15 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ExportProtocolsOptionsAction extends SimpleViewAction<ExportOptionsForm>
-    {
-        public ModelAndView getView(ExportOptionsForm form, BindException errors) throws Exception
-        {
-            List<ExpProtocol> protocols = form.lookupProtocols(getViewContext(), false);
-
-            String fileName;
-            if (protocols.size() == 1)
-            {
-                fileName = fixupExportName(protocols.get(0).getName() + ".xar");
-            }
-            else
-            {
-                fileName = protocols.size() + "AssayDefinitions.xar";
-            }
-
-            ActionURL postURL = new ActionURL(ExportProtocolsAction.class, getContainer());
-            ExportBean bean = new ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, fileName, form, postURL);
-            return new JspView<ExportBean>("/org/labkey/experiment/XARExportOptions.jsp", bean);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("XAR Export Options");
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
     public class ExportProtocolsAction extends AbstractExportAction
     {
+        @Override
+        public ModelAndView getView(ExportOptionsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            handlePost(form, errors);
+            return null;
+        }
+
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
             List<ExpProtocol> protocols = form.lookupProtocols(getViewContext(), false);
@@ -2842,15 +2828,11 @@ public class ExperimentController extends SpringActionController
             XarExportSelection selection = new XarExportSelection();
             selection.addProtocolIds(ids);
 
-            ActionURL errorURL = new ActionURL(ExportProtocolsOptionsAction.class, getContainer());
-            errorURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
-            if (form.getProtocolId() != null)
+            exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
+
+            if (form.getDataRegionSelectionKey() != null)
             {
-                errorURL.addParameter("protocolId", form.getProtocolId().intValue());
-            }
-            _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getFileName(), errorURL);
-            if (_resultURL != errorURL && form.getDataRegionSelectionKey() != null)
-            {
+                // Clear the selection
                 form.lookupProtocols(getViewContext(), true);
             }
             return true;
@@ -2903,7 +2885,7 @@ public class ExperimentController extends SpringActionController
                 for (int id : ids)
                 {
                     ExpRun run = ExperimentService.get().getExpRun(id);
-                    if (run == null || !run.getContainer().equals(getContainer()))
+                    if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
                     {
                         HttpView.throwNotFound("Could not find run " + id);
                     }
@@ -2913,21 +2895,57 @@ public class ExperimentController extends SpringActionController
                 if (form.getExpRowId() != null)
                 {
                     ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId().intValue());
-                    if (experiment != null && !experiment.getContainer().equals(getContainer()))
+                    if (experiment != null && !experiment.getContainer().hasPermission(getUser(), ReadPermission.class))
                     {
-                        HttpView.throwNotFound("Experiment " + form.getExpRowId());
+                        HttpView.throwNotFound("Run group " + form.getExpRowId());
                     }
                     selection.addExperimentIds(experiment.getRowId());
                 }
                 selection.addRunIds(ids);
 
-                ActionURL errorURL = new ActionURL(ExportRunsOptionsAction.class, getContainer());
-                if (form.getExpRowId() != null)
+                _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
+                return true;
+            }
+            catch (NumberFormatException e)
+            {
+                HttpView.throwNotFound(runIds.toString());
+                return true;
+            }
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportRunFilesAction extends AbstractExportAction
+    {
+        public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
+        {
+            Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
+            if (runIds == null || runIds.isEmpty())
+            {
+                HttpView.throwNotFound();
+            }
+
+            try
+            {
+                int[] ids = PageFlowUtil.toInts(runIds);
+                for (int id : ids)
                 {
-                    errorURL.addParameter("expRowId", form.getExpRowId().intValue());
+                    ExpRun run = ExperimentService.get().getExpRun(id);
+                    if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                    {
+                        HttpView.throwNotFound("Could not find run " + id);
+                    }
                 }
-                errorURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
-                _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getFileName(), errorURL);
+
+                XarExportSelection selection = new XarExportSelection();
+                selection.setIncludeXarXml(false);
+                if ("role".equalsIgnoreCase(form.getFileExportType()))
+                {
+                    selection.addRoles(form.getRoles());
+                }
+                selection.addRunIds(ids);
+
+                _resultURL = exportXAR(selection, null, null, form.getZipFileName());
                 return true;
             }
             catch (NumberFormatException e)
@@ -4024,19 +4042,11 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", material.getRowId());
         }
 
-        public ActionURL getExportRunsOptionsURL(Container container, ExpExperiment experiment)
+        public ActionURL getExportProtocolURL(Container container, ExpProtocol protocol)
         {
-            ActionURL result = new ActionURL(ExportRunsOptionsAction.class, container);
-            if (experiment != null)
-            {
-                result.addParameter("expRowId", experiment.getRowId());
-            }
-            return result;
-        }
-
-        public ActionURL getExportProtocolOptionsURL(Container container, ExpProtocol protocol)
-        {
-            return new ActionURL(ExperimentController.ExportProtocolsOptionsAction.class, container).addParameter("protocolId", protocol.getRowId());
+            return new ActionURL(ExperimentController.ExportProtocolsAction.class, container).
+                    addParameter("protocolId", protocol.getRowId()).
+                    addParameter("xarFileName", protocol.getName() + ".xar");
         }
 
         public ActionURL getMoveRunsLocationURL(Container container)

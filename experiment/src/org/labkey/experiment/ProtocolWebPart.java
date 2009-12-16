@@ -73,9 +73,10 @@ public class ProtocolWebPart extends WebPartView
             deleteProtocol.setRequiresSelection(true);
             bb.add(deleteProtocol);
 
+            dr.addHiddenFormField("xarFileName", "ProtocolExport.xar");
             ActionURL exportURL = getViewContext().cloneActionURL();
-            ActionButton exportProtocols = new ActionButton("", "Export...");
-            exportURL.setAction(ExperimentController.ExportProtocolsOptionsAction.class);
+            ActionButton exportProtocols = new ActionButton("", "Export");
+            exportURL.setAction(ExperimentController.ExportProtocolsAction.class);
             exportProtocols.setURL(exportURL);
             exportProtocols.setActionType(ActionButton.Action.POST);
             exportProtocols.setDisplayPermission(DeletePermission.class);

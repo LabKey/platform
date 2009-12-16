@@ -94,7 +94,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
     private void moveRun(MoveRunsPipelineJob job, ExpRunImpl experimentRun) throws SQLException, ExperimentException, IOException
     {
-        XarExporter exporter = new XarExporter(LSIDRelativizer.PARTIAL_FOLDER_RELATIVE, DataURLRelativizer.ORIGINAL_FILE_LOCATION);
+        XarExporter exporter = new XarExporter(LSIDRelativizer.PARTIAL_FOLDER_RELATIVE, DataURLRelativizer.ORIGINAL_FILE_LOCATION.createURLRewriter());
         exporter.addExperimentRun(experimentRun);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();

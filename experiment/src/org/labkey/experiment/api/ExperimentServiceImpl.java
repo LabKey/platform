@@ -44,11 +44,12 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.*;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.experiment.ExperimentAuditViewFactory;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
@@ -107,6 +108,31 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         return XAR_IMPORT_LOCK;
     }
+
+    public HttpView createRunExportView(Container container, String defaultFilenamePrefix)
+    {
+        ActionURL postURL = new ActionURL(ExperimentController.ExportRunsAction.class, container);
+        return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
+    }
+
+    public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
+    {
+        Set<String> roles = ExperimentService.get().getDataInputRoles(container, ContainerFilter.CURRENT);
+        // Remove case-only dupes
+        Set<String> dedupedRoles = new CaseInsensitiveHashSet();
+        for (Iterator<String> i = roles.iterator(); i.hasNext(); )
+        {
+            String role = i.next();
+            if (!dedupedRoles.add(role))
+            {
+                i.remove();
+            }
+        }
+
+        ActionURL postURL = new ActionURL(ExperimentController.ExportRunFilesAction.class, container);
+        return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
+    }
+
 
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, String comment)
     {
@@ -814,13 +840,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         getExpSchema().getScope().rollbackTransaction();
     }
 
-    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton, boolean exportXARButton)
+    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton)
     {
         ExperimentRunListView view = ExperimentRunListView.createView(context, type, true);
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
         view.setShowMoveRunsButton(moveButton);
-        view.setShowExportXARButton(exportXARButton);
         view.setTitle("Experiment Runs");
         ActionURL url = new ActionURL(ExperimentController.ShowRunsAction.class, context.getContainer());
         url.addParameter("experimentRunFilter", type.getDescription());
@@ -840,17 +865,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return reader.getExperimentRuns();
     }
 
-    public Set<String> getDataInputRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
+    public Set<String> getDataInputRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType... types)
     {
-        return getInputRoles(container, filter, getTinfoDataInput(), type);
+        return getInputRoles(container, filter, getTinfoDataInput(), types);
     }
 
-    public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType type)
+    public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... types)
     {
-        return getInputRoles(container, ContainerFilter.Type.Current.create(null), getTinfoMaterialInput(), type);
+        return getInputRoles(container, ContainerFilter.Type.Current.create(null), getTinfoMaterialInput(), types);
     }
 
-    private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType type)
+    private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
     {
         try
         {
@@ -858,12 +883,20 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sql.append(table);
             sql.append(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
             sql.append(getTinfoProtocolApplication(), "pa");
-            if (type != null)
+            if (types.length > 0)
             {
                 sql.append(", ");
                 sql.append(getTinfoProtocol(), "p");
-                sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
-                sql.add(type.toString());
+                sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype IN (");
+                String separator = "";
+                for (ExpProtocol.ApplicationType type : types)
+                {
+                    sql.append(separator);
+                    separator = ", ";
+                    sql.append("?");
+                    sql.add(type.toString());
+                }
+                sql.append(") AND ");
             }
             else
             {

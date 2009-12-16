@@ -20,6 +20,9 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.URLRewriter;
+import org.labkey.experiment.DataURLRelativizer;
+import org.labkey.experiment.ArchiveURLRewriter;
 import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.Protocol;
@@ -28,6 +31,7 @@ import java.sql.SQLException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * User: jeckels
@@ -38,6 +42,8 @@ public class XarExportSelection implements Serializable
     private List<Integer> _expIds = new ArrayList<Integer>();
     private List<Integer> _runIds = new ArrayList<Integer>();
     private List<Integer> _protocolIds = new ArrayList<Integer>();
+    private boolean _includeXarXml = true;
+    private List<String> _roles;
 
     public void addExperimentIds(int... expIds)
     {
@@ -63,6 +69,25 @@ public class XarExportSelection implements Serializable
         }
     }
 
+    public boolean isIncludeXarXml()
+    {
+        return _includeXarXml;
+    }
+
+    public void setIncludeXarXml(boolean includeXarXml)
+    {
+        _includeXarXml = includeXarXml;
+    }
+
+    public void addRoles(String... roles)
+    {
+        if (_roles == null)
+        {
+            _roles = new ArrayList<String>();
+        }
+        _roles.addAll(Arrays.asList(roles));
+    }
+
     public void addContent(XarExporter exporter) throws SQLException, ExperimentException
     {
         for (int expId : _expIds)
@@ -80,5 +105,10 @@ public class XarExportSelection implements Serializable
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
             exporter.addProtocol(protocol, true);
         }
+    }
+
+    public URLRewriter createURLRewriter()
+    {
+        return new ArchiveURLRewriter(_includeXarXml, _roles);
     }
 }

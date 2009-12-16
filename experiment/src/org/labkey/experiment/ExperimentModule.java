@@ -154,7 +154,7 @@ public class ExperimentModule extends SpringModule
         result.add(new BaseWebPartFactory(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
             {
-                return ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), ExperimentRunType.ALL_RUNS_TYPE, true, true);
+                return ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), ExperimentRunType.ALL_RUNS_TYPE, true);
             }
         });
         result.add(new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME){

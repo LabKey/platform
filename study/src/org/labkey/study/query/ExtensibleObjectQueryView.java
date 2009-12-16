@@ -21,7 +21,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.Study;
 import org.labkey.study.model.ExtensibleStudyEntity;
 import org.labkey.study.model.StudyImpl;
 
@@ -66,7 +65,7 @@ public class ExtensibleObjectQueryView extends QueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        bar.add(createExportMenuButton(false));
+        bar.add(createExportButton(false));
     }
 
     public boolean allowEditing()

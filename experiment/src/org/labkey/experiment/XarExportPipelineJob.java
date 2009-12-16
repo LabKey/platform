@@ -77,7 +77,7 @@ public class XarExportPipelineJob extends PipelineJob
         try
         {
             getLogger().info("Starting to write XAR to " + _exportFile.getPath());
-            XarExporter exporter = new XarExporter(_lsidRelativizer, DataURLRelativizer.ARCHIVE, _selection, _xarXmlFileName, getLogger());
+            XarExporter exporter = new XarExporter(_lsidRelativizer, _selection, _xarXmlFileName, getLogger());
             _exportFile.getParentFile().mkdirs();
             fOut = new FileOutputStream(_exportFile);
             exporter.write(fOut);

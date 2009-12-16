@@ -39,7 +39,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, ExpRun experimentRun) throws ExperimentException
+                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun) throws ExperimentException
                 {
                     try
                     {
@@ -62,7 +62,7 @@ public enum DataURLRelativizer
     {
         public URLRewriter createURLRewriter()
         {
-            return new ArchiveURLRewriter();
+            return new ArchiveURLRewriter(true, null);
         }
     },
     /**
@@ -74,7 +74,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, ExpRun expRun) throws ExperimentException
+                public String rewriteURL(File f, ExpData data, String roleName, ExpRun expRun) throws ExperimentException
                 {
                     try
                     {
@@ -103,7 +103,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, ExpRun experimentRun)
+                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun)
                 {
                     if (data == null)
                     {

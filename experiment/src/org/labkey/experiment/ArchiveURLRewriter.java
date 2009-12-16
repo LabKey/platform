@@ -22,9 +22,12 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -32,26 +35,44 @@ import java.io.IOException;
  */
 public class ArchiveURLRewriter extends URLRewriter
 {
-    public String rewriteURL(File f, ExpData data, ExpRun run) throws ExperimentException
+    private final Set<String> _roles;
+
+    public ArchiveURLRewriter(boolean includeXarXml, List<String> roles)
     {
-        String directoryName;
-        File rootDir;
-        FileInfo existingInfo = _files.get(f);
-        if (existingInfo != null)
+        super(includeXarXml);
+        _roles = roles == null ? null : new CaseInsensitiveHashSet(roles);
+    }
+
+    public String rewriteURL(File f, ExpData data, String roleName, ExpRun run) throws ExperimentException
+    {
+        if (_roles == null || _roles.contains(roleName))
         {
-            return existingInfo.getName();
+            FileInfo existingInfo = _files.get(f);
+            if (existingInfo != null)
+            {
+                return existingInfo.getName();
+            }
+            File rootDir = null;
+            if (run != null)
+            {
+                rootDir = new File(run.getFilePathRoot());
+            }
+            return addFile(ExperimentService.get().getExpData(data.getRowId()), f, getDirectoryName(run), rootDir, data.findDataHandler());
+        }
+        return null;
+    }
+
+    protected String getDirectoryName(ExpRun run)
+    {
+        if (!isIncludeXarXml())
+        {
+            return null;
         }
         if (run == null)
         {
-            directoryName = "Other";
-            rootDir = null;
+            return "Other";
         }
-        else
-        {
-            directoryName = "Run" + run.getRowId();
-            rootDir = new File(run.getFilePathRoot());
-        }
-        return addFile(ExperimentService.get().getExpData(data.getRowId()), f, directoryName, rootDir, data.findDataHandler());
+        return "Run" + run.getRowId();
     }
 
     private String addFile(ExpData data, File f, String directoryName, File rootDir, ExperimentDataHandler dataHandler)
@@ -103,7 +124,16 @@ public class ArchiveURLRewriter extends URLRewriter
 
     private String uniquifyFileName(String originalName, String directoryName, Integer copy)
     {
-        String name = directoryName + "/" + originalName;
+        String name;
+        if (directoryName == null || directoryName.equals(""))
+        {
+            name = originalName;
+        }
+        else
+        {
+            name = directoryName + "/" + originalName;
+        }
+        
         String prefix;
         String suffix;
         int index = name.indexOf('.');
