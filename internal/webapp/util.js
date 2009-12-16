@@ -41,6 +41,26 @@ function getCheckedValues(form, elementName)
     return values;
 }
 
+/**
+ * Given a radio button, determine which one in the group is selected and return its value
+ * @param radioButton one of the radio buttons in the group
+ */
+function getRadioButtonValue(radioButton)
+{
+    if (radioButton.form && radioButton.name)
+    {
+        var radioButtonElements = radioButton.form.elements[radioButton.name];
+        for (var i = 0; i < radioButtonElements.length; i++)
+        {
+            if (radioButtonElements[i].checked)
+            {
+                return radioButtonElements[i].value;
+            }
+        }
+    }
+}
+
+
 function getChildWithClassName(root, tagName, className)
 {
     if (!root) return undefined;

@@ -166,6 +166,7 @@ api/src/org/labkey/api/data/MvUtil.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
 api/src/org/labkey/api/data/Ownable.java -text
+api/src/org/labkey/api/data/PanelButton.java -text
 api/src/org/labkey/api/data/Parameter.java -text
 api/src/org/labkey/api/data/PkFilter.java -text
 api/src/org/labkey/api/data/Project.java -text
@@ -511,7 +512,10 @@ api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
 api/src/org/labkey/api/query/ViewOptions.java -text
 api/src/org/labkey/api/query/createJavaScript.jsp -text
+api/src/org/labkey/api/query/excelExportOptions.jsp -text
+api/src/org/labkey/api/query/excelScriptOptions.jsp -text
 api/src/org/labkey/api/query/exportRScript.jsp -text
+api/src/org/labkey/api/query/exportTextOptions.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
 api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
@@ -1735,6 +1739,18 @@ api/webapp/ext-2.2/source/widgets/tree/TreePanel.js -text
 api/webapp/ext-2.2/source/widgets/tree/TreeSelectionModel.js -text
 api/webapp/ext-2.2/source/widgets/tree/TreeSorter.js -text
 api/webapp/ext-2.2/ux-exception.html -text
+api/webapp/gtheme/gtheme.css -text
+api/webapp/gtheme/img/btn-arrow.gif -text
+api/webapp/gtheme/img/btn.gif -text
+api/webapp/gtheme/img/icons7.png -text
+api/webapp/gtheme/img/rc.png -text
+api/webapp/gtheme/img/rct.png -text
+api/webapp/gtheme/img/rdr.png -text
+api/webapp/gtheme/img/t.png -text
+api/webapp/gtheme/img/xb.png -text
+api/webapp/gtheme/img/xt.png -text
+api/webapp/verticalTabPanel/VerticalTabPanel.css -text
+api/webapp/verticalTabPanel/VerticalTabPanel.js -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text

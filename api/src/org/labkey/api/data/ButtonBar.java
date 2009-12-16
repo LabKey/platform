@@ -123,5 +123,6 @@ public class ButtonBar extends DisplayElement
             }
         }
         out.write("</div>");
+        out.write("<div class=\"extContainer\" />");
     }
 } 

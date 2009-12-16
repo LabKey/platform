@@ -35,6 +35,12 @@ LABKEY.DataRegion = function (config)
     this.selectionKey = config.selectionKey;
     this.selectorCols = config.selectorCols;
 
+    // The button for the ribbon panel that we're currently showing
+    this.currentPanelButton = null;
+
+    // All of the different ribbon panels that have been constructed for this data region
+    this.panelButtonContents = [];
+
     LABKEY.DataRegions[this.name] = this;
 
     this.addEvents(
@@ -461,7 +467,100 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this.msgbox.setVisible(false, false);
         var span = this.msgbox.dom.getElementsByTagName("span")[0];
         span.innerHTML = "";
+    },
+
+    /**
+     * Show a ribbon panel. tabPanelConfig is an Ext config object for a TabPanel, the only required
+     * value is the items array.
+     * */
+    showButtonPanel : function(panelButton, tabPanelConfig)
+    {
+        var parentDiv = panelButton.parentNode;
+        // Find the button bar div
+        while (parentDiv && parentDiv.className != 'labkey-button-bar')
+        {
+            parentDiv = parentDiv.parentNode;
+        }
+        var panelDiv;
+        if (parentDiv)
+        {
+            // Find the next element, which should be a place to hang the TabPanel
+            panelDiv = parentDiv.nextSibling;
+            while (panelDiv && panelDiv.className.indexOf('extContainer') == -1)
+            {
+                panelDiv = panelDiv.nextSibling;
+            }
+
+            if (panelDiv)
+            {
+                var panelToHide = null;
+                // If we find a spot to put the panel, check its current contents
+                if (this.currentPanelButton)
+                {
+                    // We're currently showing a ribbon panel, so remember that we need to hide it
+                    panelToHide = this.panelButtonContents[this.currentPanelButton.id];
+                }
+
+                // Create a callback function to render the requested ribbon panel
+                var callback = function()
+                {
+                    if (panelToHide)
+                    {
+                        panelToHide.setVisible(false);
+                    }
+                    if (this.currentPanelButton != panelButton)
+                    {
+                        if (!this.panelButtonContents[panelButton.id])
+                        {
+                            // New up the TabPanel if we haven't already
+                            // Only create one per button, even if that button is rendered both above and below the grid
+                            tabPanelConfig.tabPosition = 'left';
+                            tabPanelConfig.tabWidth = 100;
+                            tabPanelConfig.renderTo = panelDiv;
+                            var newItems = new Array(tabPanelConfig.items.length);
+                            for (var i = 0; i < tabPanelConfig.items.length; i++)
+                            {
+                                newItems[i] = new Object();
+                                newItems[i].contentEl = Ext.get(tabPanelConfig.items[i].contentEl);
+                                newItems[i].title = tabPanelConfig.items[i].title;
+                            }
+                            tabPanelConfig.items = newItems;
+                            this.panelButtonContents[panelButton.id] = new Ext.ux.VerticalTabPanel(tabPanelConfig);
+                        }
+                        else
+                        {
+                            // Otherwise, be sure that it's parented correctly - it might have been shown
+                            // in a different button bar position
+                            this.panelButtonContents[panelButton.id].getEl().remove();
+                            this.panelButtonContents[panelButton.id].getEl().appendTo(Ext.get(panelDiv));
+                        }
+
+                        this.currentPanelButton = panelButton;
+
+                        // Slide it into place
+                        this.panelButtonContents[panelButton.id].setVisible(true);
+                        this.panelButtonContents[panelButton.id].getEl().slideIn();
+                    }
+                    else
+                    {
+                        this.currentPanelButton = null;
+                    }
+                };
+
+                if (this.currentPanelButton)
+                {
+                    // We're already showing a ribbon panel, so hide it before showing the new one
+                    panelToHide.getEl().slideOut('t', { callback: callback, scope: this });
+                }
+                else
+                {
+                    // We're not showing another ribbon panel, so show the new one right away
+                    callback.call(this);
+                }
+            }
+        }
     }
+    
 });
 
 

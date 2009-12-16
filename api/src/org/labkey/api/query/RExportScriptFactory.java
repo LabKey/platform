@@ -32,7 +32,7 @@ public class RExportScriptFactory implements ExportScriptFactory
 
     public String getMenuText()
     {
-        return "Create R Script";
+        return "R";
     }
 
     public WebPartView getView(QueryView queryView)

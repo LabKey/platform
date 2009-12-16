@@ -18,10 +18,7 @@ package org.labkey.api.exp.api;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.pipeline.PipelineJob;
@@ -30,6 +27,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.HttpView;
 
 import java.io.File;
 import java.io.IOException;
@@ -118,11 +116,11 @@ public class ExperimentService
         /**
          * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
          */
-        Set<String> getDataInputRoles(Container container, ContainerFilter containerFilter, ExpProtocol.ApplicationType type);
+        Set<String> getDataInputRoles(Container container, ContainerFilter containerFilter, ExpProtocol.ApplicationType... type);
         /**
          * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate) 
          */
-        Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType type);
+        Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... type);
 
 
         /**
@@ -151,7 +149,7 @@ public class ExperimentService
         void closeTransaction();
         void rollbackTransaction();
 
-        QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton, boolean exportXARButton);
+        QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton);
 
         public DbSchema getSchema();
 
@@ -262,5 +260,8 @@ public class ExperimentService
          * @return lock object on which to synchronize
          */
         public Object getImportLock();
+
+        HttpView createRunExportView(Container container, String defaultFilenamePrefix);
+        HttpView createFileExportView(Container container, String defaultFilenamePrefix);
     }
 }

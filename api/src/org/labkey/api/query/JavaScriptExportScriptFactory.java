@@ -32,7 +32,7 @@ public class JavaScriptExportScriptFactory implements ExportScriptFactory
 
     public String getMenuText()
     {
-        return "Create JavaScript";
+        return "JavaScript";
     }
 
     public WebPartView getView(QueryView queryView)

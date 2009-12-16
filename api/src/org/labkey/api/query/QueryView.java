@@ -607,7 +607,7 @@ public class QueryView extends WebPartView<Object>
 
         if (_showExportButtons)
         {
-            bar.add(createExportMenuButton(exportAsWebPage));
+            bar.add(createExportButton(exportAsWebPage));
 
             bar.add(createPrintButton());
         }
@@ -625,32 +625,59 @@ public class QueryView extends WebPartView<Object>
         return btnPrint;
     }
 
-    public MenuButton createExportMenuButton(boolean exportAsWebPage)
+    public static class ExcelExportOptionsBean
     {
-        MenuButton exportMenuButton = new MenuButton("Export");
-        exportMenuButton.addMenuItem("Export All to Excel (.xls)", urlFor(QueryAction.exportRowsExcel).getLocalURIString());
+        private final ActionURL _xlsURL;
+        private final ActionURL _iqyURL;
+
+        public ExcelExportOptionsBean(ActionURL xlsURL, ActionURL iqyURL)
+        {
+            _xlsURL = xlsURL;
+            _iqyURL = iqyURL;
+        }
+
+        public ActionURL getIqyURL()
+        {
+            return _iqyURL;
+        }
+
+        public ActionURL getXlsURL()
+        {
+            return _xlsURL;
+        }
+    }
+
+    public PanelButton createExportButton(boolean exportAsWebPage)
+    {
+        PanelButton exportButton = new PanelButton("Export", getDataRegionName());
+        ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(urlFor(QueryAction.exportRowsExcel), _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null);
+        exportButton.addSubPanel("Excel", new JspView<ExcelExportOptionsBean>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (exportAsWebPage)
         {
             tsvURL.addParameter("exportAsWebPage", "true");
         }
-        exportMenuButton.addMenuItem("Export All to Text (.tsv)", tsvURL.getLocalURIString());
+        exportButton.addSubPanel("Text", new JspView<ActionURL>("/org/labkey/api/query/exportTextOptions.jsp", tsvURL));
+
         if (_allowExportExternalQuery)
         {
-            exportMenuButton.addMenuItem("Excel Web Query (.iqy)", urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
-            exportMenuButton.addSeparator();
-            addExportScriptItems(exportMenuButton);
+            addExportScriptItems(exportButton);
         }
-        return exportMenuButton;
+        return exportButton;
     }
 
-    public void addExportScriptItems(MenuButton menu)
+    public void addExportScriptItems(PanelButton button)
     {
-        for (ExportScriptFactory factory : _exportScriptFactories.values())
+        if (!_exportScriptFactories.isEmpty())
         {
-            ActionURL url = urlFor(QueryAction.exportScript);
-            url.addParameter("scriptType", factory.getScriptType());
-            menu.addMenuItem(factory.getMenuText(), url);
+            Map<String, ActionURL> options = new LinkedHashMap<String, ActionURL>();
+            for (ExportScriptFactory factory : _exportScriptFactories.values())
+            {
+                ActionURL url = urlFor(QueryAction.exportScript);
+                url.addParameter("scriptType", factory.getScriptType());
+                options.put(factory.getMenuText(), url);
+            }
+            button.addSubPanel("Script", new JspView<Map<String, ActionURL>>("/org/labkey/api/query/excelScriptOptions.jsp", options));
         }
     }
 

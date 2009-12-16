@@ -87,7 +87,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 manageMenu.addChild("delete assay design", "javascript: if (window.confirm('Are you sure you want to delete this assay and all of its runs?" + extraWarning + "')) { window.location = '" + deleteURL + "' }");
             }
 
-            ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolOptionsURL(_protocol.getContainer(), _protocol);
+            ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolURL(_protocol.getContainer(), _protocol);
             manageMenu.addChild("export assay design", exportURL.toString());
 
             if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))

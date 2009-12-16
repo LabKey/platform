@@ -33,7 +33,6 @@ public class ExperimentRunListView extends QueryView
 {
     private boolean _showAddToExperimentButton = false;
     private boolean _showRemoveFromExperimentButton = false;
-    private boolean _showExportXARButton = false;
     private boolean _showMoveRunsButton = false;
 
     private final ExperimentRunType _selectedType;
@@ -44,7 +43,7 @@ public class ExperimentRunListView extends QueryView
         _buttonBarPosition = DataRegion.ButtonBarPosition.BOTTOM;
         _selectedType = selectedType;
         setShowDetailsColumn(false);
-        setShowExportButtons(false);
+        setShowExportButtons(true);
         setShowRecordSelectors(true);
     }
 
@@ -161,18 +160,22 @@ public class ExperimentRunListView extends QueryView
             bar.add(deleteButton);
         }
 
-        if (_showExportXARButton)
-        {
-            ActionURL exportUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportRunsOptionsURL(context.getContainer(), getExperiment());
-
-            ActionButton exportXAR = new ActionButton("", "Export XAR");
-            exportXAR.setURL(exportUrl);
-            exportXAR.setActionType(ActionButton.Action.POST);
-            exportXAR.setRequiresSelection(true);
-            bar.add(exportXAR);
-        }
-
         _selectedType.populateButtonBar(context, bar, view, getTable().getContainerFilter());
+    }
+
+    @Override
+    public PanelButton createExportButton(boolean exportAsWebPage)
+    {
+        PanelButton result = super.createExportButton(exportAsWebPage);
+        String defaultFilenamePrefix = "Exported " + (getTitle() == null ? "Runs" : getTitle());
+
+        HttpView filesView = ExperimentService.get().createFileExportView(getContainer(), defaultFilenamePrefix);
+        result.addSubPanel("Files", filesView);
+
+        HttpView xarView = ExperimentService.get().createRunExportView(getContainer(), defaultFilenamePrefix);
+        result.addSubPanel("XAR", xarView);
+
+        return result;
     }
 
     protected DataRegion createDataRegion()
@@ -209,10 +212,5 @@ public class ExperimentRunListView extends QueryView
     public ExpRunTable getRunTable()
     {
         return (ExpRunTable)getTable();
-    }
-
-    public void setShowExportXARButton(boolean showExportXARButton)
-    {
-        _showExportXARButton = showExportXARButton;
     }
 }

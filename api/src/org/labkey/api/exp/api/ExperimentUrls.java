@@ -43,9 +43,7 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment expExperiment);
 
-    ActionURL getExportRunsOptionsURL(Container container, ExpExperiment expExperiment);
-
-    ActionURL getExportProtocolOptionsURL(Container container, ExpProtocol protocol);
+    ActionURL getExportProtocolURL(Container container, ExpProtocol protocol);
 
     public ActionURL getProtocolDetailsURL(ExpProtocol protocol);
 
