@@ -407,9 +407,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             if (viewName.endsWith(".jsp"))
                 return new JspView(viewName);
 
-            if (viewName.endsWith(".vm"))
-                throw new IllegalStateException("VelocityView is no longer supported");
-
             WebPartFactory f = Portal.getPortalPart(viewName);
             if (null != f)
             {
@@ -608,7 +605,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
     
-    public static ModelAndView throwRedirect(ActionURL url) throws RedirectException
+    public static ModelAndView throwRedirect(URLHelper url) throws RedirectException
     {
         throw new RedirectException(url.getLocalURIString());
     }

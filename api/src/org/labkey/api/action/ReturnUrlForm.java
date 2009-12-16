@@ -17,8 +17,11 @@
 package org.labkey.api.action;
 
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ActionURLException;
+import org.labkey.api.view.URLException;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
+
+import java.net.URISyntaxException;
 
 /**
 * User: adam
@@ -54,7 +57,7 @@ public class ReturnUrlForm
         }
         catch (IllegalArgumentException e)
         {
-            throw new ActionURLException(_returnUrl.getSource(), "returnUrl parameter", e);
+            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
         }
     }
 
@@ -67,9 +70,21 @@ public class ReturnUrlForm
             if (null != url)
                 return url;
         }
-        catch (ActionURLException e)
+        catch (URLException e)
         {
         }
         return defaultURL;
+    }
+
+    public URLHelper getReturnURLHelper()
+    {
+        try
+        {
+            return new URLHelper(_returnUrl);
+        }
+        catch (URISyntaxException e)
+        {
+            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
+        }
     }
 }

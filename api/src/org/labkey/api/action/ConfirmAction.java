@@ -148,7 +148,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
     public abstract void validateCommand(FORM form, Errors errors);
 
 
-    public abstract ActionURL getSuccessURL(FORM form);
+    public abstract URLHelper getSuccessURL(FORM form);
 
     // not usually used but some actions return views that close the current window etc...
     public ModelAndView getSuccessView(FORM form)

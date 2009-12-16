@@ -21,6 +21,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.view.*;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.action.ReturnUrlForm;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -113,7 +114,7 @@ public class DiscussionService
         }
     }
 
-    public static class Settings
+    public static class Settings extends ReturnUrlForm
     {
         String _boardName = "Messages";
         String _conversationName = "Message";

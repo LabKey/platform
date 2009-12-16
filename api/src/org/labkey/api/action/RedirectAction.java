@@ -19,6 +19,7 @@ package org.labkey.api.action;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -74,7 +75,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
         return "doAction";
     }
 
-    public abstract ActionURL getSuccessURL(FORM form);
+    public abstract URLHelper getSuccessURL(FORM form);
 
     public abstract boolean doAction(FORM form, BindException errors) throws Exception;
 

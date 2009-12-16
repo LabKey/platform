@@ -23,17 +23,17 @@ import org.labkey.api.util.SkipMothershipLogging;
  * Time: 11:33:03 AM
  */
 
-// This can be used in places where we fail to convert user input or a URL parameter into a valid ActionURL (e.g., a form).
-// Often this is a malformed URL in a custom form built in a wiki; we want to give the form designer a clear exception but
-// want to avoid sending to mothership.
-public class ActionURLException extends RuntimeException implements SkipMothershipLogging
+// This can be used in places where we fail to convert user input or a URL parameter into a valid ActionURL/URLHelper
+// (e.g., in a form). Often this is a malformed URL in a custom form built in a wiki; we want to give the form designer
+// a clear exception but want to avoid sending to mothership.
+public class URLException extends RuntimeException implements SkipMothershipLogging
 {
-    public ActionURLException(String urlString, Exception e)
+    public URLException(String urlString, Exception e)
     {
         this(urlString, "URL", e);
     }
 
-    public ActionURLException(String urlString, String urlName, Exception e)
+    public URLException(String urlString, String urlName, Exception e)
     {
         super(createMessage(urlString, urlName), e);
     }
@@ -43,6 +43,6 @@ public class ActionURLException extends RuntimeException implements SkipMothersh
         if (null == urlString)
             return "Missing " + urlName;
         else
-            return "Could not convert \"" + urlString + "\" to a valid ActionURL.  Please ensure that the " + urlName + " is well-formed and properly encoded.";
+            return "\"" + urlString + "\" does not appear to be a valid URL.  Please ensure that the " + urlName + " is well-formed and properly encoded.";
     }
 }
