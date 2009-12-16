@@ -19,7 +19,7 @@ package org.labkey.list.view;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURLException;
+import org.labkey.api.view.URLException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.util.ReturnURLString;
@@ -76,11 +76,11 @@ public class ListDefinitionForm extends ViewForm
         }
         catch(URISyntaxException e)
         {
-            throw new ActionURLException(_returnUrl.getSource(), "returnUrl parameter", e);
+            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
         }
         catch(NullPointerException e)
         {
-            throw new ActionURLException(null, "returnUrl parameter", e);
+            throw new URLException(null, "returnUrl parameter", e);
         }
     }
 

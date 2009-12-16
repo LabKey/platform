@@ -512,7 +512,6 @@ public class ListController extends SpringActionController
                     DefaultValueService.get().setDefaultValues(getContainer(), dataMap, getUser());
                 }
 
-                HttpView.throwRedirect(_returnURL.getLocalURIString());
                 return true;
             }
             catch (ValidationException ve)
@@ -541,11 +540,9 @@ public class ListController extends SpringActionController
             return false;
         }
 
-        public ActionURL getSuccessURL(ListDefinitionForm listDefinitionForm)
+        public URLHelper getSuccessURL(ListDefinitionForm listDefinitionForm)
         {
-            // Need to redirect to non-ActionURLs (e.g., HTML pages), so post handler does redirect
-            // TODO: In 10.1, should switch getSuccessURL() to return URLHelper
-            throw new IllegalStateException("Should not be calling getSuccessURL()");
+            return _returnURL;
         }
 
         protected ButtonBar getButtonBar(ActionURL submitURL, URLHelper returnURL)

@@ -334,7 +334,7 @@ public class ProjectController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(AddWebPartForm form)
+        public URLHelper getSuccessURL(AddWebPartForm form)
         {
             if (null != _desc && _desc.isEditable() && _desc.showCustomizeOnInsert())
             {
@@ -343,7 +343,7 @@ public class ProjectController extends SpringActionController
                         .addParameter("index", ""+_newPart.getIndex());
             }
             else
-                return form.getReturnActionURL();
+                return form.getReturnURLHelper();
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -291,7 +291,7 @@ public class CBCAssayController extends SpringActionController
             }
             catch (Exception e)
             {
-                throw new ActionURLException(_returnURL, "returnURL parameter", e);
+                throw new URLException(_returnURL, "returnURL parameter", e);
             }
         }
     }

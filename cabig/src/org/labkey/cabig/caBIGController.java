@@ -30,6 +30,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -49,7 +50,7 @@ import java.util.List;
  */
 public class caBIGController extends SpringActionController
 {
-    private static ActionResolver _actionResolver = new DefaultActionResolver(caBIGController.class);
+    private static final ActionResolver _actionResolver = new DefaultActionResolver(caBIGController.class);
 
     public caBIGController()
     {
@@ -93,7 +94,7 @@ public class caBIGController extends SpringActionController
 
         protected abstract void doAction() throws Exception;
 
-        public ActionURL getSuccessURL(ReturnUrlForm form)
+        public URLHelper getSuccessURL(ReturnUrlForm form)
         {
             return form.getReturnActionURL();
         }

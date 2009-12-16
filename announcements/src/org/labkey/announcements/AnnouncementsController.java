@@ -523,9 +523,9 @@ public class AnnouncementsController extends SpringActionController
             return new ConfirmDeleteView(ann, getWhat(), getSettings(getContainer()));
         }
 
-        public ActionURL getSuccessURL(AnnouncementDeleteForm form)
+        public URLHelper getSuccessURL(AnnouncementDeleteForm form)
         {
-            throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
+            return form.getReturnURLHelper();
         }
 
         public boolean handlePost(AnnouncementDeleteForm form, BindException errors) throws Exception
@@ -545,9 +545,6 @@ public class AnnouncementsController extends SpringActionController
                 HttpView.throwUnauthorized();
 
             AnnouncementManager.deleteAnnouncement(c, ann.getRowId());
-
-            // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
-            HttpView.throwRedirect(form.getReturnUrl());
 
             return true;
         }
@@ -875,15 +872,6 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private URLHelper getReturnURL() throws URISyntaxException
-    {
-        String url = StringUtils.trimToNull((String)getViewContext().get("returnUrl"));
-        if (null != url)
-            return new URLHelper(url);
-        return null;
-    }
-
-    
     public static ActionURL getCustomizeURL(Container c, URLHelper returnUrl)
     {
         ActionURL url = new ActionURL(CustomizeAction.class, c);
@@ -895,17 +883,17 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class CustomizeAction extends FormViewAction<DiscussionService.Settings>
     {
-        public ActionURL getSuccessURL(DiscussionService.Settings form)
+        public URLHelper getSuccessURL(DiscussionService.Settings form)
         {
-            throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
+            return form.getReturnURLHelper();
         }
 
         public ModelAndView getView(DiscussionService.Settings form, boolean reshow, BindException errors) throws Exception
         {
             CustomizeBean bean = new CustomizeBean();
 
-            bean.settings = getSettings();
-            bean.returnURL = getReturnURL();
+            bean.settings = getSettings();   // TODO: Just use form?
+            bean.returnURL = form.getReturnURLHelper();
             bean.assignedToSelect = getAssignedToSelect(getContainer(), bean.settings.getDefaultAssignedTo(), "defaultAssignedTo", getViewContext());
 
             if (hasEditorPerm(Group.groupGuests))
@@ -920,7 +908,6 @@ public class AnnouncementsController extends SpringActionController
         {
             AnnouncementManager.saveMessageBoardSettings(getContainer(), form);
 
-            HttpView.throwRedirect(getReturnURL().getLocalURIString());
             return true;
         }
 
@@ -941,7 +928,7 @@ public class AnnouncementsController extends SpringActionController
     public static class CustomizeBean
     {
         public DiscussionService.Settings settings;
-        public URLHelper returnURL;
+        public URLHelper returnURL;    // TODO: Settings has a returnUrl
         public String securityWarning;
         public String assignedToSelect;
     }
