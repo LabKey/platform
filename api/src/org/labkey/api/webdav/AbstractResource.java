@@ -126,7 +126,7 @@ public abstract class AbstractResource implements Resource
     public void setLastIndexed(long ms)
     {
         // DavCrawler uses this information
-        //ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
+        ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
     }
 
     public String getModifiedBy()

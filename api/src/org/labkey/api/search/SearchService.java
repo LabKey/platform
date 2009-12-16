@@ -164,6 +164,9 @@ public interface SearchService
     boolean isBusy();
 
 
+    /** default implementation saving lastIndexed */
+    void setLastIndexedForPath(Path path, long time);
+
     //
     // configuration
     //

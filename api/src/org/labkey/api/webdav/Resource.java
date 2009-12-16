@@ -64,6 +64,8 @@ public interface Resource
 
     List<Resource> list();
 
+    List<Resource> listModifiedSince(java.util.Date since);
+
     Resource parent();
 
     long getCreated();
