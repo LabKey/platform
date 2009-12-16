@@ -1495,7 +1495,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             schemaNode.expand(false, false);
         }
         else
-            Ext.Msg.alert("Missing Schema", "The schema '" + schemaName + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+            Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
 
     },
 
@@ -1505,7 +1505,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         var schemaNode = root.findChildBy(function(node){return node.attributes.schemaName.toLowerCase() == schemaName.toLowerCase();});
         if (!schemaNode)
         {
-            Ext.Msg.alert("Missing Schema", "The schema '" + schemaName + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+            Ext.Msg.alert("Missing Schema", "The schema '" +  Ext.util.Format.htmlEncode(schemaName) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
             return;
         }
 
@@ -1519,7 +1519,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
             if (!queryNode)
             {
-                Ext.Msg.alert("Missing Query", "The query " + schemaName + "." + queryName + " was not found! It may not be publicly accessible.");
+                Ext.Msg.alert("Missing Query", "The query " +  Ext.util.Format.htmlEncode(schemaName + "." + queryName) + " was not found! It may not be publicly accessible.");
                 return;
             }
 
