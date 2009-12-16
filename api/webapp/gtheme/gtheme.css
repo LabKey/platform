@@ -477,7 +477,9 @@ body .x-window .x-window-tl .x-window-header {
 
 .x-tab-panel-header, .x-tab-panel-footer {
 	background-color: #E1ECFC;
-	border: none;
+	border-top: none;
+	border-left: none;
+	border-right: none;
 	padding-bottom: 3px;
 }
 
