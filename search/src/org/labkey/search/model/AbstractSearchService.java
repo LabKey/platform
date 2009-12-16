@@ -22,6 +22,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.ActionResource;
@@ -42,13 +43,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final static Category _log = Category.getInstance(AbstractSearchService.class);
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
-    PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
+    final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
 
     // Resources go here for preprocessing (this can be multi-threaded)
-    PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
+    final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
 
     // And a single threaded queue for actually writing to the index (can this be multi-threaded?)
-    BlockingQueue<Item> _indexQueue = new ArrayBlockingQueue<Item>(Math.min(100,Runtime.getRuntime().availableProcessors()));
+    BlockingQueue<Item> _indexQueue = null;
 
     final List<IndexTask> _tasks = Collections.synchronizedList(new ArrayList<IndexTask>());
 
@@ -81,7 +82,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         return _defaultTask;
     }
-    
+
+
+    public void addPathToCrawl(Path path)
+    {
+        DavCrawler.getInstance().startFull(path);
+    }
+
 
     class _IndexTask extends AbstractIndexTask
     {
@@ -214,7 +221,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public boolean isBusy()
     {
-        int n = _itemQueue.size() + _indexQueue.size() + 10 * _runQueue.size();
+        int n = _itemQueue.size() + 10 * _runQueue.size();
+        if (null != _indexQueue)
+            n += _indexQueue.size();
         return n > 1000;
     }
     
@@ -298,7 +307,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (_shuttingDown)
             return;
 
-        for (int i=0 ; i<Math.max(1, getCountIndexingThreads()) ; i++)
+        int countIndexingThreads = Math.max(1,getCountIndexingThreads());
+        for (int i=0 ; i<countIndexingThreads ; i++)
         {
             Thread t = new Thread(indexRunnable, "SearchService:index");
             t.setDaemon(true);
@@ -307,6 +317,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _threads.add(t);
         }
 
+        int countPreprocessingThreads = getCountPreprocessorThreads();
         for (int i=0 ; i<getCountPreprocessorThreads() ; i++)
         {
             Thread t = new Thread(preprocessRunnable, "SearchService:preprocess " + i);
@@ -322,6 +333,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             t.start();
             _threads.add(t);
         }
+
+        if (0 < countPreprocessingThreads)
+            _indexQueue = new ArrayBlockingQueue<Item>(Math.min(100,10*Runtime.getRuntime().availableProcessors()));
 
         ContextListener.addShutdownListener(this);
     }
@@ -437,6 +451,38 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     };
 
 
+    Item getPreprocessedItem() throws InterruptedException
+    {
+        Item i = null;
+
+        // if there's an indexQueue, other threads may be preprocessing
+        // first look for a preprocessed item on the _indexQueue
+        if (null != _indexQueue)
+        {
+            i = _indexQueue.poll();
+            if (null != i)
+                return i;
+            // help out on preprocessing?
+            i = _itemQueue.poll();
+            if (null != i)
+            {
+                if (preprocess(i))
+                    return i;
+            }
+            return _indexQueue.poll(1, TimeUnit.SECONDS);
+        }
+
+        // otherwise just wait on the preprocess queue
+        i = _itemQueue.take();
+        if (null != i)
+        {
+            if (preprocess(i))
+                return i;
+        }
+        return null;
+    }
+    
+
     final Object _commitLock = new Object(){ public String toString() { return "COMMIT LOCK"; } };
     int _countIndexedSinceCommit = 0;
     
@@ -450,18 +496,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 boolean success = false;
                 try
                 {
-                    if (null == (i = _indexQueue.poll()))
-                    {
-                        // help out on preprocessing?
-                        i = _itemQueue.poll();
-                        if (null != i)
-                        {
-                            if (!preprocess(i))
-                                continue;
-                        }
-                        else
-                            i = _indexQueue.poll(1, TimeUnit.SECONDS);
-                    }
+                    i = getPreprocessedItem();
 
                     if (null == i)
                     {

@@ -18,6 +18,7 @@ package org.labkey.core.search;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
+import org.labkey.api.util.Path;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +41,7 @@ public class NoopSearchService implements SearchService
     {
         public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
         {
+            NoopSearchService.this.addRunnable(r, pri);
         }
 
         public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
@@ -136,6 +138,11 @@ public class NoopSearchService implements SearchService
     };
 
 
+    protected void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
+    {
+    }
+
+
     public IndexTask defaultTask()
     {
         return _dummyTask;
@@ -144,6 +151,10 @@ public class NoopSearchService implements SearchService
     public IndexTask createTask(String description)
     {
         return _dummyTask;
+    }
+
+    public void addPathToCrawl(Path path)
+    {
     }
 
     public void deleteResource(String identifier, PRIORITY pri)
