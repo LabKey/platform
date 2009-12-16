@@ -387,6 +387,29 @@ public class PipelineController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SearchAction extends SimpleViewAction<PathForm>
+    {
+        public SearchAction()
+        {
+        }
+
+        public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
+        {
+            SearchWebPart wp = new SearchWebPart();
+            wp.setContainer(getContainer());
+            wp._autoResize = true;
+            wp.setFrame(WebPartView.FrameType.NONE);
+            return wp;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Search files");
+            return root;
+        }
+    }
+
 
     public static class BrowseWebPart extends JspView<BrowseWebPart>
     {
@@ -412,6 +435,44 @@ public class PipelineController extends SpringActionController
             return _c != null ? _c : getViewContext().getContainer();
         }
         
+        public PipeRoot getPipeRoot()
+        {
+            if (null == _root)
+                _root = PipelineService.get().findPipelineRoot(getContainer());
+            return _root;
+        }
+
+        public boolean getAutoResize()
+        {
+            return _autoResize;
+        }
+    }
+
+
+    public static class SearchWebPart extends JspView<SearchWebPart>
+    {
+        Container _c;
+        PipeRoot _root;
+        boolean _autoResize = false;
+
+        public SearchWebPart()
+        {
+            super(PipelineController.class, "source.jsp", null, null);
+            setModelBean(this);
+            setTitle("Source Files");
+            setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
+        }
+
+        void setContainer(Container c)
+        {
+            _c = c;
+        }
+
+        public Container getContainer()
+        {
+            return _c != null ? _c : getViewContext().getContainer();
+        }
+
         public PipeRoot getPipeRoot()
         {
             if (null == _root)

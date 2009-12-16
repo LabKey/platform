@@ -34,6 +34,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
+import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -99,8 +100,8 @@ public class SearchController extends SpringActionController
                     m.enumerateDocuments(task, c, since);
                 }
 
-//                if (full) DavCrawler.start(task, Path.rootPath, since);
-//                if (full) ss.addPathToCrawl(new Path("_webdav", "home", "source", "@pipeline"));
+                if (full)
+                    ss.addPathToCrawl(new Path(WebdavService.getServletPath()));
 
                 task.setReady();
             }
@@ -177,7 +178,7 @@ public class SearchController extends SpringActionController
 
             String results = ss.search(query);
 
-            return new VBox(searchBox, new HtmlView(results));
+            return new VBox(searchBox, new HtmlView("<div id='searchResults'>" + results + "</div>"));
         }
 
         public NavTree appendNavTrail(NavTree root)

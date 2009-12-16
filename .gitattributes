@@ -1274,6 +1274,7 @@ pipeline/src/org/labkey/pipeline/mule/transformers/PipelineJobToJMSMessage.java 
 pipeline/src/org/labkey/pipeline/permission.jsp -text
 pipeline/src/org/labkey/pipeline/pipelineStatus.jsp -text
 pipeline/src/org/labkey/pipeline/setup.jsp -text
+pipeline/src/org/labkey/pipeline/source.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text

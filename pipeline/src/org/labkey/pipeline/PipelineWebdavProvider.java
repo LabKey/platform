@@ -39,7 +39,7 @@ import java.net.URI;
  */
 public class PipelineWebdavProvider implements WebdavService.Provider
 {
-    static final String PIPELINE_LINK = "@pipeline";
+    public static final String PIPELINE_LINK = "@pipeline";
 
     // currently addChildren is called only for web folders
     @Nullable

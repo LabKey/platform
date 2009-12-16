@@ -18,12 +18,15 @@ package org.labkey.search.model;
 import org.apache.log4j.Category;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.webdav.WebdavResolver;
 
+import javax.servlet.ServletContextEvent;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -49,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * The SearchService also has it's own thread pool we use when we find files to index, but the
  * background crawling is pretty different and needs its own scheduling behavior.
  */
-public class DavCrawler
+public class DavCrawler implements ShutdownListener
 {
     long _defaultWait = TimeUnit.SECONDS.toMillis(60);
     long _defaultBusyWait = TimeUnit.SECONDS.toMillis(1);
@@ -62,7 +65,7 @@ public class DavCrawler
 
         // collections
         boolean updatePath(Path path, java.util.Date lastIndexed, java.util.Date nextCrawl, boolean create);
-        void updatePrefix(Path path, java.util.Date lastIndexed, java.util.Date nextCrawl);
+        void updatePrefix(Path path, java.util.Date lastIndexed, java.util.Date nextCrawl, boolean forceReindexAtNextCrawl);
         void deletePath(Path path);
         public Map<Path, Date> getPaths(int limit);
 
@@ -77,20 +80,29 @@ public class DavCrawler
     
     DavCrawler()
     {
+        ContextListener.addShutdownListener(this);
         _crawlerThread.setDaemon(true);
         _crawlerThread.start();
     }
 
 
     static DavCrawler _instance = new DavCrawler();
+    boolean _shuttingDown = false;
 
     public static DavCrawler getInstance()
     {
         return _instance;
     }
+
     
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
+        _shuttingDown = true;
+        if (null != _crawlerThread)
+            _crawlerThread.interrupt();
+    }
 
-
+    
     /**
      * Aggressively scan the file system for new directories and new/updated files to index
      * 
@@ -105,7 +117,7 @@ public class DavCrawler
         if (null == path)
             path = WebdavService.get().getResolver().getRootPath();
 
-        _paths.updatePrefix(path, null, null);
+        _paths.updatePrefix(path, null, null, true);
 
         startContinuous(path);
     }
@@ -165,14 +177,17 @@ public class DavCrawler
 
             for (Resource child : r.list())
             {
+                if (_shuttingDown)
+                    return;
                 if (child.isFile())
                 {
-                    Date lastIndexed = map.get(r.getName());
+                    Date lastIndexed = map.get(child.getName());
                     if (null == lastIndexed)
                         lastIndexed = SavePaths.nullDate;
-                    long lastModified = r.getLastModified();
-                    if (lastModified > lastIndexed.getTime())
-                        _task.addResource(child, SearchService.PRIORITY.background);
+                    long lastModified = child.getLastModified();
+                    if (lastModified <= lastIndexed.getTime())
+                        continue;
+                    _task.addResource(child, SearchService.PRIORITY.background);
                 }
                 else if (skipContainer(child))
                 {
@@ -257,7 +272,7 @@ public class DavCrawler
         {
             long delay = 0;
             
-            while (1==1)
+            while (!_shuttingDown)
             {
                 try
                 {

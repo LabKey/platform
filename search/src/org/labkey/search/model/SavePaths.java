@@ -3,6 +3,7 @@ package org.labkey.search.model;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 
@@ -23,6 +24,7 @@ import java.util.Map;
 public class SavePaths implements DavCrawler.SavePaths
 {
     static SQLFragment _emptyFragment = new SQLFragment();
+    static java.util.Date _futureDate = new Date(DateUtil.parseDateTime("3000-01-01"));
     
     SQLFragment csPath(TableInfo ti, String path)
     {
@@ -31,6 +33,11 @@ public class SavePaths implements DavCrawler.SavePaths
         return new SQLFragment(" AND csPath=CHECKSUM(?)", path);
     }
 
+
+
+    //
+    // FOLDER/RESOURCES
+    //
 
     private boolean _update(Path path, java.util.Date last, java.util.Date next) throws SQLException
     {
@@ -103,6 +110,8 @@ public class SavePaths implements DavCrawler.SavePaths
         map.put("Path", toPathString(path));
         map.put("Name", path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
         map.put("Parent", parent);
+        map.put("NextCrawl", _futureDate);
+        map.put("LastCrawled", _futureDate);
         try
         {
             map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
@@ -141,15 +150,23 @@ public class SavePaths implements DavCrawler.SavePaths
         }
     }
 
-    
-    public void updatePrefix(Path path, java.util.Date last, java.util.Date next)
+
+    public void updatePrefix(Path path, java.util.Date last, java.util.Date next, boolean forceIndex)
     {
         try
         {
+            if (forceIndex)
+            {
+                Table.execute(getSearchSchema(),
+                        "UPDATE search.CrawlResources SET LastIndexed=?" +
+                        "WHERE Parent IN (SELECT id FROM search.CrawlCollections " +
+                        "  WHERE Path LIKE ?)",
+                        new Object[]{nullDate, toPathString(path) + "%"});
+            }
             Table.execute(getSearchSchema(),
                     "UPDATE search.CrawlCollections " +
                     "SET LastCrawled=NULL, NextCrawl=? " +
-                    "WHERE Path like ?",
+                    "WHERE Path LIKE ?",
                     new Object[]{nullDate, toPathString(path) + "%"});
         }
         catch (SQLException x)
@@ -163,6 +180,7 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         try
         {
+            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlResources WHERE Parent=(SELECT id FROM search.CrawlCollections WHERE Path=?)", new Object[]{toPathString(path)});
             Table.execute(getSearchSchema(), "DELETE FROM search.CrawlCollections WHERE Path=?", new Object[]{toPathString(path)});
         }
         catch (SQLException x)
@@ -234,6 +252,10 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    //
+    // FILES/RESOURCES
+    //
+
     public Map<String,Date> getFiles(Path path)
     {
         SQLFragment s = new SQLFragment(
@@ -250,9 +272,9 @@ public class SavePaths implements DavCrawler.SavePaths
             while (rs.next())
             {
                 String name = rs.getString("Name");
-                if (rs.wasNull())
+                if (null == name)
                     continue;
-                Date lastIndex = rs.getDate("LastIndexed");
+                Date lastIndex = rs.getTimestamp("LastIndexed");
                 map.put(name, lastIndex);
             }
             rs.close();
@@ -272,7 +294,33 @@ public class SavePaths implements DavCrawler.SavePaths
 
     public boolean updateFile(Path path, Date lastIndexed)
     {
-        return true;
+        try
+        {
+            int id = _getParentId(path);
+            SQLFragment upd = new SQLFragment(
+                    "UPDATE search.CrawlResources SET LastIndexed=? WHERE Parent=? AND Name=?",
+                    lastIndexed, id, path.getName());
+            int count = Table.execute(getSearchSchema(), upd);
+            if (count > 0)
+                return true;
+            SQLFragment ins = new SQLFragment(
+                    "INSERT INTO search.CrawlResources(Parent,Name,LastIndexed) VALUES (?,?,?)",
+                    id, path.getName(), lastIndexed);
+            count = Table.execute(getSearchSchema(), ins);
+            return count > 0;
+        }
+        catch (SQLException x)
+        {
+
+            if (SqlDialect.isConstraintException(x))
+            {
+                return false;
+            }
+            else
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
     }
 
 

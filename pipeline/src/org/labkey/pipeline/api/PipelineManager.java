@@ -20,14 +20,19 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.WebdavService;
+import org.labkey.pipeline.PipelineWebdavProvider;
 import org.labkey.pipeline.status.StatusController;
 
 import javax.mail.Address;
@@ -165,6 +170,11 @@ public class PipelineManager
             {
                 Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId());
             }
+
+            Path davPath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null != ss)
+                ss.addPathToCrawl(davPath);
         }
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(

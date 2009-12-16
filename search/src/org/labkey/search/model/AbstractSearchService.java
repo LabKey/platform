@@ -226,7 +226,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             n += _indexQueue.size();
         return n > 1000;
     }
-    
+
+
+    SavePaths _savePaths = new SavePaths();
+
+    public void setLastIndexedForPath(Path path, long time)
+    {
+        _savePaths.updateFile(path, new Date(time));
+    }
+
 
     private void queueItem(Item i)
     {

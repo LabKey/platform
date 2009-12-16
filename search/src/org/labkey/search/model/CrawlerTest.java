@@ -161,7 +161,7 @@ public class CrawlerTest extends junit.framework.TestCase
             return true;
         }
 
-        public synchronized void updatePrefix(Path path, Date lastIndexed, Date nextCrawl)
+        public synchronized void updatePrefix(Path path, Date lastIndexed, Date nextCrawl, boolean force)
         {
             for (Map.Entry<Path,Pair<Date,Date>> e : collections.entrySet())
             {
