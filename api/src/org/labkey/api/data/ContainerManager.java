@@ -182,6 +182,10 @@ public class ContainerManager
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
+        StringBuffer error = new StringBuffer();
+        if (!Container.isLegalName(name, error))
+            throw new IllegalArgumentException(error.toString());
+
         Path path = makePath(parent, name);
         SQLException sqlx = null;
 

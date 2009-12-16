@@ -485,6 +485,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
             error.append("Slashes, semicolons, and backslashes are not allowed in folder names.");
             return false;
         }
+        else if (name.startsWith("@"))
+        {
+            error.append("Folder name may not begin with '@'.");
+            return false;
+        }
 
         //Don't allow ISOControl characters as they are not handled well by the databases
         for( int i = 0; i < name.length(); ++i)

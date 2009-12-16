@@ -20,6 +20,7 @@ import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.Path;
 import org.apache.log4j.Category;
 
 import java.util.*;
@@ -144,16 +145,20 @@ public interface SearchService
     public String search(String queryString);
     public List<SearchCategory> getSearchCategories();
 
+
     //
     // index
     //
 
-    public IndexTask defaultTask();
-    public IndexTask createTask(String description);
+    IndexTask defaultTask();
+    IndexTask createTask(String description);
 
     void deleteResource(String identifier, PRIORITY pri);
 
     List<IndexTask> getTasks();
+
+    void addPathToCrawl(Path path);
+
 
     /** an indicator that there are a lot of things in the queue */
     boolean isBusy();

@@ -80,6 +80,13 @@ public class FileSystemResource extends AbstractResource
         _file = new File(folder._file, relativePath);
     }
 
+    public FileSystemResource(Path path, File file, SecurityPolicy policy)
+    {
+        super(path);
+        _file = file;
+        _policy = policy;
+    }
+
     public String getName()
     {
         return null == _name ? super.getName() : _name;
