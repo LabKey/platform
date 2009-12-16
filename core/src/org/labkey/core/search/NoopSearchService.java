@@ -201,4 +201,8 @@ public class NoopSearchService implements SearchService
     {
         return false;
     }
+
+    public void setLastIndexedForPath(Path path, long time)
+    {
+    }
 }
