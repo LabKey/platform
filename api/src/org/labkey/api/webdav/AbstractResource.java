@@ -126,7 +126,7 @@ public abstract class AbstractResource implements Resource
     public void setLastIndexed(long ms)
     {
         // DavCrawler uses this information
-        ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
+//        ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
     }
 
     public String getModifiedBy()
@@ -198,7 +198,7 @@ public abstract class AbstractResource implements Resource
     {
         if (null == _properties)
             return Collections.emptyMap();
-        Map<String,?> ret = _properties;
+        Map<String, ?> ret = _properties;
         assert null != (ret = Collections.unmodifiableMap(ret));
         return ret;
     }
@@ -365,5 +365,4 @@ public abstract class AbstractResource implements Resource
     {
         throw new UnsupportedOperationException();
     }
-    
 }

@@ -143,7 +143,7 @@ public interface SearchService
     //
 
 
-    public String search(String queryString, User user);
+    public String search(String queryString, User user, Container root);
     public List<SearchCategory> getSearchCategories();
 
 
