@@ -15,19 +15,20 @@
  */
 package org.labkey.core.search;
 
-import org.labkey.api.search.SearchService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.webdav.Resource;
-import org.labkey.api.util.Path;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
+import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.Resource;
 
-import java.util.List;
+import java.io.Reader;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.io.Reader;
 
 /**
  * Created by IntelliJ IDEA.
@@ -165,7 +166,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public String search(String queryString)
+    public String search(String queryString, User user)
     {
         return null;
     }

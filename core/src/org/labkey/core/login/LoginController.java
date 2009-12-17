@@ -894,7 +894,7 @@ public class LoginController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(VerifyForm form)
+        public URLHelper getSuccessURL(VerifyForm form)
         {
             if (_user != null)
             {

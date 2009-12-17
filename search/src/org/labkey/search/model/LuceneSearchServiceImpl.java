@@ -284,7 +284,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    public String search(String queryString)
+    public String search(String queryString, User user)
     {
         try
         {
@@ -296,11 +296,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             TopDocs topDocs;
             IndexSearcher searcher = getIndexSearcher();
+            Filter securityFilter = new SecurityFilter(user);
 
             if (null == sort)
-                topDocs = searcher.search(query, hitsPerPage);
+                topDocs = searcher.search(query, securityFilter, hitsPerPage);
             else
-                topDocs = searcher.search(query, null, hitsPerPage, new Sort(new SortField(sort, SortField.AUTO)));
+                topDocs = searcher.search(query, securityFilter, hitsPerPage, new Sort(new SortField(sort, SortField.AUTO)));
 
             ScoreDoc[] hits = topDocs.scoreDocs;
 

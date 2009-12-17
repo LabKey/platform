@@ -176,7 +176,7 @@ public class SearchController extends SpringActionController
             if (StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
                 return searchBox;
 
-            String results = ss.search(query);
+            String results = ss.search(query, getUser());
 
             return new VBox(searchBox, new HtmlView("<div id='searchResults'>" + results + "</div>"));
         }

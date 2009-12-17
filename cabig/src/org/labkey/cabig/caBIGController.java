@@ -96,7 +96,7 @@ public class caBIGController extends SpringActionController
 
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return form.getReturnActionURL();
+            return form.getReturnURLHelper();
         }
     }
 
@@ -198,7 +198,7 @@ public class caBIGController extends SpringActionController
             html.append("\"><table class=\"labkey-data-region\">");
             tree.render(html);
             html.append("</table><br>");
-            renderHierarchyButtonBar(html, form.getReturnActionURL());
+            renderHierarchyButtonBar(html, form.getReturnURLHelper());
             html.append("</form>");
 
             return new HtmlView(html.toString());
@@ -211,7 +211,7 @@ public class caBIGController extends SpringActionController
     }
 
 
-    private void renderHierarchyButtonBar(StringBuilder html, ActionURL returnUrl) throws IOException, ServletException
+    private void renderHierarchyButtonBar(StringBuilder html, URLHelper returnUrl) throws IOException, ServletException
     {
         ButtonBar bb = new ButtonBar();
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.bigiron.sas;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -144,7 +145,47 @@ public class SasController extends SpringActionController
             ModelAndView dataView = new ResultSetView(rs, "Table Data");
 
             DbScope scope = sas.getScope();
-            Connection con = scope.getConnection();
+            ModelAndView formattedDataView;
+            Connection con = null;
+
+            try
+            {
+                con = scope.getConnection();
+                DatabaseMetaData dbmd = con.getMetaData();
+                ResultSet md = dbmd.getColumns(null, form.getSchema(), form.getTable(), null);
+
+                StringBuilder columns = new StringBuilder();
+                String comma = "";
+
+                while (md.next())
+                {
+                    columns.append(comma);
+
+                    String columnName = md.getString("COLUMN_NAME");
+                    String format = md.getString("TYPE_NAME").trim();
+
+                    if (format.startsWith("."))
+                        format = format.substring(0, format.length() - 1);
+
+                    if (StringUtils.isEmpty(format) || "AGE.".equals(format))
+                        columns.append(columnName);
+                    else
+                        columns.append("PUT(").append(columnName).append(", ").append(format).append(")");
+
+                    comma = ", ";
+                }
+
+                rs = Table.executeQuery(sas, new SQLFragment("SELECT " + columns + " FROM " + form.getSchema() + "." + form.getTable()));
+                formattedDataView = new ResultSetView(rs, "Table Data With Formats Applied");
+            }
+            finally
+            {
+                if (null != con)
+                    scope.releaseConnection(con);
+            }
+
+            scope = sas.getScope();
+            con = scope.getConnection();
             DatabaseMetaData dbmd = con.getMetaData();
             ResultSet md = dbmd.getColumns(null, form.getSchema(), form.getTable(), null);
             ModelAndView metaDataView = new ResultSetView(md, "Table Meta Data");
@@ -155,7 +196,7 @@ public class SasController extends SpringActionController
             _schema = form.getSchema();
             _table = form.getTable();
 
-            return new VBox(dataView, metaDataView, pkView);
+            return new VBox(dataView, formattedDataView, metaDataView, pkView);
         }
 
         public NavTree appendNavTrail(NavTree root)

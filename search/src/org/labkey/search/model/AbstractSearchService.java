@@ -86,7 +86,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public void addPathToCrawl(Path path)
     {
-        DavCrawler.getInstance().startFull(path);
+        //DavCrawler.getInstance().startFull(path);
     }
 
 

@@ -112,14 +112,18 @@ public class DavCrawler implements ShutdownListener
 
     public void startFull(Path path)
     {
-        _log.debug("START FULL: " + path);
+        // TODO: Re-enable after schema is created (see SearchModule.hasScripts()).
+        if (false)
+        {
+            _log.debug("START FULL: " + path);
 
-        if (null == path)
-            path = WebdavService.get().getResolver().getRootPath();
+            if (null == path)
+                path = WebdavService.get().getResolver().getRootPath();
 
-        _paths.updatePrefix(path, null, null, true);
+            _paths.updatePrefix(path, null, null, true);
 
-        startContinuous(path);
+            startContinuous(path);
+        }
     }
 
 

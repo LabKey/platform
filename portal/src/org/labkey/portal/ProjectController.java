@@ -295,7 +295,7 @@ public class ProjectController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(MovePortletForm movePortletForm)
+        public URLHelper getSuccessURL(MovePortletForm movePortletForm)
         {
             return movePortletForm.getReturnActionURL(beginURL());
         }
@@ -384,7 +384,7 @@ public class ProjectController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(CustomizePortletForm customizePortletForm)
+        public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
         {
             return customizePortletForm.getReturnActionURL(beginURL());
         }
