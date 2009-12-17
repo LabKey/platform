@@ -79,6 +79,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             super(parent.getPath(), PIPELINE_LINK);
 
             this.c = c;
+            _containerId = c.getId();
             URI uriRoot = (root != null) ? root.getUri(c) : null;
             if (uriRoot != null)
             {

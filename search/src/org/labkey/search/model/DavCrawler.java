@@ -160,7 +160,7 @@ public class DavCrawler implements ShutdownListener
 
         public void submit()
         {
-            _task.addRunnable(this, SearchService.PRIORITY.background);
+            _task.addRunnable(this, SearchService.PRIORITY.crawl);
         }
 
         

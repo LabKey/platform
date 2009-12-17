@@ -94,7 +94,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 }
             },
 
-            new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class)
+            new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class),
+            new DefaultWebPartFactory("Search Files", PipelineController.SearchWebPart.class)
         );
     }
 

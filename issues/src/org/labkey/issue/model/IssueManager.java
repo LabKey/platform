@@ -813,7 +813,6 @@ public class IssueManager
     {
         Collection<Issue.Comment> _comments;
         int _issueId;
-        String _containerId;
 
         IssueResource(Issue issue)
         {

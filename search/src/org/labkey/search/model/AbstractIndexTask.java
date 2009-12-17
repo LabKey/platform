@@ -123,7 +123,8 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     public void setReady()
     {
         _isReady = true;
-        checkDone();
+        if (_subtasks.isEmpty())
+            checkDone();
     }
 
 
@@ -135,10 +136,15 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
             _indexed.incrementAndGet();
         else
             _failed.incrementAndGet();
-        Object remove =  _subtasks.remove(item);
-        assert null != remove;
-        assert remove == item;
-        if (checkDone())
+        boolean empty;
+        synchronized (_subtasks)
+        {
+            Object remove =  _subtasks.remove(item);
+            assert null != remove;
+            assert remove == item;
+            empty = _subtasks.isEmpty();
+        }
+        if (empty && checkDone())
         {
             _complete = System.currentTimeMillis();
             synchronized (_completeEvent)

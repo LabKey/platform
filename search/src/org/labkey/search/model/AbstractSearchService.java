@@ -137,18 +137,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         @Override
         public void completeItem(Object item, boolean success)
         {
+            _complete = System.currentTimeMillis();
             super.completeItem(item, success);
         }
 
         
         protected boolean checkDone()
         {
-            if (_isReady && _subtasks.size() == 0)
+            if (_isReady)
             {
+                assert _subtasks.size() == 0;
                 if (_tasks.remove(this))
-                {
                     return true;
-                }
             }
             return false;
         }
@@ -173,6 +173,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Runnable _run;
         PRIORITY _pri;
         long _start = 0;
+        long _complete = 0; // really just for debugging
         Map<?,?> _preprocessMap = null;
         
         Item(IndexTask task, OPERATION op, String id, Resource r, PRIORITY pri)
@@ -209,6 +210,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
     }
+
+
+    final Item _commitItem = new Item(null, null, PRIORITY.commit);
 
 
     public void start()
@@ -306,7 +310,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected int getCountIndexingThreads()
     {
-        return 1;
+        return 4;
     }
 
 
@@ -315,12 +319,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (_shuttingDown)
             return;
 
+        ThreadGroup group = new ThreadGroup("SearchService");
+        group.setDaemon(true);
+        group.setMaxPriority(Thread.MIN_PRIORITY + 1);
+        
         int countIndexingThreads = Math.max(1,getCountIndexingThreads());
         for (int i=0 ; i<countIndexingThreads ; i++)
         {
-            Thread t = new Thread(indexRunnable, "SearchService:index");
-            t.setDaemon(true);
-            t.setPriority(Thread.MIN_PRIORITY+1);
+            Thread t = new Thread(group, indexRunnable, "SearchService:index");
             t.start();
             _threads.add(t);
         }
@@ -328,16 +334,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         int countPreprocessingThreads = getCountPreprocessorThreads();
         for (int i=0 ; i<getCountPreprocessorThreads() ; i++)
         {
-            Thread t = new Thread(preprocessRunnable, "SearchService:preprocess " + i);
-            t.setDaemon(true);
-            t.setPriority(Thread.MIN_PRIORITY+1);
+            Thread t = new Thread(group, preprocessRunnable, "SearchService:preprocess " + i);
             t.start();
             _threads.add(t);
         }
 
         {
-            Thread t = new Thread(runRunnable, "SearchService:runner");
-            t.setDaemon(true);
+            Thread t = new Thread(group, runRunnable, "SearchService:runner");
             t.start();
             _threads.add(t);
         }
@@ -386,11 +389,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         try {Thread.sleep(100);}catch(InterruptedException x){}
                     }
                     i._run.run();
+                    if (_runQueue.isEmpty())
+                        _itemQueue.add(_commitItem);
                 }
                 catch (InterruptedException x)
                 {
                 }
-                catch (Exception x)
+                catch (Throwable x)
                 {
                     _log.error("Error running " + (null != i ? i._id : ""), x);
                 }
@@ -408,6 +413,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private boolean preprocess(Item i)
     {
+        if (_commitItem == i)
+            return true;
         Resource r = i.getResource();
         if (null == r || !r.exists())
             return false;
@@ -443,7 +450,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 catch (InterruptedException x)
                 {
                 }
-                catch (Exception x)
+                catch (Throwable x)
                 {
                     _log.error("Error processing " + (null != i ? i._id : ""), x);
                 }
@@ -461,7 +468,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     Item getPreprocessedItem() throws InterruptedException
     {
-        Item i = null;
+        Item i;
 
         // if there's an indexQueue, other threads may be preprocessing
         // first look for a preprocessed item on the _indexQueue
@@ -476,16 +483,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             {
                 if (preprocess(i))
                     return i;
+                else
+                    i.complete(false);
             }
             return _indexQueue.poll(1, TimeUnit.SECONDS);
         }
 
         // otherwise just wait on the preprocess queue
-        i = _itemQueue.take();
+        i = _itemQueue.poll(1, TimeUnit.SECONDS);
         if (null != i)
         {
             if (preprocess(i))
                 return i;
+            else
+                i.complete(false);
         }
         return null;
     }
@@ -493,6 +504,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     final Object _commitLock = new Object(){ public String toString() { return "COMMIT LOCK"; } };
     int _countIndexedSinceCommit = 0;
+    long _lastIndexedTime = 0;
     
     Runnable indexRunnable = new Runnable()
     {
@@ -505,19 +517,33 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 try
                 {
                     i = getPreprocessedItem();
+                    long ms = System.currentTimeMillis();
 
-                    if (null == i)
+                    if (null == i || _commitItem == i)
                     {
                         synchronized (_commitLock)
                         {
-                            if (_countIndexedSinceCommit > 0)
+                            if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
                             {
                                 commit();
                                 _countIndexedSinceCommit = 0;
                             }
+
                         }
                         continue;
                     }
+//                    if (_commitItem == i)
+//                    {
+//                        synchronized (_commitLock)
+//                        {
+//                            if (_countIndexedSinceCommit > 0)
+//                            {
+//                                commit();
+//                                _countIndexedSinceCommit = 0;
+//                            }
+//                        }
+//                        continue;
+//                    }
 
                     Resource r = i.getResource();
                     if (null == r || !r.exists())
@@ -530,11 +556,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     synchronized (_commitLock)
                     {
                         _countIndexedSinceCommit++;
-                        if (_countIndexedSinceCommit > 10000)
-                        {
-                            commit();
-                            _countIndexedSinceCommit = 0;
-                        }
+                        _lastIndexedTime = ms;
                     }
                 }
                 catch (InterruptedException x)

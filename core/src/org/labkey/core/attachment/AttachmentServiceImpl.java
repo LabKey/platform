@@ -1078,7 +1078,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             super(path);
             Container c = ContainerManager.getForId(parent.getContainerId());
-            _policy = c == null ? null : c.getPolicy();
+            _containerId = parent.getContainerId();
+            _policy = null==c ? null : c.getPolicy();
             _downloadUrl = downloadURL;
             _parent = parent;
             _name = name;
@@ -1089,6 +1090,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
         {
             this(folder, parent, attachment.getName());
+            _containerId = parent.getContainerId();
             _created = attachment.getCreated().getTime();
             _createdBy = attachment.getCreatedByName(HttpView.currentContext());
             _cached = attachment;
@@ -1098,6 +1100,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull String name)
         {
             super(folder.getPath(), name);
+            _containerId = parent.getContainerId();
             _folder = folder;
             Container c = ContainerManager.getForId(parent.getContainerId());
             _policy = c == null ? null : c.getPolicy();

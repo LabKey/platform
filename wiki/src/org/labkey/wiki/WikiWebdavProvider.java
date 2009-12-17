@@ -92,6 +92,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             super(parent.getPath(), WIKI_NAME);
             _c = c;
+            _containerId = _c.getId();
             _policy = c.getPolicy();
         }
 
@@ -184,6 +185,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             super(folder.getPath(), name);
             _c = folder._c;
+            _containerId = _c.getId();
             _policy = _c.getPolicy();
             _wiki = WikiManager.getWiki(_c, new HString(name));
             _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
@@ -317,6 +319,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             _policy = _folder._c.getPolicy();
 
             _c = _folder._c;
+            _containerId = _c.getId();
             _name = wiki.getName().getSource();
             _entityId = wiki.getEntityId();
             _wiki = wiki;
@@ -339,6 +342,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             super(new Path("wiki",c.getId(),name));
 
             _c = c;
+            _containerId = _c.getId();
             _name = name;
             _entityId = entityId;
             _folder = null;

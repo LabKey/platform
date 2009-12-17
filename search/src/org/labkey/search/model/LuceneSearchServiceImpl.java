@@ -173,6 +173,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
             doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
             doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
+            doc.add(new Field("container", r.getContainerId(), Field.Store.YES, Field.Index.NO));
 
             for (Map.Entry<String, ?> entry : props.entrySet())
             {
