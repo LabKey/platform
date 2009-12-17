@@ -38,6 +38,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
+import org.labkey.api.data.Container;
 import org.xml.sax.ContentHandler;
 
 import java.io.File;
@@ -284,7 +285,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    public String search(String queryString, User user)
+    public String search(String queryString, User user, Container root)
     {
         try
         {
@@ -296,7 +297,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             TopDocs topDocs;
             IndexSearcher searcher = getIndexSearcher();
-            Filter securityFilter = new SecurityFilter(user);
+            Filter securityFilter = new SecurityFilter(user, root);
 
             if (null == sort)
                 topDocs = searcher.search(query, securityFilter, hitsPerPage);

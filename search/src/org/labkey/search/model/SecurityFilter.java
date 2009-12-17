@@ -16,22 +16,21 @@
 
 package org.labkey.search.model;
 
-import org.apache.lucene.search.Filter;
-import org.apache.lucene.search.DocIdSet;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.util.DocIdBitSet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;
-import org.apache.log4j.Logger;
-import org.labkey.api.security.User;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.DocIdSet;
+import org.apache.lucene.search.Filter;
+import org.apache.lucene.util.DocIdBitSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /*
 * User: adam
@@ -42,10 +41,12 @@ class SecurityFilter extends Filter
 {
     private static final ContainerFieldSelector CONTAINER_FIELD_SELECTOR = new ContainerFieldSelector();
     private final User _user;
+    private final Container _root;
 
-    SecurityFilter(User user)
+    SecurityFilter(User user, Container root)
     {
         _user = user;
+        _root = root;
     }
 
     @Override
@@ -54,24 +55,22 @@ class SecurityFilter extends Filter
         int max = reader.maxDoc();
         BitSet bits = new BitSet(max);
 
-        if (_user.isAdministrator())
+        // TODO: Could short-circuit for administrators: bits.set(0, reader.maxDoc() - 1); -- but we want to test perf for now
+
+        Set<Container> containers = ContainerManager.getAllChildren(_root, _user);
+        Set<String> containerIds = new HashSet<String>(containers.size());
+
+        for (Container c : containers)
+            containerIds.add(c.getId());
+
+        for (int i = 0; i < max; i++)
         {
-            bits.set(0, reader.maxDoc() - 1);
-        }
-        else
-        {
-            Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user);
-            Set<String> containerIds = new HashSet<String>(containers.size());
+            Document doc = reader.document(i, CONTAINER_FIELD_SELECTOR);
 
-            for (Container c : containers)
-                containerIds.add(c.getId());
+            String id = doc.get("container");
 
-            for (int i = 0; i < max; i++)
-            {
-                Document doc = reader.document(i, CONTAINER_FIELD_SELECTOR);
-
-                Logger.getLogger(SecurityFilter.class).info(doc.toString());
-            }
+            if (null != id && containerIds.contains(id))
+                bits.set(i);
         }
 
         return new DocIdBitSet(bits);

@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
+import org.labkey.api.data.Container;
 
 import java.io.Reader;
 import java.util.Collections;
@@ -166,7 +167,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public String search(String queryString, User user)
+    public String search(String queryString, User user, Container root)
     {
         return null;
     }

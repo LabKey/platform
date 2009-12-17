@@ -18,6 +18,7 @@ package org.labkey.search.model;
 import org.apache.log4j.Category;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
 
 import java.util.Map;
 
@@ -47,7 +48,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 //        }
     }
 
-    public String search(String queryString, User user)
+    public String search(String queryString, User user, Container root)
     {
         return null;
     }
