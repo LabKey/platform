@@ -465,10 +465,6 @@ public class PipelineStatusManager
             sf.setStatus(PipelineJob.COMPLETE_STATUS);
             sf.setInfo(null);
 
-            PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
-            if (provider != null)
-                provider.preCompleteStatusFile(sf);
-
             ViewBackgroundInfo infoSet =
                     new ViewBackgroundInfo(ContainerManager.getForId(sf.getContainerId()),
                             info.getUser(),

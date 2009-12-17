@@ -82,7 +82,6 @@ public class PipelineServiceImpl extends PipelineService
         _mapPipelineProviders.put(provider.getName(), provider);
         for (String alias : aliases)
             _mapPipelineProviders.put(alias, provider);
-        provider.register();
     }
 
     public GlobusKeyPair createGlobusKeyPair(byte[] keyBytes, String keyPassword, byte[] certBytes)

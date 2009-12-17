@@ -16,7 +16,6 @@
 package org.labkey.pipeline;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
@@ -59,7 +58,6 @@ import java.util.*;
 
 public class PipelineController extends SpringActionController
 {
-    private static Logger _log = Logger.getLogger(PipelineController.class);
     private static DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
 
     public enum RefererValues { portal, pipeline }
@@ -319,7 +317,7 @@ public class PipelineController extends SpringActionController
                             root = null;
                         }
 
-                        if (root != null && fileRoot != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
+                        if (root != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
                         {
                             bean.setConfirmMessage("The pipeline root was set to '" + fileRoot.getPath() + "'.");
                         }
@@ -523,19 +521,16 @@ public class PipelineController extends SpringActionController
             ActionURL browseURL = new ActionURL(BrowseAction.class, c);
             browseURL.replaceParameter("path", toRelativePath(uriRoot, uriCurrent));
 
-            List<PipelineProvider.FileEntry> list = new ArrayList<PipelineProvider.FileEntry>();
-            PipelineProvider.FileEntry entry = new PipelineProvider.FileEntry(uriCurrent, browseURL, true);
-            list.add(entry);
-            entry.setLabel(new File(uriCurrent).getName());
+            PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(uriCurrent, browseURL);
             List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
             for (PipelineProvider provider : providers)
-                provider.updateFileProperties(getViewContext(), pr, list);
+                provider.updateFileProperties(getViewContext(), pr, entry);
 
             // keep actions in consistent order for display
             entry.orderActions();
 
             JSONArray actions = new JSONArray();
-            for (PipelineProvider.FileAction action : entry.getActions())
+            for (PipelineAction action : entry.getActions())
             {
                 actions.put(action.toJSON());                
             }
@@ -545,10 +540,6 @@ public class PipelineController extends SpringActionController
             return resp;
         }
     }
-
-
-
-
 
     @RequiresSiteAdmin
     public class UpdateRootPermissionsAction extends RedirectAction<PermissionForm>
@@ -1200,54 +1191,6 @@ public class PipelineController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    public static class ActionDownloadFile extends PipelineProvider.FileAction
-    {
-        public ActionDownloadFile(ActionURL href, File file)
-        {
-            super("download", href, new File[] {file});
-        }
-
-        @Override
-        public String getDisplay()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[<a class=\"labkey-message\" href=\"").append(PageFlowUtil.filter(getHref())).append("\">")
-                    .append(PageFlowUtil.filter(getLabel())).append("</a>]");
-            return sb.toString();
-        }
-    }
-
-    public static class ActionDeleteFile extends PipelineProvider.FileAction
-    {
-        public ActionDeleteFile(ActionURL href, File file)
-        {
-            super("delete " + file.getName(), href, new File[] {file});
-        }
-
-        @Override
-        public String getDisplay()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<a href=\"").append(PageFlowUtil.filter(getHref())).append("\">")
-                    .append("<img alt=\"").append(PageFlowUtil.filter(getLabel())).append("\" ")
-                    .append("src=\"").append(PageFlowUtil.filter(AppProps.getInstance().getContextPath() + "/_images/delete.gif")).append("\" ")
-                    .append("border=\"0\"/></a>");
-            return sb.toString();
-        }
-
-        @Override
-        public String getDisplay(int i)
-        {
-            String onClick = "setFormAction(" + i + ", '" + PageFlowUtil.filter(getHref()) + "'); submitForm(" + i + "); return false;";
-            StringBuilder sb = new StringBuilder();
-            sb.append("<input type=\"image\" onclick=\"").append(onClick).append("\" ")
-                    .append("alt=\"").append(PageFlowUtil.filter(getLabel())).append("\" ")
-                    .append("src=\"").append(PageFlowUtil.filter(AppProps.getInstance().getContextPath() + "/_images/delete.gif")).append("\" ")
-                    .append("border=\"0\"/>");
-            return sb.toString();
         }
     }
 

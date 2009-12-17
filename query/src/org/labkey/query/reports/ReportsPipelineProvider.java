@@ -18,7 +18,9 @@ package org.labkey.query.reports;
 
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.module.Module;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 
@@ -47,5 +49,10 @@ public class ReportsPipelineProvider extends PipelineProvider
                 file.delete();
             dir.delete();
         }
+    }
+
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
+    {
+        // Don't hook up any actions to files
     }
 }

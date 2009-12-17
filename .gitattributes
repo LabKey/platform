@@ -1192,7 +1192,6 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.21.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.21-9.22.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
-pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
 pipeline/src/org/labkey/pipeline/PipelineUpgradeCode.java -text

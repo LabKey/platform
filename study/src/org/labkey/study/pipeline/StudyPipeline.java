@@ -16,22 +16,24 @@
 
 package org.labkey.study.pipeline;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.security.ACL;
+import org.labkey.api.pipeline.PipelineAction;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
 import org.labkey.api.module.Module;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.samples.SpecimenController;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 
 /**
@@ -43,17 +45,15 @@ import java.util.List;
 
 public class StudyPipeline extends PipelineProvider
 {
-    private static final Logger _log = Logger.getLogger(StudyPipeline.class);
-
     public StudyPipeline(Module owningModule)
     {
         super("Study", owningModule);
     }
 
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
     {
-        if (!context.hasPermission(ACL.PERM_INSERT))
+        if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             return;
 
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
@@ -66,33 +66,30 @@ public class StudyPipeline extends PipelineProvider
             PipeRoot root = PipelineService.get().findPipelineRoot(context.getContainer());
             File rootDir = root.getRootPath();
 
-            for (FileEntry entry : entries)
-            {
-                File[] files = entry.listFiles(new FileEntryFilter() {
-                    public boolean accept(File f)
-                    {
-                        return f.getName().endsWith(".dataset");
-                    }
-                });
-
-                if (files != null)
-                    handleDatasetFiles(context, study, entry, rootDir, files);
-
-                files = entry.listFiles(new FileEntryFilter()
+            File[] files = directory.listFiles(new FileEntryFilter() {
+                public boolean accept(File f)
                 {
-                    public boolean accept(File f)
-                    {
-                        return f.getName().endsWith(".specimens");
-                    }
-                });
+                    return f.getName().endsWith(".dataset");
+                }
+            });
 
-                if (files != null)
-                    handleSpecimenFiles(entry, rootDir, files);
-            }
+            if (files != null)
+                handleDatasetFiles(context, study, directory, rootDir, files);
+
+            files = directory.listFiles(new FileEntryFilter()
+            {
+                public boolean accept(File f)
+                {
+                    return f.getName().endsWith(".specimens");
+                }
+            });
+
+            if (files != null)
+                handleSpecimenFiles(directory, rootDir, files);
         }
-        catch (Exception e)
+        catch (IOException e)
         {
-            _log.error("Exception", e);
+            throw new UnexpectedException(e);
         }
     }
 
@@ -142,45 +139,42 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    private void handleDatasetFiles(ViewContext context, Study study, FileEntry entry, File rootDir, File[] files) throws IOException
+    private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File rootDir, File[] files) throws IOException
     {
         for (File f : files)
         {
             File lock = lockForDataset(study, f);
             if (lock.exists())
             {
-                ActionURL urlReset = entry.cloneHref();
-                urlReset.setPageFlow("Study");
-                urlReset.setAction("resetPipeline");
+                ActionURL urlReset = directory.cloneHref();
+                urlReset.setAction(StudyController.ResetPipelineAction.class);
                 urlReset.replaceParameter("redirect", context.getActionURL().getLocalURIString());
                 String path = FileUtil.relativize(rootDir, lock, true);
                 urlReset.replaceParameter("path", path);
                 if (lock.canRead() && lock.canWrite())
-                    entry.addAction(new FileAction("Delete lock", urlReset, new File[]{lock}));
+                    directory.addAction(new PipelineAction("Delete lock", urlReset, new File[]{lock}));
             }
             else
             {
-                ActionURL urlImport = entry.cloneHref();
-                urlImport.setPageFlow("Study");
-                urlImport.setAction("importStudyBatch");
+                ActionURL urlImport = context.cloneActionURL();
+                urlImport.setAction(StudyController.ImportStudyBatchAction.class);
                 String path = FileUtil.relativize(rootDir, f, true);
                 urlImport.replaceParameter("path", path);
-                entry.addAction(new FileAction("Import datasets", urlImport, new File[]{f}));
+                directory.addAction(new PipelineAction("Import datasets", urlImport, new File[]{f}));
             }
         }
     }
 
 
-    private void handleSpecimenFiles(FileEntry entry, File rootDir, File[] files) throws IOException
+    private void handleSpecimenFiles(PipelineDirectory directory, File rootDir, File[] files) throws IOException
     {
         for (File f : files)
         {
-            ActionURL urlImport = entry.cloneHref();
-            urlImport.setPageFlow("Study-Samples");
-            urlImport.setAction("importSpecimenData");
+            ActionURL urlImport = directory.cloneHref();
+            urlImport.setAction(SpecimenController.ImportSpecimenData.class);
             String path = FileUtil.relativize(rootDir, f, true);
             urlImport.replaceParameter("path", path);
-            entry.addAction(new FileAction("Import specimen data", urlImport, new File[]{f}));
+            directory.addAction(new PipelineAction("Import specimen data", urlImport, new File[]{f}));
         }
     }
 }

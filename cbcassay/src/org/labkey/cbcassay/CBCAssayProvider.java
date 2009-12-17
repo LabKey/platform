@@ -37,6 +37,8 @@ import org.labkey.api.view.*;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.FileType;
+import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.cbcassay.data.CBCDataProperty;
 import org.labkey.cbcassay.data.CBCData;
 import org.springframework.web.servlet.ModelAndView;
@@ -58,7 +60,6 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     private static final String x10e3_cells_per_microliter = "x10e03 cells/\u00B5L";
     private static final String x10e6_cells_per_microliter = "x10e06 cells/\u00B5L";
     private static final String RESULT_DOMAIN_NAME = "Result Fields";
-    private static final String BATCH_DOMAIN_NAME = "Batch Fields";
 
     private static class ResultDomainProperty
     {
@@ -392,4 +393,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return new JspView<CBCData>("/org/labkey/cbcassay/view/showDetails.jsp", cbcData);
     }
 
+    public PipelineProvider getPipelineProvider()
+    {
+        return new AssayPipelineProvider(CBCAssayModule.class,
+                new PipelineProvider.FileTypesEntryFilter(new FileType(".dat")), this, "Import CBC");
+    }
 }

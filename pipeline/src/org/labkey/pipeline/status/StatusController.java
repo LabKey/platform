@@ -772,7 +772,7 @@ public class StatusController extends SpringActionController
         {
             if (provider == null)
                 return false;
-            List<PipelineProvider.StatusAction> l = provider.addStatusActions(container);
+            List<PipelineProvider.StatusAction> l = provider.addStatusActions();
             if (l == null)
                 return false;
 

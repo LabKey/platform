@@ -75,7 +75,7 @@ public class ProviderButtonBar extends ButtonBar
                 Container container = ContainerManager.getForId(containerId);
                 if (provider != null && container != null)
                 {
-                    List<PipelineProvider.StatusAction> actions = provider.addStatusActions(container);
+                    List<PipelineProvider.StatusAction> actions = provider.addStatusActions();
                     if (actions != null && actions.size() > 0)
                     {
                         List<DisplayElement> baseElements = elements;

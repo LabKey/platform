@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
@@ -77,6 +78,11 @@ public class AssayManager implements AssayService.Interface
             throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
         }
         _providers.add(provider);
+        PipelineProvider pipelineProvider = provider.getPipelineProvider();
+        if (pipelineProvider != null)
+        {
+            PipelineService.get().registerPipelineProvider(pipelineProvider);
+        }
     }
 
     public AssayProvider getProvider(String providerName)

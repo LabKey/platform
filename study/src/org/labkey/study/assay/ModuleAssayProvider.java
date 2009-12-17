@@ -41,6 +41,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
+import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.study.assay.xml.ProviderType;
 import org.labkey.study.controllers.assay.AssayController;
@@ -204,7 +205,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     /** @return a domain and its default values */
     protected Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, User user, IAssayDomainType domainType)
     {
-        DomainDescriptorType xDomain = null;
+        DomainDescriptorType xDomain;
         try
         {
             xDomain = parseDomain(domainType);
@@ -457,6 +458,13 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController.ModuleAssayUploadAction.class);
     }
 
+    public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, String[] fileNames)
+    {
+        if (!hasUploadView())
+            return super.getImportURL(container, protocol);
+        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController.ModuleAssayUploadAction.class);
+    }
+
     protected boolean hasUploadView()
     {
         return hasCustomView(UPLOAD_VIEW_FILENAME);
@@ -526,5 +534,10 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public DataExchangeHandler getDataExchangeHandler()
     {
         return new ModuleDataExchangeHandler();
+    }
+
+    public PipelineProvider getPipelineProvider()
+    {
+        return null;
     }
 }

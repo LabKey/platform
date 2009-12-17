@@ -27,11 +27,10 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.InsertPermission;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.List;
-import java.util.ListIterator;
 
 /**
  * <code>FileAnalysisPipelineProvider</code>
@@ -67,31 +66,29 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         return null;
     }
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
     {
+        if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
+        {
+            return;
+        }
+
         Container c = context.getContainer();
 
         PipelineJobService service = PipelineJobService.get();
         FileAnalysisTaskPipeline[] pipelines = service.getTaskPipelines(FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {            
-            for (ListIterator<FileEntry> it = entries.listIterator(); it.hasNext();)
+            String path = directory.cloneHref().getParameter(Params.path.toString());
+            ActionURL url = AnalysisController.urlAnalyze(c, tp.getId(), path);
+            addAction(url, tp.getDescription(),
+                    directory, directory.listFiles(tp.getInitialFileTypeFilter()));
+
+            FileFilter filter = getImportFilter(tp);
+            if (filter != null)
             {
-                FileEntry entry = it.next();
-                if (!entry.isDirectory())
-                    continue;
-
-                String path = entry.cloneHref().getParameter(Params.path.toString());
-                ActionURL url = AnalysisController.urlAnalyze(c, tp.getId(), path);
-                addAction(url, tp.getDescription(),
-                        entry, entry.listFiles(tp.getInitialFileTypeFilter()));
-
-                FileFilter filter = getImportFilter(tp);
-                if (filter != null)
-                {
-                    url = AnalysisController.urlImport(c, tp.getId(), path);
-                    addAction(url, "Import", entry, entry.listFiles(filter));                    
-                }
+                url = AnalysisController.urlImport(c, tp.getId(), path);
+                addAction(url, "Import", directory, directory.listFiles(filter));
             }
         }
     }

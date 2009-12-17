@@ -18,13 +18,12 @@ package org.labkey.experiment.pipeline;
 
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * User: jeckels
@@ -77,16 +76,15 @@ public class ExperimentPipelineProvider extends PipelineProvider
             f.renameTo(getExperimentDirectory(systemDir, name));
     }
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
     {
-        for (FileEntry entry : entries)
+        if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
         {
-            if (!entry.isDirectory())
-                continue;
-
-            addFileActions(ExperimentController.ImportXarFileAction.class, "Import Experiment",
-                    entry, entry.listFiles(new XarFilenameFilter()));
+            return;
         }
+
+        addFileActions(ExperimentController.ImportXarFileAction.class, "Import Experiment",
+                directory, directory.listFiles(new XarFilenameFilter()));
     }
 
     private static class XarFilenameFilter extends FileEntryFilter
@@ -96,14 +94,6 @@ public class ExperimentPipelineProvider extends PipelineProvider
             String lowerCase = f.getName().toLowerCase();
             return lowerCase.endsWith(".xar.xml") ||
                    lowerCase.endsWith(".xar");
-        }
-    }
-
-    private static class ExperimentPipelineWebPart extends HtmlView
-    {
-        public ExperimentPipelineWebPart()
-        {
-            super("<p>Experiment: No setup required.</p>");
         }
     }
 }

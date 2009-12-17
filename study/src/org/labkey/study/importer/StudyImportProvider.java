@@ -19,14 +19,13 @@ package org.labkey.study.importer;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.module.Module;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.List;
 
 /*
 * User: adam
@@ -41,22 +40,16 @@ public class StudyImportProvider extends PipelineProvider
     }
 
     @Override
-    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
     {
         // Only admins can import/reload studies
-        if (!context.hasPermission(ACL.PERM_ADMIN))
+        if (!context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
             return;
 
         String label = (null == StudyManager.getInstance().getStudy(context.getContainer()) ? "Import Study" : "Reload Study");
 
-        for (FileEntry entry : entries)
-        {
-            if (!entry.isDirectory())
-                continue;
-
-            for (File file : entry.listFiles(new StudyImportFilter()))
-                addAction(StudyController.ImportStudyFromPipelineAction.class, label, entry, new File[]{file});
-        }
+        for (File file : directory.listFiles(new StudyImportFilter()))
+            addAction(StudyController.ImportStudyFromPipelineAction.class, label, directory, new File[]{file});
     }
 
     private static class StudyImportFilter implements FileFilter
