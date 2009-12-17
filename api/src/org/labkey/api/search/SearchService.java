@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Path;
 import org.apache.log4j.Category;
@@ -142,7 +143,7 @@ public interface SearchService
     //
 
 
-    public String search(String queryString);
+    public String search(String queryString, User user);
     public List<SearchCategory> getSearchCategories();
 
 
