@@ -38,6 +38,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.pipeline.PipelineProvider;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -85,7 +86,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId);
 
+    /** @return the URL used to import data when the user still needs to upload data files */
     ActionURL getImportURL(Container container, ExpProtocol protocol);
+
+    /** @return the URL used to import data when data files are already on the server */
+    ActionURL getImportURL(Container container, ExpProtocol protocol, String path, String[] fileNames);
 
     TableInfo createDataTable(AssaySchema schema, ExpProtocol protocol);
 
@@ -146,6 +151,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * @return
      */
     boolean hasUsefulDetailsPage();
+
+    PipelineProvider getPipelineProvider();
 
     public enum Scope {
         ALL,

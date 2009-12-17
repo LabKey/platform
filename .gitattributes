@@ -362,6 +362,7 @@ api/src/org/labkey/api/pipeline/GlobusSettings.java -text
 api/src/org/labkey/api/pipeline/GlobusSettingsImpl.java -text
 api/src/org/labkey/api/pipeline/ParamParser.java -text
 api/src/org/labkey/api/pipeline/PipeRoot.java -text
+api/src/org/labkey/api/pipeline/PipelineAction.java -text
 api/src/org/labkey/api/pipeline/PipelineJob.java -text
 api/src/org/labkey/api/pipeline/PipelineJobData.java -text
 api/src/org/labkey/api/pipeline/PipelineJobException.java -text
@@ -737,6 +738,7 @@ api/src/org/labkey/api/study/assay/AssayDataCollector.java -text
 api/src/org/labkey/api/study/assay/AssayDataCollectorDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/AssayDataLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/AssayFileWriter.java -text
+api/src/org/labkey/api/study/assay/AssayPipelineProvider.java -text
 api/src/org/labkey/api/study/assay/AssayProvider.java -text
 api/src/org/labkey/api/study/assay/AssayPublishKey.java -text
 api/src/org/labkey/api/study/assay/AssayPublishService.java -text

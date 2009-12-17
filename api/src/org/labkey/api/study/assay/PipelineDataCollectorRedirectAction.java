@@ -15,7 +15,6 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.exp.api.ExpProtocol;

@@ -20,12 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.api.module.Module;
 import org.springframework.web.servlet.mvc.Controller;
-import org.json.JSONObject;
-import org.json.JSONArray;
 
 import java.io.*;
 import java.net.URI;
@@ -40,25 +37,18 @@ abstract public class PipelineProvider
     public enum Params { path }
 
     // UNDONE: should probably extend NavTree
-    public static class FileEntry
+    public static class PipelineDirectory
     {
         URI _uri;
-        String _label;
         ActionURL _href;
-        String _imageURL;
-        Boolean _isDirectory;
         Map<String, File> _files;  // Full list of files, if this is a directory.
-        Map<Class, File[]> _fileSets;  // Sets of files already listed for this entry.
-        List<FileAction> _actions;
-        private final boolean _open;
+        List<PipelineAction> _actions;
 
-        public FileEntry(URI uri, ActionURL href, boolean open)
+        public PipelineDirectory(URI uri, ActionURL href)
         {
-            _open = open;
-            _label = URIUtil.getFilename(uri);
             _uri = uri;
-            _href = href.clone();
-            _actions = new ArrayList<FileAction>();
+            _href = href;
+            _actions = new ArrayList<PipelineAction>();
         }
 
         public URI getURI()
@@ -66,65 +56,17 @@ abstract public class PipelineProvider
             return _uri;
         }
 
-        public String getImageURL()
-        {
-            if (_imageURL == null)
-            {
-                ActionURL imageURL = _href.clone();
-                imageURL.deleteParameters();
-                imageURL.setAction((String)null);
-                imageURL.setExtraPath("images");
-                if (isDirectory())
-                {
-                    if (_open)
-                        imageURL.setAction("folder_open.gif");
-                    else
-                        imageURL.setAction("folder.gif");
-                }
-                else
-                {
-                    imageURL.setAction("file.gif");
-                }
-                _imageURL = imageURL.toString();
-            }
-            return _imageURL;
-        }
-
-        public String getLabel()
-        {
-            return _label;
-        }
-
-        public void setLabel(String label)
-        {
-            _label = label;
-        }
-
-        public boolean isDirectory()
-        {
-            if (_isDirectory == null)
-            {
-                _isDirectory = URIUtil.isDirectory(_uri);
-            }
-            return _isDirectory.booleanValue();
-        }
-
-        public String getHref()
-        {
-            return _href.getLocalURIString();
-        }
-
         public ActionURL cloneHref()
         {
             return _href.clone();
         }
 
-        public FileAction[] getActions()
+        public List<PipelineAction> getActions()
         {
-            return _actions.toArray(new FileAction[_actions.size()]);
+            return _actions;
         }
 
-        public void addAction(FileAction action)
+        public void addAction(PipelineAction action)
         {
             _actions.add(action);
         }
@@ -135,21 +77,19 @@ abstract public class PipelineProvider
             if (_files == null)
             {
                 _files = new LinkedHashMap<String, File>();
-                _fileSets = new HashMap<Class, File[]>();
 
-                if (isDirectory())
+                assert URIUtil.isDirectory(_uri) : "Expected to be called with a directory";
+
+                // Get the full set of files in the directory.
+                // Use a file object that caches its directory state.
+                File dir = new FileCached(new File(_uri));
+                File[] files = dir.listFiles();
+
+                if (files != null)
                 {
-                    // Get the full set of files in the directory.
-                    // Use a file object that caches its directory state.
-                    File dir = new FileCached(new File(_uri));
-                    File[] files = dir.listFiles();
-
-                    if (files != null)
+                    for (File file : files)
                     {
-                        for (File file : files)
-                        {
-                            _files.put(file.getName(), file);
-                        }
+                        _files.put(file.getName(), file);
                     }
                 }
             }
@@ -173,17 +113,7 @@ abstract public class PipelineProvider
          */
         public File[] listFiles(FileFilter filter)
         {
-            if (!isDirectory())
-                return new File[0];
-
             ensureFiles();
-
-            // See if we've already used this filter before.
-            // TODO(brendanx): This no longer works with FileAnalysisPipelineProvider
-            //                 Saved some time with MS2 providers
-//            File[] files = _fileSets.get(filter.getClass());
-//            if (files != null)
-//                return files;
 
             // Actually do the filtering.
             ArrayList<File> listFiles = new ArrayList<File>();
@@ -194,15 +124,13 @@ abstract public class PipelineProvider
                 if (filter.accept(f))
                     listFiles.add(f);
             }
-            File[] files = listFiles.toArray(new File[listFiles.size()]);
-            _fileSets.put(filter.getClass(), files);
-            return files;
+            return listFiles.toArray(new File[listFiles.size()]);
         }
 
         public void orderActions()
         {
             // Sort each action's array of Files
-            for (FileAction a : _actions)
+            for (PipelineAction a : _actions)
             {
                 File[] f = a.getFiles();
                 if (null != f && f.length > 1)
@@ -217,9 +145,9 @@ abstract public class PipelineProvider
                 }
             }
             // Sort the list of actions by size, label then first File
-            Collections.sort(_actions, new Comparator<FileAction>()
+            Collections.sort(_actions, new Comparator<PipelineAction>()
             {
-                public int compare(FileAction action1, FileAction action2)
+                public int compare(PipelineAction action1, PipelineAction action2)
                 {
                     int rc;
                     File[] files1 = action1.getFiles();
@@ -246,9 +174,9 @@ abstract public class PipelineProvider
 
     public static abstract class FileEntryFilter implements FileFilter
     {
-        private FileEntry _entry;
+        private PipelineDirectory _entry;
 
-        public void setFileEntry(FileEntry entry)
+        public void setFileEntry(PipelineDirectory entry)
         {
             _entry = entry;
         }
@@ -264,6 +192,24 @@ abstract public class PipelineProvider
     public static class FileTypesEntryFilter extends FileEntryFilter
     {
         private FileType[] _initialFileTypes;
+
+        public FileTypesEntryFilter(FileType initialFileType, FileType... otherFileTypes)
+        {
+            this(appendToArray(otherFileTypes, initialFileType));
+        }
+
+        private static FileType[] appendToArray(FileType[] otherFileTypes, FileType initialFileType)
+        {
+            if (otherFileTypes == null)
+            {
+                return new FileType[] { initialFileType };
+            }
+
+            FileType[] result = new FileType[otherFileTypes.length + 1];
+            result[0] = initialFileType;
+            System.arraycopy(otherFileTypes, 0, result, 1, otherFileTypes.length);
+            return result;
+        }
 
         public FileTypesEntryFilter(FileType[] initialFileTypes)
         {
@@ -321,160 +267,6 @@ abstract public class PipelineProvider
         }
     }
 
-
-    public static class FileAction
-    {
-        String _description;
-        NavTree _links;
-        File[] _files;
-
-        public JSONObject toJSON()
-        {
-            JSONObject o = new JSONObject();
-
-            o.put("description", _description==null ? "" : _description);
-
-            JSONObject links = _links.toJSON();
-            o.put("links",links);
-
-            JSONArray files = new JSONArray();
-            if (null != _files)
-                for (File f : _files)
-                    files.put(f.getName());
-            o.put("files",files);
-            
-            return o;
-        }
-
-        /** Use NavTree to create a drop-down menu with submenus for the specified files */
-        public FileAction(NavTree links, File[] files)
-        {
-            _links = links;
-            _files = files;
-        }
-
-        /** Use a simple button for the specified files */
-        public FileAction(String label, ActionURL href, File[] files)
-        {
-            this(new NavTree(label, href), files);
-        }
-
-        public String getLabel()
-        {
-            return _links.getKey();
-        }
-
-        public String getHref()
-        {
-            if (_links.getChildCount() != 0)
-            {
-                throw new IllegalStateException("Cannot call getHref() if there is more than one link");
-            }
-            return _links.getValue();
-        }
-
-        public boolean isRootAction()
-        {
-            return (_files == null);
-        }
-        
-        public File[] getFiles()
-        {
-            return _files;
-        }
-
-        public void setDescription(String description)
-        {
-            _description = description;
-        }
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public boolean hasSameFiles(FileAction action)
-        {
-            File[] files = action.getFiles();
-            if (files == _files)
-                return true;
-            if (files == null || _files == null)
-                return false;
-            
-            if (files.length != _files.length)
-                return false;
-            for (int i = 0; i < files.length; i++)
-                if (!files[i].getPath().equals(_files[i].getPath()))
-                    return false;
-
-            return true;
-        }
-
-        public String getDisplay(int i)
-        {
-            if (_links.getChildCount() == 0)
-            {
-                // No children, use a simple button
-                String onClick = "setFormAction(" + i + ", '" + PageFlowUtil.filter(getHref()) + "'); submitForm(" + i + "); return false;";
-                return PageFlowUtil.generateSubmitButton(getLabel(), onClick);
-            }
-            else
-            {
-                // Use a popup menu
-                NavTree navTree = new NavTree(_links.getKey(), _links.getValue());
-                for (NavTree child : _links.getChildren())
-                {
-                    // Copy the tree so that we can rewrite the click event as JavaScript instead of a simple URL
-                    if (child == NavTree.MENU_SEPARATOR)
-                    {
-                        navTree.addChild(child);
-                    }
-                    else
-                    {
-                        NavTree newChild = new NavTree(child.getKey());
-                        newChild.setScript("setFormAction(" + i + ", '" + child.getValue() + "'); submitForm(" + i + "); return false;");
-                        newChild.setDisabled(child.isDisabled());
-                        newChild.setHighlighted(child.isHighlighted());
-                        newChild.setId(child.getId());
-                        navTree.addChild(newChild);
-                    }
-                }
-                return renderPopupMenu(navTree);
-            }
-        }
-
-        private String renderPopupMenu(NavTree navTree)
-        {
-            PopupMenu menu = new PopupMenu(navTree);
-
-            StringWriter writer = new StringWriter();
-            try
-                {
-                    menu.render(writer);
-                }
-                catch (IOException e)
-            {
-                throw new UnexpectedException(e);
-            }
-            return writer.toString();
-        }
-
-        public String getDisplay()
-        {
-            if (_links.getChildCount() == 0)
-            {
-                // Use a simple button
-                return PageFlowUtil.generateButton(getLabel(), getHref());
-            }
-            else
-            {
-                // Render as a popup menu that contains links
-                return renderPopupMenu(_links);
-            }
-        }
-    }
-
-    
     public static class StatusAction
     {
         String _label;
@@ -579,15 +371,6 @@ abstract public class PipelineProvider
     }
 
     /**
-     * Override to do any extra registration work when this provider is
-     * registered with the PipelineService, like registering default
-     * <code>TaskPipeline</code> instances.
-     */
-    public void register()
-    {
-    }
-
-    /**
      * Override to do an work necessary immediately after a new system
      * directory is created in a pipeline root.
 
@@ -620,15 +403,6 @@ abstract public class PipelineProvider
     {
     }
 
-    /**
-     * Override to do any extra work necessary before completing a status entry.
-     *
-     * @param sf the entry to delete
-     */
-    public void preCompleteStatusFile(PipelineStatusFile sf) throws StatusUpdateException
-    {
-    }
-
     public Module getOwningModule()
     {
         return _owningModule;
@@ -650,23 +424,17 @@ abstract public class PipelineProvider
      *
      * @param context The ViewContext for the current request
      * @param pr the <code>PipeRoot</code> object for the current context
-     * @param entries List of directories to scan for possible actions
-     *
-     * this API is only ever called with entries.size() == 1
+     * @param directory directory to scan for possible actions
      */
-    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
-    {
-        // Do nothing.
-    }
+    public abstract void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory);
 
     /**
      * Allows the provider to add action buttons to the details page of one
      * of its status entries.
      *
-     * @param container the container for the status entry
      * @return List of actions to add to the details page
      */
-    public List<StatusAction> addStatusActions(Container container)
+    public List<StatusAction> addStatusActions()
     {
         List<PipelineProvider.StatusAction> actions = new ArrayList<PipelineProvider.StatusAction>();
         actions.add(new PipelineProvider.StatusAction(CAPTION_RETRY_BUTTON)
@@ -723,28 +491,28 @@ abstract public class PipelineProvider
         }
     }
 
-    protected void addAction(ActionURL actionURL, String description, FileEntry entry, File[] files)
+    protected void addAction(ActionURL actionURL, String description, PipelineDirectory entry, File[] files)
     {
         if (files == null || files.length == 0)
             return;
 
-        entry.addAction(new FileAction(description, actionURL, files));
+        entry.addAction(new PipelineAction(description, actionURL, files));
     }
 
-    protected void addAction(Class<? extends Controller> action, String description, FileEntry entry, File[] files)
+    protected void addAction(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files)
     {
         if (files == null || files.length == 0)
             return;
-        ActionURL actionURL = entry.cloneHref();
+        ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);
-        entry.addAction(new FileAction(description, actionURL, files));
+        directory.addAction(new PipelineAction(description, actionURL, files));
     }
 
-    protected void addFileActions(Class<? extends Controller> action, String description, FileEntry entry, File[] files)
+    protected void addFileActions(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files)
     {
         if (files == null || files.length == 0)
             return;
-        ActionURL actionURL = entry.cloneHref();
+        ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);
         String path = actionURL.getParameter(Params.path);
         if (!path.endsWith("/"))
@@ -752,7 +520,7 @@ abstract public class PipelineProvider
         for (File f : files)
         {
             actionURL.replaceParameter(Params.path, path + PageFlowUtil.encode(f.getName()));
-            entry.addAction(new FileAction(description, actionURL.clone(), new File[] {f}));
+            directory.addAction(new PipelineAction(description, actionURL.clone(), new File[] {f}));
         }
     }
 
