@@ -28,10 +28,10 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
@@ -138,9 +138,10 @@ public class SearchController extends SpringActionController
                 return null;
             }
 
-            String html = "";
+            String statusMessage = "";
 
             List<SearchService.IndexTask> tasks = ss.getTasks();
+
             if (tasks.isEmpty())
             {
                 tasks = new ArrayList<SearchService.IndexTask>();
@@ -149,6 +150,7 @@ public class SearchController extends SpringActionController
                 if (null != _lastIncrementalTask)
                     tasks.add(_lastIncrementalTask);
             }
+
             for (SearchService.IndexTask task : tasks)
             {
                 int count = task.getIndexedCount();
@@ -158,26 +160,22 @@ public class SearchController extends SpringActionController
                     end = System.currentTimeMillis();
                 int skipped = task.getFailedCount();
                 if (task.getCompleteTime() != 0)
-                    html += "Indexing complete: ";
+                    statusMessage += "Indexing complete: ";
                 else
-                    html += "Indexing in progress: ";
-                html += Formats.commaf0.format(count) + " documents (" + DateUtil.formatDuration(end-start) + ") " + "<br>"; // Remove for demo: Formats.commaf0.format(skipped) + " skipped or failed <br>";
+                    statusMessage += "Indexing in progress: ";
+                statusMessage += Formats.commaf0.format(count) + " documents (" + DateUtil.formatDuration(end-start) + ") "; // Remove for demo: Formats.commaf0.format(skipped) + " skipped or failed <br>";
             }
-            html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer()).addParameter("full","1")) + "\">reindex (full)</a>]<br>";
-            html += "[<a href=\"" + PageFlowUtil.filter(new ActionURL(IndexAction.class, getContainer())) + "\">reindex (incremental)</a>]<br>";
 
-            html += "<form>";
-            if (isPrint())
-                html += "<input type=hidden name=_print value=1>";
-            html += "<input type=\"text\" size=50 id=\"query\" name=\"query\" value=\"" + PageFlowUtil.filter(query) + "\">&nbsp;" + PageFlowUtil.generateSubmitButton("Search");
-            html += "</form>";
-            HtmlView searchBox = new HtmlView(html);
+            form.setPrint(isPrint());
+            form.setStatusMessage(statusMessage);
+            HttpView searchBox = new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
+
             getPageConfig().setFocusId("query");
 
             if (StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
                 return searchBox;
 
-            String results = ss.search(query, getUser(), ContainerManager.getRoot());
+            String results = ss.search(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot());
 
             return new VBox(searchBox, new HtmlView("<div id='searchResults'>" + results + "</div>"));
         }
@@ -193,6 +191,9 @@ public class SearchController extends SpringActionController
     {
         private String _query;
         private String _sort;
+        private boolean _print = false;
+        private boolean _guest = false;       // TODO: Just for testing
+        private String _statusMessage;
 
         public String getQuery()
         {
@@ -212,6 +213,36 @@ public class SearchController extends SpringActionController
         public void setSort(String sort)
         {
             _sort = sort;
+        }
+
+        public boolean isPrint()
+        {
+            return _print;
+        }
+
+        public void setPrint(boolean print)
+        {
+            _print = print;
+        }
+
+        public String getStatusMessage()
+        {
+            return _statusMessage;
+        }
+
+        public void setStatusMessage(String statusMessage)
+        {
+            _statusMessage = statusMessage;
+        }
+
+        public boolean isGuest()
+        {
+            return _guest;
+        }
+
+        public void setGuest(boolean guest)
+        {
+            _guest = guest;
         }
     }
 }
