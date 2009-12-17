@@ -18,24 +18,31 @@ package org.labkey.filecontent;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.json.JSONArray;
+import org.labkey.api.action.*;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.UnsetRootDirectoryException;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -43,13 +50,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 
 public class FileContentController extends SpringActionController
@@ -594,6 +596,123 @@ public class FileContentController extends SpringActionController
 		   return true;
        }
    }
+
+    static class NodeForm
+    {
+        private String _node;
+
+        public String getNode()
+        {
+            return _node;
+        }
+
+        public void setNode(String node)
+        {
+            _node = node;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class FileContentSummaryAction extends ApiAction<NodeForm>
+    {
+        @Override
+        public ApiResponseWriter createResponseWriter() throws IOException
+        {
+            return new ApiJsonWriter(getViewContext().getResponse(), getContentTypeOverride())
+            {
+                @Override
+                public void write(ApiResponse response) throws IOException
+                {
+                    // need to write out the json in a form that the ext tree loader expects
+                    Map<String, Object> props = response.getProperties();
+                    if (props.containsKey("children"))
+                    {
+                        JSONArray json = new JSONArray((Collection<Object>)props.get("children"));
+                        getWriter().write(json.toString(4));
+                    }
+                    else
+                        super.write(response);
+                }
+            };
+        }
+
+        public ApiResponse execute(NodeForm form, BindException errors) throws Exception
+        {
+            String container = form.getNode();
+
+            Container c = ContainerManager.getForId(container);
+            if (c == null)
+                c = ContainerManager.getRoot();
+
+            Set<Map<String, Object>> children = new LinkedHashSet<Map<String, Object>>();
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+
+            try {
+                AttachmentDirectory root = svc.getMappedAttachmentDirectory(c, false);
+                ActionURL browse = new ActionURL(BeginAction.class, c);
+
+                if (root != null)
+                {
+                    ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+                    Map<String, Object> node = createFileSetNode("@files", root.getFileSystemDirectory());
+                    node.put("default", svc.hasSiteDefaultRoot(c));
+                    node.put("configureURL", config.getEncodedLocalURIString());
+                    node.put("href", browse.getEncodedLocalURIString());
+
+                    children.add(node);
+                }
+
+                for (AttachmentDirectory fileSet : svc.getRegisteredDirectories(c))
+                {
+                    ActionURL config = new ActionURL(ShowAdminAction.class, c);
+                    Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory());
+                    node.put("configureURL", config.getEncodedLocalURIString());
+                    node.put("href", browse.getEncodedLocalURIString());
+
+                    children.add(node);
+                }
+
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
+                if (pipeRoot != null)
+                {
+                    ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
+                    Map<String, Object> node = createFileSetNode("@pipeline", pipeRoot.getRootPath());
+                    node.put("default", PipelineService.get().hasSiteDefaultRoot(c));
+                    node.put("configureURL", config.getEncodedLocalURIString());
+                    node.put("href", browse.getEncodedLocalURIString());
+
+                    children.add(node);
+                }
+            }
+            catch (MissingRootDirectoryException e){}
+            catch (UnsetRootDirectoryException e){}
+
+            for (Container child : c.getChildren())
+            {
+                Map<String, Object> node = new HashMap<String, Object>();
+
+                node.put("id", child.getId());
+                node.put("name", child.getName());
+                node.put("uiProvider", "col");
+
+                children.add(node);
+            }
+            return new ApiSimpleResponse("children", children);
+        }
+
+        private Map<String, Object> createFileSetNode(String name, File dir)
+        {
+            Map<String, Object> node = new HashMap<String, Object>();
+            if (dir != null)
+            {
+                node.put("name", name);
+                node.put("path", dir.getPath());
+                node.put("leaf", true);
+                node.put("uiProvider", "col");
+            }
+            return node;
+        }
+    }
 
    public static class FileContentForm
    {
