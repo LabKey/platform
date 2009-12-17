@@ -41,7 +41,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private Container _impersonationProject = null;
     private boolean _active = false;
 
-    static final User guest = new GuestUser("guest");
+    public static final User guest = new GuestUser("guest");
     static final User search = new GuestUser("search");
 
     private static class GuestUser extends User
