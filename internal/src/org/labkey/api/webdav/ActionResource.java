@@ -15,8 +15,11 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
@@ -46,6 +49,7 @@ public class ActionResource extends AbstractDocumentResource
     {
         super(new Path("action",str));
         _url = new ActionURL(str);
+        _containerId = getContainerId(_url);
         _executeUrl = _url.clone();
         _executeUrl.replaceParameter("_print","1");
         _executeUrl.setScheme("http");
@@ -55,14 +59,15 @@ public class ActionResource extends AbstractDocumentResource
 
     public ActionResource(SearchService.SearchCategory category, ActionURL url)
     {
-        this(category, url, url.clone());    
+        this(category, url, url.clone());
     }
 
 
     public ActionResource(SearchService.SearchCategory category, ActionURL url, ActionURL source)
     {
-        this(url.getLocalURIString());
+        super(new Path("action",url.getLocalURIString()));
         _url = url;
+        _containerId = getContainerId(_url);
         _executeUrl = source;
         _executeUrl.replaceParameter("_print","1");
         _executeUrl.setScheme("http");
@@ -70,7 +75,17 @@ public class ActionResource extends AbstractDocumentResource
         _properties = new HashMap<String,Object>();
         _properties.put(SearchService.PROPERTY.category.toString(), category.getName());
     }
-    
+
+
+    String getContainerId(ActionURL url)
+    {
+        String path = url.getExtraPath();
+        if (GUID.isGUID(path))
+            return path;
+        Container c = ContainerManager.getForPath(path);
+        return null==c ? null : c.getId();
+    }
+
 
     public boolean exists()
     {

@@ -40,7 +40,9 @@ public interface SearchService
     
     enum PRIORITY
     {
-        crawl,      // lowest
+        commit,
+        
+        crawl,      // lowest work priority
         background, // crawler item
 
         bulk,       // all wikis

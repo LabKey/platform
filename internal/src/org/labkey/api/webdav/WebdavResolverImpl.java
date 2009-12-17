@@ -342,6 +342,7 @@ public class WebdavResolverImpl implements WebdavResolver
             super(resolver.getRootPath().append(c.getParsedPath()));
             _resolver = resolver;
             _c = c;
+            _containerId = c.getId();
             _policy = c.getPolicy();
             _attachmentDirectory = root;
             if (null != _attachmentDirectory)

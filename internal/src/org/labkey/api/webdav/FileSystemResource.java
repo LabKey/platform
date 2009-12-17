@@ -92,6 +92,12 @@ public class FileSystemResource extends AbstractResource
         return null == _name ? super.getName() : _name;
     }
 
+    @Override
+    public String getContainerId()
+    {
+        return null==_folder ? null : _folder.getContainerId();
+    }
+
     public boolean exists()
     {
         return _file == null || getType() != FileType.notpresent;

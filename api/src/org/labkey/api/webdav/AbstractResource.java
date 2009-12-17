@@ -29,8 +29,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.search.SearchService;
-import org.labkey.api.services.ServiceRegistry;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,8 +49,11 @@ public abstract class AbstractResource implements Resource
     protected long _ts = System.currentTimeMillis();                   
     private Path _path;
     protected SecurityPolicy _policy;
+    protected String _containerId;
+    
     protected String _etag = null;
     protected Map<String,Object> _properties = null;
+
 
     protected AbstractResource(Path path)
     {
@@ -85,12 +86,6 @@ public abstract class AbstractResource implements Resource
         return _path.getName();
     }
 
-
-    public String getDocumentId()
-    {
-        return "dav:" + getPath().toString();
-    }
-    
 
     public Resource parent()
     {
@@ -364,5 +359,24 @@ public abstract class AbstractResource implements Resource
     public void removeLink(String name)
     {
         throw new UnsupportedOperationException();
+    }
+
+
+    //
+    // SearchService
+    //
+    public String getDocumentId()
+    {
+        return "dav:" + getPath().toString();
+    }
+
+    public String getContainerId()
+    {
+        return _containerId;
+    }
+
+    public boolean shouldIndex()
+    {
+        return true;
     }
 }

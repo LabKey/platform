@@ -40,14 +40,6 @@ public interface Resource
 
     String getName();
 
-    /**
-     * unique name for full text index purposes there should be SearchService.ResourceResolver that can resolve this documentid
-     *
-     * This name should be server unique, and as far as possible not reusable (e.g. non-reused rowid and entityids are
-     * better than names that may be reused.
-     */
-    String getDocumentId();
-
     boolean exists();
 
     boolean isCollection();
@@ -130,4 +122,28 @@ public interface Resource
 
     // dav methods
     boolean delete(User user) throws IOException;
+
+    //
+    // for SearchService
+    //
+
+    /**
+     * unique name for full text index purposes there should be SearchService.ResourceResolver that can resolve this documentid
+     *
+     * This name should be server unique, and as far as possible not reusable (e.g. non-reused rowid and entityids are
+     * better than names that may be reused.
+     */
+    String getDocumentId();
+
+    /**
+     * required for fast permission filtering by SearchService, only non-indexable resources may return null
+     */
+    String getContainerId();
+
+    /**
+     * return false to skip this collection/resource and children
+     * TODO: is this always recursive????
+     * @return
+     */
+    boolean shouldIndex();
 }
