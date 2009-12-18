@@ -28,6 +28,25 @@ import java.io.IOException;
  */
 public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 {
+    public static final String PRIMARY_FILE = "__primaryFile__";
+
+    public enum AdditionalUploadType
+    {
+        Disallowed(null), AlreadyUploaded("Save and Import Next File"), UploadRequired("Save and Import Another Run");
+
+        private String _buttonText;
+
+        private AdditionalUploadType(String buttonText)
+        {
+            _buttonText = buttonText;
+        }
+
+        public String getButtonText()
+        {
+            return _buttonText;
+        }
+    }
+
     public String getHTML(ContextType context) throws ExperimentException;
 
     public String getShortName();
@@ -41,5 +60,5 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 
     void uploadComplete(ContextType context);
 
-    public boolean allowAdditionalUpload(ContextType context);
+    public AdditionalUploadType getAdditionalUploadType(ContextType context);
 }

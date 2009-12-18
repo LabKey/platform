@@ -22,6 +22,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
 
@@ -55,7 +56,7 @@ public class AssayPublishService
         /**
          * Container -> Study label
          */
-        Map<Container, String> getValidPublishTargets(User user, int permission);
+        Map<Container, String> getValidPublishTargets(User user, Class<? extends Permission> permission);
 
         ActionURL getPublishHistory(Container container, ExpProtocol protocol);
         ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter);

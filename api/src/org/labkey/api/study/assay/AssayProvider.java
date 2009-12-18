@@ -72,7 +72,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     List<PropertyDescriptor> getRunTableColumns(ExpProtocol protocol);
 
-    List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles);
+    List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
     String getName();
 
@@ -88,9 +88,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** @return the URL used to import data when the user still needs to upload data files */
     ActionURL getImportURL(Container container, ExpProtocol protocol);
-
-    /** @return the URL used to import data when data files are already on the server */
-    ActionURL getImportURL(Container container, ExpProtocol protocol, String path, String[] fileNames);
 
     TableInfo createDataTable(AssaySchema schema, ExpProtocol protocol);
 

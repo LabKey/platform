@@ -28,8 +28,8 @@ public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUpl
         
     }
 
-    public boolean allowAdditionalUpload(ContextType context)
+    public AdditionalUploadType getAdditionalUploadType(ContextType context)
     {
-        return true;
+        return AdditionalUploadType.UploadRequired;
     }
 }

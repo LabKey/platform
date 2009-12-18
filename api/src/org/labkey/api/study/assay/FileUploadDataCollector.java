@@ -20,7 +20,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
@@ -32,11 +31,10 @@ import java.util.Map;
 public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
 {
     private boolean _uploadComplete = false;
-    private static final String FORM_ELEMENT_NAME = "uploadedFile";
 
     public String getHTML(ContextType context)
     {
-        return "<input type=\"file\" size=\"40\" name=\"" + FORM_ELEMENT_NAME + "\" />";
+        return "<input type=\"file\" size=\"40\" name=\"" + PRIMARY_FILE + "\" />";
     }
 
     public String getShortName()
@@ -57,8 +55,8 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
         if (!(context.getRequest() instanceof MultipartHttpServletRequest))
             throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
         
-        Map<String, File> files = savePostedFiles(context, Collections.singleton(FORM_ELEMENT_NAME));
-        if (!files.containsKey(FORM_ELEMENT_NAME))
+        Map<String, File> files = savePostedFiles(context, Collections.singleton(PRIMARY_FILE));
+        if (!files.containsKey(PRIMARY_FILE))
             throw new ExperimentException("No data file was uploaded. Please enter a file name.");
         return files;
     }

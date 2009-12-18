@@ -45,7 +45,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
-import org.labkey.api.pipeline.PipelineProvider;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -314,7 +313,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         for (Map.Entry<String, File> entry : files.entrySet())
         {
-            ExpData data = createData(context.getContainer(), entry.getValue(), entry.getKey(), _dataType);
+            ExpData data = createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), _dataType);
             outputDatas.put(data, "Data");
         }
     }
@@ -553,12 +552,19 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles)
+    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
     {
         List<AssayDataCollector> result = new ArrayList<AssayDataCollector>();
-        if (uploadedFiles != null)
-            result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
-        result.add(new FileUploadDataCollector());
+        if (!PipelineDataCollector.getFileQueue(context).isEmpty())
+        {
+            result.add(new PipelineDataCollector());
+        }
+        else
+        {
+            if (uploadedFiles != null)
+                result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
+            result.add(new FileUploadDataCollector());
+        }
         return result;
     }
 
@@ -572,8 +578,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 Map<String, File> uploadedData = context.getUploadedData();
                 if (uploadedData != null && uploadedData.size() != 0)
                 {
-                    Map.Entry<String, File> entry = uploadedData.entrySet().iterator().next();
-                    file = entry.getValue();
+                    file = uploadedData.get(AssayDataCollector.PRIMARY_FILE);
                     if (runName == null)
                     {
                         runName = file.getName();
@@ -999,11 +1004,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
 
     public ActionURL getImportURL(Container container, ExpProtocol protocol)
-    {
-        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
-    }
-
-    public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, String[] fileNames)
     {
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
     }

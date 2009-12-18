@@ -21,7 +21,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.PublishStartAction;
 import org.labkey.api.study.assay.*;
@@ -85,7 +84,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         view.getDataRegion().addHiddenFormField("returnURL", returnURL);
         if (showControls())
         {
-            if (!AssayPublishService.get().getValidPublishTargets(getUser(), ACL.PERM_INSERT).isEmpty())
+            if (!AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
             {
                 ButtonBar bbar = new ButtonBar(view.getDataRegion().getButtonBar(DataRegion.MODE_GRID));
 

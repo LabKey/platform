@@ -26,11 +26,11 @@ import org.labkey.api.data.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.ACL;
 import org.labkey.api.util.GUID;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.DefaultTransformResult;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.apache.commons.beanutils.ConvertUtils;
 
 import java.util.*;
@@ -194,7 +194,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private List<AssayDataCollector> getDataCollectors()
     {
         if (_collectors == null)
-            _collectors = getProvider().getDataCollectors(Collections.<String, File>emptyMap());
+            _collectors = getProvider().getDataCollectors(Collections.<String, File>emptyMap(), this);
         return _collectors;
     }
 
@@ -338,7 +338,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             {
                 return "[None]";
             }
-            Map<Container, String> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ACL.PERM_READ);
+            Map<Container, String> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
             Container container = ContainerManager.getForId(value);
             String studyName = targets.get(container);
             if (studyName != null)

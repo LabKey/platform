@@ -22,6 +22,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.File;
+
 /**
  * User: jeckels
  * Date: Jan 2, 2009
@@ -52,4 +54,7 @@ public interface AssayUrls extends UrlProvider
     ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container);
 
     ActionURL getDeleteDesignURL(Container container, ExpProtocol protocol);
+
+    /** path and files may be null, in which case it is assumed that the POST will include data object RowIds */
+    ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files);
 }

@@ -17,12 +17,12 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -30,25 +30,22 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.util.*;
 
 /**
  * User: jeckels
  * Date: Apr 13, 2009
  */
-public abstract class PipelineDataCollectorRedirectAction extends SimpleViewAction<PipelineDataCollectorRedirectAction.UploadRedirectForm>
+@RequiresPermissionClass(InsertPermission.class)
+public class PipelineDataCollectorRedirectAction extends SimpleViewAction<PipelineDataCollectorRedirectAction.UploadRedirectForm>
 {
-    /** @return filter to apply to the files in the selected directory */
-    protected abstract FileFilter getFileFilter();
-
-    /** @return URL to actually handle the upload after the file list is stuck in the session */
-    protected abstract ActionURL getUploadURL(ExpProtocol protocol);
-
     public ModelAndView getView(UploadRedirectForm form, BindException errors) throws Exception
     {
         Container container = getViewContext().getContainer();
@@ -69,10 +66,18 @@ public abstract class PipelineDataCollectorRedirectAction extends SimpleViewActi
                 HttpView.throwNotFound("Unable to find file: " + path);
             }
 
-            File[] selectedFiles = f.listFiles(getFileFilter());
-            if (selectedFiles != null)
+            for (String fileName : getViewContext().getRequest().getParameterValues("file"))
             {
-                files.addAll(Arrays.asList(selectedFiles));
+                if (fileName.indexOf("/") != -1 || fileName.indexOf("\\") != -1)
+                {
+                    throw new NotFoundException(fileName);
+                }
+                File file = new File(f, fileName);
+                if (!NetworkDrive.exists(file))
+                {
+                    throw new NotFoundException(fileName);
+                }
+                files.add(file);
             }
         }
         else
@@ -110,10 +115,10 @@ public abstract class PipelineDataCollectorRedirectAction extends SimpleViewActi
         List<Map<String, File>> maps = new ArrayList<Map<String, File>>();
         for (File file : files)
         {
-            maps.add(Collections.singletonMap(file.getName(), file));
+            maps.add(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, file));
         }
         PipelineDataCollector.setFileCollection(getViewContext().getRequest().getSession(true), container, form.getProtocol(), maps);
-        HttpView.throwRedirect(getUploadURL(form.getProtocol()));
+        HttpView.throwRedirect(AssayService.get().getProvider(form.getProtocol()).getImportURL(container, form.getProtocol()));
         return null;
     }
 
@@ -123,7 +128,18 @@ public abstract class PipelineDataCollectorRedirectAction extends SimpleViewActi
      * @param files the selected files
      * @return the subset of the files that should actually be loaded
      */
-    protected abstract List<File> validateFiles(BindException errors, List<File> files);
+    protected List<File> validateFiles(BindException errors, List<File> files)
+    {
+        for (File file : files)
+        {
+            ExpData data = ExperimentService.get().getExpDataByURL(file, getViewContext().getContainer());
+            if (data != null && data.getRun() != null)
+            {
+                errors.addError(new LabkeyError("The file " + file.getAbsolutePath() + " has already been uploaded"));
+            }
+        }
+        return files;
+    }
 
     public NavTree appendNavTrail(NavTree root)
     {

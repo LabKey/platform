@@ -33,7 +33,6 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
@@ -253,7 +252,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
      * @param form the form with posted values
      * @param batchDomain domain for the batch fields
      */
-    protected boolean showBatchStep(FormType form, Domain batchDomain)
+    protected boolean showBatchStep(FormType form, Domain batchDomain) throws ServletException
     {
         DomainProperty[] batchColumns = batchDomain.getProperties();
         return batchColumns != null && batchColumns.length != 0;
@@ -397,12 +396,13 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         saveFinishButton.setActionType(ActionButton.Action.POST);
         bbar.add(saveFinishButton);
 
-        List<AssayDataCollector> collectors = newRunForm.getProvider().getDataCollectors(Collections.<String, File>emptyMap());
+        List<AssayDataCollector> collectors = newRunForm.getProvider().getDataCollectors(Collections.<String, File>emptyMap(), newRunForm);
         for (AssayDataCollector collector : collectors)
         {
-            if (collector.allowAdditionalUpload(newRunForm))
+            AssayDataCollector.AdditionalUploadType t = collector.getAdditionalUploadType(newRunForm);
+            if (t != AssayDataCollector.AdditionalUploadType.Disallowed)
             {
-                ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Save and Import Another Run");
+                ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", t.getButtonText());
                 saveUploadAnotherButton.setScript(insertView.getDataRegion().getJavascriptFormReference(true) + ".multiRunUpload.value = \"true\";");
                 saveUploadAnotherButton.setActionType(ActionButton.Action.POST);
                 bbar.add(saveUploadAnotherButton);
@@ -501,7 +501,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
         {
-            Map<Container, String> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ACL.PERM_READ);
+            Map<Container, String> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
 
             boolean disabled = isDisabledInput();
             out.write("<select name=\"" + _inputName + "\"" + (disabled ? " DISABLED" : "") + ">\n");

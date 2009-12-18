@@ -61,9 +61,9 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
         {
             sb.append(" (");
             sb.append(additionalSets);
-            sb.append(" more file set");
+            sb.append(" more run");
             sb.append(additionalSets > 1 ? "s" : "");
-            sb.append(" available after this run is complete.)");
+            sb.append(" available)");
         }
         return sb.toString();
     }
@@ -73,13 +73,13 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
      */
     protected int getAdditionalFileSetCount(ContextType context)
     {
-        return getFileCollection(context).size() - 1;
+        return getFileQueue(context).size() - 1;
     }
 
     /** @return the files to be processed for the current upload attempt */
     protected Map<String, File> getCurrentFilesForDisplay(ContextType context)
     {
-        List<Map<String, File>> files = getFileCollection(context);
+        List<Map<String, File>> files = getFileQueue(context);
         if (files.isEmpty())
         {
             return Collections.emptyMap();
@@ -94,7 +94,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 
     public String getDescription(ContextType context)
     {
-        List<Map<String, File>> allFiles = getFileCollection(context);
+        List<Map<String, File>> allFiles = getFileQueue(context);
         if (allFiles.isEmpty())
         {
             return "";
@@ -105,25 +105,25 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 
     public static synchronized void setFileCollection(HttpSession session, Container c, ExpProtocol protocol, List<Map<String, File>> files)
     {
-        List<Map<String, File>> existingFiles = getFileCollection(session, c, protocol);
+        List<Map<String, File>> existingFiles = getFileQueue(session, c, protocol);
         existingFiles.clear();
         existingFiles.addAll(files);
     }
 
-    public List<Map<String, File>> getFileCollection(ContextType context)
+    public static List<Map<String, File>> getFileQueue(AssayRunUploadContext context)
     {
-        return getFileCollection(context.getRequest().getSession(true), context.getContainer(), context.getProtocol());
+        return getFileQueue(context.getRequest().getSession(true), context.getContainer(), context.getProtocol());
     }
 
-    private static List<Map<String, File>> getFileCollection(HttpSession session, Container c, ExpProtocol protocol)
+    private static List<Map<String, File>> getFileQueue(HttpSession session, Container c, ExpProtocol protocol)
     {
-        Map<Pair<Container, Integer>, List<Map<String, File>>> collections = (Map<Pair<Container, Integer>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
+        Map<Pair<Container, ExpProtocol>, List<Map<String, File>>> collections = (Map<Pair<Container, ExpProtocol>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
         if (collections == null)
         {
-            collections = new HashMap<Pair<Container, Integer>, List<Map<String, File>>>();
+            collections = new HashMap<Pair<Container, ExpProtocol>, List<Map<String, File>>>();
             session.setAttribute(PipelineDataCollector.class.getName(), collections);
         }
-        Pair<Container, Integer> key = new Pair<Container, Integer>(c, protocol.getRowId());
+        Pair<Container, ExpProtocol> key = new Pair<Container, ExpProtocol>(c, protocol);
         List<Map<String, File>> result = collections.get(key);
         if (result == null)
         {
@@ -135,7 +135,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 
     public Map<String, File> createData(ContextType context) throws IOException
     {
-        List<Map<String, File>> files = getFileCollection(context);
+        List<Map<String, File>> files = getFileQueue(context);
         if (files.isEmpty())
         {
             throw new FileNotFoundException("No files from the pipeline directory have been selected");
@@ -150,15 +150,19 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 
     public void uploadComplete(ContextType context)
     {
-        List<Map<String, File>> files = getFileCollection(context);
+        List<Map<String, File>> files = getFileQueue(context);
         if (!files.isEmpty())
         {
             files.remove(0);
         }
     }
 
-    public boolean allowAdditionalUpload(ContextType context)
+    public AdditionalUploadType getAdditionalUploadType(ContextType context)
     {
-        return getFileCollection(context).size() > 1; 
+        if (getFileQueue(context).size() > 1)
+        {
+            return AdditionalUploadType.AlreadyUploaded;
+        }
+        return AdditionalUploadType.Disallowed;
     }
 }

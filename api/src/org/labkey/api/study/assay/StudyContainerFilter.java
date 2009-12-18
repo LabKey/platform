@@ -17,7 +17,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,7 +54,7 @@ public class StudyContainerFilter extends ContainerFilter
             }
             else
             {
-                _ids = ContainerFilter.toIds(AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ACL.PERM_READ).keySet());
+                _ids = ContainerFilter.toIds(AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ReadPermission.class).keySet());
             }
         }
         return _ids;

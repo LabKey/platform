@@ -9,11 +9,13 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 
 import java.util.List;
+import java.util.Collections;
 import java.io.File;
 
 /**
@@ -49,12 +51,13 @@ public class AssayPipelineProvider extends PipelineProvider
         if (files != null && files.length > 0)
         {
             List<ExpProtocol> assays = AssayService.get().getAssayProtocols(context.getContainer());
+            Collections.sort(assays, ExpObject.NAME_COMPARATOR);
             NavTree navTree = new NavTree(_actionDescription);
             for (ExpProtocol protocol : assays)
             {
                 if (AssayService.get().getProvider(protocol) == _assayProvider)
                 {
-                    ActionURL url = _assayProvider.getImportURL(context.getContainer(), protocol, pr.relativePath(new File(directory.getURI())), new String[0]); 
+                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), protocol, pr.relativePath(new File(directory.getURI())), files); 
                     NavTree child = new NavTree("Use " + protocol.getName(), url);
                     child.setId(_actionDescription + ":Use " + protocol.getName());
                     navTree.addChild(child);

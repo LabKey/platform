@@ -53,7 +53,9 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
 
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException
     {
-        if (_uploadComplete)            return Collections.emptyMap();        ExpProtocol protocol = context.getProtocol();
+        if (_uploadComplete)
+            return Collections.emptyMap();
+        ExpProtocol protocol = context.getProtocol();
         String data = context.getRequest().getParameter(FORM_ELEMENT_NAME);
         if (data == null)
         {
@@ -69,7 +71,7 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
         ByteArrayInputStream bIn = new ByteArrayInputStream(data.getBytes(context.getRequest().getCharacterEncoding()));
 
         writeFile(bIn, file);
-        return Collections.singletonMap(file.getName(), file);
+        return Collections.singletonMap(PRIMARY_FILE, file);
     }
 
     public boolean isVisible()

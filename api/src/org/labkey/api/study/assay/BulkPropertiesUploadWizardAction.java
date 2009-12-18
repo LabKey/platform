@@ -46,7 +46,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
     }
 
     @Override
-    protected boolean showBatchStep(FormType runForm, Domain uploadDomain)
+    protected boolean showBatchStep(FormType runForm, Domain uploadDomain) throws ServletException
     {
         return true;
     }
@@ -90,15 +90,15 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
 
                 // Hold on to a copy of the original file list so that we can reset the selection state if one of them fails
                 List<Map<String, File>> allFiles =
-                        new ArrayList<Map<String, File>>(collector.getFileCollection(form));
+                        new ArrayList<Map<String, File>>(collector.getFileQueue(form));
                 boolean success = false;
                 ExperimentService.get().beginTransaction();
                 try
                 {
-                    boolean hasMoreRuns;
+                    AssayDataCollector.AdditionalUploadType additionalStatus;
                     do
                     {
-                        hasMoreRuns = collector.allowAdditionalUpload(form);
+                        additionalStatus = collector.getAdditionalUploadType(form);
                         form.getUploadedData();
                         form.getBulkProperties();
                         validatePostedProperties(form.getRunProperties(), errors);
@@ -109,7 +109,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                         runs.add(handler.saveExperimentRun(form));
                         form.clearUploadedData();
                     }
-                    while (hasMoreRuns);
+                    while (additionalStatus == AssayDataCollector.AdditionalUploadType.AlreadyUploaded);
                     success = true;
                     ExperimentService.get().commitTransaction();
                     return runs;
