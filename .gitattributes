@@ -1774,8 +1774,11 @@ search/lib/lucene-core-2.9.1.jar -text
 search/lib/lucene-snowball-2.9.1.jar -text
 search/lib/tika-app-0.5.jar -text
 search/module.properties -text
-search/resources/schemas/dbscripts/postgresql/search-0.00-0.02.sql -text
-search/resources/schemas/dbscripts/sqlserver/search-0.00-0.02.sql -text
+search/resources/schemas/dbscripts/postgresql/search-0.00-0.03.sql -text
+search/resources/schemas/dbscripts/postgresql/search-0.02-0.03.sql -text
+search/resources/schemas/dbscripts/sqlserver/search-0.00-0.03.sql -text
+search/resources/schemas/dbscripts/sqlserver/search-0.02-0.03.sql -text
+search/resources/schemas/search.xml -text
 search/src/META-INF/search_jars.txt -text
 search/src/org/labkey/search/SearchContainerListener.java -text
 search/src/org/labkey/search/SearchController.java -text

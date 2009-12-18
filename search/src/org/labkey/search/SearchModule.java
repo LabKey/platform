@@ -33,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 public class SearchModule extends DefaultModule
 {
@@ -43,12 +44,18 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.02;
+        return 0.03;
     }
 
     public boolean hasScripts()
     {
-        return false;
+        return true;
+    }
+
+    @Override
+    public Set<String> getSchemaNames()
+    {
+        return Collections.singleton("search");
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
