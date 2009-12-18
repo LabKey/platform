@@ -37,14 +37,17 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.study.assay.AssayPipelineProvider;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.FileType;
 import org.labkey.api.view.*;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.study.assay.xml.ProviderType;
 import org.labkey.study.controllers.assay.AssayController;
+import org.labkey.study.StudyModule;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.script.ScriptEngineManager;
@@ -78,6 +81,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private File viewsDir;
     private String name;
     private String description;
+    private FileType[] inputFileSuffices = new FileType[0];
 
     private FieldKey participantIdKey;
     private FieldKey visitIdKey;
@@ -150,6 +154,11 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 specimenIdKey = FieldKey.fromString(fieldKeys.getSpecimenId());
         }
 
+        inputFileSuffices = new FileType[providerConfig.getInputDataFileSuffixArray().length];
+        for (int i = 0; i < inputFileSuffices.length; i++)
+        {
+            inputFileSuffices[i] = new FileType(providerConfig.getInputDataFileSuffixArray(i));
+        }
     }
 
     @Override
@@ -458,13 +467,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController.ModuleAssayUploadAction.class);
     }
 
-    public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, String[] fileNames)
-    {
-        if (!hasUploadView())
-            return super.getImportURL(container, protocol);
-        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController.ModuleAssayUploadAction.class);
-    }
-
     protected boolean hasUploadView()
     {
         return hasCustomView(UPLOAD_VIEW_FILENAME);
@@ -538,6 +540,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public PipelineProvider getPipelineProvider()
     {
-        return null;
+        return new AssayPipelineProvider(StudyModule.class,
+                new PipelineProvider.FileTypesEntryFilter(inputFileSuffices), this, "Import " + getName());
     }
 }

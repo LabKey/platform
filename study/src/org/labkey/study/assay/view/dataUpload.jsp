@@ -46,7 +46,7 @@
                     {
                     }
 
-                    for (AssayDataCollector collector : bean.getProvider().getDataCollectors(uploadedData))
+                    for (AssayDataCollector collector : bean.getProvider().getDataCollectors(uploadedData, bean))
                     {
                         if (collector.isVisible())
                         {

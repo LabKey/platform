@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
@@ -80,7 +81,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     /**
      * Container -> study label
      */
-    public Map<Container, String> getValidPublishTargets(User user, int permission)
+    public Map<Container, String> getValidPublishTargets(User user, Class<? extends Permission> permission)
     {
         final Set<Container> allowedContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), user, permission);
         Map<Container, String> result = new TreeMap<Container, String>(new Comparator<Container>()

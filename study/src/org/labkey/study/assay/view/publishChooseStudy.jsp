@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.actions.PublishStartAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
@@ -31,6 +30,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();
@@ -111,7 +111,7 @@
                 <select name="targetStudy">
                 <%
 
-                    Map<Container, String> targets = AssayPublishService.get().getValidPublishTargets(getViewContext().getUser(), ACL.PERM_INSERT);
+                    Map<Container, String> targets = AssayPublishService.get().getValidPublishTargets(getViewContext().getUser(), InsertPermission.class);
                     for (Map.Entry<Container, String> target : targets.entrySet())
                     {
                         String path = target.getKey().getPath();

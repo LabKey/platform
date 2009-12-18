@@ -135,9 +135,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return "Imports Complete Blood Count data files.";
     }
 
-    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles)
+    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
     {
-        List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles);
+        List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles, context);
         result.add(0, new TextAreaDataCollector());
         result.add(new PipelineDataCollector());
         return result;

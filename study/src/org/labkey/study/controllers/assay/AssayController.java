@@ -80,6 +80,7 @@ public class AssayController extends SpringActionController
             PublishStartAction.class,
             PublishConfirmAction.class,
             UploadWizardAction.class,
+            PipelineDataCollectorRedirectAction.class,
             DeleteAction.class,
             DesignerAction.class,
             TemplateAction.class,
@@ -869,6 +870,22 @@ public class AssayController extends SpringActionController
         public ActionURL getDeleteDesignURL(Container container, ExpProtocol protocol)
         {
             return getProtocolURL(container, protocol, DeleteAction.class);
+        }
+
+        public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files)
+        {
+            ActionURL url = new ActionURL(PipelineDataCollectorRedirectAction.class, container);
+            url.addParameter("protocolId", protocol.getRowId());
+            if (path != null)
+            {
+                assert files != null : "If you specify a path you must include files as well";
+                url.addParameter("path", path);
+                for (File file : files)
+                {
+                    url.addParameter("file", file.getName());
+                }
+            }
+            return url;
         }
     }
 }

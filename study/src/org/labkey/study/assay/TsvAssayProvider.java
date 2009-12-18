@@ -60,10 +60,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             FieldKey.fromParts("ObjectId")));
     }
 
-    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles)
+    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
     {
-        List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles);
-        result.add(0, new TextAreaDataCollector());
+        List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles, context);
+        if (PipelineDataCollector.getFileQueue(context).isEmpty())
+        {
+            result.add(0, new TextAreaDataCollector());
+        }
         return result;
     }
 
