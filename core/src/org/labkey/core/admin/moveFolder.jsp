@@ -50,7 +50,7 @@
     <%
         boolean showAll = form.isShowAll() || c.isProject();
         ActionURL moveURL = AdminController.getMoveFolderURL(c, form.isAddAlias());    // Root is placeholder -- will get replaced by container tree
-        AdminController.MoveContainerTree ct = new AdminController.MoveContainerTree(showAll ? "/" : c.getProject().getName(), ctx.getUser(), ACL.PERM_ADMIN, moveURL);
+        AdminController.MoveContainerTree ct = new AdminController.MoveContainerTree(showAll ? "/" : c.getProject().getName(), ctx.getUser(), moveURL);
         ct.setIgnore(c);        // Can't set a folder's parent to itself or its children
         ct.setInitialLevel(1);  // Use as left margin
     %>

@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.core.admin.AdminController.*"%>
 <%@ page import="java.util.List"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -31,7 +32,7 @@
     final ViewContext ctx = me.getViewContext();
     final Container c = ctx.getContainer();
     final ActionURL currentUrl = ctx.cloneActionURL();
-    final ContainerTreeSelected ct = new ContainerTreeSelected(c.getProject().getName(), ctx.getUser(), ACL.PERM_ADMIN, currentUrl, "managefolders");
+    final ContainerTreeSelected ct = new ContainerTreeSelected(c.getProject().getName(), ctx.getUser(), AdminPermission.class, currentUrl, "managefolders");
     Container parent = c.getParent();
     List<Container> siblings = parent == null ? null : parent.getChildren();
     boolean hasSiblings = siblings != null && siblings.size() > 1;

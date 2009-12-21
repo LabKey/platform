@@ -314,7 +314,7 @@ public class AssayController extends SpringActionController
             final User user = getViewContext().getUser();
             final ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
 
-            ContainerTree tree = new ContainerTree("/", getUser(), DesignAssayPermission.class, null, null)
+            ContainerTree tree = new ContainerTree("/", getUser(), DesignAssayPermission.class, null)
             {
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)

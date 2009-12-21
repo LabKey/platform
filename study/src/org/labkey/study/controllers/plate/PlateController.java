@@ -284,7 +284,7 @@ public class PlateController extends SpringActionController
         {
             _templateName = templateName;
             _selectedDestination = selectedDestination;
-            ContainerTree tree = new ContainerTree("/", user, ACL.PERM_INSERT, null)
+            ContainerTree tree = new ContainerTree("/", user, InsertPermission.class, null)
             {
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)

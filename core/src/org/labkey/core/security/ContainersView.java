@@ -17,9 +17,9 @@
 package org.labkey.core.security;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerTreeSelected;
 import org.labkey.api.util.PageFlowUtil;
@@ -60,7 +60,7 @@ public class ContainersView extends WebPartView
     public void renderView(Object model, PrintWriter out) throws IOException, ServletException
     {
         ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(_c);
-        PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), ACL.PERM_ADMIN, url);
+        PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), url);
         ct.setCurrent(getViewContext().getContainer());
         LookAndFeelProperties props = LookAndFeelProperties.getInstance(getViewContext().getContainer());
         StringBuilder html = new StringBuilder("<div id='" + _id + "' class='extContainer " + _className+ "'><table class=\"labkey-data-region\" style=\"" + props.getNavigationBarWidth() + "px\">");
@@ -73,9 +73,9 @@ public class ContainersView extends WebPartView
 
     public static class PermissionsContainerTree extends ContainerTreeSelected
     {
-        public PermissionsContainerTree(String rootPath, User user, int perm, ActionURL url)
+        public PermissionsContainerTree(String rootPath, User user, ActionURL url)
         {
-            super(rootPath, user, perm, url);
+            super(rootPath, user, AdminPermission.class, url);
         }
 
         protected void renderCellContents(StringBuilder html, Container c, ActionURL url)

@@ -21,7 +21,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
@@ -184,7 +183,7 @@ public class caBIGController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
             ActionURL currentUrl = getViewContext().getActionURL();
-            caBIGHierarchyTree tree = new caBIGHierarchyTree(getContainer().getPath(), getUser(), ACL.PERM_ADMIN, currentUrl);
+            caBIGHierarchyTree tree = new caBIGHierarchyTree(getContainer().getPath(), getUser(), currentUrl);
 
             StringBuilder html = new StringBuilder();
             html.append("<script type=\"text/javascript\">\n").append("LABKEY.requiresScript('DataRegion.js');\n").append("</script>");
@@ -260,9 +259,9 @@ public class caBIGController extends SpringActionController
         private static String _unauthorizedButton = PageFlowUtil.generateDisabledButton("Not Authorized");
         private ActionURL _currentUrl;
 
-        private caBIGHierarchyTree(String rootPath, User user, int perm, ActionURL currentUrl)
+        private caBIGHierarchyTree(String rootPath, User user, ActionURL currentUrl)
         {
-            super(rootPath, user, perm, currentUrl);
+            super(rootPath, user, AdminPermission.class, currentUrl);
             _currentUrl = currentUrl;
         }
 

@@ -1094,7 +1094,7 @@ public class WikiController extends SpringActionController
             //get projects and folders for which user has admin permissions
             Container c = getContainer();
             ActionURL currentURL = getViewContext().cloneActionURL();
-            ContainerTreeSelected ct = new ContainerTreeSelected("/", getUser(), ACL.PERM_ADMIN, currentURL);
+            ContainerTreeSelected ct = new ContainerTreeSelected("/", getUser(), AdminPermission.class, currentURL);
             ct.setCurrent(c);
             ct.setInitialLevel(1);
 

@@ -4099,9 +4099,9 @@ public class AdminController extends SpringActionController
     {
         private Container ignore;
 
-        public MoveContainerTree(String rootPath, User user, int perm, ActionURL url)
+        public MoveContainerTree(String rootPath, User user, ActionURL url)
         {
-            super(rootPath, user, perm, url);
+            super(rootPath, user, AdminPermission.class, url);
         }
 
         public void setIgnore(Container c)
