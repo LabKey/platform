@@ -1022,6 +1022,8 @@ abstract public class PipelineJob extends Job implements Serializable
 
             // tell more modern TPP tools to run headless (so no perl calls etc) bpratt 4-14-09
             pb.environment().put("XML_ONLY", "1");
+            // tell TPP tools not to mess with tmpdirs, we handle this at higher level
+            pb.environment().put("WEBSERVER_TMP","");
 
             try
             {
