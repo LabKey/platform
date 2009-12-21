@@ -17,10 +17,10 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
@@ -42,20 +42,9 @@ public class ContainerTree
     private String _purpose;
     private int _initialLevel = 0;
 
-    public ContainerTree(String rootPath, User user, int perm)
-    {
-        init(rootPath, user, perm, null, null);
-    }
-
-
-    public ContainerTree(String rootPath, User user, int perm, ActionURL url)
+    public ContainerTree(String rootPath, User user, Class<? extends Permission> perm, ActionURL url)
     {
         init(rootPath, user, perm, url, null);
-    }
-
-    public ContainerTree(String rootPath, User user, int perm, ActionURL url, String purpose)
-    {
-        init(rootPath, user, perm, url, purpose);
     }
 
     public ContainerTree(String rootPath, User user, Class<? extends Permission> perm, ActionURL url, String purpose)
@@ -63,12 +52,7 @@ public class ContainerTree
         init(rootPath, user, perm, url, purpose);
     }
 
-    private void init(String rootPath, User user, int perm, ActionURL url, String purpose)
-    {
-        init(rootPath, user, ACL.translatePermission(perm), url, purpose);
-    }
-
-    private void init(String rootPath, User user, Class<? extends Permission> perm, ActionURL url, String purpose)
+    private void init(String rootPath, User user, Class<? extends Permission> perm, ActionURL url, @Nullable String purpose)
     {
         _root = ContainerManager.getForPath(rootPath);
         _user = user;

@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -28,12 +29,12 @@ public class ContainerTreeSelected extends ContainerTree
 {
     protected Container current;
 
-    public ContainerTreeSelected(String rootPath, User user, int perm, ActionURL url, String purpose)
+    public ContainerTreeSelected(String rootPath, User user, Class<? extends Permission> perm, ActionURL url, String purpose)
     {
         super(rootPath, user, perm, url, purpose);
     }
     
-    public ContainerTreeSelected(String rootPath, User user, int perm, ActionURL url)
+    public ContainerTreeSelected(String rootPath, User user, Class<? extends Permission> perm, ActionURL url)
     {
         super(rootPath, user, perm, url);
     }

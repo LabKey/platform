@@ -15,11 +15,11 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.util.ContainerTree;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.ContainerTree;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
 
@@ -35,7 +35,7 @@ public abstract class PipelineRootContainerTree extends ContainerTree
 
     public PipelineRootContainerTree(User user, ActionURL url)
     {
-        super("/", user, ACL.PERM_INSERT, url);
+        super("/", user, InsertPermission.class, url);
     }
     
     /** Look up the chain until we find one or reach the root */
