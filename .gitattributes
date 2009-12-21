@@ -1768,10 +1768,10 @@ query/webapp/reports/r.gif -text
 query/webapp/reports/xls.gif -text
 search/Search.iml -text
 search/build.xml -text
-search/lib/lucene-2.9.1-src.zip -text
-search/lib/lucene-2.9.1.zip -text
-search/lib/lucene-core-2.9.1.jar -text
-search/lib/lucene-snowball-2.9.1.jar -text
+search/lib/lucene-3.0.0-src.zip -text
+search/lib/lucene-3.0.0.zip -text
+search/lib/lucene-core-3.0.0.jar -text
+search/lib/lucene-snowball-3.0.0.jar -text
 search/lib/tika-app-0.5.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/search-0.00-0.03.sql -text

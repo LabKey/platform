@@ -271,8 +271,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private synchronized IndexWriter getIndexWriter() throws IOException
     {
+        // CONSIDER: Set a large, but finite max field length if we get OutOfMemory errors during indexing
         if (null == _iw)
-            _iw = new IndexWriter(_directory, _analyzer);
+            _iw = new IndexWriter(_directory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
 
         return _iw;
     }
@@ -295,7 +296,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             int hitsPerPage = 20;
 
             long start = System.nanoTime();
-            Query query = new QueryParser("body", _analyzer).parse(queryString.toLowerCase());
+            Query query = new QueryParser(Version.LUCENE_30, "body", _analyzer).parse(queryString.toLowerCase());
 
             TopDocs topDocs;
             IndexSearcher searcher = getIndexSearcher();
@@ -304,7 +305,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (null == sort)
                 topDocs = searcher.search(query, securityFilter, hitsPerPage);
             else
-                topDocs = searcher.search(query, securityFilter, hitsPerPage, new Sort(new SortField(sort, SortField.AUTO)));
+                topDocs = searcher.search(query, securityFilter, hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
 
             ScoreDoc[] hits = topDocs.scoreDocs;
 

@@ -89,7 +89,7 @@ public class LuceneSearch
 
             Analyzer analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
 
-            iw = new IndexWriter(directory, analyzer);
+            iw = new IndexWriter(directory, analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
 
             iw.deleteAll();
 
@@ -157,14 +157,14 @@ public class LuceneSearch
         int hitsPerPage = 20;
 
         long start = System.nanoTime();
-        Query query = new QueryParser("Title", analyzer).parse(queryString);
+        Query query = new QueryParser(Version.LUCENE_30, "Title", analyzer).parse(queryString);
 
         TopDocs topDocs;
 
         if (null == sort)
             topDocs = searcher.search(query, hitsPerPage);
         else
-            topDocs = searcher.search(query, null, hitsPerPage, new Sort(new SortField(sort, SortField.AUTO)));
+            topDocs = searcher.search(query, null, hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
 
         ScoreDoc[] hits = topDocs.scoreDocs;
 
