@@ -499,17 +499,24 @@ public abstract class DefaultModule implements Module
         Set<String> fileNames = new HashSet<String>();
         File dir;
 
+        String sqlScriptsPath = getSqlScriptsPath(dialect);
         if (_loadFromSource)
-            dir = new File(new File(_sourcePath, "resources"), getSqlScriptsPath(dialect));
-        else
-            dir = new File(_explodedPath, getSqlScriptsPath(dialect));
-
-        if(dir.exists() && dir.isDirectory())
         {
-            for(File script : dir.listFiles())
+            dir = new File(_sourcePath, sqlScriptsPath);
+            if (!dir.isDirectory())
+                dir = new File(_sourcePath, "resources/" + sqlScriptsPath);
+            if (!dir.isDirectory())
+                dir = new File(_sourcePath, "src/" + sqlScriptsPath);
+        }
+        else
+            dir = new File(_explodedPath, sqlScriptsPath);
+
+        if (dir.isDirectory())
+        {
+            for (File script : dir.listFiles())
             {
                 String name = script.getName().toLowerCase();
-                if(name.endsWith(".sql") && (null == schemaName || name.startsWith(schemaName + "-")))
+                if (name.endsWith(".sql") && (null == schemaName || name.startsWith(schemaName + "-")))
                     fileNames.add(script.getName());
             }
         }
