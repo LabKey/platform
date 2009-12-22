@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.wiki.permissions;
+package org.labkey.announcements.model;
 
+import org.labkey.announcements.AnnouncementModule;
 import org.labkey.api.security.permissions.AbstractPermission;
-import org.labkey.wiki.WikiModule;
 
 /*
-* User: Dave
-* Date: May 7, 2009
-* Time: 11:36:42 AM
+* User: adam
+* Date: Dec 22, 2009
+* Time: 10:33:21 AM
 */
-public class IncludeScriptPermission extends AbstractPermission
+public class SecureMessageBoardRespondPermission extends AbstractPermission
 {
-    public IncludeScriptPermission()
+    public SecureMessageBoardRespondPermission()
     {
-        super("Include Script", "Allows the user to include client-side script in wiki pages",
-                WikiModule.class);
+        super("Secure message board respond", "Allows user to respond to any message in a secure message board", AnnouncementModule.class);
     }
 }

@@ -26,25 +26,25 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.security.ACL;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
-import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.TabLoader;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -65,7 +65,7 @@ public class PropertyController extends SpringActionController
         setActionResolver(_actionResolver);
     }
     
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class EditDomainAction extends SimpleViewAction<DomainForm>
     {
         private Domain _domain;

@@ -31,9 +31,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
@@ -160,7 +159,7 @@ public class CoreController extends SpringActionController
         abstract Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception;
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     public class ThemeStylesheetAction extends BaseStylesheetAction
@@ -184,7 +183,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     public class CustomStylesheetAction extends BaseStylesheetAction
     {
@@ -235,7 +234,7 @@ public class CoreController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     public class ContainerRedirectAction extends SimpleRedirectAction<RedirectForm>
     {
@@ -311,7 +310,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class GetAttachmentIconAction extends SimpleViewAction<GetAttachmentIconForm>
     {
         public ModelAndView getView(GetAttachmentIconForm form, BindException errors) throws Exception

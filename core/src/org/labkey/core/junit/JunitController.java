@@ -16,13 +16,16 @@
 
 package org.labkey.core.junit;
 
-import junit.framework.*;
+import junit.framework.TestCase;
+import junit.framework.TestFailure;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
 import org.apache.commons.lang.time.FastDateFormat;
+import org.json.JSONObject;
 import org.labkey.api.action.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
@@ -31,7 +34,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -263,7 +265,7 @@ public class JunitController extends SpringActionController
     private static final LinkedList<String> list = new LinkedList<String>();
     private static final Format format = FastDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class AliveAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -384,7 +386,7 @@ public class JunitController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class EchoFormAction implements Controller
     {
         public ModelAndView handleRequest(HttpServletRequest req, HttpServletResponse res) throws Exception

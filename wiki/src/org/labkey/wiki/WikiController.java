@@ -2006,7 +2006,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CollapseExpandAction extends FormViewAction<CollapseExpandForm>
     {
 
@@ -3227,7 +3227,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class TransformWikiAction extends ApiAction<TransformWikiForm>
     {
         public ApiResponse execute(TransformWikiForm form, BindException errors) throws Exception
@@ -3393,7 +3393,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class SetEditorPreferenceAction extends ApiAction<SetEditorPreferenceForm>
     {
         public static final String CAT_EDITOR_PREFERENCE = "editorPreference";
@@ -3427,7 +3427,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class SetTocPreferenceAction extends ApiAction<SetTocPreferenceForm>
     {
         public static final String PROP_TOC_DISPLAYED = "displayToc";

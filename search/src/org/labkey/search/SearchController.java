@@ -175,7 +175,7 @@ public class SearchController extends SpringActionController
             if (StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
                 return searchBox;
 
-            String results = ss.search(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot());
+            String results = ss.search(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot(), form.getPage());
 
             return new VBox(searchBox, new HtmlView("<div id='searchResults'>" + results + "</div>"));
         }
@@ -194,6 +194,7 @@ public class SearchController extends SpringActionController
         private boolean _print = false;
         private boolean _guest = false;       // TODO: Just for testing
         private String _statusMessage;
+        private int _page = 0;
 
         public String getQuery()
         {
@@ -243,6 +244,16 @@ public class SearchController extends SpringActionController
         public void setGuest(boolean guest)
         {
             _guest = guest;
+        }
+
+        public int getPage()
+        {
+            return _page;
+        }
+
+        public void setPage(int page)
+        {
+            _page = page;
         }
     }
 }

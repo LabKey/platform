@@ -16,12 +16,13 @@
 
 package org.labkey.announcements.model;
 
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager.PermissionSet;
 import org.labkey.api.security.User;
-import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 /**
  * User: adam
@@ -43,11 +44,11 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
             return true;
         
         // Editors can read all messages
-        if (hasPermission(EDITOR_PERM))
+        if (hasPermission(SecureMessageBoardReadPermission.class))
             return true;
 
         // If not an editor, message board must have a member list, user must be on it, and user must have read permissions
-        return _settings.hasMemberList() && hasPermission(ACL.PERM_READ) && ann.getMemberList().contains(_user);
+        return _settings.hasMemberList() && hasPermission(ReadPermission.class) && ann.getMemberList().contains(_user);
     }
 
     public boolean allowDeleteMessage(Announcement ann)
@@ -63,11 +64,11 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
     public boolean allowResponse(Announcement ann)
     {
         // Editors can respond to any message
-        if (hasPermission(EDITOR_PERM))
+        if (hasPermission(SecureMessageBoardRespondPermission.class))
             return true;
 
         // If not an editor, message board must have a member list, user must be on it, and user must have insert permissions
-        return _settings.hasMemberList() && hasPermission(ACL.PERM_INSERT) && ann.getMemberList().contains(_user);
+        return _settings.hasMemberList() && hasPermission(InsertPermission.class) && ann.getMemberList().contains(_user);
     }
 
     public boolean allowUpdate(Announcement ann)
@@ -79,7 +80,8 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
     {
         SimpleFilter filter = super.getThreadFilter();
 
-        if (!hasPermission(EDITOR_PERM))
+        // Filter for non-editors
+        if (!hasPermission(SecureMessageBoardReadPermission.class))
             filter.addWhereClause("RowId IN (SELECT MessageId FROM " + _comm.getTableInfoMemberList() + " WHERE UserId = ?)", new Object[]{_user.getUserId()});
 
         return filter;

@@ -132,7 +132,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class BeginAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -317,7 +317,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @AllowedDuringUpgrade
     public class MaintenanceAction extends SimpleViewAction
     {
@@ -341,7 +341,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class ContainerIdAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -361,7 +361,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class GuidAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -372,7 +372,7 @@ public class AdminController extends SpringActionController
 
 
     // No security checks... anyone (even guests) can view the credits page
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CreditsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -3729,7 +3729,7 @@ public class AdminController extends SpringActionController
 
     // For backward compatibility only -- old welcomeWiki text has link to admin/modifyFolder.view?action=create 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class ModifyFolderAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception

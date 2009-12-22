@@ -20,11 +20,10 @@ import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -431,7 +430,7 @@ public class TestController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class PermNoneAction extends PermAction
     {
         public PermNoneAction()

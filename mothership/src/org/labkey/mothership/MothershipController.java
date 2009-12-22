@@ -38,10 +38,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -601,7 +598,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class ReportExceptionAction extends SimpleViewAction<ExceptionForm>
     {
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
@@ -666,7 +663,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CheckForUpdatesAction extends SimpleViewAction<UpdateCheckForm>
     {
         public ModelAndView getView(UpdateCheckForm form, BindException errors) throws Exception

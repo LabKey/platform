@@ -615,7 +615,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     public class ExcelWebQueryAction extends ExportRowsTsvAction
     {
@@ -2083,7 +2083,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE) //will check below
+    @RequiresNoPermission //will check below
     public class SaveRowsAction extends BaseSaveRowsAction
     {
         private static final String PROP_VALUES = "values";
@@ -2549,7 +2549,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CheckSyntaxAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException bindErrors) throws Exception
@@ -3151,7 +3151,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class GetServerDateAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception

@@ -28,6 +28,9 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
@@ -124,6 +127,13 @@ public class AnnouncementModule extends DefaultModule
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
         AuditLogService.get().addAuditViewFactory(MessageAuditViewFactory.getInstance());
+
+        // Editors can read and respond to secure message boards
+        RoleManager.registerPermission(new SecureMessageBoardReadPermission());
+        RoleManager.registerPermission(new SecureMessageBoardRespondPermission());
+        Role editor = RoleManager.getRole(EditorRole.class);
+        editor.addPermission(SecureMessageBoardReadPermission.class);
+        editor.addPermission(SecureMessageBoardRespondPermission.class);
 
         DailyDigest.setTimer();
 

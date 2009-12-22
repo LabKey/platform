@@ -607,7 +607,7 @@ public class ReportsController extends SpringActionController
     }
 */
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CreateRReportAction extends FormViewAction<RReportBean>
     {
         public void validateCommand(RReportBean target, Errors errors)
@@ -639,7 +639,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
     {
         public void validateCommand(ScriptReportBean target, Errors errors)
@@ -782,7 +782,7 @@ public class ReportsController extends SpringActionController
             HttpView.throwUnauthorized("Only members of the Site Admin and Site Developers groups are allowed to create and edit R views.");
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class SaveRReportAction extends CreateRReportAction
     {
         private Report _report;

@@ -167,7 +167,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public String search(String queryString, User user, Container root)
+    public String search(String queryString, User user, Container root, int page)
     {
         return null;
     }

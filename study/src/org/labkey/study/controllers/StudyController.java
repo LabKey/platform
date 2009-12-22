@@ -836,7 +836,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class ExpandStateNotifyAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6136,7 +6136,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CheckForReload extends ManageReloadAction    // Subclassing makes it easier to redisplay errors, etc.
     {
         @Override

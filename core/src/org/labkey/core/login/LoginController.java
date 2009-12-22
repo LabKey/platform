@@ -217,7 +217,8 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE) @ActionNames("login, showLogin")
+    @RequiresNoPermission
+    @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     public class LoginAction extends FormViewAction<LoginForm>
@@ -457,7 +458,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     public class AgreeToTermsAction extends FormViewAction<LoginForm>
     {
@@ -713,7 +714,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     public class LogoutAction extends RedirectAction
@@ -750,7 +751,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @AllowedDuringUpgrade
     public class SetPasswordAction extends FormViewAction<VerifyForm>
     {
@@ -965,7 +966,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @AllowedDuringUpgrade
     public class ResetPasswordAction extends FormViewAction<LoginForm>
     {
@@ -1087,7 +1088,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @AllowedDuringUpgrade
     public class InitialUserAction extends FormViewAction<InitialUserForm>
     {
@@ -1227,7 +1228,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     @IgnoresTermsOfUse
     public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
@@ -1278,7 +1279,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class InvalidateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception

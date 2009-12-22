@@ -400,7 +400,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     private abstract class DavAction implements Controller
     {
         final String method;
@@ -478,7 +478,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class GetAction extends DavAction
     {
         public GetAction()
@@ -609,7 +609,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class DavmountAction extends GetAction
     {
         public DavmountAction()
@@ -619,7 +619,7 @@ public class DavController extends SpringActionController
     }
 
     
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class HeadAction extends GetAction
     {
         public HeadAction()
@@ -660,7 +660,7 @@ public class DavController extends SpringActionController
      * <input type="file" name="file">
      * </form>
      */
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class PostAction extends PutAction
     {
         public PostAction()
@@ -732,7 +732,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class PropfindAction extends DavAction
     {
         Resource _resource = null;
@@ -1003,7 +1003,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class JsonAction extends PropfindAction
     {
         // depth > 1 NYI
@@ -1728,7 +1728,7 @@ public class DavController extends SpringActionController
 
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class MkcolAction extends DavAction
     {
         public MkcolAction()
@@ -1811,7 +1811,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class PutAction extends DavAction
     {
         // this is a member so PostAction() can set it
@@ -1972,7 +1972,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class DeleteAction extends DavAction
     {
         public DeleteAction()
@@ -2148,7 +2148,7 @@ public class DavController extends SpringActionController
     }
     
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class TraceAction extends DavAction
     {
         public TraceAction()
@@ -2158,7 +2158,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class PropPatchAction extends DavAction
     {
         public PropPatchAction()
@@ -2175,7 +2175,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class CopyAction extends DavAction
     {
         public CopyAction()
@@ -2192,7 +2192,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class MoveAction extends DavAction
     {
         public MoveAction()
@@ -2318,7 +2318,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class LockAction extends DavAction
     {
         public LockAction()
@@ -2328,7 +2328,7 @@ public class DavController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class UnlockAction extends DavAction
     {
         public UnlockAction()
@@ -2338,7 +2338,7 @@ public class DavController extends SpringActionController
     }
 
     
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class OptionsAction extends DavAction
     {
         public OptionsAction()

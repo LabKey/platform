@@ -586,7 +586,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)  // Custom permission checking in base class to handle owner-delete
+    @RequiresNoPermission  // Custom permission checking in base class to handle owner-delete
     public class DeleteThreadAction extends DeleteMessageAction
     {
         String getWhat()
@@ -606,7 +606,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)  // Custom permission checking in base class to handle owner-delete
+    @RequiresNoPermission  // Custom permission checking in base class to handle owner-delete
     public class DeleteResponseAction extends DeleteMessageAction
     {
         String getWhat()
@@ -785,7 +785,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)    // Permission checking done in verifyPermissions() to handle owner-update, etc.
+    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
     public class ShowAddAttachmentAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent)
@@ -794,7 +794,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)    // Permission checking done in verifyPermissions() to handle owner-update, etc.
+    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
     public class AddAttachmentAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
@@ -826,7 +826,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)    // Permission checking done in verifyPermissions() to handle owner-update, etc.
+    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
     public class ShowConfirmDeleteAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
@@ -835,7 +835,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)    // Permission checking done in verifyPermissions() to handle owner-update, etc.
+    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
     public class DeleteAttachmentAction extends AttachmentAction
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
@@ -1450,7 +1450,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)   // Custom permission checking below to handle owner-update
+    @RequiresNoPermission   // Custom permission checking below to handle owner-update
     public class UpdateAction extends FormViewAction<AnnouncementForm>
     {
         private Announcement _ann;

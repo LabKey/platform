@@ -72,7 +72,7 @@ public class FtpController extends SpringActionController
         return super.handleRequest(request, response);
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class FtpConnectorAction extends InterfaceAction<FtpConnector>
     {
         public FtpConnectorAction()

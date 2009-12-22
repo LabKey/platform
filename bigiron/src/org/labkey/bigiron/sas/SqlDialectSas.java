@@ -15,7 +15,6 @@
  */
 package org.labkey.bigiron.sas;
 
-import com.sas.net.sharenet.ShareNetDriver;
 import junit.framework.TestSuite;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
@@ -48,7 +47,7 @@ public abstract class SqlDialectSas extends SqlDialect
 
     protected boolean claimsDriverClassName(String driverClassName)
     {
-        return driverClassName.equals(ShareNetDriver.class.getName());
+        return driverClassName.equals("com.sas.net.sharenet.ShareNetDriver");
     }
 
     public void prepareNewDbSchema(DbSchema schema)

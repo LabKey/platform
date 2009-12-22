@@ -198,15 +198,16 @@ public class SecurityApiActions
             Container container = getViewContext().getContainer();
 
             //if user id and user email is null, assume current user
-            User user = null;
-            if(null != form.getUserId())
+            User user;
+
+            if (null != form.getUserId())
                 user = UserManager.getUser(form.getUserId().intValue());
-            else if(null != form.getUserEmail())
+            else if (null != form.getUserEmail())
                 user = UserManager.getUser(new ValidEmail(form.getUserEmail()));
             else
                 user = currentUser;
 
-            if(null == user)
+            if (null == user)
                 throw new IllegalArgumentException("No user found that matches specified userId or email address");
 
             //if user is not current user, current user must have admin perms in container
@@ -215,7 +216,7 @@ public class SecurityApiActions
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            Map<String,Object> userInfo = new HashMap<String,Object>();
+            Map<String, Object> userInfo = new HashMap<String, Object>();
             userInfo.put("userId", user.getUserId());
             userInfo.put("displayName", user.getDisplayName(getViewContext()));
             response.put("user", userInfo);
@@ -224,9 +225,9 @@ public class SecurityApiActions
             return response;
         }
 
-        protected Map<String,Object> getContainerPerms(Container container, User user, boolean recurse)
+        protected Map<String, Object> getContainerPerms(Container container, User user, boolean recurse)
         {
-            Map<String,Object> permsInfo = new HashMap<String,Object>();
+            Map<String, Object> permsInfo = new HashMap<String,Object>();
 
             //add container info
             permsInfo.put("id", container.getId());
@@ -262,7 +263,8 @@ public class SecurityApiActions
 
             //add all groups the user belongs to in this container
             List<Group> groups = SecurityManager.getGroups(container, user);
-            List<Map<String,Object>> groupsInfo = new ArrayList<Map<String,Object>>();
+            List<Map<String, Object>> groupsInfo = new ArrayList<Map<String, Object>>();
+
             for(Group group : groups)
             {
                 Map<String,Object> groupInfo = new HashMap<String,Object>();
@@ -317,12 +319,12 @@ public class SecurityApiActions
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            List<Map<String,Object>> groupInfos = new ArrayList<Map<String,Object>>();
+            List<Map<String, Object>> groupInfos = new ArrayList<Map<String, Object>>();
             //include both project and global groups
             List<Group> groups = SecurityManager.getGroups(getViewContext().getContainer(), getViewContext().getUser());
             for(Group group : groups)
             {
-                Map<String,Object> groupInfo = new HashMap<String,Object>();
+                Map<String, Object> groupInfo = new HashMap<String, Object>();
                 groupInfo.put("id", group.getUserId());
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
                 groupInfo.put("isProjectGroup", group.isProjectGroup());
@@ -345,7 +347,7 @@ public class SecurityApiActions
 
             //return similar info as is already exposed on LABKEY.user & LABKEY.Security.currentUser
             //so we can swap it out
-            Map<String,Object> userInfo = new HashMap<String,Object>();
+            Map<String, Object> userInfo = new HashMap<String, Object>();
             userInfo.put("id", user.getUserId());
             userInfo.put("displayName", user.getDisplayName(getViewContext()));
             userInfo.put("email", user.getEmail());

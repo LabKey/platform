@@ -168,7 +168,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1535,7 +1535,7 @@ public class SecurityController extends SpringActionController
             policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));
             SecurityManager.savePolicy(policy);
 
-            // @RequiresPermission(ACL.PERM_NONE)
+            // @RequiresNoPermission
             assertPermission(guest, BeginAction.class);
             assertPermission(user, BeginAction.class);
             assertPermission(admin, BeginAction.class);

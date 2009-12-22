@@ -1616,7 +1616,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class SetShowWarningMessagesAction extends ApiAction<ShowWarningMessagesForm>
     {
         public ApiResponse execute(ShowWarningMessagesForm form, BindException errors) throws Exception

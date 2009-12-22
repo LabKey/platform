@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.Container;
@@ -296,7 +297,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    public String search(String queryString, User user, Container root)
+    public String search(String queryString, User user, Container root, int page)
     {
         try
         {
@@ -311,25 +312,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Filter securityFilter = new SecurityFilter(user, root);
 
             if (null == sort)
-                topDocs = searcher.search(query, securityFilter, hitsPerPage);
+                topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage);
             else
-                topDocs = searcher.search(query, securityFilter, hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
+                topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
 
             ScoreDoc[] hits = topDocs.scoreDocs;
 
             StringBuilder html = new StringBuilder("<table><tr><td colspan=2>Found ");
-            html.append(topDocs.totalHits).append(" result");
+            html.append(Formats.commaf0.format(topDocs.totalHits)).append(" result");
 
             if (topDocs.totalHits != 1)
                 html.append("s");
 
             long time = (System.nanoTime() - start)/1000000;
-            html.append(" in ").append(time).append(" millisecond").append(1 != time ? "s" : "").append(".  Displaying ");
+            html.append(" in ").append(Formats.commaf0.format(time)).append(" millisecond").append(1 != time ? "s" : "").append(".  Displaying ");
 
-            if (hits.length < topDocs.totalHits)
+            if (hitsPerPage < topDocs.totalHits)
             {
-                html.append("page ").append(1).append(" of ");
-                html.append((int)Math.ceil((double)topDocs.totalHits / hits.length));
+                html.append("page ").append(Formats.commaf0.format(page + 1)).append(" of ");
+                html.append(Formats.commaf0.format((int)Math.ceil((double)topDocs.totalHits / hitsPerPage)));
             }
             else
             {
@@ -338,8 +339,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             html.append(".</td></tr>\n");
 
-            for (ScoreDoc hit : hits)
+            for (int i = page * hitsPerPage; i < Math.min((page + 1) * hitsPerPage, hits.length); i++)
             {
+                ScoreDoc hit = hits[i];
                 Document doc = searcher.doc(hit.doc);
 
                 String summary = doc.get("summary");

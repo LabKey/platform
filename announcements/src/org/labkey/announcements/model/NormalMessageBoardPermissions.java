@@ -20,12 +20,10 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.OwnerRole;
-import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.roles.RoleManager;
 
 /**
  * User: adam
@@ -51,17 +49,17 @@ public class NormalMessageBoardPermissions implements Permissions
     {
         if (_user == User.getSearchUser())
             return true;
-        return hasPermission(ACL.PERM_READ);
+        return hasPermission(ReadPermission.class);
     }
 
     public boolean allowInsert()
     {
-        return hasPermission(ACL.PERM_INSERT);
+        return hasPermission(InsertPermission.class);
     }
 
     public boolean allowResponse(Announcement ann)
     {
-        return hasPermission(ACL.PERM_INSERT);
+        return hasPermission(InsertPermission.class);
     }
 
     public boolean allowUpdate(Announcement ann)
@@ -88,7 +86,7 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowDeleteAnyThread()
     {
-        return hasPermission(ACL.PERM_DELETE);
+        return hasPermission(DeletePermission.class);
     }
 
     public SimpleFilter getThreadFilter()
@@ -101,8 +99,13 @@ public class NormalMessageBoardPermissions implements Permissions
         return _c.hasPermission(_user, perm);
     }
 
+    protected boolean hasPermission(Class<? extends Permission> perm)
+    {
+        return _c.hasPermission(_user, perm);
+    }
+
     public boolean includeGroups()
     {
-        return  _settings.includeGroups() && hasPermission(ACL.PERM_ADMIN);
+        return  _settings.includeGroups() && hasPermission(AdminPermission.class);
     }
 }

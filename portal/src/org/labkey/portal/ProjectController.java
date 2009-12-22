@@ -128,7 +128,7 @@ public class ProjectController extends SpringActionController
         return new ActionURL(BeginAction.class, getContainer());
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class StartAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -216,7 +216,7 @@ public class ProjectController extends SpringActionController
      * for compatibility with old bookmarks, but redirect so doesn't show
      * up any more...
      */
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class HomeAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -634,7 +634,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public static class ExpandCollapseAction extends SimpleViewAction<CollapseExpandForm>
     {
         public ModelAndView getView(CollapseExpandForm form, BindException errors) throws Exception
@@ -875,7 +875,7 @@ public class ProjectController extends SpringActionController
     /**
      * Returns all contains visible to the current user
      */
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class GetContainersAction extends ApiAction<GetContainersForm>
     {
         int _requestedDepth;
@@ -924,7 +924,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresNoPermission
     public class IconAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
