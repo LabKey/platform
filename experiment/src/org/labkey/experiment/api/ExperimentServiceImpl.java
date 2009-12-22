@@ -490,7 +490,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             MaterialSource[] materialSources = Table.select(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, null, MaterialSource.class);
             ExpSampleSetImpl[] result = ExpSampleSetImpl.fromMaterialSources(materialSources);
             // Do the sort on the Java side to make sure it's always case-insensitive
-            Arrays.sort(result, ExpObject.NAME_COMPARATOR);
+            Arrays.sort(result);
             return result;
         }
         catch (SQLException x)
@@ -1368,9 +1368,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         try
         {
-            Filter filter = new SimpleFilter().
-                    addCondition("DataFileUrl", url).
-                    addCondition("Container", c.getId());
+            SimpleFilter filter = new SimpleFilter("DataFileUrl", url);
+            if (c != null)
+            {
+                filter.addCondition("Container", c.getId());
+            }
             Sort sort = new Sort("-Created");
             Data data = Table.selectObject(getTinfoData(), Table.ALL_COLUMNS, filter, sort, Data.class);
             return data == null ? null : new ExpDataImpl(data);
@@ -1917,7 +1919,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid("SampleSource", "Default").toString();
     }
 
-    public List<ExpRunImpl> getRunsUsingDatas(List<ExpData> datas) throws SQLException
+    public List<ExpRunImpl> getRunsUsingDatas(List<ExpData> datas)
     {
         if (datas.isEmpty())
         {
@@ -1932,14 +1934,21 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             dataRowIdSQL.append(data.getRowId());
         }
 
-        ExperimentRun[] runs = Table.executeQuery(getExpSchema(), "SELECT * FROM " + getTinfoExperimentRun() + " WHERE \n" +
-                "RowId IN " +
-                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication().getSelectName() + " pa, " + getTinfoDataInput() + " di " +
-                "WHERE di.TargetApplicationId = pa.RowId AND di.DataID IN (" + dataRowIdSQL + ")) \n" +
-                "OR RowId IN " +
-                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication().getSelectName() + " pa, " + getTinfoData() + " d " +
-                "WHERE d.SourceApplicationId = pa.RowId AND d.RowId IN (" + dataRowIdSQL + "))", new Object[0], ExperimentRun.class);
-        return Arrays.asList(ExpRunImpl.fromRuns(runs));
+        try
+        {
+            ExperimentRun[] runs = Table.executeQuery(getExpSchema(), "SELECT * FROM " + getTinfoExperimentRun() + " WHERE \n" +
+                    "RowId IN " +
+                    "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoDataInput() + " di " +
+                    "WHERE di.TargetApplicationId = pa.RowId AND di.DataID IN (" + dataRowIdSQL + ")) \n" +
+                    "OR RowId IN " +
+                    "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoData() + " d " +
+                    "WHERE d.SourceApplicationId = pa.RowId AND d.RowId IN (" + dataRowIdSQL + "))", new Object[0], ExperimentRun.class);
+            return Arrays.asList(ExpRunImpl.fromRuns(runs));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ExpRun[] getRunsUsingMaterials(int... ids) throws SQLException

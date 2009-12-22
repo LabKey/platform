@@ -31,11 +31,9 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.query.QueryView;
 import org.labkey.pipeline.PipelineController;
-import org.labkey.pipeline.api.PipelineEmailPreferences;
-import org.labkey.pipeline.api.PipelineServiceImpl;
-import org.labkey.pipeline.api.PipelineStatusFileImpl;
-import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.api.*;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -46,8 +44,6 @@ import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import java.io.*;
-import java.net.URI;
-import java.sql.SQLException;
 import java.util.*;
 
 
@@ -56,7 +52,6 @@ public class StatusController extends SpringActionController
     private static Logger _log = Logger.getLogger(StatusController.class);
     private static DefaultActionResolver _resolver = new DefaultActionResolver(StatusController.class);
 
-    private static final int MAX_DISPLAY_ROWS = 1000;
     protected static final String _newline = System.getProperty("line.separator");
     protected static final String DATAREGION_STATUS = "dataregion_StatusFiles";
 
@@ -137,13 +132,14 @@ public class StatusController extends SpringActionController
 
             setHelpTopic(getHelpTopic("Pipeline-Status/status"));
 
-            GridView gridView = getGridView(c, getUser(), errors, ShowListRegionAction.class);
+            QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, false);
             gridView.setTitle("Data Pipeline");
 
             if (!c.isRoot())
             {
                 return gridView;
             }
+            gridView.disableContainerFilterSelection();
 
             if (!PipelineService.get().isEnterprisePipeline())
             {
@@ -205,7 +201,8 @@ public class StatusController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            GridView gridView = getGridView(getContainer(), getUser(), errors, null);
+            QueryView gridView = new PipelineQueryView(getViewContext(), errors, null, false);
+            gridView.disableContainerFilterSelection();
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
             return null;
         }
@@ -216,7 +213,7 @@ public class StatusController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            GridView gridView = getPartView(getContainer(), getUser(), errors, null);
+            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), errors, null, true);
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
             return null;
         }
@@ -429,16 +426,14 @@ public class StatusController extends SpringActionController
             Container c = getContainerCheckAdmin();
 
             boolean written = false;
-            String fileName = "";
+            String fileName;
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
             if (sf != null)
             {
                 fileName = form.getFilename();
 
-                if (fileName == null || fileName.length() == 0)
-                    fileName = "";
-                else
+                if (fileName != null && fileName.length() != 0)
                 {
                     File fileStatus = new File(sf.getFilePath());
                     String statusName = fileStatus.getName();
@@ -751,231 +746,6 @@ public class StatusController extends SpringActionController
         {
             return _detailsUrl;
         }
-    }
-
-    private static class HideShowRetryColumn extends SimpleDisplayColumn
-    {
-        private ActionButton _btnRetry;
-        private Map<String, Set<String>> _mapProvidersContainers = new HashMap<String, Set<String>>();
-
-        public HideShowRetryColumn(ButtonBar bb)
-        {
-            List<DisplayElement> buttons = bb.getList();
-            for (DisplayElement button : buttons)
-            {
-                if (PipelineProvider.CAPTION_RETRY_BUTTON.equals(button.getCaption()))
-                    _btnRetry = (ActionButton) button;
-            }
-        }
-
-        public boolean supportsRetry(PipelineProvider provider, Container container)
-        {
-            if (provider == null)
-                return false;
-            List<PipelineProvider.StatusAction> l = provider.addStatusActions();
-            if (l == null)
-                return false;
-
-            for (PipelineProvider.StatusAction action : l)
-            {
-                if (PipelineProvider.CAPTION_RETRY_BUTTON.compareTo(action.getLabel()) == 0)
-                    return true;
-            }
-
-            return false;
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            if (_btnRetry == null)
-                return;
-
-            Map cols = ctx.getRow();
-            String providerName = (String) cols.get("Provider");
-            String containerId = (String) cols.get("Container");
-            Set<String> setContainers = _mapProvidersContainers.get(providerName);
-            if (setContainers == null)
-            {
-                setContainers = new HashSet<String>();
-                _mapProvidersContainers.put(providerName, setContainers);
-            }
-            if (!setContainers.contains(containerId))
-            {
-                setContainers.add(containerId);
-                if (supportsRetry(PipelineService.get().getPipelineProvider(providerName),
-                        ContainerManager.getForId(containerId)))
-                    _btnRetry.setVisible(true);
-            }
-        }
-    }
-
-    public static GridView getGridView(Container c, User user, BindException errors, Class<? extends ApiAction> apiAction)
-            throws SQLException
-    {
-        StatusDataRegion rgn = getGrid(c, user);
-        rgn.setApiAction(apiAction);
-        GridView gridView = new GridView(rgn, errors);
-        if (c == null || c.isRoot())
-        {
-            gridView.getRenderContext().setUseContainerFilter(false);
-            gridView.getViewContext().setPermissions(ACL.PERM_READ);
-        }
-        gridView.setSort(new Sort("-Created"));
-        return gridView;
-    }
-
-    public static GridView getPartView(Container c, User user, BindException errors, Class<? extends ApiAction> apiAction) throws SQLException
-    {
-        URI uriRoot = null;
-
-        PipelineService service = PipelineService.get();
-        boolean canModify = service.canModifyPipelineRoot(user, c);
-        PipeRoot pr = service.findPipelineRoot(c);
-        if (pr != null)
-            uriRoot = pr.getUri(c);
-
-        if (uriRoot == null && !canModify)
-            return null;
-
-        StatusDataRegion rgn = new StatusDataRegion();
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
-        rgn.setApiAction(apiAction);
-        rgn.setColumns(PipelineStatusManager.getTableInfo().getColumns("Status, Created, FilePath, Description"));
-        DisplayColumn col = rgn.getDisplayColumn("Status");
-        col.setURLExpression(urlDetailsData(c));
-        col.setNoWrap(true);
-        col = rgn.getDisplayColumn("FilePath");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("Description");
-        col.setVisible(false);
-        col = new DescriptionDisplayColumn(uriRoot);
-        rgn.addDisplayColumn(col);
-
-        String referer = PipelineController.RefererValues.portal.toString();
-        ButtonBar bb = new ButtonBar();
-
-        if (c.hasPermission(user, InsertPermission.class) && uriRoot != null)
-        {
-            ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, referer);
-            ActionButton button = new ActionButton(url, "Process and Import Data");
-            button.setActionType(ActionButton.Action.GET);
-            bb.add(button);
-        }
-
-        if (canModify)
-        {
-            ActionURL url = PipelineController.urlSetup(c, referer);
-            ActionButton button = new ActionButton(url, "Setup");
-            button.setActionType(ActionButton.Action.GET);
-            bb.add(button);
-        }
-
-        rgn.setButtonBar(bb, DataRegion.MODE_GRID);
-
-        GridView gridView = new GridView(rgn, errors);
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
-        gridView.setFilter(filter);
-        gridView.setSort(new Sort("-Created"));
-        return gridView;
-    }
-
-    private static StatusDataRegion getGrid(Container c, User user) throws SQLException
-    {
-        StatusDataRegion rgn = new StatusDataRegion();
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
-        rgn.setColumns(getTableInfo().getColumns("Status, Created, FilePath, Description, Provider, Container"));
-        DisplayColumn col = rgn.getDisplayColumn("Status");
-        col.setURLExpression(urlDetailsData(c));
-        col.setNoWrap(true);
-        col = rgn.getDisplayColumn("Description");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("Provider");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("Container");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("FilePath");
-        PipelineService service = PipelineService.get();
-        boolean canModifyRoot = false;
-        URI uriRoot = null;
-        if (!c.isRoot())
-        {
-            canModifyRoot = service.canModifyPipelineRoot(user, c);
-            PipeRoot pr = service.findPipelineRoot(c);
-            if (pr != null)
-            {
-                uriRoot = pr.getUri(c);
-            }
-
-            col.setVisible(false);
-            col = new DescriptionDisplayColumn(uriRoot);
-            rgn.addDisplayColumn(col);
-        }
-
-        // Make table layout faster on IE
-        rgn.setFixedWidthColumns(false);
-
-        ButtonBar bb = new ButtonBar();
-
-        if (c.hasPermission(user, InsertPermission.class) && uriRoot != null)
-        {
-            ActionButton button = new ActionButton("browse.view", "Process and Import Data");
-            button.setActionType(ActionButton.Action.LINK);
-            button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, PipelineController.RefererValues.pipeline.toString()));
-            bb.add(button);
-        }
-
-        if (canModifyRoot)
-        {
-            ActionButton button = new ActionButton("setup.view", "Setup");
-            button.setActionType(ActionButton.Action.LINK);
-            button.setURL(PipelineController.urlSetup(c, PipelineController.RefererValues.pipeline.toString()));
-            bb.add(button);
-        }
-
-        ActionButton retryStatus = new ActionButton("runAction.view?action=" + PipelineProvider.CAPTION_RETRY_BUTTON, PipelineProvider.CAPTION_RETRY_BUTTON);
-        retryStatus.setRequiresSelection(true);
-        retryStatus.setActionType(ActionButton.Action.POST);
-        if (!user.isAdministrator())
-            retryStatus.setDisplayPermission(UpdatePermission.class);
-        retryStatus.setVisible(false);
-        bb.add(retryStatus);
-
-        ActionButton deleteStatus = new ActionButton("deleteStatus.view", "Delete");
-        deleteStatus.setRequiresSelection(true);
-        deleteStatus.setActionType(ActionButton.Action.POST);
-        if (!user.isAdministrator())
-            deleteStatus.setDisplayPermission(DeletePermission.class);
-        bb.add(deleteStatus);
-
-        ActionButton completeStatus = new ActionButton("completeStatus.view", "Complete");
-        completeStatus.setRequiresSelection(true);
-        completeStatus.setActionType(ActionButton.Action.POST);
-        if (!user.isAdministrator())
-            completeStatus.setDisplayPermission(UpdatePermission.class);
-        bb.add(completeStatus);
-
-        // Display the "Show Queue" button, if this is not the Enterprise Pipeline,
-        // the user is an administrator, and this is the pipeline administration page.
-        if (!PipelineService.get().isEnterprisePipeline() &&
-                user.isAdministrator() && c.isRoot())
-        {
-            ActionButton showQueue = new ActionButton((String)null, "Show Queue");
-            showQueue.setURL(PipelineController.urlStatus(c, true));
-            bb.add(showQueue);
-        }
-
-        col = new HideShowRetryColumn(bb);
-        col.setWidth("35"); // Match the width if the checkbox.
-        rgn.addDisplayColumn(col);
-
-        rgn.setButtonBar(bb, DataRegion.MODE_GRID);
-        rgn.setShowRecordSelectors(true);
-        rgn.setMaxRows(MAX_DISPLAY_ROWS);
-
-        return rgn;
     }
 
     private DataRegion getDetails(Container c, User user, int rowId)

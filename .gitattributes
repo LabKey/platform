@@ -1215,6 +1215,7 @@ pipeline/src/org/labkey/pipeline/api/PipelineJobMarshaller.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineJobServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineJobStoreImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineManager.java -text
+pipeline/src/org/labkey/pipeline/api/PipelineQuerySchema.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineQueueImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineRoot.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineSchema.java -text
@@ -1276,6 +1277,7 @@ pipeline/src/org/labkey/pipeline/source.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text
+pipeline/src/org/labkey/pipeline/status/PipelineQueryView.java -text
 pipeline/src/org/labkey/pipeline/status/ProviderButtonBar.java -text
 pipeline/src/org/labkey/pipeline/status/StatusController.java -text
 pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
@@ -2133,6 +2135,7 @@ study/src/org/labkey/study/assay/AssayDomainKind.java -text
 study/src/org/labkey/study/assay/AssayManager.java -text
 study/src/org/labkey/study/assay/AssayPublishManager.java -text
 study/src/org/labkey/study/assay/AssayServiceImpl.java -text
+study/src/org/labkey/study/assay/FileBasedModuleDataHandler.java -text
 study/src/org/labkey/study/assay/ModuleAssayLoader.java -text
 study/src/org/labkey/study/assay/ModuleAssayProvider.java -text
 study/src/org/labkey/study/assay/ModuleDataExchangeHandler.java -text

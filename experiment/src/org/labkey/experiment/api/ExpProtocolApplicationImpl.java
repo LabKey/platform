@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
-import org.labkey.experiment.ExperimentRunGraph;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -97,7 +96,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             {
                 _inputDatas.add(input.getData());
             }
-            Collections.sort(_inputDatas, ExpObject.NAME_COMPARATOR);
+            Collections.sort(_inputDatas);
         }
         return _inputDatas;
     }
@@ -113,7 +112,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             {
                 _inputMaterials.add(input.getMaterial());
             }
-            Collections.sort(_inputMaterials, ExpObject.NAME_COMPARATOR);
+            Collections.sort(_inputMaterials);
         }
         return _inputMaterials;
     }
@@ -124,7 +123,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         if (_outputDatas == null)
         {
             _outputDatas = new ArrayList<ExpData>(Arrays.asList(ExpDataImpl.fromDatas(ExperimentServiceImpl.get().getOutputDataForApplication(getRowId()))));
-            Collections.sort(_outputDatas, ExpObject.NAME_COMPARATOR);
+            Collections.sort(_outputDatas);
         }
         return _outputDatas;
     }
@@ -141,7 +140,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         if (_outputMaterials == null)
         {
             _outputMaterials = new ArrayList<ExpMaterial>(Arrays.asList(ExpMaterialImpl.fromMaterials(ExperimentServiceImpl.get().getOutputMaterialForApplication(getRowId()))));
-            Collections.sort(_outputMaterials, ExpObject.NAME_COMPARATOR);
+            Collections.sort(_outputMaterials);
         }
         return _outputMaterials;
     }

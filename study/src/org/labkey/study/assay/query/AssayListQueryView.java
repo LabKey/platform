@@ -16,10 +16,7 @@
 
 package org.labkey.study.assay.query;
 
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.Sort;
+import org.labkey.api.data.*;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -66,6 +63,16 @@ public class AssayListQueryView extends QueryView
         {
             ActionURL manageProjectAssays = new ActionURL(AssayController.BeginAction.class, project);
             ActionButton sharedButton = new ActionButton("Manage Project Assays", manageProjectAssays);
+            sharedButton.setActionType(ActionButton.Action.LINK);
+            bar.add(sharedButton);
+        }
+
+        Container sharedProject = ContainerManager.getSharedContainer();
+        if (!sharedProject.equals(getContainer()) && !sharedProject.equals(project) &&
+                sharedProject.hasPermission(getUser(), DesignAssayPermission.class))
+        {
+            ActionURL manageProjectAssays = new ActionURL(AssayController.BeginAction.class, sharedProject);
+            ActionButton sharedButton = new ActionButton("Manage Shared Project Assays", manageProjectAssays);
             sharedButton.setActionType(ActionButton.Action.LINK);
             bar.add(sharedButton);
         }

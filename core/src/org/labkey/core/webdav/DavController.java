@@ -1152,6 +1152,25 @@ public class DavController extends SpringActionController
                             }
                             xml.writeProperty(null, "getetag", resource.getETag());
                             xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
+                            List<NavTree> actions = resource.getActions();
+                            if (!actions.isEmpty())
+                            {
+                                xml.writeElement(null, "actions", XMLWriter.OPENING);
+                                for (NavTree action : actions)
+                                {
+                                    xml.writeElement(null, "action", XMLWriter.OPENING);
+                                    if (action.getKey() != null)
+                                    {
+                                        xml.writeProperty(null, "message", action.getKey());
+                                    }
+                                    if (action.getValue() != null)
+                                    {
+                                        xml.writeProperty(null, "href", PageFlowUtil.filter(action.getValue()));
+                                    }
+                                    xml.writeElement(null, "action", XMLWriter.CLOSING);
+                                }
+                                xml.writeElement(null, "actions", XMLWriter.CLOSING);
+                            }
                         }
                         else
                         {

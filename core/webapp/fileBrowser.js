@@ -229,7 +229,64 @@ function renderFileSize(value, metadata, record, rowIndex, colIndex, store)
 {
     if (!record.get('file')) return "";
     var f =  Ext.util.Format.fileSize(value);
-    return "<span title='" + f + "'>" + value + "</span>";
+    var x = value;
+    var formatted = (x == 0) ? '0' : '';
+    var separator = '';
+    while (x > 0)
+    {
+        // Comma separate between thousands
+        formatted = separator + formatted;
+        formatted = (x % 10) + formatted;
+        x -= (x % 10);
+        if (x > 0)
+        {
+            formatted = ((x % 100) / 10) + formatted;
+            x -= (x % 100);
+        }
+        if (x > 0)
+        {
+            formatted = ((x % 1000) / 100) + formatted;
+            x -= (x % 1000);
+        }
+        x = x / 1000;
+        separator = ',';
+    }
+    return "<span title='" + f + "'>" + formatted + "</span>";
+}
+
+
+function renderUsage(value, metadata, record, rowIndex, colIndex, store)
+{
+    if (!value || value.length == 0) return "";
+    if (!record.get('file')) return "";
+    var result = "<span title='";
+    for (var i = 0; i < value.length; i++)
+    {
+        if (i > 0)
+        {
+            result = result + ", ";
+        }
+        result = result + Ext.util.Format.htmlEncode(value[i].message);
+    }
+    result = result + "'>";
+    for (i = 0; i < value.length; i++)
+    {
+        if (i > 0)
+        {
+            result = result + ", ";
+        }
+        if (value[i].href)
+        {
+            result = result + "<a href=\'" + Ext.util.Format.htmlEncode(value[i].href) + "'>";
+        }
+        result = result + Ext.util.Format.htmlEncode(value[i].message);
+        if (value[i].href)
+        {
+            result = result + "</a>";
+        }
+    }
+    result = result + "</span>";
+    return result;
 }
 
 var _rDateTime = Ext.util.Format.dateRenderer("Y-m-d H:i:s");
@@ -404,6 +461,7 @@ function destroyPreviews()
 //      createdBy(string)
 //      modifiedBy(string)
 //      iconHref(string)
+//      actionHref(string)
 //      contentType(string,optional)
 
 var FILESYSTEM_EVENTS = {listfiles:"listfiles", ready:"ready"};
@@ -642,6 +700,36 @@ LABKEY.WebdavFileSystem = function(config)
             {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
             {name: 'modifiedBy', mapping: 'propstat/prop/modifiedby'},
             {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
+            {name: 'actionHref', mapping: 'propstat/prop/actions',
+                convert : function (v, rec)
+                {
+                    var result = [];
+                    var actionsElements = Ext.DomQuery.compile('propstat/prop/actions').call(this, rec);
+                    if (actionsElements.length > 0)
+                    {
+                        var actionElements = actionsElements[0].getElementsByTagName('action');
+                        for (var i = 0; i < actionElements.length; i++)
+                        {
+                            var action = new Object();
+                            var childNodes = actionElements[i].childNodes;
+                            for (var n = 0; n < childNodes.length; n++)
+                            {
+                                var childNode = childNodes[n];
+                                if (childNode.nodeName == 'message')
+                                {
+                                    action.message = childNode.textContent;
+                                }
+                                else if (childNode.nodeName == 'href')
+                                {
+                                    action.href = childNode.textContent;
+                                }
+                            }
+                            result[result.length] = action;
+                        }
+                    }
+                    return result;
+                }
+            },
             {name: 'iconHref'},
             {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
             {name: 'options'}
@@ -2323,7 +2411,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
 //                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
-                {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize}
+                {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
+                {header: "Usages", width: 150, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage}
             ]
         });
         this.grid.getSelectionModel().on(ROWSELETION_EVENTS.rowselect, this.Grid_onRowselect, this);

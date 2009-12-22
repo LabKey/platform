@@ -147,6 +147,8 @@ public class StudyModule extends SpringModule
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
 
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
+
+        ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
     }
 
     @Override

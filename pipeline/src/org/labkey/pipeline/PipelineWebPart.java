@@ -15,10 +15,10 @@
  */
 package org.labkey.pipeline;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
 import org.labkey.api.view.*;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.pipeline.status.StatusController;
+import org.labkey.pipeline.status.PipelineQueryView;
 
 import java.io.PrintWriter;
 
@@ -39,40 +39,22 @@ public class PipelineWebPart extends WebPartView
         setTitleHref(StatusController.urlShowList(viewContext.getContainer(), false));
     }
 
-    protected void showMessage(String message) throws Exception
-    {
-        HtmlView view = new HtmlView("<table class=\"DataRegion\"><tr><td>" + message + "</td></tr></table>");
-        view.setTitle(getPartName());
-        include(view);
-    }
-
     @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
-        Container c;
-
-        try
+        if (!PipelineService.get().hasValidPipelineRoot(getViewContext().getContainer()) &&
+                !PipelineService.get().canModifyPipelineRoot(getViewContext().getUser(), getViewContext().getContainer()))
         {
-            c = getViewContext().getContainer(ACL.PERM_READ);
+            HtmlView view = new HtmlView("<table class=\"DataRegion\"><tr><td>Setup required.  Please contact your project administrator.</td></tr></table>");
+            view.setTitle(getPartName());
+            include(view);
         }
-        catch (UnauthorizedException e)
+        else
         {
-            if (getViewContext().getUser().isGuest())
-                showMessage("Please log in to see this data.");
-            else
-                showMessage("You do not have permission to see this data.");
-            return;
-        }
-
-        GridView gridView = StatusController.getPartView(c, getViewContext().getUser(), null,
-                StatusController.ShowPartRegionAction.class);
-        if (gridView == null)
-        {
-            showMessage("Setup required.  Please contact your project administrator.");
-            return;
+            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), null, StatusController.ShowPartRegionAction.class, true);
+            gridView.setCustomizeLinks(getCustomizeLinks());
+            include(gridView);
         }
 
-        gridView.setCustomizeLinks(getCustomizeLinks());
-        include(gridView);
     }
 }

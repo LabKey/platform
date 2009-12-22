@@ -27,18 +27,15 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.query.ValidationException;
-import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
 
 import java.util.Map;
-import java.util.Date;
 import java.sql.SQLException;
 import java.io.Serializable;
 
 abstract public class ExpObjectImpl implements ExpObject, Serializable
 {
-    static final private Logger _log = Logger.getLogger(ExpObjectImpl.class);
     static public final String s_urlFlagged = AppProps.getInstance().getContextPath() + "/Experiment/flagDefault.gif";
     static public final String s_urlUnflagged = AppProps.getInstance().getContextPath() + "/Experiment/unflagDefault.gif";
 
@@ -201,5 +198,25 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     public int hashCode()
     {
         return getRowId() ^ getClass().hashCode();
+    }
+
+    public int compareTo(ExpObject o2)
+    {
+        if (getName() != null)
+        {
+            if (o2.getName() != null)
+            {
+                return getName().compareToIgnoreCase(o2.getName());
+            }
+            return 1;
+        }
+        else
+        {
+            if (o2.getName() != null)
+            {
+                return -1;
+            }
+            return 0;
+        }
     }
 }

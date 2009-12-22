@@ -350,23 +350,23 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             _populated = true;
             ExperimentServiceImpl.get().populateRun(this);
-            Collections.sort(_materialOutputs, ExpObject.NAME_COMPARATOR);
-            Collections.sort(_dataOutputs, ExpObject.NAME_COMPARATOR);
+            Collections.sort(_materialOutputs);
+            Collections.sort(_dataOutputs);
 
-            Map<ExpMaterial, String> sortedMaterialInputs = new TreeMap<ExpMaterial, String>(ExpObject.NAME_COMPARATOR);
+            Map<ExpMaterial, String> sortedMaterialInputs = new TreeMap<ExpMaterial, String>();
             sortedMaterialInputs.putAll(_materialInputs);
             _materialInputs = sortedMaterialInputs;
 
-            Map<ExpData, String> sortedDataInputs = new TreeMap<ExpData, String>(ExpObject.NAME_COMPARATOR);
+            Map<ExpData, String> sortedDataInputs = new TreeMap<ExpData, String>();
             sortedDataInputs.putAll(_dataInputs);
             _dataInputs = sortedDataInputs;
 
             for (ExpProtocolApplicationImpl step : _protocolSteps)
             {
-                Collections.sort(step.getInputDatas(), ExpObject.NAME_COMPARATOR);
-                Collections.sort(step.getOutputDatas(), ExpObject.NAME_COMPARATOR);
-                Collections.sort(step.getInputMaterials(), ExpObject.NAME_COMPARATOR);
-                Collections.sort(step.getOutputMaterials(), ExpObject.NAME_COMPARATOR);
+                Collections.sort(step.getInputDatas());
+                Collections.sort(step.getOutputDatas());
+                Collections.sort(step.getInputMaterials());
+                Collections.sort(step.getOutputMaterials());
             }
         }
     }

@@ -19,6 +19,7 @@ package org.labkey.study.assay;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -157,7 +158,13 @@ public class AssayManager implements AssayService.Interface
         Container project = container.getProject();
         if (project != null && !container.equals(project))
         {
-            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(container.getProject());
+            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(project);
+            addTopLevelProtocols(projectProtocols, protocols);
+        }
+        Container sharedContainer = ContainerManager.getSharedContainer();
+        if (!container.equals(sharedContainer) && !sharedContainer.equals(project))
+        {
+            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(sharedContainer);
             addTopLevelProtocols(projectProtocols, protocols);
         }
         return protocols;
@@ -203,7 +210,10 @@ public class AssayManager implements AssayService.Interface
         Container protocolContainer = protocol.getContainer();
 
         // Always add the current container if we're looking at an assay and under the protocol
-        if (!isStudyView && (currentContainer.equals(protocolContainer) || currentContainer.hasAncestor(protocolContainer)))
+        if (!isStudyView &&
+                (currentContainer.equals(protocolContainer) ||
+                currentContainer.hasAncestor(protocolContainer) ||
+                protocolContainer.equals(ContainerManager.getSharedContainer())))
             containers.add(currentContainer);
 
 
