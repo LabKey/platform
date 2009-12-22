@@ -42,13 +42,13 @@ public abstract class AssayBaseQueryView extends QueryView
         getSettings().setAllowChooseQuery(false);
     }
 
-    protected DataRegion createDataRegion()
+    @Override
+    protected void configureDataRegion(DataRegion dr)
     {
-        DataRegion dr = super.createDataRegion();
+        super.configureDataRegion(dr);
         dr.setShowRecordSelectors(showControls());
         dr.setShadeAlternatingRows(true);
         dr.setShowBorders(true);
-        return dr;
     }
 
     protected boolean showControls()

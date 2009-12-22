@@ -72,7 +72,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
             throw new NotFoundException("Assay ID not specified.");
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getRowId().intValue());
         if (protocol == null || (validateContainer && !protocol.getContainer().equals(form.getContainer()) &&
-                !protocol.getContainer().equals(form.getContainer().getProject())))
+                !protocol.getContainer().equals(form.getContainer().getProject()) && !protocol.getContainer().equals(ContainerManager.getSharedContainer())))
         {
             throw new NotFoundException("Assay " + form.getRowId() + " does not exist.");
         }

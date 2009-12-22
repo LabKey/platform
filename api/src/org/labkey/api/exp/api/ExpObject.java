@@ -30,7 +30,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
 
-public interface ExpObject extends Identifiable
+public interface ExpObject extends Identifiable, Comparable<ExpObject>
 {
     int getRowId();
     void setLSID(String lsid);
@@ -59,29 +59,6 @@ public interface ExpObject extends Identifiable
 
     void save(User user);
     void delete(User user);
-
-    public static final Comparator<ExpObject> NAME_COMPARATOR = new Comparator<ExpObject>()
-    {
-        public int compare(ExpObject o1, ExpObject o2)
-        {
-            if (o1.getName() != null)
-            {
-                if (o2.getName() != null)
-                {
-                    return o1.getName().compareToIgnoreCase(o2.getName());
-                }
-                return 1;
-            }
-            else
-            {
-                if (o2.getName() != null)
-                {
-                    return -1;
-                }
-                return 0;
-            }
-        }
-    };
 
     /**
      * @return Map from PropertyURI to ObjectProperty

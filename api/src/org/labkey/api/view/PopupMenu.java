@@ -125,11 +125,11 @@ public class PopupMenu extends DisplayElement
 
     public void renderMenuScript(Writer out) throws IOException
     {
-        out.append("<script type=\"text/javascript\">LABKEY.requiresExtJs();</script>");
-        out.append("<script type=\"text/javascript\">\n");
+        out.append("<script type=\"text/javascript\">LABKEY.requiresExtJs();\n");
+        out.append("Ext.onReady(function() {\n");
         out.append("        new Ext.menu.Menu(");
         out.append(renderMenuModel(_navTree.getChildren(), getId()));
-        out.append("         );\n</script>");
+        out.append("         );});\n</script>");
     }
 
     // UNDONE: use NavTree.toJS()

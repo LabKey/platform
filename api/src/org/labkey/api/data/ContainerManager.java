@@ -35,6 +35,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Cache;
+import org.jetbrains.annotations.NotNull;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -127,18 +128,6 @@ public class ContainerManager
     }
 
 
-    private static String getName(String path)
-    {
-        path = removeTrailing(path, '/');
-        int slash = path.lastIndexOf('/');
-
-        if (-1 == slash)
-            return path;
-
-        return path.substring(slash + 1);
-    }
-
-
     private static Container createRoot()
     {
         try
@@ -150,7 +139,7 @@ public class ContainerManager
         }
         catch (SQLException x)
         {
-            _log.error("createRoot", x);
+            throw new RuntimeSQLException(x);
         }
 
         return getRoot();
@@ -283,6 +272,7 @@ public class ContainerManager
 
     private static final String SHARED_CONTAINER_PATH = "/Shared";
 
+    @NotNull
     public static Container getSharedContainer()
     {
         Container c = getForPath(SHARED_CONTAINER_PATH);
@@ -1552,6 +1542,7 @@ public class ContainerManager
      * This prevents us from resetting permissions if all users
      * are dropped.
      */
+    @NotNull
     public static Container bootstrapContainer(String path, Role adminRole, Role userRole, Role guestRole)
     {
         Container c = null;
@@ -1577,8 +1568,7 @@ public class ContainerManager
 
             if (c == null)
             {
-                _log.error("Unable to ensure container for path '" + path + "'");
-                return c;
+                throw new IllegalStateException("Unable to ensure container for path '" + path + "'");
             }
 
             // Only set permissions if there are no explicit permissions

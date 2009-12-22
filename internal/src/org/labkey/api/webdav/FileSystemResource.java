@@ -26,6 +26,11 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.apache.commons.io.IOUtils;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpData;
 
 import java.io.*;
 import java.util.*;
@@ -371,6 +376,26 @@ public class FileSystemResource extends AbstractResource
         return history;
     }
 
+    @NotNull @Override
+    public List<NavTree> getActions()
+    {
+        if (_file != null)
+        {
+            ExpData data = ExperimentService.get().getExpDataByURL(_file, getContainer());
+            if (data != null)
+            {
+                ActionURL url = data.findDataHandler().getContentURL(data.getContainer(), data);
+                List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
+                List<NavTree> result = new ArrayList<NavTree>();
+                for (ExpRun run : runs)
+                {
+                    result.add(new NavTree(run.getName(), url));
+                }
+                return result;
+            }
+        }
+        return Collections.emptyList();
+    }
 
     /*
     * not part of Resource interface, but used by FtpConnector

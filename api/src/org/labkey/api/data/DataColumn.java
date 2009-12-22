@@ -50,9 +50,6 @@ public class DataColumn extends DisplayColumn
     private boolean _preserveNewlines;
     private boolean _editable = true;
 
-    private static Logger _log = Logger.getLogger(DataColumn.class);
-
-
     //Careful, a renderer without a resultset is only good for input forms
     public DataColumn(ColumnInfo col)
     {

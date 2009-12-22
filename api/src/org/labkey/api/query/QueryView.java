@@ -688,7 +688,7 @@ public class QueryView extends WebPartView<Object>
         final boolean showingSelected = getShowRows() == ShowRows.SELECTED;
         final boolean showingUnselected = getShowRows() == ShowRows.UNSELECTED;
 
-        MenuButton pageSizeMenu = new MenuButton("Page Size") {
+        MenuButton pageSizeMenu = new MenuButton("Page Size", getDataRegionName() + ".Menu.PageSize") {
             public boolean shouldRender(RenderContext ctx)
             {
                 ResultSet rs = ctx.getResultSet();
@@ -762,6 +762,7 @@ public class QueryView extends WebPartView<Object>
         URLHelper target = urlChangeView();
         NavTreeMenuButton button = new NavTreeMenuButton("Views");
         NavTree menu = button.getNavTree();
+        menu.setId(getDataRegionName() + ".Menu.Views");
 
         // existing views
         addGridViews(button, target, current);
@@ -1102,15 +1103,20 @@ public class QueryView extends WebPartView<Object>
 
     protected DataRegion createDataRegion()
     {
-        List<DisplayColumn> displayColumns = getDisplayColumns();
         DataRegion rgn = new DataRegion();
+        configureDataRegion(rgn);
+        return rgn;
+    }
+
+    protected void configureDataRegion(DataRegion rgn)
+    {
+        rgn.setDisplayColumns(getDisplayColumns());
         rgn.setMaxRows(getMaxRows());
         rgn.setOffset(getOffset());
         rgn.setShowRows(getShowRows());
         rgn.setShowRecordSelectors(showRecordSelectors());
         rgn.setName(getDataRegionName());
         rgn.setSelectionKey(getSelectionKey());
-        rgn.setDisplayColumns(displayColumns);
 
         rgn.setShadeAlternatingRows(isShadeAlternatingRows());
         rgn.setShowFilterDescription(isShowFilterDescription());
@@ -1121,7 +1127,6 @@ public class QueryView extends WebPartView<Object>
             rgn.setAggregates(getAggregates());
 
         rgn.setTable(getTable());
-        return rgn;
     }
 
     public void setButtonBarPosition(DataRegion.ButtonBarPosition buttonBarPosition)

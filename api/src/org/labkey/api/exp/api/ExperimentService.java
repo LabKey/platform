@@ -175,7 +175,7 @@ public class ExperimentService
         public String getDefaultSampleSetLsid();
 
         ExpRun[] getRunsUsingMaterials(int... materialIds) throws SQLException;
-        List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas) throws SQLException;
+        List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
 
         ExpRun getCreatingRun(File file, Container c);
         List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds) throws SQLException;

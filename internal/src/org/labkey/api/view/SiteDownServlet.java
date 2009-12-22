@@ -41,7 +41,7 @@ public class SiteDownServlet extends HttpServlet
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {
         Writer writer = resp.getWriter();
-        writer.write("<html><hread><title>LabKey Server currently unavailable</title></head>\n");
+        writer.write("<html><head><title>LabKey Server currently unavailable</title></head>\n");
         writer.write("<body>" + _message + "</body></html>");
     }
 }

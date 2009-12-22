@@ -286,14 +286,14 @@ public abstract class AbstractResource implements Resource
     @NotNull
     public List<WebdavResolver.History> getHistory()
     {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
     
 
     @NotNull
     public List<NavTree> getActions()
     {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     public static String c(String path, String... names)

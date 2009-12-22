@@ -9,7 +9,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -51,7 +50,7 @@ public class AssayPipelineProvider extends PipelineProvider
         if (files != null && files.length > 0)
         {
             List<ExpProtocol> assays = AssayService.get().getAssayProtocols(context.getContainer());
-            Collections.sort(assays, ExpObject.NAME_COMPARATOR);
+            Collections.sort(assays);
             NavTree navTree = new NavTree(_actionDescription);
             for (ExpProtocol protocol : assays)
             {

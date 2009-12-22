@@ -34,8 +34,18 @@ public class MenuButton extends ActionButton
 
     public MenuButton(String caption)
     {
+        this(caption, null);
+    }
+
+    public MenuButton(String caption, String menuId)
+    {
         super("MenuButton", caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
-        popupMenu = new PopupMenu(new NavTree(caption), PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.MENUBUTTON);
+        NavTree navTree = new NavTree(caption);
+        popupMenu = new PopupMenu(navTree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.MENUBUTTON);
+        if (menuId != null)
+        {
+            navTree.setId(menuId);
+        }
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
