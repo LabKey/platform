@@ -614,6 +614,7 @@ api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
 api/src/org/labkey/api/security/PermissionsMap.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
+api/src/org/labkey/api/security/RequiresNoPermission.java -text
 api/src/org/labkey/api/security/RequiresPermission.java -text
 api/src/org/labkey/api/security/RequiresPermissionClass.java -text
 api/src/org/labkey/api/security/RequiresSiteAdmin.java -text

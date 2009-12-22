@@ -15,29 +15,31 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.LabkeyError;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels

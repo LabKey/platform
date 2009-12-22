@@ -610,8 +610,10 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (requiresLogin && user.isGuest())
             HttpView.throwUnauthorized();
 
-        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin)
-            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, or @RequiresLogin annotation is required on class " + actionClass.getName());
+        boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
+
+        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission)
+            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, or @RequiresNoPermission annotation is required on class " + actionClass.getName());
     }
 
     private static Class<? extends Permission> translatePermission(RequiresPermission requiresPerm)
