@@ -196,6 +196,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             return Collections.singletonMap(Document.class, doc);
         }
+        catch(NoClassDefFoundError err)
+        {
+            // Suppress stack trace, etc., if Bouncy Castle isn't present.
+            if ("org/bouncycastle/cms/CMSException".equals(err.getMessage()))
+                _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encyption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
+            else
+                throw err;
+        }
         catch(Throwable e)
         {
             _log.error("Indexing error with " + id, e);

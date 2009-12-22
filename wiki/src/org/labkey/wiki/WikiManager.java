@@ -17,32 +17,30 @@ package org.labkey.wiki;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.log4j.Category;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchTermProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
+import org.labkey.api.webdav.Resource;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
-import org.labkey.api.util.Pair;
-import org.labkey.api.search.SearchService;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.webdav.Resource;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
-import org.apache.log4j.Category;
-import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -50,8 +48,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
-
-import static org.labkey.api.search.SearchService.PROPERTY.*;
 
 
 /**
@@ -913,8 +909,6 @@ public class WikiManager
                             documentName);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
-
-                Logger.getLogger(WikiManager.class).info("Indexed " + list.size() + " wiki attachments");
             }
         }
         catch (SQLException x)
