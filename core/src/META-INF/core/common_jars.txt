@@ -1,3 +1,5 @@
+The following JAR files are distributed and installed in the <tomcat>/common/lib directory.
+
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 activation.jar|JavaBeans Activation Framework|1.1.1|{link:Sun|http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp}|{link:Sun Binary Distribution License|https://www.labkey.org/download/jaf-LICENSE.txt}|adam|JavaMail dependency

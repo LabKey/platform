@@ -19,7 +19,6 @@ package org.labkey.list.view;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.*;
-import org.springframework.validation.BindException;
 
 import java.util.Map;
 
@@ -64,14 +63,14 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
 
     public HttpView getEditView(Portal.WebPart webPart)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/experiment/controllers/list/customizeSingleListWebPart.jsp", webPart);
+        return new JspView<Portal.WebPart>("/org/labkey/list/view/customizeSingleListWebPart.jsp", webPart);
     }
 
     private static class SingleListWebPart extends ListQueryView
     {
         private SingleListWebPart(ListQueryForm form, Map<String, String> props)
         {
-            super(form, (BindException)null);
+            super(form, null);
 
             ListDefinition list = form.getList();
             String title = props.get("title");
