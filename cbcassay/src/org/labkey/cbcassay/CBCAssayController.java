@@ -25,23 +25,23 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.query.ResultsQueryView;
-import org.labkey.api.study.actions.ProtocolIdForm;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
@@ -125,7 +125,7 @@ public class CBCAssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN | ACL.PERM_DELETE)
+    @RequiresPermissionClass(AdminPermission.class)
     public class EditResultsAction extends FormViewAction<EditResultsForm>
     {
         ExpProtocol _protocol;

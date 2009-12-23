@@ -378,13 +378,33 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
+            Module core = ModuleLoader.getInstance().getCoreModule();
 
-            HttpView jars = new CreditsView("jars.txt", getWebInfJars(true), "JAR", "webapp", jarRegEx);
-            HttpView commonJars = new CreditsView("common_jars.txt", getCommonJars(), "Common JAR", "/external/lib/common directory", jarRegEx);
-            HttpView scripts = new CreditsView("scripts.txt", null, "JavaScript and Icons", "/internal/webapp directory", null);
-            HttpView executables = new CreditsView("executables.txt", getBinFilenames(), "Executable", "/external/bin directory", "([\\w\\.]+\\.(exe|dll|manifest|jar))");
+            HttpView jars = new CreditsView("/core/META-INF/core/jars.txt", getCreditsFile(core, "jars.txt"), getWebInfJars(true), "JAR", "webapp", null, jarRegEx);
+            VBox views = new VBox(jars);
 
-            return new VBox(jars, commonJars, scripts, executables);
+            List<Module> modules = ModuleLoader.getInstance().getModules();
+
+            for (Module module : modules)
+            {
+                if (!module.equals(core))
+                {
+                    String wikiSource = getCreditsFile(module, "jars.txt");
+
+                    if (null != wikiSource)
+                    {
+                        HttpView moduleJars = new CreditsView("jars.txt", getCreditsFile(module, "jars.txt"), module.getJarFilenames(), "JAR", "webapp", "the " + module.getName() + " Module", jarRegEx);
+                        views.addView(moduleJars);
+                    }
+                }
+            }
+
+            views.addView(new CreditsView("/core/META-INF/core/common_jars.txt", getCreditsFile(core, "common_jars.txt"), getCommonJars(), "Common JAR", "/external/lib/common directory", null, jarRegEx));
+            views.addView(new CreditsView("/core/META-INF/core/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript and Icons", null, null, null));
+            views.addView(new CreditsView("/core/META-INF/core/executables.txt", getCreditsFile(core, "executables.txt"), getBinFilenames(), "Executable", "/external/bin directory", null, "([\\w\\.]+\\.(exe|dll|manifest|jar))"));
+            views.addView(new CreditsView("/core/META-INF/core/installer.txt", getCreditsFile(core, "installer.txt"), null, "Executable", null, "the Graphical Windows Installer", null));
+
+            return views;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -399,11 +419,10 @@ public class AdminController extends SpringActionController
         private final String WIKI_LINE_SEP = "\r\n\r\n";
         private String _html;
 
-        CreditsView(String creditsFilename, Set<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern) throws IOException
+        CreditsView(String creditsFilename, String wikiSource, Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern) throws IOException
         {
             super();
-            setTitle(fileType + " Files Shipped with LabKey");
-            String wikiSource = getCreditsFile(creditsFilename);
+            setTitle(fileType + " Files Distributed with " + (null == component ? "Labkey Core" : component));
 
             if (null != filenames)
                 wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
@@ -419,7 +438,7 @@ public class AdminController extends SpringActionController
         }
 
 
-        private String getErrors(String wikiSource, String creditsFilename, Set<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
+        private String getErrors(String wikiSource, String creditsFilename, Collection<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
             Set<String> documentedFilenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
             Set<String> documentedFilenamesCopy = new HashSet<String>();
@@ -452,11 +471,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static String getCreditsFile(String filename) throws IOException
+    private static String getCreditsFile(Module module, String filename) throws IOException
     {
-        Module core = ModuleLoader.getInstance().getCoreModule();
-        InputStream is = core.getResourceStream("/META-INF/" + filename);
-        return PageFlowUtil.getStreamContentsAsString(is);
+        InputStream is = module.getResourceStream("/META-INF/" + module.getName().toLowerCase() + "/" + filename);
+        return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
     }
 
 

@@ -1,0 +1,6 @@
+{table}
+Filename|Component|Version|Source|License|LabKey Dev|Purpose
+lucene-core-3.0.0.jar|Lucene|3.0.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
+lucene-snowball-3.0.0.jar|Snowball|3.0.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
+tika-app-0.5.jar|Tika|0.5|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Document parsers for full-text search
+{table}

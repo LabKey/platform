@@ -16,24 +16,25 @@
 
 package org.labkey.search;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.webdav.ActionResource;
-import org.labkey.api.util.Path;
-import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.AbstractSearchService;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.search.model.LuceneSearchServiceImpl;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.io.FilenameFilter;
+import java.io.File;
 
 public class SearchModule extends DefaultModule
 {
@@ -98,5 +99,17 @@ public class SearchModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    // Custom filter to avoid flagging Bouncy Castle jar
+    protected FilenameFilter getJarFilenameFilter()
+    {
+        return new FilenameFilter() {
+            public boolean accept(File dir, String name)
+            {
+                return name.endsWith(".jar") && !name.startsWith("bcmail-jdk15");
+            }
+        };
     }
 }

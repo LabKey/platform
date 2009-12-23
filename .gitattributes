@@ -144,6 +144,7 @@ authentication/Authentication.iml -text
 authentication/lib/amclientsdk.jar -text
 authentication/lib/opensso-src.zip -text
 authentication/module.properties -text
+authentication/src/META-INF/authentication/jars.txt -text
 authentication/src/org/labkey/authentication/AuthenticationModule.java -text
 authentication/src/org/labkey/authentication/ldap/LdapAuthenticationManager.java -text
 authentication/src/org/labkey/authentication/ldap/LdapAuthenticationProvider.java -text
@@ -417,10 +418,11 @@ core/resources/schemas/dbscripts/sqlserver/prop-8.30-9.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-0.00-1.00.sql -text
-core/src/META-INF/common_jars.txt -text
-core/src/META-INF/executables.txt -text
-core/src/META-INF/jars.txt -text
-core/src/META-INF/scripts.txt -text
+core/src/META-INF/core/common_jars.txt -text
+core/src/META-INF/core/executables.txt -text
+core/src/META-INF/core/installer.txt -text
+core/src/META-INF/core/jars.txt -text
+core/src/META-INF/core/scripts.txt -text
 core/src/org/labkey/core/CoreContainerListener.java -text
 core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text
@@ -1780,7 +1782,7 @@ search/resources/schemas/dbscripts/postgresql/search-0.02-0.03.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.02-0.03.sql -text
 search/resources/schemas/search.xml -text
-search/src/META-INF/search_jars.txt -text
+search/src/META-INF/search/jars.txt -text
 search/src/org/labkey/search/SearchContainerListener.java -text
 search/src/org/labkey/search/SearchController.java -text
 search/src/org/labkey/search/SearchModule.java -text

@@ -1,4 +1,4 @@
-The following executable files are shipped and installed with the standard LabKey Server Graphical Windows Installer.
+The following executable files are distibuted and installed with the LabKey Server Graphical Windows Installer.
 They are also shipped in the zip download used for manual Windows installations.
 
 {table}
@@ -16,13 +16,3 @@ libexpat.dll\\libexpatw.dll|{link:Expat|http://expat.sourceforge.net/}|N/A|{link
 Microsoft.VC80.CRT.manifest\\msvcm80.dll\\msvcp80.dll\\msvcr80.dll|{link:Microsoft C-Runtime|http://msdn.microsoft.com/en-us/library/abx4dbyh(VS.80).aspx}|VC++ 2005|{link:Microsoft|http://www.microsoft.com}|{link:Visual C++ 2005 Redistributables|http://msdn2.microsoft.com/en-us/library/ms235299.aspx}|jeckels|The C-Runtime for VC++ 2005, used by the Trans Proteomic Pipeline and the X!Tandem.
 Microsoft.VC80.MFC.manifest\\mfc80.dll\\mfc80u.dll\\mfcm80.dll\\mfcm80u.dll|{link:Microsoft Foundation Classes Library|http://msdn.microsoft.com/en-us/library/d06h2x6e(VS.80).aspx}|VC++ 2005|{link:Microsoft|http://www.microsoft.com}|{link:Visual C++ 2005 Redistributables|http://msdn2.microsoft.com/en-us/library/ms235299.aspx}|jeckels|Used by ReAdW.exe.
 {table}
-
-The following executable files are shipped and installed only with the standard LabKey Server Graphical Windows Installer.
-{table}
-Component|Version|Source|License|LabKey Dev|Purpose
-{link:Sun Java Runtime Environment (JRE)|http://java.sun.com/j2se/desktopjava/jre/index.jsp}|1.6.0_10|{link:Sun Microsystems, Inc.|http://www.sun.com}|{link:Binary Code License Agreement|http://java.com/en/download/license.jsp}|brittp|Provides the Java Virtual Machine, libraries, and other components to run LabKey Server on Windows machines.
-{link:PostgreSQL|http://www.postgresql.org/}|8.3.7|{link:PostgreSQL|http://www.postgresql.org/}|{link:BSD|http://www.postgresql.org/about/licence}|brittp|A powerful, open source relational database system that LabKey Server uses to store all its data.
-{link:Apache Tomcat|http://tomcat.apache.org/}|5.5.20|{link:Apache|http://tomcat.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|brittp|Web server on which LabKey Server runs.
-{link:caBIG Components|http://ncicb.nci.nih.gov/infrastructure/cacoresdk}|4.0|{link:NCICB|http://ncicb.nci.nih.gov/infrastructure/cacoresdk}|{link:caBIG license|http://ncicb.nci.nih.gov/download/cacoresdklicenseagreement.jsp}|peter|caBIG publishing webapp.
-{table}
-

@@ -19,7 +19,6 @@ package org.labkey.announcements.model;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.security.SecurityManager.PermissionSet;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -31,8 +30,6 @@ import org.labkey.api.security.permissions.ReadPermission;
  */
 public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
 {
-    protected final static int EDITOR_PERM = PermissionSet.EDITOR.getPermissions();
-
     public SecureMessageBoardPermissions(Container c, User user, DiscussionService.Settings settings)
     {
         super(c, user, settings);

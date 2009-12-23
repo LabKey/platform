@@ -64,7 +64,7 @@
     for (Announcement a : bean.announcements)
     { %>
     <tr>
-        <td class="labkey-announcement-title labkey-force-word-break" width="40%" align="left"><span><a href="<%=h(a.getThreadUrl(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%
+        <td class="labkey-announcement-title labkey-force-word-break" width="40%" align="left"><span><a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%
         if (a.getResponseCount() > 0)
             out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
         %></td>
@@ -84,7 +84,7 @@
             }
         %>
     </td></tr>
-<%      } %>    <tr><td style="padding-bottom:4;" colspan=3 align="left">[<a href="<%=h(a.getThreadUrl(c))%>rowId=<%=a.getRowId()%>">view <%=bean.settings.getConversationName().toLowerCase()%><%if (null != bean.insertURL)
+<%      } %>    <tr><td style="padding-bottom:4;" colspan=3 align="left">[<a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>">view <%=bean.settings.getConversationName().toLowerCase()%><%if (null != bean.insertURL)
 {%> or respond<%}%></a>]</td></tr>
 <%
     }

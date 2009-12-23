@@ -314,21 +314,10 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     }
 
 
-    @Transient
-    public String getThreadUrl(Container container)
+    public ActionURL getThreadURL(Container container)
     {
-        ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, container);
-        return url.getLocalURIString();
+        return new ActionURL(AnnouncementsController.ThreadAction.class, container);
     }
-
-    public String getPostResponseUrl(Container container)
-    {
-        ActionURL url = new ActionURL(AnnouncementsController.RespondAction.class, container);
-        url.addParameter("rowId", Integer.toString(getRowId()));
-        url.addParameter("entityId", getEntityId());
-        return url.getLocalURIString();
-    }
-
 
     public String translateBody(Container container)
     {
