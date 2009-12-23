@@ -825,4 +825,31 @@ public abstract class DefaultModule implements Module
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
     {
     }
+
+    public @Nullable Collection<String> getJarFilenames()
+    {
+        if (!AppProps.getInstance().isDevMode())
+            return null;
+
+        File lib = new File(AppProps.getInstance().getProjectRoot(), "server/modules/" + getName() + "/lib");
+
+        if (!lib.exists())
+            return null;
+
+        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
+        filenames.addAll(Arrays.asList(lib.list(getJarFilenameFilter())));
+
+        return filenames;
+    }
+
+    protected FilenameFilter getJarFilenameFilter()
+    {
+        return new FilenameFilter() {
+            public boolean accept(File dir, String name)
+            {
+                return name.endsWith(".jar");
+            }
+        };
+    }
 }

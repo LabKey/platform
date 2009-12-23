@@ -266,4 +266,9 @@ public class MockModule implements Module
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
     {
     }
+
+    public @Nullable Collection<String> getJarFilenames()
+    {
+        return null;
+    }
 }

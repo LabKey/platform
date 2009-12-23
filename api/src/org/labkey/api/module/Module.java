@@ -267,4 +267,11 @@ public interface Module extends Comparable<Module>
      * else incremental (either modified > modifiedSince, or modified > lastIndexed)
      */
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, @Nullable Container c, @Nullable Date modifiedSince);
+
+    /**
+     * Used in dev mode to verify that the module credits pages is complete.  Called only if jars.txt is present in
+     * <module>/META-INF/<module> directory.
+     * @return Jar filenames used by this module
+     */
+    public @Nullable Collection<String> getJarFilenames();
 }
