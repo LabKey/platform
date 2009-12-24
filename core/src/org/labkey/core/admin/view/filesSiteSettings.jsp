@@ -85,11 +85,10 @@
 
     Ext.onReady(function(){
         var tree = new Ext.tree.ColumnTree({
-            width: 625,
+            width: 630,
             height: 500,
             rootVisible:false,
             autoScroll:true,
-            title: 'File Roots',
             renderTo: 'viewsGrid',
 
             columns:[{
@@ -107,9 +106,9 @@
             }],
 
             tbar: [
-                {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},'-',
-                {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},'-',
-                {text:'Configure Selected', tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'}, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},'-',
+                {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},
+                {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},
+                {text:'Configure Selected', tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'}, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
             ],
 
             loader: new Ext.tree.TreeLoader({

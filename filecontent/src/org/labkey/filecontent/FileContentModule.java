@@ -19,6 +19,7 @@ package org.labkey.filecontent;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;

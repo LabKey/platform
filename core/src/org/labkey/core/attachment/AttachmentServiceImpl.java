@@ -388,7 +388,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
             if (parent instanceof AttachmentDirectory)
-                ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
+                ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), name);
         }
         catch (SQLException x)
         {

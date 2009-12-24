@@ -2372,7 +2372,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }
     },
 
-
     constructor : function(config)
     {
         config = config || {};
@@ -2397,24 +2396,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         // GRID
         //
 
-        // mild convolution to pass fileSystem to the _attachPreview function
-        var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
-
         this.store = new FileStore({recordType:this.fileSystem.FileRecord});
-        this.grid = new Ext.grid.GridPanel(
-        {
-            store: this.store,
-            border:false,
-            selModel : new Ext.grid.RowSelectionModel({singleSelect:true}),
-            columns: [
-                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:iconRenderer},
-                {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-//                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
-                {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
-                {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
-                {header: "Usages", width: 150, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage}
-            ]
-        });
+        this.grid = this.createGrid();
+
         this.grid.getSelectionModel().on(ROWSELETION_EVENTS.rowselect, this.Grid_onRowselect, this);
         this.grid.getSelectionModel().on(ROWSELETION_EVENTS.selectionchange, this.Grid_onSelectionChange, this);
         this.grid.on(GRIDPANEL_EVENTS.celldblclick, this.Grid_onCelldblclick, this);
@@ -2426,60 +2410,21 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.getView().colMenu.getEl().addClass("extContainer");
         }, this.grid);
 
+
         //
         // TREE
         //
 
         if (this.showFolderTree)
         {
-            var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
-            var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
-            this.tree = new Ext.tree.TreePanel(
-            {
-                loader:treeloader,
-                root:root,
-                rootVisible:true,
-                title: 'Folders',
-                useArrows:true,
-                margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
-                autoScroll:true,
-                animate:true,
-                enableDD:false,
-                containerScroll:true,
-                border:false,
-                pathSeparator:';'
-            });
-            this.tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
+            this.tree = this.createTreePanel();
         }
 
         //
         // Toolbar and Actions
         //
 
-        var tbarConfig = [];
-        if (!this.tbar)
-        {
-            // UNDONE: need default ordering
-            if (!this.allowChangeDirectory)
-            {
-                delete this.actions.createDirectory;
-                delete this.actions.parentFolder;
-            }
-            for (var a in this.actions)
-                if (this.actions[a] && this.actions[a].isAction)
-                    tbarConfig.push(this.actions[a]);
-        }
-        else
-        {
-            for (var i=0 ; i<this.tbar.length ; i++)
-            {
-                var item = this.tbar[i];
-                if (typeof item == "string" && typeof this.actions[item] == "object")
-                    tbarConfig.push(this.actions[item]);
-                else
-                    tbarConfig.push(item);
-            }
-        }
+        var tbarConfig = this.getTbarConfig();
 
         //
         // Upload
@@ -2566,67 +2511,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         // Layout top panel
         //
 
-        var layoutItems = [];
-        if (this.showAddressBar)
-        {
-            layoutItems.push(
-            {
-                region: 'north',
-                height: 24,
-                margins: '5 5 0 5',
-                layout: 'fit',
-                border: true,
-                items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
-            });
-        }
-        if (this.showDetails)
-        {
-            layoutItems.push(
-            {
-                region: 'south',
-                split: true,
-                height: 100,
-                minSize: 0,
-                maxSize: 250,
-                margins: '0 5 5 5',
-                layout: 'fit',
-                items: [{html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'}]
-            });
-        }
-        if (this.showFolderTree)
-        {
-            this.tree.region='west';
-            this.tree.split=true;
-            this.tree.width = 200;
-            layoutItems.push(this.tree);
-        }
-        layoutItems.push(
-            {
-                region:'center',
-                margins: '5 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '5') + ' 0',
-                minSize: 200,
-                layout:'border',
-                items:
-                    [
-                        {region:'center', layout:'fit', border:false, items:[this.grid]},
-                        {region:'south', layout:'fit', border:false, height:40, minSize:40, margins:'1 0 0 0', items:[this.uploadPanel]}
-                    ]
-            });
-        if (this.propertiesPanel)
-        {
-            var panels = !'length' in this.propertiesPanel ? [this.propertiesPanel] : this.propertiesPanel;
-            layoutItems.push(
-            {
-                region:'east',
-                split:true,
-                margins: this.showDetails ? '5 5 0 0' : '5 5 5 0',
-                width: 200,
-                minSize: 100,
-                border: false,
-                layout: 'accordion',
-                items: panels
-            });
-        }
+        var layoutItems = this.getItems();
 
         Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
         LABKEY.FileBrowser.superclass.constructor.call(this, config);
@@ -2713,5 +2598,150 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         // applet
         this.on(BROWSER_EVENTS.directorychange, this.updateAppletState, this);
+    },
+
+    getTbarConfig : function()
+    {
+        var tbarConfig = [];
+        if (!this.tbar)
+        {
+            // UNDONE: need default ordering
+            if (!this.allowChangeDirectory)
+            {
+                delete this.actions.createDirectory;
+                delete this.actions.parentFolder;
+            }
+            for (var a in this.actions)
+                if (this.actions[a] && this.actions[a].isAction)
+                    tbarConfig.push(this.actions[a]);
+        }
+        else
+        {
+            for (var i=0 ; i<this.tbar.length ; i++)
+            {
+                var item = this.tbar[i];
+                if (typeof item == "string" && typeof this.actions[item] == "object")
+                    tbarConfig.push(this.actions[item]);
+                else
+                    tbarConfig.push(item);
+            }
+        }
+        return tbarConfig;
+    },
+
+    /**
+     * Returns the array of items contained by this panel.
+     */
+    getItems : function()
+    {
+        var layoutItems = [];
+        if (this.showAddressBar)
+        {
+            layoutItems.push(
+            {
+                region: 'north',
+                height: 24,
+                margins: '5 5 0 5',
+                layout: 'fit',
+                border: true,
+                items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
+            });
+        }
+        if (this.showDetails)
+        {
+            layoutItems.push(
+            {
+                region: 'south',
+                split: true,
+                height: 100,
+                minSize: 0,
+                maxSize: 250,
+                margins: '0 5 5 5',
+                layout: 'fit',
+                items: [{html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'}]
+            });
+        }
+        if (this.showFolderTree)
+        {
+            this.tree.region='west';
+            this.tree.split=true;
+            this.tree.width = 200;
+            layoutItems.push(this.tree);
+        }
+        layoutItems.push(
+            {
+                region:'center',
+                margins: '5 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '5') + ' 0',
+                minSize: 200,
+                layout:'border',
+                items:
+                    [
+                        {region:'center', layout:'fit', border:false, items:[this.grid]},
+                        {region:'south', layout:'fit', border:false, height:40, minSize:40, margins:'1 0 0 0', items:[this.uploadPanel]}
+                    ]
+            });
+        if (this.propertiesPanel)
+        {
+            var panels = !'length' in this.propertiesPanel ? [this.propertiesPanel] : this.propertiesPanel;
+            layoutItems.push(
+            {
+                region:'east',
+                split:true,
+                margins: this.showDetails ? '5 5 0 0' : '5 5 5 0',
+                width: 200,
+                minSize: 100,
+                border: false,
+                layout: 'accordion',
+                items: panels
+            });
+        }
+        return layoutItems;
+    },
+
+    createTreePanel : function()
+    {
+        var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
+        var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
+        var tree = new Ext.tree.TreePanel(
+        {
+            loader:treeloader,
+            root:root,
+            rootVisible:true,
+            title: 'Folders',
+            useArrows:true,
+            margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
+            autoScroll:true,
+            animate:true,
+            enableDD:false,
+            containerScroll:true,
+            border:false,
+            pathSeparator:';'
+        });
+        tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
+
+        return tree;
+    },
+
+    createGrid : function()
+    {
+        // mild convolution to pass fileSystem to the _attachPreview function
+        var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
+
+        var grid = new Ext.grid.GridPanel(
+        {
+            store: this.store,
+            border:false,
+            selModel : new Ext.grid.RowSelectionModel({singleSelect:true}),
+            columns: [
+                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:iconRenderer},
+                {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
+//                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
+                {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
+                {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
+                {header: "Usages", width: 150, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage}
+            ]
+        });
+        return grid;
     }
 });
+

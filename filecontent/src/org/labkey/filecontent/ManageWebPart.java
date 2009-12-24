@@ -16,6 +16,7 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.files.view.FilesWebPart;
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,12 +31,12 @@ public class ManageWebPart extends FilesWebPart
 
     public ManageWebPart(Container c)
     {
-        super(JSP, c);
+        super(c);
     }
 
     public ManageWebPart(Container c, String fileSet)
     {
-        super(JSP, c, fileSet);
+        super(c, fileSet);
     }
 
 }

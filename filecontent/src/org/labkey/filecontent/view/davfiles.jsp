@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
-<%@ page import="org.labkey.filecontent.FilesWebPart" %>
+<%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -38,7 +38,8 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 %>
 <%
     ViewContext context = HttpView.currentContext();
-    AttachmentDirectory root = (AttachmentDirectory)HttpView.currentModel();
+    FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm)HttpView.currentModel();
+    AttachmentDirectory root = bean.getRoot();
     FilesWebPart me = (FilesWebPart) HttpView.currentView();
     Container c = context.getContainer();
 

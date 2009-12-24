@@ -29,6 +29,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
@@ -36,6 +37,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineManager;
@@ -408,6 +410,44 @@ public class PipelineController extends SpringActionController
         }
     }
 
+
+/*
+    public static class BrowseWebPart extends FilesWebPart
+    {
+        public BrowseWebPart()
+        {
+            super(getContextContainer());
+
+            ViewContext ctx = getRootContext();
+            FilesForm bean = getModelBean();
+
+            bean.setShowAddressBar(true);
+            bean.setShowFolderTree(true);
+            bean.setShowDetails(true);
+            bean.setAllowChangeDirectory(true);
+            bean.setAutoResize(true);
+
+            List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
+            actions.add(FilesForm.actions.parentFolder);
+            actions.add(FilesForm.actions.download);
+            actions.add(FilesForm.actions.deletePath);
+            actions.add(FilesForm.actions.refresh);
+            actions.add(FilesForm.actions.createDirectory);
+
+            if (ctx.getContainer().hasPermission(ctx.getUser(), InsertPermission.class))
+                actions.add(FilesForm.actions.uploadTool);
+
+            bean.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
+            
+            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+            if (root != null)
+                bean.setRootPath(root.getContainer(), PipelineWebdavProvider.PIPELINE_LINK);
+
+            setTitle("Pipeline Files");
+            setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
+        }
+    }
+*/
 
     public static class BrowseWebPart extends JspView<BrowseWebPart>
     {
@@ -1267,6 +1307,11 @@ public class PipelineController extends SpringActionController
         public ActionURL urlBegin(Container container)
         {
             return PipelineController.urlBegin(container);
+        }
+
+        public ActionURL urlActions(Container container)
+        {
+            return new ActionURL(ActionsAction.class, container);
         }
     }
 

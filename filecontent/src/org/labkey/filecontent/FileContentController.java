@@ -28,8 +28,10 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -89,6 +91,19 @@ public class FileContentController extends SpringActionController
        return t;
    }
 */
+
+    public static class FileUrlsImpl implements FileUrls
+    {
+        public ActionURL urlBegin(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
+        public ActionURL urlShowAdmin(Container container)
+        {
+            return new ActionURL(ShowAdminAction.class, container);
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
@@ -807,80 +822,6 @@ public class FileContentController extends SpringActionController
            this.fileSet = fileSet;
        }
    }
-
-   public static class CustomizeWebPartForm
-   {
-       private String pageId;
-       private int index;
-       private String fileSet;
-       private String path;
-       private boolean useFileSet;
-
-       public CustomizeWebPartForm()
-       {
-
-       }
-
-       public CustomizeWebPartForm(Portal.WebPart webPart)
-       {
-           pageId = webPart.getPageId();
-           index = webPart.getIndex();
-           fileSet = webPart.getPropertyMap().get("fileSet");
-           path = webPart.getPropertyMap().get("path");
-           useFileSet = fileSet != null;
-       }
-
-       public String getPageId()
-       {
-           return pageId;
-       }
-
-       public void setPageId(String pageId)
-       {
-           this.pageId = pageId;
-       }
-
-       public int getIndex()
-       {
-           return index;
-       }
-
-       public void setIndex(int index)
-       {
-           this.index = index;
-       }
-
-       public String getFileSet()
-       {
-           return fileSet;
-       }
-
-       public void setFileSet(String fileSet)
-       {
-           this.fileSet = fileSet;
-       }
-
-       public String getPath()
-       {
-           return path;
-       }
-
-       public void setPath(String path)
-       {
-           this.path = path;
-       }
-
-       public boolean isUseFileSet()
-       {
-           return useFileSet;
-       }
-
-       public void setUseFileSet(boolean useFileSet)
-       {
-           this.useFileSet = useFileSet;
-       }
-   }
-
 
     private static class IFrameView extends JspView<String>
     {
