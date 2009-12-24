@@ -71,7 +71,7 @@ public class AssayPipelineProvider extends PipelineProvider
             {
                 if (AssayService.get().getProvider(protocol) == _assayProvider)
                 {
-                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), protocol, pr.relativePath(new File(directory.getURI())), new File[0]); 
+                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), protocol, pr.relativePath(new File(directory.getURI())), files); 
                     NavTree child = new NavTree("Use " + protocol.getName(), url);
                     child.setId(_actionDescription + ":Use " + protocol.getName());
                     navTree.addChild(child);
