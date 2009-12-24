@@ -48,10 +48,11 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     private final ColumnDescriptor _cdKey;
     @Nullable
     private final File _attachmentDir;
+    @Nullable
     private final ListImportProgress _progress;
     private final Map<String, FileNameUniquifier> _uniquifiers = new HashMap<String, FileNameUniquifier>();
 
-    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey, @Nullable File attachmentDir, ListImportProgress progress)
+    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey, @Nullable File attachmentDir, @Nullable ListImportProgress progress)
     {
         _user = user;
         _list = list;
@@ -129,6 +130,7 @@ public class ListImportHelper implements OntologyManager.ImportHelper
 
     public void afterBatchInsert(int currentRow) throws SQLException
     {
-        _progress.setCurrentRow(currentRow);
+        if (null != _progress)
+            _progress.setCurrentRow(currentRow);
     }
 }

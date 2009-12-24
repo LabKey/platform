@@ -506,7 +506,7 @@ public class ListDefinitionImpl implements ListDefinition
         return errors;
     }
 
-    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, @Nullable File attachmentDir, List<String> errors, ListImportProgress progress)
+    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, @Nullable File attachmentDir, List<String> errors, @Nullable ListImportProgress progress)
     {
         boolean transaction = false;
 

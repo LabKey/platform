@@ -48,16 +48,16 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
         try
         {
             ListQueryForm form = new ListQueryForm(Integer.parseInt(listIdParam), portalCtx);
+
+            if (null == form.getList())
+                return new HtmlView(title, "List does not exist");
+
             form.setViewName(viewName);
             return new SingleListWebPart(form, props);
         }
         catch (NumberFormatException e)
         {
             return new HtmlView(title, "List id is invalid");
-        }
-        catch (NotFoundException e)
-        {
-            return new HtmlView(title, "List does not exist");
         }
     }
 
