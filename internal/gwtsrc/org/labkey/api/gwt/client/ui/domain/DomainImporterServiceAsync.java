@@ -23,12 +23,13 @@ import java.util.Map;
 
 public interface DomainImporterServiceAsync
 {
-
     void inferenceColumns(AsyncCallback<List<InferencedColumn>> async);
 
     void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
 
     void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
 
-    void importData(GWTDomain domain, Map<String, String> mappedColumnNames, AsyncCallback<List<String>> async);
+    void importData(GWTDomain domain, Map<String, String> mappedColumnNames, AsyncCallback<ImportStatus> async);
+
+    void getStatus(String importId, AsyncCallback<ImportStatus> async);
 }

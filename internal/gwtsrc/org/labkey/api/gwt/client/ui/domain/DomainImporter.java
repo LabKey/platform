@@ -15,6 +15,7 @@
  */
 package org.labkey.api.gwt.client.ui.domain;
 
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
@@ -232,7 +233,7 @@ public class DomainImporter
             columnMap = columnMapper.getColumnMap();
         else
             columnMap = new HashMap<String, String>(); // emptyMap() is not serializable
-        service.importData(domain, columnMap, new AsyncCallback<List<String>>()
+        service.importData(domain, columnMap, new AsyncCallback<ImportStatus>()
         {
             public void onFailure(Throwable caught)
             {
@@ -240,19 +241,70 @@ public class DomainImporter
                 handleServerFailure(caught);
             }
 
-            public void onSuccess(List<String> errors)
+            public void onSuccess(ImportStatus status)
             {
-                if (errors == null || errors.isEmpty())
-                {
-                    finish();
-                }
+                if (!status.isComplete())
+                    pollForComplete(status.getJobId(), domain);
                 else
-                {
-                    resetDomainFields(domain);
-                    handleServerFailure(errors);
-                }
+                    handleComplete(status, domain);
             }
         });
+    }
+
+    private void pollForComplete(final String jobId, final GWTDomain domain)
+    {
+        Timer t = new Timer() {
+            int i = 0;
+
+            public void run()
+            {
+                service.getStatus(jobId, new AsyncCallback<ImportStatus>()
+                {
+                    public void onFailure(Throwable caught)
+                    {
+                        resetDomainFields(domain);
+                        handleServerFailure(caught);
+                        cancel();
+                    }
+
+                    public void onSuccess(ImportStatus status)
+                    {
+                        if (!status.isComplete())
+                        {
+                            updateStatus(status);
+                        }
+                        else
+                        {
+                            handleComplete(status, domain);
+                            cancel();
+                        }
+                    }
+                });
+            }
+        };
+
+        // Schedule the timer to run every 5 seconds.
+        t.scheduleRepeating(5000);
+    }
+
+    private void updateStatus(ImportStatus status)
+    {
+        importStatusLabel.setText("Importing " + status.getCurrentRow() + "/" + status.getTotalRows());
+    }
+
+    private void handleComplete(ImportStatus status, GWTDomain domain)
+    {
+        List<String> errors = status.getMessages();
+
+        if (errors == null || errors.isEmpty())
+        {
+            finish();
+        }
+        else
+        {
+            resetDomainFields(domain);
+            handleServerFailure(errors);
+        }
     }
 
     private void handleServerFailure(List<String> errors)

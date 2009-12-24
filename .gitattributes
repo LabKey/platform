@@ -1835,6 +1835,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporter.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterServiceAsync.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportException.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportStatus.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/InferencedColumn.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/CheckboxItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text

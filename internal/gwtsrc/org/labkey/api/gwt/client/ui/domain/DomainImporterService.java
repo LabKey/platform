@@ -30,5 +30,6 @@ public interface DomainImporterService extends RemoteService
     public List<InferencedColumn> inferenceColumns() throws ImportException;
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
     public GWTDomain getDomainDescriptor(String typeURI);
-    public List<String> importData(GWTDomain domain, Map<String,String> mappedColumnNames) throws ImportException;
+    public ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
+    public ImportStatus getStatus(String importId) throws ImportException;
 }

@@ -89,7 +89,7 @@ public class OntologyManager
 		return m;
 	}
 
-    public static final int MAX_PROPS_IN_BATCH = 1000;
+    public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
 
     public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {

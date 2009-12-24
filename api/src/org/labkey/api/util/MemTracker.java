@@ -135,7 +135,7 @@ public class MemTracker
 
     public static synchronized boolean remove(Object object)
     {
-        assert  _instance._remove(object);
+        assert _instance._remove(object);
         return true;
     }
 

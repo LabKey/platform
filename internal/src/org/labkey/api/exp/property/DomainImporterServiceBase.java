@@ -22,6 +22,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
+import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -46,9 +47,17 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     /** The number of sample data rows to return **/
     private static final int NUM_SAMPLE_ROWS = 5;
 
+    private final File _tempFile;
+
     public DomainImporterServiceBase(ViewContext context)
     {
         super(context);
+
+        // Retrieve the file from the session now, so we can delete it later.  If we're importing in a background thread,
+        // we won't have a session at the end of import.
+        HttpSession session = getViewContext().getSession();
+        SessionTempFileHolder fileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");
+        _tempFile = (null == fileHolder ? null : fileHolder.getFile());
     }
 
     public List<InferencedColumn> inferenceColumns() throws ImportException
@@ -68,13 +77,10 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     @NotNull
     private File getImportFile() throws ImportException
     {
-        HttpSession session = getViewContext().getSession();
-        SessionTempFileHolder fileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");
-
-        if (fileHolder == null)
+        if (null == _tempFile)
             throw new ImportException("No temp file uploaded");
 
-        return fileHolder.getFile();
+        return _tempFile;
     }
 
     protected void deleteImportFile()
@@ -84,7 +90,10 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
             //noinspection ResultOfMethodCallIgnored
             getImportFile().delete();
             HttpSession session = getViewContext().getSession();
-            session.removeAttribute("org.labkey.domain.tempFile");
+
+            // No session if we're running in a background thread
+            if (null != session)
+                session.removeAttribute("org.labkey.domain.tempFile");
         }
         catch (ImportException ie)
         {
@@ -154,7 +163,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, getContainer());
     }
 
-    public abstract List<String> importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
+    public abstract ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
 
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
     {
