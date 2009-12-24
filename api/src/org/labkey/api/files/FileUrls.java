@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2006-2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.pipeline;
+
+package org.labkey.api.files;
 
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
 
 /**
- * <code>PipelineUrls</code> a UrlProvider for the pipeline UI.
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: Dec 23, 2009
  */
-public interface PipelineUrls extends UrlProvider
+public interface FileUrls extends UrlProvider
 {
-    ActionURL urlBrowse(Container container, String referer);
-    ActionURL urlBrowse(Container container, String referer, String path);
-
-    ActionURL urlReferer(Container container);
-
-    ActionURL urlSetup(Container container);
-
     ActionURL urlBegin(Container container);
 
-    ActionURL urlActions(Container container);
+    ActionURL urlShowAdmin(Container container);
 }

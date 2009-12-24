@@ -302,8 +302,13 @@ api/src/org/labkey/api/exp/xar/MapReplacer.java -text
 api/src/org/labkey/api/exp/xar/Replacer.java -text
 api/src/org/labkey/api/exp/xar/XarConstants.java -text
 api/src/org/labkey/api/files/FileContentService.java -text
+api/src/org/labkey/api/files/FileUrls.java -text
 api/src/org/labkey/api/files/MissingRootDirectoryException.java -text
 api/src/org/labkey/api/files/UnsetRootDirectoryException.java -text
+api/src/org/labkey/api/files/view/CustomizeFilesWebPartView.java -text
+api/src/org/labkey/api/files/view/FilesWebPart.java -text
+api/src/org/labkey/api/files/view/customizeWebPart.jsp -text
+api/src/org/labkey/api/files/view/fileContent.jsp -text
 api/src/org/labkey/api/jsp/ContextPage.java -text
 api/src/org/labkey/api/jsp/FormPage.java -text
 api/src/org/labkey/api/jsp/JspBase.java -text
