@@ -153,6 +153,8 @@ public class ExceptionUtil
             return;
         }
 
+        _log.error("Exception detected and logged to mothership", ex);
+
         String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL);
         ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
         if (level != ExceptionReportingLevel.NONE &&
