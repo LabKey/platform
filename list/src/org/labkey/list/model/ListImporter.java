@@ -108,7 +108,7 @@ public class ListImporter
 
                 if (tsv.exists())
                 {
-                    List<String> errors = def.insertListItems(user, DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName));
+                    List<String> errors = def.insertListItems(user, DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName), null);
 
                     for (String error : errors)
                         log.error(error);

@@ -769,14 +769,14 @@ public class Query
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
-            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null);
+            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null, null);
 
             ListDefinition S = s.createList(qtest, "S");
             S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null);
+            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
         }
 
 

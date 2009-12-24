@@ -20,11 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
+import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.User;
@@ -48,15 +48,17 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     private final ColumnDescriptor _cdKey;
     @Nullable
     private final File _attachmentDir;
+    private final ListImportProgress _progress;
     private final Map<String, FileNameUniquifier> _uniquifiers = new HashMap<String, FileNameUniquifier>();
 
-    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey, @Nullable File attachmentDir)
+    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey, @Nullable File attachmentDir, ListImportProgress progress)
     {
         _user = user;
         _list = list;
         _properties = properties;
         _cdKey = cdKey;
         _attachmentDir = attachmentDir;
+        _progress = progress;
     }
     
     public String beforeImportObject(Map<String, Object> map) throws SQLException
@@ -125,7 +127,8 @@ public class ListImportHelper implements OntologyManager.ImportHelper
         }
     }
 
-    public void afterImportObject(String lsid, ObjectProperty[] props) throws SQLException
+    public void afterBatchInsert(int currentRow) throws SQLException
     {
+        _progress.setCurrentRow(currentRow);
     }
 }

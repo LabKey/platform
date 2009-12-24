@@ -39,8 +39,6 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -2929,7 +2927,7 @@ public class StudyManager
         }
 
 
-        public void afterImportObject(String lsid, ObjectProperty[] props) throws SQLException
+        public void afterBatchInsert(int currentRow) throws SQLException
         {
         }
 

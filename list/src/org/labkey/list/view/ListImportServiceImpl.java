@@ -16,18 +16,22 @@
 package org.labkey.list.view;
 
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.MemTracker;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * User: jgarms
@@ -53,27 +57,108 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         if (def == null)
             throw new IllegalArgumentException("List definition not found");
 
-        List<String> errors;
-        DataLoader<Map<String, Object>> loader = getDataLoader();
+        ProgressIndicator progress = new ProgressIndicator();
+        BackgroundListImporter importer = new BackgroundListImporter(def, getDataLoader(), progress);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<List<String>> future = executor.submit(importer);
+        // Make sure these go away
+        MemTracker.put(executor);
+        MemTracker.put(future);
+
+        String errorMessage;
 
         try
         {
-            errors = def.insertListItems(getUser(), loader, null);
+            // Infrastructure is in place for cancelling and reporting progress, however, DomainImporterServiceAsync
+            // and implementations needs to be changed to support async import.  For now, block until complete.
+
+            while (!future.isDone())
+            {
+                Thread.sleep(1000);
+            }
+
+            if (!future.isCancelled())
+                return future.get();
+
+            errorMessage = "I was cancelled";
         }
-        catch (IOException ioe)
+        catch (InterruptedException e)
         {
-            throw new ImportException(ioe.getMessage());
+            errorMessage = e.getMessage();
         }
-        finally
+        catch (ExecutionException e)
         {
-            loader.close();
+            errorMessage = e.getMessage();
         }
 
-        if (errors.isEmpty())
+        List<String> errors = new LinkedList<String>();
+        errors.add(errorMessage);
+
+        return errors;
+    }
+
+    public class BackgroundListImporter implements Callable<List<String>>
+    {
+        private final ListDefinition _def;
+        private final DataLoader<Map<String, Object>> _loader;
+        private final ListImportProgress _progress;
+
+        private List<String> errors;
+
+        private BackgroundListImporter(ListDefinition def, DataLoader<Map<String, Object>> loader, ListImportProgress progress)
         {
-            deleteImportFile();
+            _def = def;
+            _loader = loader;
+            _progress = progress;
         }
 
-        return errors;        
+        public List<String> call() throws ImportException
+        {
+            try
+            {
+                errors = _def.insertListItems(getUser(), _loader, null, _progress);
+            }
+            catch (IOException ioe)
+            {
+                throw new ImportException(ioe.getMessage());
+            }
+            finally
+            {
+                _loader.close();
+            }
+
+            if (errors.isEmpty())
+            {
+                deleteImportFile();
+            }
+
+            return errors;
+        }
+    }
+
+    public static class ProgressIndicator implements ListImportProgress
+    {
+        private volatile int _rows = 0;
+        private volatile int _currentRow = 0;
+
+        public void setTotalRows(int rows)
+        {
+            _rows = rows;
+        }
+
+        public int getTotalRows()
+        {
+            return _rows;
+        }
+
+        public void setCurrentRow(int currentRow)
+        {
+            _currentRow = currentRow;
+        }
+
+        public int getCurrentRow()
+        {
+            return _currentRow;
+        }
     }
 }
