@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.list.view;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListService;
@@ -23,15 +25,21 @@ import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * User: jgarms
@@ -39,12 +47,14 @@ import java.util.concurrent.*;
  */
 public class ListImportServiceImpl extends DomainImporterServiceBase
 {
+    private static final Logger LOG = Logger.getLogger(ListImportServiceImpl.class);
+
     public ListImportServiceImpl(ViewContext context)
     {
         super(context);
     }
 
-    public List<String> importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws ImportException
+    public ImportStatus importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws ImportException
     {
         Domain domain = PropertyService.get().getDomain(gwtDomain.getDomainId());
         if (domain == null)
@@ -61,40 +71,58 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         BackgroundListImporter importer = new BackgroundListImporter(def, getDataLoader(), progress);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<List<String>> future = executor.submit(importer);
+
+        ImportContext context = new ImportContext(future, progress);
+        setContext(context.getJobId(), context);
+
         // Make sure these go away
         MemTracker.put(executor);
         MemTracker.put(future);
+        MemTracker.put(context);
+        MemTracker.put(progress);
 
-        String errorMessage;
+        return context.getImportStatus();
+    }
 
-        try
+    private void setContext(String jobId, ImportContext context)
+    {
+        HttpSession session = getViewContext().getSession();
+        session.setAttribute("ListImportContext:" + jobId, context);
+    }
+
+    private void clearContext(String jobId)
+    {
+        HttpSession session = getViewContext().getSession();
+        session.removeAttribute("ListImportContext:" + jobId);
+    }
+
+    private ImportContext getContext(String jobId)
+    {
+        HttpSession session = getViewContext().getSession();
+        return (ImportContext)session.getAttribute("ListImportContext:" + jobId);
+    }
+
+    public ImportStatus getStatus(String jobId)
+    {
+        ImportContext context = getContext(jobId);
+        ImportStatus status;
+
+        if (null != context)
         {
-            // Infrastructure is in place for cancelling and reporting progress, however, DomainImporterServiceAsync
-            // and implementations needs to be changed to support async import.  For now, block until complete.
+            status = context.getImportStatus();
 
-            while (!future.isDone())
-            {
-                Thread.sleep(1000);
-            }
-
-            if (!future.isCancelled())
-                return future.get();
-
-            errorMessage = "I was cancelled";
+            if (status.isComplete())
+                clearContext(jobId);
         }
-        catch (InterruptedException e)
+        else
         {
-            errorMessage = e.getMessage();
-        }
-        catch (ExecutionException e)
-        {
-            errorMessage = e.getMessage();
+            // Context is not stashed in the session... new up dummy status that claims to be complete
+            status = new ImportStatus();
+            status.setComplete(true);
+            status.setJobId(jobId);
         }
 
-        List<String> errors = new LinkedList<String>();
-        errors.add(errorMessage);
-
-        return errors;
+        return status;
     }
 
     public class BackgroundListImporter implements Callable<List<String>>
@@ -102,8 +130,6 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         private final ListDefinition _def;
         private final DataLoader<Map<String, Object>> _loader;
         private final ListImportProgress _progress;
-
-        private List<String> errors;
 
         private BackgroundListImporter(ListDefinition def, DataLoader<Map<String, Object>> loader, ListImportProgress progress)
         {
@@ -114,6 +140,8 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
         public List<String> call() throws ImportException
         {
+            List<String> errors;
+
             try
             {
                 errors = _def.insertListItems(getUser(), _loader, null, _progress);
@@ -159,6 +187,58 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         public int getCurrentRow()
         {
             return _currentRow;
+        }
+    }
+
+    private static class ImportContext
+    {
+        private final Future<List<String>> _future;
+        private final ProgressIndicator _progress;
+        private final String _jobId;
+
+        private ImportContext(Future<List<String>> future, ProgressIndicator progress)
+        {
+            _future = future;
+            _progress = progress;
+            _jobId = GUID.makeHash();   // Unique ID used by client to retrieve import status
+        }
+
+        private String getJobId()
+        {
+            return _jobId;
+        }
+
+        private ImportStatus getImportStatus()
+        {
+            ImportStatus status = new ImportStatus();
+            status.setJobId(_jobId);
+            status.setTotalRows(_progress.getTotalRows());
+            status.setCurrentRow(_progress.getCurrentRow());
+
+            boolean done = _future.isDone();
+            status.setComplete(done);
+
+            if (done)
+            {
+                if (!_future.isCancelled())
+                {
+                    List<String> messages;
+
+                    try
+                    {
+                        messages = _future.get();
+                    }
+                    catch (Exception e)
+                    {
+                        messages = new LinkedList<String>();
+                        messages.add(e.getMessage());
+                    }
+
+                    status.setMessages(messages);
+                }
+            }
+
+            return status;
         }
     }
 }

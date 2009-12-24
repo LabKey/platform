@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
@@ -44,7 +45,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         super(context);
     }
 
-    public List<String> importData(GWTDomain domain, Map<String, String> columnMap) throws ImportException
+    public ImportStatus importData(GWTDomain domain, Map<String, String> columnMap) throws ImportException
     {
         Container container = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
@@ -72,19 +73,19 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
 
         List<String> errors = new ArrayList<String>();
 
-        DataLoader loader = getDataLoader();
+        DataLoader<Map<String, Object>> loader = getDataLoader();
         try
         {
             StudyManager.getInstance().importDatasetData(
-            study,
-            getUser(),
-            def,
-            loader,
-            System.currentTimeMillis(),
-            columnMap,
-            errors,
-            true,
-            StudyManager.getInstance().getDefaultQCState(study)
+                study,
+                getUser(),
+                def,
+                loader,
+                System.currentTimeMillis(),
+                columnMap,
+                errors,
+                true,
+                StudyManager.getInstance().getDefaultQCState(study)
             );
         }
         catch (IOException e)
@@ -112,6 +113,16 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser());
         }
 
-        return errors;
+        ImportStatus status = new ImportStatus();
+
+        status.setComplete(true);
+        status.setMessages(errors);
+
+        return status;
+    }
+
+    public ImportStatus getStatus(String importId) throws ImportException
+    {
+        throw new ImportException("Shouldn't be calling getStatus() -- datasets import synchronously");
     }
 }
