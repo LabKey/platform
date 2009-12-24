@@ -17,7 +17,6 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.ObjectProperty;
 
 import java.util.Map;
 import java.sql.SQLException;
@@ -40,7 +39,7 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
         return _dataLSID + ".DataRow-" + _id++;
     }
 
-    public void afterImportObject(String lsid, ObjectProperty[] props) throws SQLException
+    public void afterBatchInsert(int currentRow) throws SQLException
     {
 
     }

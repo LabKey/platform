@@ -227,11 +227,11 @@ public class DomainImporter
 
     protected void importData(final GWTDomain domain)
     {
-        Map<String,String> columnMap;
+        Map<String, String> columnMap;
         if (columnMapper != null)
             columnMap = columnMapper.getColumnMap();
         else
-            columnMap = new HashMap<String,String>(); // emptyMap() is not serializable
+            columnMap = new HashMap<String, String>(); // emptyMap() is not serializable
         service.importData(domain, columnMap, new AsyncCallback<List<String>>()
         {
             public void onFailure(Throwable caught)

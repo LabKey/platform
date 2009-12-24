@@ -173,7 +173,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ListItem getListItemForEntityId(String entityId);
 
     int getRowCount();
-    List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader, @Nullable File attachmentDir) throws IOException;
+    List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader, @Nullable File attachmentDir, @Nullable ListImportProgress progress) throws IOException;
 
     TableInfo getTable(User user);
 

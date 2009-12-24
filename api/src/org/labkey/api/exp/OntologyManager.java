@@ -33,7 +33,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.RowMap;
 
@@ -90,7 +89,7 @@ public class OntologyManager
 		return m;
 	}
 
-    public static final int MAX_PROPS_IN_BATCH = 10000;
+    public static final int MAX_PROPS_IN_BATCH = 1000;
 
     public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
@@ -128,8 +127,14 @@ public class OntologyManager
                     validatorMap.put(pd.getPropertyId(), validators);
             }
 
+            int rowCount = 0;
+
 			for (Map<String, Object> map : rows)
 			{
+                // TODO: Add InterruptedException to method signature and throw
+                if (Thread.currentThread().isInterrupted())
+                    throw new RuntimeException("I should probably be an InterruptedException");
+
 				assert before.start();
 				String lsid = helper.beforeImportObject(map);
 				resultingLsids[resultingLsidsIndex++] = lsid;
@@ -176,10 +181,13 @@ public class OntologyManager
 				}
                 assert ensure.stop();
 
+                rowCount++;
+
                 if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
                 {
                     assert insert.start();
                     insertPropertiesBulk(c, propsToInsert);
+                    helper.afterBatchInsert(rowCount);
                     assert insert.stop();
                     propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
                 }
@@ -190,6 +198,7 @@ public class OntologyManager
 
             assert insert.start();
 			insertPropertiesBulk(c, propsToInsert);
+            helper.afterBatchInsert(rowCount);
 			assert insert.stop();
 		}
 		catch (SQLException x)
@@ -226,8 +235,8 @@ public class OntologyManager
 	{
 		/** return LSID for new or existing Object */
 		String beforeImportObject(Map<String, Object> map) throws SQLException;
-		void afterImportObject(String lsid, ObjectProperty[] props) throws SQLException;
-	}
+		void afterBatchInsert(int currentRow) throws SQLException;
+    }
 
 
 	public static class SubstImportHelper implements OntologyManager.ImportHelper
@@ -244,10 +253,10 @@ public class OntologyManager
 			return expr.eval(map);
 		}
 
-		public void afterImportObject(String lsid, ObjectProperty[] props) throws SQLException
+		public void afterBatchInsert(int currentRow) throws SQLException
 		{
 		}
-	}
+    }
 
 
 	public static class GuidImportHelper implements OntologyManager.ImportHelper
@@ -257,10 +266,10 @@ public class OntologyManager
 			return GUID.makeURN();
 		}
 
-		public void afterImportObject(String lsid, ObjectProperty[] props) throws SQLException
+		public void afterBatchInsert(int currentRow) throws SQLException
 		{
 		}
-	}
+    }
 
 
 	/**
