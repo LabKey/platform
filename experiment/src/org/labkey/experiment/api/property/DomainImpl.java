@@ -209,6 +209,7 @@ public class DomainImpl implements Domain
         return _new;
     }
 
+    // TODO: throws SQLException instead of RuntimeSQLException (e.g., constraint violation due to duplicate domain name) 
     public void save(User user) throws ChangePropertyDescriptorException
     {
         boolean transaction = false;

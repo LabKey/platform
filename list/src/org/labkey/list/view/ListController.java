@@ -172,11 +172,17 @@ public class ListController extends SpringActionController
                 _list.save(getUser());
                 return true;
             }
-            catch(Exception e)
+            // Domain.save() throws RuntimeSQLException instead of SQLException... unwrap to detect constraint
+            // violation and provide a better error message.  TODO: Domain.save() should throw SQLException instead
+            catch (RuntimeSQLException e)
             {
-                errors.reject(ERROR_MSG, "List creation failed: " + e.getMessage());
-                return false;
+                if (SqlDialect.isConstraintException(e.getSQLException()))
+                    errors.reject(ERROR_MSG, "A list with this name already exists; please choose a different name.");
+                else
+                    throw e;
             }
+
+            return false;
         }
 
         public ActionURL getSuccessURL(NewListForm form)

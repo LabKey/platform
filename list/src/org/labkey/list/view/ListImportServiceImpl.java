@@ -36,10 +36,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * User: jgarms
@@ -69,8 +66,21 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
         ProgressIndicator progress = new ProgressIndicator();
         BackgroundListImporter importer = new BackgroundListImporter(def, getDataLoader(), progress);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        // A one-shot, single-thread executor service to handle the background import while allowing cancelling,
+        // a progress indicator, and return of errors.  Give the thread a name and mem track it.  Submit the importer
+        // task and shut down immediately.
+        ExecutorService executor = Executors.newSingleThreadExecutor(new ThreadFactory()
+        {
+            public Thread newThread(Runnable r)
+            {
+                Thread t = new Thread(r, "List Import Background Thread");
+                MemTracker.put(t);
+                return t;
+            }
+        });
         Future<List<String>> future = executor.submit(importer);
+        executor.shutdown();
 
         ImportContext context = new ImportContext(future, progress);
         setContext(context.getJobId(), context);
@@ -116,7 +126,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         }
         else
         {
-            // Context is not stashed in the session... new up dummy status that claims to be complete
+            // Context is not stashed in the session... send back a dummy status that claims to be complete
             status = new ImportStatus();
             status.setComplete(true);
             status.setJobId(jobId);
