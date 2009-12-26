@@ -244,14 +244,14 @@ public class DomainImporter
             public void onSuccess(ImportStatus status)
             {
                 if (!status.isComplete())
-                    pollForComplete(status.getJobId(), domain);
+                    initProgressIndicator(status.getJobId(), domain);
                 else
                     handleComplete(status, domain);
             }
         });
     }
 
-    private void pollForComplete(final String jobId, final GWTDomain domain)
+    private void initProgressIndicator(final String jobId, final GWTDomain domain)
     {
         Timer t = new Timer() {
             int i = 0;
