@@ -1819,11 +1819,8 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupListener.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupServiceAsync.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/ui/ProgressBar.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertiesEditor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertyPane.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/ui/ResizableWidget.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/ui/ResizableWidgetCollection.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/SaveButtonBar.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/Saveable.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/StringListBox.java -text
@@ -1841,6 +1838,9 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterServiceAsync.j
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportStatus.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/InferencedColumn.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ProgressBar.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ResizableWidget.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ResizableWidgetCollection.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/CheckboxItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text

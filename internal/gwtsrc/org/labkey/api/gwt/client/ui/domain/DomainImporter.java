@@ -23,7 +23,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.FileUploadWithListeners;
 import org.labkey.api.gwt.client.ui.ImageButton;
-import org.labkey.api.gwt.client.ui.ProgressBar;
+import org.labkey.api.gwt.client.ui.incubator.ProgressBar;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.*;
