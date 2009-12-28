@@ -175,7 +175,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**
      * @return the data type that this run creates for its analyzed results
      */
-    DataType getDataType();
+    AssayDataType getDataType();
 
     /** @return a short description of this assay type - what kinds of data it can be used to analyze, etc */
     String getDescription();

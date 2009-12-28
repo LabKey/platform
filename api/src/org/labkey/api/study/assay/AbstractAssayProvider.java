@@ -52,6 +52,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileFilter;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
@@ -89,9 +90,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
     protected AssayTableMetadata _tableMetadata;
-    protected final DataType _dataType;
+    protected final AssayDataType _dataType;
 
-    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType, AssayTableMetadata tableMetadata)
+    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)
     {
         _dataType = dataType;
         _protocolLSIDPrefix = protocolLSIDPrefix;
@@ -315,6 +316,65 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             ExpData data = createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), _dataType);
             outputDatas.put(data, "Data");
+        }
+
+        File primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);
+        if (primaryFile != null)
+        {
+            addRelatedOutputDatas(context, outputDatas, primaryFile, Collections.<AssayDataType>emptyList());
+        }
+    }
+
+    /**
+     * Add files that follow the general naming convention (same basename) as the primary file
+     * @param knownRelatedDataTypes data types that should be given a particular LSID or role, others file types
+     * will have them auto-generated based on their extension
+     */
+    protected void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, final File primaryFile, List<AssayDataType> knownRelatedDataTypes) throws ExperimentException
+    {
+        final String baseName = getDataType().getFileType().getBaseName(primaryFile);
+        if (baseName != null)
+        {
+            // Grab all the files that are related based on naming convention
+            File[] relatedFiles = primaryFile.getParentFile().listFiles(new FileFilter()
+            {
+                public boolean accept(File f)
+                {
+                    return f.getName().startsWith(baseName) && !primaryFile.equals(f);
+                }
+            });
+
+            for (File relatedFile : relatedFiles)
+            {
+                String roleName = null;
+                DataType dataType = null;
+                for (AssayDataType inputType : knownRelatedDataTypes)
+                {
+                    // Check if we recognize it as a specially handled file type
+                    if (inputType.getFileType().isMatch(relatedFile.getName(), baseName))
+                    {
+                        roleName = inputType.getRole();
+                        dataType = inputType;
+                        break;
+                    }
+                }
+                // If not, make up a new type and role for it
+                if (roleName == null || dataType == null)
+                {
+                    roleName = relatedFile.getName().substring(baseName.length());
+                    while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
+                    {
+                        roleName = roleName.substring(1);
+                    }
+                    if ("".equals(roleName))
+                    {
+                        roleName = null;
+                    }
+                    dataType = new DataType("RelatedFile");
+                }
+                ExpData imageData = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType);
+                outputDatas.put(imageData, roleName);
+            }
         }
     }
 
@@ -1560,7 +1620,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             validator.validate(context, run);
     }
 
-    public DataType getDataType()
+    public AssayDataType getDataType()
     {
         return _dataType;
     }

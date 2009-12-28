@@ -144,16 +144,14 @@ public class FileType implements Serializable
         String suffix = null;
         for (String s : _suffixes)
         {
-            if (file.getName().endsWith(s))
+            if (file.getName().toLowerCase().endsWith(s.toLowerCase()))
             {
                 suffix = s;
                 break;
             }
         }
         assert suffix != null : "Could not find matching suffix even though types match";
-        for (int i = suffix.indexOf('.'); i >= 0; i = suffix.indexOf('.', i+1))
-            n++;
-        return FileUtil.getBaseName(file, n);
+        return file.getName().substring(0, file.getName().length() - suffix.length());
     }
 
     public File newFile(File parent, String basename)
@@ -174,10 +172,9 @@ public class FileType implements Serializable
      */
     public boolean isType(String filePath)
     {
-        // TODO: lowercase?
         for (String suffix : _suffixes)
         {
-            if (filePath.endsWith(suffix))
+            if (filePath.toLowerCase().endsWith(suffix.toLowerCase()))
             {
                 return true;
             }
@@ -189,7 +186,7 @@ public class FileType implements Serializable
     {
         for (String suffix : _suffixes)
         {
-            if (name.equals(basename + suffix))
+            if (name.equalsIgnoreCase(basename + suffix))
             {
                 return true;
             }

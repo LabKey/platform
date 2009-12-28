@@ -102,8 +102,6 @@ abstract public class PipelineService
 
     abstract public String getPipelineProperty(Container container, String name) throws SQLException;
 
-    abstract public BrowseView getBrowseView(BrowseForm form);
-
     abstract public HttpView getSetupView(SetupForm form);
 
     abstract public boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception;

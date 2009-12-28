@@ -31,7 +31,7 @@ import java.util.*;
  */
 public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 {
-    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType, AssayTableMetadata tableMetadata)
+    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)
     {
         super(protocolLSIDPrefix, runLSIDPrefix, dataType, tableMetadata);
     }
