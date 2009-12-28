@@ -16,11 +16,8 @@
 
 package org.labkey.api.data;
 
-import java.io.InputStream;
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Connection;
+import java.io.InputStream;
 
 /**
  * User: brittp

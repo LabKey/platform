@@ -16,7 +16,6 @@
 package org.labkey.api.unused;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.unused.PropertyBag;
 
 import javax.swing.*;
 import java.beans.PropertyChangeListener;
@@ -27,11 +26,11 @@ import java.beans.PropertyChangeListener;
  * Time: 11:06:23 AM
  */
 public class ApplicationContext
-    {
-    static Logger _log = Logger.getLogger(ApplicationContext.class);
+{
+    private static final Logger _log = Logger.getLogger(ApplicationContext.class);
 
     public interface ApplicationContextProvider
-        {
+    {
         public void status(String message);
 	    public void errorMessage(String message, Throwable t);
 	    public void infoMessage(String message);
@@ -40,117 +39,116 @@ public class ApplicationContext
         public void setProperty(String propName, Object value);
         public void addPropertyChangeListener(PropertyChangeListener listener);
         public void addPropertyChangeListener(String name, PropertyChangeListener listener);
-        }
+    }
 
     private static ApplicationContextProvider _callback = new DefaultApplicationContext();
 
     public static void setMessage(String message)
-        {
+    {
         _callback.status(message);
-        }
+    }
 
 	public static void errorMessage(String message, Throwable t)
-		{
+    {
 		_callback.errorMessage(message, t);
-		}
+    }
 
 	public static void infoMessage(String message)
-		{
+    {
 		_callback.infoMessage(message);
-		}
+    }
 
     public static JFrame getFrame()
-        {
+    {
         return _callback.getFrame();
-        }
+    }
 
     public static Object getProperty(String propName)
-        {
+    {
         return _callback.getProperty(propName);
-        }
+    }
 
     public static void setProperty(String propName, Object value)
-        {
+    {
         _callback.setProperty(propName, value);
-        }
+    }
 
     public static void addPropertyChangeListener(PropertyChangeListener listener)
-        {
+    {
         _callback.addPropertyChangeListener(listener);
-        }
+    }
 
     public static void addPropertyChangeListener(String name, PropertyChangeListener listener)
-        {
+    {
         _callback.addPropertyChangeListener(name, listener);
-        }
+    }
 
     public static synchronized ApplicationContextProvider getImpl()
-        {
+    {
         return _callback;
-        }
+    }
 
     public static synchronized void setImpl(ApplicationContextProvider callback)
-        {
+    {
         _callback = callback;
-        }
+    }
 
     /**
      * Command line host callback
      */
     public static class DefaultApplicationContext implements ApplicationContextProvider
-        {
+    {
         PropertyBag _properties = new PropertyBag();
 
         public void status(String message)
-            {
+        {
             _log.info(message);
-            }
+        }
 
 	    public void errorMessage(String message, Throwable t)
-		    {
+        {
 		    if (null != message)
 		        System.err.println(message);
 		    if (null != t)
 			    t.printStackTrace(System.err);
-		    }
+        }
 
 /*
  * dhmay adding 12/15/2005
  * Prints an informational message, with no associated stack trace
  */
 	    public void infoMessage(String message)
-		    {
+        {
 		    if (null != message)
 		        System.err.println(message);
-		    }
+        }
 
         public JFrame getFrame()
-            {
+        {
             return null;
-            }
+        }
 
         public void setProperty(String name, Object value)
-            {
+        {
             _properties.put(name, value);
-            }
+        }
 
 
         public Object getProperty(String name)
-            {
+        {
             return _properties.get(name);
-            }
+        }
 
 
         public void addPropertyChangeListener(PropertyChangeListener listener)
-            {
+        {
             _properties.addPropertyChangeListener(listener);
-            }
+        }
 
 
         public void addPropertyChangeListener(String name, PropertyChangeListener listener)
-            {
+        {
             _properties.addPropertyChangeListener(name, listener);
-            }
-
         }
     }
+}

@@ -120,7 +120,7 @@ public class RegexValidatorDialog extends ValidatorDialog
         boolean checked = false;
         String failOnMatch = (String)prop.getProperties().get(FAIL_ON_MATCH);
         if (failOnMatch != null)
-            checked = new Boolean(failOnMatch).booleanValue();
+            checked = Boolean.parseBoolean(failOnMatch);
 
         BoundCheckBox checkBox = new BoundCheckBox("", checked, new WidgetUpdatable()
         {

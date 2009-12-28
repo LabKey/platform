@@ -83,7 +83,7 @@ import java.util.*;
  * <p>
  *   The CGI search path will start at
  *   cgiDir, which MUST be configured as a servlet parameter
- *  (msi: THis is a change for labkey. CGIs not expected to be in webappRootDir anymore)
+ *  (msi: This is a change for labkey. CGIs not expected to be in webappRootDir anymore)
  * </p>
  * <p>
  *   cgiDir is defined by setting
@@ -1890,11 +1890,11 @@ public final class CGIServlet extends HttpServlet {
                     rdr.close() ;
                 } catch (IOException ce) {
                     log("sendToLog error", ce) ;
-                } ;
-            } ;
+                }
+            }
             if ( lineCount > 0 && debug > 2) {
                 log("runCGI: " + lineCount + " lines received on stderr") ;
-            } ;
+            }
         }
 
 

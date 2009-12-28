@@ -15,8 +15,6 @@
  */
 package org.labkey.api.arrays;
 
-import org.labkey.api.arrays.FloatRange;
-
 import java.util.ArrayList;
 
 

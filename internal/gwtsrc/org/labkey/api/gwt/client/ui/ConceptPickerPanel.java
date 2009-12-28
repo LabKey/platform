@@ -16,10 +16,8 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.user.client.ui.Panel;
-import com.google.gwt.user.client.ui.SimplePanel;
-import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.VerticalPanel;
 
 /**
  * Created by IntelliJ IDEA.

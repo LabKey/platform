@@ -17,12 +17,10 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.ui.*;
-import com.google.gwt.user.client.Window;
-
-import java.util.List;
-import java.util.ArrayList;
-
 import org.labkey.api.gwt.client.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.

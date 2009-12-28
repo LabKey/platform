@@ -15,9 +15,6 @@
  */
 package org.labkey.api.exp;
 
-import org.fhcrc.cpas.exp.xml.SimpleValueType;
-import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
-
 /**
  * User: jeckels
  * Date: Sep 28, 2005

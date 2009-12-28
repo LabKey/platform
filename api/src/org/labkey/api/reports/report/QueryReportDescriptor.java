@@ -16,11 +16,8 @@
 
 package org.labkey.api.reports.report;
 
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.report.view.ReportQueryView;
-
-import java.sql.ResultSet;
+import org.labkey.api.view.ViewContext;
 
 /**
  * Created by IntelliJ IDEA.

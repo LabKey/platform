@@ -19,8 +19,6 @@ package org.labkey.api.reports.report;
 import org.labkey.api.reports.Report;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.ResultSet;
-
 /**
  * Created by IntelliJ IDEA.
  * User: Karl Lum

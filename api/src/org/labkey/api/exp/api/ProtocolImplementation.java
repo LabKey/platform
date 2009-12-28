@@ -16,10 +16,9 @@
 
 package org.labkey.api.exp.api;
 
-import java.util.List;
-import java.sql.SQLException;
-
 import org.labkey.api.security.User;
+
+import java.sql.SQLException;
 
 public class ProtocolImplementation
 {

@@ -16,10 +16,11 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.StringExpression;
-
-import java.util.Collections;
 
 public class QueryForeignKey implements ForeignKey
 {

@@ -23,8 +23,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
-import java.util.Collections;
-
 /**
  * Class which is not really a foreign key to another table.
  * It's just used for a link on a column bound to rowid which displays

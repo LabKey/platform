@@ -16,8 +16,6 @@
 
 package org.labkey.api.study;
 
-import java.io.Serializable;
-
 /**
  * User: brittp
  * Date: Oct 20, 2006

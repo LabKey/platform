@@ -17,7 +17,6 @@ package org.labkey.api.pipeline.cmd;
 
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.WorkDirectory;
-import org.labkey.api.pipeline.WorkDirectoryTask;
 
 import java.io.IOException;
 

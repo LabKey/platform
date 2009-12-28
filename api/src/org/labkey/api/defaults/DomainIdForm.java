@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.labkey.api.defaults;
 
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ViewForm;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.ReturnURLString;/*
+
+/*
  * User: brittp
  * Date: Mar 2, 2009
  * Time: 5:17:59 PM

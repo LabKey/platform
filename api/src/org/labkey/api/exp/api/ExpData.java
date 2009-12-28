@@ -16,15 +16,13 @@
 
 package org.labkey.api.exp.api;
 
-import org.labkey.api.security.User;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.pipeline.PipelineJob;
 
-import java.net.URI;
-import java.util.Date;
 import java.io.File;
+import java.net.URI;
 import java.sql.SQLException;
 
 public interface ExpData extends ExpProtocolOutput

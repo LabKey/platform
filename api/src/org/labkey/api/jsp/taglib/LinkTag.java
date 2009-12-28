@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.jsp.taglib.SimpleTagBase;
 import org.labkey.api.util.URLHelper;
 
 import javax.servlet.jsp.JspException;

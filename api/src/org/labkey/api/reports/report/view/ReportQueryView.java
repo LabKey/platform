@@ -16,23 +16,17 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryAction;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.study.StudyService;
 
 import java.sql.ResultSet;
-import java.util.Map;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.

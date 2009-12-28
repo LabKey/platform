@@ -18,11 +18,9 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.StringExpression;
-
-import java.util.Collections;
 
 /**
  * A lookup from the __PRIMARY KEY__ of a table back to ITSELF.

@@ -16,14 +16,7 @@
 
 package org.labkey.api.exp.property;
 
-import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.data.Container;
-
-import java.util.Map;
-import java.util.HashMap;
-import java.sql.SQLException;
 
 public class ExperimentProperty
 {

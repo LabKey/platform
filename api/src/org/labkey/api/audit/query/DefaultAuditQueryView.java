@@ -16,9 +16,8 @@
 
 package org.labkey.api.audit.query;
 
-import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 

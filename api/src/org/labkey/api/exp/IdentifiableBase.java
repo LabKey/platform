@@ -15,8 +15,6 @@
  */
 package org.labkey.api.exp;
 
-import org.labkey.api.exp.api.ExperimentService;
-
 import java.io.Serializable;
 
 /**

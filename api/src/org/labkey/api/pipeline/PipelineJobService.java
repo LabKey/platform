@@ -18,7 +18,6 @@ package org.labkey.api.pipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
-import java.util.Map;
 
 /**
  * <code>PipelineJobService</code> exposes the interface for dealing with

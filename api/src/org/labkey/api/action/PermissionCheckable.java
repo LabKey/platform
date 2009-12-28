@@ -19,8 +19,6 @@ package org.labkey.api.action;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 
-import javax.servlet.ServletException;
-
 /**
  * User: jeckels
  * Date: Apr 9, 2008

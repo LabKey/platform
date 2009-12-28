@@ -17,7 +17,6 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 
 public class Lookup
 {
