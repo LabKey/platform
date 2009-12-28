@@ -23,6 +23,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.FileUploadWithListeners;
 import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.ui.ProgressBar;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.*;
@@ -61,8 +62,10 @@ public class DomainImporter
 
     FileUploadWithListeners fileUpload;
 
+    private ImageButton importButton;
     private HTML uploadStatusLabel;
-    private Label importStatusLabel;
+    private ProgressBarText progressBarText;
+    private ProgressBar progressBar = null;
 
     List<InferencedColumn> columns;
 
@@ -138,7 +141,6 @@ public class DomainImporter
 
     private void importData()
     {
-        importStatusLabel.setText("Creating columns...");
         service.getDomainDescriptor(typeURI, new AsyncCallback<GWTDomain>()
         {
             public void onFailure(Throwable caught)
@@ -189,7 +191,7 @@ public class DomainImporter
             {
                 if (errors == null || errors.isEmpty())
                 {
-                    importStatusLabel.setText("Importing data...");
+                    progressBarText.setText("Importing data...");
                     importData(newDomain);
                 }
                 else
@@ -251,10 +253,12 @@ public class DomainImporter
         });
     }
 
+    Timer t;
+
     private void initProgressIndicator(final String jobId, final GWTDomain domain)
     {
-        Timer t = new Timer() {
-            int i = 0;
+        t = new Timer() {
+            boolean firstTime = true;
 
             public void run()
             {
@@ -269,27 +273,50 @@ public class DomainImporter
 
                     public void onSuccess(ImportStatus status)
                     {
-                        if (!status.isComplete())
+                        if (status.isComplete())
                         {
-                            updateStatus(status);
+                            // Update status one last time (show 100%), but not if this is the first time through.
+                            if (!firstTime)
+                                updateStatus(status, firstTime);
+
+                            handleComplete(status, domain);
+                            cancel();
                         }
                         else
                         {
-                            handleComplete(status, domain);
-                            cancel();
+                            updateStatus(status, firstTime);
+
+                            if (firstTime)
+                            {
+                                firstTime = false;
+                                t.scheduleRepeating(5000);
+                            }
                         }
                     }
                 });
             }
         };
 
-        // Schedule the timer to run every 5 seconds.
-        t.scheduleRepeating(5000);
+        // First status check in one second; subsequent checks every five seconds.
+        t.schedule(1000);
     }
 
-    private void updateStatus(ImportStatus status)
+    private void updateStatus(ImportStatus status, boolean firstTime)
     {
-        importStatusLabel.setText("Importing " + status.getCurrentRow() + "/" + status.getTotalRows());
+        if (status.getTotalRows() > 0)
+        {
+            if (firstTime)
+            {
+                progressBar.setMaxProgress(status.getTotalRows());
+            }
+
+            progressBar.setProgress(status.getCurrentRow());
+        }
+        else
+        {
+            // If we don't know the total number of rows we can't show a progress bar 
+            progressBarText.setText("Importing data: " + status.getCurrentRow() + " rows");
+        }
     }
 
     private void handleComplete(ImportStatus status, GWTDomain domain)
@@ -314,13 +341,11 @@ public class DomainImporter
         {
             sb.append(error).append("\n");
         }
-        importStatusLabel.setText("");
         Window.alert(sb.toString());
     }
 
     private void handleServerFailure(Throwable caught)
     {
-        importStatusLabel.setText("");
         Window.alert(caught.getMessage());
     }
 
@@ -398,13 +423,18 @@ public class DomainImporter
             if (needGridAndButtons)
             {
                 HorizontalPanel buttons = new HorizontalPanel();
-                buttons.add(new ImageButton("Import", new ClickListener()
+                importButton = new ImageButton("Import", new ClickListener()
                 {
                     public void onClick(Widget sender)
                     {
+                        importButton.setEnabled(false);
+                        progressBarText = new ProgressBarText("Creating columns...");
+                        progressBar = new ProgressBar(0, 100, 0, progressBarText);
+                        mainPanel.add(progressBar);
                         importData();
                     }
-                }));
+                });
+                buttons.add(importButton);
                 buttons.add(new ImageButton("Cancel", new ClickListener()
                 {
                     public void onClick(Widget sender)
@@ -412,11 +442,32 @@ public class DomainImporter
                         cancel();
                     }
                 }));
-                importStatusLabel = new HTML("&nbsp;");
-                buttons.add(importStatusLabel);
 
                 mainPanel.add(buttons);
             }
+        }
+    }
+
+    private static class ProgressBarText extends ProgressBar.TextFormatter
+    {
+        private String _text;
+
+        private ProgressBarText(String text)
+        {
+            setText(text);
+        }
+
+        private void setText(String text)
+        {
+            _text = text;
+        }
+
+        protected String getText(ProgressBar bar, double curProgress)
+        {
+            if (0.0 == curProgress)
+                return _text;
+            else
+                return "Importing data (" + (int) (100 * bar.getPercent()) + "%)";
         }
     }
 

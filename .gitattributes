@@ -1819,8 +1819,11 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupListener.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupServiceAsync.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/ProgressBar.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertiesEditor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertyPane.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/ResizableWidget.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/ResizableWidgetCollection.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/SaveButtonBar.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/Saveable.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/StringListBox.java -text
