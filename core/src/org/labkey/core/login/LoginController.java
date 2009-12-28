@@ -1107,20 +1107,24 @@ public class LoginController extends SpringActionController
 
             HttpView view = new JspView<String>("/org/labkey/core/login/initialUser.jsp", form.getEmail(), errors);
 
-            List<String> attributions = new ArrayList<String>();
-            for (Module module : ModuleLoader.getInstance().getModules())
-            {
-                attributions.addAll(module.getAttributions());
-            }
-
-            JspView<List<String>> view_attrib = new JspView<List<String>>("/org/labkey/core/login/attribution.jsp", attributions);
-            view = new VBox(view, view_attrib);
-
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle("Register First User");
             page.setIncludeLoginLink(false);
-            page.setFocusId("email");
+
+            if (!errors.hasErrors())
+            {
+                page.setFocusId("email");
+
+                List<String> attributions = new ArrayList<String>();
+                for (Module module : ModuleLoader.getInstance().getModules())
+                {
+                    attributions.addAll(module.getAttributions());
+                }
+
+                JspView<List<String>> view_attrib = new JspView<List<String>>("/org/labkey/core/login/attribution.jsp", attributions);
+                view = new VBox(view, view_attrib);
+            }
 
             return view;
         }
