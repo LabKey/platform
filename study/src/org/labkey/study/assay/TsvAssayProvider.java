@@ -31,7 +31,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.FileType;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -137,7 +136,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public PipelineProvider getPipelineProvider()
     {
         return new AssayPipelineProvider(StudyModule.class,
-                new PipelineProvider.FileTypesEntryFilter(new FileType(".xls"), new FileType(".tsv"), new FileType(".xls"), new FileType(".txt")), 
+                new PipelineProvider.FileTypesEntryFilter(getDataType().getFileType()), 
                 this, "Import GPAT");
     }
 }

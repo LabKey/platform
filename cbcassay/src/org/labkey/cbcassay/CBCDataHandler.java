@@ -25,10 +25,12 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.util.FileType;
 import org.apache.log4j.Logger;
 
 import java.io.*;
@@ -41,7 +43,7 @@ import java.util.regex.Pattern;
  */
 public class CBCDataHandler extends AbstractAssayTsvDataHandler
 {
-    public static final DataType DATA_TYPE = new DataType("CBCAssayData");
+    public static final AssayDataType DATA_TYPE = new AssayDataType("CBCAssayData", new FileType(".dat"));
 
     public Priority getPriority(ExpData data)
     {

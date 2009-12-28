@@ -33,15 +33,14 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileType;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: brittp
@@ -50,7 +49,7 @@ import java.util.Set;
  */
 public class TsvDataHandler extends AbstractAssayTsvDataHandler implements TransformDataHandler
 {
-    public static final DataType DATA_TYPE = new DataType("AssayRunTSVData");
+    public static final AssayDataType DATA_TYPE = new AssayDataType("AssayRunTSVData", new FileType(Arrays.asList(".tsv", ".xls", ".txt"), ".tsv"));
     private boolean _allowEmptyData = false;
 
     public Priority getPriority(ExpData data)

@@ -27,8 +27,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.*;
-import org.labkey.api.pipeline.browse.BrowseForm;
-import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -36,7 +34,6 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.pipeline.PipelineController;
-import org.labkey.pipeline.browse.BrowseViewImpl;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
 import org.mule.MuleManager;
@@ -363,11 +360,6 @@ public class PipelineServiceImpl extends PipelineService
     public String getPipelineProperty(Container container, String name) throws SQLException
     {
         return PipelineManager.getPipelineProperty(container, name);
-    }
-
-    public BrowseView getBrowseView(BrowseForm form)
-    {
-        return new BrowseViewImpl(form);
     }
 
     public HttpView getSetupView(SetupForm form)

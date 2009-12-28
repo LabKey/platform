@@ -37,7 +37,6 @@ import org.labkey.api.view.*;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.FileType;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.cbcassay.data.CBCDataProperty;
 import org.labkey.cbcassay.data.CBCData;
@@ -396,6 +395,6 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     public PipelineProvider getPipelineProvider()
     {
         return new AssayPipelineProvider(CBCAssayModule.class,
-                new PipelineProvider.FileTypesEntryFilter(new FileType(".dat")), this, "Import CBC");
+                new PipelineProvider.FileTypesEntryFilter(getDataType().getFileType()), this, "Import CBC");
     }
 }
