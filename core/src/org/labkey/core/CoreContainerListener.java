@@ -37,7 +37,7 @@ import java.sql.SQLException;
  */
 public class CoreContainerListener implements ContainerManager.ContainerListener
 {
-    private static Logger _log = Logger.getLogger(CoreContainerListener.class);
+    private static final Logger _log = Logger.getLogger(CoreContainerListener.class);
 
     public void containerCreated(Container c)
     {

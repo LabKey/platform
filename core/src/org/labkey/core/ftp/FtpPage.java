@@ -90,9 +90,9 @@ public class FtpPage implements HasViewContext
     public String getPort()
     {
         if (useFTP)
-            return StringUtils.defaultIfEmpty(AppProps.getInstance().getPipelineFTPPort(),"21");
+            return StringUtils.defaultIfEmpty(AppProps.getInstance().getPipelineFTPPort(), "21");
         else
-            return "" + getViewContext().getRequest().getServerPort();
+            return String.valueOf(getViewContext().getRequest().getServerPort());
     }
 
     // encoded path

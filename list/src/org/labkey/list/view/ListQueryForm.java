@@ -26,8 +26,8 @@ import org.labkey.list.model.ListSchema;
 
 public class ListQueryForm extends QueryForm
 {
-    ListDefinition _def;
-    boolean _exportAsWebPage = false;
+    private ListDefinition _def;
+    private boolean _exportAsWebPage = false;
 
     public ListQueryForm()
     {

@@ -17,30 +17,12 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.ExternalStudyWriter;
 import org.labkey.api.study.ExternalStudyWriterFactory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyContext;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.list.view.ListItemAttachmentParent;
-
-import java.io.*;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 
 /*
 * User: adam
@@ -49,7 +31,6 @@ import java.util.*;
 */
 public class StudyListWriter implements ExternalStudyWriter
 {
-    private static final Logger LOG = Logger.getLogger(StudyListWriter.class);
     private static final String DEFAULT_DIRECTORY = "lists";
 
     public String getSelectionText()

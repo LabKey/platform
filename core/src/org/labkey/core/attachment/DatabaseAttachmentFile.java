@@ -36,7 +36,7 @@ import java.sql.SQLException;
  */
 public class DatabaseAttachmentFile implements AttachmentFile
 {
-    private Attachment _attachment;
+    private final Attachment _attachment;
     private String _contentType;
     private int _fileSize;
     private ResultSet _rs = null;

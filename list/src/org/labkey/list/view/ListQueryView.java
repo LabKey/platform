@@ -26,8 +26,8 @@ import org.springframework.validation.BindException;
 
 public class ListQueryView extends QueryView
 {
-    ListDefinition _list;
-    boolean _exportAsWebPage = false;
+    private final ListDefinition _list;
+    private final boolean _exportAsWebPage;
 
     public ListQueryView(ListQueryForm form, BindException errors)
     {

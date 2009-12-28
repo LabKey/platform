@@ -98,6 +98,7 @@ public class ContainersView extends WebPartView
             {
                 html.append(PageFlowUtil.filter(c.getName()));
             }
+
             if (c.equals(current))
                 html.append("</span>");
         }

@@ -20,10 +20,10 @@ import org.labkey.api.util.UnexpectedException;
 
 public class ListItm implements Cloneable
 {
-    int listId;
-    Object key;
-    Integer objectId;
-    String entityId;
+    private int listId;
+    private Object key;
+    private Integer objectId;
+    private String entityId;
 
     public Object getKey()
     {
