@@ -16,6 +16,7 @@
  */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page isELIgnored="true" %>
 
 <table>
     <tr class="labkey-wp-header"><th align="left">Syntax Reference</th></tr>
