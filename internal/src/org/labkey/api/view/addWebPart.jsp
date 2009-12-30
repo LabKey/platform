@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Portal.AddWebParts bean = (Portal.AddWebParts)HttpView.currentModel();
@@ -51,7 +50,7 @@
         <form action="<%=PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(getViewContext().getContainer())%>">
         <table><tr><td>
         <input type="hidden" name="pageId" value="<%=bean.pageId%>"/>
-        <input type="hidden"name="location"value="right"/>
+        <input type="hidden" name="location" value="right"/>
         <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(getViewContext().getActionURL())%>">
         <select name="name">
             <option value="">&lt;Select Part&gt;</option>

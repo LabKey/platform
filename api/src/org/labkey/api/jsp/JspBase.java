@@ -23,6 +23,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.JspView;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.action.ReturnUrlForm;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -272,6 +273,11 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
     public String generateSubmitButton(String text)
     {
         return PageFlowUtil.generateSubmitButton(text);
+    }
+
+    public String generateReturnUrlFormField(URLHelper returnURL)
+    {
+        return ReturnUrlForm.generateHiddenFormField(returnURL);
     }
 
     public void include(ModelAndView view, Writer writer) throws Exception

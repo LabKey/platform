@@ -3214,7 +3214,7 @@ public class OntologyManager
 
         ConceptMapFactory(ResultSet rs) throws SQLException
         {
-            Map<String,Integer> findMap = getFindMap();
+            Map<String, Integer> findMap = getFindMap();
             
             rsName = rs.findColumn("name");
             findMap.put("name",findMap.size());
@@ -3242,7 +3242,7 @@ public class OntologyManager
             findMap.put(SearchService.PROPERTY.securableResourceId.toString(), findMap.size());
         }
 
-        Map<String,Object> getRowMap(ResultSet rs) throws SQLException
+        Map<String, Object> getRowMap(ResultSet rs) throws SQLException
         {
             RowMap<Object> map = super.getRowMap();
             List<Object> list = map.getRow();

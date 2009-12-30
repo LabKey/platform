@@ -18,6 +18,7 @@ package org.labkey.api.action;
 
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.URLException;
 
 import java.net.URISyntaxException;
@@ -35,6 +36,11 @@ public class ReturnUrlForm
     }
 
     private ReturnURLString _returnUrl;
+
+    public static String generateHiddenFormField(URLHelper returnUrl)
+    {
+        return "<input type=\"hidden\" name=\"" + Params.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">";
+    }
 
     public ReturnURLString getReturnUrl()
     {
