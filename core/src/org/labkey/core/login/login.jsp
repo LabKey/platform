@@ -107,7 +107,7 @@
         <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=bean.termsOfUseChecked ? " checked" : ""%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
     } %>
         <tr><td></td><td height="50px">
-            <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(returnURL)%>"><%
+            <%=generateReturnUrlFormField(returnURL)%><%
 
             if (bean.form.getSkipProfile())
             { %>

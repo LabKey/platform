@@ -17,15 +17,13 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView.InsertBean"%>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();

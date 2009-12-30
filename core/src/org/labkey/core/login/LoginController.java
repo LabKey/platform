@@ -214,7 +214,7 @@ public class LoginController extends SpringActionController
     {
         private User _user = null;
 
-        public void validateCommand(LoginForm target, Errors errors)
+        public void validateCommand(LoginForm form, Errors errors)
         {
         }
 
@@ -234,7 +234,7 @@ public class LoginController extends SpringActionController
             // behavior (see #9246).  Next, check to see if any authentication credentials already exist (passed as URL
             // param, in a cookie, etc.)
             if (!reshow && (isLoggedIn() || authenticate(form, request, response)))
-                return HttpView.redirect(getSuccessURLAsString(form));
+                return HttpView.redirect(getSuccessURL(form));
             else
                 return showLogin(form, request, getPageConfig(), false);
         }
@@ -291,22 +291,8 @@ public class LoginController extends SpringActionController
                     response.addCookie(emailCookie);
                 }
             }
-            else
-            {
-                return false;
-            }
 
-            try
-            {
-                HttpView.throwRedirect(getSuccessURLAsString(form));
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-
-            // should never get here, as the success options throw RedirectExceptions
-            throw new IllegalStateException("Should have redirected");
+            return success;
         }
 
         private boolean isLoggedIn()
@@ -357,25 +343,28 @@ public class LoginController extends SpringActionController
             return false;
         }
 
-        public ActionURL getSuccessURL(LoginForm form)
+        public URLHelper getSuccessURL(LoginForm form)
         {
-            // No longer possible, as the handlePost() should redirect.
-            throw new UnsupportedOperationException("This should never occur. Success should redirect.");
-        }
+            // Default redirect if returnURL is not specified
+            ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
 
-        private ReturnURLString getSuccessURLAsString(LoginForm form) throws SQLException, ServletException
-        {
-            // If this is user's first log in or some required field isn't filled in then go to update page
-            if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
+            // After successful login (and possibly profile update) we'll end up here
+            URLHelper returnURL = form.getReturnURLHelper(homeURL);
+
+            try
             {
-                URLHelper url = form.getReturnURLHelper();
-                if (null != url)
-                    return new ReturnURLString(PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(url, _user.getUserId()).getLocalURIString());
+                // If this is user's first log in or some required field isn't filled in then go to update page first
+                if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
+                {
+                    returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(returnURL, _user.getUserId());
+                }
             }
-            ReturnURLString ret = form.getReturnUrl();
-            if (null != ret && !ret.isEmpty())
-                return ret;
-            return new ReturnURLString(AppProps.getInstance().getHomePageActionURL().toLocalString(false), false);
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
+            return returnURL;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -619,7 +608,6 @@ public class LoginController extends SpringActionController
         private boolean remember;
         private String email;
         private String password;
-        private ReturnURLString URI;       // TODO: Remove this once we convert URI -> returnURL
         private boolean approvedTermsOfUse;
         private boolean skipProfile;
 
@@ -699,35 +687,30 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class LogoutAction extends RedirectAction
+    public class LogoutAction extends RedirectAction<ReturnUrlForm>
     {
         @Override
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        public void checkPermissions() throws UnauthorizedException
         {
             // Override allows logout from any folder, even when impersonating within a project
         }
 
-        public ActionURL getSuccessURL(Object o)
+        public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return AppProps.getInstance().getHomePageActionURL();
+            return form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
         }
 
-        public boolean doAction(Object o, BindException errors) throws Exception
+        public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
         {
             if (getUser().isImpersonated())
                 SecurityManager.stopImpersonating(getViewContext(), getUser());
             else
                 SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
 
-            String redirect = getViewContext().getActionURL().getParameter(ReturnUrlForm.Params.returnUrl);
-
-            if (null != redirect)
-                HttpView.throwRedirect(redirect);
-
             return true;
         }
 
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(ReturnUrlForm form, Errors errors)
         {
         }
     }

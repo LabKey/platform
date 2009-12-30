@@ -78,7 +78,7 @@ public class ProjectController extends SpringActionController
             ActionURL url = getCustomizeWebPartURL(c);
             url.addParameter("pageId", webPart.getPageId());
             url.addParameter("index", String.valueOf(webPart.getIndex()));
-            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+            url.addReturnURL(returnURL);
             return url;
         }
 
@@ -88,7 +88,7 @@ public class ProjectController extends SpringActionController
             url.addParameter("pageId", webPart.getPageId());
             url.addParameter("index", String.valueOf(webPart.getIndex()));
             url.addParameter("direction", String.valueOf(direction));
-            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+            url.addReturnURL(returnURL);
             return url;
         }
 
@@ -97,7 +97,7 @@ public class ProjectController extends SpringActionController
             ActionURL url = new ActionURL(DeleteWebPartAction.class, c);
             url.addParameter("pageId", webPart.getPageId());
             url.addParameter("index", String.valueOf(webPart.getIndex()));
-            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+            url.addReturnURL(returnURL);
             return url;
         }
 

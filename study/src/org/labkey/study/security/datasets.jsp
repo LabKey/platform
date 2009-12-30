@@ -90,7 +90,7 @@ if (guestsCanRead || usersCanRead)
 else
 {
 %>
-    These groups do not have read permissions.  (Note: a user may belong to more that one group, see documentation.)
+    These groups do not have read permissions.  (Note: a user may belong to more than one group, see documentation.)
     <ul class="minus">
     <%
         if (noReadGroups.size() == 0)
