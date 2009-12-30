@@ -149,9 +149,9 @@ function renderBrowser(rootPath, dir)
         {
             FilesWebPartPanel.superclass.initComponent.call(this);
             this.createPanels();
-            
+
             this.on(BROWSER_EVENTS.directorychange,function(record){this.onDirectoryChange(record);}, this);
-            this.on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
+            this.grid.getSelectionModel().on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
         },
 
         getTbarConfig : function()
@@ -291,7 +291,7 @@ function renderBrowser(rootPath, dir)
 
             // delete the actions container
             if (this.allActionsTab && this.pipelineActions != undefined)
-                this.allActionsTab.removeAll();
+                this.allActionsTab.remove('allActionsToolbar');
 
             if (actions && actions.length)
             {
@@ -325,7 +325,7 @@ function renderBrowser(rootPath, dir)
 
                 // add the actions to a toolbar and insert into the tabpanel
                 var allActions = new Ext.Toolbar({
-                    //id: 'allActionsToolbar',
+                    id: 'allActionsToolbar',
                     items: this.pipelineActions
                 });
                 this.allActionsTab.add(allActions);
@@ -336,31 +336,39 @@ function renderBrowser(rootPath, dir)
         // selection change handler
         onSelectionChange : function(record)
         {
-            var selections = this.grid.selModel.getSelections();
-
-            if (this.pipelineActions && selections.length)
+            if (this.pipelineActions)
             {
-                var selectionMap = {};
+                var selections = this.grid.selModel.getSelections();
 
-                for (var i=0; i < selections.length; i++)
-                    selectionMap[selections[i].data.name] = true;
-
-                for (var i=0; i <this.pipelineActions.length; i++)
+                if (selections.length)
                 {
-                    var action = this.pipelineActions[i];
-                    if (action.initialConfig.files && action.initialConfig.files.length)
+                    var selectionMap = {};
+
+                    for (var i=0; i < selections.length; i++)
+                        selectionMap[selections[i].data.name] = true;
+
+                    for (var i=0; i <this.pipelineActions.length; i++)
                     {
-                        var contains = false;
-                        for (var j=0; j <action.initialConfig.files.length; j++)
+                        var action = this.pipelineActions[i];
+                        if (action.initialConfig.files && action.initialConfig.files.length)
                         {
-                            if (action.initialConfig.files[j] in selectionMap)
+                            var contains = false;
+                            for (var j=0; j <action.initialConfig.files.length; j++)
                             {
-                                contains = true;
-                                break;
+                                if (action.initialConfig.files[j] in selectionMap)
+                                {
+                                    contains = true;
+                                    break;
+                                }
                             }
+                            contains ? action.enable() : action.disable();
                         }
-                        contains ? action.enable() : action.disable();
                     }
+                }
+                else
+                {
+                    for (var i=0; i <this.pipelineActions.length; i++)
+                        this.pipelineActions[i].enable();
                 }
             }
         },
@@ -368,6 +376,20 @@ function renderBrowser(rootPath, dir)
         executePipelineAction : function(item, e)
         {
             var selections = this.grid.selModel.getSelections();
+
+            // if there are no selections, treat as if all are selected
+            if (selections.length == 0)
+            {
+                var selections = [];
+                var store = this.grid.getStore();
+
+                for (var i=0; i <store.getCount(); i++)
+                {
+                    var record = store.getAt(i);
+                    if (record.data.file)
+                        selections.push(record);
+                }
+            }
 
             if (item && item.itemHref)
             {
