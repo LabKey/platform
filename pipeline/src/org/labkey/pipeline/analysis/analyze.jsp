@@ -68,7 +68,7 @@
         <td><textarea style="width: 100%;" name="protocolDescription" cols="150" rows="4"><%=h(form.getProtocolDescription())%></textarea></td></tr>
 <%  } %>
 
-<%  if (form.getFileInputNames().length != 1)
+<%  if (form.getFile().length != 1)
     { %>
     <tr><td class='labkey-form-label'>Analyze Files:</td>
 <%  }
@@ -78,14 +78,14 @@
 <%  } %>
         <td>
 <%
-    if (form.getFileInputNames().length == 0)
+    if (form.getFile().length == 0)
         out.print("No files found");
     else
     {
         hasWork = !form.isActiveJobs(); %>
         <table>
 <%
-        String[] inputNames = form.getFileInputNames();
+        String[] inputNames = form.getFile();
         String[] inputStatus = form.getFileInputStatus();
         for (int i = 0; i < inputNames.length; i++)
         {
@@ -96,7 +96,7 @@
                 hasRun = true;
             }
             %><tr><td><%=h(inputNames[i])%><%=status%>
-                <input type="hidden" name="fileInputNames" value="<%=h(inputNames[i])%>"></td>
+                <input type="hidden" name="file" value="<%=h(inputNames[i])%>"></td>
             <td>&nbsp;</td></tr><%
         } %>
         </table><%
@@ -104,7 +104,7 @@
 %>
         </td>
     </tr>
-    <tr><td class='labkey-form-label'>Paramters:</td>
+    <tr><td class='labkey-form-label'>Parameters:</td>
         <td>
 <%  if ("".equals(form.getProtocol()))
     { %>

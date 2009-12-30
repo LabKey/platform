@@ -99,8 +99,8 @@ public class AnalysisController extends SpringActionController
         {
             // HACK: Because Spring likes to split up single values if they are
             //       are set to an array.  Very lame for checkboxes.
-            String name = AnalyzeForm.Params.fileInputNames.toString();
-            form.setFileInputNames(getViewContext().getRequest().getParameterValues(name));
+            String name = AnalyzeForm.Params.file.toString();
+            form.setFile(getViewContext().getRequest().getParameterValues(name));
             
             TaskId taskId = form.getTaskId();
             if (taskId == null)
@@ -240,7 +240,7 @@ public class AnalysisController extends SpringActionController
                 }
 
                 ArrayList<File> filesInputList = new ArrayList<File>();
-                for (String fileInputName : form.getFileInputNames())
+                for (String fileInputName : form.getFile())
                 {
                     if (fileInputName == null)
                     {
@@ -337,8 +337,8 @@ public class AnalysisController extends SpringActionController
         {
             // HACK: Because Spring likes to split up single values if they are
             //       are set to an array.  Very lame for checkboxes.
-            String name = AnalyzeForm.Params.fileInputNames.toString();
-            form.setFileInputNames(getViewContext().getRequest().getParameterValues(name));
+            String name = AnalyzeForm.Params.file.toString();
+            form.setFile(getViewContext().getRequest().getParameterValues(name));
         }
 
         public boolean doAction(AnalyzeForm form, BindException errors) throws Exception
@@ -421,7 +421,7 @@ public class AnalysisController extends SpringActionController
 
                 ArrayList<File> filesInputList = new ArrayList<File>();
                 FileType ftInput = null;
-                for (String fileInputName : form.getFileInputNames())
+                for (String fileInputName : form.getFile())
                 {
                     if (fileInputName == null)
                     {
@@ -475,7 +475,7 @@ public class AnalysisController extends SpringActionController
 
     public static class AnalyzeForm extends ViewForm
     {
-        public enum Params { path, nsClass, name, fileInputNames }
+        public enum Params { path, nsClass, name, file }
 
         private String path = "";
         private String nsClass = "";
@@ -483,7 +483,7 @@ public class AnalysisController extends SpringActionController
         private String protocol = "";
         private String protocolName = "";
         private String protocolDescription = "";
-        private String[] fileInputNames = new String[0];
+        private String[] file = new String[0];
         private String[] fileInputStatus = null;
         private String configureXml = "";
         private boolean saveProtocol = false;
@@ -499,10 +499,10 @@ public class AnalysisController extends SpringActionController
             
             activeJobs = false;
 
-            int len = fileInputNames.length;
+            int len = file.length;
             fileInputStatus = new String[len + 1];
             for (int i = 0; i < len; i++)
-                fileInputStatus[i] = initStatusFile(protocol, dirData, dirAnalysis, fileInputNames[i], true);
+                fileInputStatus[i] = initStatusFile(protocol, dirData, dirAnalysis, file[i], true);
             fileInputStatus[len] = initStatusFile(protocol,  dirData, dirAnalysis, null, false);
         }
 
@@ -628,14 +628,14 @@ public class AnalysisController extends SpringActionController
             this.protocolDescription = (protocolDescription == null ? "" : protocolDescription);
         }
 
-        public String[] getFileInputNames()
+        public String[] getFile()
         {
-            return fileInputNames;
+            return file;
         }
 
-        public void setFileInputNames(String[] fileInputNames)
+        public void setFile(String[] fileInputNames)
         {
-            this.fileInputNames = fileInputNames==null ? new String[0] : fileInputNames;
+            this.file = fileInputNames==null ? new String[0] : fileInputNames;
         }
 
         public String[] getFileInputStatus()
