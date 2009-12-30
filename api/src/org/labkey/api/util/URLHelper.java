@@ -37,7 +37,7 @@ import java.util.*;
 
 public class URLHelper implements Cloneable, Serializable, Taintable
 {
-    static Category _log = Logger.getInstance(URLHelper.class);
+    private static final Category _log = Logger.getInstance(URLHelper.class);
 
     protected boolean _tainted = false;
     protected String _scheme = "http";
@@ -154,7 +154,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     public HString toLocalString(boolean allowSubstSyntax)
     {
         String local = getLocalURIString(allowSubstSyntax);
-        return new HString(local,_tainted);
+        return new HString(local, _tainted);
     }
 
 

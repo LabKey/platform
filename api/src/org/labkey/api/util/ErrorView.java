@@ -151,7 +151,7 @@ class ErrorView extends HttpView
         }
         if (_includeStopImpersonatingButton)
         {
-            ActionURL logoutURL = PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c, getViewContext().getActionURL().getLocalURIString());
+            ActionURL logoutURL = PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c, getViewContext().getActionURL());
             out.print(PageFlowUtil.generateButton("Stop Impersonating", logoutURL));
         }
 

@@ -20,6 +20,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -39,7 +40,7 @@ public interface LoginUrls extends UrlProvider
     public ActionURL getLoginURL(Container c, String returnURLString);
     public ActionURL getLogoutURL(Container c);
     public ActionURL getStopImpersonatingURL(Container c, HttpServletRequest request);
-    public ActionURL getLogoutURL(Container c, String returnURLString);
+    public ActionURL getLogoutURL(Container c, URLHelper returnURL);
     public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL);
     public ActionURL getAgreeToTermsURL(Container c, String returnURLString);
 }

@@ -16,10 +16,9 @@
 
 package org.labkey.api.action;
 
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.URLException;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.URLException;
 
 import java.net.URISyntaxException;
 
@@ -47,26 +46,24 @@ public class ReturnUrlForm
         _returnUrl = returnUrl;
     }
 
-    public ActionURL getReturnActionURL()
+    public URLHelper getReturnURLHelper()
     {
         try
         {
-            if (null == _returnUrl)
-                return null;
-            return new ActionURL(_returnUrl);
+            return (null == _returnUrl ? null : new URLHelper(_returnUrl));
         }
-        catch (IllegalArgumentException e)
+        catch (URISyntaxException e)
         {
             throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
         }
     }
 
     // Return the passed-in default URL if returnURL param is missing or unparseable
-    public ActionURL getReturnActionURL(ActionURL defaultURL)
+    public URLHelper getReturnURLHelper(URLHelper defaultURL)
     {
         try
         {
-            ActionURL url = getReturnActionURL();
+            URLHelper url = getReturnURLHelper();
             if (null != url)
                 return url;
         }
@@ -74,17 +71,5 @@ public class ReturnUrlForm
         {
         }
         return defaultURL;
-    }
-
-    public URLHelper getReturnURLHelper()
-    {
-        try
-        {
-            return new URLHelper(_returnUrl);
-        }
-        catch (URISyntaxException e)
-        {
-            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
-        }
     }
 }

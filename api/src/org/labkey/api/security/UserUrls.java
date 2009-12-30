@@ -18,6 +18,7 @@ package org.labkey.api.security;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.URLHelper;
 
 /**
  * User: adam
@@ -31,5 +32,5 @@ public interface UserUrls extends UrlProvider
     ActionURL getUserAccessURL(Container container, int userId);
     ActionURL getUserDetailsURL(Container container, int userId);
     ActionURL getUserDetailsURL(Container c);
-    ActionURL getUserUpdateURL(ActionURL returnURL, int userId);
+    ActionURL getUserUpdateURL(URLHelper returnURL, int userId);
 }

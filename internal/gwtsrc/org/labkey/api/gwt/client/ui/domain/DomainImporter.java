@@ -57,22 +57,15 @@ public class DomainImporter
      * E.g. "modified", etc.
      */
     private Set<String> baseColumnNames;
-
     private VerticalPanel mainPanel;
-
-    FileUploadWithListeners fileUpload;
-
+    private FileUploadWithListeners fileUpload;
     private ImageButton importButton;
     private HTML uploadStatusLabel;
     private ProgressBarText progressBarText;
     private ProgressBar progressBar = null;
-
-    List<InferencedColumn> columns;
-
+    private List<InferencedColumn> columns;
     private DomainImportGrid grid;
-
     private ColumnMapper columnMapper;
-
 
     private String cancelURL;
     private String successURL;
@@ -228,13 +221,21 @@ public class DomainImporter
         });
     }
 
+    /*
+         The "import data" stage supports both synchronous and asynchronous imports.  A synchronous service will finish
+         the entire import and then return a status object indicating "complete."  An asynchronous service will initiate
+         the import in a background thread and return an "incomplete" status included a jobId.  The client uses the
+         jobId to query import progress periodically via a timer and to cancel the import if requested.
+     */
     protected void importData(final GWTDomain domain)
     {
         Map<String, String> columnMap;
+
         if (columnMapper != null)
             columnMap = columnMapper.getColumnMap();
         else
             columnMap = new HashMap<String, String>(); // emptyMap() is not serializable
+
         service.importData(domain, columnMap, new AsyncCallback<ImportStatus>()
         {
             public void onFailure(Throwable caught)
@@ -253,10 +254,13 @@ public class DomainImporter
         });
     }
 
-    Timer t;
+    private Timer t;
+    private String jobId;
 
     private void initProgressIndicator(final String jobId, final GWTDomain domain)
     {
+        this.jobId = jobId;
+
         t = new Timer() {
             boolean firstTime = true;
 
@@ -314,7 +318,7 @@ public class DomainImporter
         }
         else
         {
-            // If we don't know the total number of rows we can't show a progress bar 
+            // If we don't know the total number of rows we just update the text
             progressBarText.setText("Importing data: " + status.getCurrentRow() + " rows");
         }
     }
@@ -353,12 +357,24 @@ public class DomainImporter
     {
         if (null == cancelURL || cancelURL.length() == 0)
             back();
-        else
+        else if (null == jobId)
             navigate(cancelURL);
+        else
+            service.cancelImport(jobId, new AsyncCallback<String>() {
+                public void onFailure(Throwable caught)
+                {
+                    Window.alert("Failure:\n" + caught.getMessage());
+                }
+
+                public void onSuccess(String result)
+                {
+                    navigate(result);
+                }
+            });
     }
 
     public static native void navigate(String url) /*-{
-      $wnd.location.href = url;
+        $wnd.location.href = url;
     }-*/;
 
 
@@ -370,8 +386,7 @@ public class DomainImporter
     {
         public void onSubmit(FormSubmitEvent event)
         {
-
-            if(fileUpload.getFilename().length() == 0)
+            if (fileUpload.getFilename().length() == 0)
             {
                 Window.alert("Please select a file to upload");
                 event.setCancelled(true);
@@ -429,7 +444,7 @@ public class DomainImporter
                     {
                         importButton.setEnabled(false);
                         progressBarText = new ProgressBarText("Creating columns...");
-                        progressBar = new ProgressBar(0, 100, 0, progressBarText);
+                        progressBar = new ProgressBar(0, 100, 0, progressBarText);  // Placeholder to display the first couple messages
                         mainPanel.add(progressBar);
                         importData();
                     }
@@ -502,7 +517,6 @@ public class DomainImporter
                 selector.setItemSelected(rowToSelect, true); // Cascade down the columns
                 columnSelectors.add(selector);
 
-
                 Label label = new Label(destinationColumn + ":");
                 mappingGrid.setWidget(row, 1, label);
                 mappingGrid.setWidget(row, 2, selector);
@@ -524,8 +538,9 @@ public class DomainImporter
          */
         public Map<String,String> getColumnMap()
         {
-            Map<String,String> result = new HashMap<String,String>();
-            for(int i=0; i<columnsToMap.size(); i++)
+            Map<String, String> result = new HashMap<String, String>();
+
+            for (int i = 0; i < columnsToMap.size(); i++)
             {
                 String dataColumn = columnsToMap.get(i);
                 ListBox selector = columnSelectors.get(i);
@@ -533,6 +548,7 @@ public class DomainImporter
 
                 result.put(fileColumn, dataColumn);
             }
+
             return result;
         }
     }
@@ -555,5 +571,4 @@ public class DomainImporter
             return true;
         return false;
     }
-
 }

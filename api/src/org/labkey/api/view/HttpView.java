@@ -665,6 +665,8 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      * we've done that.
      * @return
      */
+
+    // TODO: Return URLHelper instead?
     public static String getContextURL()
     {
         ViewContext context = getRootContext();

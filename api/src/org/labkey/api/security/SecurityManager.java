@@ -117,27 +117,6 @@ public class SecurityManager
             return _label;
         }
 
-        /**
-         * Returns a label enumerating all the individual ACL perms
-         * that the specified permission posseses.
-         */
-        public static String getLabel(int permissions)
-        {
-            StringBuffer sb = new StringBuffer();
-            String concat = "";
-
-            for (Pair<Integer, String> pair : _allPerms)
-            {
-                if ((pair.getKey() & permissions) != 0)
-                {
-                    sb.append(concat);
-                    sb.append(pair.getValue());
-                    concat = "|";
-                }
-            }
-            return sb.toString();
-        }
-
         public int getPermissions()
         {
             return _permissions;
@@ -425,7 +404,7 @@ public class SecurityManager
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
 
-    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser, Container project, ActionURL returnURL)
+    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser, Container project, URLHelper returnURL)
     {
         invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
 
@@ -451,7 +430,7 @@ public class SecurityManager
     }
 
 
-    public static void impersonate(ViewContext viewContext, User impersonatedUser, Container project, ActionURL returnURL)
+    public static void impersonate(ViewContext viewContext, User impersonatedUser, Container project, URLHelper returnURL)
     {
         HttpServletRequest request = viewContext.getRequest();
         User adminUser = viewContext.getUser();

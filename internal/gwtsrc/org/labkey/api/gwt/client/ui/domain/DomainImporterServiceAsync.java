@@ -31,5 +31,7 @@ public interface DomainImporterServiceAsync
 
     void importData(GWTDomain domain, Map<String, String> mappedColumnNames, AsyncCallback<ImportStatus> async);
 
-    void getStatus(String importId, AsyncCallback<ImportStatus> async);
+    void getStatus(String jobId, AsyncCallback<ImportStatus> async);
+
+    void cancelImport(String jobId, AsyncCallback<String> async);
 }
