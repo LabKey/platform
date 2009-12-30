@@ -260,12 +260,12 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         return PageFlowUtil.generateButton(text, href, onClickScript);
     }
 
-    public String generateButton(String text, ActionURL href)
+    public String generateButton(String text, URLHelper href)
     {
         return PageFlowUtil.generateButton(text, href);
     }
 
-    public String generateButton(String text, ActionURL href, String onClickScript)
+    public String generateButton(String text, URLHelper href, String onClickScript)
     {
         return PageFlowUtil.generateButton(text, href, onClickScript);
     }
@@ -278,6 +278,11 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
     public String generateReturnUrlFormField(URLHelper returnURL)
     {
         return ReturnUrlForm.generateHiddenFormField(returnURL);
+    }
+
+    public String generateReturnUrlFormField(ReturnUrlForm form)
+    {
+        return ReturnUrlForm.generateHiddenFormField(form.getReturnURLHelper());
     }
 
     public void include(ModelAndView view, Writer writer) throws Exception

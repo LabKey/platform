@@ -39,10 +39,10 @@
     writePropertyValues(out, propertyValues);
 
     %>
-<br><%=PageFlowUtil.generateSubmitButton(confirmAction.getConfirmText())%>&nbsp;<%
+<br><%=generateSubmitButton(confirmAction.getConfirmText())%>&nbsp;<%
     if (null != cancelUrl)
     {
-        %><%=PageFlowUtil.generateButton(confirmAction.getCancelText(), cancelUrl)%><%
+        %><%=generateButton(confirmAction.getCancelText(), cancelUrl)%><%
     }
     else if (confirmAction.isPopupConfirmation())
     {

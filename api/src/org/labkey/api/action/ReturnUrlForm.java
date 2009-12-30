@@ -16,12 +16,14 @@
 
 package org.labkey.api.action;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.URLException;
 
 import java.net.URISyntaxException;
+
 
 /**
 * User: adam
@@ -37,6 +39,7 @@ public class ReturnUrlForm
 
     private ReturnURLString _returnUrl;
 
+    // Generate a hidden form field to post a return URL with the standard name used by this form
     public static String generateHiddenFormField(URLHelper returnUrl)
     {
         return "<input type=\"hidden\" name=\"" + Params.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">";
@@ -52,6 +55,7 @@ public class ReturnUrlForm
         _returnUrl = returnUrl;
     }
 
+    @Nullable
     public URLHelper getReturnURLHelper()
     {
         try

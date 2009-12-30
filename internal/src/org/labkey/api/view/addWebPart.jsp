@@ -15,23 +15,27 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Portal.AddWebParts bean = (Portal.AddWebParts)HttpView.currentModel();
+    ViewContext ctx = getViewContext();
+    Container c = ctx.getContainer();
+    ActionURL currentURL = ctx.getActionURL();
 %>
 <table width="100%">
 <tr>
     <td align="left">
-		<form action="<%=PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(getViewContext().getContainer())%>">
+		<form action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
 		<table><tr><td>
 		<input type="hidden" name="pageId" value="<%=bean.pageId%>"/>
 		<input type="hidden" name="location" value="<%=bean.location%>"/>
-        <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(getViewContext().getActionURL())%>">
+        <%=generateReturnUrlFormField(currentURL)%>
         <select name="name">
             <option value="">&lt;Select Part&gt;</option>
 <%          for ( String name : bean.webPartNames)
@@ -40,18 +44,18 @@
             } %>
         </select>
         </td><td>
-        <%=PageFlowUtil.generateSubmitButton("Add Web Part")%>    
+        <%=generateSubmitButton("Add Web Part")%>
         </td></tr></table>
        </form>
     </td>
 <% if (bean.rightWebPartNames != null && !bean.rightWebPartNames.isEmpty())
     { %>
     <td align="right">
-        <form action="<%=PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(getViewContext().getContainer())%>">
+        <form action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
         <table><tr><td>
         <input type="hidden" name="pageId" value="<%=bean.pageId%>"/>
         <input type="hidden" name="location" value="right"/>
-        <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(getViewContext().getActionURL())%>">
+        <%=generateReturnUrlFormField(currentURL)%>
         <select name="name">
             <option value="">&lt;Select Part&gt;</option>
 <%          for (String name : bean.rightWebPartNames)
@@ -60,7 +64,7 @@
             } %>
         </select>
         </td><td>
-            <%=PageFlowUtil.generateSubmitButton("Add Web Part")%>    
+            <%=generateSubmitButton("Add Web Part")%>
         </td></tr></table>
         </form>
     </td>
