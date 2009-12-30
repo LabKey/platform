@@ -245,30 +245,6 @@ function renderBrowser(rootPath, dir)
             return grid;
         },
 
-        createTreePanel : function()
-        {
-            var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:true});
-            var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
-            var tree = new Ext.tree.TreePanel(
-            {
-                loader:treeloader,
-                root:root,
-                rootVisible:false,
-                title: 'Folders',
-                useArrows:true,
-                margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
-                autoScroll:true,
-                animate:true,
-                enableDD:false,
-                containerScroll:true,
-                border:false,
-                pathSeparator:';'
-            });
-            tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
-
-            return tree;
-        },
-
         onDirectoryChange : function(record)
         {
             var path = record.data.path;
