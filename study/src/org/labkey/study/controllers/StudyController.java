@@ -3713,7 +3713,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("Pipeline root is not set");
 
             File path = new File(pipelineRootURI.resolve(new URI(form.getPath())));
-            File studyFile = new File(path, form.getFileInputNames()[0]);
+            File studyFile = new File(path, form.getFile()[0]);
 
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             BindException errors = new BindException(c, "import");
@@ -3750,7 +3750,7 @@ public class StudyController extends BaseStudyController
     public static class ImportStudyForm
     {
         private String _path;
-        private String[] _fileInputNames;
+        private String[] _file;
 
         public String getPath()
         {
@@ -3762,14 +3762,14 @@ public class StudyController extends BaseStudyController
             _path = path;
         }
 
-        public String[] getFileInputNames()
+        public String[] getFile()
         {
-            return _fileInputNames;
+            return _file;
         }
 
-        public void setFileInputNames(String[] fileInputNames)
+        public void setFile(String[] file)
         {
-            _fileInputNames = fileInputNames;
+            _file = file;
         }
     }
 

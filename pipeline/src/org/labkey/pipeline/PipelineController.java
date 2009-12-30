@@ -374,8 +374,6 @@ public class PipelineController extends SpringActionController
         public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
         {
             BrowseWebPart wp = new BrowseWebPart();
-            wp.setContainer(getContainer());
-            wp._autoResize = true;
             wp.setFrame(WebPartView.FrameType.NONE);
             return wp;
         }
@@ -410,8 +408,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-
-/*
     public static class BrowseWebPart extends FilesWebPart
     {
         public BrowseWebPart()
@@ -447,8 +443,8 @@ public class PipelineController extends SpringActionController
             setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
         }
     }
-*/
 
+/*
     public static class BrowseWebPart extends JspView<BrowseWebPart>
     {
         Container _c;
@@ -486,6 +482,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
+*/
 
     public static class SearchWebPart extends JspView<SearchWebPart>
     {

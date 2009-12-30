@@ -34,8 +34,8 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 <%
     ViewContext context = HttpView.currentContext();
     PipelineController.BrowseWebPart me = (PipelineController.BrowseWebPart) HttpView.currentView();
-    PipeRoot root = me.getPipeRoot();
-    Container c = null == root ? me.getContainer() : root.getContainer();
+    PipeRoot root = null;//me.getPipeRoot();
+    Container c = null;// == root ? me.getContainer() : root.getContainer();
 
     // prefix is where we want the tree rooted
     // TODO: applet and fileBrowser could use more consistent configuration parameters
@@ -60,9 +60,6 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     LABKEY.requiresScript("fileBrowser.js");
 </script>
 
-<div class="extContainer" style="<%=me.getAutoResize() ? "padding-left:10px;" : ""%>">
-<div id="files"></div>
-</div>
 
 <div style="display:none;">
 <div id="help">
@@ -80,7 +77,6 @@ function $c(a,b)
     return fileSystem.concatPaths(a,b);
 }
 
-var autoResize = <%= me.getAutoResize() ? "true" : "false" %>;
 var actionsConnection = new Ext.data.Connection({autoAbort:true});
 var activeMenus = {};
 var fileMap = {};
