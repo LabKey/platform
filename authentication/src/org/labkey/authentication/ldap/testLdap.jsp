@@ -49,9 +49,9 @@ client browser.
     <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:400;" value="<%=h(form.getPassword())%>"></td></tr>
     <tr><td>Use SASL Authentication:</td><td><input id="SASL" type="checkbox" name="SASL" <%=form.getSASL() ? "checked" : ""%>></td></tr>
     <tr><td colspan=2 align=center style="height:50">
-        <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=form.getReturnUrl()%>">
-        <%=PageFlowUtil.generateSubmitButton("Test")%>
-        <%=PageFlowUtil.generateButton("Done", form.getReturnUrl())%>
+        <%=generateReturnUrlFormField(form)%>
+        <%=generateSubmitButton("Test")%>
+        <%=generateButton("Done", form.getReturnURLHelper())%>
     </td></tr>
 </table>
 </form>

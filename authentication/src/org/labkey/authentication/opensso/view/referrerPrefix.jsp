@@ -34,8 +34,8 @@
         <tr><td class="labkey-form-label">URL prefix</td><td><input type="text" name="prefix" value="<%=h(bean.getPrefix())%>" style="width:400px;"></td></tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr><td colspan="2">
-            <%=PageFlowUtil.generateSubmitButton("Save")%>
-            <%=PageFlowUtil.generateButton("Cancel", OpenSSOController.getCurrentSettingsURL())%>
+            <%=generateSubmitButton("Save")%>
+            <%=generateButton("Cancel", OpenSSOController.getCurrentSettingsURL())%>
         </td></tr>
     </table><br>
 </form>

@@ -27,7 +27,7 @@
     DiscussionService.Settings settings = bean.settings;
 
 %><form action="customize.post" method="post">
-<input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.returnURL)%>">
+<%=generateReturnUrlFormField(bean.returnURL)%>
 <table>
     <tr>
         <td class="labkey-form-label">Board name</td>
@@ -103,7 +103,7 @@
         <td><table><tr><td><input type="checkbox" name="includeGroups"<%=settings.includeGroups() ? " checked" : ""%>></td></tr></table></td>
     </tr>
     <tr>
-        <td colspan=2><%=PageFlowUtil.generateSubmitButton("Save")%>
+        <td colspan=2><%=generateSubmitButton("Save")%>
         <%=PageFlowUtil.generateButton("Cancel", bean.returnURL)%></td>
     </tr>
 </table>

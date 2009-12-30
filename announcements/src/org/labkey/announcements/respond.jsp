@@ -50,7 +50,7 @@ function validateForm(form)
 </script>
 <form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
-<input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.cancelURL)%>">
+<%=generateReturnUrlFormField(bean.cancelURL)%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
 <table><%
 
@@ -139,7 +139,7 @@ if (settings.hasFormatPicker())
       </table>
     </td></tr>
 </table>
-<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.cancelURL) %>
+<br>&nbsp;<%=generateSubmitButton("Submit")%>&nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.cancelURL) %>
 </form>
 <br>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>

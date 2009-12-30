@@ -56,7 +56,7 @@
                 }
             %>
             </select><br>
-            <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(returnURL)%>">
+            <%=generateReturnUrlFormField(returnURL)%>
             <%=PageFlowUtil.generateSubmitButton("Impersonate")%><%
             }
             %>

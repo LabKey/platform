@@ -35,6 +35,6 @@
         <tr><td class="labkey-form-label"><%=key%></td><td><input type="text" name="<%=key%>" value="<%=value%>" style="width:400px;"></td></tr><%
     }
 %>
-    </table><br><%=PageFlowUtil.generateSubmitButton("Save")%>
-    <%=PageFlowUtil.generateButton("Cancel", OpenSSOController.getCurrentSettingsURL())%>
+    </table><br><%=generateSubmitButton("Save")%>
+    <%=generateButton("Cancel", OpenSSOController.getCurrentSettingsURL())%>
 </form>

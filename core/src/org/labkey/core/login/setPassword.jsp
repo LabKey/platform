@@ -48,9 +48,9 @@
             { %>
             <input type=hidden name=skipProfile value="1"><%
             }
-            if (null != bean.form.getReturnUrl())
+            if (null != bean.form.getReturnURLHelper())
             { %>
-            <input type=hidden name=<%=ReturnUrlForm.Params.returnUrl%> value="<%=h(bean.form.getReturnUrl())%>"><%
+            <%=generateReturnUrlFormField(bean.form)%><%
             }
 
             %>

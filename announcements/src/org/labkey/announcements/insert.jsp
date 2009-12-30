@@ -32,7 +32,7 @@
     Container c = HttpView.currentContext().getContainer();
     DiscussionService.Settings settings = bean.settings;
     AnnouncementsController.AnnouncementForm form = bean.form;
-    URLHelper cancelUrl = bean.cancelURL;
+    URLHelper cancelURL = bean.cancelURL;
     String insertUrl = AnnouncementsController.getInsertURL(c).getEncodedLocalURIString();
 %>
 <%=formatMissedErrors("form")%>
@@ -49,8 +49,8 @@ function validateForm(form)
 }
 </script>
 <form method=post enctype="multipart/form-data" action="<%=insertUrl%>" onSubmit="return validateForm(this)">
-<input type=hidden name=cancelUrl value="<%=h(null != cancelUrl ? cancelUrl.getLocalURIString() : null)%>">
-<input type=hidden name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(null != cancelUrl ? cancelUrl.getLocalURIString() : null)%>">
+<input type=hidden name=cancelUrl value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>">
+<%=generateReturnUrlFormField(cancelURL)%>
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
 <input type=hidden name=allowMultipleDiscussions value="<%=bean.allowMultipleDiscussions%>">
 <table>
@@ -128,10 +128,10 @@ if (bean.allowBroadcast)
       </table>
     </td></tr>
 </table>
-<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%
-if (null != cancelUrl)
+<br>&nbsp;<%=generateSubmitButton("Submit")%>&nbsp;<%
+if (null != cancelURL)
 {
-    %><%=PageFlowUtil.generateButton("Cancel", cancelUrl)%><%
+    %><%=PageFlowUtil.generateButton("Cancel", cancelURL)%><%
 }
 else
 {

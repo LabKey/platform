@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
@@ -31,7 +30,7 @@ list templates.
 </td></tr>
 <tr><td><input type="file" name="listZip" size="50"></td></tr>
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Import Lists")%></td>
+    <td><%=generateSubmitButton("Import Lists")%></td>
 </tr>
 
 </table>

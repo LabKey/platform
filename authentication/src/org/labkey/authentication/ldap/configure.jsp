@@ -47,8 +47,8 @@
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
         <td colspan=2>
-            <%=PageFlowUtil.generateSubmitButton("Save")%>
-            <%=PageFlowUtil.generateButton(bean.reshow ? "Done" : "Cancel", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>
+            <%=generateSubmitButton("Save")%>
+            <%=generateButton(bean.reshow ? "Done" : "Cancel", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>
         </td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>

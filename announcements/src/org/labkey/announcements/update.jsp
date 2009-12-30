@@ -39,7 +39,7 @@
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=ann.getEntityId()%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
-<input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.returnURL)%>">
+<%=generateReturnUrlFormField(bean.returnURL)%>
 <table><%
 
 if (settings.isTitleEditable())

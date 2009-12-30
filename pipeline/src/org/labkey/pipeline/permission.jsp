@@ -84,7 +84,7 @@ These permissions control whether pipeline files can be downloaded and updated v
     }
     %></table><br><%
 %>
-<%=PageFlowUtil.generateSubmitButton("Submit")%>
+<%=generateSubmitButton("Submit")%>
 </form>
 <script type="text/javascript">
 toggleEnableFTP(document.getElementById("enabledCheckbox"));

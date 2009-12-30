@@ -53,8 +53,8 @@
 </tr>
 <tr>
     <td>
-        <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.returnURL)%>">
-        <%=PageFlowUtil.generateSubmitButton("Set")%>
+        <%=generateReturnUrlFormField(bean.returnURL)%>
+        <%=generateSubmitButton("Set")%>
     </td>
 </tr>
 </table>
