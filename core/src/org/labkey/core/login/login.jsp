@@ -23,7 +23,9 @@
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.util.ReturnURLString" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -32,9 +34,7 @@
     ViewContext context = HttpView.currentContext();
     User user = context.getUser();
     LoginForm form = bean.form;
-    ReturnURLString returnURI = form.getReturnUrl();
-    if (returnURI == null)
-        returnURI = new ReturnURLString(form.getReturnActionURL().toHString());
+    URLHelper returnURL = form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
     boolean agreeOnly = bean.agreeOnly;
 
     // Next bit of code makes the enter button work on IE.
@@ -107,7 +107,7 @@
         <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=bean.termsOfUseChecked ? " checked" : ""%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
     } %>
         <tr><td></td><td height="50px">
-            <input type="hidden" name="URI" value="<%=h(returnURI)%>"><%
+            <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(returnURL)%>"><%
 
             if (bean.form.getSkipProfile())
             { %>

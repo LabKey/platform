@@ -120,7 +120,7 @@ public class LoginController extends SpringActionController
                 returnURL = AppProps.getInstance().getHomePageActionURL();
 
             url.setExtraPath(returnURL.getExtraPath());
-            addReturnURL(url, returnURL.getLocalURIString());
+            url.addReturnURL(returnURL);
             return url;
         }
 
@@ -133,16 +133,16 @@ public class LoginController extends SpringActionController
         }
 
         
-        public ActionURL getLoginURL(Container c, ReturnURLString returnURLString)
+        public ActionURL getLoginURL(Container c, URLHelper returnURL)
         {
             ActionURL url = new ActionURL(LoginAction.class, c);
-            addReturnURL(url, returnURLString);
+            url.addReturnURL(returnURL);
             return url;
         }
 
-        private ActionURL getLoginURL(Container c, String email, boolean skipProfile, ReturnURLString returnURLString)
+        private ActionURL getLoginURL(Container c, String email, boolean skipProfile, URLHelper returnURL)
         {
-            ActionURL url = getLoginURL(c, returnURLString);
+            ActionURL url = getLoginURL(c, returnURL);
 
             url.addParameter("email", email);
 
@@ -157,10 +157,10 @@ public class LoginController extends SpringActionController
             return new ActionURL(LogoutAction.class, c);
         }
 
-        public ActionURL getLogoutURL(Container c, String returnURLString)
+        public ActionURL getLogoutURL(Container c, URLHelper returnURL)
         {
             ActionURL url = getLogoutURL(c);
-            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURLString);
+            url.addReturnURL(returnURL);
             return url;
         }
 
@@ -169,10 +169,10 @@ public class LoginController extends SpringActionController
             HttpSession session = request.getSession(true);
 
             // Return to the admin's original URL, if it's there
-            ActionURL returnUrl = (ActionURL)session.getAttribute(SecurityManager.IMPERSONATION_RETURN_URL_KEY);
+            URLHelper returnURL = (URLHelper)session.getAttribute(SecurityManager.IMPERSONATION_RETURN_URL_KEY);
 
-            if (null != returnUrl)
-                return getLogoutURL(c, returnUrl.getLocalURIString());
+            if (null != returnURL)
+                return getLogoutURL(c, returnURL);
             else
                 return getLogoutURL(c);
         }
@@ -180,7 +180,7 @@ public class LoginController extends SpringActionController
         public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
-            addReturnURL(url, returnURL);
+            url.addReturnURL(returnURL);
             return url;
         }
 
@@ -191,22 +191,11 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        // TODO: Remove this -- should only be passing in URLHelpers, which can be added directly to another URL
         private void addReturnURL(ActionURL url, String returnURLString)
         {
             if (null != returnURLString)
-                url.addParameter("URI", returnURLString);
-        }
-
-        private void addReturnURL(ActionURL url, HString returnURLString)
-        {
-            if (null != returnURLString)
-                url.addParameter("URI", returnURLString);
-        }
-
-        private void addReturnURL(ActionURL url, ActionURL returnURL)
-        {
-            if (null != returnURL)
-                url.addParameter("URI", returnURL.getLocalURIString());
+                url.addParameter(ReturnUrlForm.Params.returnUrl, returnURLString);
         }
     }
 
@@ -379,7 +368,7 @@ public class LoginController extends SpringActionController
             // If this is user's first log in or some required field isn't filled in then go to update page
             if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
             {
-                ActionURL url = form.getReturnActionURL();
+                URLHelper url = form.getReturnURLHelper();
                 if (null != url)
                     return new ReturnURLString(PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(url, _user.getUserId()).getLocalURIString());
             }
@@ -576,7 +565,8 @@ public class LoginController extends SpringActionController
     {
         Container termsContainer = null;
 
-        ReturnURLString redir = form.getURI();
+        // TODO: Just use form.getReturnURLHelper()
+        ReturnURLString redir = form.getReturnUrl();
         if (null != redir)
         {
             try
@@ -673,23 +663,15 @@ public class LoginController extends SpringActionController
             return this.errorHtml;
         }
 
+        // TODO: Remove getURI()/setURI()
         public ReturnURLString getURI()
         {
-            return URI;
+            return getReturnUrl();
         }
 
         public void setURI(ReturnURLString URI)
         {
-            this.URI = URI;
             setReturnUrl(URI);
-        }
-
-        public ActionURL getReturnActionURL()
-        {
-            if (null == getReturnUrl())
-                return AppProps.getInstance().getHomePageActionURL();
-            else
-                return super.getReturnActionURL();
         }
 
         public boolean isApprovedTermsOfUse()
@@ -901,9 +883,9 @@ public class LoginController extends SpringActionController
             {
                 ViewContext viewContext = getViewContext();
                 viewContext.setUser(_user);
-                return form.getReturnActionURL(ContainerManager.getHomeContainer().getStartURL(viewContext));
+                return form.getReturnURLHelper(ContainerManager.getHomeContainer().getStartURL(viewContext));
             }
-            return getUrls().getLoginURL(getContainer(), _email.getEmailAddress(), form.getSkipProfile(), form.getReturnUrl());
+            return getUrls().getLoginURL(getContainer(), _email.getEmailAddress(), form.getSkipProfile(), form.getReturnURLHelper());
         }
 
         public NavTree appendNavTrail(NavTree root)

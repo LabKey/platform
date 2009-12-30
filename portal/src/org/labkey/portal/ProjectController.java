@@ -297,7 +297,7 @@ public class ProjectController extends SpringActionController
 
         public URLHelper getSuccessURL(MovePortletForm movePortletForm)
         {
-            return movePortletForm.getReturnActionURL(beginURL());
+            return movePortletForm.getReturnURLHelper(beginURL());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -386,7 +386,7 @@ public class ProjectController extends SpringActionController
 
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
         {
-            return customizePortletForm.getReturnActionURL(beginURL());
+            return customizePortletForm.getReturnURLHelper(beginURL());
         }
 
         public NavTree appendNavTrail(NavTree root)

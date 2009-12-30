@@ -121,8 +121,13 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         return status;
     }
 
-    public ImportStatus getStatus(String importId) throws ImportException
+    public ImportStatus getStatus(String jobId) throws ImportException
     {
         throw new ImportException("Shouldn't be calling getStatus() -- datasets import synchronously");
+    }
+
+    public String cancelImport(String jobId)
+    {
+        return null;
     }
 }

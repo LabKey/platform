@@ -33,10 +33,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
@@ -98,7 +95,7 @@ public class UserController extends SpringActionController
             return new ActionURL(DetailsAction.class, c);
         }
 
-        public ActionURL getUserUpdateURL(ActionURL returnURL, int userId)
+        public ActionURL getUserUpdateURL(URLHelper returnURL, int userId)
         {
             ActionURL url = new ActionURL(ShowUpdateAction.class, ContainerManager.getRoot());
             url.addReturnURL(returnURL);
@@ -1590,12 +1587,12 @@ public class UserController extends SpringActionController
 
             if (c.isRoot())
             {
-                SecurityManager.impersonate(getViewContext(), impersonatedUser, null, form.getReturnActionURL());
+                SecurityManager.impersonate(getViewContext(), impersonatedUser, null, form.getReturnURLHelper());
                 return AppProps.getInstance().getHomePageActionURL();
             }
             else
             {
-                SecurityManager.impersonate(getViewContext(), impersonatedUser, c.getProject(), form.getReturnActionURL());
+                SecurityManager.impersonate(getViewContext(), impersonatedUser, c.getProject(), form.getReturnURLHelper());
                 return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             }
         }

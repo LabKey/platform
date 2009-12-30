@@ -16,7 +16,6 @@
 
 package org.labkey.list.view;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListService;
@@ -44,8 +43,6 @@ import java.util.concurrent.*;
  */
 public class ListImportServiceImpl extends DomainImporterServiceBase
 {
-    private static final Logger LOG = Logger.getLogger(ListImportServiceImpl.class);
-
     public ListImportServiceImpl(ViewContext context)
     {
         super(context);
@@ -82,7 +79,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         Future<List<String>> future = executor.submit(importer);
         executor.shutdown();
 
-        ImportContext context = new ImportContext(future, progress);
+        ImportContext context = new ImportContext(future, progress, def);
         setContext(context.getJobId(), context);
 
         // Make sure these go away
@@ -205,12 +202,14 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         private final Future<List<String>> _future;
         private final ProgressIndicator _progress;
         private final String _jobId;
+        private final ListDefinition _listDef;
 
-        private ImportContext(Future<List<String>> future, ProgressIndicator progress)
+        private ImportContext(Future<List<String>> future, ProgressIndicator progress, ListDefinition def)
         {
             _future = future;
             _progress = progress;
             _jobId = GUID.makeHash();   // Unique ID used by client to retrieve import status
+            _listDef = def;
         }
 
         private String getJobId()
@@ -250,5 +249,36 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
             return status;
         }
+
+        public Future<List<String>> getFuture()
+        {
+            return _future;
+        }
+
+        public ListDefinition getListDef()
+        {
+            return _listDef;
+        }
+    }
+
+    public String cancelImport(String jobId) throws ImportException
+    {
+        ImportContext context = getContext(jobId);
+
+        Future<List<String>> future = context.getFuture();
+        future.cancel(true);
+
+        ListDefinition def = context.getListDef();
+
+        try
+        {
+            def.delete(getUser());
+        }
+        catch (Exception e)
+        {
+            throw new ImportException(e.getMessage());
+        }
+
+        return ListController.getBeginURL(def.getContainer()).getLocalURIString();
     }
 }

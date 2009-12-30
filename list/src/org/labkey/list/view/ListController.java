@@ -249,7 +249,7 @@ public class ListController extends SpringActionController
     {
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            // Cancelling the import should delete the list
+            // Cancelling the import just deletes the list
             ListDefinition _list = form.getList();
             _list.delete(getUser());
             HttpView.throwRedirect(getBeginURL(getContainer()));
