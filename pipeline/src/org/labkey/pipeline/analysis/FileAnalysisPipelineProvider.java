@@ -24,8 +24,8 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.util.FileType;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.InsertPermission;
 
@@ -80,14 +80,13 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {            
             String path = directory.cloneHref().getParameter(Params.path.toString());
-            ActionURL url = AnalysisController.urlAnalyze(c, tp.getId(), path);
-            addAction(url, tp.getDescription(),
+            addAction(tp.getAnalyzeURL(c, path), tp.getDescription(),
                     directory, directory.listFiles(tp.getInitialFileTypeFilter()));
 
             FileFilter filter = getImportFilter(tp);
             if (filter != null)
             {
-                url = AnalysisController.urlImport(c, tp.getId(), path);
+                ActionURL url = AnalysisController.urlImport(c, tp.getId(), path);
                 addAction(url, "Import", directory, directory.listFiles(filter));
             }
         }

@@ -24,7 +24,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * <code>FileAnalysisProtocol</code>
@@ -55,7 +54,7 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
 
     public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, File[] filesInput,
                                                      File fileParameters)
-            throws SQLException, IOException
+            throws IOException
     {
         TaskId id = _factory.getPipeline().getId();
         return new FileAnalysisJob(this, FileAnalysisPipelineProvider.name, info,

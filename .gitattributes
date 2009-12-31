@@ -1196,7 +1196,6 @@ pipeline/src/org/labkey/pipeline/PipelineUpgradeCode.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebdavProvider.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalysisController.java -text
-pipeline/src/org/labkey/pipeline/analysis/AnalyzePage.java -text
 pipeline/src/org/labkey/pipeline/analysis/CommandTaskImpl.java -text
 pipeline/src/org/labkey/pipeline/analysis/ConvertTaskFactory.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisJob.java -text
@@ -1230,8 +1229,6 @@ pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/browse.jsp -text
-pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
-pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text

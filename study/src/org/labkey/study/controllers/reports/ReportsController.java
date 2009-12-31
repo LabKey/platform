@@ -411,7 +411,7 @@ public class ReportsController extends BaseStudyController
             if (reshow)
             {
                 EnrollmentReport.saveEnrollmentReport(getViewContext(), report);
-                return HttpView.redirect(getViewContext().getActionURL().relativeUrl("enrollmentReport", null));
+                return HttpView.redirect(getViewContext().cloneActionURL().setAction(EnrollmentReportAction.class));
             }
 
             int datasetId = NumberUtils.toInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));

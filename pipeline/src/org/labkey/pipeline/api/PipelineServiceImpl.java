@@ -225,7 +225,7 @@ public class PipelineServiceImpl extends PipelineService
 
 
 
-    public URI getPipelineRootSetting(Container container, final String type) throws SQLException
+    public URI getPipelineRootSetting(Container container, final String type)
     {
         String root = PipelineManager.getPipelineRoot(container, type);
         if (root == null)

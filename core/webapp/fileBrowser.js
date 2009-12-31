@@ -229,6 +229,11 @@ function renderFileSize(value, metadata, record, rowIndex, colIndex, store)
 {
     if (!record.get('file')) return "";
     var f =  Ext.util.Format.fileSize(value);
+    return "<span title='" + f + "'>" + formatWithCommas(value) + "</span>";
+}
+
+function formatWithCommas(value)
+{
     var x = value;
     var formatted = (x == 0) ? '0' : '';
     var separator = '';
@@ -251,7 +256,7 @@ function renderFileSize(value, metadata, record, rowIndex, colIndex, store)
         x = x / 1000;
         separator = ',';
     }
-    return "<span title='" + f + "'>" + formatted + "</span>";
+    return formatted;
 }
 
 
@@ -2179,30 +2184,25 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 html.push("<tr><th style='text-align:right; color:#404040'>");
                 html.push(label);
-                html.push(":</th><td style='font-size:110%;'>");
+                html.push(":</th><td style='padding-left: 5px'>");
                 html.push(value);
                 html.push("</td></tr>");
             };
 
-/*
-            html.push('<table width=100%><tr><td align=left valign=top style="font-size:133%; padding-left:8px;">');
-            html.push($h(data.name));
-            html.push('</td><td align=right valign=top style="color:#404040; padding-right:8px;">');
-            html.push($h(data.uri));
-            html.push("</td></tr></table>");
-*/
-            html.push('<p style="padding:8px;"><span align=left style="font-size:133%; padding:8px;">');
-            html.push($h(data.name));
-            html.push("</span>");
-            html.push('<span align=right style="color:#404040; padding-left:8px; padding-botton:8px;">');
-            html.push($h(data.uri));
-            html.push("</span></p>");
-
             html.push("<table style='padding-left:30px;'>");
+            row("Name", data.name);
+            row("WebDav URL", data.uri);
             if (data.modified)
-                row("Date Modified", _longDateTime(data.modified));
+                row("Date modified", _longDateTime(data.modified));
             if (data.file)
-                row("Size",data.size);
+                {
+                    var sizeValue = Ext.util.Format.fileSize(data.size);
+                    if (data.size > 1024)
+                    {
+                        sizeValue += " (" + formatWithCommas(data.size) + " bytes)";
+                    }
+                    row("Size", sizeValue);
+                }
             if (data.createdBy && data.createdBy != 'Guest')
                 row("Created By", $h(data.createdBy));
             if (startsWith(data.contentType,"image/"))
@@ -2653,7 +2653,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 region: 'south',
                 split: true,
-                height: 100,
+                height: 80,
                 minSize: 0,
                 maxSize: 250,
                 margins: '0 5 5 5',

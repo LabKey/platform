@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-//FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
 FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz");
 %>
 <%
@@ -129,17 +128,17 @@ function renderPipelineActions(actions)
     // Always show all the actions for the current folder, even when a file is selected
 //    var all = {id:'showAll', style:{display:'none'}, children:['[', {tag:'a', onClick:'showAllActions()', href:'#', children:['show all']},']']};
 //    html.push(all);
-    
+
     for (var i=0; i < actions.length; i++)
     {
         var action = actions[i];
         var actionMarkup = {tag:'div', id:'actiondiv' + ++actionDivCounter, style:styleAction, children:[]};
         actionDivs.push(actionMarkup.id);
 
-        // UNDONE: some actions depend on this this parameter, why not append it themselves?
+        // UNDONE: some actions depend on this parameter, why not append it themselves?
         var fileInputNames = "";
         for (var f=0; f < action.files.length; f++)
-            fileInputNames += "&fileInputNames=" + encodeURIComponent(action.files[f]);
+            fileInputNames += "&file=" + encodeURIComponent(action.files[f]);
 
         // BUTTONS
         for (var lg=0; lg < action.linkgroups.length; lg++)

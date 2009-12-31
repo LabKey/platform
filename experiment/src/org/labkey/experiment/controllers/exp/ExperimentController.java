@@ -38,6 +38,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
+import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -211,19 +212,18 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class DetailsAction extends SimpleViewAction<ExperimentForm>
+    public class DetailsAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpExperimentImpl _experiment;
 
-        public ModelAndView getView(ExperimentForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
 
-            int rowId = form.getBean().getRowId();
-            _experiment = ExperimentServiceImpl.get().getExpExperiment(rowId);
+            _experiment = ExperimentServiceImpl.get().getExpExperiment(form.getRowId());
             if (_experiment == null)
             {
-                throw new NotFoundException("Could not find an experiment with RowId " + rowId);
+                throw new NotFoundException("Could not find an experiment with RowId " + form.getRowId());
             }
 
             if (!_experiment.getContainer().equals(getViewContext().getContainer()))
@@ -231,11 +231,9 @@ public class ExperimentController extends SpringActionController
                 HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_experiment.getContainer()));
             }
 
-            form.setBean(_experiment.getDataObject());
-
             CustomPropertiesView customPropertiesView = new CustomPropertiesView(_experiment.getLSID(), getViewContext().cloneActionURL(), c);
 
-            DetailsView detailsView = new DetailsView(new DataRegion(), form);
+            DetailsView detailsView = new DetailsView(new DataRegion(), _experiment.getRowId());
             detailsView.getDataRegion().setTable(ExperimentServiceImpl.get().getTinfoExperiment());
             detailsView.getDataRegion().addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,ContactId,ExperimentDescriptionURL,Hypothesis,Comments");
             detailsView.getDataRegion().getDisplayColumn(0).setVisible(false);
@@ -334,30 +332,22 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
+    public class ShowMaterialSourceAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpSampleSetImpl _source;
 
-        public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
         {
-            MaterialSource source = form.getBean();
-            if (source != null)
+            _source = ExperimentServiceImpl.get().getSampleSet(form.getRowId());
+            if (_source == null && form.getLsid() != null)
             {
-                _source = ExperimentServiceImpl.get().getSampleSet(source.getRowId());
-                if (_source == null && source.getLSID() != null)
+                if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
                 {
-                    if (source.getLSID().equalsIgnoreCase("Material") || source.getLSID().equalsIgnoreCase("Sample"))
-                    {
-                        // Not a real sample set - just show all the materials instead
-                        HttpView.throwRedirect(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
-                    }
-                    // Check if the URL specifies the LSID, and stick the bean back into the form
-                    _source = ExperimentServiceImpl.get().getSampleSet(source.getLSID());
-                    if (_source != null)
-                    {
-                        form.setBean(_source.getDataObject());
-                    }
+                    // Not a real sample set - just show all the materials instead
+                    HttpView.throwRedirect(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
                 }
+                // Check if the URL specifies the LSID, and stick the bean back into the form
+                _source = ExperimentServiceImpl.get().getSampleSet(form.getLsid());
             }
 
             if (_source == null)
@@ -403,7 +393,7 @@ public class ExperimentController extends SpringActionController
 
             queryView.setTitle("Sample Set Contents");
 
-            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), true), form);
+            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), true), _source.getRowId());
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
@@ -411,7 +401,9 @@ public class ExperimentController extends SpringActionController
 
             if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source))
             {
-                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(new ActionButton(ExperimentController.ShowUpdateMaterialSourceAction.class, "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET));
+                ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
+                updateButton.setDisplayPermission(UpdatePermission.class);
+                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
                 ActionURL editTypeURL = getViewContext().cloneActionURL();
                 editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
@@ -575,27 +567,24 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowMaterialAction extends SimpleViewAction<MaterialForm>
+    public class ShowMaterialAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpMaterialImpl _material;
 
-        public ModelAndView getView(MaterialForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            Material inputMaterial = form.getBean();
-            _material = ExperimentServiceImpl.get().getExpMaterial(inputMaterial.getRowId());
-            if (_material == null && inputMaterial.getLSID() != null)
+            _material = ExperimentServiceImpl.get().getExpMaterial(form.getRowId());
+            if (_material == null && form.getLsid() != null)
             {
-                _material = ExperimentServiceImpl.get().getExpMaterial(inputMaterial.getLSID());
+                _material = ExperimentServiceImpl.get().getExpMaterial(form.getLsid());
             }
             if (_material == null)
             {
-                HttpView.throwNotFound("Could not find a material with RowId " + inputMaterial.getRowId());
+                HttpView.throwNotFound("Could not find a material with RowId " + form.getRowId());
             }
 
             ensureCorrectContainer(getContainer(), _material, getViewContext());
-
-            form.setBean(_material.getDataObject());
 
             ExpRunImpl run = _material.getRun();
             ExpProtocol sourceProtocol = _material.getSourceProtocol();
@@ -614,7 +603,7 @@ public class ExperimentController extends SpringActionController
 
             //TODO: Can't yet edit materials uploaded from a material source
             dr.setButtonBar(new ButtonBar());
-            DetailsView detailsView = new DetailsView(dr, form);
+            DetailsView detailsView = new DetailsView(dr, _material.getRowId());
             detailsView.setTitle("Standard Properties");
 
             CustomPropertiesView cpv = new CustomPropertiesView(_material.getLSID(), getViewContext().cloneActionURL(), c);
@@ -1520,14 +1509,14 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowApplicationAction extends SimpleViewAction<ProtocolApplicationForm>
+    public class ShowApplicationAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpProtocolApplicationImpl _app;
         private ExpRun _run;
 
-        public ModelAndView getView(ProtocolApplicationForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
         {
-            _app = ExperimentServiceImpl.get().getExpProtocolApplication(form.getBean().getRowId());
+            _app = ExperimentServiceImpl.get().getExpProtocolApplication(form.getRowId());
             if (_app == null)
             {
                 HttpView.throwNotFound("Could not find Protocol Application");
@@ -1537,21 +1526,19 @@ public class ExperimentController extends SpringActionController
             {
                 HttpView.throwNotFound("No experiment run associated with Protocol Application");
             }
-            form.setBean(_app.getDataObject());
             ensureCorrectContainer(getContainer(), _app, getViewContext());
 
             ExpProtocol protocol = _app.getProtocol();
 
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoProtocolApplication().getUserEditableColumns());
-            DetailsView detailsView = new DetailsView(dr, form);
+            DetailsView detailsView = new DetailsView(dr, form.getRowId());
             dr.removeColumns("RunId", "ProtocolLSID", "RowId", "LSID");
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(_run));
             dr.addDisplayColumn(new ProtocolDisplayColumn(protocol));
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_app, _run));
             detailsView.setTitle("Protocol Application");
             dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
-
 
             Container c = getContainer();
             ApplicationOutputGrid outMGrid = new ApplicationOutputGrid(c, _app.getRowId(), ExperimentServiceImpl.get().getTinfoMaterial());
@@ -1589,17 +1576,16 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ProtocolDetailsAction extends SimpleViewAction<ProtocolForm>
+    public class ProtocolDetailsAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpProtocol _protocol;
 
-        public ModelAndView getView(ProtocolForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
         {
-            Protocol bean = form.getBean();
-            _protocol = ExperimentService.get().getExpProtocol(bean.getRowId());
+            _protocol = ExperimentService.get().getExpProtocol(form.getRowId());
             if (_protocol == null)
             {
-                _protocol = ExperimentServiceImpl.get().getExpProtocol(bean.getLSID());
+                _protocol = ExperimentServiceImpl.get().getExpProtocol(form.getLSID());
             }
 
             if (_protocol == null)
@@ -1612,11 +1598,8 @@ public class ExperimentController extends SpringActionController
             detailsView.setTitle("Standard Properties");
 
             CustomPropertiesView cpv = new CustomPropertiesView(_protocol.getLSID(), getViewContext().cloneActionURL(), getContainer());
-
             ProtocolParametersView parametersView = new ProtocolParametersView(_protocol);
-
             ProtocolListView listView = new ProtocolListView(_protocol, getContainer());
-
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), true), ExperimentRunType.ALL_RUNS_TYPE)
@@ -1767,27 +1750,39 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class ProtocolApplicationForm extends BeanViewForm<ProtocolApplication>
+    public static class ExpObjectForm
     {
-        public ProtocolApplicationForm()
-        {
-            super(ProtocolApplication.class, ExperimentServiceImpl.get().getTinfoProtocolApplication());
-        }
-    }
+        private int _rowId;
+        private String _lsid;
 
-    public static class ProtocolForm extends BeanViewForm<Protocol>
-    {
-        public ProtocolForm()
+        public String getLsid()
         {
-            super(Protocol.class, ExperimentServiceImpl.get().getTinfoProtocol());
+            return _lsid;
         }
-    }
 
-    public static class MaterialForm extends BeanViewForm<Material>
-    {
-        public MaterialForm()
+        public void setLsid(String lsid)
         {
-            super(Material.class, ExperimentServiceImpl.get().getTinfoMaterial());
+            _lsid = lsid;
+        }
+
+        public String getLSID()
+        {
+            return getLsid();
+        }
+
+        public void setLSID(String lsid)
+        {
+            setLsid(lsid);
+        }
+
+        public int getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(int rowId)
+        {
+            _rowId = rowId;
         }
     }
 
@@ -2480,16 +2475,97 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class ShowAddXarFileAction extends SimpleViewAction<AddXarFileForm>
+    public class ShowAddXarFileAction extends FormViewAction<Object>
     {
-        public ModelAndView getView(AddXarFileForm form, BindException errors) throws Exception
+        public URLHelper getSuccessURL(Object o)
+        {
+            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer());
+        }
+
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
             if (!hasValidPipelineURI(getContainer()))
             {
                 return new NoPipelineRootSetView(getContainer(), "upload a XAR");
             }
 
-            return new JspView<AddXarFileForm>("/org/labkey/experiment/addXarFile.jsp", form);
+            return new JspView<Object>("/org/labkey/experiment/addXarFile.jsp", null, errors);
+        }
+
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
+                throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
+
+            if (!hasValidPipelineURI(getContainer()))
+            {
+                return false;
+            }
+
+            MultipartFile formFile = getFileMap().get("uploadFile");
+            if (formFile == null)
+            {
+                errors.addError(new LabkeyError("No file was posted by the browser."));
+                return false;
+            }
+
+            byte[] bytes = formFile.getBytes();
+            if (bytes.length == 0)
+            {
+                errors.addError(new LabkeyError("No file was posted by the browser."));
+                return false;
+            }
+
+            File systemDir = PipelineService.get().findPipelineRoot(getContainer()).ensureSystemDirectory();
+            File uploadDir = new File(systemDir, "UploadedXARs");
+            uploadDir.mkdirs();
+            if (!uploadDir.isDirectory())
+            {
+                errors.addError(new LabkeyError("Unable to create a 'system/UploadedXARs' directory under the pipeline root"));
+                return false;
+            }
+            String userDirName = getUser().getEmail();
+            if (userDirName == null || userDirName.length() == 0)
+            {
+                userDirName = GUEST_DIRECTORY_NAME;
+            }
+            File userDir = new File(uploadDir, userDirName);
+            userDir.mkdirs();
+            if (!userDir.isDirectory())
+            {
+                errors.addError(new LabkeyError("Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root"));
+                return false;
+            }
+
+            File xarFile = new File(userDir, formFile.getOriginalFilename());
+            OutputStream out = null;
+            try
+            {
+                out = new BufferedOutputStream(new FileOutputStream(xarFile));
+                out.write(bytes);
+            }
+            catch (IOException e)
+            {
+                errors.addError(new LabkeyError("Unable to write uploaded XAR file to " + xarFile.getPath()));
+                return false;
+            }
+            finally
+            {
+                if (out != null)
+                { //noinspection EmptyCatchBlock
+                    try { out.close(); } catch (IOException e) {}
+                }
+            }
+
+            ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
+                    "Uploaded file", true);
+            PipelineService.get().queueJob(job);
+
+            return true;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3043,7 +3119,7 @@ public class ExperimentController extends SpringActionController
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run == null || !run.getContainer().equals(getContainer()))
                 {
-                    HttpView.throwNotFound("Run " + runId);
+                    throw new NotFoundException("Run " + runId);
                 }
                 exp.removeRun(getUser(), run);
             }
@@ -3072,7 +3148,7 @@ public class ExperimentController extends SpringActionController
                     HttpView.throwRedirect(url);
             }
 
-            String html = message + "<form action=\"" + getViewContext().getActionURL().relativeUrl("resolveLSID", null) + "\">" +
+            String html = message + "<form action=\"" + getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class) + "\">" +
                     " Lsid <input type=text name=lsid value=\"" +
                     (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
                     PageFlowUtil.generateSubmitButton("Go", "", "size=\"60\"") + "</form>";
@@ -3207,7 +3283,7 @@ public class ExperimentController extends SpringActionController
             else
             {
                 Set<String> materialInputRoles = new TreeSet<String>();
-                materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(getContainer(), null));
+                materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(getContainer()));
                 Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<ExpMaterial, String>();
                 for (ExpMaterial material : materials)
                 {
@@ -3854,111 +3930,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class AddXarFileForm
-    {
-        protected String _path;
-        private String _error;
-
-        public String getPath()
-        {
-            return _path;
-        }
-
-        public void setPath(String path)
-        {
-            _path = path;
-        }
-
-        public String getError()
-        {
-            return _error;
-        }
-
-        public void setError(String error)
-        {
-            _error = error;
-        }
-    }
-
-    @RequiresPermissionClass(InsertPermission.class)
-    public class UploadXarFileAction extends SimpleViewAction<Object>
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
-
-            if (!hasValidPipelineURI(getContainer()))
-            {
-                return new NoPipelineRootSetView(getContainer(), "upload a XAR");
-            }
-
-            MultipartFile formFile = getFileMap().get("uploadFile");
-            if (formFile == null)
-            {
-                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowAddXarFileURL(getContainer(), "No file was posted by the browser."));
-                return null;
-            }
-
-            byte[] bytes = formFile.getBytes();
-            if (bytes.length == 0)
-            {
-                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowAddXarFileURL(getContainer(), "No file was posted by the browser."));
-            }
-
-            File systemDir = PipelineService.get().findPipelineRoot(getContainer()).ensureSystemDirectory();
-            File uploadDir = new File(systemDir, "UploadedXARs");
-            uploadDir.mkdirs();
-            if (!uploadDir.isDirectory())
-            {
-                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowAddXarFileURL(getContainer(), "Unable to create a 'system/UploadedXARs' directory under the pipeline root"));
-            }
-            String userDirName = getUser().getEmail();
-            if (userDirName == null || userDirName.length() == 0)
-            {
-                userDirName = GUEST_DIRECTORY_NAME;
-            }
-            File userDir = new File(uploadDir, userDirName);
-            userDir.mkdirs();
-            if (!userDir.isDirectory())
-            {
-                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowAddXarFileURL(getContainer(), "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root"));
-            }
-
-            File xarFile = new File(userDir, formFile.getOriginalFilename());
-            OutputStream out = null;
-            try
-            {
-                out = new BufferedOutputStream(new FileOutputStream(xarFile));
-                out.write(bytes);
-            }
-            catch (IOException e)
-            {
-                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowAddXarFileURL(getContainer(), "Unable to write uploaded XAR file to " + xarFile.getPath()));
-            }
-            finally
-            {
-                if (out != null)
-                { //noinspection EmptyCatchBlock
-                    try { out.close(); } catch (IOException e) {}
-                }
-            }
-
-            ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
-                    "Uploaded file", true);
-            PipelineService.get().queueJob(job);
-
-            // Forward to the job's container.
-            HttpView.throwRedirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-    }
-
     public static File getPipelineRoot(Container c) throws SQLException
     {
         PipeRoot pr = PipelineService.get().findPipelineRoot(c);
@@ -3982,37 +3953,41 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class ImportXarFileAction extends SimpleViewAction<AddXarFileForm>
+    public class ImportXarFileAction extends SimpleViewAction<PipelinePathForm>
     {
-        public ModelAndView getView(AddXarFileForm form, BindException errors) throws Exception
+        public ModelAndView getView(PipelinePathForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            ActionURL url;
-            File f = null;
 
             File rootFile = getPipelineRoot(c);
-            if (rootFile != null)
+            if (rootFile == null)
+                throw new NotFoundException("No pipeline root found");
+
+            URI dirURI = URIUtil.resolve(rootFile.toURI(), form.getPath());
+            if (dirURI == null)
+                throw new NotFoundException("Could not find path " + form.getPath());
+
+            if (form.getFile().length == 0)
             {
-                URI uriData = URIUtil.resolve(rootFile.toURI(), form.getPath());
-                if (uriData != null)
-                    f = new File(uriData);
+                throw new NotFoundException("No files specified for import");
             }
 
-            if (null != f && f.exists() && f.isFile())
+            File dir = new File(dirURI);
+            for (String fileName : form.getFile())
             {
-                PipelineService service = PipelineService.get();
-
-                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false);
-                service.queueJob(job);
-
-                url = getContainer().getStartURL(getViewContext());
+                File f = new File(dir, fileName);
+                if (NetworkDrive.exists(f) && f.isFile())
+                {
+                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false);
+                    PipelineService.get().queueJob(job);
+                }
+                else
+                {
+                    throw new NotFoundException("Could not find file " + fileName);
+                }
             }
-            else
-            {
-                url = new ActionURL(ShowAddXarFileAction.class, getContainer());
-                url.addParameter("error", "File not found.");
-            }
-            return HttpView.redirect(url);
+            
+            return HttpView.redirect(getContainer().getStartURL(getViewContext()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4057,6 +4032,11 @@ public class ExperimentController extends SpringActionController
         public ActionURL getProtocolDetailsURL(ExpProtocol protocol)
         {
             return new ActionURL(ProtocolDetailsAction.class, protocol.getContainer()).addParameter("rowId", protocol.getRowId());
+        }
+
+        public ActionURL getProtocolApplicationDetailsURL(ExpProtocolApplication app)
+        {
+            return new ActionURL(ShowApplicationAction.class, app.getContainer()).addParameter("rowId", app.getRowId());
         }
 
         public ActionURL getProtocolGridURL(Container c)
@@ -4106,16 +4086,10 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
-        public ActionURL getShowAddXarFileURL(Container c, String error)
+        public ActionURL getShowAddXarFileURL(Container c)
         {
-            ActionURL result = new ActionURL(ShowAddXarFileAction.class, c);
-            if (error != null)
-            {
-                result.addParameter("error", error);
-            }
-            return result;
+            return new ActionURL(ShowAddXarFileAction.class, c);
         }
-
 
         public ActionURL getShowExperimentsURL(Container c)
         {
@@ -4226,6 +4200,16 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
+        public ActionURL getMaterialDetailsURL(ExpMaterial material)
+        {
+            return new ActionURL(ShowMaterialAction.class, material.getContainer()).addParameter("rowId", material.getRowId());
+        }
+
+        public ActionURL getDataDetailsURL(ExpData data)
+        {
+            return new ActionURL(ShowDataAction.class, data.getContainer()).addParameter("rowId", data.getRowId());
+        }
+
         public ActionURL getShowFileURL(Container c)
         {
             return new ActionURL(ShowFileAction.class, c);
@@ -4238,9 +4222,9 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
-        public ActionURL getShowRunGraphURL(Container container)
+        public ActionURL getShowRunGraphURL(ExpRun run)
         {
-            return new ActionURL(ShowRunGraphAction.class, container);
+            return new ActionURL(ShowRunGraphAction.class, run.getContainer()).addParameter("rowId", run.getRowId());
         }
 
         public ActionURL getUploadXARURL(Container container)

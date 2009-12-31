@@ -23,7 +23,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * <code>FileAnalysisJob</code>
@@ -40,7 +39,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                            File fileParameters,
                            File filesInput[]
     )
-            throws SQLException, IOException
+            throws IOException
     {
         super(protocol, providerName, info, protocolName, fileParameters, filesInput);
 

@@ -15,137 +15,206 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
-<%@ page import="org.labkey.pipeline.analysis.AnalysisController"%>
-<%@ page extends="org.labkey.pipeline.analysis.AnalyzePage" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    AnalysisController.AnalyzeForm form = getForm();
-    PipelineUrls up = urlProvider(PipelineUrls.class);
-
-    boolean hasWork = false;
-    boolean hasRun = false;
+    ActionURL cancelURL = (ActionURL)HttpView.currentModel();
 %>
 
 <labkey:errors />
 
-<%
-    if(getProtocolNames().length > 0)
-        out.print("Choose an existing protocol or define a new one.<br>");
-    else
-        out.print("Define a new protocol using the following fields and run analysis.<br>");
-%>
-    <br>
+<script type="text/javascript">
 
-<form id="analysis_form" method="post" action="<%=urlFor(AnalysisController.AnalyzeAction.class)%>">
-    <input type="hidden" name="runAnalysis" value="true">
-    <input type="hidden" name="path" value="<%=h(form.getPath())%>">
-    <input type="hidden" name="nsClass" value="<%=h(form.getNsClass())%>">
-    <input type="hidden" name="name" value="<%=h(form.getName())%>">
-<table>
-    <tr><td class='labkey-form-label'>Analysis Protocol:</td>
-        <td><select name="protocol"
-                            onchange="changeProtocol(this)">
-            <option>&lt;New Protocol&gt;</option>
-<%
-    for (String protocol : getProtocolNames())
+    var allProtocols;
+    var selectedFileNames;
+    var taskId = LABKEY.ActionURL.getParameter("taskId");
+    var path = LABKEY.ActionURL.getParameter("path");
+
+    function getProtocolsCallback(protocols, defaultProtocolName)
     {
-        if (protocol.equals(form.getProtocol()))
-            out.print("<option selected>");
-        else
-            out.print("<option>");
-        out.print(h(protocol));
-        out.print("</option>");
-    }
-%>
-        </select></td></tr>
-
-<%  if ("".equals(form.getProtocol()))
-    { %>
-    <tr><td class='labkey-form-label'>Protocol Name:</td>
-        <td><input type="text" name="protocolName" size="40" value="<%=h(form.getProtocolName())%>"></td></tr>
-    <tr><td class='labkey-form-label'>Protocol Description:</td>
-        <td><textarea style="width: 100%;" name="protocolDescription" cols="150" rows="4"><%=h(form.getProtocolDescription())%></textarea></td></tr>
-<%  } %>
-
-<%  if (form.getFile().length != 1)
-    { %>
-    <tr><td class='labkey-form-label'>Analyze Files:</td>
-<%  }
-    else
-    { %>
-    <tr><td class='labkey-form-label'>Analyze File:</td>
-<%  } %>
-        <td>
-<%
-    if (form.getFile().length == 0)
-        out.print("No files found");
-    else
-    {
-        hasWork = !form.isActiveJobs(); %>
-        <table>
-<%
-        String[] inputNames = form.getFile();
-        String[] inputStatus = form.getFileInputStatus();
-        for (int i = 0; i < inputNames.length; i++)
+        var selectElement = document.getElementById("protocolSelect");
+        selectElement.options[0].text = "<New Protocol>";
+        allProtocols = new Object();
+        for (var i = 0; i < protocols.length; i++)
         {
-            String status = "";
-            if (inputStatus != null && inputStatus[i] != null)
-            {
-                status = " (<b>" + h(inputStatus[i]) + "</b>)";
-                hasRun = true;
-            }
-            %><tr><td><%=h(inputNames[i])%><%=status%>
-                <input type="hidden" name="file" value="<%=h(inputNames[i])%>"></td>
-            <td>&nbsp;</td></tr><%
-        } %>
-        </table><%
+            selectElement.options[i + 1] = new Option(protocols[i].name, protocols[i].name, protocols[i].name == defaultProtocolName);
+            allProtocols[protocols[i].name] = protocols[i];
+        }
+        if (changeProtocol(defaultProtocolName))
+        {
+            selectElement.focus();
+        }
+        else
+        {
+            document.getElementById("protocolNameInput").focus();
+        }
     }
-%>
+
+    function startAnalysis()
+    {
+        var config =
+        {
+            taskId: taskId,
+            path: path,
+            files: selectedFileNames,
+            saveProtocol: document.getElementById("saveProtocolInput").checked,
+            protocolName: document.getElementById("protocolNameInput").value,
+            successCallback: function() { window.location = LABKEY.ActionURL.buildURL("project", "start.view") }
+        };
+        if (document.getElementById("protocolSelect").selectedIndex == 0)
+        {
+            config.protocolDescription = document.getElementById("protocolDescriptionInput").value; 
+            config.xmlParameters = document.getElementById("xmlParametersInput").value;
+        }
+        LABKEY.Pipeline.startAnalysis(config);
+    }
+
+    /** @param statusInfo is either a string to be shown for all files, or an array with status information for each file */
+    function showFileStatus(statusInfo, submitType)
+    {
+        var globalStatus = "";
+        var files = [];
+        if (typeof statusInfo === 'string')
+        {
+            files = [];
+            globalStatus = statusInfo;
+        }
+        else if (statusInfo && statusInfo.length)
+        {
+            // Assume it's an array
+            files = statusInfo;
+        }
+        var status = "";
+        for (var i = 0; i < selectedFileNames.length; i++)
+        {
+            status = status + selectedFileNames[i];
+            for (var j = 0; j < files.length; j++)
+            {
+                if (selectedFileNames[i] == files[j].name)
+                {
+                    if (files[j].status)
+                    {
+                        status += " <b>(" + files[j].status + ")</b>";
+                    }
+                    break;
+                }
+            }
+            status += " " + globalStatus + "<br/>";
+        }
+        document.getElementById("fileStatus").innerHTML = status;
+        if (!submitType)
+        {
+            document.getElementById("submitButton").style.display = "none";
+        }
+        else
+        {
+            document.getElementById("submitButton").innerHTML = submitType;
+            document.getElementById("submitButton").style.display = "";
+        }
+    }
+
+    /** @return true if an existing, saved protocol is selected */
+    function changeProtocol(selectedProtocolName)
+    {
+        var selectedProtocol = allProtocols[selectedProtocolName];
+        var inputs = Ext.DomQuery.select("[@class=protocol-input]");
+        var disabledState;
+        if (selectedProtocol)
+        {
+            disabledState = true;
+            document.getElementById("protocolNameInput").value = selectedProtocol.name;
+            document.getElementById("protocolDescriptionInput").value = selectedProtocol.description;
+            document.getElementById("xmlParametersInput").value = selectedProtocol.xmlParameters;
+            showFileStatus("<em>(Refreshing status)</em>");
+            LABKEY.Pipeline.getFileStatus(
+            {
+                taskId: taskId,
+                path: path,
+                files: selectedFileNames,
+                successCallback: showFileStatus,
+                protocolName: selectedProtocolName
+            });
+        }
+        else
+        {
+            disabledState = false;
+            document.getElementById("protocolNameInput").value = "";
+            document.getElementById("protocolDescriptionInput").value = "";
+            document.getElementById("xmlParametersInput").value = "<?xml version=\"1.0\"?>\n" +
+                        "<bioml>\n" +
+                        "<!-- Override default parameters here. -->\n" +
+                        "</bioml>";
+            showFileStatus("", "Analyze");
+        }
+        for (var i = 0; i < inputs.length; i++)
+        {
+            inputs[i].disabled = disabledState;
+        }
+        return disabledState;
+    }
+
+    Ext.onReady(function()
+    {
+        selectedFileNames = LABKEY.ActionURL.getParameterArray("file");
+        if (!selectedFileNames || selectedFileNames.length == 0)
+        {
+            alert("No files have been selected for analysis. Return to the pipeline to select them.");
+            window.location = "<%= PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(HttpView.currentContext().getContainer(), null) %>";
+        }
+        showFileStatus("<em>(Refreshing status)</em>");
+        LABKEY.Pipeline.getProtocols({ taskId: taskId, successCallback: getProtocolsCallback });
+    });
+</script>
+
+    Choose an existing protocol or define a new one.<br />
+
+<form id="analysis_form">
+<table>
+    <tr>
+        <td class='labkey-form-label'>Analysis Protocol:</td>
+        <td>
+            <select id="protocolSelect" name="protocol" onchange="changeProtocol(this.options[this.selectedIndex].value);">
+                <option>&lt;Loading...&gt;</option>
+            </select>
         </td>
     </tr>
-    <tr><td class='labkey-form-label'>Parameters:</td>
-        <td>
-<%  if ("".equals(form.getProtocol()))
-    { %>
-            <textarea style="width: 100%;" name="configureXml" cols="150" rows="20"><%=form.getConfigureXml()%></textarea><br>
-<%  }
-    else
-    { %>
-<pre>
-<%=h(form.getConfigureXml())%>
-</pre>
-<%  }
 
-    if ("".equals(form.getProtocol()))
-    {
-        %><tr><td></td><td><input type="checkbox" name="saveProtocol" <% if (form.isSaveProtocol()) { %>checked<% } %>/> Save protocol for future use</td></tr><%
-    }
-    if (hasWork)
-    {
-        if (hasRun)
-        {
-            %><tr><td colspan="2"><labkey:button text="Retry"/>&nbsp;<labkey:button text="Cancel" href="<%=up.urlReferer(getContainer())%>"/></td></tr><%            
-        }
-        else
-        {
-            %><tr><td colspan="2"><labkey:button text="Analyze"/>&nbsp;<labkey:button text="Cancel" href="<%=up.urlReferer(getContainer())%>"/></td></tr><%
-        }
-    }
-    else
-    {
-        %><tr><td colspan="2"><labkey:button text="Cancel" href="<%=up.urlReferer(getContainer())%>"/></td></tr><%        
-    }
-%>
+    <tr>
+        <td class='labkey-form-label'>Protocol Name:</td>
+        <td>
+            <input disabled="true" id="protocolNameInput" class="protocol-input" type="text" name="protocolName" size="40" />
+        </td>
+    </tr>
+    <tr>
+        <td class='labkey-form-label'>Protocol Description:</td>
+        <td><textarea disabled="true" id="protocolDescriptionInput" class="protocol-input" style="width: 100%;" name="protocolDescription" cols="150" rows="4"></textarea></td>
+    </tr>
+
+    <tr>
+        <td class='labkey-form-label'>File(s):</td>
+        <td id="fileStatus" />
+    </tr>
+    <tr id="parametersRow">
+        <td class='labkey-form-label'>Parameters:</td>
+        <td>
+            <textarea disabled="true" id="xmlParametersInput" class="protocol-input" style="width: 100%;" name="xmlParameters" cols="150" rows="15"></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td/>
+        <td>
+            <input type="checkbox" class="protocol-input" disabled="true" id="saveProtocolInput" name="saveProtocol" checked="true" /> Save protocol for future use
+        </td>
+    </tr>
+    <tr>
+        <td/>
+        <td>
+            <labkey:button text="Analyze" id="submitButton" onclick="startAnalysis(); return false;" />
+            <labkey:button text="Cancel" href="<%= cancelURL %>"/>
+        </td>
+    </tr>
 </table>
 </form>
-<script>
-    function changeProtocol(sel)
-    {
-        document.getElementsByName("runAnalysis")[0].value = false;
-        document.getElementById("analysis_form").submit();
-    }
-</script>
-<script for="window" event="onload">
-    try {document.getElementByName("protocol").focus();} catch(x){}
-</script>

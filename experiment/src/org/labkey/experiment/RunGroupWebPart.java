@@ -124,7 +124,7 @@ public class RunGroupWebPart extends QueryView
             deleteExperiment.setRequiresSelection(true);
             bb.add(deleteExperiment);
 
-            ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getShowAddXarFileURL(getViewContext().getContainer(), null), "Upload XAR");
+            ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getShowAddXarFileURL(getViewContext().getContainer()), "Upload XAR");
             addXarFile.setActionType(ActionButton.Action.LINK);
             addXarFile.setDisplayPermission(InsertPermission.class);
             bb.add(addXarFile);

@@ -94,7 +94,7 @@ public class PipelineManager
         return getPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
     }
 
-    static public String getPipelineRoot(Container container, String type) throws SQLException
+    static public String getPipelineRoot(Container container, String type)
     {
         PipelineRoot root = getPipelineRootObject(container, type);
         if (root == null)
