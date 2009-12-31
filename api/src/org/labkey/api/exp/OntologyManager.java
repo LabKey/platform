@@ -46,6 +46,7 @@ import java.util.Date;
 import static org.labkey.api.search.SearchService.PROPERTY;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.gwt.client.ui.domain.CancellationException;
 
 /**
  * User: migra
@@ -131,9 +132,9 @@ public class OntologyManager
 
 			for (Map<String, Object> map : rows)
 			{
-                // TODO: Add InterruptedException to method signature and throw
+                // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
-                    throw new RuntimeException("I should probably be an InterruptedException");
+                    throw new CancellationException();
 
 				assert before.start();
 				String lsid = helper.beforeImportObject(map);

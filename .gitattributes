@@ -1831,6 +1831,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/VennDiagramView.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WebPartPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WidgetUpdatable.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WindowUtil.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/CancellationException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImportGrid.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporter.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterService.java -text

@@ -71,6 +71,8 @@ public class DomainImporter
     private String successURL;
     private String typeURI;
 
+    private boolean cancelRequested = false;
+
     public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
     {
         this.service = service;
@@ -129,7 +131,8 @@ public class DomainImporter
 
     public void finish()
     {
-        navigate(successURL);
+        if (!cancelRequested)
+            navigate(successURL);
     }
 
     private void importData()
@@ -254,16 +257,14 @@ public class DomainImporter
         });
     }
 
-    private Timer t;
+    private Timer statusTimer;
     private String jobId;
 
     private void initProgressIndicator(final String jobId, final GWTDomain domain)
     {
         this.jobId = jobId;
 
-        t = new Timer() {
-            boolean firstTime = true;
-
+        statusTimer = new Timer() {
             public void run()
             {
                 service.getStatus(jobId, new AsyncCallback<ImportStatus>()
@@ -277,39 +278,26 @@ public class DomainImporter
 
                     public void onSuccess(ImportStatus status)
                     {
+                        updateStatus(status);
+
                         if (status.isComplete())
                         {
-                            // Update status one last time (show 100%), but not if this is the first time through.
-                            if (!firstTime)
-                                updateStatus(status, firstTime);
-
-                            handleComplete(status, domain);
                             cancel();
-                        }
-                        else
-                        {
-                            updateStatus(status, firstTime);
-
-                            if (firstTime)
-                            {
-                                firstTime = false;
-                                t.scheduleRepeating(5000);
-                            }
+                            handleComplete(status, domain);
                         }
                     }
                 });
             }
         };
 
-        // First status check in one second; subsequent checks every five seconds.
-        t.schedule(1000);
+        statusTimer.scheduleRepeating(2000);
     }
 
-    private void updateStatus(ImportStatus status, boolean firstTime)
+    private void updateStatus(ImportStatus status)
     {
         if (status.getTotalRows() > 0)
         {
-            if (firstTime)
+            if (status.getTotalRows() != (int)progressBar.getMaxProgress())
             {
                 progressBar.setMaxProgress(status.getTotalRows());
             }
@@ -360,10 +348,13 @@ public class DomainImporter
         else if (null == jobId)
             navigate(cancelURL);
         else
+        {
+            cancelRequested = true;
+            statusTimer.cancel();
             service.cancelImport(jobId, new AsyncCallback<String>() {
                 public void onFailure(Throwable caught)
                 {
-                    Window.alert("Failure:\n" + caught.getMessage());
+                    Window.alert("Cancel failure:\n" + caught.getMessage());
                 }
 
                 public void onSuccess(String result)
@@ -371,6 +362,7 @@ public class DomainImporter
                     navigate(result);
                 }
             });
+        }
     }
 
     public static native void navigate(String url) /*-{
