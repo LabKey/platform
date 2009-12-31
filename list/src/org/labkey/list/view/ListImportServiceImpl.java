@@ -32,6 +32,7 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -132,7 +133,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         return status;
     }
 
-    public class BackgroundListImporter implements Callable<List<String>>
+    private class BackgroundListImporter implements Callable<List<String>>
     {
         private final ListDefinition _def;
         private final DataLoader<Map<String, Object>> _loader;
@@ -151,7 +152,14 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
             try
             {
+                // TODO: Instead of throwing a CancellationException, this method should return a status object holding
+                //  errors and cancellation status.  This will require reworking OntologyManager, so signal with an
+                //  exception for now.
                 errors = _def.insertListItems(getUser(), _loader, null, _progress);
+            }
+            catch (CancellationException ce)
+            {
+                return Collections.emptyList();
             }
             catch (IOException ioe)
             {
@@ -264,9 +272,10 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
     public String cancelImport(String jobId) throws ImportException
     {
         ImportContext context = getContext(jobId);
-
         Future<List<String>> future = context.getFuture();
         future.cancel(true);
+
+        // CONSIDER: wait for canceled thread to finish?
 
         ListDefinition def = context.getListDef();
 
@@ -277,6 +286,10 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         catch (Exception e)
         {
             throw new ImportException(e.getMessage());
+        }
+        finally
+        {
+            clearContext(jobId);
         }
 
         return ListController.getBeginURL(def.getContainer()).getLocalURIString();
