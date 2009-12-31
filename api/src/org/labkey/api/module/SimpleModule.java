@@ -40,7 +40,7 @@ import java.beans.PropertyChangeEvent;
 /**
  * Used for simple, entirely file-based modules
  */
-public class SimpleModule extends DefaultModule implements ContainerManager.ContainerListener
+public class SimpleModule extends SpringModule implements ContainerManager.ContainerListener
 {
     private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
 
@@ -156,6 +156,19 @@ public class SimpleModule extends DefaultModule implements ContainerManager.Cont
             });
         }
         ContainerManager.addContainerListener(this);
+
+        initWebApplicationContext();
+    }
+
+    @Override
+    protected ContextType getContextType()
+    {
+        String realPath = ModuleLoader.getServletContext().getRealPath(getContextXMLPath());
+        if (new File(realPath).exists())
+        {
+            return ContextType.config;
+        }
+        return ContextType.none;
     }
 
     protected String getResourcePath()

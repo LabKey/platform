@@ -70,7 +70,7 @@ abstract public class PipelineService
     abstract public PipeRoot getPipelineRootSetting(Container container);
 
     @Nullable
-    abstract public URI getPipelineRootSetting(Container container, String type) throws SQLException;
+    abstract public URI getPipelineRootSetting(Container container, String type);
 
     @NotNull
     abstract public PipeRoot[] getOverlappingRoots(Container c) throws SQLException;

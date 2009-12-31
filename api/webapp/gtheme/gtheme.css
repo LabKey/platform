@@ -507,17 +507,14 @@ ul.x-tab-strip li {margin-left:3px; }
 
 body .x-grid3 .x-grid3-row {
 	border-top:0;
-	padding-bottom: 1px;
-	padding-top:2px;
+	padding-bottom: 0px;
+	padding-top:1px;
 }
 
 body .x-grid3 .x-grid3-row-selected {
 	padding:0;
-	border-top: 2px solid #6694E3;
-	border-bottom: 2px solid #6694E3;
-	border-left: 1px solid #6694E3;
-	border-right: 1px solid #6694E3;
-	background: #DFE8F6 !important;
+    border: 1px solid #6694E3;
+    background: #DFE8F6 !important;
 }
 
 body .x-grid3 .x-grid3-row-alt {

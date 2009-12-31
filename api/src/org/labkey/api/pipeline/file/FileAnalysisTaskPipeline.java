@@ -17,6 +17,8 @@ package org.labkey.api.pipeline.file;
 
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.data.Container;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -89,4 +91,6 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      * @return an instance of an output file that may be used in a task
      */
     File findOutputFile(FileAnalysisJobSupport support, String name);
+
+    URLHelper getAnalyzeURL(Container c, String path);
 }

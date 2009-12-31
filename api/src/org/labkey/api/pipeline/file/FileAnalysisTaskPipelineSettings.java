@@ -18,6 +18,8 @@ package org.labkey.api.pipeline.file;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +76,9 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
      * in reverse.
      */
     private Map<FileType, List<FileType>> _fileExtHierarchy;
+
+    /** URL at which this job should be configured and launched */
+    private StringExpression _analyzeURL;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
@@ -139,5 +144,15 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setFileExtHierarchy(Map<FileType, List<FileType>> fileExtHierarchy)
     {
         _fileExtHierarchy = fileExtHierarchy;
+    }
+
+    public String getAnalyzeURL()
+    {
+        return _analyzeURL == null ? null : _analyzeURL.getSource();
+    }
+
+    public void setAnalyzeURL(String url)
+    {
+        _analyzeURL = StringExpressionFactory.createURL(url);
     }
 }

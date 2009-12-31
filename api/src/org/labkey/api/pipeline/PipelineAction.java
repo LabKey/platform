@@ -16,7 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.URLHelper;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -41,7 +41,7 @@ public class PipelineAction
     }
 
     /** Use a simple button for the specified files */
-    public PipelineAction(String label, ActionURL href, File[] files)
+    public PipelineAction(String label, URLHelper href, File[] files)
     {
         this(new NavTree(label, href), files);
     }

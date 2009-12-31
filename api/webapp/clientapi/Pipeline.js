@@ -31,13 +31,13 @@ LABKEY.Pipeline = new function(){
          * Gets the container in which the pipeline for this container is defined. This may be the
          * container in which the request was made, or a parent container if the pipeline was defined
          * there.
-         * @param {Object} config A configuration object with the following properites.
+         * @param {Object} config A configuration object with the following properties.
          * @param {Function} config.successCallback The function to call with the resulting information.
          * This function will be passed a single parameter of type object, which will have the following
-         * properites:
+         * properties:
          * <ul>
          *  <li>containerPath: the container path in which the pipeline is defined. If no pipeline has
-         * been defined in this container hierarhcy, the value of this property will be null.</li>
+         * been defined in this container hierarchy, the value of this property will be null.</li>
          * </ul>
          * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:
@@ -51,6 +51,106 @@ LABKEY.Pipeline = new function(){
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("pipeline", "getPipelineContainer.api", config.containerPath),
                 method: 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        /**
+         * Gets the protocols that have been saved for a particular pipeline.
+         * 
+         * @param {Object} config A configuration object with the following properties.
+         * @param {String} config.taskId Identifier for the pipeline.
+         * @param {Function} config.successCallback The function to call with the resulting information.
+         * This function will be passed a list of protocol objects, which will have the following properties:
+         * <ul>
+         *  <li>containerPath: the container path in which the pipeline is defined. If no pipeline has
+         * been defined in this container hierarhcy, the value of this property will be null.</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
+         * will receive one parameter of type object with the following properites:
+         * <ul>
+         *  <li>exception: The exception message.</li>
+         * </ul>
+         * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
+         */
+        getProtocols : function(config) {
+            var params = new Object();
+            params.taskId = config.taskId;
+            var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
+            var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getSavedProtocols.api", containerPath);
+            Ext.Ajax.request({
+                url: url,
+                method: 'POST',
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(function(data, response){
+                    if(config.successCallback)
+                        config.successCallback(data.protocols, data.defaultProtocolName, response);
+                }, this),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        getFileStatus : function(config)
+        {
+            var params = new Object();
+            params.taskId = config.taskId;
+            params.path = config.path;
+            params.file = config.files;
+            params.protocolName = config.protocolName;
+            var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
+            var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getFileStatus.api", containerPath);
+            Ext.Ajax.request({
+                url: url,
+                method: 'POST',
+                timeout: 60000000,
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(function(data, response){
+                    if(config.successCallback)
+                        config.successCallback(data.files, data.submitType, response);
+                }, this),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+
+        startAnalysis : function(config) {
+            var params = new Object();
+            params.taskId = config.taskId;
+            params.path = config.path;
+            if (!config.protocolName)
+            {
+                throw "Invalid config, must include protocolName property";
+            }
+            params.protocolName = config.protocolName;
+            params.protocolDescription = config.protocolDescription;
+            params.file = config.files;
+            params.saveProtocol = config.saveProtocol == undefined || config.saveProtocol;
+            if (config.xmlParameters)
+            {
+                // Convert from an Element to a string if needed
+                params.configureXml = Ext.DomHelper.markup(config.xmlParameters);
+            }
+            else if (config.jsonParameters)
+            {
+                if (Ext.isString(config.jsonParameters))
+                {
+                    // We already have a string
+                    params.configureJson = config.jsonParameters;
+                }
+                else
+                {
+                    // Convert from JavaScript object to a string
+                    params.configureJson = Ext.util.JSON.encode(config.jsonParameters);
+                }
+            }
+            var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
+            var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "startAnalysis.api", containerPath);
+            Ext.Ajax.request({
+                url: url,
+                method: 'POST',
+                params: params,
+                timeout: 60000000,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });

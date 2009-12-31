@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.module.Module;
 import org.springframework.web.servlet.mvc.Controller;
@@ -491,7 +492,7 @@ abstract public class PipelineProvider
         }
     }
 
-    protected void addAction(ActionURL actionURL, String description, PipelineDirectory entry, File[] files)
+    protected void addAction(URLHelper actionURL, String description, PipelineDirectory entry, File[] files)
     {
         if (files == null || files.length == 0)
             return;

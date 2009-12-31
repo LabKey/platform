@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -206,6 +205,5 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
                                           File[] filesInput,
                                           File fileParameters
-    )
-            throws SQLException, IOException;
+    ) throws IOException;
 }

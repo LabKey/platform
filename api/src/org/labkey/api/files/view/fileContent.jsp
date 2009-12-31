@@ -284,7 +284,7 @@ function renderBrowser(rootPath, dir)
                             var item = action.links.items[j];
                             if (item.text && item.href)
                             {
-                                items.push({text: item.text, itemHref: item.href, listeners: {click: this.executePipelineAction, scope: this}});
+                                items.push({text: item.text, files: action.files, itemHref: item.href, listeners: {click: this.executePipelineAction, scope: this}});
                             }
                         }
 
@@ -375,13 +375,27 @@ function renderBrowser(rootPath, dir)
                     return false;
                 }
 
-                var params = [];
+                var form = document.createElement("form");
+                form.setAttribute("method", "post");
+                form.setAttribute("action", item.itemHref);
+
                 for (var i=0; i < selections.length; i++)
                 {
-                    params.push("file=" + encodeURIComponent(selections[i].data.name));
+                    for (var j = 0; j < item.files.length; j++)
+                    {
+                        if (item.files[j] == selections[i].data.name)
+                        {
+                            var fileField = document.createElement("input");
+                            fileField.setAttribute("name", "file");
+                            fileField.setAttribute("value", selections[i].data.name);
+                            form.appendChild(fileField);
+                            break;
+                        }
+                    }
                 }
-                var url = item.itemHref + '&' + params.join('&');
-                window.location = url;
+
+                document.body.appendChild(form);    // Not entirely sure if this is necessary
+                form.submit();
             }
         }
     });

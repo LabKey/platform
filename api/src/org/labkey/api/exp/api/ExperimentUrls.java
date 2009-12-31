@@ -45,7 +45,9 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getExportProtocolURL(Container container, ExpProtocol protocol);
 
-    public ActionURL getProtocolDetailsURL(ExpProtocol protocol);
+    ActionURL getProtocolDetailsURL(ExpProtocol protocol);
+
+    ActionURL getProtocolApplicationDetailsURL(ExpProtocolApplication app);
 
     ActionURL getMoveRunsLocationURL(Container container);
 
@@ -59,13 +61,17 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getShowFileURL(Container container, ExpData data, boolean inline);
 
+    ActionURL getMaterialDetailsURL(ExpMaterial material);
+
+    ActionURL getDataDetailsURL(ExpData data);
+
     ActionURL getShowFileURL(Container container);
 
     ActionURL getSetFlagURL(HttpServletRequest request);
 
     ActionURL getShowSampleSetURL(ExpSampleSet sampleSet);
 
-    ActionURL getShowRunGraphURL(Container container);
+    ActionURL getShowRunGraphURL(ExpRun run);
 
     ActionURL getUploadXARURL(Container container);
 }

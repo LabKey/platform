@@ -193,6 +193,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return getProtocolNames(uriRoot, null); 
     }
 
+    /** @return sorted list of protocol names */
     public String[] getProtocolNames(URI uriRoot, File dirData)
     {
         HashSet<String> setNames = new HashSet<String>();

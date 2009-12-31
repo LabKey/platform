@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * User: migra
@@ -34,9 +35,8 @@ public enum LsidType
                 public String getDisplayURL(Lsid lsid)
                 {
                     ExpExperiment exp = getObject(lsid);
-                    ActionURL helper = getHelperForContainer(exp.getContainer());
-
-                    return helper.relativeUrl("details", "rowId=" + exp.getRowId());
+                    return exp == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(exp.getContainer(), exp).toString();
                 }
 
                 public ExpExperiment getObject(Lsid lsid)
@@ -50,12 +50,8 @@ public enum LsidType
                 public String getDisplayURL(Lsid lsid)
                 {
                     ExpProtocol protocol = getObject(lsid);
-                    if (null == protocol)
-                        return null;
-
-                    ActionURL helper = getHelperForContainer(protocol.getContainer());
-
-                    return helper.relativeUrl("protocol", "rowId=" + protocol.getRowId());
+                    return protocol == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol).toString();
                 }
 
                 public ExpProtocol getObject(Lsid lsid)
@@ -70,12 +66,8 @@ public enum LsidType
                 public String getDisplayURL(Lsid lsid)
                 {
                     ExpProtocolApplication app = getObject(lsid);
-                    if (null == app)
-                        return null;
-
-                    ActionURL helper = getHelperForRun(app.getRun());
-
-                    return helper.relativeUrl("showApplication", "rowId=" + app.getRowId());
+                    return app == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolApplicationDetailsURL(app).toString();
                 }
 
                 public ExpProtocolApplication getObject(Lsid lsid)
@@ -89,24 +81,14 @@ public enum LsidType
                 public String getDisplayURL(Lsid lsid)
                 {
                     ExpMaterial m = getObject(lsid);
-                    if (null == m)
-                        return null;
-
-                    ActionURL helper;
-                    if (null != m.getContainer())
-                        helper = getHelperForContainer(m.getContainer());
-                    else
-                        helper = getHelperForRun(m.getRun());
-
-                    return helper.relativeUrl("showMaterial", "rowId=" + m.getRowId());
+                    return m == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(m).toString();
                 }
 
                 public ExpMaterial getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpMaterial(lsid.toString());
                 }
-
-
             },
 
     MaterialSource
@@ -115,12 +97,8 @@ public enum LsidType
                 public String getDisplayURL(Lsid lsid)
                 {
                     ExpSampleSet source = getObject(lsid);
-                    if (null == source)
-                        return null;
-
-                    ActionURL helper = getHelperForContainer(source.getContainer());
-
-                    return helper.relativeUrl("showMaterialSource", "rowId=" + source.getRowId());
+                    return source == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(source).toString();
                 }
 
                 public ExpSampleSet getObject(Lsid lsid)
@@ -134,16 +112,8 @@ public enum LsidType
                 public String getDisplayURL(Lsid lsid)
                 {
                     ExpData data = getObject(lsid);
-                    if (null == data)
-                        return null;
-
-                    ActionURL helper;
-                    if (null != data.getContainer())
-                        helper = getHelperForContainer(data.getContainer());
-                    else
-                        helper = getHelperForRun(data.getRun());
-
-                    return helper.relativeUrl("showData", "rowId=" + data.getRowId());
+                    return data == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getDataDetailsURL(data).toString();
                 }
 
                 public ExpData getObject(Lsid lsid)
@@ -157,11 +127,8 @@ public enum LsidType
                 public String getDisplayURL(Lsid lsid)
                 {
                     ExpRun run = getObject(lsid);
-                    if (null == run)
-                        return null;
-
-                    ActionURL helper = getHelperForContainer(run.getContainer());
-                    return helper.relativeUrl("showRunGraph", "rowId=" + run.getRowId());
+                    return run == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowRunGraphURL(run).toString();
                 }
 
                 public ExpRun getObject(Lsid lsid)
@@ -175,50 +142,18 @@ public enum LsidType
             {
                 public String getDisplayURL(Lsid lsid)
                 {
-                    ExpMaterial m = getObject(lsid);
-                    if (null == m)
-                        return null;
-
-                    ActionURL helper;
-                    if (null != m.getContainer())
-                        helper = getHelperForContainer(m.getContainer());
-                    else
-                        helper = getHelperForRun(m.getRun());
-
-                    return helper.relativeUrl("showMaterial", "rowId=" + m.getRowId());
+                    return Material.getDisplayURL(lsid);
                 }
 
                 public ExpMaterial getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpMaterial(lsid.toString());
                 }
-
-
             };
 
     public abstract Identifiable getObject(Lsid lsid);
 
     public abstract String getDisplayURL(Lsid lsid);
-
-    private static ActionURL getHelperForContainer(Container c)
-    {
-        ActionURL helper = new ActionURL();
-        helper.setPageFlow("Experiment");
-
-        if (null != c)
-            helper.setContainer(c);
-
-        return helper;
-    }
-
-    private static ActionURL getHelperForRun(ExpRun run)
-    {
-        ActionURL helper = new ActionURL();
-        helper.setPageFlow("Experiment");
-
-        helper.setContainer(run.getContainer());
-        return helper;
-    }
 
     public static LsidType get(String prefix)
     {

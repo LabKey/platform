@@ -896,7 +896,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public SecurableResource getParentResource()
     {
         SecurableResource parent = getParent();
-        return getParent().equals(this) ? null : parent;
+        return this.equals(getParent()) ? null : parent;
     }
 
     public boolean mayInheritPolicy()

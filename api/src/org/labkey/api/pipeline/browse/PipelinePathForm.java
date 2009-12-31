@@ -22,15 +22,36 @@ package org.labkey.api.pipeline.browse;
  */
 public class PipelinePathForm
 {
-    private String path;
+    private String _path;
+    private String[] _file = new String[0];
 
     public String getPath()
     {
-        return path;
+        return _path;
     }
 
     public void setPath(String path)
     {
-        this.path = path;
+        _path = path;
+    }
+
+    public String[] getFile()
+    {
+        return _file;
+    }
+
+    public void setFile(String[] file)
+    {
+        for (String s : file)
+        {
+            if (s != null)
+            {
+                if (s.indexOf("..") != -1 || s.indexOf("/") != -1 || s.indexOf("\\") != -1)
+                {
+                    throw new IllegalArgumentException("File names should not include any path information");
+                }
+            }
+        }
+        _file = file;
     }
 }

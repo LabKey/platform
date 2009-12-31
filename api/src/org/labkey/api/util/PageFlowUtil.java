@@ -1665,6 +1665,28 @@ public class PageFlowUtil
 
         sb.append(",serverName:(").append(PageFlowUtil.jsString(props.getServerName())).append(" || 'LabKey Server')");
         sb.append(",versionString:").append(PageFlowUtil.jsString(props.getLabkeyVersionString()));
+        if ("post".equalsIgnoreCase(context.getRequest().getMethod()))
+        {
+            sb.append(",postParameters: {");
+            String separator = "";
+            for (Map.Entry<String, String[]> entry : ((Map<String, String[]>) context.getRequest().getParameterMap()).entrySet())
+            {
+                sb.append(separator);
+                separator = ",";
+                sb.append(PageFlowUtil.jsString(entry.getKey()));
+                sb.append(":");
+                sb.append("[");
+                String valueSeparator = "";
+                for (String value : entry.getValue())
+                {
+                    sb.append(valueSeparator);
+                    valueSeparator = ",";
+                    sb.append(PageFlowUtil.jsString(value));
+                }
+                sb.append("]");
+            }
+            sb.append("}");
+        }
         sb.append("}"); //end config
         return sb.toString();
     }

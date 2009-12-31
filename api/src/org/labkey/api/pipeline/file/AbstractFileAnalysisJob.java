@@ -30,7 +30,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +63,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    String protocolName,
                                    File fileParameters,
                                    File filesInput[]
-    ) throws SQLException, IOException
+    ) throws IOException
     {
         super(providerName, info);
 

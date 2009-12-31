@@ -126,7 +126,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
 
         List<String> result = new ArrayList<String>();
         // Add the location of the context XML inside the module
-        result.add("/WEB-INF/" + prefix + "Context.xml");
+        result.add(getContextXMLPath());
 
         if (ContextType.config.equals(getContextType()))
         {
@@ -149,6 +149,11 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
         }
 
         return result;
+    }
+
+    protected String getContextXMLPath()
+    {
+        return "/WEB-INF/" + getName().toLowerCase() + "Context.xml";
     }
 
     ContextLoader _contextLoader;

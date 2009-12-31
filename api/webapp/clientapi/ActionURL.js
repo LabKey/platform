@@ -34,6 +34,10 @@ LABKEY.ActionURL = new function()
     // private functions
     function buildParameterMap()
     {
+        if (LABKEY.postParameters)
+        {
+            return LABKEY.postParameters;
+        }
         var paramString = window.location.search;
         if (paramString.charAt(0) == '?')
             paramString = paramString.substring(1, paramString.length);
