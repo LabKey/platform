@@ -31,6 +31,7 @@ import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.io.PrintWriter;
 
 /*
 * User: adam
@@ -215,9 +216,9 @@ public class QueryProfiler
                     sb.append("  <tr><td>").append("Unique queries with the ").append(set.getDescription()).append(" (top ").append(Formats.commaf0.format(set.size())).append("):</td></tr>\n");
                     sb.append("</table><br>\n");
 
-                    int row=0;
+                    int row = 0;
                     for (QueryTracker tracker : set)
-                        tracker.insertRow(rows, (0==(++row)%2)?"labkey-alternate-row":"labkey-row");
+                        tracker.insertRow(rows, (0 == (++row) % 2) ? "labkey-alternate-row" : "labkey-row");
                 }
 
                 sb.append("<table cellspacing=0 cellpadding=3>\n");
@@ -230,6 +231,41 @@ public class QueryProfiler
         }
 
         throw new IllegalArgumentException("Query statistic \"" + statName + "\" does not exist");
+    }
+
+    public static class QueryStatTsvWriter extends TSVWriter
+    {
+        private final String _statName;
+
+        public QueryStatTsvWriter(String statName)
+        {
+            _statName = statName;
+        }
+
+        protected void write()
+        {
+            for (QueryTrackerSet set : TRACKER_SETS)
+            {
+                if (set.getCaption().equals(_statName))
+                {
+                    StringBuilder rows = new StringBuilder();
+
+                    // Don't update anything while we're rendering the report or vice versa
+                    synchronized (LOCK)
+                    {
+                        for (QueryTracker tracker : set)
+                            tracker.exportRow(rows);
+                    }
+
+                    QueryTracker.exportRowHeader(_pw);
+                    _pw.println(rows);
+
+                    return;
+                }
+            }
+
+            throw new IllegalArgumentException("Query statistic \"" + _statName + "\" does not exist");
+        }
     }
 
     private static class Query
@@ -357,6 +393,24 @@ public class QueryProfiler
             sb.append("</a></td>");
         }
 
+        private static void exportRowHeader(PrintWriter pw)
+        {
+            String tab = "";
+
+            for (QueryTrackerSet set : TRACKER_SETS)
+            {
+                if (set.shouldDisplay())
+                {
+                    pw.print(tab);
+                    pw.print(set.getCaption());
+                    tab = "\t";
+                }
+            }
+
+            pw.print(tab);
+            pw.println("SQL");
+        }
+
         private void insertRow(StringBuilder sb, String className)
         {
             StringBuilder row = new StringBuilder();
@@ -368,6 +422,24 @@ public class QueryProfiler
 
             row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSql(),true)).append("</td>");
             row.append("</tr>\n");
+            sb.insert(0, row);
+        }
+
+        private void exportRow(StringBuilder sb)
+        {
+            StringBuilder row = new StringBuilder();
+            String tab = "";
+
+            for (QueryTrackerSet set : TRACKER_SETS)
+            {
+                if (set.shouldDisplay())
+                {
+                    row.append(tab).append(Formats.commaf0.format(((QueryTrackerComparator)set.comparator()).getPrimaryStatisticValue(this)));
+                    tab = "\t";
+                }
+            }
+
+            row.append(tab).append(getSql().trim().replaceAll("(\\s)+", " ")).append("\n");
             sb.insert(0, row);
         }
     }
