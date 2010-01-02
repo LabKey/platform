@@ -226,7 +226,7 @@ public class AnnouncementsController extends SpringActionController
 
             ButtonBar bb = new ButtonBar();
 
-            ActionButton bulkEdit = new ActionButton(getBulkEditURL(new URLHelper(form.getReturnUrl())), "Bulk Edit");
+            ActionButton bulkEdit = new ActionButton(getBulkEditURL(form.getReturnURLHelper()), "Bulk Edit");
             bulkEdit.setActionType(ActionButton.Action.LINK);
             bb.add(bulkEdit);
             rgn.setButtonBar(bb);
@@ -282,9 +282,9 @@ public class AnnouncementsController extends SpringActionController
                 colLastModifiedBy.setVisible(false);
 
             VBox vbox = new VBox();
-            vbox.addView(new AnnouncementEmailDefaults(c, new URLHelper(form.getReturnUrl())));
+            vbox.addView(new AnnouncementEmailDefaults(c, form.getReturnURLHelper()));
             vbox.addView(gridView);
-            vbox.addView(new HtmlView("<br>" + PageFlowUtil.generateButton("Done", form.getReturnUrl())));
+            vbox.addView(new HtmlView("<br>" + PageFlowUtil.generateButton("Done", form.getReturnURLHelper())));
 
             return vbox;
         }
@@ -311,14 +311,7 @@ public class AnnouncementsController extends SpringActionController
 
         public ActionURL getSuccessURL(BulkEditEmailPrefsForm form)
         {
-            try
-            {
-                return getAdminEmailURL(getContainer(), new URLHelper(form.getReturnUrl()));
-            }
-            catch (URISyntaxException e)
-            {
-                return null;
-            }
+            return getAdminEmailURL(getContainer(), form.getReturnURLHelper(null));
         }
 
         public ModelAndView getView(BulkEditEmailPrefsForm form, boolean reshow, BindException errors) throws Exception
@@ -362,7 +355,7 @@ public class AnnouncementsController extends SpringActionController
                 ResultSetUtil.close(rs);
             }
 
-            _returnUrl = new URLHelper(form.getReturnUrl());  // NavTrail needs this
+            _returnUrl = form.getReturnURLHelper();  // NavTrail needs this
 
             return new BulkEditView(c, emailPrefList, _returnUrl);
         }
@@ -513,7 +506,7 @@ public class AnnouncementsController extends SpringActionController
             if (!perm.allowDeleteMessage(ann))
                 HttpView.throwUnauthorized();
 
-            _returnUrl = new URLHelper(form.getReturnUrl());
+            _returnUrl = form.getReturnURLHelper();
 
             if (null != form.getCancelUrl())
                 _cancelUrl = new URLHelper(form.getCancelUrl());
@@ -1723,14 +1716,7 @@ public class AnnouncementsController extends SpringActionController
 
         public ActionURL getSuccessURL(EmailDefaultSettingsForm form)
         {
-            try
-            {
-                return getAdminEmailURL(getContainer(), new URLHelper(form.getReturnUrl()));
-            }
-            catch (URISyntaxException e)
-            {
-                return null;
-            }
+            return getAdminEmailURL(getContainer(), form.getReturnURLHelper(null));
         }
 
         public void validateCommand(EmailDefaultSettingsForm target, Errors errors)

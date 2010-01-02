@@ -17,33 +17,34 @@
 package org.labkey.core.login;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.*;
+import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.jetbrains.annotations.Nullable;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -52,11 +53,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.PrintWriter;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: adam
@@ -472,15 +472,12 @@ public class LoginController extends SpringActionController
                 SecurityManager.setTermsOfUseApproved(getViewContext(), project, true);
             }
 
-            HttpView.throwRedirect(form.getReturnUrl());
-
             return true;
         }
 
-        public ActionURL getSuccessURL(LoginForm form)
+        public URLHelper getSuccessURL(LoginForm form)
         {
-            // No longer possible, as handlePost() should redirect.
-            throw new UnsupportedOperationException("This should never occur. Success should redirect.");
+            return form.getReturnURLHelper();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -554,24 +551,13 @@ public class LoginController extends SpringActionController
     {
         Container termsContainer = null;
 
-        // TODO: Just use form.getReturnURLHelper()
-        ReturnURLString redir = form.getReturnUrl();
-        if (null != redir)
+        URLHelper returnURL = form.getReturnURLHelper(null);
+
+        if (null != returnURL)
         {
             try
             {
-                URI uri = new URI(redir.getSource());
-            }
-            catch (URISyntaxException e)
-            {
-                redir = null;
-            }
-        }
-        if (null != redir)
-        {
-            try
-            {
-                Container redirContainer = ContainerManager.getForPath(new ActionURL(redir).getExtraPath());
+                Container redirContainer = ContainerManager.getForPath(new ActionURL(returnURL.getLocalURIString()).getExtraPath());
                 if (null != redirContainer)
                     termsContainer = redirContainer.getProject();
             }
@@ -649,17 +635,6 @@ public class LoginController extends SpringActionController
         public String getErrorHtml()
         {
             return this.errorHtml;
-        }
-
-        // TODO: Remove getURI()/setURI()
-        public ReturnURLString getURI()
-        {
-            return getReturnUrl();
-        }
-
-        public void setURI(ReturnURLString URI)
-        {
-            setReturnUrl(URI);
         }
 
         public boolean isApprovedTermsOfUse()
