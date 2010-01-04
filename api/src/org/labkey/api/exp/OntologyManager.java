@@ -3279,6 +3279,7 @@ public class OntologyManager
                 String propertyURI = (String)m.get("propertyUri");
                 m.put(PROPERTY.title.toString(), propertyURI);
 
+                String container = (String)m.get("container");
                 String desc = (String)m.get("description");
                 String label = (String)m.get("label");
                 String name = (String)m.get("name");
@@ -3291,6 +3292,7 @@ public class OntologyManager
                 Resource r = new org.labkey.api.webdav.SimpleDocumentResource(
                     new Path(propertyURI),
                     "concept:" + propertyURI,
+                    container,
                     "text/plain", body.getBytes(),
                     url,
                     m

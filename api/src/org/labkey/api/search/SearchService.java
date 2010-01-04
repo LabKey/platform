@@ -16,6 +16,7 @@
 package org.labkey.api.search;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
 import org.labkey.api.security.SecurableResource;
@@ -24,6 +25,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Path;
 import org.apache.log4j.Category;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.io.*;
@@ -140,14 +143,30 @@ public interface SearchService
     }
 
 
+    public static class SearchHit
+    {
+        public int totalHits;
+        
+        public String docid;
+        public String container;
+        public String title;
+        public String summary;
+        public String url;
+    }
+
+
     //
     // search
     //
 
-
-    public String search(String queryString, User user, Container root, int page);
+    public Collection<SearchHit> search(String queryString, User user, Container root, int page) throws IOException;
+    public String searchFormatted(String queryString, User user, Container root, int page);
+    
     public List<SearchCategory> getSearchCategories();
 
+    public boolean isParticipantId(User user, String ptid);
+//  CONSIDER: async version
+//    public Future<Boolean> isParticipantId(User user);
 
     //
     // index
@@ -162,6 +181,12 @@ public interface SearchService
 
     void addPathToCrawl(Path path);
 
+    // container, ptid pairs
+    void addParticipantIds(Collection<Pair<String,String>> ptids);
+
+    // container, ptid resultset
+    void addParticipantIds(ResultSet ptids) throws SQLException;
+
 
     /** an indicator that there are a lot of things in the queue */
     boolean isBusy();
@@ -169,6 +194,7 @@ public interface SearchService
 
     /** default implementation saving lastIndexed */
     void setLastIndexedForPath(Path path, long time);
+
 
     //
     // configuration

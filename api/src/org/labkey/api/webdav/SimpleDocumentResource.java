@@ -40,9 +40,10 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     byte[] _body;
     ActionURL _executeUrl;
 
-    public SimpleDocumentResource(Path path, String documentId, String contentType, byte[] body, ActionURL executeUrl, Map<String,Object> properties)
+    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, byte[] body, ActionURL executeUrl, Map<String,Object> properties)
     {
         super(path);
+        _containerId = containerId;
         _documentId = documentId;
         _contentType = contentType;
         _body = body;
@@ -50,6 +51,12 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         if (null != properties)
             _properties = new HashMap<String,Object>(properties);
     }
+
+    public SimpleDocumentResource(Path path, String documentId, String contentType, byte[] body, ActionURL executeUrl, Map<String,Object> properties)
+    {
+        this(path,documentId,executeUrl.getExtraPath(),contentType,body,executeUrl,properties);
+    }
+    
 
     @Override
     public String getContentType()
