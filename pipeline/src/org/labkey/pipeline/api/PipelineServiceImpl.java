@@ -158,7 +158,7 @@ public class PipelineServiceImpl extends PipelineService
         PipeRoot pr = service.findPipelineRoot(container);
         if (pr != null)
         {
-            uriRoot = pr.getUri(container);
+            uriRoot = pr.getUri();
             if (uriRoot != null)
             {
                 File f = new File(uriRoot);

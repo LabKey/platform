@@ -2150,32 +2150,6 @@ public class WikiController extends SpringActionController
             setId(getNavTreeId(context));
             setElements(context, getNavTree(context));
 
-            if (null == c)
-            {
-                // WebPart case
-                try
-                {
-                    c = getViewContext().getContainer(0);
-                }
-                catch (Exception x)
-                {
-                }
-            }
-
-            if (!c.hasPermission(user, ReadPermission.class))
-            {
-                if (user.isGuest())
-                {
-                    out.println("Please log in to see this data.");
-                }
-                else
-                {
-                    out.println("You do not have permission to see this data.");
-                }
-
-                return;
-            }
-
             boolean isInWebPart = false;
             //is page being rendered in web part or in module?
             String pageUrl = context.getActionURL().getPageFlow();

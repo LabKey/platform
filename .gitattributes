@@ -884,7 +884,6 @@ experiment/src/org/labkey/experiment/pipeline/MoveRunsTask.java -text
 experiment/src/org/labkey/experiment/pipeline/MoveRunsTaskFactory.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorSource.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorTask.java -text
-experiment/src/org/labkey/experiment/pipeline/XarImportTask.java -text
 experiment/src/org/labkey/experiment/runTypeFilters.jsp -text
 experiment/src/org/labkey/experiment/samples/UploadMaterialSetForm.java -text
 experiment/src/org/labkey/experiment/samples/UploadSamplesHelper.java -text
@@ -1228,7 +1227,6 @@ pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesSiteSetting
 pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
-pipeline/src/org/labkey/pipeline/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text

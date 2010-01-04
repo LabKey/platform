@@ -444,46 +444,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-/*
-    public static class BrowseWebPart extends JspView<BrowseWebPart>
-    {
-        Container _c;
-        PipeRoot _root;
-        boolean _autoResize = false;
-        
-        public BrowseWebPart()
-        {
-            super(PipelineController.class, "browse.jsp", null, null);
-            setModelBean(this);
-            setTitle("Pipeline Files");
-            setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
-        }
-
-        void setContainer(Container c)
-        {
-            _c = c;
-        }
-
-        public Container getContainer()
-        {
-            return _c != null ? _c : getViewContext().getContainer();
-        }
-        
-        public PipeRoot getPipeRoot()
-        {
-            if (null == _root)
-                _root = PipelineService.get().findPipelineRoot(getContainer());
-            return _root;
-        }
-
-        public boolean getAutoResize()
-        {
-            return _autoResize;
-        }
-    }
-
-*/
-
     public static class SearchWebPart extends JspView<SearchWebPart>
     {
         Container _c;
@@ -536,7 +496,7 @@ public class PipelineController extends SpringActionController
                 return null;
             }
 
-            URI uriRoot = pr.getUri(c);
+            URI uriRoot = pr.getUri();
 
             String path = form.getPath();
             if (null == path || "./".equals(path))
@@ -748,8 +708,8 @@ public class PipelineController extends SpringActionController
                 Container c = getContainer();
 
                 PipeRoot root = service.findPipelineRoot(c);
-                URI uriRoot = (root != null) ? root.getUri(c) : null;
-                if (uriRoot == null || !URIUtil.exists(root.getUri(c)))
+                URI uriRoot = (root != null) ? root.getUri() : null;
+                if (uriRoot == null || !URIUtil.exists(root.getUri()))
                 {
                     HttpView.throwNotFound();
                     return;

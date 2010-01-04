@@ -1077,7 +1077,7 @@ public class ExperimentController extends SpringActionController
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 if (root != null)
                 {
-                    URI uri = root.getUri(c);
+                    URI uri = root.getUri();
                     if (uri != null)
                     {
                         File rootFile = new File(uri);
@@ -3936,7 +3936,7 @@ public class ExperimentController extends SpringActionController
         if (pr == null)
             return null;
 
-        URI uri = pr.getUri(c);
+        URI uri = pr.getUri();
         if (uri == null)
         {
             return null;
@@ -3957,33 +3957,16 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(PipelinePathForm form, BindException errors) throws Exception
         {
-            Container c = getContainer();
-
-            File rootFile = getPipelineRoot(c);
-            if (rootFile == null)
-                throw new NotFoundException("No pipeline root found");
-
-            URI dirURI = URIUtil.resolve(rootFile.toURI(), form.getPath());
-            if (dirURI == null)
-                throw new NotFoundException("Could not find path " + form.getPath());
-
-            if (form.getFile().length == 0)
+            for (File f : form.getValidatedFiles(getContainer()))
             {
-                throw new NotFoundException("No files specified for import");
-            }
-
-            File dir = new File(dirURI);
-            for (String fileName : form.getFile())
-            {
-                File f = new File(dir, fileName);
-                if (NetworkDrive.exists(f) && f.isFile())
+                if (f.isFile())
                 {
                     ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false);
                     PipelineService.get().queueJob(job);
                 }
                 else
                 {
-                    throw new NotFoundException("Could not find file " + fileName);
+                    throw new NotFoundException("Expected a file but found a directory: " + f.getName());
                 }
             }
             

@@ -17,7 +17,6 @@
 package org.labkey.study.controllers.plate;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;

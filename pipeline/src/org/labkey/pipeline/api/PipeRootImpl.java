@@ -142,11 +142,6 @@ public class PipeRootImpl implements PipeRoot
         return ret;
     }
 
-    public URI getUri(Container container)
-    {
-        return _uri;
-    }
-
     public String getStartingPath(Container container, User user)
     {
         try
@@ -216,13 +211,13 @@ public class PipeRootImpl implements PipeRoot
     }
 
     // UNDONE: need wrappers for file download/upload permissions
-    public boolean hasPermission(Container container, User user, int perm)
+    public boolean hasPermission(Container container, User user, Class<? extends Permission> perm)
     {
         return _container.hasPermission(user, perm) && container.hasPermission(user, perm);
     }
 
     // UNDONE: need wrappers for file download/upload permissions
-    public void requiresPermission(Container container, User user, int perm) throws ServletException
+    public void requiresPermission(Container container, User user, Class<? extends Permission> perm) throws ServletException
     {
         if (!hasPermission(container, user, perm))
         {

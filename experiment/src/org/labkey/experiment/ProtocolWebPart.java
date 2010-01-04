@@ -17,7 +17,6 @@ package org.labkey.experiment;
 
 import org.labkey.api.view.*;
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -47,7 +46,7 @@ public class ProtocolWebPart extends WebPartView
     @Override
     public void renderView(Object model, PrintWriter out) throws Exception
     {
-        Container c = getViewContext().getContainer(ACL.PERM_READ);
+        Container c = getViewContext().getContainer();
 
         DataRegion dr = new DataRegion();
         dr.setName("protocols");

@@ -32,7 +32,6 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.query.QueryView;
-import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.*;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.springframework.validation.BindException;

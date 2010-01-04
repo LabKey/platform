@@ -16,12 +16,12 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.WebThemesBean> me = (HttpView<AdminController.WebThemesBean>) HttpView.currentView();
@@ -366,7 +366,7 @@ if (null == webThemeErrors)
         }
         else
             {%>
-            <%=PageFlowUtil.generateButton("Done", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
+            <%=PageFlowUtil.generateButton("Done", PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(HttpView.currentContext().getContainer()))%>
            <%}%>
     </td>
 </tr>
@@ -455,7 +455,9 @@ function changeTheme(sel)
 }
 
 </script>
-<script for=window event=onload>
-try {document.getElementByName("themeName").focus();} catch(x){}
-updateAll();
+<script type="text/javascript">
+    Ext.onReady(function() {
+        try {document.getElementByName("themeName").focus();} catch(x){}
+        updateAll();
+    });
 </script>

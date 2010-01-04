@@ -16,21 +16,15 @@
 package org.labkey.pipeline.analysis;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
-import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.InsertPermission;
 
 import java.io.File;
-import java.io.FileFilter;
 
 /**
  * <code>FileAnalysisPipelineProvider</code>
@@ -82,60 +76,6 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             String path = directory.cloneHref().getParameter(Params.path.toString());
             addAction(tp.getAnalyzeURL(c, path), tp.getDescription(),
                     directory, directory.listFiles(tp.getInitialFileTypeFilter()));
-
-            FileFilter filter = getImportFilter(tp);
-            if (filter != null)
-            {
-                ActionURL url = AnalysisController.urlImport(c, tp.getId(), path);
-                addAction(url, "Import", directory, directory.listFiles(filter));
-            }
         }
-    }
-
-    private FileFilter getImportFilter(FileAnalysisTaskPipeline tp)
-    {
-        TaskId[] progression = tp.getTaskProgression();
-        if (progression == null)
-            return null;
-        
-        for (TaskId id : progression)
-        {
-            if (id.getNamespaceClass().equals(XarTemplateSubstitutionId.class))
-            {
-                final XarTemplateSubstitutionId.Factory factory = (XarTemplateSubstitutionId.Factory)
-                        PipelineJobService.get().getTaskFactory(id);
-                final FileType[] types = factory.getInputTypes();
-                if (types == null || types.length == 0)
-                    return null;
-
-                return new FileEntryFilter ()
-                    {
-                        public boolean accept(File f)
-                        {
-                            // If this is the input type to a xar generator
-                            FileType typeInput = null;
-                            for (FileType type : types)
-                            {
-                                if (type.isType(f))
-                                {
-                                    typeInput = type;
-                                    break;
-                                }
-                            }
-                            if (typeInput == null)
-                                return false;
-
-                            // But neither the output type, nor a plain XAR XML are present
-                            File parent = f.getParentFile();
-                            String baseName = typeInput.getBaseName(f);
-                            return !fileExists(factory.getOutputType().newFile(parent, baseName)) &&
-                                    !fileExists(XarGeneratorId.FT_XAR_XML.newFile(parent, baseName));
-                        }
-                    };
-                
-            }
-        }
-
-        return null;
     }
 }

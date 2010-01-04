@@ -17,20 +17,17 @@ package org.labkey.pipeline.analysis;
 
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -140,13 +137,6 @@ public class AnalysisController extends SpringActionController
             throw new NotFoundException();
 
         return provider.getProtocolFactory(taskPipeline);
-    }
-
-    public static ActionURL urlImport(Container container, TaskId tid, String path)
-    {
-        return new ActionURL(ImportAction.class, container)
-                .addParameter(AnalyzeForm.Params.taskId, tid.toString())
-                .addParameter(AnalyzeForm.Params.path, path);
     }
 
     @RequiresPermissionClass(InsertPermission.class)
@@ -342,161 +332,9 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
-    public class ImportAction extends RedirectAction<AnalyzeForm>
-    {
-        public ActionURL getSuccessURL(AnalyzeForm analyzeForm)
-        {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
-        }
-
-        public boolean throwNotFound()
-        {
-            HttpView.throwNotFound();
-            return false;
-        }
-
-        public boolean throwNotFound(String message)
-        {
-            HttpView.throwNotFound(message);
-            return false;
-        }
-
-        public void validateCommand(AnalyzeForm form, Errors errors)
-        {
-            // HACK: Because Spring likes to split up single values if they are
-            //       are set to an array.  Very lame for checkboxes.
-            String name = AnalyzeForm.Params.file.toString();
-            form.setFile(getViewContext().getRequest().getParameterValues(name));
-        }
-
-        public boolean doAction(AnalyzeForm form, BindException errors) throws Exception
-        {
-            FileAnalysisTaskPipeline tp = getTaskPipeline(form.getTaskId());
-            FileType[] initialTypes = tp.getInitialFileTypes();
-            if (initialTypes.length == 0)
-                return throwNotFound("The pipeline '" + tp.getId() + "' has no initial file types.");
-
-            TaskId taskIdGenerator = null;
-            for (TaskId id : tp.getTaskProgression())
-            {
-                if (id.getNamespaceClass().equals(XarTemplateSubstitutionId.class))
-                {
-                    taskIdGenerator = id;
-                    break;
-                }
-            }
-
-            if (taskIdGenerator == null)
-                return throwNotFound("The pipeline '" + tp.getId() + "' does not contain a valid XAR XML generator.");
-
-            XarTemplateSubstitutionId.Factory factoryGenerator = (XarTemplateSubstitutionId.Factory)
-                    PipelineJobService.get().getTaskFactory(taskIdGenerator);
-            FileType ftGenInput = factoryGenerator.getInputTypes()[0];
-            if (ftGenInput == null)
-                return throwNotFound("The pipeline '" + tp.getId() + "' XAR generator input type not found.");                
-
-            PipeRoot pr = PipelineService.get().findPipelineRoot(getContainer());
-            if (pr == null || !URIUtil.exists(pr.getUri()))
-                return throwNotFound("This folder does not have a pipeline root.");
-
-            URI uriRoot = pr.getUri();
-            URI uriAnalysis = URIUtil.resolve(uriRoot, form.getPath());
-            if (uriAnalysis == null)
-                return throwNotFound();
-
-            File dirRoot = new File(uriRoot);
-            File dirAnalysis = new File(uriAnalysis);
-            if (!NetworkDrive.exists(dirAnalysis))
-                return throwNotFound();
-
-            FileAnalysisPipelineProvider provider = (FileAnalysisPipelineProvider)
-                    PipelineService.get().getPipelineProvider(FileAnalysisPipelineProvider.name);
-            if (provider == null)
-                return throwNotFound();
-
-            try
-            {
-                Container c = getContainer();
-
-                FileAnalysisProtocolFactory factory = provider.getProtocolFactory(tp);
-                factory.ensureDefaultParameters(dirRoot);
-
-                File fileParameters = new File(dirAnalysis, factory.getParametersFileName());
-                FileAnalysisProtocol protocol;
-                if (!NetworkDrive.exists(fileParameters))
-                {
-                    protocol = factory.createProtocolInstance(
-                        "import",
-                        "Import data from unknown source.",
-                        PipelineJobService.get().createParamParser().getXML());
-                }
-                else
-                {
-                    protocol = factory.loadInstance(fileParameters);
-                }
-
-                protocol.setEmail(getUser().getEmail());
-                protocol.saveInstance(fileParameters, c);
-
-                ArrayList<File> filesInputList = new ArrayList<File>();
-                FileType ftInput = null;
-                for (String fileInputName : form.getFile())
-                {
-                    if (fileInputName == null)
-                    {
-                        errors.reject(ERROR_MSG, "Empty name found in file list.");
-                        return false;
-                    }
-                    File fileGenInput = new File(dirAnalysis, fileInputName);
-                    String baseName = ftGenInput.getBaseName(fileGenInput);
-                    if (ftInput == null)
-                    {
-                        for (FileType ftCheck : initialTypes)
-                        {
-                            File fileCheck = tp.findInputFile(dirRoot, dirAnalysis, ftCheck.getName(dirRoot, baseName));
-                            if (fileCheck != null && NetworkDrive.exists(fileCheck))
-                            {
-                                ftInput = ftCheck;
-                                break;
-                            }
-                        }
-
-                        if (ftInput == null)
-                            ftInput = initialTypes[0];
-                    }
-                    File fileInput = tp.findInputFile(dirRoot, dirAnalysis, ftInput.getName(dirRoot, baseName));
-                    if (fileInput == null)
-                        return throwNotFound("Failed to locate input file " + ftInput.getName(dirRoot, baseName) + ".");
-                    filesInputList.add(fileInput);
-                }
-                File[] filesInput = filesInputList.toArray(new File[filesInputList.size()]);
-
-                AbstractFileAnalysisJob job =
-                        protocol.createPipelineJob(getViewBackgroundInfo(), filesInput, fileParameters);
-
-                job.setActiveTaskId(taskIdGenerator);
-                PipelineService.get().queueJob(job);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, e.getMessage());
-                return false;
-            }
-            catch (IOException e)
-            {
-                errors.reject(ERROR_MSG, "Failure attempting to write input parameters." + e.getMessage());
-                return false;
-            }
-
-            return true;
-        }
-    }
-
     public static class AnalyzeForm extends PipelinePathForm
     {
-        public enum Params { path, taskId, file
-        }
+        public enum Params { path, taskId, file }
 
         private String taskId = "";
         private String protocolName = "";

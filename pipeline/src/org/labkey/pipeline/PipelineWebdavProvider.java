@@ -80,7 +80,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
             this.c = c;
             _containerId = c.getId();
-            URI uriRoot = (root != null) ? root.getUri(c) : null;
+            URI uriRoot = (root != null) ? root.getUri() : null;
             if (uriRoot != null)
             {
                 _policy = org.labkey.api.security.SecurityManager.getPolicy(root);
