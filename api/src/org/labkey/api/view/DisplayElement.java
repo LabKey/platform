@@ -17,7 +17,6 @@ package org.labkey.api.view;
 
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.Permission;
@@ -58,12 +57,6 @@ public abstract class DisplayElement implements View, Cloneable
     public Class<? extends Permission> getDisplayPermission()
     {
         return _displayPermission;
-    }
-
-    public void setDisplayPermission(int displayPermission)
-    {
-        checkLocked();
-        _displayPermission = ACL.translatePermission(displayPermission);
     }
 
     public void setDisplayPermission(Class<? extends Permission> perm)

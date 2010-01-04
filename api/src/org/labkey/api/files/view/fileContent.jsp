@@ -22,13 +22,13 @@
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -69,7 +69,7 @@
 %>
 
 
-<div class="extContainer" style="padding:20px;">
+<div class="extContainer">
     <table>
         <tr><td><div id="toolbar"></div></td></tr>
         <tr><td><div id="files"></div></td></tr>
@@ -419,10 +419,10 @@ function renderBrowser(rootPath, dir)
         buttonCfg: buttonActions
 /*
         buttonCfg:['download','deletePath','refresh'
-        <%=c.hasPermission(context.getUser(),ACL.PERM_INSERT)?",'uploadTool'":""%>
+        <%=c.hasPermission(context.getUser(), InsertPermission.class)?",'uploadTool'":""%>
         ,'->'
         , new Ext.form.Label({html:'File Set:&nbsp;'}), combo
-        <%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>
+        <%=c.hasPermission(context.getUser(), AdminPermission.class)?",'configure'":""%>
         ]
 */
     });
@@ -488,7 +488,7 @@ function renderBrowser(rootPath, dir)
             if (StringUtils.equals(me.getFileSet(),name))
                 selectedValue = value;
         }
-        if (c.hasPermission(context.getUser(),ACL.PERM_ADMIN))
+        if (c.hasPermission(context.getUser(), AdminPermission.class))
         {
     //        out.write(",[" + q(new ActionURL(FileContentController.ShowAdminAction.class,c).getLocalURIString()) + ",'[configure]']");
         }

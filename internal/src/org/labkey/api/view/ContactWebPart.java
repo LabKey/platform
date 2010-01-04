@@ -40,28 +40,7 @@ public class ContactWebPart extends WebPartView
     @Override
     public void renderView(Object model, PrintWriter out) throws Exception
     {
-        Container c;
-
-        try
-        {
-            c = getViewContext().getContainer(ACL.PERM_READ);
-        }
-        catch (UnauthorizedException e)
-        {
-            String message;
-
-            if (getViewContext().getUser().isGuest())
-                message = "Please log in to see this data.";
-            else
-                message = "You do not have permission to see this data.";
-
-            out.println(message);
-
-            return;
-        }
-
-        if (c == null)
-            throw new IllegalStateException("There is a problem with this folder. Please see your administrator for assistance.");
+        Container c = getViewContext().getContainer();
 
         GridView gridView = new GridView(getGridRegionWebPart(), (BindException)null);
         gridView.setFrame(FrameType.DIV);

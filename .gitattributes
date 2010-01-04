@@ -270,9 +270,6 @@ api/src/org/labkey/api/exp/list/ListItem.java -text
 api/src/org/labkey/api/exp/list/ListService.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorId.java -text
-api/src/org/labkey/api/exp/pipeline/XarImportFactorySettings.java -text
-api/src/org/labkey/api/exp/pipeline/XarImportTaskId.java -text
-api/src/org/labkey/api/exp/pipeline/XarTemplateSubstitutionId.java -text
 api/src/org/labkey/api/exp/property/DefaultPropertyValidator.java -text
 api/src/org/labkey/api/exp/property/Domain.java -text
 api/src/org/labkey/api/exp/property/DomainAuditViewFactory.java -text
@@ -618,7 +615,6 @@ api/src/org/labkey/api/security/GroupManager.java -text
 api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
 api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
-api/src/org/labkey/api/security/PermissionsMap.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
 api/src/org/labkey/api/security/RequiresNoPermission.java -text
 api/src/org/labkey/api/security/RequiresPermission.java -text
@@ -1766,16 +1762,11 @@ api/webapp/ext-2.2/source/widgets/tree/TreePanel.js -text
 api/webapp/ext-2.2/source/widgets/tree/TreeSelectionModel.js -text
 api/webapp/ext-2.2/source/widgets/tree/TreeSorter.js -text
 api/webapp/ext-2.2/ux-exception.html -text
-api/webapp/gtheme/gtheme.css -text
 api/webapp/gtheme/img/btn-arrow.gif -text
 api/webapp/gtheme/img/btn.gif -text
 api/webapp/gtheme/img/icons7.png -text
-api/webapp/gtheme/img/rc.png -text
 api/webapp/gtheme/img/rct.png -text
 api/webapp/gtheme/img/rdr.png -text
-api/webapp/gtheme/img/t.png -text
-api/webapp/gtheme/img/xb.png -text
-api/webapp/gtheme/img/xt.png -text
 api/webapp/verticalTabPanel/VerticalTabPanel.css -text
 api/webapp/verticalTabPanel/VerticalTabPanel.js -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text

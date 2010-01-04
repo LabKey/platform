@@ -509,22 +509,6 @@ abstract public class PipelineProvider
         directory.addAction(new PipelineAction(description, actionURL, files));
     }
 
-    protected void addFileActions(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files)
-    {
-        if (files == null || files.length == 0)
-            return;
-        ActionURL actionURL = directory.cloneHref();
-        actionURL.setAction(action);
-        String path = actionURL.getParameter(Params.path);
-        if (!path.endsWith("/"))
-            path += "/";
-        for (File f : files)
-        {
-            actionURL.replaceParameter(Params.path, path + PageFlowUtil.encode(f.getName()));
-            directory.addAction(new PipelineAction(description, actionURL.clone(), new File[] {f}));
-        }
-    }
-
     /**
      * Return true if this provider believes that it is in use in the container, and
      * also can handle overlapping pipeline roots.

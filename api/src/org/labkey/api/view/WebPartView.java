@@ -551,29 +551,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         }
     }
 
-    protected Container hasAccess(ViewContext model, String name) throws Exception
-    {
-        try
-        {
-            return model.getContainer(ACL.PERM_READ);
-        }
-        catch (UnauthorizedException e)
-        {
-            String message;
-
-            if (model.getUser().isGuest())
-                message = "Please log in to see this data.";
-            else
-                message = "You do not have permission to see this data.";
-
-            HtmlView view = new HtmlView("<table class=\"DataRegion\"><tr><td>" + message + "</td></tr></table>");
-            view.setTitle(name);
-            include(view);
-            return null;
-        }
-    }
-
-
     protected void renderView(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         renderView(model, response.getWriter());

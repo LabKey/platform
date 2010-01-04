@@ -15,6 +15,18 @@
  */
 package org.labkey.api.pipeline.browse;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+
+import java.io.File;
+import java.net.URI;
+import java.util.List;
+import java.util.ArrayList;
+
 /**
  * <code>PipelinePathForm</code>
  * 
@@ -53,5 +65,46 @@ public class PipelinePathForm
             }
         }
         _file = file;
+    }
+
+    /**
+     * Ensures that the files are all in the same directory, which is under the container's pipeline root, and that
+     * they all exist on disk.
+     * Ensures that all files exist on disk, but they could be directories.
+     * Throws NotFoundException if no files are specified, invalid files are specified, there's no pipeline root, etc.
+     */
+    public List<File> getValidatedFiles(Container c)
+    {
+        PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+        if (pr == null)
+            throw new NotFoundException("Could not find a pipeline root for " + c.getPath());
+
+        URI rootURI = pr.getUri();
+        if (rootURI == null)
+        {
+            throw new NotFoundException("Could not find a pipeline root for " + c.getPath());
+        }
+
+        URI dirURI = URIUtil.resolve(rootURI, getPath());
+        if (dirURI == null)
+            throw new NotFoundException("Could not find path " + getPath());
+
+        if (getFile() == null || getFile().length == 0)
+        {
+            throw new NotFoundException("No files specified");
+        }
+
+        List<File> result = new ArrayList<File>();
+        File dir = new File(dirURI);
+        for (String fileName : _file)
+        {
+            File f = new File(dir, fileName);
+            if (!NetworkDrive.exists(f))
+            {
+                throw new NotFoundException("Could not find file '" + fileName + "' in '" + getPath() + "'");
+            }
+            result.add(f);
+        }
+        return result;
     }
 }

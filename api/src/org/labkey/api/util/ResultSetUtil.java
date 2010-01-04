@@ -25,9 +25,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.PermissionsMap;
-import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -107,102 +104,6 @@ public class ResultSetUtil
             throw new RuntimeSQLException(x);
         }
     }
-
-
-    public static ResultSet filter(ResultSet in, final User u, final PermissionsMap<Map> fn, final int required)
-    {
-        Predicate<Map<String, Object>> pred = new Predicate<Map<String, Object>>()
-        {
-            public boolean evaluate(Map<String, Object> map)
-            {
-                int perm = fn.getPermissions(u, map);
-                return (perm & required) == required;
-            }
-        };
-        return filter(in, pred);
-    }
-
-
-    public static class OwnerPermissions implements PermissionsMap<Map>
-    {
-        private String _ownerColumn;
-        private int _ownerPermissions;
-
-        public OwnerPermissions(String ownerColumn, int ownerPermissions)
-        {
-            _ownerColumn = ownerColumn;
-            _ownerPermissions = ownerPermissions;
-        }
-
-        public int getPermissions(User u, Map t)
-        {
-            Integer ownerid = (Integer)t.get(_ownerColumn);
-            if (null != ownerid && u.getUserId() == ownerid)
-                return _ownerPermissions;
-            return 0;
-        }
-    }
-
-
-    public static class MapPermissions implements PermissionsMap<Map>
-    {
-        private String _keyColumn;
-        private Map<Object,ACL> _aclMap;
-        private int _defaultPermissions;
-
-        private HashMap<Object,Integer> _permMap;
-
-        /** aclMap may be used across users/calls, HOWEVER, this class should not
-         * be reused, as we cache per user information.
-         *
-         * @param keyColumn
-         * @param aclMap
-         * @param defaultPermissions
-         */
-        public MapPermissions(String keyColumn, Map<Object, ACL> aclMap, int defaultPermissions)
-        {
-            _keyColumn = keyColumn;
-            _aclMap = aclMap;
-            _defaultPermissions = defaultPermissions;
-            _permMap = new HashMap<Object,Integer>(aclMap.size() * 2);
-        }
-
-        public int getPermissions(User u, Map t)
-        {
-            Object key = t.get(_keyColumn);
-            Integer perm = _permMap.get(key);
-            if (null == perm)
-            {
-                ACL acl = _aclMap.get(key);
-                if (null == acl)
-                    perm = _defaultPermissions;
-                else
-                    perm = acl.getPermissions(u);
-                _permMap.put(key,perm);
-            }
-            return perm;
-        }
-    }
-
-
-    public static class UnionPermissions implements PermissionsMap<Map>
-    {
-        PermissionsMap<Map>[] _mappers;
-
-        public UnionPermissions(PermissionsMap<Map>... mappers)
-        {
-            _mappers = mappers;
-        }
-
-        public int getPermissions(User u, Map t)
-        {
-            int perm = 0;
-            for (PermissionsMap<Map> mapper : _mappers)
-                perm |= mapper.getPermissions(u, t);
-            return perm;
-        }
-    }
-
 
     // Convenience method to convert the current row in a ResultSet to a map.  Do not call this in a loop -- new up a ResultSetRowMap instead
     public static Map<String, Object> mapRow(ResultSet rs) throws SQLException

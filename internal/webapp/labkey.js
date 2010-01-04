@@ -108,12 +108,20 @@ LABKEY.requiresScript = function(file, immediate)
     }
 };
 
-LABKEY.addElemToHead = function(elemName, attributes)
+LABKEY.addElemToHead = function(elemName, attributes, beforeFirst)
 {
     var elem = document.createElement(elemName);
     for(var attr in attributes)
         elem[attr] = attributes[attr];
-    document.getElementsByTagName("head")[0].appendChild(elem);
+    var headElement = document.getElementsByTagName("head")[0];
+    if (beforeFirst)
+    {
+        headElement.insertBefore(elem, headElement.firstChild);
+    }
+    else
+    {
+        headElement.appendChild(elem);
+    }
 };
 
 LABKEY.addMarkup = function(html)
@@ -140,7 +148,7 @@ LABKEY.loadScripts = function()
 };
 
 
-LABKEY.requiresCss = function(file)
+LABKEY.requiresCss = function(file, beforeFirst)
 {
     var fullPath = LABKEY.contextPath + "/" + file;
     if (this._requestedScriptFiles[fullPath])
@@ -150,7 +158,7 @@ LABKEY.requiresCss = function(file)
         type: "text/css",
         rel: "stylesheet",
         href: fullPath
-    });
+    }, beforeFirst);
     this._requestedScriptFiles[fullPath] = 1;
 };
 
@@ -168,9 +176,10 @@ LABKEY.requiresYahoo = function(script, immediate)
 LABKEY.requiresExtJs = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
-    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
-    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css');
-    LABKEY.requiresCss(LABKEY.extJsRoot + '/../gtheme/gtheme.css');
+    // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
+    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css', true);
+    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css', true);
+
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
     if (LABKEY.devMode && false)
     {
@@ -186,7 +195,6 @@ LABKEY.requiresExtJs = function(immediate)
 LABKEY.requiresClientAPI = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
-    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresExtJs(immediate);
     if (LABKEY.devMode)
     {

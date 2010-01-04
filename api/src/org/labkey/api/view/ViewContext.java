@@ -296,26 +296,6 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     }
 
 
-    public Container getContainer(int perm)
-            throws ServletException
-    {
-        Container c = getContainer();
-        if (null == c)
-            HttpView.throwNotFound();
-
-        User user = getUser();
-        boolean hasPermission =
-                perm == 0 ||
-                        perm == ACL.PERM_ADMIN && user.isAdministrator() ||
-                        c.hasPermission(user, perm);
-
-        if (!hasPermission)
-            HttpView.throwUnauthorized();
-
-        return c;
-    }
-
-
     public void setContainer(Container c)
     {
         _c = c;

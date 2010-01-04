@@ -19,6 +19,7 @@ package org.labkey.api.pipeline;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -41,8 +42,6 @@ public interface PipeRoot extends SecurableResource
 
     String relativePath(File file);
 
-    URI getUri(Container container);
-
     String getStartingPath(Container container, User user);
 
     void rememberStartingPath(Container container, User user, String path);
@@ -51,9 +50,9 @@ public interface PipeRoot extends SecurableResource
 
     boolean isUnderRoot(URI uri);
 
-    boolean hasPermission(Container container, User user, int perm);
+    boolean hasPermission(Container container, User user, Class<? extends Permission> perm);
 
-    void requiresPermission(Container container, User user, int perm) throws ServletException;
+    void requiresPermission(Container container, User user, Class<? extends Permission> perm) throws ServletException;
 
     File ensureSystemDirectory();
 
