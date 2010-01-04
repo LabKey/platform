@@ -1771,8 +1771,10 @@ search/lib/tika-app-0.5.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.02-0.03.sql -text
+search/resources/schemas/dbscripts/postgresql/search-0.03-0.04.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.02-0.03.sql -text
+search/resources/schemas/dbscripts/sqlserver/search-0.03-0.04.sql -text
 search/resources/schemas/search.xml -text
 search/src/META-INF/search/jars.txt -text
 search/src/org/labkey/search/SearchContainerListener.java -text
@@ -1789,6 +1791,7 @@ search/src/org/labkey/search/model/SavePaths.java -text
 search/src/org/labkey/search/model/SecurityFilter.java -text
 search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
 search/src/org/labkey/search/view/search.jsp -text
+search/src/schemas/search.xml -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text
 study/gwtsrc/org/labkey/assay/designer/client/AssayDesigner.java -text
 study/gwtsrc/org/labkey/assay/upload/ListChooser.gwt.xml -text

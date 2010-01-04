@@ -45,8 +45,7 @@ import org.xml.sax.ContentHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -297,40 +296,75 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    public String search(String queryString, User user, Container root, int page)
+    public List<SearchHit> search(String queryString, User user, Container root, int page)
+            throws IOException
     {
+        String sort = null;  // TODO: add sort parameter
+        int hitsPerPage = 20;
+
+        Query query;
         try
         {
-            String sort = null;  // TODO: add sort parameter
-            int hitsPerPage = 20;
+            query = new QueryParser(Version.LUCENE_30, "body", _analyzer).parse(queryString.toLowerCase());
+        }
+        catch (ParseException x)
+        {
+            IOException io = new IOException();
+            io.initCause(x);
+            throw io;
+        }
+        TopDocs topDocs;
+        IndexSearcher searcher = getIndexSearcher();
+        Filter securityFilter = new SecurityFilter(user, root);
 
+        if (null == sort)
+            topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage);
+        else
+            topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
+
+        ScoreDoc[] hits = topDocs.scoreDocs;
+
+        ArrayList<SearchHit> ret = new ArrayList<SearchHit>(hitsPerPage);
+        for (int i = page * hitsPerPage; i < Math.min((page + 1) * hitsPerPage, hits.length); i++)
+        {
+            ScoreDoc scoreDoc = hits[i];
+            Document doc = searcher.doc(scoreDoc.doc);
+
+            SearchHit hit = new SearchHit();
+            hit.totalHits = topDocs.totalHits;
+            hit.summary = doc.get("summary");
+            hit.url = doc.get("url");
+            hit.title = doc.get("title");
+            ret.add(hit);
+        }
+
+        return ret;
+    }
+    
+
+    public String searchFormatted(String queryString, User user, Container root, int page)
+    {
+        int hitsPerPage = 20;
+        
+        try
+        {
             long start = System.nanoTime();
-            Query query = new QueryParser(Version.LUCENE_30, "body", _analyzer).parse(queryString.toLowerCase());
-
-            TopDocs topDocs;
-            IndexSearcher searcher = getIndexSearcher();
-            Filter securityFilter = new SecurityFilter(user, root);
-
-            if (null == sort)
-                topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage);
-            else
-                topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
-
-            ScoreDoc[] hits = topDocs.scoreDocs;
+            List<SearchHit> hits = search(queryString, user, root, page);
+            long time = (System.nanoTime() - start)/1000000;
 
             StringBuilder html = new StringBuilder("<table><tr><td colspan=2>Found ");
-            html.append(Formats.commaf0.format(topDocs.totalHits)).append(" result");
 
-            if (topDocs.totalHits != 1)
+            int totalHits = hits.isEmpty() ? 0 : hits.get(0).totalHits;
+            html.append(Formats.commaf0.format(totalHits)).append(" result");
+            if (totalHits != 1)
                 html.append("s");
 
-            long time = (System.nanoTime() - start)/1000000;
             html.append(" in ").append(Formats.commaf0.format(time)).append(" millisecond").append(1 != time ? "s" : "").append(".  Displaying ");
 
-            if (hitsPerPage < topDocs.totalHits)
+            if (hitsPerPage < totalHits)
             {
                 html.append("page ").append(Formats.commaf0.format(page + 1)).append(" of ");
-                html.append(Formats.commaf0.format((int)Math.ceil((double)topDocs.totalHits / hitsPerPage)));
+                html.append(Formats.commaf0.format((int)Math.ceil((double)totalHits / hitsPerPage)));
             }
             else
             {
@@ -339,31 +373,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             html.append(".</td></tr>\n");
 
-            for (int i = page * hitsPerPage; i < Math.min((page + 1) * hitsPerPage, hits.length); i++)
+            for (int i = page * hitsPerPage; i < Math.min((page + 1) * hitsPerPage, hits.size()); i++)
             {
-                ScoreDoc hit = hits[i];
-                Document doc = searcher.doc(hit.doc);
-
-                String summary = doc.get("summary");
-                String url = doc.get("url");
-                String title = doc.get("title");
+                SearchHit hit = hits.get(i);
 
                 html.append("<tr><td colspan=2>&nbsp;</td></tr>\n");
-                html.append("<tr><td colspan=2><a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(title)).append("</a>").append("</td></tr>\n");
-                html.append("<tr><td width=25>&nbsp;</td><td>").append(PageFlowUtil.filter(summary)).append("</td></tr>\n");
+                html.append("<tr><td colspan=2><a href=\"").append(PageFlowUtil.filter(hit.url)).append("\">").append(PageFlowUtil.filter(hit.title)).append("</a>").append("</td></tr>\n");
+                html.append("<tr><td width=25>&nbsp;</td><td>").append(PageFlowUtil.filter(hit.summary)).append("</td></tr>\n");
             }
 
             html.append("</table>\n");
 
             return html.toString();
         }
-        catch (ParseException e)
-        {
-            return "Error: " + e.getMessage();
-        }
         catch (IOException e)
         {
-            return "Error: " + e.getMessage();
+            Throwable t = e;
+            if (e.getCause() instanceof ParseException)
+                t = e.getCause();
+            return "Error: " + t.getMessage();
         }
     }
 

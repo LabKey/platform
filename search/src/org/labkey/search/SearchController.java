@@ -138,6 +138,8 @@ public class SearchController extends SpringActionController
                 return null;
             }
 
+            boolean isParticipant = ss.isParticipantId(getUser(), StringUtils.trimToEmpty(query));
+
             String statusMessage = "";
 
             List<SearchService.IndexTask> tasks = ss.getTasks();
@@ -175,9 +177,13 @@ public class SearchController extends SpringActionController
             if (StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
                 return searchBox;
 
-            String results = ss.search(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot(), form.getPage());
+            String results = ss.searchFormatted(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot(), form.getPage());
 
-            return new VBox(searchBox, new HtmlView("<div id='searchResults'>" + results + "</div>"));
+            VBox view = new VBox(searchBox);
+            if (isParticipant)
+                view.addView(new HtmlView(query + " is a ptid"));
+            view.addView(new HtmlView("<div id='searchResults'>" + results + "</div>"));
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)

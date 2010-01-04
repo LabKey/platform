@@ -18,16 +18,23 @@ package org.labkey.search.model;
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.*;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.Path;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.ActionResource;
 
 import javax.servlet.ServletContextEvent;
+import java.io.File;
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -90,6 +97,34 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    final Object _ptidsLock = new Object();
+    HashSet<Pair<String,String>> _ptids = new HashSet<Pair<String,String>>();
+
+
+    public void addParticipantIds(ResultSet ptids) throws SQLException
+    {
+        synchronized (_ptidsLock)
+        {
+            while (ptids.next())
+            {
+                Pair<String,String> p = new Pair<String,String>(ptids.getString(1),ptids.getString(2));
+                if (null==p.first || null==p.second)
+                    continue;
+                _ptids.add(p);
+            }
+        }
+    }
+
+
+    public void addParticipantIds(Collection<Pair<String,String>> ptids)
+    {
+        synchronized (_ptidsLock)
+        {
+            _ptids.addAll(ptids);
+        }
+    }
+
+
     class _IndexTask extends AbstractIndexTask
     {
         _IndexTask(String description)
@@ -137,7 +172,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         @Override
         public void completeItem(Object item, boolean success)
         {
-            _complete = System.currentTimeMillis();
+            if (item instanceof Item)
+                ((Item)item)._complete = System.currentTimeMillis();
             super.completeItem(item, success);
         }
 
@@ -383,14 +419,30 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 boolean success = false;
                 try
                 {
-                    i = _runQueue.take();
-                    while (!_shuttingDown && _itemQueue.size() > 1000)
+                    i = _runQueue.poll(30, TimeUnit.SECONDS);
+                    if (null != i)
                     {
-                        try {Thread.sleep(100);}catch(InterruptedException x){}
+                        while (!_shuttingDown && _itemQueue.size() > 1000)
+                        {
+                            try {Thread.sleep(100);}catch(InterruptedException x){}
+                        }
+                        i._run.run();
                     }
-                    i._run.run();
                     if (_runQueue.isEmpty())
+                    {
+                        HashSet<Pair<String,String>> ptids = null;
+                        synchronized (_ptidsLock)
+                        {
+                            if (!_ptids.isEmpty())
+                            {
+                                ptids = _ptids;
+                                _ptids = new HashSet<Pair<String,String>>();
+                            }
+                        }
+                        if (null != ptids)
+                            indexPtids(ptids);
                         _itemQueue.add(_commitItem);
+                    }
                 }
                 catch (InterruptedException x)
                 {
@@ -609,6 +661,83 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    public boolean isParticipantId(User user, String ptid)
+    {
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.executeQuery(DbSchema.get("search"),
+                "SELECT Container FROM search.ParticipantIndex WHERE ParticipantID=?",
+                new Object[] {ptid});
+            while (rs.next())
+            {
+                String id = rs.getString(1);
+                Container c = ContainerManager.getForId(id);
+                if (null != c && c.hasPermission(user, ReadPermission.class))
+                    return true;
+            }
+            return false;
+        }
+        catch (SQLException x)
+        {
+            _log.error("unexpected error", x);
+            return false;
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
+
+    protected void indexPtids(final Set<Pair<String,String>> ptids) throws IOException, SQLException
+    {
+        TempTableLoader ld = new TempTableLoader(null, false)
+        {
+            @Override
+            protected void initialize() throws IOException
+            {
+            }
+
+            @Override
+            protected void setSource(File inputFile) throws IOException
+            {
+            }
+
+            @Override
+            public List<Map<String, Object>> load() throws IOException
+            {
+                RowMapFactory f = new RowMapFactory("Container", "ParticipantID");
+                ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>(ptids.size());
+                for (Pair<String,String> p : ptids)
+                {
+                    Map m = f.getRowMap(new Object[] {p.first, p.second});
+                    list.add(m);
+                }
+                return list;
+            }
+        };
+        ld.setColumns(new ColumnDescriptor[] {
+            new ColumnDescriptor("Container", String.class),
+            new ColumnDescriptor("ParticipantID", String.class)
+        });
+        DbSchema search = DbSchema.get("search");
+        Table.TempTableInfo tinfo = ld.loadTempTable(search);
+        Date now = new Date(System.currentTimeMillis());
+        Table.execute(search,
+                "UPDATE search.ParticipantIndex SET LastIndexed=? " +
+                "WHERE EXISTS (SELECT ParticipantId FROM " + tinfo.getTempTableName() + " F WHERE F.Container = ParticipantIndex.Container AND F.ParticipantID = ParticipantIndex.ParticipantID)",
+                new Object[] {now});
+        Table.execute(search,
+                "INSERT INTO search.ParticipantIndex (Container, ParticipantID, LastIndexed) " +
+                "SELECT F.Container, F.ParticipantID, ? " +
+                "FROM " + tinfo.getTempTableName() + " F " +
+                "WHERE NOT EXISTS (SELECT ParticipantID FROM search.ParticipantIndex T WHERE F.Container = T.Container AND F.ParticipantID = T.ParticipantID)",
+                new Object[] {now});
+        tinfo.delete();
+    }
+
+
     protected abstract void index(String id, Resource r, Map preprocessProps);
     protected abstract void commit();
     protected abstract void shutDown();
@@ -618,5 +747,42 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     Map<?,?> preprocess(String id, Resource r)
     {
         return emptyMap;
+    }
+
+
+    static void indexMaintenance()
+    {
+        try
+        {
+            DbSchema search = DbSchema.get("search");
+            Table.execute(search,
+                    "DELETE FROM search.ParticipantIndex " +
+                    "WHERE LastIndexed < ?",
+                    new Object[] {new Date(System.currentTimeMillis() - 7*24*60*60*1000L)});
+        }
+        catch (SQLException x)
+        {
+            _log.error("maintenance error", x);
+        }
+    }
+
+
+    static
+    {
+        SystemMaintenance.addTask(new SearchServiceMaintenanceTask());
+    }
+
+
+    private static class SearchServiceMaintenanceTask implements SystemMaintenance.MaintenanceTask
+    {
+        public String getMaintenanceTaskName()
+        {
+            return "Search Service Maintenance";
+        }
+
+        public void run()
+        {
+            indexMaintenance();
+        }
     }
 }

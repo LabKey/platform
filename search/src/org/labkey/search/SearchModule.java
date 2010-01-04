@@ -36,6 +36,7 @@ import java.util.Set;
 import java.io.FilenameFilter;
 import java.io.File;
 
+
 public class SearchModule extends DefaultModule
 {
     public String getName()
@@ -45,7 +46,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 0.03;
+        return 0.04;
     }
 
     public boolean hasScripts()
@@ -53,17 +54,20 @@ public class SearchModule extends DefaultModule
         return true;
     }
 
+
     @Override
     public Set<String> getSchemaNames()
     {
         return Collections.singleton("search");
     }
 
+
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }
 
+    
     protected void init()
     {
         addController("search", SearchController.class);

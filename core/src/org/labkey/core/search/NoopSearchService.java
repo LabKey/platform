@@ -19,12 +19,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.Container;
 
+import java.io.IOException;
 import java.io.Reader;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -159,6 +164,15 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    public void addParticipantIds(Collection<Pair<String,String>> ptids)
+    {
+    }
+
+    public void addParticipantIds(ResultSet ptids) throws SQLException
+    {
+        while (ptids.next()) {};
+    }
+
     public void deleteResource(String identifier, PRIORITY pri)
     {
     }
@@ -167,7 +181,17 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public String search(String queryString, User user, Container root, int page)
+    public Collection<SearchHit> search(String queryString, User user, Container root, int page) throws IOException
+    {
+        return Collections.emptyList();
+    }
+
+    public boolean isParticipantId(User user, String ptid)
+    {
+        return false;
+    }
+
+    public String searchFormatted(String queryString, User user, Container root, int page)
     {
         return null;
     }

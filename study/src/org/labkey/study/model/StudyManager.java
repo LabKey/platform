@@ -3200,7 +3200,7 @@ public class StudyManager
     }
     
 
-    public static void indexParticipants(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public static void indexParticipantView(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         ResultSet rs = null;
         try
@@ -3238,6 +3238,7 @@ public class StudyManager
                 props.put(SearchService.PROPERTY.title.toString(), "Study " + label + " -- Participant " + id);
                 SimpleDocumentResource r = new SimpleDocumentResource(
                         p, "participant:/" + p,
+                        container,
                         "text/plain", id.getBytes(),
                         view, props
                 );
@@ -3255,6 +3256,32 @@ public class StudyManager
         }
     }
 
+    
+    public static void indexParticipants(Container c)
+    {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null == ss)
+            return;
+        
+        ResultSet rs = null;
+        try
+        {
+            Map<String,String> studyLabels = new HashMap<String,String>();
+            SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
+            if (null != c)
+                f.append("WHERE container = '" + c.getId() + "'");
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+            ss.addParticipantIds(rs);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
 
 
     public static class StudyTestCase extends junit.framework.TestCase
