@@ -57,6 +57,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -78,9 +79,12 @@ import org.labkey.study.visitmanager.DateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -89,7 +93,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudyManager
 {
-    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
+    public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
+    public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Participant");
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
     private static StudyManager _instance;
@@ -3185,7 +3190,7 @@ public class StudyManager
                 view.setExtraPath(container);
                 ActionURL source = details.clone().replaceParameter("id",String.valueOf(id));
                 source.setExtraPath(container);
-                ActionResource r = new ActionResource(searchCategory, view, source);
+                ActionResource r = new ActionResource(datasetCategory, view, source);
                 task.addResource(r, SearchService.PRIORITY.item);
             }
         }
@@ -3199,56 +3204,107 @@ public class StudyManager
         }
     }
     
-
-    public static void indexParticipantView(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public static void indexParticipantView(final SearchService.IndexTask task, final Date modifiedSince)
     {
         ResultSet rs = null;
         try
         {
-            Map<String,String> studyLabels = new HashMap<String,String>();
-            SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
-            if (null != c)
-                f.append("WHERE container = '" + c.getId() + "'");
+            SQLFragment f = new SQLFragment("SELECT DISTINCT container FROM study.participant");
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
-
-            ActionURL participant = new ActionURL(StudyController.ParticipantAction.class, null);
-            Map<String,Object> props = new HashMap<String,Object>();
             while (rs.next())
             {
-                String container = rs.getString(1);
-                String label = studyLabels.get(container);
-                if (null == label)
+                final String id = rs.getString(1);
+                final Container c = ContainerManager.getForId(id);
+                if (null == c)
+                    continue;
+                task.addRunnable(new Runnable()
                 {
-                    Container k = ContainerManager.getForId(container);
-                    if (null != k)
+                    public void run()
                     {
-                        Study s = StudyManager.getInstance().getStudy(k);
-                        if (null != s)
-                            label = s.getLabel();
+                        indexParticipantView(task, c, modifiedSince);
                     }
-                    label = StringUtils.trimToEmpty(label);
-                    studyLabels.put(container,label);
-                }
-                String id = rs.getString(2);
-                ActionURL view = participant.clone().replaceParameter("participantId",String.valueOf(id));
-                view.setExtraPath(container);
-                Path p = new Path(container,id);
-                // UNDONE: searchCategory
-                props.put("participantid", id);
-                props.put(SearchService.PROPERTY.title.toString(), "Study " + label + " -- Participant " + id);
-                SimpleDocumentResource r = new SimpleDocumentResource(
-                        p, "participant:/" + p,
-                        container,
-                        "text/plain", id.getBytes(),
-                        view, props
-                );
-                r. getProperties();
-                task.addResource(r, SearchService.PRIORITY.item);
+                }, SearchService.PRIORITY.group);
             }
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+    }
+
+
+    public static void indexParticipantView(SearchService.IndexTask task, Container c, Date modifiedSince)
+    {
+        if (null == c)
+        {
+            indexParticipantView(task, modifiedSince);
+            return;
+        }
+
+        ResultSet rs = null;
+        try
+        {
+            Study study = StudyManager.getInstance().getStudy(c);
+            if (null == study)
+                return;
+
+            SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
+            if (null != c)
+                f.append("WHERE container = '" + c.getId() + "'");
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
+
+            ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
+            indexURL.setExtraPath(c.getId());
+            ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
+            executeURL.setExtraPath(c.getId());
+            
+            Map<String,Object> props = new HashMap<String,Object>();
+
+            while (rs.next())
+            {
+
+                String id = rs.getString(2);
+                ActionURL execute = executeURL.clone().addParameter("participantId",String.valueOf(id));
+                Path p = new Path(c.getId(),id);
+
+                if (0==1)
+                {
+                    // SimpleDocument
+                    props.put(SearchService.PROPERTY.category.toString(), subjectCategory);
+                    props.put("participantid", id);
+                    props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- Participant " + id);
+                    SimpleDocumentResource r = new SimpleDocumentResource(
+                            p, "participant:/" + p,
+                            c.getId(),
+                            "text/plain",
+                            id.getBytes(),
+                            execute, props
+                    );
+                    task.addResource(r, SearchService.PRIORITY.item);
+                }
+                else
+                {
+                    // ActionResource
+                    ActionURL index = indexURL.clone().addParameter("participantId",String.valueOf(id));
+                    ActionResource r = new ActionResource(subjectCategory, execute, index);
+                    task.addResource(r, SearchService.PRIORITY.item);
+                }
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        catch (Throwable x)
+        {
+            _log.error("Unexpected error", x);
+            if (x instanceof RuntimeException)
+                throw (RuntimeException)x;
+            throw new RuntimeException(x);
         }
         finally
         {

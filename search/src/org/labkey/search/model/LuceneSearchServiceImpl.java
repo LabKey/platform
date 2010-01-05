@@ -32,6 +32,7 @@ import org.apache.lucene.util.Version;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -301,6 +302,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         String sort = null;  // TODO: add sort parameter
         int hitsPerPage = 20;
+
+        boolean isParticipantId = isParticipantId(user, queryString);
+        if (isParticipantId)
+        {
+            queryString += " " + SearchService.PROPERTY.category.name() + ":subject^1"; // UNDONE: StudyManager.subjectCategory
+        }
 
         Query query;
         try

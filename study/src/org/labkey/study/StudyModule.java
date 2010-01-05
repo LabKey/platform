@@ -17,6 +17,7 @@
 package org.labkey.study;
 
 import junit.framework.TestCase;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentRunType;
@@ -260,7 +261,10 @@ public class StudyModule extends SpringModule
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
-            ss.addSearchCategory(StudyManager.searchCategory);
+        {
+            ss.addSearchCategory(StudyManager.subjectCategory);
+            ss.addSearchCategory(StudyManager.datasetCategory);
+        }
     }
 
 
@@ -430,10 +434,29 @@ public class StudyModule extends SpringModule
 
     
     @Override
-    public void enumerateDocuments(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public void enumerateDocuments(@NotNull final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {
-        StudyManager.indexDatasets(task, c, modifiedSince);
-        StudyManager.indexParticipantView(task, c, modifiedSince);
-        StudyManager.indexParticipants(c);
+        task.addRunnable(new Runnable()
+        {
+            public void run()
+            {
+                StudyManager.indexDatasets(task, c, modifiedSince);
+            }
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(new Runnable()
+        {
+            public void run()
+            {
+                StudyManager.indexParticipantView(task, c, modifiedSince);            }
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(new Runnable()
+        {
+            public void run()
+            {
+                StudyManager.indexParticipants(c);
+            }
+        }, SearchService.PRIORITY.bulk);
     }
 }

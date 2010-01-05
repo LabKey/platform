@@ -68,6 +68,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.FileSystemFile;
@@ -864,6 +865,45 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class IndexParticipantAction extends ParticipantAction
+    {
+        ParticipantForm _form;
+        Study _study;
+
+        @Override
+        protected Set<Role> getContextualRoles()
+        {
+            if (getViewContext().getUser() == User.getSearchUser())
+                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+            return null;
+        }
+
+        @Override
+        public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            _study = getStudy();
+            if (null == _form.getParticipantId() || null == _study)
+                HttpView.throwNotFound();
+            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setNoIndex();
+            VBox box = new VBox();
+            box.addView(new HtmlView(PageFlowUtil.filter(_study.getLabel() + ": " + _form.getParticipantId())));
+            ModelAndView characteristicsView = StudyManager.getInstance().getParticipantDemographicsView(getContainer(), form, errors);
+            box.addView(characteristicsView);
+            return box;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild(_study.getLabel() + ": " + _form.getParticipantId());
+            return root;
+        }
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
@@ -908,23 +948,25 @@ public class StudyController extends BaseStudyController
                 }
             }
 
+            VBox vbox = new VBox();
+            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId(), form.getQCState());
+            vbox.addView(navView);
+
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
-            ModelAndView participantView;
             if (customParticipantView != null && customParticipantView.isActive())
             {
-                participantView = new HtmlView(customParticipantView.getBody());
+                HtmlView participantView = new HtmlView(customParticipantView.getBody());
+                vbox.addView(participantView);
             }
             else
             {
                 ModelAndView characteristicsView = StudyManager.getInstance().getParticipantDemographicsView(getContainer(), form, errors);
                 ModelAndView dataView = StudyManager.getInstance().getParticipantView(getContainer(), form, errors);
-
-                participantView = new VBox(characteristicsView, dataView);
+                vbox.addView(characteristicsView);
+                vbox.addView(dataView);
             }
 
-            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId(), form.getQCState());
-
-            return new VBox(navView, participantView);
+            return vbox;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -933,6 +975,7 @@ public class StudyController extends BaseStudyController
                     addChild("Participant - " + _bean.getParticipantId());
         }
     }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class UploadVisitMapAction extends FormViewAction<TSVForm>
