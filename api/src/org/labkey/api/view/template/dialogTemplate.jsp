@@ -31,6 +31,7 @@
 <html>
 <head>
     <title><%=h(pageConfig.getTitle())%></title>
+<%= pageConfig.getMetaTags() %>
 <%= PageFlowUtil.getStandardIncludes(c) %>
     <script type="text/javascript" src="<%=contextPath%>/labkey.js?<%=AppProps.getInstance().getServerSessionGUID()%>"></script>
     <script type="text/javascript" language="javascript">

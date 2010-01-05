@@ -16,12 +16,20 @@
 
 package org.labkey.api.view.template;
 
+import org.apache.commons.collections.MultiHashMap;
+import org.apache.commons.collections.MultiMap;
+import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.module.Module;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -67,6 +75,7 @@ public class PageConfig
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
+    private MultiValueMap _meta = new MultiValueMap();
 
     public PageConfig()
     {
@@ -287,4 +296,46 @@ public class PageConfig
     }
 
 
+    public void addMetaTag(String name, String value)
+    {
+        if (!_meta.containsValue(name,value))
+            _meta.put(name,value);
+    }
+    
+
+    public void setMetaTag(String name, String value)
+    {
+        _meta.remove(name);
+        if (null != value)
+            _meta.put(name,value);
+    }
+
+
+    public void setNoIndex()
+    {
+        _meta.remove("ROBOTS", "INDEX");
+        addMetaTag("ROBOTS", "NOINDEX");
+    }
+
+
+    public void setNoFollow()
+    {
+        _meta.remove("ROBOTS", "FOLLOW");
+        addMetaTag("ROBOTS", "NOFOLLOW");
+    }
+
+
+    public String getMetaTags()
+    {
+        if (_meta.isEmpty())
+            return "";
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, Collection<String>>  e : (Set<Map.Entry<String, Collection<String>>>)_meta.entrySet())
+        {
+            sb.append("<META NAME=\"").append(PageFlowUtil.filter(e.getKey())).append("\" CONTENT=\"");
+            sb.append(PageFlowUtil.filter(StringUtils.join(e.getValue(), ", ")));
+            sb.append("\">\n");
+        }
+        return sb.toString();
+    }
 }

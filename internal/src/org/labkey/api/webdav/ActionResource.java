@@ -43,17 +43,17 @@ import java.util.HashMap;
 public class ActionResource extends AbstractDocumentResource
 {
     ActionURL _url;
-    ActionURL _executeUrl;
+    ActionURL _indexUrl;
 
     public ActionResource(String str)
     {
         super(new Path("action",str));
         _url = new ActionURL(str);
         _containerId = getContainerId(_url);
-        _executeUrl = _url.clone();
-        _executeUrl.replaceParameter("_print","1");
-        _executeUrl.setScheme("http");
-        _executeUrl.setHost("localhost");
+        _indexUrl = _url.clone();
+        _indexUrl.replaceParameter("_print","1");
+        _indexUrl.setScheme("http");
+        _indexUrl.setHost("localhost");
     }
 
 
@@ -68,10 +68,10 @@ public class ActionResource extends AbstractDocumentResource
         super(new Path("action",url.getLocalURIString()));
         _url = url;
         _containerId = getContainerId(_url);
-        _executeUrl = source;
-        _executeUrl.replaceParameter("_print","1");
-        _executeUrl.setScheme("http");
-        _executeUrl.setHost("localhost");
+        _indexUrl = source;
+        _indexUrl.replaceParameter("_print","1");
+        _indexUrl.setScheme("http");
+        _indexUrl.setHost("localhost");
         _properties = new HashMap<String,Object>();
         _properties.put(SearchService.PROPERTY.category.toString(), category.getName());
     }
@@ -127,7 +127,7 @@ public class ActionResource extends AbstractDocumentResource
             };
             try
             {
-                _response = ViewServlet.GET(req, _executeUrl, "text/html");
+                _response = ViewServlet.GET(req, _indexUrl, "text/html");
                 return _response;
             }
             catch (IOException x)

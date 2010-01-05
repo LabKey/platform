@@ -24,16 +24,20 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.jsp.PageContext;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.HashMap;
@@ -501,6 +505,34 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         mv.getView().render(mv.getModel(), request, response);
     }
+
+
+    public static void renderToStream(ModelAndView mv, final OutputStream out) throws Exception
+    {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse(){
+            @Override
+            public ServletOutputStream getOutputStream()
+            {
+                return new ServletOutputStream(){
+                    @Override
+                    public void write(int b) throws IOException
+                    {
+                        out.write(b);
+                    }
+                };
+            }
+
+            @Override
+            public void setStatus(int status)
+            {
+                if (status != HttpServletResponse.SC_OK)
+                    throw new RuntimeException("Unexpected Status: " + status);
+            }
+        };
+        include(mv, request, response);
+    }
+    
 
 
     /**
