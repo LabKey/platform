@@ -3177,6 +3177,7 @@ public class AdminController extends SpringActionController
     public static class DataCheckForm
     {
         private String _dbSchema = "";
+        private boolean _full = false;
 
         public List<Module> modules = ModuleLoader.getInstance().getModules();
         public DataCheckForm(){}
@@ -3184,6 +3185,8 @@ public class AdminController extends SpringActionController
         public List<Module> getModules() { return modules;  }
         public String getDbSchema() { return _dbSchema; }
         public void setDbSchema(String dbSchema){ _dbSchema = dbSchema; }
+        public boolean getFull() { return _full; }
+        public void setFull(boolean full) { _full = full; }
     }
 
 
@@ -3193,10 +3196,10 @@ public class AdminController extends SpringActionController
         public void export(DataCheckForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             String dbSchemaName = form.getDbSchema();
-            if (null == dbSchemaName)
+            if (null == dbSchemaName || dbSchemaName.length() == 0)
                 HttpView.throwNotFound("Must specify dbSchema parameter");
 
-            boolean bFull = false;    // TODO: Pass in via form?
+            boolean bFull = form.getFull();
 
             TablesDocument tdoc = TableXmlUtils.getXmlDocumentFromMetaData(dbSchemaName, bFull);
             StringWriter sw = new StringWriter();
