@@ -37,7 +37,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapParticipantColumn("PTID").setKeyField(true);
         addWrapColumn(_rootTable.getColumn("Container")).setFk(new ContainerForeignKey());
 
-        addSpecimenVisitColumn(_schema.getStudy().isDateBased());
+        addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
 
         ColumnInfo pvColumn = new AliasedColumn(this, "ParticipantVisit", _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
         pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")

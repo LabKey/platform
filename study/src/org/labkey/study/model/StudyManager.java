@@ -51,13 +51,9 @@ import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.Visit;
+import org.labkey.api.study.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -75,16 +71,14 @@ import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.visitmanager.DateVisitManager;
+import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
+import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -275,10 +269,10 @@ public class StudyManager
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
-        if (oldStudy.isDateBased()  && !oldStartDate.equals(study.getStartDate()))
+        if (oldStudy.getTimepointType() == TimepointType.RELATIVE_DATE && !oldStartDate.equals(study.getStartDate()))
         {
             // start date has changed, and datasets may use that value. Uncache.
-            DateVisitManager visitManager = (DateVisitManager) getVisitManager(study);
+            RelativeDateVisitManager visitManager = (RelativeDateVisitManager) getVisitManager(study);
             visitManager.recomputeDates(oldStartDate, user);
             clearCaches(study.getContainer(), true);
         }
@@ -532,8 +526,13 @@ public class StudyManager
         return getVisits(study, null, null, order);
     }
 
+    private VisitImpl[] EMPTY_VISIT_ARRAY = new VisitImpl[0];
+
     public VisitImpl[] getVisits(Study study, CohortImpl cohort, User user, Visit.Order order)
     {
+        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+            return EMPTY_VISIT_ARRAY;
+
         try
         {
             SimpleFilter filter = null;
@@ -2285,7 +2284,7 @@ public class StudyManager
                     // since there is usually only one entry for demographic data per dataset
                     if (def.isDemographicData())
                     {
-                        if (study.isDateBased())
+                        if (study.getTimepointType() != TimepointType.VISIT)
                         {
                             if (col.getName().equalsIgnoreCase("Date"))
                             {
@@ -2355,7 +2354,7 @@ public class StudyManager
 
                 if (!def.isDemographicData())
                 {
-                    error.append(study.isDateBased() ? "/Date" : "/Visit");
+                    error.append(study.getTimepointType() != TimepointType.RELATIVE_DATE ? "/Date" : "/Visit");
 
                     if (def.getKeyPropertyName() != null)
                         error.append("/").append(def.getKeyPropertyName()).append(" Triple.  ");
@@ -2376,7 +2375,7 @@ public class StudyManager
                     String err = "Duplicate: Participant = " + m.get(participantIdURI);
                     if (!def.isDemographicData())
                     {
-                        if (study.isDateBased())
+                        if (study.getTimepointType() != TimepointType.VISIT)
                             err = err + "Date = " + m.get(visitDateURI);
                         else
                             err = err + ", VisitSequenceNum = " + m.get(visitSequenceNumURI);
@@ -2692,10 +2691,16 @@ public class StudyManager
 
     public VisitManager getVisitManager(StudyImpl study)
     {
-        if (!study.isDateBased())
-            return new SequenceVisitManager(study);
-        else
-            return new DateVisitManager(study);
+        switch (study.getTimepointType())
+        {
+            case VISIT:
+                return new SequenceVisitManager(study);
+            case ABSOLUTE_DATE:
+                return new AbsoluteDateVisitManager(study);
+            case RELATIVE_DATE:
+            default:
+                return new RelativeDateVisitManager(study);
+        }
     }
 
     private static final String STUDY_FORMAT_STRINGS = "DefaultStudyFormatStrings";
@@ -2849,7 +2854,7 @@ public class StudyManager
         {
             String ptid = String.valueOf(map.get(participantURI));
             double visit;
-            if (_study.isDateBased())
+            if (_study.getTimepointType() != TimepointType.VISIT)
             {
                 Date date = (Date)(ConvertUtils.lookup(Date.class).convert(Date.class, map.get(visitDateURI)));
                 if (null != date)
@@ -2879,7 +2884,7 @@ public class StudyManager
             String uri = getURI(map);
             String ptid = String.valueOf(map.get(participantURI));
             double visit;
-            if (_study.isDateBased())
+            if (_study.getTimepointType() != TimepointType.VISIT)
             {
                 Date date = (Date)(ConvertUtils.lookup(Date.class).convert(Date.class, map.get(visitDateURI)));
                 if (null != date)
@@ -2896,7 +2901,7 @@ public class StudyManager
             Object modified = map.get(modifiedURI);
             Long timeModified = null == modified ? _lastModified : toMs(modified);
             Long visitDate = toMs(map.get(_visitDatePropertyURI));
-            assert _dataset.isDemographicData() || !_study.isDateBased() || null != visitDate;
+            assert _dataset.isDemographicData() || _study.getTimepointType() == TimepointType.VISIT || null != visitDate;
             String sourceLsid = (String) map.get(sourceLsidURI);
             Integer qcState = (Integer) map.get(qcStateURI);
 

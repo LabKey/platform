@@ -180,7 +180,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                                           List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         StudyImpl targetStudy = StudyManager.getInstance().getStudy(targetContainer);
-        assert verifyRequiredColumns(dataMaps, targetStudy.isDateBased());
+        assert verifyRequiredColumns(dataMaps, targetStudy.getTimepointType());
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean ownsTransaction = !scope.isTransactionActive();
 
@@ -324,7 +324,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return lsidMap;
     }
 
-    private boolean verifyRequiredColumns(List<Map<String, Object>> dataMaps, boolean isDateBased)
+    private boolean verifyRequiredColumns(List<Map<String, Object>> dataMaps, TimepointType timepointType)
     {
         for (Map<String, Object> dataMap : dataMaps)
         {
@@ -332,8 +332,8 @@ public class AssayPublishManager implements AssayPublishService.Service
             for (String key : dataMap.keySet())
                 lcaseSet.add(key.toLowerCase());
             assert lcaseSet.contains("participantid") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
-            assert isDateBased || lcaseSet.contains("sequencenum") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
-            assert !isDateBased || lcaseSet.contains("date") : "Publishable assay results must include participantid, date, and sourcelsid columns.";
+            assert timepointType != TimepointType.VISIT || lcaseSet.contains("sequencenum") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
+            assert timepointType != TimepointType.RELATIVE_DATE || lcaseSet.contains("date") : "Publishable assay results must include participantid, date, and sourcelsid columns.";
             //assert lcaseSet.contains("sourcelsid") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
         }
         return true;
@@ -686,7 +686,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         if (null == study)
             throw new IllegalArgumentException("No study in container: " + container.getPath());
 
-        return study.isDateBased() ? TimepointType.DATE : TimepointType.VISIT;
+        return study.getTimepointType();
     }
 
     public String getStudyName(Container container)

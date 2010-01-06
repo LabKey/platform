@@ -20,6 +20,7 @@ import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
@@ -56,7 +57,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
             throw new IllegalStateException("Could not find dataset: " + domain.getName());
 
 
-        if (study.isDateBased())
+        if (study.getTimepointType() != TimepointType.VISIT)
         {
             // We've told the user to select their "Visit Date",
             // but it's really called "Date" in the database.

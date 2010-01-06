@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
@@ -92,7 +93,7 @@
            <td class="labkey-form-label">Cohort</td><td><%=h(cohortMap.get(dataset.getCohortId()))%></td>
         </tr>
         <%
-            if (!study.isDateBased()) //TODO: Allow date column to change even in date-based studies...
+            if (study.getTimepointType() == TimepointType.VISIT) //TODO: Allow date column to change even in date-based studies...
             {
         %>
         <tr>

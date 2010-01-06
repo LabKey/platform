@@ -4325,7 +4325,7 @@ public class SpecimenController extends BaseStudyController
             }
 
             List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().isDateBased(), "ParticipantId");
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(), "ParticipantId");
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));

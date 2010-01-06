@@ -34,6 +34,7 @@
 <%@ page import="org.labkey.study.importer.StudyReload" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -101,11 +102,13 @@
         <td>This study defines <%= getDataSets().length %> Datasets</td>
         <td><%= textLink("Manage Datasets", "manageTypes.view") %></td>
     </tr>
+    <% if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE) { %>
     <tr>
         <th align="left"><%= visitLabel %></th>
         <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>
         <td><%= textLink("Manage " + visitLabel, "manageVisits.view") %></td>
     </tr>
+    <% } %>
     <tr>
         <th align="left">Locations</th>
         <td>This study references <%= getSites().length %> labs/sites/repositories</td>

@@ -49,12 +49,13 @@ public class DatasetImporter implements EntryPoint
         List<String> columnsToMap = new ArrayList<String>();
         columnsToMap.add("Participant ID");
 
-        String dateBasedString = PropertyUtil.getServerProperty("dateBased");
-        boolean isDateBased = Boolean.parseBoolean(dateBasedString);
-        if (isDateBased)
+        String timepointTypeString = PropertyUtil.getServerProperty("timepointType");
+        if ("RELATIVE_DATE".equals(timepointTypeString))
             columnsToMap.add("Visit Date");
-        else
+        else if ("VISIT".equals(timepointTypeString))
             columnsToMap.add("Sequence Num");
+        else
+            columnsToMap.add("Date");
 
         Set<String> baseColumnNames = new HashSet<String>();
         String baseColNamesString = PropertyUtil.getServerProperty("baseColumnNames");

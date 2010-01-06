@@ -491,8 +491,7 @@ public class DatasetController extends BaseStudyController
 
             props.put("typeURI", def.getTypeURI());
 
-            Boolean isDateBased = getStudy().isDateBased();
-            props.put("dateBased", isDateBased.toString());
+            props.put("timepointType", getStudy().getTimepointType().toString());
 
             // Cancel should delete the dataset
             ActionURL cancelURL = new ActionURL(

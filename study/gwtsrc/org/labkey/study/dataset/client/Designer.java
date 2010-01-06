@@ -48,7 +48,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 {
     private String _returnURL;
     private String _cancelURL;
-    private boolean _isDateBased;
+    private String _timepointType;
 
     private GWTDataset _dataset;
     private GWTDomain _domain;
@@ -118,9 +118,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         String typeURI = PropertyUtil.getServerProperty("typeURI");
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         _cancelURL = PropertyUtil.getServerProperty("cancelURL");
-        String dateBased = PropertyUtil.getServerProperty("dateBased");
-        if (dateBased != null)
-            _isDateBased = Boolean.valueOf(dateBased).booleanValue();
+        _timepointType = PropertyUtil.getServerProperty("timepointType");
 
         _root = RootPanel.get("org.labkey.study.dataset.Designer-Root");
 
@@ -724,7 +722,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             else
                 _table.setWidget(row, 1, new HTMLPanel("<em>No cohorts defined</em>"));
 
-            if (!_isDateBased)
+            if ("VISIT".equals(_timepointType))
             {
                 BoundListBox dsVisitDate = new BoundListBox(_dataset.getVisitDateMap(), _dataset.getVisitDatePropertyName(), new WidgetUpdatable()
                 {

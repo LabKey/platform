@@ -45,7 +45,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         pvColumn.setIsUnselectable(true);
         addColumn(pvColumn);
 
-        addSpecimenVisitColumn(_schema.getStudy().isDateBased());
+        addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
         addWrapColumn(_rootTable.getColumn("Volume"));
         addSpecimenTypeColumns();
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));

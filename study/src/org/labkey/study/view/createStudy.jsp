@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -40,8 +41,9 @@
         </tr>
             <tr>
                 <th align="left">Timepoints <%=helpPopup("Timepoint Styles", "<p>Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.</p><p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></th>
-                <td align="left"><input type="radio" name="dateBased" value="true" <%=form.isDateBased() ? "CHECKED" : ""%>> Dates &nbsp;&nbsp;
-                    <input type="radio" name="dateBased" value="false" <%=form.isDateBased() ? "" : "CHECKED"%>> Assigned Visits
+                <td align="left">
+                    <input type="radio" name="timepointType" value="<%=TimepointType.RELATIVE_DATE%>" <%=form.getTimepointType() == TimepointType.RELATIVE_DATE ? "CHECKED" : ""%>> Dates &nbsp;&nbsp;
+                    <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>" <%=form.getTimepointType() == TimepointType.VISIT ? "" : "CHECKED"%>> Assigned Visits
                 </td>
             </tr>
         <tr>

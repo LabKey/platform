@@ -47,6 +47,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -142,7 +143,7 @@
             filter.addCondition("ParticipantId", bean.getParticipantId());
 
             Sort sort;
-            if (study.isDateBased())
+            if (study.getTimepointType() != TimepointType.VISIT)
             {
                 sort = new Sort("-Date");
             }

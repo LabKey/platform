@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.xml.StudyDocument;
@@ -41,6 +42,12 @@ class VisitImporter
 
         if (null != visitsXml)
         {
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+            {
+                errors.reject("uploadVisitMap", "Can't import visits for a non-timepoint based study.");
+                return false;
+            }
+
             File visitMap = ctx.getStudyFile(root, root, visitsXml.getFile());
             ctx.getLogger().info("Loading visit map from " + StudyImportException.getRelativePath(root, visitMap));
             String content = PageFlowUtil.getFileContentsAsString(visitMap);

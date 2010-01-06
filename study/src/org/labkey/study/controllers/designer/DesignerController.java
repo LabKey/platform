@@ -25,7 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -42,6 +41,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.files.FileContentService;
@@ -377,7 +377,7 @@ public class DesignerController extends SpringActionController
                     inputWorkbook = null;
             }
 
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(true, "Subject Id");
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.RELATIVE_DATE, "Subject Id");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())

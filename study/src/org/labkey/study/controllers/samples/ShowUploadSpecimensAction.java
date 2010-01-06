@@ -27,6 +27,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
@@ -124,7 +125,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         Set<Object> vialIds = new HashSet<Object>();
         Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
         Map<Object, Pair<Object,Object>> sampleIdMap = new HashMap<Object, Pair<Object, Object>>();
-        String visitKey = study.isDateBased() ? SimpleSpecimenImporter.DRAW_TIMESTAMP : SimpleSpecimenImporter.VISIT;
+        String visitKey = study.getTimepointType() == TimepointType.VISIT ? SimpleSpecimenImporter.VISIT : SimpleSpecimenImporter.DRAW_TIMESTAMP;
 
         if (specimenRows.size() == 0)
             errors.reject(SpringActionController.ERROR_MSG, "No specimen data was provided.");
@@ -166,7 +167,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " duplicate vial id " + vialId);
 
             Set<String> requiredFields = PageFlowUtil.set(SimpleSpecimenImporter.DRAW_TIMESTAMP);
-            if (!study.isDateBased())
+            if (study.getTimepointType() == TimepointType.VISIT)
                 requiredFields.add(SimpleSpecimenImporter.VISIT);
             for (String col : requiredFields)
             {

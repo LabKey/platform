@@ -23,6 +23,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
@@ -314,7 +315,7 @@ public class StudyDesignManager
         //Grab study info from XML and use it here
         StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());
         StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
-        study.setDateBased(true);
+        study.setTimepointType(TimepointType.RELATIVE_DATE);
         study.setStartDate(startDate);
         study = StudyManager.getInstance().createStudy(user, study);
 

@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
@@ -99,10 +100,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "Dataset"
     };
 
-    private static final String[] DEFAULT_DATE_FIELD_NAMES_ARRAY = new String[]
+    private static final String[] DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY = new String[]
     {
         "Date",
         "VisitDate",
+    };
+
+    private static final String[] DEFAULT_RELATIVE_DATE_FIELD_NAMES_ARRAY = new String[]
+    {
         "Day"
     };
 
@@ -121,14 +126,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "Dataset"
     };
 
-    private static final CaseInsensitiveHashSet DEFAULT_DATE_FIELDS;
+    private static final CaseInsensitiveHashSet DEFAULT_ABSOLUTE_DATE_FIELDS;
+    private static final CaseInsensitiveHashSet DEFAULT_RELATIVE_DATE_FIELDS;
     private static final CaseInsensitiveHashSet DEFAULT_VISIT_FIELDS;
     private static final CaseInsensitiveHashSet HIDDEN_DEFAULT_FIELDS = new CaseInsensitiveHashSet(HIDDEN_DEFAULT_FIELD_NAMES_ARRAY);
 
     static
     {
-        DEFAULT_DATE_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
-        DEFAULT_DATE_FIELDS.addAll(DEFAULT_DATE_FIELD_NAMES_ARRAY);
+        DEFAULT_ABSOLUTE_DATE_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+        DEFAULT_ABSOLUTE_DATE_FIELDS.addAll(DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY);
+
+        DEFAULT_RELATIVE_DATE_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+        DEFAULT_RELATIVE_DATE_FIELDS.addAll(DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY);
+        DEFAULT_RELATIVE_DATE_FIELDS.addAll(DEFAULT_RELATIVE_DATE_FIELD_NAMES_ARRAY);
 
         DEFAULT_VISIT_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
         DEFAULT_VISIT_FIELDS.addAll(DEFAULT_VISIT_FIELD_NAMES_ARRAY);
@@ -153,13 +163,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public static boolean isDefaultFieldName(String fieldName, Study study)
     {
-        if (study.isDateBased())
+        switch (study.getTimepointType())
         {
-            return DEFAULT_DATE_FIELDS.contains(fieldName);
-        }
-        else
-        {
-            return DEFAULT_VISIT_FIELDS.contains(fieldName);
+            case VISIT:
+                return DEFAULT_VISIT_FIELDS.contains(fieldName);
+            case ABSOLUTE_DATE:
+                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
+            case RELATIVE_DATE:
+            default:
+                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
         }
     }
 
@@ -170,11 +182,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public Set<String> getDefaultFieldNames()
     {
-        Set<String> fieldNames;
-        if (getStudy().isDateBased())
-            fieldNames = DEFAULT_DATE_FIELDS;
-        else
-            fieldNames = DEFAULT_VISIT_FIELDS;
+        TimepointType timepointType = getStudy().getTimepointType();
+        Set<String> fieldNames =
+                timepointType == TimepointType.VISIT ? DEFAULT_VISIT_FIELDS :
+                timepointType == TimepointType.ABSOLUTE_DATE ? DEFAULT_ABSOLUTE_DATE_FIELDS:
+                DEFAULT_RELATIVE_DATE_FIELDS;
 
         return Collections.unmodifiableSet(fieldNames);
     }
@@ -595,7 +607,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public String getVisitDatePropertyName()
     {
-        if (null == _visitDatePropertyName && getStudy().isDateBased())
+        if (null == _visitDatePropertyName && getStudy().getTimepointType() != TimepointType.VISIT)
             _visitDatePropertyName = "Date"; //Todo: Allow alternate names
         return _visitDatePropertyName;
     }
@@ -615,7 +627,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         keyNames.add("ParticipantId");
         if (!isDemographicData())
         {
-            keyNames.add(getStudy().isDateBased() ? "Date" : "SequenceNum");
+            keyNames.add(getStudy().getTimepointType() == TimepointType.VISIT ? "SequenceNum" : "Date");
         }
         if (getKeyPropertyName() != null)
             keyNames.add(getKeyPropertyName());
@@ -712,7 +724,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
             sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(c, SpecimenService.CompletionType.VisitId));
 
-            if (study.isDateBased())
+            if (study.getTimepointType() != TimepointType.VISIT)
             {
                 sequenceNumCol.setNullable(true);
                 sequenceNumCol.setHidden(true);
@@ -722,15 +734,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 visitDateCol.setNullable(false);
                 columns.add(visitDateCol);
 
-                ColumnInfo dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
-                dayColumn.setUserEditable(false);
-                columns.add(dayColumn);
+                ColumnInfo dayColumn = null;
+                if (study.getTimepointType() == TimepointType.RELATIVE_DATE)
+                {
+                    dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
+                    dayColumn.setUserEditable(false);
+                    columns.add(dayColumn);
+                }
 
                 if (def.isDemographicData())
                 {
                     visitDateCol.setHidden(true);
                     visitDateCol.setUserEditable(false);
-                    dayColumn.setHidden(true);
+                    if (dayColumn != null)
+                        dayColumn.setHidden(true);
                 }
             }
 

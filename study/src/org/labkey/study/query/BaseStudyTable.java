@@ -18,6 +18,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -88,11 +89,11 @@ public abstract class BaseStudyTable extends FilteredTable
         return addColumn(typeColumn);
     }
 
-    protected void addSpecimenVisitColumn(boolean dateBased)
+    protected void addSpecimenVisitColumn(TimepointType timepointType)
     {
-        ColumnInfo visitColumn;
+        ColumnInfo visitColumn = null;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
-        if (dateBased)
+        if (timepointType == TimepointType.RELATIVE_DATE)
         {
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
             // could change to visitrowid but that changes datatype and displays rowid
@@ -101,23 +102,30 @@ public abstract class BaseStudyTable extends FilteredTable
             visitColumn.setLabel("Timepoint");
             visitDescriptionColumn.setHidden(true);
         }
-        else
+        else if (timepointType == TimepointType.VISIT)
         {
             visitColumn = addColumn(new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue")));
         }
-
-        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
+        else
         {
-            public TableInfo getLookupTableInfo()
+            // No Timepoint or Visit column
+        }
+
+        if (visitColumn != null)
+        {
+            LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
             {
-                VisitTable visitTable = new VisitTable(_schema);
-                visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
-                return visitTable;
-            }
-        };
-        visitFK.setJoinOnContainer(true);
-        visitColumn.setFk(visitFK);
-        visitColumn.setKeyField(true);
+                public TableInfo getLookupTableInfo()
+                {
+                    VisitTable visitTable = new VisitTable(_schema);
+                    visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
+                    return visitTable;
+                }
+            };
+            visitFK.setJoinOnContainer(true);
+            visitColumn.setFk(visitFK);
+            visitColumn.setKeyField(true);
+        }
     }
 
     private static class DateVisitColumn extends ExprColumn

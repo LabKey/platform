@@ -30,6 +30,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -70,7 +71,11 @@
     exportSchemaURL.addParameter("datasetId", dataset.getDataSetId());
 
     %><br><%=PageFlowUtil.generateButton("View Dataset Data", viewDatasetURL)%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL)%><%
+    if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+    {
+    %>&nbsp;
+    <%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL)%><%
+    }
     %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL)%><%
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
@@ -103,6 +108,7 @@ if (!pipelineSet)
     me.include(typeSummary, out);
     %>
 </td>
+<% if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE) { %>
 <td><img src="<%=contextPath%>/_.gif" height=1 width=10 alt=""></td>
 <td valign=top>
 <% WebPartView.startTitleFrame(out, "Visit Map", null, null, null); %>
@@ -122,5 +128,7 @@ if (!pipelineSet)
     }
 %></table>
 <% WebPartView.endTitleFrame(out); %>
-</td></tr>
+</td>
+<% } %>
+</tr>
 </table>

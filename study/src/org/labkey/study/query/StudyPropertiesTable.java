@@ -16,8 +16,10 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -25,6 +27,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,8 +52,13 @@ public class StudyPropertiesTable extends BaseStudyTable
         containerColumn.setUserEditable(false);
         containerColumn.setKeyField(true);
 
-        ColumnInfo dateBasedColumn = addWrapColumn(_rootTable.getColumn("dateBased"));
+        ColumnInfo timepointTypeColumn = addWrapColumn(_rootTable.getColumn("timepointType"));
+        timepointTypeColumn.setUserEditable(false);
+
+        ColumnInfo dateBasedColumn = new ExprColumn(this, "dateBased", new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN TRUE ELSE FALSE END)"), Types.BOOLEAN, timepointTypeColumn);
         dateBasedColumn.setUserEditable(false);
+        dateBasedColumn.setHidden(true);
+        dateBasedColumn.setDescription("Deprecated.  Use 'timepointType' column instead.");
 
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setUserEditable(false);

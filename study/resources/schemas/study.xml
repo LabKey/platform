@@ -29,8 +29,8 @@
       <ns:column columnName="entityid">
         <ns:description>A unique string ID for each study.</ns:description>
       </ns:column>
-      <ns:column columnName="DateBased">
-        <ns:description>Whether each study is date based (versus visit based).</ns:description>
+      <ns:column columnName="TimepointType">
+        <ns:description>Whether the study uses visits or relative or absolute dates.  TimepointType may be VISIT, RELATIVE_DATE, or ABSOLUTE_DATE.</ns:description>
       </ns:column>
       <ns:column columnName="StartDate">
         <ns:description>The start date of each study.  Note that participants can also have start dates.</ns:description>

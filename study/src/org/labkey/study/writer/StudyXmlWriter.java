@@ -24,6 +24,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.TimepointType;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -62,7 +63,7 @@ class StudyXmlWriter implements InternalStudyWriter
 
         // Study attributes
         studyXml.setLabel(study.getLabel());
-        studyXml.setDateBased(study.isDateBased());
+        studyXml.setTimepointType(TimepointType.Enum.forString(study.getTimepointType().toString()));
 
         if (null != study.getStartDate())
         {

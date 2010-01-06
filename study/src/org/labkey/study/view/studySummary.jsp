@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
 <%@ page import="org.labkey.api.study.Visit" %><%@ page import="org.labkey.api.pipeline.PipelineService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
@@ -60,7 +61,7 @@ if (null == getStudy())
     }
     return;
 }
-    boolean dateBased = getStudy().isDateBased();
+    TimepointType timepointType = getStudy().getTimepointType();
     SecurityPolicy policy = c.getPolicy();
     boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, getStudy().getContainer());
@@ -71,9 +72,11 @@ if (null == getStudy())
     <tr><td valign="top">This study defines
 <ul>
     <li><%= getDataSets().length %> Datasets (Forms and Assays) &nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
-    <li><%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>&nbsp;<%=!dateBased && isAdmin && getVisits(Visit.Order.DISPLAY).length < 0 ?
+    <% if (timepointType != TimepointType.ABSOLUTE_DATE) { %>
+    <li><%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>&nbsp;<%=timepointType == TimepointType.VISIT && isAdmin && getVisits(Visit.Order.DISPLAY).length < 0 ?
                         textLink("Import Visit Map", url.setAction(StudyController.UploadVisitMapAction.class)) : "" %><%=
                         isAdmin ? textLink("Manage " + visitLabel, url.setAction(StudyController.ManageVisitsAction.class)) : "" %></li>
+    <% } %>
     <li><%= getSites().length %> Labs and Sites&nbsp;<%= isAdmin ? textLink("Manage Labs/Sites", url.setAction(StudyController.ManageSitesAction.class)) : ""%></li>
 <%
     if (StudyManager.getInstance().showCohorts(c, user))

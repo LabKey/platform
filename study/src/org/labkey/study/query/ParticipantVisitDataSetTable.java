@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
@@ -44,6 +45,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         super(StudySchema.getInstance().getSchema());
         StudyManager studyManager = StudyManager.getInstance();
         _study = studyManager.getStudy(schema.getContainer());
+        assert _study.getTimepointType() != TimepointType.ABSOLUTE_DATE;
         _colParticipantId = colParticipantId;
         _dataset = dsd;
         _schema = schema;
@@ -189,7 +191,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 {
                     DataSetTable dsTable = new DataSetTable(_schema, _dataset);
                     dsTable.hideParticipantLookups();
-                    if (_study.isDateBased())
+                    if (_study.getTimepointType() == TimepointType.RELATIVE_DATE)
                     {
                         SQLFragment sequenceSelector = new SQLFragment("SequenceNum = (select pv.sequencenum\n" +
                             "from \n" +
@@ -207,9 +209,13 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
                         dsTable.addCondition(sequenceSelector);
                     }
-                    else
+                    else if (_study.getTimepointType() == TimepointType.VISIT)
                     {
                         dsTable.addCondition(new SQLFragment("SequenceNum=" + sequenceNum));
+                    }
+                    else
+                    {
+                        // XXX: non-timepoint based studies?
                     }
                     return dsTable;
                 }

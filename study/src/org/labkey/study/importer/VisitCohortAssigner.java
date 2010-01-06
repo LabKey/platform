@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.study.model.CohortImpl;
@@ -50,6 +51,9 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
         if (null != visitsXml)
         {
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                throw new StudyImportException("Can't import visits for a non-timepoint based study.");
+            
             File visitMap = ctx.getStudyFile(root, root, visitsXml.getFile());
 
             StudyManager studyManager = StudyManager.getInstance();

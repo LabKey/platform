@@ -281,6 +281,7 @@ core/resources/schemas/dbscripts/postgresql/core-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.31-9.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.32-9.33.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.33-9.34.sql -text
+core/resources/schemas/dbscripts/postgresql/core-9.34-9.35.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/bootstrap.sql -text
@@ -357,6 +358,7 @@ core/resources/schemas/dbscripts/sqlserver/core-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.31-9.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.32-9.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.33-9.34.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-9.34-9.35.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/bootstrap.sql -text
@@ -1993,6 +1995,7 @@ study/resources/schemas/dbscripts/postgresql/study-9.22-9.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.24-9.25.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.25-9.26.sql -text
+study/resources/schemas/dbscripts/postgresql/study-9.30-9.301.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2115,6 +2118,7 @@ study/resources/schemas/dbscripts/sqlserver/study-9.22-9.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.24-9.25.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.25-9.26.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-9.30-9.301.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -2549,7 +2553,8 @@ study/src/org/labkey/study/view/uploadVisitMap.jsp -text
 study/src/org/labkey/study/view/viewPreferences.jsp -text
 study/src/org/labkey/study/view/visitOrder.jsp -text
 study/src/org/labkey/study/view/visitVisibility.jsp -text
-study/src/org/labkey/study/visitmanager/DateVisitManager.java -text
+study/src/org/labkey/study/visitmanager/AbsoluteDateVisitManager.java -text
+study/src/org/labkey/study/visitmanager/RelativeDateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text
 study/src/org/labkey/study/visitmanager/VisitManager.java -text
 study/src/org/labkey/study/writer/AbstractContext.java -text

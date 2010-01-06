@@ -17,6 +17,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.*;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
@@ -63,8 +64,10 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.isSetLabel())
                     studyForm.setLabel(studyXml.getLabel());
 
-                if (studyXml.isSetDateBased())
-                    studyForm.setDateBased(studyXml.getDateBased());
+                if (studyXml.isSetTimepointType())
+                    studyForm.setTimepointType(TimepointType.valueOf(studyXml.getTimepointType().toString()));
+                else if (studyXml.isSetDateBased())
+                    studyForm.setTimepointType(studyXml.getDateBased() ? TimepointType.RELATIVE_DATE : TimepointType.VISIT);
 
                 if (studyXml.isSetStartDate())
                     studyForm.setStartDate(studyXml.getStartDate().getTime());
@@ -85,8 +88,10 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.isSetLabel())
                     study.setLabel(studyXml.getLabel());
 
-                if (studyXml.isSetDateBased())
-                    study.setDateBased(studyXml.getDateBased());
+                if (studyXml.isSetTimepointType())
+                    study.setTimepointType(TimepointType.valueOf(studyXml.getTimepointType().toString()));
+                else if (studyXml.isSetDateBased())
+                    study.setTimepointType(studyXml.getDateBased() ? TimepointType.RELATIVE_DATE : TimepointType.VISIT);
 
                 if (studyXml.isSetStartDate())
                     study.setStartDate(studyXml.getStartDate().getTime());

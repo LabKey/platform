@@ -112,7 +112,7 @@ public class StudyModule extends SpringModule
 
     public double getVersion()
     {
-        return 9.30;
+        return 9.301;
     }
 
     protected void init()
@@ -145,6 +145,7 @@ public class StudyModule extends SpringModule
         Search.register(new StudySearch());
 
         EnumConverter.registerEnum(SecurityType.class);
+        EnumConverter.registerEnum(TimepointType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
 
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());

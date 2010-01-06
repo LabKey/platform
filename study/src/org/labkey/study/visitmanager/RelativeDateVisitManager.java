@@ -31,9 +31,9 @@ import java.util.*;
 * User: brittp
 * Created: Feb 29, 2008 11:23:37 AM
 */
-public class DateVisitManager extends VisitManager
+public class RelativeDateVisitManager extends VisitManager
 {
-    public DateVisitManager(StudyImpl study)
+    public RelativeDateVisitManager(StudyImpl study)
     {
         super(study);
     }

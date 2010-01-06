@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
@@ -79,6 +80,11 @@ public class VisitMapImporter
 
     public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, StudyImportException
     {
+        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+        {
+            errors.add("Can't import visits for non-timepoint based study.");
+            return false;
+        }
         if (content == null)
         {
             errors.add("Visit map is empty");

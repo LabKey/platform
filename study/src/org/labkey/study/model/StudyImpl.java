@@ -25,6 +25,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.GUID;
 import org.labkey.study.SampleManager;
@@ -45,7 +46,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX);
 
     private String _label;
-    private boolean _dateBased;
+    private TimepointType _timepointType;
     private Date _startDate;
     private SecurityType _securityType = SecurityType.BASIC_READ; // Default value. Not allowed to be null
     private String _participantCohortProperty;
@@ -203,15 +204,15 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return true;
     }
 
-    public boolean isDateBased()
+    public TimepointType getTimepointType()
     {
-        return _dateBased;
+        return _timepointType;
     }
 
-    public void setDateBased(boolean dateBased)
+    public void setTimepointType(TimepointType timepointType)
     {
         verifyMutability();
-        _dateBased = dateBased;
+        _timepointType = timepointType;
     }
 
     public SecurityType getSecurityType()

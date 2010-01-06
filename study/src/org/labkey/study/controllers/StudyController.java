@@ -291,7 +291,7 @@ public class StudyController extends BaseStudyController
                     "studyId", ""+study.getRowId(),
                     "datasetId", ""+form.getDatasetId(),
                     "typeURI", def.getTypeURI(),
-                    "dateBased", ""+study.isDateBased(),
+                    "timepointType", ""+study.getTimepointType(),
                     "returnURL", new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
             HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
@@ -600,6 +600,7 @@ public class StudyController extends BaseStudyController
             VisitImpl visit = null;
             if (_visitId != 0)
             {
+                assert study.getTimepointType() != TimepointType.ABSOLUTE_DATE;
                 visit = StudyManager.getInstance().getVisitForRowId(getStudy(), _visitId);
                 if (null == visit)
                     HttpView.throwNotFound();
@@ -1048,7 +1049,7 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            if (target.isDateBased() && null == target.getStartDate())
+            if (target.getTimepointType() == TimepointType.RELATIVE_DATE && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
 
             target.setLabel(StringUtils.trimToNull(target.getLabel()));
@@ -1074,7 +1075,7 @@ public class StudyController extends BaseStudyController
         if (null == study)
         {
             study = new StudyImpl(c, form.getLabel());
-            study.setDateBased(form.isDateBased());
+            study.setTimepointType(form.getTimepointType());
             study.setStartDate(form.getStartDate());
             study.setSecurityType(form.getSecurityType());
             StudyManager.getInstance().createStudy(user, study);
@@ -1166,7 +1167,7 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            if (target.isDateBased() && null == target.getStartDate())
+            if (target.getTimepointType() == TimepointType.RELATIVE_DATE && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
 
             target.setLabel(StringUtils.trimToNull(target.getLabel()));
@@ -1223,7 +1224,7 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            if (target.isDateBased() && null == target.getStartDate())
+            if (target.getTimepointType() == TimepointType.RELATIVE_DATE && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
         }
 
@@ -1235,6 +1236,9 @@ public class StudyController extends BaseStudyController
                 ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
                 return action.getView(form, errors);
             }
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                errors.reject(null, "Unsupported operation for absolute date study");
+
             return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
         }
 
@@ -1260,6 +1264,9 @@ public class StudyController extends BaseStudyController
                 ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
                 return action.getView(form, errors);
             }
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                errors.reject(null, "Unsupported operation for absolute date study");
+
             return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
         }
 
@@ -1271,7 +1278,8 @@ public class StudyController extends BaseStudyController
 
         private String _jspName() throws ServletException
         {
-            return getStudy().isDateBased() ? "manageTimepoints.jsp" : "manageVisits.jsp";
+            assert getStudy().getTimepointType() != TimepointType.ABSOLUTE_DATE;
+            return getStudy().getTimepointType() == TimepointType.RELATIVE_DATE ? "manageTimepoints.jsp" : "manageVisits.jsp";
         }
     }
 
@@ -1448,6 +1456,9 @@ public class StudyController extends BaseStudyController
             try
             {
                 StudyImpl study = getStudy();
+                if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                    errors.reject(null, "Unsupported operation for absolute date study");
+                
                 target.validate(errors, study);
                 if(errors.getErrorCount() > 0)
                     return;
@@ -1473,15 +1484,19 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors) throws Exception
         {
+            StudyImpl study = getStudy();
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                errors.reject(null, "Unsupported operation for absolute date study");
+
             int id = NumberUtils.toInt((String)getViewContext().get("id"));
-            _v = StudyManager.getInstance().getVisitForRowId(getStudy(), id);
+            _v = StudyManager.getInstance().getVisitForRowId(study, id);
             if (_v == null)
             {
                 return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));
             }
             VisitSummaryBean visitSummary = new VisitSummaryBean();
             visitSummary.setVisit(_v);
-            ModelAndView view = new StudyJspView<VisitSummaryBean>(getStudy(), getVisitJsp("edit"), visitSummary, errors);
+            ModelAndView view = new StudyJspView<VisitSummaryBean>(study, getVisitJsp("edit"), visitSummary, errors);
             view.addObject("errors", errors);
 
             return view;
@@ -1581,6 +1596,9 @@ public class StudyController extends BaseStudyController
         {
             int visitId = form.getId();
             Study study = getStudy();
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                errors.reject(null, "Unsupported operation for absolute date study");
+
             VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (visit != null)
             {
@@ -1605,6 +1623,9 @@ public class StudyController extends BaseStudyController
         {
             int visitId = form.getId();
             StudyImpl study = getStudy();
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                errors.reject(null, "Unsupported operation for absolute date study");
+
             _visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (null == _visit)
                 return HttpView.throwNotFound();
@@ -1628,6 +1649,9 @@ public class StudyController extends BaseStudyController
             try
             {
                 StudyImpl study = getStudy();
+                if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                    errors.reject(null, "Unsupported operation for absolute date study");
+
                 target.validate(errors, study);
                 if(errors.getErrorCount() > 0)
                     return;
@@ -1652,7 +1676,11 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<Object>(getStudy(), getVisitJsp("create"), null, errors);
+            StudyImpl study = getStudy();
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                errors.reject(null, "Unsupported operation for absolute date study");
+
+            ModelAndView view = new StudyJspView<Object>(study, getVisitJsp("create"), null, errors);
             view.addObject("form", form);
 
             return view;
@@ -1848,7 +1876,7 @@ public class StudyController extends BaseStudyController
                 // see DatasetBatch.prepareImport()
                 columnMap.put("visit", DataSetDefinition.getSequenceNumURI());
 
-                if (getStudy().isDateBased())
+                if (getStudy().getTimepointType() != TimepointType.VISIT)
                     columnMap.put("date", DataSetDefinition.getVisitDateURI());
                 columnMap.put("ptid", DataSetDefinition.getParticipantIdURI());
                 columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
@@ -2627,6 +2655,9 @@ public class StudyController extends BaseStudyController
 
         public void validate(Errors errors, Study study)
         {
+            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+                errors.reject(null, "Unsupported operation for absolute date study");
+
             HttpServletRequest request = getRequest();
 
             if (null != StringUtils.trimToNull(request.getParameter(".oldValues")))
@@ -2662,7 +2693,7 @@ public class StudyController extends BaseStudyController
             }
             setBean(visit);
             // for date-based studies, values can be negative, but it's not allowed in visit-based studies
-            if ((visit.getSequenceNumMin() < 0 || visit.getSequenceNumMax() < 0) && !study.isDateBased())
+            if ((visit.getSequenceNumMin() < 0 || visit.getSequenceNumMax() < 0) && study.getTimepointType() == TimepointType.VISIT)
                 errors.reject(null, "Sequence numbers must be greater than or equal to zero.");
         }
 
@@ -3431,16 +3462,16 @@ public class StudyController extends BaseStudyController
             dr.setTable(tinfo);
 
             Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
-            if (study.isDateBased())
+            if (study.getTimepointType() != TimepointType.VISIT)
                 ignoreColumns.add("SequenceNum");
 
             // If this is demographic data, user doesn't need to enter visit info -- we have defaults.
             if (def.isDemographicData())
             {
-                if (study.isDateBased())
-                    ignoreColumns.add("Date");
-                else
+                if (study.getTimepointType() == TimepointType.VISIT)
                     ignoreColumns.add("SequenceNum");
+                else // DATE or NONE
+                    ignoreColumns.add("Date");
             }
             if (def.isKeyPropertyManaged())
             {
@@ -4755,7 +4786,7 @@ public class StudyController extends BaseStudyController
             studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME));
 
             StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
-            study.setDateBased(true);
+            study.setTimepointType(TimepointType.RELATIVE_DATE);
             study.setStartDate(startDate);
             study = StudyManager.getInstance().createStudy(getUser(), study);
 
@@ -4944,7 +4975,7 @@ public class StudyController extends BaseStudyController
                         "studyId", String.valueOf(study.getRowId()),
                         "datasetId", String.valueOf(dsDef.getDataSetId()),
                         "typeURI", dsDef.getTypeURI(),
-                        "dateBased", String.valueOf(study.isDateBased()),
+                        "timepointType", String.valueOf(study.getTimepointType()),
                         "returnURL", url.getLocalURIString(),
                         "cancelURL", url.getLocalURIString(),
                         "create", "false");
@@ -5136,7 +5167,7 @@ public class StudyController extends BaseStudyController
                             "studyId", String.valueOf(study.getRowId()),
                             "datasetId", String.valueOf(dsDef.getDataSetId()),
                             "typeURI", dsDef.getTypeURI(),
-                            "dateBased", "false",
+                            "timepointType", String.valueOf(study.getTimepointType()), // XXX: should always be "VISIT" ?
                             "returnURL", returnURL.toString(),
                             "cancelURL", returnURL.toString(),
                             "create", "false");
@@ -5548,7 +5579,8 @@ public class StudyController extends BaseStudyController
 
     private String getVisitJsp(String prefix) throws ServletException
     {
-        return prefix + (getStudy().isDateBased() ? "Timepoint" : "Visit") + ".jsp";
+        assert getStudy().getTimepointType() != TimepointType.ABSOLUTE_DATE;
+        return prefix + (getStudy().getTimepointType() == TimepointType.RELATIVE_DATE ? "Timepoint" : "Visit") + ".jsp";
     }
 
     public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig
@@ -5597,7 +5629,7 @@ public class StudyController extends BaseStudyController
     public static class StudyPropertiesForm
     {
         private String _label;
-        private boolean _dateBased;
+        private TimepointType _timepointType;
         private Date _startDate;
         private boolean _simpleRepository = true;
         private SecurityType _securityType;
@@ -5612,14 +5644,14 @@ public class StudyController extends BaseStudyController
             _label = label;
         }
 
-        public boolean isDateBased()
+        public TimepointType getTimepointType()
         {
-            return _dateBased;
+            return _timepointType;
         }
 
-        public void setDateBased(boolean dateBased)
+        public void setTimepointType(TimepointType timepointType)
         {
-            _dateBased = dateBased;
+            _timepointType = timepointType;
         }
 
         public Date getStartDate()

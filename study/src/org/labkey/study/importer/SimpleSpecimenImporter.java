@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -66,16 +67,16 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     }
 
     private Map<String, String> _columnLabels;
-    private final boolean _dateBasedStudy;
+    private final TimepointType _timepointType;
 
     public SimpleSpecimenImporter()
     {
-        this(true, "Subject Id");
+        this(TimepointType.RELATIVE_DATE, "Subject Id");
     }
 
-    public SimpleSpecimenImporter(boolean dateBasedStudy, String participantIdLabel)
+    public SimpleSpecimenImporter(TimepointType timepointType, String participantIdLabel)
     {
-        _dateBasedStudy = dateBasedStudy;
+        _timepointType = timepointType;
         _columnLabels = new HashMap<String,String>(DEFAULT_COLUMN_LABELS);
         _columnLabels.put(PARTICIPANT_ID, participantIdLabel);
     }
@@ -140,7 +141,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 PRIMARY_SPECIMEN_TYPE,
                 DERIVIATIVE_TYPE,
                 ADDITIVE_TYPE));
-        if (!_dateBasedStudy)
+        if (_timepointType == TimepointType.VISIT)
             colNames.add(3, VISIT);
 
         ColumnDescriptor[] cols = new ColumnDescriptor[colNames.size()];
@@ -188,7 +189,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             if (null == row.get("lab"))
                 specimenRow.put(labLookup.getForeignKeyCol(), labLookup.getDefaultLabId());
             
-            if (study.isDateBased())
+            if (study.getTimepointType() != TimepointType.VISIT)
                 specimenRow.put(VISIT, StudyManager.sequenceNumFromDate((Date) specimenRow.get(DRAW_TIMESTAMP)));
 
             if (!row.containsKey(VIAL_ID))

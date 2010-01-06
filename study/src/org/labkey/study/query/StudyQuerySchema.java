@@ -24,6 +24,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
@@ -85,7 +86,8 @@ public class StudyQuerySchema extends UserSchema
             // All these require studies defined
             ret.add("Participant");
             ret.add("Site");
-            ret.add("Visit");
+            if (_study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+                ret.add("Visit");
             ret.add("SpecimenEvent");
             ret.add("SpecimenDetail");
             ret.add("SpecimenSummary");
@@ -94,7 +96,8 @@ public class StudyQuerySchema extends UserSchema
             ret.add("SpecimenRequest");
             ret.add("SpecimenRequestStatus");
             ret.add("VialRequest");
-            ret.add("ParticipantVisit");
+            if (_study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+                ret.add("ParticipantVisit");
             ret.add("DataSets");
             ret.add("DataSetColumns");
 
@@ -226,7 +229,7 @@ public class StudyQuerySchema extends UserSchema
             SpecimenEventTable ret = new SpecimenEventTable(this);
             return ret;
         }
-        if ("ParticipantVisit".equalsIgnoreCase(name))
+        if ("ParticipantVisit".equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
         {
             ParticipantVisitTable ret = new ParticipantVisitTable(this);
             return ret;
@@ -241,7 +244,7 @@ public class StudyQuerySchema extends UserSchema
             SpecimenRequestStatusTable ret = new SpecimenRequestStatusTable(this);
             return ret;
         }
-        if ("Visit".equalsIgnoreCase(name))
+        if ("Visit".equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
         {
             VisitTable ret = new VisitTable(this);
             return ret;

@@ -22,6 +22,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.*;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -88,7 +89,7 @@ public class DataSetTable extends FilteredTable
             {
                 // If this is an OORIndicator and there's a matching value column in the same table, don't add this column
             }
-            else if (baseColumn.getName().equalsIgnoreCase("SequenceNum") && _schema.getStudy().isDateBased())
+            else if (baseColumn.getName().equalsIgnoreCase("SequenceNum") && _schema.getStudy().getTimepointType() != TimepointType.VISIT)
             {
                 // wrap the sequencenum column and set a format to prevent scientific notation, since the sequencenum values
                 // for date-based studies can be quite large (e.g., 20091014).
