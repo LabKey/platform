@@ -50,8 +50,8 @@ public abstract class BaseStudyTable extends FilteredTable
 
     protected ColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
-        ColumnInfo originatingSiteCol = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
-        originatingSiteCol.setFk(new LookupForeignKey("RowId")
+        ColumnInfo locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
+        locationColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -60,7 +60,7 @@ public abstract class BaseStudyTable extends FilteredTable
                 return result;
             }
         });
-        return addColumn(originatingSiteCol);
+        return addColumn(locationColumn);
     }
 
     protected ColumnInfo addWrapTypeColumn(String wrappedName, final String rootTableColumnName)

@@ -21,6 +21,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowResizeListener;
 import com.google.gwt.user.client.WindowCloseListener;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.core.client.GWT;
 import org.labkey.plate.designer.client.model.GWTPlate;
 import org.labkey.plate.designer.client.model.GWTWellGroup;
@@ -127,6 +128,7 @@ public class TemplateView extends HorizontalPanel
         // plate name textbox:
         _nameBox = new TextBox();
         _nameBox.setVisibleLength(40);
+        DOM.setElementAttribute(_nameBox.getElement(), "id", "templateName");
         String plateName = PropertyUtil.getServerProperty("defaultPlateName");
         if (plateName == null)
         {
@@ -180,10 +182,10 @@ public class TemplateView extends HorizontalPanel
         _propertyTabPanel.setWidth("500px");
 
         _platePropertyPanel = new PlatePropertyPanel(this);
-        _propertyTabPanel.add(_platePropertyPanel, "Plate Properties");
+        //_propertyTabPanel.add(_platePropertyPanel, "Plate Properties");
 
         _wellGroupPropertyPanel = new WellGroupPropertyPanel(this);
-        //_propertyTabPanel.add(_wellGroupPropertyPanel, "Well Group Properties");
+        _propertyTabPanel.add(_wellGroupPropertyPanel, "Well Group Properties");
 
         _warningPanel = new WarningPanel();
         _propertyTabPanel.add(_warningPanel, "Warnings");

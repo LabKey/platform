@@ -27,8 +27,6 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimen());
 
-        addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
-        
         getColumn("ParticipantId").setFk(null);
 
         addSpecimenVisitColumn(false);

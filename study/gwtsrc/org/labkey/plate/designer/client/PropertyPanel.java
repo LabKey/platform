@@ -18,6 +18,7 @@ package org.labkey.plate.designer.client;
 
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.DOM;
 
 import java.util.*;
 
@@ -146,6 +147,7 @@ public abstract class PropertyPanel extends DockPanel
         _propertyTable.setWidget(row, 0, new Label(name));
         _propertyTable.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
         TextBox textBox = new TextBox();
+        DOM.setElementAttribute(textBox.getElement(), "id", "property-" + name);
         textBox.addChangeListener(_changeListener);
         textBox.addKeyboardListener(_keyboardListener);
         if (value != null)

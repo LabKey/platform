@@ -58,7 +58,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     {
         if (_overlappingGroups == null)
         {
-            _overlappingGroups = new HashSet<WellGroup>();
+            _overlappingGroups = new LinkedHashSet<WellGroup>();
             for (Position position : getPositions())
             {
                 List<? extends WellGroup> groups = _plate.getWellGroups(position);
@@ -74,7 +74,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
 
     public Set<WellGroup> getOverlappingGroups(Type type)
     {
-        Set<WellGroup> typedGroups = new HashSet<WellGroup>();
+        Set<WellGroup> typedGroups = new LinkedHashSet<WellGroup>();
         for (WellGroup overlappingGroup : getOverlappingGroups())
         {
             if (type == overlappingGroup.getType())

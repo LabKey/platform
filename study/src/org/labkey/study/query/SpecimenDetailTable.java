@@ -103,8 +103,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         if (StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
             addColumn(new CollectionCohortColumn(_schema, this));
 
-        addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
-
         addWrapColumn(_rootTable.getColumn("VialCount"));
         addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
         addWrapColumn(_rootTable.getColumn("AtRepositoryCount"));
