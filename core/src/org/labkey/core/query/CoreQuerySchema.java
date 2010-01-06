@@ -45,6 +45,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String SITE_USERS_TABLE_NAME = "SiteUsers";
     public static final String PRINCIPALS_TABLE_NAME = "Principals";
     public static final String MEMBERS_TABLE_NAME = "Members";
+    public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
 
     public CoreQuerySchema(User user, Container c)
@@ -70,7 +71,50 @@ public class CoreQuerySchema extends UserSchema
             return getMembers();
         if (GROUPS_TABLE_NAME.equalsIgnoreCase(name))
             return getGroups();
+        if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(name))
+            return getWorkbooks();
         return null;
+    }
+
+    public TableInfo getWorkbooks()
+    {
+        TableInfo containersBase = CoreSchema.getInstance().getTableInfoContainers();
+        FilteredTable workbooks = new FilteredTable(containersBase);
+        ColumnInfo col;
+
+        col = workbooks.wrapColumn("ID", containersBase.getColumn("RowId"));
+        col.setKeyField(true);
+        col.setReadOnly(true);
+        workbooks.addColumn(col);
+
+        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("Name")));
+
+        col = workbooks.wrapColumn(containersBase.getColumn("CreatedBy"));
+        final boolean isSiteAdmin = getUser().isAdministrator();
+        col.setFk(new LookupForeignKey("UserId", "DisplayName")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return isSiteAdmin ? getSiteUsers() : getUsers();
+            }
+        });
+        workbooks.addColumn(col);
+
+        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("Created")));
+        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("Parent")));
+        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("EntityID")));
+
+        List<FieldKey> defCols = new ArrayList<FieldKey>();
+        defCols.add(FieldKey.fromParts("ID"));
+        defCols.add(FieldKey.fromParts("Name"));
+        defCols.add(FieldKey.fromParts("CreatedBy"));
+        defCols.add(FieldKey.fromParts("Created"));
+        workbooks.setDefaultVisibleColumns(defCols);
+
+        //filter for parent = current container
+        workbooks.addCondition(containersBase.getColumn("Parent"), getContainer());
+        
+        return workbooks;
     }
 
     public TableInfo getGroups()

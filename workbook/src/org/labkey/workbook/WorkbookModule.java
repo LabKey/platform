@@ -53,7 +53,7 @@ public class WorkbookModule extends DefaultModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new DefaultWebPartFactory("Workbooks", "menubar", WorkbookList.class));
+        return Arrays.asList(new DefaultWebPartFactory("Workbooks (Prototype)", "menubar", WorkbookList.class));
     }
 
     protected void init()

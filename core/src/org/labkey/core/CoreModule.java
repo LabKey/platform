@@ -54,6 +54,7 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
+import org.labkey.core.workbook.WorkbookQueryView;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -77,7 +78,7 @@ public class CoreModule extends SpringModule
 
     public double getVersion()
     {
-        return 9.33;
+        return 9.34;
     }
 
     @Override
@@ -181,6 +182,13 @@ public class CoreModule extends SpringModule
                         };
                         v.setFrame(WebPartView.FrameType.PORTAL);
                         return v;
+                    }
+                },
+                new AlwaysAvailableWebPartFactory("Workbooks")
+                {
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        return new WorkbookQueryView(portalCtx, new CoreQuerySchema(portalCtx.getUser(), portalCtx.getContainer()));
                     }
                 });
     }

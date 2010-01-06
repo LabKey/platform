@@ -280,6 +280,7 @@ core/resources/schemas/dbscripts/postgresql/core-9.13-9.14.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.31-9.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.32-9.33.sql -text
+core/resources/schemas/dbscripts/postgresql/core-9.33-9.34.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/bootstrap.sql -text
@@ -355,6 +356,7 @@ core/resources/schemas/dbscripts/sqlserver/core-9.13-9.14.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.31-9.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.32-9.33.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-9.33-9.34.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/bootstrap.sql -text
@@ -526,6 +528,7 @@ core/src/org/labkey/core/webdav/FileSystemAuditViewFactory.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
 core/src/org/labkey/core/webdav/list.jsp -text
+core/src/org/labkey/core/workbook/WorkbookQueryView.java -text
 core/webapp/FileTree.js -text
 core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
