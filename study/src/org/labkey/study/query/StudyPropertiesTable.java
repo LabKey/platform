@@ -55,10 +55,11 @@ public class StudyPropertiesTable extends BaseStudyTable
         ColumnInfo timepointTypeColumn = addWrapColumn(_rootTable.getColumn("timepointType"));
         timepointTypeColumn.setUserEditable(false);
 
-        ColumnInfo dateBasedColumn = new ExprColumn(this, "dateBased", new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN TRUE ELSE FALSE END)"), Types.BOOLEAN, timepointTypeColumn);
+        ColumnInfo dateBasedColumn = new ExprColumn(this, "DateBased", new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN TRUE ELSE FALSE END)"), Types.BOOLEAN, timepointTypeColumn);
         dateBasedColumn.setUserEditable(false);
         dateBasedColumn.setHidden(true);
         dateBasedColumn.setDescription("Deprecated.  Use 'timepointType' column instead.");
+        addColumn(dateBasedColumn);
 
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setUserEditable(false);
