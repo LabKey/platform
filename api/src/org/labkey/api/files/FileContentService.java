@@ -84,4 +84,12 @@ public interface FileContentService
      * @return Array of attachment directories that have previously been registered
      */
     public AttachmentDirectory[] getRegisteredDirectories(Container c);
+
+    enum ContentType {
+        files,
+        pipeline,
+        assay,
+    }
+
+    public String getFolderName(ContentType type);
 }

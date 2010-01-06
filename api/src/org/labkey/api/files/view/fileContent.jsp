@@ -22,13 +22,13 @@
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -125,11 +125,32 @@ function renderBrowser(rootPath, dir)
             fileBrowser.changeDirectory(value);
     });
 
+    /**
+     * A version of a tab panel that doesn't render the tab strip, used to swap
+     * in panels programmatically
+     * @param w
+     * @param h
+     */
+    TinyTabPanel = Ext.extend(Ext.TabPanel, {
+
+        adjustBodyWidth : function(w){
+            if(this.header){
+                this.header.setWidth(w);
+                this.header.setHeight(1);
+            }
+            if(this.footer){
+                this.footer.setWidth(w);
+                this.header.setHeight(1);
+            }
+            return w;
+        }
+    });
+
     // subclass the filebrowser panel
     FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
-        // additional actions panel
-        extraActionsPanel : undefined,
+        // collapsible tab panel used to display dialog-like content
+        collapsibleTabPanel : undefined,
 
         // all actions tab
         allActionsTab : undefined,
@@ -159,12 +180,75 @@ function renderBrowser(rootPath, dir)
             return [];
         },
 
+        uploadFile : function(fb, v)
+        {
+            if (this.currentDirectory)
+            {
+                var form = this.collapsibleTabPanel.getActiveTab().getForm();
+                var path = this.fileUploadField.getValue();
+                var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+                var name = path.substring(i+1);
+                var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
+                var file = this.fileSystem.recordFromCache(target);
+                if (file)
+                {
+                    alert('file already exists on server: ' + name);
+                }
+                else
+                {
+                    var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
+                    // set errorReader, so that handleResponse() doesn't try to eval() the XML response
+                    // assume that we've got a WebdavFileSystem
+                    form.errorReader = this.fileSystem.transferReader;
+                    form.doAction(new Ext.form.Action.Submit(form, options));
+                    Ext.getBody().dom.style.cursor = "wait";
+                }
+            }
+        },
+
+        uploadSuccess : function(f, action)
+        {
+            this.fileUploadField.reset();
+            Ext.getBody().dom.style.cursor = "pointer";
+            console.log("upload actioncomplete");
+            console.log(action);
+            var options = action.options;
+            // UNDONE: update data store directly
+            this.toggleTabPanel();
+            this.refreshDirectory();
+            this.selectFile(this.fileSystem.concatPaths(options.record.data.path, options.name));
+        },
+
+        uploadFailed : function(f, action)
+        {
+            this.fileUploadField.reset();
+            Ext.getBody().dom.style.cursor = "pointer";
+            console.log("upload actionfailed");
+            console.log(action);
+            this.refreshDirectory();
+        },
+
         /**
          * Initialize additional components
          */
         createPanels : function()
         {
             var buttons = [];
+
+            this.actions.upload = new Ext.Action({
+                text: 'Upload',
+                listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
+            });
+
+            this.actions.moreActions = new Ext.Action({
+                text: 'More Actions',
+                listeners: {click:function(button, event) {this.toggleTabPanel('allActionsTab');}, scope:this},
+                tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'}
+            });
+            //buttons.push(new Ext.Button({text:'More Actions', tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'},
+            //    listeners:{click:function(button, event) {this.toggleTabPanel('allActionsTab');}, scope:this}}));
+
+//            buttons.push(new Ext.Button({text:'Upload', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}));
 
             if (this.buttonCfg && this.buttonCfg.length)
             {
@@ -178,46 +262,98 @@ function renderBrowser(rootPath, dir)
                 }
             }
 
-            buttons.push(new Ext.Button({text:'More Actions', tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'},
-                listeners:{click:function(button, event) {this.toggleActionsPanel();}, scope:this}}));
-            //buttons.push(new Ext.Button(this.actions.uploadTool));
+            //buttons.push(new Ext.Button({text:'More Actions', tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'},
+            //    listeners:{click:function(button, event) {this.toggleTabPanel('allActionsTab');}, scope:this}}));
 
             new Ext.Toolbar({
                 renderTo: 'toolbar',
                 border: false,
                 items: buttons
             });
+        },
+
+        /**
+         * Override base class to add components to the file browser
+         * @override
+         */
+        getItems : function()
+        {
+            var items = FilesWebPartPanel.superclass.getItems.call(this);
 
             this.allActionsTab = new Ext.Panel({
-                id: 'tabAllActions',
+                id: 'allActionsTab',
                 title: 'All'
             });
 
-            this.extraActionsPanel = new Ext.ux.VerticalTabPanel({
-                renderTo: 'toolbar',
-                hidden: true,
-                activeTab: 'tabAllActions',
-                tabPosition: 'left',
-                tabWidth: 100,
+            this.fileUploadField = new Ext.form.FileUploadField(
+            {
+                id: this.id ? this.id + 'Upload' : 'fileUpload',
+                buttonText: "Browse...",
+                width: 350,
+                fieldLabel: 'Choose a file'
+            });
+
+            var uploadPanel = new Ext.FormPanel({
+                id: 'uploadFileTab',
+                formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
+                method : 'POST',
+                fileUpload: true,
+                enctype:'multipart/form-data',
+                border:false,
+                bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [
-                    this.allActionsTab,
-                    {title: 'Assays'},
-                    {title: 'Flow'}
+                    this.fileUploadField,
+                    {xtype: 'textfield', fieldLabel: 'Description', width: 350}
+                ],
+                buttons:[
+                    new Ext.Button(this.actions.uploadTool),
+                    {text: 'Submit', handler:this.uploadFile, scope:this},
+                    {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
+                ],
+                listeners: {
+                    "actioncomplete" : {fn: this.uploadSuccess, scope: this},
+                    "actionfailed" : {fn: this.uploadFailed, scope: this}
+                }
+            });
+
+            this.collapsibleTabPanel = new TinyTabPanel({
+                region: 'north',
+                collapseMode: 'mini',
+                height: 110,
+                header: false,
+                margins:'1 1 1 1',
+                cmargins:'1 1 1 1',
+                collapsible: true,
+                collapsed: true,
+                hideCollapseTool: true,
+                activeTab: 'allActionsTab',
+                items: [
+                    uploadPanel,
+                    this.allActionsTab
                 ]});
+
+            items.push(this.collapsibleTabPanel);
+            return items;
         },
 
-        toggleActionsPanel : function()
+        toggleTabPanel : function(tabId)
         {
-            var el = this.extraActionsPanel.getEl();
-
-            if (el.isVisible())
+            if (!tabId)
+                this.collapsibleTabPanel.collapse();
+            
+            if (this.collapsibleTabPanel.isVisible())
             {
-                el.slideOut('t', {callback: function() {this.extraActionsPanel.setVisible(false);}, scope: this});
+                var activeTab = this.collapsibleTabPanel.getActiveTab();
+
+                if (activeTab && activeTab.getId() == tabId)
+                    this.collapsibleTabPanel.collapse();
+                else
+                    this.collapsibleTabPanel.setActiveTab(tabId);
             }
             else
             {
-                this.extraActionsPanel.setVisible(true);
-                el.slideIn();
+                this.collapsibleTabPanel.setActiveTab(tabId);
+                this.collapsibleTabPanel.expand();
             }
         },
 
@@ -412,6 +548,7 @@ function renderBrowser(rootPath, dir)
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
         showProperties: false,
+        showFileUpload: false,
         showDetails: <%=bean.isShowDetails()%>,
         allowChangeDirectory: <%=bean.isAllowChangeDirectory()%>,
         actions: {drop:dropAction, configure:configureAction},

@@ -24,6 +24,7 @@ import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.view.CustomizeFilesWebPartView;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
@@ -87,9 +88,14 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         List<FilesForm.actions> buttons = new ArrayList<FilesForm.actions>();
 
+        if (getRootContext().getContainer().hasPermission(getRootContext().getUser(), InsertPermission.class))
+        {
+            buttons.add(FilesForm.actions.upload);
+        }
         buttons.add(FilesForm.actions.download);
         buttons.add(FilesForm.actions.deletePath);
         buttons.add(FilesForm.actions.refresh);
+        buttons.add(FilesForm.actions.moreActions);
 
         form.setButtonConfig(buttons.toArray(new FilesForm.actions[buttons.size()]));
 
@@ -189,6 +195,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             configure,
             createDirectory,
             parentFolder,
+            upload,
+            moreActions,
         }
 
         public boolean isAutoResize()
