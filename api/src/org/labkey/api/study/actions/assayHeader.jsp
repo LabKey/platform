@@ -15,13 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.study.actions.AssayHeaderView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.PopupMenu" %>
+<%@ page import="org.labkey.api.view.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayHeaderView> me = (JspView<AssayHeaderView>) HttpView.currentView();
@@ -33,17 +28,25 @@
             <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
             <p>
                 <%
-                    if (bean.getManagePopupView() != null)
+                    ActionURL current = getViewContext().getActionURL();
+                    for (NavTree link : bean.getLinks())
                     {
-                        me.include(bean.getManagePopupView(), out);
+                        if (link.getChildCount() == 0)
+                        {
+                            String url = link.getValue();
+                            boolean active = current.getLocalURIString().equals(url);
+                %>
+                            <%= active ? "<strong>" : "" %><%= textLink(link.getKey(), url) %><%= active ? "</strong>" : "" %>
+                <%
+                        }
+                        else
+                        {
+                            PopupMenuView popup = new PopupMenuView(link);
+                            popup.setButtonStyle(PopupMenu.ButtonStyle.TEXTBUTTON);
+                            me.include(popup, out);
+                        }
                     }
-                    for (Map.Entry<String, ActionURL> entry : bean.getLinks().entrySet())
-                    {
-                        ActionURL current = getViewContext().getActionURL();
-                        ActionURL link = entry.getValue();
-                        boolean active = current.getLocalURIString().equals(link.getLocalURIString()); %>
-                        <%= active ? "<strong>" : "" %><%= textLink(entry.getKey(), link) %><%= active ? "</strong>" : "" %>
-                <% } %>
+                %>
             </p>
         </td>
     </tr>

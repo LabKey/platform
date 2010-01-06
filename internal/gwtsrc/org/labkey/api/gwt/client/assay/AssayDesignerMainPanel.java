@@ -20,6 +20,7 @@ import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.util.ServiceUtil;
@@ -316,6 +317,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     setDirty(true);
                 }
             });
+            DOM.setElementAttribute(templateList.getElement(), "id", "plateTemplate");
             HorizontalPanel picker = new HorizontalPanel();
             picker.add(templateList);
             picker.add(new HTML("&nbsp;[<a href=\"" + PropertyUtil.getRelativeURL("plateTemplateList", "Plate") + "\">configure templates</a>]"));
