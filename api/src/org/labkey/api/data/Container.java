@@ -73,6 +73,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
     private transient FolderType _folderType;
 
+    //is this container a workbook?
+    private boolean _workbook;
+
 
     // UNDONE: BeanFactory for Container
 
@@ -302,6 +305,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean shouldDisplay()
     {
+        if (isWorkbook())
+            return false;
+
         String name = _path.getName();
         if(name.length() == 0)
             return true; // Um, I guess we should display it?
@@ -315,6 +321,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             return true;
         }
+    }
+
+    public boolean isWorkbook()
+    {
+        return _workbook;
+    }
+
+    public void setWorkbook(boolean workbook)
+    {
+        _workbook = workbook;
     }
 
     /**
