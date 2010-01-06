@@ -140,6 +140,12 @@ public interface SearchService
         {
             return _description;
         }
+
+        @Override
+        public String toString()
+        {
+            return _name;
+        }
     }
 
 

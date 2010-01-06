@@ -3264,14 +3264,13 @@ public class OntologyManager
     static private void _indexConcepts(SearchService.IndexTask task)
     {
         ResultSet rs = null;
-        Container root = ContainerManager.getSharedContainer();
         Container shared = ContainerManager.getSharedContainer();
 
         try
         {
             rs = Table.executeQuery(getExpSchema(),
-                    "SELECT * FROM exp.PropertyDescriptor", // WHERE Container=?",
-                    null, 0, false); // new Object[] {shared});
+                    "SELECT * FROM exp.PropertyDescriptor WHERE Container=? AND rangeuri='xsd:nil'",
+                    new Object[] {shared.getId()}, 0, false); // new Object[] {shared});
             ConceptMapFactory f = new ConceptMapFactory(rs);
             while (rs.next())
             {
@@ -3279,20 +3278,19 @@ public class OntologyManager
                 String propertyURI = (String)m.get("propertyUri");
                 m.put(PROPERTY.title.toString(), propertyURI);
 
-                String container = (String)m.get("container");
                 String desc = (String)m.get("description");
                 String label = (String)m.get("label");
                 String name = (String)m.get("name");
                 String body = StringUtils.trimToEmpty(name) + " " +
                         StringUtils.trimToEmpty(label) + " " +
                         StringUtils.trimToEmpty(desc);
-                
-                ActionURL url = new ActionURL("experiment-types","findConcepts",shared);
+
+                ActionURL url = new ActionURL("experiment-types","findConcepts",shared.getId());
                 url.addParameter("concept",propertyURI);
                 Resource r = new org.labkey.api.webdav.SimpleDocumentResource(
                     new Path(propertyURI),
                     "concept:" + propertyURI,
-                    container,
+                    shared.getId(),
                     "text/plain", body.getBytes(),
                     url,
                     m
