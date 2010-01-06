@@ -71,7 +71,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
         FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
-        FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
+        FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.RELATIVE_DATE);
         FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
         AssaySchema assaySchema = AssayService.get().createSchema(studySchema.getUser(), studySchema.getContainer());
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(assaySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK, drawDateFK));
@@ -89,7 +89,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         if (participantIdCol != null || visitIdCol != null || dateCol != null)
         {
             // We want NULL if there's no match based on specimen id
-            sql.append("CASE WHEN (" + studyAlias + ".DateBased IS NULL) THEN NULL ELSE (CASE WHEN (");
+            sql.append("CASE WHEN (" + studyAlias + ".TimepointType IS NULL) THEN NULL ELSE (CASE WHEN (");
             if (participantIdCol != null)
             {
                 // Check if the participants match, or if they're both NULL
@@ -118,8 +118,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 {
                     // If we're in a visit-based study, check that both the visits match or are null. Also,
                     // if the assay has a date column and it has a value, it needs to match as well.
-                    sql.append("((" + studyAlias + ".DateBased IS NULL OR " + studyAlias + ".DateBased = ?)");
-                    sql.add(Boolean.FALSE);
+                    sql.append("((" + studyAlias + ".TimepointType IS NULL OR " + studyAlias + ".TimepointType = '" + TimepointType.VISIT + "')");
                     sql.append(" AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL))");
                     if (dateCol != null)
                     {
@@ -134,11 +133,10 @@ public class SpecimenForeignKey extends LookupForeignKey
                 }
                 if (dateCol != null)
                 {
-                    // If we're in a date-based study, check that the dates match or are both NULL
-                    sql.append("((" + studyAlias + ".DateBased = ? OR " + studyAlias + ".DateBased IS NULL) AND (" +
+                    // If we're in a date-based or timepoint-less study, check that the dates match or are both NULL
+                    sql.append("((" + studyAlias + ".TimepointType = '" + TimepointType.RELATIVE_DATE + "' OR " + studyAlias + ".TimepointType = '" + TimepointType.ABSOLUTE_DATE + "' OR " + studyAlias + ".TimepointType IS NULL) AND (" +
                             dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
                             dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL)))");
-                    sql.add(Boolean.TRUE);
                 }
                 sql.append(")");
             }
@@ -218,7 +216,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
             FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();
             FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
-            FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
+            FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.RELATIVE_DATE);
             // Need to support this other name for dates
             FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
             FieldKey objectIdFK = _tableMetadata.getResultRowIdFieldKey();

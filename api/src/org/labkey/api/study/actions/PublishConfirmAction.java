@@ -275,7 +275,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         queryView.setButtons(buttons);
         return new VBox(new JspView<PublishConfirmBean>("/org/labkey/api/study/actions/publishHeader.jsp",
-                new PublishConfirmBean(timepointType == TimepointType.DATE, mismatched), errors), queryView);
+                new PublishConfirmBean(timepointType, mismatched), errors), queryView);
     }
 
     private void attemptCopy(PublishConfirmForm publishConfirmForm, BindException errors, ViewContext context, AssayProvider provider, Set<Integer> selectedObjects, List<Integer> allObjects, Container targetStudy, Map<Object, String> postedVisits, Map<Object, String> postedPtids, TimepointType timepointType)
@@ -393,9 +393,9 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private boolean _dateBased;
         private final boolean _mismatched;
 
-        public PublishConfirmBean(boolean dateBased, boolean mismatched)
+        public PublishConfirmBean(TimepointType timepointType, boolean mismatched)
         {
-            _dateBased = dateBased;
+            _dateBased = timepointType != TimepointType.VISIT;
             _mismatched = mismatched;
         }
 

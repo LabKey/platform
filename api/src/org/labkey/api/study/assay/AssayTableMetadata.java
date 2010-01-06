@@ -53,7 +53,7 @@ public class AssayTableMetadata
 
     public FieldKey getVisitIDFieldKey(TimepointType timepointType)
     {
-        if (timepointType == TimepointType.DATE)
+        if (timepointType == TimepointType.RELATIVE_DATE)
         {
             return new FieldKey(_specimenDetailParentFieldKey, AbstractAssayProvider.DATE_PROPERTY_NAME);
         }

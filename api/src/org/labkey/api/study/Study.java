@@ -38,7 +38,7 @@ public interface Study extends StudyEntity
 
     boolean isAdvancedCohorts();
 
-    boolean isDateBased();
+    TimepointType getTimepointType();
 
     Date getStartDate();
 }
