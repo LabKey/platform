@@ -32,7 +32,6 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
-    LABKEY.requiresExtJs(true);
     LABKEY.requiresClientAPI(true);
     LABKEY.requiresScript("applet.js");
     LABKEY.requiresScript("fileBrowser.js");

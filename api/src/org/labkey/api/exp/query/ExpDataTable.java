@@ -21,7 +21,6 @@ import org.labkey.api.exp.api.*;
 
 public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
 {
-    static final public String COLUMN_ROWID = "exp.data.rowid";
     enum Column
     {
         RowId,

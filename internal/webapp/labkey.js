@@ -108,20 +108,12 @@ LABKEY.requiresScript = function(file, immediate)
     }
 };
 
-LABKEY.addElemToHead = function(elemName, attributes, beforeFirst)
+LABKEY.addElemToHead = function(elemName, attributes)
 {
     var elem = document.createElement(elemName);
     for(var attr in attributes)
         elem[attr] = attributes[attr];
-    var headElement = document.getElementsByTagName("head")[0];
-    if (beforeFirst)
-    {
-        headElement.insertBefore(elem, headElement.firstChild);
-    }
-    else
-    {
-        headElement.appendChild(elem);
-    }
+    document.getElementsByTagName("head")[0].appendChild(elem);
 };
 
 LABKEY.addMarkup = function(html)
@@ -148,7 +140,7 @@ LABKEY.loadScripts = function()
 };
 
 
-LABKEY.requiresCss = function(file, beforeFirst)
+LABKEY.requiresCss = function(file)
 {
     var fullPath = LABKEY.contextPath + "/" + file;
     if (this._requestedScriptFiles[fullPath])
@@ -158,7 +150,7 @@ LABKEY.requiresCss = function(file, beforeFirst)
         type: "text/css",
         rel: "stylesheet",
         href: fullPath
-    }, beforeFirst);
+    });
     this._requestedScriptFiles[fullPath] = 1;
 };
 
@@ -173,29 +165,14 @@ LABKEY.requiresYahoo = function(script, immediate)
     LABKEY.requiresScript(expanded, immediate);
 };
 
-LABKEY.requiresExtJs = function(immediate)
+LABKEY.requiresExtJs = function()
 {
-    if (arguments.length < 1) immediate = true;
-    // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
-    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css', true);
-    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css', true);
-
-    LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
-    if (LABKEY.devMode && false)
-    {
-        LABKEY.requiresScript("ext-exploded.js", immediate);
-    }
-    else
-    {
-        LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-    }
-    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
+    // No-op. This is now included in all page renders, and this method is solely here for backwards compatibility.
 };
 
 LABKEY.requiresClientAPI = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
-    LABKEY.requiresExtJs(immediate);
     if (LABKEY.devMode)
     {
         //load individual scripts so that they get loaded from source tree

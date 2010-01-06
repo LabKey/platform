@@ -35,7 +35,7 @@ public interface ExpRun extends ExpObject
      */
     public ExpData[] getOutputDatas(DataType type);
     public ExpData[] getInputDatas(String inputRole, ExpProtocol.ApplicationType appType);
-    public String getFilePathRoot();
+    public File getFilePathRoot();
     public void setFilePathRoot(File filePathRoot);
     public void setProtocol(ExpProtocol protocol);
     public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);

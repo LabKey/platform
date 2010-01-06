@@ -730,7 +730,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             // may want to just put this in a js file and include it in all the wizard pages
             out.write("<script type=\"text/javascript\">\n");
-            out.write("    LABKEY.requiresExtJs(true);\n");
             out.write("    function showPopup(elem, txtTitle, txtMsg)\n" +
                     "      {\n" +
                     "        var win = new Ext.Window({\n" +

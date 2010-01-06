@@ -130,10 +130,12 @@ public class ExperimentService
          */
         ExpRunTable createRunTable(String name, UserSchema schema);
         ExpDataTable createDataTable(String name, UserSchema schema);
+        ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
         ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
         ExpProtocolTable createProtocolTable(String name, UserSchema schema);
         ExpExperimentTable createExperimentTable(String name, UserSchema schema);
         ExpMaterialTable createMaterialTable(String name, UserSchema schema);
+        ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema);
         ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema);
 
         String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);

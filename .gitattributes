@@ -283,8 +283,11 @@ api/src/org/labkey/api/exp/property/PropertyUtil.java -text
 api/src/org/labkey/api/exp/property/Type.java -text
 api/src/org/labkey/api/exp/property/ValidatorKind.java -text
 api/src/org/labkey/api/exp/query/AbstractExpSchema.java -text
+api/src/org/labkey/api/exp/query/ExpDataInputTable.java -text
 api/src/org/labkey/api/exp/query/ExpDataTable.java -text
 api/src/org/labkey/api/exp/query/ExpExperimentTable.java -text
+api/src/org/labkey/api/exp/query/ExpInputTable.java -text
+api/src/org/labkey/api/exp/query/ExpMaterialInputTable.java -text
 api/src/org/labkey/api/exp/query/ExpMaterialTable.java -text
 api/src/org/labkey/api/exp/query/ExpProtocolApplicationTable.java -text
 api/src/org/labkey/api/exp/query/ExpProtocolTable.java -text

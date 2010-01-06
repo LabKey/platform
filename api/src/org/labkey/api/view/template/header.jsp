@@ -90,9 +90,6 @@
 <%  } //if warning messages %>
 </table>
 <script type="text/javascript">
-    LABKEY.requiresExtJs(false);
-</script>
-<script type="text/javascript">
     function labkeyShowWarningMessages(show)
     {
         if(undefined === show)

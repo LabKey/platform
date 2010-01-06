@@ -46,12 +46,16 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
     public static enum FrameType
     {
-        PORTAL,     // with portal widgets
-        TITLE,      // title w/hr
+        /** with portal widgets */
+        PORTAL,
+        /** title w/ hr */
+        TITLE,
         DIALOG,
-        DIV,        // just <div class="">
+        /** just <div class=""> */
+        DIV,
         LEFT_NAVIGATION,
-        NONE        // clean
+        /** clean */
+        NONE
     }
 
     public WebPartView()

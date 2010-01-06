@@ -1498,6 +1498,36 @@ public class PageFlowUtil
         sb.append(PageFlowUtil.filter(printStyleURL));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
 
+        // Ext CSS
+        sb.append("    <link href=\"");
+        sb.append(AppProps.getInstance().getContextPath());
+        sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+        sb.append("    <link href=\"");
+        sb.append(AppProps.getInstance().getContextPath());
+        sb.append("/ext-2.2/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+
+        // Ext JS
+        sb.append("    <script src=\"");
+        sb.append(AppProps.getInstance().getContextPath());
+        sb.append("/ext-2.2/adapter/ext/ext-base.js?").append(getServerHash());
+        sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+        sb.append("    <script src=\"");
+        sb.append(AppProps.getInstance().getContextPath());
+        if (AppProps.getInstance().isDevMode() && false)
+        {
+            sb.append("/ext-exploded.js?");
+        }
+        else
+        {
+            sb.append("/ext-2.2/ext-all").append(AppProps.getInstance().isDevMode() ? "-debug.js?" : ".js?");
+        }
+        sb.append(getServerHash());
+        sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+        sb.append("    <script src=\"");
+        sb.append(AppProps.getInstance().getContextPath());
+        sb.append("/ext-2.2/ext-patches.js?").append(getServerHash());
+        sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
 
         sb.append("    <link href=\"");
@@ -1636,9 +1666,7 @@ public class PageFlowUtil
         sb.append(",");
         sb.append("devMode:").append(props.isDevMode()?"true":"false");
         sb.append(",");
-        if (null == serverHash)
-            serverHash = 0x7fffffff & props.getServerSessionGUID().hashCode();
-        sb.append("hash:'").append(serverHash).append("'");
+        sb.append("hash:'").append(getServerHash()).append("'");
         sb.append(",");
 
         //TODO: these should be passed in by callers
@@ -1689,6 +1717,13 @@ public class PageFlowUtil
         }
         sb.append("}"); //end config
         return sb.toString();
+    }
+
+    private static String getServerHash()
+    {
+        if (null == serverHash)
+            serverHash = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();
+        return Integer.toString(serverHash);
     }
 
 

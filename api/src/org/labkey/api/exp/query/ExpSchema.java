@@ -17,13 +17,11 @@
 package org.labkey.api.exp.query;
 
 import org.labkey.api.query.*;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.util.StringExpression;
 
 import java.util.*;
 
@@ -49,11 +47,27 @@ public class ExpSchema extends AbstractExpSchema
                 return expSchema.setupTable(ret);
             }
         },
+        DataInputs
+        {
+            public TableInfo createTable(ExpSchema expSchema)
+            {
+                ExpDataInputTable ret = ExperimentService.get().createDataInputTable(TableType.DataInputs.toString(), expSchema);
+                return expSchema.setupTable(ret);
+            }
+        },
         Materials
         {
             public TableInfo createTable(ExpSchema expSchema)
             {
                 return expSchema.getSamplesSchema().getSampleTable(null);
+            }
+        },
+        MaterialInputs
+        {
+            public TableInfo createTable(ExpSchema expSchema)
+            {
+                ExpMaterialInputTable ret = ExperimentService.get().createMaterialInputTable(TableType.MaterialInputs.toString(), expSchema);
+                return expSchema.setupTable(ret);
             }
         },
         Protocols
@@ -192,7 +206,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getProtocolApplicationForeignKey()
     {
-        return new LookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -216,7 +230,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getRunIdForeignKey()
     {
-        return new LookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -227,7 +241,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getDataIdForeignKey()
     {
-        return new LookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -238,7 +252,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getMaterialIdForeignKey()
     {
-        return new LookupForeignKey("RowId")
+        return new ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -249,12 +263,26 @@ public class ExpSchema extends AbstractExpSchema
 
     public ForeignKey getRunLSIDForeignKey()
     {
-        return new LookupForeignKey("LSID")
+        return new ExperimentLookupForeignKey("LSID")
         {
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Runs);
             }
         };
+    }
+
+    private abstract static class ExperimentLookupForeignKey extends LookupForeignKey
+    {
+        public ExperimentLookupForeignKey(String pkColumnName)
+        {
+            super(pkColumnName);
+        }
+
+        @Override
+        public StringExpression getURL(ColumnInfo parent)
+        {
+            return getURL(parent, true);
+        }
     }
 }

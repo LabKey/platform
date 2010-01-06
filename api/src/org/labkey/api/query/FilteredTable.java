@@ -158,9 +158,9 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
 
-    public void clearConditions(ColumnInfo col)
+    public void clearConditions(String columnName)
     {
-        _filter.deleteConditions(col.getName());
+        _filter.deleteConditions(columnName);
     }
 
     public void addCondition(ColumnInfo col, Container container)
@@ -294,7 +294,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         ColumnInfo containerColumn = _rootTable.getColumn("container");
         if (containerColumn != null && getContainer() != null)
         {
-            clearConditions(containerColumn);
+            clearConditions(containerColumn.getName());
             Collection<String> ids = filter.getIds(getContainer());
             if (ids != null)
             {
