@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,17 +33,16 @@
     SearchController.SearchForm form = me.getModelBean();
     Container c = me.getViewContext().getContainer();
 
-    String queryString = form.getQueryString();
-    
+    List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
+
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     List<SearchService.SearchCategory> categories = ss.getSearchCategories();
     SearchService.SearchCategory selected = null;
     for (SearchService.SearchCategory cat : categories)
     {
         String s = "+searchCategory:" + cat.toString();
-        if (queryString.contains(s))
+        if (q.remove(s))
         {
-            queryString = queryString.replace(s," ");
             selected = cat;
             break;
         }
@@ -61,7 +62,7 @@
     }
 %>
     <input type="hidden" name="guest" value=0>
-    <input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(queryString))%>">&nbsp;
+    <input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q," ")))%>">&nbsp;
     <%=generateSubmitButton("Search")%>
     <%=buttonImg("Search As Guest", "document.search.guest.value=1; return true;")%><br>
 <%

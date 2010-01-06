@@ -129,7 +129,6 @@ public class SearchController extends SpringActionController
     {
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
-            String query = form.getQueryString();
 
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null == ss)
@@ -138,9 +137,16 @@ public class SearchController extends SpringActionController
                 return null;
             }
 
-            boolean isParticipant = ss.isParticipantId(getUser(), StringUtils.trimToEmpty(query));
-
             String statusMessage = "";
+
+            for (String q : form.getQ())
+            {
+                q = StringUtils.trimToEmpty(q);
+                if (q.length() == 0)
+                    continue;
+                if (ss.isParticipantId(getUser(), q))
+                    statusMessage = q + "is a participantid\n";
+            }
 
             List<SearchService.IndexTask> tasks = ss.getTasks();
 
@@ -170,20 +176,20 @@ public class SearchController extends SpringActionController
 
             form.setPrint(isPrint());
             form.setStatusMessage(statusMessage);
+
+            VBox vbox = new VBox();
             HttpView searchBox = new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
+            vbox.addView(searchBox);
 
             getPageConfig().setFocusId("query");
 
-            if (StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
-                return searchBox;
-
-            String results = ss.searchFormatted(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot(), form.getPage());
-
-            VBox view = new VBox(searchBox);
-            if (isParticipant)
-                view.addView(new HtmlView(query + " is a ptid"));
-            view.addView(new HtmlView("<div id='searchResults'>" + results + "</div>"));
-            return view;
+            String query = form.getQueryString();
+            if (!StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
+            {
+                String results = ss.searchFormatted(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot(), form.getPage());
+                vbox.addView(new HtmlView("<div id='searchResults'>" + results + "</div>"));
+            }
+            return vbox;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -204,7 +210,7 @@ public class SearchController extends SpringActionController
 
         public String[] getQ()
         {
-            return _query;
+            return null == _query ? new String[0] : _query;
         }
 
         public String getQueryString()

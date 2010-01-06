@@ -40,6 +40,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.search.SearchService;
@@ -196,6 +197,10 @@ public class ExperimentModule extends SpringModule
 
     public void startup(ModuleContext context)
     {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null != ss)
+            ss.addSearchCategory(OntologyManager.conceptCategory);
+
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
         ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
         {
