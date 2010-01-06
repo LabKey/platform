@@ -21,22 +21,23 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.*;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.HttpView;
+import org.jetbrains.annotations.Nullable;
 
 import java.beans.PropertyChangeEvent;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -57,12 +58,6 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     {
         UPLOAD,
         DELETE
-    }
-
-    enum ContentType {
-        files,
-        pipeline,
-        assay,
     }
 
     public File getFileRoot(Container c)
@@ -436,6 +431,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public AttachmentParent[] getNamedAttachmentDirectories(Container c) throws SQLException
     {
         return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, new SimpleFilter("Container", c), null, FileSystemAttachmentParent.class);
+    }
+
+    public @Nullable String getFolderName(FileContentService.ContentType type)
+    {
+        if (type != null)
+            return "@" + type.name();
+        return null;
     }
 
     static void moveToDeleted(File fileToMove)

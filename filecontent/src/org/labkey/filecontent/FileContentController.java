@@ -672,7 +672,7 @@ public class FileContentController extends SpringActionController
                     Map<String, Object> node = createFileSetNode("@files", root.getFileSystemDirectory());
                     node.put("default", svc.hasSiteDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
-                    node.put("href", browse.getEncodedLocalURIString());
+                    node.put("browseURL", browse.getEncodedLocalURIString());
 
                     children.add(node);
                 }
@@ -682,7 +682,7 @@ public class FileContentController extends SpringActionController
                     ActionURL config = new ActionURL(ShowAdminAction.class, c);
                     Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory());
                     node.put("configureURL", config.getEncodedLocalURIString());
-                    node.put("href", browse.getEncodedLocalURIString());
+                    node.put("browseURL", browse.getEncodedLocalURIString());
 
                     children.add(node);
                 }
@@ -691,10 +691,11 @@ public class FileContentController extends SpringActionController
                 if (pipeRoot != null)
                 {
                     ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
+                    ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
                     Map<String, Object> node = createFileSetNode("@pipeline", pipeRoot.getRootPath());
                     node.put("default", PipelineService.get().hasSiteDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
-                    node.put("href", browse.getEncodedLocalURIString());
+                    node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
 
                     children.add(node);
                 }

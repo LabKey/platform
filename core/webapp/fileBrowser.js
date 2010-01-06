@@ -1671,6 +1671,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     showAddressBar: true,
     showDetails: true,
     showProperties: true,
+    showFileUpload: true,
     propertiesPanel : null,
     statePrefix : null,
 
@@ -2668,17 +2669,20 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.tree.width = 200;
             layoutItems.push(this.tree);
         }
+
+        var centerItems = [];
+
+        centerItems.push({region:'center', layout:'fit', border:false, items:[this.grid]});
+        if (this.showFileUpload)
+            centerItems.push({region:'south', layout:'fit', border:false, height:40, minSize:40, margins:'1 0 0 0', items:[this.uploadPanel]});
+
         layoutItems.push(
             {
                 region:'center',
                 margins: '5 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '5') + ' 0',
                 minSize: 200,
                 layout:'border',
-                items:
-                    [
-                        {region:'center', layout:'fit', border:false, items:[this.grid]},
-                        {region:'south', layout:'fit', border:false, height:40, minSize:40, margins:'1 0 0 0', items:[this.uploadPanel]}
-                    ]
+                items: centerItems
             });
         if (this.propertiesPanel)
         {

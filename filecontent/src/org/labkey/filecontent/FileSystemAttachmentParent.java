@@ -96,19 +96,14 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         else
             dir = new File(path);
 
-/*
-        File root = new File(dir, getFolderName(_contentType));
-        if (!root.exists())
-            root.mkdirs();
-
-        return root;
-*/
+        if (_contentType != null)
+        {
+            File root = new File(dir, svc.getFolderName(_contentType));
+            if (!root.exists())
+                root.mkdirs();
+            return root;
+        }
         return dir;
-    }
-
-    private String getFolderName(FileContentServiceImpl.ContentType type)
-    {
-        return "@" + type.name();
     }
 
     // AttachmentServiceImpl uses this to retrieve the attachments of many parents with a single query.  Implementation

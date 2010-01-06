@@ -417,21 +417,21 @@ public class PipelineController extends SpringActionController
             ViewContext ctx = getRootContext();
             FilesForm bean = getModelBean();
 
-            bean.setShowAddressBar(true);
+            //bean.setShowAddressBar(true);
             bean.setShowFolderTree(true);
             bean.setShowDetails(true);
             bean.setAllowChangeDirectory(true);
             bean.setAutoResize(true);
 
             List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
+            if (ctx.getContainer().hasPermission(ctx.getUser(), InsertPermission.class))
+                actions.add(FilesForm.actions.upload);
             actions.add(FilesForm.actions.parentFolder);
             actions.add(FilesForm.actions.download);
             actions.add(FilesForm.actions.deletePath);
             actions.add(FilesForm.actions.refresh);
             actions.add(FilesForm.actions.createDirectory);
-
-            if (ctx.getContainer().hasPermission(ctx.getUser(), InsertPermission.class))
-                actions.add(FilesForm.actions.uploadTool);
+            actions.add(FilesForm.actions.moreActions);
 
             bean.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
             

@@ -57,6 +57,7 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.files.FileContentService;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -313,6 +314,16 @@ public class AdminController extends SpringActionController
         public ActionURL getMemTrackerURL()
         {
             return new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getFilesSiteSettingsURL(boolean upgrade)
+        {
+            ActionURL url = new ActionURL(FilesSiteSettingsAction.class, ContainerManager.getRoot());
+
+            if (upgrade)
+                url.addParameter("upgrade", true);
+
+            return url;
         }
     }
 
@@ -2937,8 +2948,18 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                ActionURL url = new AdminUrlsImpl().getCustomizeSiteURL(true);
-                vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url) + PageFlowUtil.generateRedirectOnEnter(url)));
+                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+
+                if (svc != null && svc.getSiteDefaultRoot() == null)
+                {
+                    ActionURL url = new AdminUrlsImpl().getFilesSiteSettingsURL(true);
+                    vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url) + PageFlowUtil.generateRedirectOnEnter(url)));
+                }
+                else
+                {
+                    ActionURL url = new AdminUrlsImpl().getCustomizeSiteURL(true);
+                    vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url) + PageFlowUtil.generateRedirectOnEnter(url)));
+                }
             }
 
             getPageConfig().setTemplate(Template.Dialog);
