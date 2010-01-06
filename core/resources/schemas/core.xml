@@ -30,6 +30,7 @@
       <ns:column columnName="SortOrder"/>
       <ns:column columnName="CaBIGPublished"/>
       <ns:column columnName="Description"/>
+      <ns:column columnName="Workbook"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Documents" tableDbType="TABLE">
