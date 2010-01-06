@@ -486,6 +486,8 @@ public class TypesController extends SpringActionController
         {
             expSchema.getScope().closeConnection();
             Cache.getShared().remove("Experiment-TypesController.getSemanticTypes");
+
+            OntologyManager.indexConcepts(null);
         }
     }
 

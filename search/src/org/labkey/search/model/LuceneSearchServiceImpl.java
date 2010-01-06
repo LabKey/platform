@@ -306,7 +306,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         boolean isParticipantId = isParticipantId(user, queryString);
         if (isParticipantId)
         {
-            queryString += " " + SearchService.PROPERTY.category.name() + ":subject^1"; // UNDONE: StudyManager.subjectCategory
+            queryString += " " + SearchService.PROPERTY.category.toString() + ":subject^1"; // UNDONE: StudyManager.subjectCategory
         }
 
         Query query;

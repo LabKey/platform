@@ -306,7 +306,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
     {
-//        if (c == null && modifiedSince == null)
-//            OntologyManager.indexConcepts(task);
+        if (c == null)
+            OntologyManager.indexConcepts(task);
     }
 }

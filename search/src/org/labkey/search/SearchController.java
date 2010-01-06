@@ -129,7 +129,7 @@ public class SearchController extends SpringActionController
     {
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
-            String query = form.getQuery();
+            String query = form.getQueryString();
 
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null == ss)
@@ -195,19 +195,27 @@ public class SearchController extends SpringActionController
 
     public static class SearchForm
     {
-        private String _query;
+        private String[] _query;
         private String _sort;
         private boolean _print = false;
         private boolean _guest = false;       // TODO: Just for testing
         private String _statusMessage;
         private int _page = 0;
 
-        public String getQuery()
+        public String[] getQ()
         {
             return _query;
         }
 
-        public void setQuery(String query)
+        public String getQueryString()
+        {
+            if (null == _query || _query.length == 0)
+                return "";
+            return StringUtils.join(_query, " ");
+        }
+
+
+        public void setQ(String[] query)
         {
             _query = query;
         }
