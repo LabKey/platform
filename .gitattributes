@@ -772,7 +772,6 @@ experiment/src/org/labkey/experiment/ExperimentModule.java -text
 experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text
 experiment/src/org/labkey/experiment/ExperimentRunDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ExperimentRunGraph.java -text
-experiment/src/org/labkey/experiment/ExperimentRunInputOutput.jsp -text
 experiment/src/org/labkey/experiment/ExperimentUpgradeCode.java -text
 experiment/src/org/labkey/experiment/ExternalDocsLabelCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java -text
@@ -805,13 +804,16 @@ experiment/src/org/labkey/experiment/api/DataInput.java -text
 experiment/src/org/labkey/experiment/api/DataLinkColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpIdentifiableBaseImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpIdentifiableEntityImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpMaterialInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpObjectImpl.java -text

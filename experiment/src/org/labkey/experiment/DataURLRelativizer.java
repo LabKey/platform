@@ -86,7 +86,7 @@ public enum DataURLRelativizer
                         {
                             return f.getCanonicalPath();
                         }
-                        return FileUtil.relativizeUnix(new File(expRun.getFilePathRoot()), f, false);
+                        return FileUtil.relativizeUnix(expRun.getFilePathRoot(), f, false);
                     }
                     catch (IOException e)
                     {

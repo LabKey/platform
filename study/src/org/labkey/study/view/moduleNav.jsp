@@ -20,9 +20,6 @@
     NavTree tree = (NavTree)HttpView.currentModel();
 %>
 <script type="text/javascript">
-LABKEY.requiresExtJs(true);
-</script>
-<script type="text/javascript">
 Ext.ux.IFrameComponent = Ext.extend(Ext.BoxComponent,
 {
    onRender : function(ct, position)

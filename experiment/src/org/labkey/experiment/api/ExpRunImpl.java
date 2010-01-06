@@ -141,9 +141,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
     }
 
-    public String getFilePathRoot()
+    public File getFilePathRoot()
     {
-        return _object.getFilePathRoot();
+        return new File(_object.getFilePathRoot());
     }
 
     public void setFilePathRoot(File file)

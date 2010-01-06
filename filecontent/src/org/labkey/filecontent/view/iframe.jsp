@@ -22,9 +22,6 @@
 %>
 <iframe id="fileFrame" frameborder=0 src="<%=h(url)%>" width="100%">Your browser does not support inline frames, try Mozilla or Internet Explorer</iframe>
 <script type="text/javascript">
-    LABKEY.requiresExtJs(true);
-</script>
-<script type="text/javascript">
 var top = 100;
 function resizeFrame()
 {

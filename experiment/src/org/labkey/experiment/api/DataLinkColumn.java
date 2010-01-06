@@ -39,6 +39,7 @@ abstract class DataLinkColumn extends DataColumn
     public DataLinkColumn(ColumnInfo col)
     {
         super(col);
+        setTextAlign("left");
     }
 
     protected abstract ActionURL getURL(ExpData data);

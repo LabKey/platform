@@ -56,7 +56,6 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     //String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + rootPath;
 %>
 <script type="text/javascript" language="javascript">
-    LABKEY.requiresExtJs(true);
     LABKEY.requiresScript("applet.js");
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("FileUploadField.js");

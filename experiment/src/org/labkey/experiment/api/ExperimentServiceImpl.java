@@ -602,6 +602,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpDataTableImpl(name, schema);
     }
 
+    public ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema)
+    {
+        return new ExpDataInputTableImpl(name, expSchema);
+    }
+
     public ExpSampleSetTable createSampleSetTable(String name, UserSchema schema)
     {
         return new ExpSampleSetTableImpl(name, schema);
@@ -620,6 +625,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpMaterialTable createMaterialTable(String name, UserSchema schema)
     {
         return new ExpMaterialTableImpl(name, schema);
+    }
+
+    public ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema schema)
+    {
+        return new ExpMaterialInputTableImpl(name, schema);
     }
 
     public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema)

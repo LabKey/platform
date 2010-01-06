@@ -45,7 +45,7 @@ public class ArchiveURLRewriter extends URLRewriter
 
     public String rewriteURL(File f, ExpData data, String roleName, ExpRun run) throws ExperimentException
     {
-        if (_roles == null || _roles.contains(roleName))
+        if (f != null && (_roles == null || _roles.contains(roleName)))
         {
             FileInfo existingInfo = _files.get(f);
             if (existingInfo != null)
@@ -55,7 +55,7 @@ public class ArchiveURLRewriter extends URLRewriter
             File rootDir = null;
             if (run != null)
             {
-                rootDir = new File(run.getFilePathRoot());
+                rootDir = run.getFilePathRoot();
             }
             return addFile(ExperimentService.get().getExpData(data.getRowId()), f, getDirectoryName(run), rootDir, data.findDataHandler());
         }

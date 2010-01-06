@@ -26,10 +26,6 @@
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
-<script type="text/javascript">
-    LABKEY.requiresExtJs(true);
-</script>
-
 <%
     Map<String, String> schemaOptions = new TreeMap<String, String>(new Comparator<String>(){
         public int compare(String o1, String o2)

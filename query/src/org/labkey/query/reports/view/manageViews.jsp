@@ -28,7 +28,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <script type="text/javascript">
-    LABKEY.requiresExtJs(true);
     LABKEY.requiresClientAPI(true);
     LABKEY.requiresScript("reports/manageViews.js");
 </script>

@@ -35,10 +35,17 @@
   </ns:table>
   <ns:table tableName="DataInput" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="DataId"/>
-      <ns:column columnName="TargetApplicationId"/>
-      <ns:column columnName="Role" />
+      <ns:column columnName="DataId">
+          <ns:description>The data object that was used as an input</ns:description>
+      </ns:column>
+      <ns:column columnName="TargetApplicationId">
+          <ns:description>The protocol application that used the data as an input</ns:description>
+      </ns:column>
+      <ns:column columnName="Role">
+          <ns:description>The purpose of the usage of the data object</ns:description>
+      </ns:column>
     </ns:columns>
+    <ns:description>Contains one row per data input in a protocol application for a run in this folder.</ns:description>
   </ns:table>
   <ns:table tableName="Experiment" tableDbType="TABLE">
     <ns:columns>
@@ -188,10 +195,17 @@
   </ns:table>
   <ns:table tableName="MaterialInput" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="MaterialId"/>
-      <ns:column columnName="TargetApplicationId"/>
-      <ns:column columnName="Role" />
+      <ns:column columnName="MaterialId">
+        <ns:description>The material object that was used as an input</ns:description>
+      </ns:column>
+      <ns:column columnName="TargetApplicationId">
+        <ns:description>The protocol application that used the data as an input</ns:description>
+      </ns:column>
+      <ns:column columnName="Role">
+        <ns:description>The purpose of the usage of the data object</ns:description>
+      </ns:column>
     </ns:columns>
+    <ns:description>Contains one row per material input in a protocol application for a run in this folder.</ns:description>
   </ns:table>
   <ns:table tableName="MaterialSource" tableDbType="TABLE">
     <ns:columns>

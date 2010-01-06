@@ -38,7 +38,6 @@
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
-    LABKEY.requiresExtJs(true);
     LABKEY.requiresClientAPI(true);
     LABKEY.requiresScript("reports/manageViews.js");
 </script>

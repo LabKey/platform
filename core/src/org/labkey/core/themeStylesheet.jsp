@@ -103,12 +103,12 @@ fieldset
 
 /* general */
 
-.labkey-header.hover
+.labkey-header:hover
 {
     background: #<%= wpHeaderPanel %>;
 }
 
-.labkey-header-large.hover
+.labkey-header-large:hover
 {
     background: #<%= wpHeaderPanel %>;
 }
@@ -597,11 +597,15 @@ td a.x-grid3-hd-btn:hover {
 	background-position: -12px -41px;
 }
 
-.x-menu { padding:0; background: white none; }
+.x-menu {
+    padding:0;
+    background: white none;
+    border-color: #<%= navBorder %>;
+}
 .x-menu-sep {margin:1px 1px 0 1px;}
 
 li.x-menu-item-active {
-	background:#E0ECFF none repeat scroll 0 0;/*#<%= fullScreenBorder %>  none repeat scroll 0 0;*/
+	background:#E0ECFF none repeat scroll 0 0;
 	border: none;
 }
 
@@ -611,7 +615,11 @@ li.x-menu-item-active a.x-menu-item {
 	color:black;
 }
 
-.extContainer .x-menu-item-active{background:#EAEAEA repeat-x left bottom;border:1px solid #aaccf6;padding:0;}
+.extContainer .x-menu-item-active {
+    background:#EAEAEA repeat-x left bottom;
+    border:1px solid #<%= wpHeaderPanelBorder %>;
+    padding:0;
+}
 
 /* Tools */
 .x-tool {
@@ -805,6 +813,12 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 	padding-right:4px;
 }
 
+/*********** X-tree ******/
+
+.x-tree-node .x-tree-selected {
+    background-color: <%= navBackground %>;
+}
+
 /*********** X-window ******/
 .x-window-tc {
 	background: #<%= fullScreenBorder %> ;
@@ -935,6 +949,9 @@ body .x-window .x-window-tl .x-window-header {
 	border-right-width:0;
 }
 
+.x-tab-panel-body {
+    border-color: #<%= navBorder %>;
+}
 
 .x-tab-panel-bbar-noborder .x-toolbar {
     border-width:0;
@@ -948,6 +965,7 @@ body .x-window .x-window-tl .x-window-header {
 
 .x-tab-panel-header, .x-tab-panel-footer {
 	background-color: #<%= navBackground %>;
+	border-color: #<%= navBorder %>;
 	border-top: none;
 	border-left: none;
 	border-right: none;

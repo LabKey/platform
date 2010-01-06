@@ -120,7 +120,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 }
             }
 
-            MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), new File(experimentRun.getFilePathRoot()), job);
+            MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), experimentRun.getFilePathRoot(), job);
             XarReader reader = new XarReader(xarSource, job);
             reader.parseAndLoad(false);
 

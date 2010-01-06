@@ -18,7 +18,6 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
@@ -29,7 +28,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
 
-import java.sql.Types;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -102,8 +100,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public ColumnInfo createPropertyColumn(String name)
     {
-        ColumnInfo ret = wrapColumn(name,getLSIDColumn());
-        return ret;
+        return wrapColumn(name, getLSIDColumn());
     }
 
     public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
@@ -204,22 +201,4 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     {
         return _schema.getSchemaName();
     }
-
-
-/*
-    @Override
-    public boolean hasContainerContext()
-    {
-        ContainerFilter cf = getContainerFilter();
-        return null == cf || ContainerFilter.CURRENT == cf;
-    }
-
-
-    @Override
-    public Container getContainer(Map context)
-    {
-        assert getContainer().equals(_schema.getContainer());
-        return getContainer();
-    }
-*/
 }

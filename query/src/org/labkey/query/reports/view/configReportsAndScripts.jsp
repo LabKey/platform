@@ -37,8 +37,6 @@
 </style>
 
 <script type="text/javascript">
-    LABKEY.requiresExtJs(true);
-
     var R_EXTENSIONS = 'R,r';
     var PERL_EXTENSIONS = 'pl';
 

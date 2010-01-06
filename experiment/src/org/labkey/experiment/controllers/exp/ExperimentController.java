@@ -32,6 +32,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -39,10 +40,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
@@ -828,9 +826,11 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRunImpl experimentRun)
+        protected HttpView createLowerView(ExpRunImpl experimentRun, BindException errors)
         {
-            return new ExperimentRunGraphView(experimentRun, false);
+            return new VBox(
+                    new ToggleRunView(experimentRun, false, true, true),
+                    new ExperimentRunGraphView(experimentRun, false));
         }
     }
 
@@ -896,11 +896,11 @@ public class ExperimentController extends SpringActionController
 
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, cpv));
             vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL()));
-            vbox.addView(createLowerView(_experimentRun));
+            vbox.addView(createLowerView(_experimentRun, errors));
             return vbox;
         }
 
-        protected abstract HttpView createLowerView(ExpRunImpl experimentRun);
+        protected abstract HttpView createLowerView(ExpRunImpl experimentRun, BindException errors);
 
         public NavTree appendNavTrail(NavTree root)
         {
@@ -991,53 +991,150 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    public class ToggleRunView extends HtmlView
+    {
+        public ToggleRunView(ExpRun expRun, boolean showGraphSummary, boolean showGraphDetail, boolean showText)
+        {
+            super(null);
+            StringBuilder sb = new StringBuilder();
+            if (showGraphSummary)
+            {
+                sb.append("[<a href=\"");
+                sb.append(ExperimentUrlsImpl.get().getRunGraphURL(expRun));
+                sb.append("\">graph summary view</a>] ");
+            }
+            else
+            {
+                sb.append("[<strong>graph summary view</strong>] ");
+            }
+            if (showGraphDetail)
+            {
+                sb.append("[<a href=\"");
+                sb.append(ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun));
+                sb.append("\">graph detail view</a>] ");
+            }
+            else
+            {
+                sb.append("[<strong>graph detail view</strong>] ");
+            }
+            if (showText)
+            {
+                sb.append("[<a href=\"");
+                sb.append(ExperimentUrlsImpl.get().getRunTextURL(expRun));
+                sb.append("\">text view</a>] ");
+            }
+            else
+            {
+                sb.append("[<strong>text view</strong>] ");
+            }
+            File runRoot = expRun.getFilePathRoot();
+            if (NetworkDrive.exists(runRoot))
+            {
+                if (!runRoot.isDirectory())
+                {
+                    runRoot = runRoot.getParentFile();
+                }
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(expRun.getContainer());
+                if (pipelineRoot != null)
+                {
+                    if (URIUtil.isDescendent(pipelineRoot.getUri(), runRoot.toURI()))
+                    {
+                        String path = runRoot.toURI().toString().substring(pipelineRoot.getUri().toString().length());
+                        sb.append("[<a href=\"");
+                        sb.append(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(expRun.getContainer(), null, path));
+                        sb.append("\">files view</a>] ");
+                    }
+                }
+            }
+
+            sb.append("[<a onclick=\"document.getElementById('exportFilesForm').submit(); return false;\">download all files</a>]");
+            sb.append("<form id=\"exportFilesForm\" method=\"post\" action=\"");
+            sb.append(new ActionURL(ExportRunFilesAction.class, expRun.getContainer()));
+            sb.append("\"><input type=\"hidden\" value=\"ExportSingleRun\" name=\"");
+            sb.append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
+            sb.append("\" /><input type=\"hidden\" name=\"");
+            sb.append(DataRegion.SELECT_CHECKBOX_NAME);
+            sb.append("\" value=\"");
+            sb.append(expRun.getRowId());
+            sb.append("\" /><input type=\"hidden\" name=\"zipFileName\" value=\"");
+            sb.append(PageFlowUtil.filter(expRun.getName()));
+            sb.append(".zip\" /></form>");
+
+            setHtml(sb.toString());
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunTextAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRunImpl expRun)
+        protected HttpView createLowerView(ExpRunImpl expRun, BindException errors)
         {
-            JspView<RunInputOutputBean> inputView = new JspView<RunInputOutputBean>("/org/labkey/experiment/ExperimentRunInputOutput.jsp", new RunInputOutputBean(expRun.getMaterialInputs(), expRun.getDataInputs()));
-            inputView.setFrame(WebPartView.FrameType.TITLE);
-            inputView.setTitle("Run Inputs");
-
-            Map<ExpMaterial, String> outputMaterials = new LinkedHashMap<ExpMaterial, String>();
-            for (ExpMaterial material : expRun.getMaterialOutputs())
-            {
-                outputMaterials.put(material, null);
-            }
-            Map<ExpData, String> outputDatas = new LinkedHashMap<ExpData, String>();
-            for (ExpData expData : expRun.getDataOutputs())
-            {
-                outputDatas.put(expData, null);
-            }
-            JspView<RunInputOutputBean> outputView = new JspView<RunInputOutputBean>("/org/labkey/experiment/ExperimentRunInputOutput.jsp", new RunInputOutputBean(outputMaterials, outputDatas));
-            outputView.setFrame(WebPartView.FrameType.TITLE);
-            outputView.setTitle("Run Outputs");
-
-            HBox inputOutputHBox = new HBox(inputView, outputView);
-
             JspView<ExpRun> applicationsView = new JspView<ExpRun>("/org/labkey/experiment/ProtocolApplications.jsp", expRun);
             applicationsView.setFrame(WebPartView.FrameType.TITLE);
             applicationsView.setTitle("Protocol Applications");
 
-            HtmlView toggleView = new HtmlView("[<a href=\"" + ExperimentUrlsImpl.get().getRunGraphURL(expRun) + "\">graph summary view</a>] [<a href=\"" + ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun) + "\">graph detail view</a>]");
+            HtmlView toggleView = new ToggleRunView(expRun, true, true, false);
 
-            VBox result = new VBox(toggleView, inputOutputHBox, applicationsView);
-            result.setTitle("Text View");
-            result.setFrame(WebPartView.FrameType.PORTAL);
-            return result;
+            QuerySettings runDataInputsSettings = new QuerySettings(getViewContext(), "RunDataInputs", ExpSchema.TableType.DataInputs.name());
+            UsageQueryView runDataInputsView = new UsageQueryView("Data Inputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRun, runDataInputsSettings, errors);
+            runDataInputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+
+            QuerySettings runDataOutputsSettings = new QuerySettings(getViewContext(), "RunDataOutputs", ExpSchema.TableType.DataInputs.name());
+            UsageQueryView runDataOutputsView = new UsageQueryView("Data Outputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRunOutput, runDataOutputsSettings, errors);
+
+            QuerySettings runMaterialInputsSetting = new QuerySettings(getViewContext(), "RunMaterialInputs", ExpSchema.TableType.MaterialInputs.name());
+            UsageQueryView runMaterialInputsView = new UsageQueryView("Material Inputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRun, runMaterialInputsSetting, errors);
+            runMaterialInputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+
+            QuerySettings runMaterialOutputsSettings = new QuerySettings(getViewContext(), "RunMaterialOutputs", ExpSchema.TableType.MaterialInputs.name());
+            UsageQueryView runMaterialOutputsView = new UsageQueryView("Material Outputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRunOutput, runMaterialOutputsSettings, errors);
+
+            HBox inputsView = new HBox(runDataInputsView, runMaterialInputsView);
+            HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
+
+            return new VBox(toggleView, inputsView, outputsView, applicationsView);
         }
+    }
+
+    private static class UsageQueryView extends QueryView
+    {
+        private final ExpRun _run;
+        private final ExpProtocol.ApplicationType _type;
+
+        public UsageQueryView(String title, ViewContext context, ExpRun run, ExpProtocol.ApplicationType type,
+                                   QuerySettings settings, BindException errors)
+        {
+            super(new ExpSchema(context.getUser(), context.getContainer()), settings, errors);
+            setTitle(title);
+            setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            setFrame(FrameType.TITLE);
+            settings.setAllowChooseQuery(false);
+            _run = run;
+            _type = type;
+            setShowExportButtons(false);
+            setShowPagination(false);
+            setAllowableContainerFilterTypes(Collections.<ContainerFilter.Type>emptyList());
+        }
+
+        @Override
+        protected TableInfo createTable()
+        {
+            ExpInputTable tableInfo = (ExpInputTable)super.createTable();
+            tableInfo.setRun(_run, _type);
+            return tableInfo;
+        }
+
     }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphDetailAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRunImpl run)
+        protected HttpView createLowerView(ExpRunImpl run, BindException errors)
         {
             ExperimentRunGraphView gw = new ExperimentRunGraphView(run, true);
             if (null != getViewContext().getActionURL().getParameter("focus"))
                 gw.setFocus(getViewContext().getActionURL().getParameter("focus"));
-            return gw;
+            return new VBox(new ToggleRunView(run, true, false, true), gw);
         }
     }
 
