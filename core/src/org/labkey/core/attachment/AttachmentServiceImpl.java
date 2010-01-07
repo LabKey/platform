@@ -1460,10 +1460,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             namedParentTest = fileService.getRegisteredDirectory(folder, "test");
             assertNull(namedParentTest);
 
-            File relativeDir = new File(attachDir, "subdir2");
             //registering a directory doesn't make sure it exists
-            relativeDir.mkdirs();
             AttachmentDirectory relativeParent = fileService.registerDirectory(folder, "relative", "subdir2", true);
+            File relativeDir = relativeParent.getFileSystemDirectory();
+            relativeDir.mkdirs();
+            
             AttachmentDirectory relativeParentTest = fileService.getRegisteredDirectory(folder, "relative");
             assertNotNull(relativeParentTest);
             assertSameFile(relativeParentTest.getFileSystemDirectory(), relativeParent.getFileSystemDirectory());
