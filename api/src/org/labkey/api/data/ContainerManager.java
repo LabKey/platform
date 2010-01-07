@@ -35,7 +35,6 @@ import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Cache;
-import org.labkey.api.module.ModuleLoader;
 import org.jetbrains.annotations.NotNull;
 
 import java.beans.PropertyChangeEvent;
@@ -169,15 +168,15 @@ public class ContainerManager
     // TODO: Handle root creation here?
     public static Container createContainer(Container parent, String name)
     {
-        return createContainer(parent, name, null, false);
+        return createContainer(parent, name, null, false, null);
     }
 
-    public static Container createContainer(Container parent, String name, String description)
+    public static Container createContainer(Container parent, String name, String description, User user)
     {
-        return createContainer(parent, name, description, false);
+        return createContainer(parent, name, description, false, null);
     }
     
-    private static Container createContainer(Container parent, String name, String description, boolean workbook)
+    private static Container createContainer(Container parent, String name, String description, boolean workbook, User user)
     {
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
@@ -198,7 +197,7 @@ public class ContainerManager
             if (null != description)
                 m.put("Description", description);
             m.put("Workbook", workbook);
-            Table.insert(null, core.getTableInfoContainers(), m);
+            Table.insert(user, core.getTableInfoContainers(), m);
         }
         catch (SQLException x)
         {
@@ -286,12 +285,12 @@ public class ContainerManager
         return c;
     }
 
-    public static Container createWorkbook(Container parent, String name, String description)
+    public static Container createWorkbook(Container parent, String name, String description, User user)
     {
         //parent must not be a workbook
         if (parent.isWorkbook())
             throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
-        return createContainer(parent, name, description, true);
+        return createContainer(parent, name, description, true, user);
     }
 
 

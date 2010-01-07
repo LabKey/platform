@@ -18,6 +18,7 @@ package org.labkey.api.view.menu;
 
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.data.Container;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -44,12 +45,13 @@ public class MenuService
     {
         public List<? extends WebPartView> getMenus(ViewContext context, PageConfig page)
         {
+            Container container = context.getContainer();
             List<WebPartView> menus = new ArrayList<WebPartView>();
             //menus.add(new HomeLinkMenu());
             menus.add(new ContainerMenu(context));
             menus.add(new ProjectsMenu(context));
-            //menus.add(new FolderAdminMenu(context));
-            menus.add(new ProjectAdminMenu(context));
+            if (!container.isWorkbook())
+                menus.add(new ProjectAdminMenu(context));
             menus.add(new SiteAdminMenu(context));
             menus.add(new FooterMenu(context, page));
             return menus;
