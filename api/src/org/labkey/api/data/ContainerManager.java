@@ -35,6 +35,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Cache;
+import org.labkey.api.module.ModuleLoader;
 import org.jetbrains.annotations.NotNull;
 
 import java.beans.PropertyChangeEvent;
@@ -168,6 +169,16 @@ public class ContainerManager
     // TODO: Handle root creation here?
     public static Container createContainer(Container parent, String name)
     {
+        return createContainer(parent, name, null, false);
+    }
+
+    public static Container createContainer(Container parent, String name, String description)
+    {
+        return createContainer(parent, name, description, false);
+    }
+    
+    private static Container createContainer(Container parent, String name, String description, boolean workbook)
+    {
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
@@ -184,6 +195,9 @@ public class ContainerManager
             m.put("Parent", parent.getId());
             m.put("Name", name);
             m.put("SortOrder", getNewChildSortOrder(parent));
+            if (null != description)
+                m.put("Description", description);
+            m.put("Workbook", workbook);
             Table.insert(null, core.getTableInfoContainers(), m);
         }
         catch (SQLException x)
@@ -199,7 +213,10 @@ public class ContainerManager
         if (null == c && null != sqlx)
             throw new RuntimeSQLException(sqlx);
 
-        SecurityManager.setAdminOnlyPermissions(c);
+        //workbooks inherit perms from their parent so don't create a policy if this is a workbook
+        if (!workbook)
+            SecurityManager.setAdminOnlyPermissions(c);
+        
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
 
         fireCreateContainer(c);
@@ -267,6 +284,14 @@ public class ContainerManager
                 c = createContainer(parent, name);
         }
         return c;
+    }
+
+    public static Container createWorkbook(Container parent, String name, String description)
+    {
+        //parent must not be a workbook
+        if (parent.isWorkbook())
+            throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
+        return createContainer(parent, name, description, true);
     }
 
 
@@ -777,6 +802,9 @@ public class ContainerManager
         Map<String, NavTree> m = new HashMap<String, NavTree>();
         for (Container f : folders)
         {
+            if (f.isWorkbook())
+                continue;
+            
             Set<Class<? extends Permission>> perms = f.getPolicy().getPermissions(user);
             boolean skip = (perms.size() == 0 || (!f.shouldDisplay()));
             //Always put the project and current container in...
@@ -1818,12 +1846,16 @@ public class ContainerManager
             int sortOrder = rs.getInt("SortOrder");
             Date created = rs.getTimestamp("Created");
             // _ts, createdby, cabigpublished
+            String description = rs.getString("Description");
+            boolean workbook = rs.getBoolean("Workbook");
 
             Container dirParent = null;
             if (null != parentId)
                 dirParent = getForId(parentId);
 
             d = new Container(dirParent, name, id, rowId, sortOrder, created);
+            d.setDescription(description);
+            d.setWorkbook(workbook);
             return d;
         }
 

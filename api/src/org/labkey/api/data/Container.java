@@ -808,6 +808,53 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _activeModules;
     }
 
+    public boolean isDescendant(Container container)
+    {
+        if (null == container)
+            return false;
+
+        Container cur = this.getParent();
+        while (null != cur)
+        {
+            if (cur.equals(container))
+                return true;
+            cur = cur.getParent();
+        }
+        return false;
+    }
+
+    /**
+     * Searches descendants of this container recursively until it finds
+     * one that has a name matching the name provided. Search is done
+     * breadth-first (optimize for immediate child), and name matching is
+     * case-insentitive.
+     * @param name The name to find
+     * @return Matching Container or null if not found.
+     */
+    @Nullable
+    public Container findDescendant(String name)
+    {
+        return findDescendant(this, name);
+    }
+
+    private Container findDescendant(Container parent, String name)
+    {
+        for (Container child : parent.getChildren())
+        {
+            if (child.getName().equalsIgnoreCase(name))
+                return child;
+        }
+
+        Container ret = null;
+        for (Container child : parent.getChildren())
+        {
+            ret = findDescendant(child, name);
+            if (null == ret)
+                return ret;
+        }
+        return null;
+    }
+
     public static class ContainerException extends Exception
     {
         public ContainerException(String message)
