@@ -462,21 +462,38 @@ public class CoreController extends SpringActionController
 
         public ModelAndView getView(CreateWorkbookForm createWorkbookForm, boolean reshow, BindException errors) throws Exception
         {
-            int nextId = 1; //TODO: store next id on container
             Container container = getContainer();
             CreateWorkbookBean bean = new CreateWorkbookBean();
 
             //suggest a name
-            //TODO: get prefix from container (defaults to container name)
-            bean.setName(container.getName() + "-" + nextId);
+            bean.setName(container.getNextWorkbookName());
 
             return new JspView<CreateWorkbookBean>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
         }
 
         public boolean handlePost(CreateWorkbookForm form, BindException errors) throws Exception
         {
-            _newWorkbook = ContainerManager.createWorkbook(getContainer(), form.getName(), form.getDescription(), getUser());
+            String name = StringUtils.trimToNull(form.getName());
+            Container container = getContainer();
+
+            _newWorkbook = ContainerManager.createWorkbook(container, name, StringUtils.trimToNull(form.getDescription()), getUser());
             _newWorkbook.setFolderType(new WorkbookFolderType());
+
+            //parse and remember new prefix
+            //according to spec, name can be in the following forms
+            // <prefix>-N
+            // <prefix> N
+            //
+            int pos = name.lastIndexOf('-');
+            if (pos < 0)
+                pos = name.lastIndexOf(" ");
+
+            if (pos >= 0)
+            {
+                String prefix = name.substring(0, pos);
+                container.setWorkbookNamePrefix(prefix);
+            }
+
             return true;
         }
 

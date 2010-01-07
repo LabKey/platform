@@ -57,6 +57,7 @@ import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
 import org.labkey.core.workbook.WorkbookFolderType;
+import org.labkey.core.workbook.WorkbookWebPartFactory;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -195,6 +196,26 @@ public class CoreModule extends SpringModule
                         box.setFrame(WebPartView.FrameType.PORTAL);
                         box.setTitle("Workbooks");
                         return box;
+                    }
+                },
+                new WorkbookWebPartFactory("Workbook Description")
+                {
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        Container c = portalCtx.getContainer();
+                        StringBuilder html = new StringBuilder();
+
+                        html.append("<h3>");
+                        html.append(PageFlowUtil.filter(c.getName()));
+                        html.append("</h3>");
+
+                        html.append(null != c.getDescription() ? PageFlowUtil.filter(c.getDescription())
+                                : "<p style=\"font-style:italic;\">No description provided.</p>");
+
+                        HtmlView view = new HtmlView(html.toString());
+                        view.setTitle("Workbook Description");
+                        view.setFrame(WebPartView.FrameType.PORTAL);
+                        return view;
                     }
                 });
     }
