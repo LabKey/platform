@@ -475,7 +475,7 @@ public class CoreController extends SpringActionController
 
         public boolean handlePost(CreateWorkbookForm form, BindException errors) throws Exception
         {
-            _newWorkbook = ContainerManager.createWorkbook(getContainer(), form.getName(), form.getDescription());
+            _newWorkbook = ContainerManager.createWorkbook(getContainer(), form.getName(), form.getDescription(), getUser());
             _newWorkbook.setFolderType(new WorkbookFolderType());
             return true;
         }
