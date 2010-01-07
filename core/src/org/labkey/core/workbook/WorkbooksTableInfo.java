@@ -52,6 +52,8 @@ public class WorkbooksTableInfo extends FilteredTable
         col.setURL(webURLExp);
         this.addColumn(col);
 
+        this.addColumn(this.wrapColumn(getRealTable().getColumn("Description")));
+        
         col = this.wrapColumn(getRealTable().getColumn("CreatedBy"));
         final boolean isSiteAdmin = _schema.getUser().isAdministrator();
         col.setFk(new LookupForeignKey("UserId", "DisplayName")

@@ -24,12 +24,12 @@ public class WorkbookFolderType extends DefaultFolderType
     {
         super(NAME,
                 "A workbook containing files and experiment runs.",
+                null,
                 Arrays.asList(
                         Portal.getPortalPart("Workbook Description").createWebPart(),
                         Portal.getPortalPart("Files").createWebPart(),
                         Portal.getPortalPart("Experiment Runs").createWebPart()
                 ),
-                null,
                 getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), getModule("Experiment")),
                 ModuleLoader.getInstance().getCoreModule());
     }

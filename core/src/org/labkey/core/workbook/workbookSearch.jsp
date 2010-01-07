@@ -27,33 +27,16 @@
     WorkbookSearchBean searchBean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
 %>
-<style type="text/css">
-    .wbsearch-empty-search
-    {
-        color: #CCCCCC;
-    }
-</style>
 <form method="GET" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
-    <input type="text" id="wbsearch-id" name="id" size="20" value="Enter ID or Name" class="wbsearch-empty-search"/>
+    <input type="text" id="wbsearch-id" name="id" size="20" value=""/>
     <%=PageFlowUtil.generateSubmitButton("Go")%>
 </form>
 
 <script type="text/javascript">
     Ext.onReady(function(){
-        var input = Ext.get("wbsearch-id");
-        if(!input)
-            return;
-        input.on("focus", function(){
-            input.removeClass("wbsearch-empty-search");
-            input.set({value:""});
-        });
-        input.on("blur", function(){
-            var value = input.getValue();
-            if (!value || value.toString().trim().length <= 0)
-            {
-                input.addClass("wbsearch-empty-search");
-                input.set({value:"Enter ID or Name"});
-            }
+        new Ext.form.TextField({
+            applyTo: 'wbsearch-id',
+            emptyText: 'Jump to ID or Name'
         });
     });
 </script>
