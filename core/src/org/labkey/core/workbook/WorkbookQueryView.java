@@ -2,11 +2,13 @@ package org.labkey.core.workbook;
 
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ActionURL;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.CoreController;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,6 +29,31 @@ public class WorkbookQueryView extends QueryView
         settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
         setSettings(settings);
 
-        setTitle("Workbooks");
+        setShadeAlternatingRows(true);
+        setShowDeleteButton(true);
+        setShowRecordSelectors(true);
+        setFrame(FrameType.NONE);
+    }
+
+    @Override
+    public DataView createDataView()
+    {
+        DataView view = super.createDataView();
+        DataRegion region = view.getDataRegion();
+        if(region.getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
+        {
+            ButtonBar bar = region.getButtonBar(DataRegion.MODE_GRID);
+            if (null != bar)
+            {
+                ActionButton btn = new ActionButton(new ActionURL(CoreController.ManageWorkbooksAction.class, getContainer()), "Manage Workbooks");
+                btn.setActionType(ActionButton.Action.LINK);
+                bar.add(btn);
+
+                btn = new ActionButton(new ActionURL(CoreController.CreateWorkbookAction.class, getContainer()), "Create New Workbook");
+                btn.setActionType(ActionButton.Action.LINK);
+                bar.add(btn);
+            }
+        }
+        return view;
     }
 }

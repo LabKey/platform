@@ -26,6 +26,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
+import org.labkey.core.workbook.WorkbooksTableInfo;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -78,43 +79,7 @@ public class CoreQuerySchema extends UserSchema
 
     public TableInfo getWorkbooks()
     {
-        TableInfo containersBase = CoreSchema.getInstance().getTableInfoContainers();
-        FilteredTable workbooks = new FilteredTable(containersBase);
-        ColumnInfo col;
-
-        col = workbooks.wrapColumn("ID", containersBase.getColumn("RowId"));
-        col.setKeyField(true);
-        col.setReadOnly(true);
-        workbooks.addColumn(col);
-
-        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("Name")));
-
-        col = workbooks.wrapColumn(containersBase.getColumn("CreatedBy"));
-        final boolean isSiteAdmin = getUser().isAdministrator();
-        col.setFk(new LookupForeignKey("UserId", "DisplayName")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return isSiteAdmin ? getSiteUsers() : getUsers();
-            }
-        });
-        workbooks.addColumn(col);
-
-        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("Created")));
-        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("Parent")));
-        workbooks.addColumn(workbooks.wrapColumn(containersBase.getColumn("EntityID")));
-
-        List<FieldKey> defCols = new ArrayList<FieldKey>();
-        defCols.add(FieldKey.fromParts("ID"));
-        defCols.add(FieldKey.fromParts("Name"));
-        defCols.add(FieldKey.fromParts("CreatedBy"));
-        defCols.add(FieldKey.fromParts("Created"));
-        workbooks.setDefaultVisibleColumns(defCols);
-
-        //filter for parent = current container
-        workbooks.addCondition(containersBase.getColumn("Parent"), getContainer());
-        
-        return workbooks;
+        return new WorkbooksTableInfo(this);
     }
 
     public TableInfo getGroups()

@@ -17,10 +17,7 @@
 package org.labkey.core;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -33,13 +30,23 @@ import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.view.*;
+import org.labkey.core.workbook.WorkbookQueryView;
+import org.labkey.core.workbook.WorkbookSearchView;
+import org.labkey.core.workbook.CreateWorkbookBean;
+import org.labkey.core.workbook.WorkbookFolderType;
+import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -344,6 +351,144 @@ public class CoreController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class ManageWorkbooksAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new WorkbookQueryView(getViewContext(), new CoreQuerySchema(getUser(), getContainer()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Manage Workbooks");
+        }
+    }
+
+    public static class LookupWorkbookForm
+    {
+        private String _id;
+
+        public String getId()
+        {
+            return _id;
+        }
+
+        public void setId(String id)
+        {
+            _id = id;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class LookupWorkbookAction extends SimpleViewAction<LookupWorkbookForm>
+    {
+        public ModelAndView getView(LookupWorkbookForm form, BindException errors) throws Exception
+        {
+            if (null == form.getId())
+                throw new NotFoundException("You must supply the id of the workbook you wish to find.");
+
+            //try to lookup based on id
+            Container container = ContainerManager.getForRowId(form.getId());
+            //if found, ensure it's a descendant of the current container, and redirect
+            if (null != container && container.isDescendant(getContainer()))
+                throw new RedirectException(container.getStartURL(getViewContext()));
+
+            //next try to lookup based on name
+            container = getContainer().findDescendant(form.getId());
+            if (null != container)
+                throw new RedirectException(container.getStartURL(getViewContext()));
+
+            //otherwise, return a workbooks list with the search view
+            HtmlView message = new HtmlView("<p class='labkey-error'>Could not find a workbook with id '" + form.getId() + "' in this folder or subfolders. Try searching or entering a different id.</p>");
+            WorkbookQueryView wbqview = new WorkbookQueryView(getViewContext(), new CoreQuerySchema(getUser(), getContainer()));
+            return new VBox(message, new WorkbookSearchView(wbqview), wbqview);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            //if a view ends up getting rendered, the workbook id was not found
+            return root.addChild("Workbooks");
+        }
+    }
+
+    public static class CreateWorkbookForm
+    {
+        private String _name;
+        private String _description;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateWorkbookAction extends FormViewAction<CreateWorkbookForm>
+    {
+        private Container _newWorkbook;
+
+        public void validateCommand(CreateWorkbookForm form, Errors errors)
+        {
+            String name = StringUtils.trimToNull(form.getName());
+            if (null == name)
+                errors.reject(null, "You must supply a name for the new workbook!");
+            else
+            {
+                //ensure name is unique
+                Container container = getContainer();
+                if (container.hasChild(name))
+                    errors.reject(null, "The name '" + name + "' has already been used for another workbook.");
+            }
+        }
+
+        public ModelAndView getView(CreateWorkbookForm createWorkbookForm, boolean reshow, BindException errors) throws Exception
+        {
+            int nextId = 1; //TODO: store next id on container
+            Container container = getContainer();
+            CreateWorkbookBean bean = new CreateWorkbookBean();
+
+            //suggest a name
+            //TODO: get prefix from container (defaults to container name)
+            bean.setName(container.getName() + "-" + nextId);
+
+            return new JspView<CreateWorkbookBean>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
+        }
+
+        public boolean handlePost(CreateWorkbookForm form, BindException errors) throws Exception
+        {
+            _newWorkbook = ContainerManager.createWorkbook(getContainer(), form.getName(), form.getDescription());
+            _newWorkbook.setFolderType(new WorkbookFolderType());
+            return true;
+        }
+
+        public URLHelper getSuccessURL(CreateWorkbookForm form)
+        {
+            Container c = (null != _newWorkbook ? _newWorkbook : getContainer());
+            return c.getStartURL(getViewContext());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create New Workbook");
         }
     }
 }

@@ -55,6 +55,8 @@ import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.labkey.core.workbook.WorkbookQueryView;
+import org.labkey.core.workbook.WorkbookSearchView;
+import org.labkey.core.workbook.WorkbookFolderType;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -188,7 +190,11 @@ public class CoreModule extends SpringModule
                 {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        return new WorkbookQueryView(portalCtx, new CoreQuerySchema(portalCtx.getUser(), portalCtx.getContainer()));
+                        WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, new CoreQuerySchema(portalCtx.getUser(), portalCtx.getContainer()));
+                        VBox box = new VBox(new WorkbookSearchView(wbqview), wbqview);
+                        box.setFrame(WebPartView.FrameType.PORTAL);
+                        box.setTitle("Workbooks");
+                        return box;
                     }
                 });
     }
@@ -300,6 +306,7 @@ public class CoreModule extends SpringModule
         AnalyticsController.registerAdminConsoleLinks();
 
         WebdavService.get().setResolver(WebdavResolverImpl.get());
+        ModuleLoader.getInstance().registerFolderType(new WorkbookFolderType());
     }
 
     @Override
