@@ -76,6 +76,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
     //is this container a workbook?
     private boolean _workbook;
 
+    public static final String WORKBOOK_PROPS_CATEGORY = "workbook";
+    public static final String WORKBOOK_PROP_PREFIX = "prefix";
+    public static final String WORKBOOK_PROP_NEXTID = "nextid";
+
 
     // UNDONE: BeanFactory for Container
 
@@ -966,4 +970,30 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         return true;
     }
+
+    public synchronized String getNextWorkbookName()
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), WORKBOOK_PROPS_CATEGORY, true);
+        String prefix = props.get(WORKBOOK_PROP_PREFIX);
+        if (null == prefix)
+            prefix = getName();
+        String nextIdString = props.get(WORKBOOK_PROP_NEXTID);
+        int nextId = 1;
+        if (null != nextIdString)
+            nextId = Integer.parseInt(nextIdString);
+
+        //increment and save next id
+        props.put(WORKBOOK_PROP_NEXTID, String.valueOf(nextId + 1));
+        PropertyManager.saveProperties(props);
+
+        return prefix + "-" + nextId;
+    }
+
+    public synchronized void setWorkbookNamePrefix(String prefix)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), WORKBOOK_PROPS_CATEGORY, true);
+        props.put(WORKBOOK_PROP_PREFIX, prefix);
+        PropertyManager.saveProperties(props);
+    }
+
 }
