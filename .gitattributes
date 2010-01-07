@@ -538,6 +538,7 @@ core/src/org/labkey/core/workbook/WorkbookSearchView.java -text
 core/src/org/labkey/core/workbook/WorkbookWebPartFactory.java -text
 core/src/org/labkey/core/workbook/WorkbooksTableInfo.java -text
 core/src/org/labkey/core/workbook/createWorkbook.jsp -text
+core/src/org/labkey/core/workbook/workbookDescription.jsp -text
 core/src/org/labkey/core/workbook/workbookSearch.jsp -text
 core/webapp/FileTree.js -text
 core/webapp/SecurityAdmin.css -text
