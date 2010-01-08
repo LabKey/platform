@@ -19,9 +19,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
@@ -121,7 +123,7 @@ public abstract class AbstractResource implements Resource
     public void setLastIndexed(long ms)
     {
         // DavCrawler uses this information
-//        ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
+        ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
     }
 
     public String getModifiedBy()
