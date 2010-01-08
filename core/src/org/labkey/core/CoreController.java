@@ -33,6 +33,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
@@ -506,6 +507,32 @@ public class CoreController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create New Workbook");
+        }
+    }
+
+    public static class UpdateDescriptionForm
+    {
+        private String _description;
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class UpdateDescriptionAction extends MutatingApiAction<UpdateDescriptionForm>
+    {
+        public ApiResponse execute(UpdateDescriptionForm form, BindException errors) throws Exception
+        {
+            String description =  StringUtils.trimToNull(form.getDescription());
+            ContainerManager.updateDescription(getContainer(), description, getUser());
+            return new ApiSimpleResponse("description", description);
         }
     }
 }

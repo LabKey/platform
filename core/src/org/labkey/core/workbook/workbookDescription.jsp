@@ -24,8 +24,73 @@
     Container container = me.getViewContext().getContainer();
 %>
 
+<style type="text/css">
+    .wb-empty-description
+    {
+        font-style: italic;
+    }
+</style>
+
 <h3 id="wbd-name"><%=PageFlowUtil.filter(container.getName())%></h3>
 
-<p id="wbd-description" <%=null == container.getDescription() ? "style=\"font-style:italic;\"" : ""%>>
-    <%=(null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "No description provided.")%>
-</p>
+<div id="wbd-description" <%=null == container.getDescription() ? "class=\"wb-empty-description\"" : ""%>
+><%=(null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "No description provided.")%></div>
+
+<script type="text/javascript">
+    var _editor, _field;
+    Ext.onReady(function(){
+        if (!LABKEY.Security.currentUser.canUpdate)
+            return;
+
+        _field = new Ext.form.TextField({
+            selectOnFocus: true,
+            cls: 'extContainer',
+            grow: true
+        });
+
+        _editor = new Ext.Editor(_field, {
+            alignment: 'lt-lt',
+            autoSize: 'width',
+            listeners: {
+                complete: {
+                    fn: onEditDescription
+                }
+            }
+        });
+
+        var descrElem = Ext.get("wbd-description");
+
+        descrElem.on("click", function(){
+            if (descrElem.hasClass("wb-empty-description"))
+            {
+                descrElem.update("");
+                descrElem.removeClass("wb-empty-description");
+            }
+            _editor.startEdit(descrElem);
+        });
+    });
+
+    function onEditDescription() {
+        var descrElem = Ext.get("wbd-description");
+        var oldDescr = descrElem.dom.innerHTML;
+        descrElem.update("updating...");
+        
+        var params = {description: _field.getValue()};
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("core", "updateDescription"),
+            method: "POST",
+            success: function() {
+                Ext.get("wbd-description").update(_field.getValue());
+            },
+            failure: function() {
+                Ext.Msg.alert("Error", "Error updating description!");
+                descrElem.update(oldDescr);
+            },
+            jsonData: params,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
+    }
+
+</script>
