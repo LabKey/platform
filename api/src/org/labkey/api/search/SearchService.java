@@ -179,6 +179,7 @@ public interface SearchService
     // index
     //
 
+    void purgeQueues();
     void start();
     void pause();
     boolean isRunning();
