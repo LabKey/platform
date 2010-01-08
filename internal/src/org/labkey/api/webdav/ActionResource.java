@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -59,11 +60,15 @@ public class ActionResource extends AbstractDocumentResource
 
     public ActionResource(SearchService.SearchCategory category, ActionURL url)
     {
-        this(category, url, url.clone());
+        this(category, url, url.clone(), null);
     }
 
-
     public ActionResource(SearchService.SearchCategory category, ActionURL url, ActionURL source)
+    {
+        this(category, url, source, null);
+    }
+
+    public ActionResource(SearchService.SearchCategory category, ActionURL url, ActionURL source, Map<String,Object> properties)
     {
         super(new Path("action",url.getLocalURIString()));
         _url = url;
@@ -73,7 +78,10 @@ public class ActionResource extends AbstractDocumentResource
         _indexUrl.setScheme("http");
         _indexUrl.setHost("localhost");
         _properties = new HashMap<String,Object>();
-        _properties.put(SearchService.PROPERTY.category.toString(), category.getName());
+        if (null != properties)
+            _properties.putAll(properties);
+        if (null != category)
+            _properties.put(SearchService.PROPERTY.category.toString(), category.getName());
     }
 
 

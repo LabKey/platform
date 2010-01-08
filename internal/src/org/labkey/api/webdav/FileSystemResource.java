@@ -17,6 +17,7 @@ package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
@@ -100,8 +101,11 @@ public class FileSystemResource extends AbstractResource
     @Override
     public String getContainerId()
     {
+        if (null != _containerId)
+            return _containerId;
         return null==_folder ? null : _folder.getContainerId();
     }
+
 
     public boolean exists()
     {
@@ -301,8 +305,6 @@ public class FileSystemResource extends AbstractResource
             }
             return _lastModified;
         }
-        if (_c != null && _c.getCreated() != null)
-            return _c.getCreated().getTime();
         return Long.MIN_VALUE;
     }
 
@@ -397,12 +399,11 @@ public class FileSystemResource extends AbstractResource
         return Collections.emptyList();
     }
 
-    /*
-    * not part of Resource interface, but used by FtpConnector
-    */
-
-    public Container getContainer()
+    Container getContainer()
     {
-        return _c;
+        String id = getContainerId();
+        if (null == id)
+            return null;
+        return ContainerManager.getForId(id);
     }
 }

@@ -165,8 +165,9 @@ public interface SearchService
     // search
     //
 
-    public Collection<SearchHit> search(String queryString, User user, Container root, int page) throws IOException;
-    public String searchFormatted(String queryString, User user, Container root, int page);
+    public List<SearchHit> search(String queryString, User user, Container root, int page) throws IOException;
+//    public String searchFormatted(String queryString, User user, Container root, int page);
+    public String escapeTerm(String term);
     
     public List<SearchCategory> getSearchCategories();
 
@@ -178,6 +179,11 @@ public interface SearchService
     // index
     //
 
+    void start();
+    void pause();
+    boolean isRunning();
+
+    
     IndexTask defaultTask();
     IndexTask createTask(String description);
 
@@ -201,6 +207,7 @@ public interface SearchService
     /** default implementation saving lastIndexed */
     void setLastIndexedForPath(Path path, long time);
 
+    void deleteContainer(String id);
 
     //
     // configuration
@@ -208,7 +215,7 @@ public interface SearchService
     
     public void addSearchCategory(SearchCategory category);
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
-    public void clearIndex();
+    public void clear();
 
     /**
      * filter for documents modified since the provided date
