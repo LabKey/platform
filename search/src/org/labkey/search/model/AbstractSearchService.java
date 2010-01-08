@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,11 +25,12 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.ActionResource;
+import org.labkey.api.webdav.WebdavService;
+import org.labkey.search.SearchModule;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
@@ -93,7 +95,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public void addPathToCrawl(Path path)
     {
-        //DavCrawler.getInstance().startFull(path);
+        DavCrawler.getInstance().startContinuous(path);
     }
 
 
@@ -216,7 +218,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             if (null != r)
                 _start = System.currentTimeMillis();
-            _op = op; _id = id; _res = r;
+            _op = op;
+            _id = id;
+            _res = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
             _task = task;
         }
@@ -226,6 +230,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _run = r;
             _pri = null == pri ? PRIORITY.bulk : pri;
             _task = task;
+            _id = String.valueOf(r);
         }
 
         Resource getResource()
@@ -251,14 +256,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final Item _commitItem = new Item(null, null, PRIORITY.commit);
 
 
-    public void start()
-    {
-        startThreads();
-//        _crawler.startContinuous(this, new Path(WebdavService.getServletPath()));
-//        _crawler.startFull(this.defaultTask(), new Path(WebdavService.getServletPath()), null);
-    }
-
-
     public boolean isBusy()
     {
         int n = _itemQueue.size() + 10 * _runQueue.size();
@@ -275,6 +272,28 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _savePaths.updateFile(path, new Date(time));
     }
 
+
+    public final void deleteContainer(final String id)
+    {
+        Runnable r = new Runnable(){
+            public void run()
+            {
+                deleteIndexedContainer(id);
+                synchronized (_commitLock)
+                {
+                    _countIndexedSinceCommit++;
+                }
+            }
+        };
+        queueItem(new Item(defaultTask(), r, PRIORITY.background));
+    }
+
+
+    public final void clear()
+    {
+        clearIndex();
+        _savePaths.updatePrefix(Path.rootPath, null, null, true);
+    }
 
     private void queueItem(Item i)
     {
@@ -339,20 +358,77 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    final Object _runningLock = new Object();
+    boolean _threadsInitialized = false;
+    boolean _shuttingDown = false;
+    boolean _paused = true;
+    ArrayList<Thread> _threads = new ArrayList<Thread>(10);
+
+    
+    public void start()
+    {
+        synchronized (_runningLock)
+        {
+            _paused = false;
+            startThreads();
+            DavCrawler.getInstance().startContinuous(new Path(WebdavService.getServletPath()));
+            _runningLock.notifyAll();
+        }
+    }
+
+
+    public void pause()
+    {
+        synchronized (_runningLock)
+        {
+            _paused = true;
+        }
+        commit();
+    }
+
+
+    public boolean isRunning()
+    {
+        return !_paused;
+    }
+
+
+    boolean waitForRunning()
+    {
+        synchronized (_runningLock)
+        {
+            while (_paused && !_shuttingDown)
+            {
+                try
+                {
+                    _runningLock.wait();
+                }
+                catch (InterruptedException x)
+                {
+                }
+            }
+            return !_shuttingDown;
+        }
+    }
+
+    
     protected int getCountPreprocessorThreads()
     {
         return 0;
     }
 
+    
     protected int getCountIndexingThreads()
     {
         return 4;
     }
 
 
-    void startThreads()
+    protected void startThreads()
     {
         if (_shuttingDown)
+            return;
+        if (_threadsInitialized)
             return;
 
         ThreadGroup group = new ThreadGroup("SearchService");
@@ -384,12 +460,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (0 < countPreprocessingThreads)
             _indexQueue = new ArrayBlockingQueue<Item>(Math.min(100,10*Runtime.getRuntime().availableProcessors()));
 
+        _threadsInitialized = true;
+
         ContextListener.addShutdownListener(this);
     }
-
-
-    boolean _shuttingDown = false;
-    ArrayList<Thread> _threads = new ArrayList<Thread>(10);
 
 
     public void shutdownStarted(ServletContextEvent servletContextEvent)
@@ -415,6 +489,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             while (!_shuttingDown)
             {
+                if (!waitForRunning())
+                    continue;
+
                 Item i = null;
                 boolean success = false;
                 try
@@ -488,6 +565,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             while (!_shuttingDown)
             {
+                if (!waitForRunning())
+                    continue;
+
                 Item i = null;
                 boolean success = false;
                 try
@@ -557,13 +637,26 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final Object _commitLock = new Object(){ public String toString() { return "COMMIT LOCK"; } };
     int _countIndexedSinceCommit = 0;
     long _lastIndexedTime = 0;
-    
+
+
+    public final void commit()
+    {
+        synchronized (_commitLock)
+        {
+            commitIndex();
+            _countIndexedSinceCommit = 0;
+        }
+    }
+
+
     Runnable indexRunnable = new Runnable()
     {
         public void run()
         {
             while (!_shuttingDown)
             {
+//                if (!waitForRunning())
+//                    continue;
                 Item i = null;
                 boolean success = false;
                 try
@@ -578,24 +671,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                             if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
                             {
                                 commit();
-                                _countIndexedSinceCommit = 0;
                             }
 
                         }
                         continue;
                     }
-//                    if (_commitItem == i)
-//                    {
-//                        synchronized (_commitLock)
-//                        {
-//                            if (_countIndexedSinceCommit > 0)
-//                            {
-//                                commit();
-//                                _countIndexedSinceCommit = 0;
-//                            }
-//                        }
-//                        continue;
-//                    }
 
                     Resource r = i.getResource();
                     if (null == r || !r.exists())
@@ -609,6 +689,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     {
                         _countIndexedSinceCommit++;
                         _lastIndexedTime = ms;
+                        if (_countIndexedSinceCommit > 10000)
+                            commit();
                     }
                 }
                 catch (InterruptedException x)
@@ -663,6 +745,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public boolean isParticipantId(User user, String ptid)
     {
+        ptid = StringUtils.trim(ptid);
+        if (StringUtils.isEmpty(ptid))
+            return false;
         ResultSet rs = null;
         try
         {
@@ -739,8 +824,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     protected abstract void index(String id, Resource r, Map preprocessProps);
-    protected abstract void commit();
+    protected abstract void commitIndex();
+    protected abstract void deleteIndexedContainer(String id);
     protected abstract void shutDown();
+    protected abstract void clearIndex();
+
 
     static Map emptyMap = Collections.emptyMap();
     
