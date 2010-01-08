@@ -393,6 +393,22 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    /** this is for testing, and memcheck only! */
+    public void purgeQueues()
+    {
+        _defaultTask._subtasks.clear();
+        for (IndexTask t : getTasks())
+        {
+            t.cancel(true);
+            ((AbstractIndexTask)t)._subtasks.clear();
+        }
+        _runQueue.clear();
+        _itemQueue.clear();
+        if (null != _indexQueue)
+            _indexQueue.clear();
+    }
+
+
     boolean waitForRunning()
     {
         synchronized (_runningLock)
@@ -565,9 +581,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             while (!_shuttingDown)
             {
-                if (!waitForRunning())
-                    continue;
-
                 Item i = null;
                 boolean success = false;
                 try

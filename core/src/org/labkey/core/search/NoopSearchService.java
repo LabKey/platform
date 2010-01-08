@@ -237,6 +237,10 @@ public class NoopSearchService implements SearchService
         return StringUtils.trimToEmpty(term);
     }
 
+    public void purgeQueues()
+    {
+    }
+
     public void start()
     {
     }

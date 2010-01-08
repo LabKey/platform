@@ -58,6 +58,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.search.SearchService;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -2300,6 +2301,9 @@ public class AdminController extends SpringActionController
             {
                 Introspector.flushCaches();
                 CacheMap.purgeAllCaches();
+                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+                if (null != ss)
+                    ss.purgeQueues();
             }
 
             if (form.isGc())
