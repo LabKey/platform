@@ -15,6 +15,7 @@
  */
 package org.labkey.core.search;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchService;
@@ -181,7 +182,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public Collection<SearchHit> search(String queryString, User user, Container root, int page) throws IOException
+    public List<SearchHit> search(String queryString, User user, Container root, int page) throws IOException
     {
         return Collections.emptyList();
     }
@@ -191,12 +192,7 @@ public class NoopSearchService implements SearchService
         return false;
     }
 
-    public String searchFormatted(String queryString, User user, Container root, int page)
-    {
-        return null;
-    }
-
-    public void clearIndex()
+    public void clear()
     {
     }
 
@@ -230,5 +226,27 @@ public class NoopSearchService implements SearchService
 
     public void setLastIndexedForPath(Path path, long time)
     {
+    }
+
+    public void deleteContainer(String id)
+    {
+    }
+
+    public String escapeTerm(String term)
+    {
+        return StringUtils.trimToEmpty(term);
+    }
+
+    public void start()
+    {
+    }
+
+    public void pause()
+    {
+    }
+
+    public boolean isRunning()
+    {
+        return false;
     }
 }

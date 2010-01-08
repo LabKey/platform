@@ -16,21 +16,22 @@
 package org.labkey.search.model;
 
 import org.apache.log4j.Category;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.*;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.view.ActionURL;
 
 import javax.servlet.ServletContextEvent;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,8 +55,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class DavCrawler implements ShutdownListener
 {
+    SearchService.SearchCategory folderCategory = new SearchService.SearchCategory("Folder", "Folder");
+
     long _defaultWait = TimeUnit.SECONDS.toMillis(60);
-    long _defaultBusyWait = TimeUnit.SECONDS.toMillis(1);
+    long _defaultBusyWait = TimeUnit.SECONDS.toMillis(5);
 
     // to make testing easier, break out the interface for persisting crawl state
     public interface SavePaths
@@ -64,10 +67,16 @@ public class DavCrawler implements ShutdownListener
         final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("2000-01-01"));
 
         // collections
+
+        /** update path (optionally create) */
         boolean updatePath(Path path, java.util.Date lastIndexed, java.util.Date nextCrawl, boolean create);
+
+        /** insert path if it does not exist */
+        boolean insertPath(Path path, java.util.Date nextCrawl);
         void updatePrefix(Path path, java.util.Date lastIndexed, java.util.Date nextCrawl, boolean forceReindexAtNextCrawl);
         void deletePath(Path path);
-        public Map<Path, Date> getPaths(int limit);
+        /** <lastCrawl, nextCrawl> */
+        public Map<Path, Pair<Date,Date>> getPaths(int limit);
 
         // files
         public Map<String,Date> getFiles(Path path);
@@ -89,6 +98,7 @@ public class DavCrawler implements ShutdownListener
     static DavCrawler _instance = new DavCrawler();
     boolean _shuttingDown = false;
 
+    
     public static DavCrawler getInstance()
     {
         return _instance;
@@ -132,12 +142,30 @@ public class DavCrawler implements ShutdownListener
      */
     public void startContinuous(Path start)
     {
-        _log.debug("START FULL");
+        _log.debug("START CONTINUOUS " + start.toString());
 
         _paths.updatePath(start, null, null, true);
         pingCrawler();
     }
 
+
+    public static void addContainer(SearchService.IndexTask task, Resource resource)
+    {
+        Container c = ContainerManager.getForId(resource.getContainerId());
+        if (null == c)
+            return;
+        String body = c.getPath() + "\n" + c.getDescription();
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put(SearchService.PROPERTY.title.toString(), c.getName());
+        Resource doc = new SimpleDocumentResource(resource.getPath(),
+                "container:" + c.getId(),
+                c.getId(),
+                "text/plain",
+                body.getBytes(),
+                new ActionURL("project","start",c),
+                properties);
+        task.addResource(doc, SearchService.PRIORITY.item);
+    }
 
 
     class IndexDirectoryJob implements Runnable
@@ -145,30 +173,42 @@ public class DavCrawler implements ShutdownListener
         SearchService.IndexTask _task;
         Path _path;
         boolean _full;
-
+        Date _lastCrawl=null;
+        Date _nextCrawl=null;
+        Date _indexTime = null;
+        
         /**
          * @param path
-         * @param full  if true, immediately schedule a scan for all children
          */
-        IndexDirectoryJob(SearchService.IndexTask task, Path path, boolean full)
+        IndexDirectoryJob(Path path, Date last, Date next)
         {
-            _task = task;
             _path = path;
-            _full = full;
+            _lastCrawl = last;
+            _nextCrawl = next;
+            _full = _nextCrawl.getTime() < SavePaths.oldDate.getTime();
         }
 
 
         public void submit()
         {
+            _task = getSearchService().createTask("Index " + _path.toString());
             _task.addRunnable(this, SearchService.PRIORITY.crawl);
+            _task.setReady();
         }
 
-        
+
         public void run()
         {
             _log.debug("IndexDirectoryJob.run(" + _path + ")");
-            
-            // index files
+            final long now = System.currentTimeMillis();
+
+            if (_path.equals(Path.rootPath))
+            {
+                // what do we want to do here...
+                return;
+            }
+
+
             Resource r = getResolver().lookup(_path);
             if (null == r || !r.isCollection())
             {
@@ -176,8 +216,25 @@ public class DavCrawler implements ShutdownListener
                 return;
             }
 
-            // get current index status
+
+            // if this is a web folder, call enumerate documents
+            if (r instanceof WebdavResolver.WebFolder)
+            {
+                Container c = ContainerManager.getForId(r.getContainerId());
+                if (null == c)
+                    return;
+
+                addContainer(_task, r);
+
+                for (Module m : ModuleLoader.getInstance().getModules())
+                {
+                    m.enumerateDocuments(_task, c, _full ? null : _lastCrawl);
+                }
+            }
+
+            // get current index status for files
             Map<String,Date> map = _paths.getFiles(_path);
+            // CONSIDER: _paths.getChildCollections(_path);
 
             for (Resource child : r.list())
             {
@@ -193,19 +250,41 @@ public class DavCrawler implements ShutdownListener
                         continue;
                     _task.addResource(child, SearchService.PRIORITY.background);
                 }
+                else if (!child.exists()) // happens when pipeline is defined but directory doesn't exist
+                {
+                    continue;
+                }
+                else if (!child.shouldIndex())
+                {
+                    continue;
+                }
                 else if (skipContainer(child))
                 {
                     continue;
                 }
-                else if (_full)
+                else
                 {
-                    _paths.updatePath(child.getPath(), null, null, true);
-                    pingCrawler();
+                    long nextCrawl = SavePaths.nullDate.getTime();
+                    if (!(r instanceof WebdavResolver.WebFolder))
+                        nextCrawl += child.getPath().size()*1000; // bias toward breadth first
+                    if (_full)
+                    {
+                        _paths.updatePath(child.getPath(), null, new Date(nextCrawl), true);
+                        pingCrawler();
+                    }
+                    else
+                    {
+                        _paths.insertPath(child.getPath(), new Date(nextCrawl));
+                    }
                 }
             }
+
+            // UNDONE: would be better if this were called on _task completion
+            long changeInterval = Cache.DAY;
+            long nextCrawl = now + (long)(changeInterval * (0.5 + 0.5 * Math.random()));
+            _paths.updatePath(_path, new Date(now), new Date(nextCrawl), true);
         }
     }
-
 
 
     class Rate
@@ -280,9 +359,11 @@ public class DavCrawler implements ShutdownListener
             {
                 try
                 {
+                    SearchService ss = getSearchService();
+                    if (!((AbstractSearchService)ss).waitForRunning())
+                        continue;
                     _wait(_crawlerEvent, delay);
                     delay = _defaultBusyWait;
-                    SearchService ss = getSearchService();
                     if (null == ss || ss.isBusy())
                         continue;
                     delay = findSomeWork();
@@ -301,21 +382,22 @@ public class DavCrawler implements ShutdownListener
         _log.debug("findSomeWork()");
 
         boolean fullCrawl = false;
-        Map<Path,Date> map = _paths.getPaths(100);
+        Map<Path,Pair<Date,Date>> map = _paths.getPaths(100);
         List<Path> paths = new ArrayList<Path>(map.size());
 
-        for (Map.Entry<Path,Date> e : map.entrySet())
+        for (Map.Entry<Path,Pair<Date,Date>> e : map.entrySet())
         {
             Path path = e.getKey();
-            Date nextCrawl = e.getValue();
+            Date lastCrawl = e.getValue().first;
+            Date nextCrawl = e.getValue().second;
             boolean full = nextCrawl.getTime() < SavePaths.oldDate.getTime();
             fullCrawl |= full;
 
-            _log.debug("reindex: " + path.toString());
+            _log.debug("crawl: " + path.toString());
             paths.add(path);
-            new IndexDirectoryJob(getSearchService().defaultTask(), path, full).submit();
+            new IndexDirectoryJob(path, lastCrawl, nextCrawl).submit();
         }
-        long delay = (fullCrawl || map.size() > 0) ? 0 : TimeUnit.SECONDS.toMillis(60);
+        long delay = (fullCrawl || map.size() > 0) ? 0 : _defaultWait;
         return delay;
     }
     
@@ -323,13 +405,22 @@ public class DavCrawler implements ShutdownListener
     static boolean skipContainer(Resource r)
     {
         String name = r.getName();
-        
+
         if ("@wiki".equals(name))
             return true;
 
         if (".svn".equals(name))
             return true;
 
+        if (".Trash".equals(name))
+            return true;
+
+        // if symbolic link
+        //  return true;
+        
+        if (name.startsWith("."))
+            return true;
+        
         return false;
     }
 

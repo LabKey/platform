@@ -170,6 +170,14 @@ public class CrawlerTest extends junit.framework.TestCase
         Map<Path, Pair<Date,Date>> collections = new HashMap<Path,Pair<Date,Date>>();
         Map<Path, Date> files = new HashMap<Path, Date>();
 
+        public boolean insertPath(Path path, Date nextCrawl)
+        {
+            if (collections.containsKey(path))
+                return false;
+            Pair p = collections.put(path, new Pair<Date,Date>(nullDate,nextCrawl));
+            return true;
+        }
+
         public synchronized boolean updatePath(Path path, Date lastIndexed, Date nextCrawl, boolean create)
         {
             collections.put(path, new Pair<Date,Date>(lastIndexed,nextCrawl));
@@ -190,16 +198,16 @@ public class CrawlerTest extends junit.framework.TestCase
             collections.remove(path);
         }
 
-        public synchronized Map<Path, Date> getPaths(int limit)
+        public synchronized Map<Path, Pair<Date,Date>> getPaths(int limit)
         {
             long now = System.currentTimeMillis();
             limit = Math.min(limit,5);
-            Map<Path, Date> ret = new TreeMap<Path,Date>();
+            Map<Path, Pair<Date,Date>> ret = new TreeMap<Path,Pair<Date,Date>>();
             for (Map.Entry<Path,Pair<Date,Date>> e : collections.entrySet())
             {
                 Date nextCrawl = e.getValue().second;
                 if (nextCrawl.getTime() < now)
-                    ret.put(e.getKey(), nextCrawl);
+                    ret.put(e.getKey(), new Pair(e.getValue().first, e.getValue().second));
                 if (ret.size() == limit)
                     break;
             }

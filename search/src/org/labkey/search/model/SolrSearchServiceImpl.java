@@ -22,10 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,14 +50,9 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 //        }
     }
 
-    public Collection<SearchHit> search(String queryString, User user, Container root, int page) throws IOException
+    public List<SearchHit> search(String queryString, User user, Container root, int page) throws IOException
     {
         return Collections.emptyList();
-    }
-
-    public String searchFormatted(String queryString, User user, Container root, int page)
-    {
-        return "";
     }
 
     public void clearIndex()
@@ -68,12 +60,22 @@ public class SolrSearchServiceImpl extends AbstractSearchService
         
     }
 
-    protected void commit()
+    protected void commitIndex()
     {
         _log.info("COMMIT");
     }
 
     protected void shutDown()
     {
+    }
+
+    @Override
+    protected void deleteIndexedContainer(String id)
+    {
+    }
+
+    public String escapeTerm(String term)
+    {
+        return term;
     }
 }

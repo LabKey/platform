@@ -1806,6 +1806,7 @@ search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
 search/src/org/labkey/search/model/SavePaths.java -text
 search/src/org/labkey/search/model/SecurityFilter.java -text
 search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
+search/src/org/labkey/search/view/admin.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
 search/src/schemas/search.xml -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text

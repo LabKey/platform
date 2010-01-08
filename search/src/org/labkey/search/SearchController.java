@@ -20,8 +20,10 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -34,14 +36,18 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.search.model.AbstractSearchService;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class SearchController extends SpringActionController
 {
@@ -57,6 +63,234 @@ public class SearchController extends SpringActionController
     {
         public ActionURL getRedirectURL(Object o) throws Exception
         {
+            return new ActionURL(SearchAction.class, getContainer());
+        }
+    }
+
+
+    public static class AdminForm
+    {
+        private boolean pause;
+        private boolean start;
+
+        public boolean isStart()
+        {
+            return start;
+        }
+
+        public void setStart(boolean start)
+        {
+            this.start = start;
+        }
+
+        public boolean isPause()
+        {
+            return pause;
+        }
+
+        public void setPause(boolean pause)
+        {
+            this.pause = pause;
+        }
+    }
+    
+
+    @RequiresSiteAdmin
+    public class AdminAction extends FormViewAction<AdminForm>
+    {
+        public void validateCommand(AdminForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<AdminForm>(SearchController.class, "view/admin.jsp", form, errors);
+        }
+
+        public boolean handlePost(AdminForm form, BindException errors) throws Exception
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null == ss)
+            {
+                errors.reject("Indesing service is not running");
+                return false;
+            }
+
+            Map<String,String> m = PropertyManager.getProperties(SearchModule.class.getName(),true);
+            if (form.isStart())
+            {
+                ss.start();
+                m.put(SearchModule.searchRunningState,"true");
+            }
+            else if (form.isPause())
+            {
+                ss.pause();
+                m.put(SearchModule.searchRunningState,"false");
+            }
+            PropertyManager.saveProperties(m);
+            return true;
+        }
+        
+        public URLHelper getSuccessURL(AdminForm o)
+        {
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Admin Console", new ActionURL("admin","showAdmin","/"));
+            root.addChild("Indexing Configuration");
+            return root;
+        }
+
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            return null;
+        }
+    }
+
+
+    // UNDONE: remove; for testing only
+    @RequiresSiteAdmin
+    public class CancelAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            // SimpleRedirectAction doesn't take a form
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+    
+            if (null == ss)
+                return null;
+
+            SearchService.IndexTask defaultTask = ss.defaultTask();
+            for (SearchService.IndexTask task : ss.getTasks())
+            {
+                if (task != defaultTask && !task.isCancelled())
+                    task.cancel(true);
+            }
+
+            try
+            {
+                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                if (null != returnUrl)
+                    return new ActionURL(returnUrl);
+            }
+            catch (Exception x)
+            {
+            }
+            return new ActionURL(SearchAction.class, getContainer());
+        }
+    }
+
+
+    // UNDONE: remove; for testing only
+    @RequiresSiteAdmin
+    public class ClearAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            // SimpleRedirectAction doesn't take a form
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null == ss)
+                return null;
+
+            ss.clear();
+
+            try
+            {
+                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                if (null != returnUrl)
+                    return new ActionURL(returnUrl);
+            }
+            catch (Exception x)
+            {
+            }
+            return new ActionURL(SearchAction.class, getContainer());
+        }
+    }
+
+
+    // UNDONE: remove; for testing only
+    @RequiresSiteAdmin
+    public class CommitAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            // SimpleRedirectAction doesn't take a form
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null == ss)
+                return null;
+
+            ((AbstractSearchService)ss).commit();
+
+            try
+            {
+                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                if (null != returnUrl)
+                    return new ActionURL(returnUrl);
+            }
+            catch (Exception x)
+            {
+            }
+            return new ActionURL(SearchAction.class, getContainer());
+        }
+    }
+
+
+
+    // UNDONE: remove; for testing only
+    @RequiresSiteAdmin
+    public class PauseAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            // SimpleRedirectAction doesn't take a form
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null == ss)
+                return null;
+
+            ss.pause();
+
+            try
+            {
+                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                if (null != returnUrl)
+                    return new ActionURL(returnUrl);
+            }
+            catch (Exception x)
+            {
+            }
+            return new ActionURL(SearchAction.class, getContainer());
+        }
+    }
+
+
+    // UNDONE: remove; for testing only
+    @RequiresSiteAdmin
+    public class StartAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            // SimpleRedirectAction doesn't take a form
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null == ss)
+                return null;
+
+            ss.start();
+
+            try
+            {
+                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                if (null != returnUrl)
+                    return new ActionURL(returnUrl);
+            }
+            catch (Exception x)
+            {
+            }
             return new ActionURL(SearchAction.class, getContainer());
         }
     }
@@ -84,13 +318,11 @@ public class SearchController extends SpringActionController
 
             if (!fullInProgress)
             {
-                if (full)
-                    ss.clearIndex();
-
                 Date since = full ? null : new Date(0);
                 Container c = full ? null : getViewContext().getContainer();
 
-                SearchService.IndexTask task = ss.createTask(full ? "Full Index" : c.getName());
+                String taskName = full ? "Full Index" : "Incremental index of " + c.getPath();
+                SearchService.IndexTask task = ss.createTask(taskName);
                 if (full)
                     _lastFullTask = task;
                 else
@@ -141,13 +373,19 @@ public class SearchController extends SpringActionController
 
             for (String q : form.getQ())
             {
-                q = StringUtils.trimToEmpty(q);
-                if (q.length() == 0)
+                q = StringUtils.strip(q," +-");
+                if (StringUtils.isEmpty(q))
                     continue;
                 if (ss.isParticipantId(getUser(), q))
-                    statusMessage = q + "is a participantid\n";
+                    statusMessage = q + " is a participantid\n";
             }
 
+            if (ss.isRunning())
+                statusMessage += "indexing is running\n";
+            else
+                statusMessage += "indexing is paused\n";
+
+/*
             List<SearchService.IndexTask> tasks = ss.getTasks();
 
             if (tasks.isEmpty())
@@ -173,23 +411,13 @@ public class SearchController extends SpringActionController
                     statusMessage += "Indexing in progress: ";
                 statusMessage += Formats.commaf0.format(count) + " documents (" + DateUtil.formatDuration(end-start) + ") "; // Remove for demo: Formats.commaf0.format(skipped) + " skipped or failed <br>";
             }
+*/
 
             form.setPrint(isPrint());
             form.setStatusMessage(statusMessage);
 
-            VBox vbox = new VBox();
-            HttpView searchBox = new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
-            vbox.addView(searchBox);
-
-            getPageConfig().setFocusId("query");
-
-            String query = form.getQueryString();
-            if (!StringUtils.isEmpty(StringUtils.trimToEmpty(query)))
-            {
-                String results = ss.searchFormatted(query, form.isGuest() ? User.guest : getUser(), ContainerManager.getRoot(), form.getPage());
-                vbox.addView(new HtmlView("<div id='searchResults'>" + results + "</div>"));
-            }
-            return vbox;
+            HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
+            return search;
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -3267,21 +3267,20 @@ public class StudyManager
             ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
             executeURL.setExtraPath(c.getId());
             
-            Map<String,Object> props = new HashMap<String,Object>();
-
             while (rs.next())
             {
-
                 String id = rs.getString(2);
                 ActionURL execute = executeURL.clone().addParameter("participantId",String.valueOf(id));
                 Path p = new Path(c.getId(),id);
 
+                Map<String,Object> props = new HashMap<String,Object>();
+                props.put(SearchService.PROPERTY.category.toString(), subjectCategory);
+                props.put(SearchService.PROPERTY.participantId.toString(), id);
+                props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- Participant " + id);
+
                 if (0==1)
                 {
                     // SimpleDocument
-                    props.put(SearchService.PROPERTY.category.toString(), subjectCategory);
-                    props.put("participantid", id);
-                    props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- Participant " + id);
                     SimpleDocumentResource r = new SimpleDocumentResource(
                             p, "participant:/" + p,
                             c.getId(),
@@ -3294,8 +3293,8 @@ public class StudyManager
                 else
                 {
                     // ActionResource
-                    ActionURL index = indexURL.clone().addParameter("participantId",String.valueOf(id));
-                    ActionResource r = new ActionResource(subjectCategory, execute, index);
+                    ActionURL index = indexURL.clone().addParameter("participantId",id);
+                    ActionResource r = new ActionResource(subjectCategory, execute, index, props);
                     task.addResource(r, SearchService.PRIORITY.item);
                 }
             }

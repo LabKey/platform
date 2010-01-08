@@ -710,7 +710,7 @@ public class IssueManager
             comma = ",";
         }
         f.append(")\n");
-        f.append("ORDER BY I.issueid");
+        f.append("ORDER BY I.issueid, C.created");
 
         ResultSet rs = null;
         try

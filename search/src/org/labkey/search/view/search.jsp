@@ -23,19 +23,26 @@
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="java.io.IOException" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.text.ParseException" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SearchController.SearchForm> me = (JspView<SearchController.SearchForm>) HttpView.currentView();
     SearchController.SearchForm form = me.getModelBean();
     Container c = me.getViewContext().getContainer();
+    User user = me.getViewContext().getUser();
+    SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
 
-    SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     List<SearchService.SearchCategory> categories = ss.getSearchCategories();
     SearchService.SearchCategory selected = null;
     for (SearchService.SearchCategory cat : categories)
@@ -55,7 +62,7 @@
 %>
 [<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c).addParameter("full", "1"))%>">reindex (full)</a>]<br>
 [<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c))%>">reindex (incremental)</a>]<br>
-<form name="search"><%
+<form id=searchForm name="search"><%
     if (form.isPrint())
     { %>
     <input type=hidden name=_print value=1>";<%
@@ -64,8 +71,9 @@
     <input type="hidden" name="guest" value=0>
     <input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q," ")))%>">&nbsp;
     <%=generateSubmitButton("Search")%>
-    <%=buttonImg("Search As Guest", "document.search.guest.value=1; return true;")%><br>
-<%
+    <%=buttonImg("Search As Guest", "document.search.guest.value=1; return true;")%>
+    <%=buttonImg("Google", "return google();")%><br>
+    <%
     %><input type=radio name=q value="" <%=null==selected?"checked":""%>>all<br><%
     for (SearchService.SearchCategory cat : categories)
     {
@@ -75,3 +83,79 @@
     }
 %>
 </form>
+
+<script type="text/javascript">
+function google()
+{
+    var query = document.getElementById('query').value;
+    window.location = 'http://www.google.com/search?q=' + encodeURIComponent(query);
+    return false;
+}
+
+</script>
+<%
+    String queryString = form.getQueryString();
+    if (null != StringUtils.trimToNull(queryString))
+    {
+        int hitsPerPage = 20;  // UNDONE
+        int pageNo=0;
+
+        try
+        {
+            long start = System.nanoTime();
+            List<SearchService.SearchHit> hits = ss.search(queryString, user, ContainerManager.getRoot(), pageNo);
+            long time = (System.nanoTime() - start)/1000000;
+            int totalHits = hits.isEmpty() ? 0 : hits.get(0).totalHits;
+
+            %><p />Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1?"s":""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
+
+            if (hitsPerPage < totalHits)
+            {
+                %>Displaying page <%=Formats.commaf0.format(pageNo + 1)%> of <%=Formats.commaf0.format((int)Math.ceil((double)totalHits / hitsPerPage))%><br><%
+            }
+            else
+            {
+                %>Displaying all results<br><%
+            }
+            %><p />
+            <div id="searchResults" width="400px"><%
+
+            for (int i = pageNo * hitsPerPage; i < Math.min((pageNo + 1) * hitsPerPage, hits.size()); i++)
+            {
+                SearchService.SearchHit hit = hits.get(i);
+
+                String href = hit.url;
+                try
+                {
+                    if (href.startsWith("/"))
+                    {
+                        ActionURL url = new ActionURL(href);
+                        Container cc = ContainerManager.getForId(url.getExtraPath());
+                        url.setExtraPath(cc.getPath());
+                        href = url.getLocalURIString();
+                    }
+                }
+                catch (Exception x)
+                {
+                    //
+                }
+
+                %><a href="<%=h(hit.url)%>"><%=h(hit.title)%></a><br><%
+                String summary = StringUtils.trimToNull(hit.summary);
+                if (null != summary)
+                {
+                    %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary,false)%></div><%
+                }
+                %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><%
+            }
+            %></div><%
+        }
+        catch (IOException e)
+        {
+            Throwable t = e;
+            if (e.getCause() instanceof ParseException)
+                t = e.getCause();
+            out.write("Error: " + t.getMessage());
+        }
+    }
+%>

@@ -19,16 +19,14 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -111,11 +109,11 @@ public class SavePaths implements DavCrawler.SavePaths
             return id;
 
         // insert parent
-        return _insert(parent);
+        return _ensure(parent);
     }
 
 
-    private int _insert(Path path) throws SQLException
+    private int _ensure(Path path) throws SQLException
     {
         // Mostly I don't care about Parent
         // However, we need this for the primary key
@@ -147,6 +145,37 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    public boolean insertPath(Path path, Date nextCrawl)
+    {
+        try
+        {
+        // Mostly I don't care about Parent
+            // However, we need this for the primary key
+            int parent = _getParentId(path);
+
+            CaseInsensitiveHashMap<Object> map = new CaseInsensitiveHashMap<Object>();
+            map.put("Path", toPathString(path));
+            map.put("Name", path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
+            map.put("Parent", parent);
+            map.put("NextCrawl", nextCrawl);
+            map.put("LastCrawled", nullDate);
+            map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
+            return true;
+        }
+        catch (SQLException x)
+        {
+            if (SqlDialect.isConstraintException(x))
+            {
+                return false;
+            }
+            else
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+    }
+
+
     public boolean updatePath(Path path, java.util.Date last, java.util.Date next, boolean create)
     {
         try
@@ -154,7 +183,7 @@ public class SavePaths implements DavCrawler.SavePaths
             boolean success = _update(path,last,next);
             if (!success && create)
             {
-                _insert(path);
+                _ensure(path);
                 success = _update(path,last,next);
             }
             return success;
@@ -164,7 +193,7 @@ public class SavePaths implements DavCrawler.SavePaths
             throw new RuntimeSQLException(x);
         }
     }
-
+    
 
     public void updatePrefix(Path path, java.util.Date last, java.util.Date next, boolean forceIndex)
     {
@@ -182,6 +211,7 @@ public class SavePaths implements DavCrawler.SavePaths
                     "UPDATE search.CrawlCollections " +
                     "SET LastCrawled=NULL, NextCrawl=? " +
                     "WHERE Path LIKE ?",
+                    // UNDONE LIKE ESCAPE
                     new Object[]{nullDate, toPathString(path) + "%"});
         }
         catch (SQLException x)
@@ -195,8 +225,9 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         try
         {
-            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlResources WHERE Parent=(SELECT id FROM search.CrawlCollections WHERE Path=?)", new Object[]{toPathString(path)});
-            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlCollections WHERE Path=?", new Object[]{toPathString(path)});
+            // UNDONE LIKE ESCAPE
+            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", new Object[]{toPathString(path) + "%"});
+            Table.execute(getSearchSchema(), "DELETE FROM search.CrawlCollections WHERE Path LIKE ?", new Object[]{toPathString(path) + "%"});
         }
         catch (SQLException x)
         {
@@ -206,13 +237,13 @@ public class SavePaths implements DavCrawler.SavePaths
 
 
 
-    public Map<Path, Date> getPaths(int limit)
+    public Map<Path, Pair<Date,Date>> getPaths(int limit)
     {
         java.sql.Timestamp now = new Timestamp(System.currentTimeMillis());
         java.sql.Timestamp awhileago = new Timestamp(now.getTime() - 30*60000);
 
         SQLFragment f = new SQLFragment(
-                "SELECT Path, NextCrawl\n" +
+                "SELECT Path, LastCrawled, NextCrawl\n" +
                 "FROM search.CrawlCollections\n" +
                 "WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?) " +
                 "ORDER BY NextCrawl",
@@ -222,7 +253,7 @@ public class SavePaths implements DavCrawler.SavePaths
         ResultSet rs = null;
         try
         {
-            Map<Path,Date> map = new HashMap<Path,Date>();
+            Map<Path,Pair<Date,Date>> map = new LinkedHashMap<Path,Pair<Date,Date>>();
             ArrayList<String> paths = new ArrayList<String>(limit);
             
             rs = Table.executeQuery(getSearchSchema(), sel);
@@ -230,8 +261,9 @@ public class SavePaths implements DavCrawler.SavePaths
             while (rs.next())
             {
                 String path = rs.getString(1);
-                java.sql.Timestamp nextCrawl = rs.getTimestamp(2);
-                map.put(Path.parse(path),nextCrawl);
+                java.sql.Timestamp lastCrawl = rs.getTimestamp(2);
+                java.sql.Timestamp nextCrawl = rs.getTimestamp(3);
+                map.put(Path.parse(path),new Pair(lastCrawl,nextCrawl));
                 paths.add(path);
             }
             rs.close();

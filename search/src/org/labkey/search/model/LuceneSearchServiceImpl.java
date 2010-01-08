@@ -37,7 +37,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.Container;
@@ -78,6 +77,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+
+    public String escapeTerm(String term)
+    {
+        if (StringUtils.isEmpty(term))
+            return "";
+        String illegal = "+-&|!(){}[]^\"~*?:\\";
+        if (StringUtils.containsNone(term,illegal))
+            return term;
+        StringBuilder sb = new StringBuilder(term.length()*2);
+        for (char ch : term.toCharArray())
+        {
+            if (illegal.indexOf(ch) != -1)
+                sb.append('\\');
+            sb.append(ch);
+        }
+        return sb.toString();
+    }
+    
 
     public void clearIndex()
     {
@@ -197,7 +214,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             return Collections.singletonMap(Document.class, doc);
         }
-        catch(NoClassDefFoundError err)
+        catch (NoClassDefFoundError err)
         {
             // Suppress stack trace, etc., if Bouncy Castle isn't present.
             if ("org/bouncycastle/cms/CMSException".equals(err.getMessage()))
@@ -205,9 +222,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             else
                 throw err;
         }
-        catch(Throwable e)
+        catch (Throwable e)
         {
-            _log.error("Indexing error with " + id, e);
+            String name = r.getPath().toString();
+            File f = r.getFile();
+            if (null != f)
+                name = f.getPath();
+            _log.error("Indexing error: " + name, e);
         }
 
         return null;
@@ -250,7 +271,37 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    protected synchronized void commit()
+    @Override
+    protected void deleteIndexedContainer(String id)
+    {
+        try
+        {
+            IndexWriter w = getIndexWriter();
+            Query query;
+            String s="";
+            try
+            {
+                s = "+" + SearchService.PROPERTY.container.toString() + ":" + id;
+                query = new QueryParser(Version.LUCENE_30, SearchService.PROPERTY.container.toString(), _analyzer).parse(s);
+            }
+            catch (ParseException x)
+            {
+                _log.error("Unexpected exception: s=" + s, x);
+                IOException io = new IOException();
+                io.initCause(x);
+                throw io;
+            }
+
+            w.deleteDocuments(query);
+        }
+        catch (IOException x)
+        {
+            
+        }
+    }
+
+
+    protected synchronized void commitIndex()
     {
         try
         {
@@ -303,7 +354,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         String sort = null;  // TODO: add sort parameter
         int hitsPerPage = 20;
 
-        boolean isParticipantId = isParticipantId(user, queryString);
+        // UNDONE: smarter query parsing
+        boolean isParticipantId = isParticipantId(user, StringUtils.strip(queryString," +-"));
         if (isParticipantId)
         {
             queryString += " " + SearchService.PROPERTY.category.toString() + ":subject^1"; // UNDONE: StudyManager.subjectCategory
@@ -349,7 +401,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
     
 
-    public String searchFormatted(String queryString, User user, Container root, int page)
+/*    public String searchFormatted(String queryString, User user, Container root, int page)
     {
         int hitsPerPage = 20;
         
@@ -401,6 +453,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             return "Error: " + t.getMessage();
         }
     }
+*/
 
     protected void shutDown()
     {

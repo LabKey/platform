@@ -53,12 +53,14 @@ import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -5818,6 +5820,9 @@ public class StudyController extends BaseStudyController
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
+            Container container = getViewContext().getContainer();
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
             out.print("<table><tr><td align=\"left\">");
             if (_prevURL == null)
                 out.print("[< Previous Participant]");
@@ -5829,8 +5834,16 @@ public class StudyController extends BaseStudyController
                 out.print("[Next Participant >]");
             else
                 out.print("[<a href=\"" + _nextURL + "\">Next Participant ></a>]");
+            out.print("&nbsp;");
 
-            Container container = getViewContext().getContainer();
+            if (null != _currentParticipantId && null != ss)
+            {
+                ActionURL search = new ActionURL("search", "search", container);
+                search.addParameter("q", "+" + ss.escapeTerm(_currentParticipantId));
+                out.print("[<a href=\"" + search.getEncodedLocalURIString() + "\">Search</a>]");
+                out.print("&nbsp;");
+            }
+
             if (_showCustomizeLink && container.hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, container);

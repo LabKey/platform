@@ -18,7 +18,9 @@ package org.labkey.search;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager.ContainerListener;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.beans.PropertyChangeEvent;
 
@@ -30,6 +32,9 @@ public class SearchContainerListener implements ContainerListener
 
     public void containerDeleted(Container c, User user)
     {
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null != ss)
+            ss.deleteContainer(c.getId());
     }
 
     public void propertyChange(PropertyChangeEvent evt)
