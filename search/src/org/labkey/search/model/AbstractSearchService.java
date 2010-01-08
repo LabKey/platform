@@ -297,7 +297,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private void queueItem(Item i)
     {
-        assert MemTracker.put(i);
+//        assert MemTracker.put(i);
 
         _log.debug("_submitQueue.put(" + i._id + ")");
         if (null != i._run)
