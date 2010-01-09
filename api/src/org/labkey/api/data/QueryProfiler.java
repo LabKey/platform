@@ -168,7 +168,7 @@ public class QueryProfiler
         }
     }
 
-    public static HttpView getReportView(String statName, ActionURL resetURL, ActionURLFactory factory)
+    public static HttpView getReportView(String statName, String buttonHTML, ActionURLFactory factory)
     {
         for (QueryTrackerSet set : TRACKER_SETS)
         {
@@ -185,7 +185,7 @@ public class QueryProfiler
                 {
                     int requests = ViewServlet.getRequestCount() - _requestCountAtLastReset;
                     sb.append("  <tr>");
-                    sb.append("<td>").append(PageFlowUtil.generateButton("Reset All Statistics", resetURL)).append("</td>");
+                    sb.append("<td>").append(buttonHTML).append("</td>");
                     sb.append("</tr>\n  <tr>");
                     sb.append("<td>Total Query Invocation Count:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryCount)).append("</td>");
                     sb.append("<td width=10>&nbsp;</td>");
@@ -513,7 +513,7 @@ public class QueryProfiler
 
         private final String _caption;
         private final String _description;
-        private final boolean _stable;   // Is this statistic stable, i.e., will it change after a QueryTracker has been added to the set?
+        private final boolean _stable;   // Is this statistic stable, i.e., will it never change once a QueryTracker has been added to the set?
         private final boolean _display;  // Should we display this statistic in the report?
 
         private QueryTrackerSet(String caption, String description, boolean stable, boolean display, Comparator<? super QueryTracker> comparator)
