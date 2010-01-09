@@ -2077,7 +2077,9 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
         {
-            return QueryProfiler.getReportView(form.getStat(), getResetQueryStatisticssURL(), new QueryProfiler.ActionURLFactory() {
+            String buttonHTML = PageFlowUtil.generateButton("Reset All Statistics", getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.generateButton("Export", getExportQueriesURL(form.getStat()));
+
+            return QueryProfiler.getReportView(form.getStat(), buttonHTML, new QueryProfiler.ActionURLFactory() {
                 public ActionURL getActionURL(String name)
                 {
                     return getQueriesURL(name);
@@ -2107,6 +2109,13 @@ public class AdminController extends SpringActionController
     }
 
 
+    private ActionURL getExportQueriesURL(String stat)
+    {
+        ActionURL url = new ActionURL(ExportQueriesAction.class, ContainerManager.getRoot());
+        url.addParameter("stat", stat);
+        return url;
+    }
+
     @RequiresPermissionClass(AdminReadPermission.class)
     public class ExportQueriesAction extends ExportAction<QueriesForm>
     {
@@ -2118,7 +2127,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private static ActionURL getResetQueryStatisticssURL()
+    private static ActionURL getResetQueryStatisticsURL()
     {
         return new ActionURL(ResetQueryStatisticsAction.class, ContainerManager.getRoot());
     }
