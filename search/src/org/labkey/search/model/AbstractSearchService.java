@@ -16,6 +16,7 @@
 package org.labkey.search.model;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections15.MultiMap;
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +31,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.search.SearchModule;
 
 import javax.servlet.ServletContextEvent;
@@ -39,6 +42,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -95,7 +99,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public void addPathToCrawl(Path path)
     {
-        DavCrawler.getInstance().startContinuous(path);
+        DavCrawler.getInstance().addPathToCrawl(path, null);
     }
 
 
@@ -371,7 +375,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             _paused = false;
             startThreads();
-            DavCrawler.getInstance().startContinuous(new Path(WebdavService.getServletPath()));
+            DavCrawler.getInstance().addPathToCrawl(new Path(WebdavService.getServletPath()), null);
             _runningLock.notifyAll();
         }
     }
@@ -848,6 +852,102 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     Map<?,?> preprocess(String id, Resource r)
     {
         return emptyMap;
+    }
+
+
+    final AtomicReference<DocumentProvider[]> _documentProviders = new AtomicReference<DocumentProvider[]>();
+    
+    public void addDocumentProvider(DocumentProvider provider)
+    {
+        synchronized (_documentProviders)
+        {
+            DocumentProvider[] documentProviders = _documentProviders.get();
+            if (null == documentProviders)
+            {
+                documentProviders = new DocumentProvider[1];
+            }
+            else
+            {
+                DocumentProvider[] arr = new DocumentProvider[documentProviders.length+1];
+                System.arraycopy(documentProviders, 0, arr, 0, documentProviders.length);
+                documentProviders = arr;
+            }
+            documentProviders[documentProviders.length-1] = provider;
+            _documentProviders.set(documentProviders);
+        }
+    }
+
+
+    public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
+    {
+        final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
+
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                DocumentProvider[] documentProviders = _documentProviders.get();
+                for (DocumentProvider p : documentProviders)
+                {
+                    p.enumerateDocuments(task, c, since);
+                }
+            }
+        };
+        task.addRunnable(r, PRIORITY.bulk); // breaks rule of always adding w/higher priority than parent task
+        if (null == in)
+            task.setReady();
+        return task;
+    }
+
+
+    // UNDONE: get last crawl time from Crawler? support incrementsl
+    public IndexTask indexProject(IndexTask in, final Container c)
+    {
+        final IndexTask task = null==in ? createTask("Index project " + c.getName()) : in;
+
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                MultiMap<Container,Container> mmap = ContainerManager.getContainerTree(c);
+                Set<Container> set = new HashSet<Container>();
+                for (Container key : mmap.keySet())
+                {
+                    set.add(key);
+                    for (Container v : mmap.get(key))
+                        set.add(v);
+                }
+                for (Container i : set)
+                {
+                    indexContainer(task, i, null);
+                }
+            }
+        };
+        task.addRunnable(r, PRIORITY.bulk);
+        if (null == in)
+            task.setReady();
+        return task;
+    }
+
+
+    // UNDONE: support incremental
+    public IndexTask indexFull()
+    {
+        final IndexTask task = createTask("Full reindex");
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                DocumentProvider[] documentProviders = _documentProviders.get();
+                for (DocumentProvider p : documentProviders)
+                {
+                    p.enumerateDocuments(task, null, null);
+                }
+            }
+        };
+        task.addRunnable(r, PRIORITY.bulk);
+        task.setReady();
+        return task;
     }
 
 

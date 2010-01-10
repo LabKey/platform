@@ -152,6 +152,8 @@ public class SavePaths implements DavCrawler.SavePaths
         // Mostly I don't care about Parent
             // However, we need this for the primary key
             int parent = _getParentId(path);
+            if (nextCrawl == null)
+                nextCrawl = new Date(System.currentTimeMillis()+5*60000);
 
             CaseInsensitiveHashMap<Object> map = new CaseInsensitiveHashMap<Object>();
             map.put("Path", toPathString(path));
@@ -236,6 +238,21 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    public Date getNextCrawl()
+    {
+        try
+        {
+            SQLFragment f = new SQLFragment("SELECT MIN(NextCrawl) FROM search.CrawlCollections WHERE LastCrawled IS NULL OR LastCrawled < ?");
+            f.add(System.currentTimeMillis() - 30*60000);
+            Timestamp t = Table.executeSingleton(getSearchSchema(), f.getSQL(), f.getParamsArray(), java.sql.Timestamp.class);
+            return t;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
 
     public Map<Path, Pair<Date,Date>> getPaths(int limit)
     {
@@ -255,7 +272,7 @@ public class SavePaths implements DavCrawler.SavePaths
         {
             Map<Path,Pair<Date,Date>> map = new LinkedHashMap<Path,Pair<Date,Date>>();
             ArrayList<String> paths = new ArrayList<String>(limit);
-            
+
             rs = Table.executeQuery(getSearchSchema(), sel);
 
             while (rs.next())

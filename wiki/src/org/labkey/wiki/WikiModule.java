@@ -52,7 +52,7 @@ import java.util.*;
  * Date: Jul 18, 2005
  * Time: 3:07:21 PM
  */
-public class WikiModule extends DefaultModule
+public class WikiModule extends DefaultModule implements SearchService.DocumentProvider
 {
     public static final String WEB_PART_NAME = "Wiki";
 
@@ -105,7 +105,10 @@ public class WikiModule extends DefaultModule
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
+        {
             ss.addSearchCategory(WikiManager.searchCategory);
+            ss.addDocumentProvider(this);
+        }
     }
 
     private void bootstrap(ModuleContext moduleContext)

@@ -112,7 +112,7 @@ public class SearchController extends SpringActionController
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null == ss)
             {
-                errors.reject("Indesing service is not running");
+                errors.reject("Indexing service is not running");
                 return false;
             }
 
@@ -313,30 +313,19 @@ public class SearchController extends SpringActionController
 
             boolean fullInProgress = false;
             for (SearchService.IndexTask task : ss.getTasks())
-                if ("Full Index".equals(task.getDescription()))
+                if (_lastFullTask == task)
                     fullInProgress = true;
 
             if (!fullInProgress)
             {
-                Date since = full ? null : new Date(0);
-                Container c = full ? null : getViewContext().getContainer();
-
-                String taskName = full ? "Full Index" : "Incremental index of " + c.getPath();
-                SearchService.IndexTask task = ss.createTask(taskName);
                 if (full)
-                    _lastFullTask = task;
-                else
-                    _lastIncrementalTask = task;
-
-                for (Module m : ModuleLoader.getInstance().getModules())
                 {
-                    m.enumerateDocuments(task, c, since);
+                    _lastFullTask = ss.indexFull();
                 }
-
-                if (full)
-                    ss.addPathToCrawl(new Path(WebdavService.getServletPath()));
-
-                task.setReady();
+                else
+                {
+                    _lastIncrementalTask = ss.indexContainer(null,  getViewContext().getContainer(), null);
+                }
             }
 
             try

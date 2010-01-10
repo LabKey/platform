@@ -37,9 +37,10 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
-import org.labkey.api.webdav.WebdavResolverImpl;
-import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.webdav.ModuleStaticResolverImpl;
+import org.labkey.api.webdav.*;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -58,6 +59,7 @@ import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookWebPartFactory;
+import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -72,7 +74,7 @@ import java.util.*;
  * Date: Jul 25, 2005
  * Time: 2:54:30 PM
  */
-public class CoreModule extends SpringModule
+public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
     public String getName()
     {
@@ -318,6 +320,13 @@ public class CoreModule extends SpringModule
 
         WebdavService.get().setResolver(WebdavResolverImpl.get());
         ModuleLoader.getInstance().registerFolderType(new WorkbookFolderType());
+
+
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (null != ss)
+        {
+            ss.addDocumentProvider(this);
+        }
     }
 
     @Override
@@ -439,8 +448,49 @@ public class CoreModule extends SpringModule
     }
 
 
-    @Override
-    public void enumerateDocuments(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public void enumerateDocuments(SearchService.IndexTask task, Container c, Date since)
     {
+        if (null == c || c.isRoot())
+            return;
+        Container p = c.getProject();
+        String title;
+        String body;
+
+        // UNDONE: generalize to other folder types
+        Study study = StudyService.get().getStudy(c);
+        if (c.isProject())
+        {
+            title = "Project -- " + c.getName();
+            body = "";
+            body += "\n" + StringUtils.trimToEmpty(c.getDescription());
+        }
+        else if (c.isWorkbook())
+        {
+            title = "Workbook -- " + c.getName();
+            body = "Workbook " + c.getName() + " in Project " + p.getName();
+        }
+        else if (null != study)
+        {
+            title = "Study -- " + study.getLabel();
+            body = "Study Folder " + c.getName() + " in Project " + p.getName();
+            body += study.getDisplayString();
+        }
+        else
+        {
+            title = "Folder -- " + c.getName();
+            body = "Folder " + c.getName() + " in Project " + p.getName();
+            body += "\n" + StringUtils.trimToEmpty(c.getDescription());
+        }
+        Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put(SearchService.PROPERTY.title.toString(), title);
+        properties.put(SearchService.PROPERTY.category.toString(), SearchService.navigationCategory);
+        Resource doc = new SimpleDocumentResource(c.getParsedPath(),
+                "container:" + c.getId(),
+                c.getId(),
+                "text/plain",
+                body.getBytes(),
+                new ActionURL("project","start",c),
+                properties);
+        task.addResource(doc, SearchService.PRIORITY.item);
     }
 }

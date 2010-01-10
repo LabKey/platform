@@ -214,6 +214,13 @@ public class CrawlerTest extends junit.framework.TestCase
             return ret;
         }
 
+
+        public Date getNextCrawl()
+        {
+            return new Date(System.currentTimeMillis());
+        }
+        
+
         public synchronized Map<String, Date> getFiles(Path path)
         {
             Map<String,Date> ret = new TreeMap<String,Date>();

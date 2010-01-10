@@ -52,7 +52,7 @@ import java.util.*;
  * <p/>
  * TODO: merge announcement & wiki into one module?
  */
-public class AnnouncementModule extends DefaultModule
+public class AnnouncementModule extends DefaultModule implements SearchService.DocumentProvider
 {
     public static final String WEB_PART_NAME = "Messages";
 
@@ -141,6 +141,7 @@ public class AnnouncementModule extends DefaultModule
         if (null != ss)
         {
             ss.addSearchCategory(AnnouncementManager.searchCategory);
+            ss.addDocumentProvider(this);
         }
     }
     
@@ -208,7 +209,6 @@ public class AnnouncementModule extends DefaultModule
     }
 
 
-    @Override
     public void enumerateDocuments(final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()

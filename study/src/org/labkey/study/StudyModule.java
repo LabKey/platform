@@ -84,7 +84,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
-public class StudyModule extends SpringModule
+public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
     public static final String MODULE_NAME = "Study";
 
@@ -265,6 +265,7 @@ public class StudyModule extends SpringModule
         {
             ss.addSearchCategory(StudyManager.subjectCategory);
             ss.addSearchCategory(StudyManager.datasetCategory);
+            ss.addDocumentProvider(this);
         }
     }
 

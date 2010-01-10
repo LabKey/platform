@@ -69,7 +69,7 @@ import java.util.*;
  * Date: Jul 18, 2005
  * Time: 3:25:52 PM
  */
-public class ExperimentModule extends SpringModule
+public class ExperimentModule extends SpringModule implements SearchService.DocumentProvider
 {
     private static final String SAMPLE_SET_WEB_PART_NAME = "Sample Sets";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
@@ -199,7 +199,10 @@ public class ExperimentModule extends SpringModule
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
+        {
             ss.addSearchCategory(OntologyManager.conceptCategory);
+            ss.addDocumentProvider(this);
+        }
 
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
         ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
@@ -311,7 +314,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
     {
-        if (c == null)
+        if (c == ContainerManager.getSharedContainer())
             OntologyManager.indexConcepts(task);
     }
 }

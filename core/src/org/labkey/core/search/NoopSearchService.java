@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -252,5 +253,24 @@ public class NoopSearchService implements SearchService
     public boolean isRunning()
     {
         return false;
+    }
+
+    public IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since)
+    {
+        return null==task?_dummyTask:task;
+    }
+
+    public IndexTask indexProject(@Nullable IndexTask task, Container project)
+    {
+        return null==task?_dummyTask:task;
+    }
+
+    public IndexTask indexFull()
+    {
+        return _dummyTask;
+    }
+
+    public void addDocumentProvider(DocumentProvider provider)
+    {
     }
 }

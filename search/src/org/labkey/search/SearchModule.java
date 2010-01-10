@@ -108,6 +108,7 @@ public class SearchModule extends DefaultModule
             if (m.containsKey(searchRunningState))
                 running = "true".equals(m.get(searchRunningState));
 
+            // UNDONE: start the service AFTER all the other modules have had a chance to register DocumentProviders
             if (running)
                 ss.start();
 

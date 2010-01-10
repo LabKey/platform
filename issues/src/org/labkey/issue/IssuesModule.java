@@ -45,7 +45,7 @@ import java.util.*;
  * Date: Jul 18, 2005
  * Time: 3:48:21 PM
  */
-public class IssuesModule extends DefaultModule
+public class IssuesModule extends DefaultModule implements SearchService.DocumentProvider
 {
     private static final Logger _log = Logger.getLogger(IssuesModule.class);
 
@@ -90,6 +90,7 @@ public class IssuesModule extends DefaultModule
         {
             ss.addSearchCategory(IssueManager.searchCategory);
             ss.addResourceResolver("issue",IssueManager.getSearchResolver());
+            ss.addDocumentProvider(this);
         }
     }
 

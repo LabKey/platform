@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -40,6 +41,7 @@
     Container c = me.getViewContext().getContainer();
     User user = me.getViewContext().getUser();
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+    boolean wideView = true;
 
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
 
@@ -93,17 +95,23 @@ function google()
 }
 
 </script>
+
+
 <%
     String queryString = form.getQueryString();
     if (null != StringUtils.trimToNull(queryString))
     {
+        %><table><tr><td  valign="top" align="left" width=500><%
         int hitsPerPage = 20;  // UNDONE
         int pageNo=0;
 
         try
         {
+            String qs = queryString;
+            if (wideView && -1 == qs.indexOf("searchCategory:"))
+                qs += " -searchCategory:navigation";
             long start = System.nanoTime();
-            List<SearchService.SearchHit> hits = ss.search(queryString, user, ContainerManager.getRoot(), pageNo);
+            List<SearchService.SearchHit> hits = ss.search(qs, user, ContainerManager.getRoot(), pageNo);
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = hits.isEmpty() ? 0 : hits.get(0).totalHits;
 
@@ -118,7 +126,7 @@ function google()
                 %>Displaying all results<br><%
             }
             %><p />
-            <div id="searchResults" width="400px"><%
+            <div id="searchResults"><%
 
             for (int i = pageNo * hitsPerPage; i < Math.min((pageNo + 1) * hitsPerPage, hits.size()); i++)
             {
@@ -148,7 +156,50 @@ function google()
                 }
                 %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><%
             }
-            %></div><%
+            %></div></td><%
+
+            if (-1 == queryString.indexOf("searchCategory") && wideView)
+            {
+                qs = "(" +  queryString + ") &&  +searchCategory:navigation";
+                hits = ss.search(qs, user, ContainerManager.getRoot(), pageNo);
+                if (hits.size() > 0)
+                {
+                    %><td valign="top" align="left" width="350>"><%
+                    WebPartView.startTitleFrame(out, "Quick Links");
+                    %><div id="navigationResults"><%
+                    for (int i = pageNo * hitsPerPage; i < Math.min((pageNo + 1) * hitsPerPage, hits.size()); i++)
+                    {
+                        SearchService.SearchHit hit = hits.get(i);
+
+                        String href = hit.url;
+                        try
+                        {
+                            if (href.startsWith("/"))
+                            {
+                                ActionURL url = new ActionURL(href);
+                                Container cc = ContainerManager.getForId(url.getExtraPath());
+                                url.setExtraPath(cc.getPath());
+                                href = url.getLocalURIString();
+                            }
+                        }                                                        
+                        catch (Exception x)
+                        {
+                            //
+                        }
+
+                        %><a href="<%=h(hit.url)%>"><%=h(hit.title)%></a><br><%
+                        String summary = StringUtils.trimToNull(hit.summary);
+                        if (null != summary)
+                        {
+                            %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary,false)%></div><%
+                        }
+                        /* %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><% */
+                    }
+                    %></div><%
+                    WebPartView.endTitleFrame(out);
+                    %></td><%
+                }
+            }
         }
         catch (IOException e)
         {
@@ -157,5 +208,7 @@ function google()
                 t = e.getCause();
             out.write("Error: " + t.getMessage());
         }
+        
     }
 %>
+</td></tr></table>

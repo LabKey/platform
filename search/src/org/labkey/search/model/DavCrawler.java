@@ -16,6 +16,7 @@
 package org.labkey.search.model;
 
 import org.apache.log4j.Category;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -29,6 +30,8 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 
 import javax.servlet.ServletContextEvent;
 import java.util.*;
@@ -55,7 +58,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class DavCrawler implements ShutdownListener
 {
-    SearchService.SearchCategory folderCategory = new SearchService.SearchCategory("Folder", "Folder");
+//    SearchService.SearchCategory folderCategory = new SearchService.SearchCategory("Folder", "Folder");
 
     long _defaultWait = TimeUnit.SECONDS.toMillis(60);
     long _defaultBusyWait = TimeUnit.SECONDS.toMillis(5);
@@ -75,8 +78,10 @@ public class DavCrawler implements ShutdownListener
         boolean insertPath(Path path, java.util.Date nextCrawl);
         void updatePrefix(Path path, java.util.Date lastIndexed, java.util.Date nextCrawl, boolean forceReindexAtNextCrawl);
         void deletePath(Path path);
+
         /** <lastCrawl, nextCrawl> */
         public Map<Path, Pair<Date,Date>> getPaths(int limit);
+        public Date getNextCrawl();
 
         // files
         public Map<String,Date> getFiles(Path path);
@@ -122,49 +127,28 @@ public class DavCrawler implements ShutdownListener
 
     public void startFull(Path path)
     {
-        // TODO: Re-enable after schema is created (see SearchModule.hasScripts()).
-        if (false)
-        {
-            _log.debug("START FULL: " + path);
+        _log.debug("START FULL: " + path);
 
-            if (null == path)
-                path = WebdavService.get().getResolver().getRootPath();
+        if (null == path)
+            path = WebdavService.get().getResolver().getRootPath();
 
-            _paths.updatePrefix(path, null, null, true);
+        _paths.updatePrefix(path, null, null, true);
 
-            startContinuous(path);
-        }
+        addPathToCrawl(path, null);
     }
 
 
     /**
      * start a background process to watch directories
+     * optionally add a path at the same time
      */
-    public void startContinuous(Path start)
+    public void addPathToCrawl(Path start, Date nextCrawl)
     {
         _log.debug("START CONTINUOUS " + start.toString());
 
-        _paths.updatePath(start, null, null, true);
+        if (null != start)
+            _paths.insertPath(start, nextCrawl);
         pingCrawler();
-    }
-
-
-    public static void addContainer(SearchService.IndexTask task, Resource resource)
-    {
-        Container c = ContainerManager.getForId(resource.getContainerId());
-        if (null == c)
-            return;
-        String body = c.getPath() + "\n" + c.getDescription();
-        Map<String,Object> properties = new HashMap<String,Object>();
-        properties.put(SearchService.PROPERTY.title.toString(), c.getName());
-        Resource doc = new SimpleDocumentResource(resource.getPath(),
-                "container:" + c.getId(),
-                c.getId(),
-                "text/plain",
-                body.getBytes(),
-                new ActionURL("project","start",c),
-                properties);
-        task.addResource(doc, SearchService.PRIORITY.item);
     }
 
 
@@ -223,13 +207,7 @@ public class DavCrawler implements ShutdownListener
                 Container c = ContainerManager.getForId(r.getContainerId());
                 if (null == c)
                     return;
-
-                addContainer(_task, r);
-
-                for (Module m : ModuleLoader.getInstance().getModules())
-                {
-                    m.enumerateDocuments(_task, c, _full ? null : _lastCrawl);
-                }
+                getSearchService().indexContainer(_task, c,  _full ? null : _lastCrawl);
             }
 
             // get current index status for files
@@ -280,7 +258,7 @@ public class DavCrawler implements ShutdownListener
             }
 
             // UNDONE: would be better if this were called on _task completion
-            long changeInterval = Cache.DAY;
+            long changeInterval = (r instanceof WebdavResolver.WebFolder) ? Cache.DAY / 2 : Cache.DAY;
             long nextCrawl = now + (long)(changeInterval * (0.5 + 0.5 * Math.random()));
             _paths.updatePath(_path, new Date(now), new Date(nextCrawl), true);
         }
@@ -360,7 +338,7 @@ public class DavCrawler implements ShutdownListener
                 try
                 {
                     SearchService ss = getSearchService();
-                    if (!((AbstractSearchService)ss).waitForRunning())
+                    if (null != ss && !((AbstractSearchService)ss).waitForRunning())
                         continue;
                     _wait(_crawlerEvent, delay);
                     delay = _defaultBusyWait;
@@ -383,8 +361,18 @@ public class DavCrawler implements ShutdownListener
 
         boolean fullCrawl = false;
         Map<Path,Pair<Date,Date>> map = _paths.getPaths(100);
-        List<Path> paths = new ArrayList<Path>(map.size());
 
+        if (map.isEmpty())
+        {
+            return _defaultWait;
+//            Date next = _paths.getNextCrawl();
+//            if (null == next)
+//                return 5 * 60000;
+//            long delay = next.getTime() - System.currentTimeMillis();
+//            return Math.max(0,Math.min(5*60000,delay));
+        }
+
+        List<Path> paths = new ArrayList<Path>(map.size());
         for (Map.Entry<Path,Pair<Date,Date>> e : map.entrySet())
         {
             Path path = e.getKey();
