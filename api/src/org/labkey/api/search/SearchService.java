@@ -16,6 +16,7 @@
 package org.labkey.api.search;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
@@ -40,6 +41,8 @@ import java.io.*;
 public interface SearchService
 {
     static Category _log = Category.getInstance(SearchService.class);
+
+    public final static SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
     
     enum PRIORITY
     {
@@ -114,6 +117,11 @@ public interface SearchService
     }
 
 
+    //
+    // plug in interfaces
+    //
+
+    
     public interface ResourceResolver
     {
         Resource resolve(@NotNull String resourceIdentifier);
@@ -124,11 +132,18 @@ public interface SearchService
     {
         private final String _name;
         private final String _description;
+        private final boolean _showInDialog;
 
         public SearchCategory(@NotNull String name, @NotNull String description)
         {
+            this(name,description,true);
+        }
+        
+        public SearchCategory(@NotNull String name, @NotNull String description, boolean showInDialog)
+        {
             _name = name;
             _description = description;
+            _showInDialog = showInDialog;
         }
 
         public String getName()
@@ -149,21 +164,21 @@ public interface SearchService
     }
 
 
+    //
+    // search
+    //
+
+    
     public static class SearchHit
     {
         public int totalHits;
-        
+
         public String docid;
         public String container;
         public String title;
         public String summary;
         public String url;
     }
-
-
-    //
-    // search
-    //
 
     public List<SearchHit> search(String queryString, User user, Container root, int page) throws IOException;
 //    public String searchFormatted(String queryString, User user, Container root, int page);
@@ -172,8 +187,10 @@ public interface SearchService
     public List<SearchCategory> getSearchCategories();
 
     public boolean isParticipantId(User user, String ptid);
-//  CONSIDER: async version
-//    public Future<Boolean> isParticipantId(User user);
+
+    // CONSIDER: async version
+    // public Future<Boolean> isParticipantId(User user);
+
 
     //
     // index
@@ -194,6 +211,10 @@ public interface SearchService
 
     void addPathToCrawl(Path path);
 
+    IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
+    IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
+    IndexTask indexFull(/*boolean incremental*/);
+
     // container, ptid pairs
     void addParticipantIds(Collection<Pair<String,String>> ptids);
 
@@ -210,13 +231,35 @@ public interface SearchService
 
     void deleteContainer(String id);
 
+    public void clear();
+
+
     //
-    // configuration
+    // configuration, plugins 
     //
     
     public void addSearchCategory(SearchCategory category);
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
-    public void clear();
+
+    public interface DocumentProvider
+    {
+        /**
+         * enumerate documents for full text search
+         *
+         * modifiedSince == null -> full reindex
+         * else incremental (either modified > modifiedSince, or modified > lastIndexed)
+         */
+        void enumerateDocuments(IndexTask task, Container c, Date since);
+    }
+
+    // an interface that enumerates documents in a container (not recursive)
+    public void addDocumentProvider(DocumentProvider provider);
+
+    
+    //
+    // helpers
+    //
+    
 
     /**
      * filter for documents modified since the provided date

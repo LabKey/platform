@@ -513,7 +513,8 @@ public class Table
         BOOLEAN(Boolean.class) { Boolean getObject(ResultSet rs) throws SQLException { boolean f = rs.getBoolean(1); return rs.wasNull() ? null : f ; }},
         LONG(Long.class) { Long getObject(ResultSet rs) throws SQLException { long l = rs.getLong(1); return rs.wasNull() ? null : l; }},
         UTIL_DATE(Date.class) { Date getObject(ResultSet rs) throws SQLException { return rs.getTimestamp(1); }},
-        BYTES(byte[].class) { Object getObject(ResultSet rs) throws SQLException { return rs.getBytes(1); }};
+        BYTES(byte[].class) { Object getObject(ResultSet rs) throws SQLException { return rs.getBytes(1); }},
+        TIMESTAMP(Timestamp.class) { Object getObject(ResultSet rs) throws SQLException { return rs.getTimestamp(1); }};
 
         abstract Object getObject(ResultSet rs) throws SQLException;
 
@@ -543,8 +544,17 @@ public class Table
     // Standard SQLException catch block: log exception, query SQL, and params
     private static void _doCatch(String sql, Object[] parameters, Connection conn, SQLException e)
     {
-        _log.error("SQL Exception", e);
-        _logQuery(Priority.ERROR, sql, parameters, conn);
+        if (sql.startsWith("INSERT") && SqlDialect.isConstraintException(e))
+        {
+            _log.warn("SQL Exception", e);
+            _logQuery(Priority.WARN, sql, parameters, conn);
+        }
+        else
+        {
+            _log.error("SQL Exception", e);
+            _logQuery(Priority.ERROR, sql, parameters, conn);
+
+        }
     }
 
 

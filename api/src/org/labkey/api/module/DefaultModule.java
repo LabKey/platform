@@ -821,10 +821,6 @@ public abstract class DefaultModule implements Module
         return l;
     }
 
-    
-    public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
-    {
-    }
 
     public @Nullable Collection<String> getJarFilenames()
     {

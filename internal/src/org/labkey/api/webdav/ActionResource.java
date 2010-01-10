@@ -95,6 +95,13 @@ public class ActionResource extends AbstractDocumentResource
     }
 
 
+    @Override
+    public void setLastIndexed(long ms)
+    {
+        // UNDONE
+    }
+
+
     public boolean exists()
     {
         return true;

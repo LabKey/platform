@@ -56,7 +56,12 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     {
         this(path,documentId,executeUrl.getExtraPath(),contentType,body,executeUrl,properties);
     }
-    
+
+    @Override
+    public void setLastIndexed(long ms)
+    {
+        //UNDONE
+    }
 
     @Override
     public String getContentType()
