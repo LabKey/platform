@@ -435,7 +435,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     
-    @Override
     public void enumerateDocuments(@NotNull final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {
         task.addRunnable(new Runnable()

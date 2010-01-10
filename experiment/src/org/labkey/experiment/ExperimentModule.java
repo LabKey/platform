@@ -310,8 +310,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new ExperimentUpgradeCode();
     }
 
-
-    @Override
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
     {
         if (c == ContainerManager.getSharedContainer())

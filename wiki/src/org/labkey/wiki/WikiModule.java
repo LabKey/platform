@@ -207,7 +207,6 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     }
 
 
-    @Override
     public void enumerateDocuments(final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()

@@ -141,7 +141,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     }
 
 
-    @Override
     public void enumerateDocuments(final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()
