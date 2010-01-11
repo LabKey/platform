@@ -51,7 +51,7 @@
 <%
     if (0 < q.length())
     {
-        String qs = q + " +container:" + c.getId() + " +searchCategory:issues";
+        String qs = "+(" + q + ") +container:" + c.getId() + " +searchCategory:issues";
         if (-1 == q.indexOf("status:"))
             qs += " status:open^2 status:closed^1";
 
