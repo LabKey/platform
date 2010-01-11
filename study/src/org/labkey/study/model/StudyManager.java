@@ -2213,18 +2213,6 @@ public class StudyManager
         {
             for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
                 qcStateLabels.put(state.getLabel(), state);
-
-            if (tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null)
-            {
-                for (Map<String, Object> dataMap : dataMaps)
-                {
-                    String qcStateLabel = (String) dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
-                    // We have a non-null QC state column value.  We need to check to see if this is a known state,
-                    // and mark it for addition if not.
-                    if (qcStateLabel != null && qcStateLabel.length() > 0 && !qcStateLabels.containsKey(qcStateLabel))
-                        qcStateLabels.put(qcStateLabel, null);
-                }
-            }
         }
 
         //
@@ -2243,10 +2231,23 @@ public class StudyManager
             if (col.getName().equalsIgnoreCase("lsid"))
                 continue;
 
-            for (int i = 0; i < dataMaps.size(); i++)
+            int i = 0;
+            ListIterator<Map<String, Object>> iter = dataMaps.listIterator();
+            while (iter.hasNext())
             {
-                Map<String, Object> dataMap = dataMaps.get(i);
+                i++;
+                Map<String, Object> dataMap = iter.next();
                 Object val = dataMap.get(col.getPropertyURI());
+
+                if (needToHandleQCState && col.getName().equals(DataSetTable.QCSTATE_LABEL_COLNAME))
+                {
+                    String qcStateLabel = (String)val;
+                    // We have a non-null QC state column value.  We need to check to see if this is a known state,
+                    // and mark it for addition if not.
+                    if (qcStateLabel != null && qcStateLabel.length() > 0 && !qcStateLabels.containsKey(qcStateLabel))
+                        qcStateLabels.put(qcStateLabel, null);
+                }
+
                 boolean valueMissing;
 
                 if (val == null)
@@ -2292,7 +2293,7 @@ public class StudyManager
                                 // so we need to construct a copy and update our entry
                                 dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
                                 dataMap.put(col.getPropertyURI(), study.getStartDate());
-                                dataMaps.set(i, dataMap);
+                                iter.set(dataMap);
                                 continue;
                             }
                         }
@@ -2305,7 +2306,7 @@ public class StudyManager
 
                                 // We introduce a sentinel, 0, as our SequenceNum
                                 dataMap.put(col.getPropertyURI(), 0);
-                                dataMaps.set(i, dataMap);
+                                iter.set(dataMap);
                                 continue;
                             }
                         }
@@ -2466,15 +2467,18 @@ public class StudyManager
                     int currentKey = getMaxKeyValue(def, user);
 
                     // Sadly, may have to create new maps, since TabLoader's aren't modifyable
-                    for (int i = 0; i < dataMaps.size(); i++)
+                    ListIterator<Map<String, Object>> iter = dataMaps.listIterator();
+                    while (iter.hasNext())
                     {
+                        Map<String, Object> dataMap = iter.next();
+
                         // Only insert if there isn't already a value
-                        if (dataMaps.get(i).get(keyPropertyURI) == null)
+                        if (dataMap.get(keyPropertyURI) == null)
                         {
                             currentKey++;
-                            Map<String, Object> data = new HashMap<String, Object>(dataMaps.get(i));
+                            Map<String, Object> data = new CaseInsensitiveHashMap<Object>(dataMap);
                             data.put(keyPropertyURI, currentKey);
-                            dataMaps.set(i, data);
+                            iter.set(data);
                         }
                     }
                 }

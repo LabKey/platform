@@ -183,9 +183,13 @@ public class UploadSamplesHelper
                     {
                         throw new ExperimentException("Id Columns must match");
                     }
-                    for (int i = 0; i < maps.size(); i++)
+                    int i = 0;
+                    ListIterator<Map<String, Object>> iter = maps.listIterator();
+                    while (iter.hasNext())
                     {
-                        if (maps.get(i).get(uri) == null)
+                        i++;
+                        Map<String, Object> map = iter.next();
+                        if (map.get(uri) == null)
                         {
                             if (uri.contains("#"))
                             {
