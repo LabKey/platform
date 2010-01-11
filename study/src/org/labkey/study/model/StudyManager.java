@@ -2312,7 +2312,6 @@ public class StudyManager
                     }
 
                     errors.add("Row " + (i + 1) + " does not contain required field " + col.getName() + ".");
-                    break;
                 }
                 else if (val == CONVERSION_ERROR)
                 {
@@ -2322,13 +2321,12 @@ public class StudyManager
                         errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
                         rowToConversionErrorURIs.put(i, col.getPropertyURI());
                     }
-                    break;
                 }
             }
-        }
 
-        if (errors.size() > 0)
-            return imported;
+            if (errors.size() > 0)
+                return imported;
+        }
 
         String keyPropertyURI = null;
         String keyPropertyName = def.getKeyPropertyName();
