@@ -262,6 +262,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public boolean isBusy()
     {
+        if (!isRunning())
+            return true;
         int n = _itemQueue.size() + 10 * _runQueue.size();
         if (null != _indexQueue)
             n += _indexQueue.size();
@@ -446,6 +448,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected void startThreads()
     {
+        assert Thread.holdsLock(_runningLock);
         if (_shuttingDown)
             return;
         if (_threadsInitialized)
@@ -509,13 +512,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             while (!_shuttingDown)
             {
-                if (!waitForRunning())
-                    continue;
-
                 Item i = null;
                 boolean success = false;
+
                 try
                 {
+                    if (!waitForRunning())
+                        continue;
+
                     i = _runQueue.poll(30, TimeUnit.SECONDS);
                     if (null != i)
                     {
@@ -552,7 +556,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 {
                     if (null != i)
                     {
-                        i.complete(success);
+                        try
+                        {
+                            i.complete(success);
+                        }
+                        catch (Throwable t)
+                        {
+                            _log.error("Unexpected error", t);
+                        }
                     }
                 }
             }
@@ -639,7 +650,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
         // otherwise just wait on the preprocess queue
-        i = _itemQueue.poll(1, TimeUnit.SECONDS);
+        i = _itemQueue.poll(2, TimeUnit.SECONDS);
         if (null != i)
         {
             if (preprocess(i))

@@ -1535,17 +1535,34 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
-            String searchTerm = (String)getProperty("search", "");
+            String searchTerm = (String)getProperty("q", "");
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance(c)), searchTerm, new ActionURL(SearchAction.class, c), false, false);
+            HttpView results = new SearchResultsView(c, searchTerm, isPrint());
             return results;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return new ListAction(getViewContext()).appendNavTrail(root).addChild("Search Results");
+        }
+    }
+
+
+    public static class SearchResultsView extends JspView<SearchResultsView>
+    {
+        public Container _c;
+        public String _query;
+        public boolean _print;
+        
+        SearchResultsView(Container c, String query, boolean isPrint)
+        {
+            super(IssuesController.class, "search.jsp", null);
+            _c = c;
+            _query = query;
+            _print = isPrint;
+            setModelBean(this);
         }
     }
 

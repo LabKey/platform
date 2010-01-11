@@ -48,6 +48,6 @@
         <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName, "", "align=\"top\" vspace=\"2\"")%></form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap><form action="search.view" method="get">
-        <input type="text" size="30" name="search" value="">
+        <input type="text" size="30" name="q" value="">
         <%=PageFlowUtil.generateSubmitButton("Search", "", "align=\"top\" vspace=\"2\"")%></form></td>
 </tr></table>

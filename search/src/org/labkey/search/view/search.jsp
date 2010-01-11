@@ -66,8 +66,8 @@
 [<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c))%>">reindex (incremental)</a>]<br>
 <form id=searchForm name="search"><%
     if (form.isPrint())
-    { %>
-    <input type=hidden name=_print value=1>";<%
+    {
+        %><input type=hidden name=_print value=1><%
     }
 %>
     <input type="hidden" name="guest" value=0>
@@ -75,8 +75,8 @@
     <%=generateSubmitButton("Search")%>
     <%=buttonImg("Search As Guest", "document.search.guest.value=1; return true;")%>
     <%=buttonImg("Google", "return google();")%><br>
-    <%
-    %><input type=radio name=q value="" <%=null==selected?"checked":""%>>all<br><%
+    <input type=checkbox name="container" value="<%=c.getId()%>" <%=null==form.getContainer()?"":"checked"%>>this folder and children<br>
+    <input type=radio name=q value="" <%=null==selected?"checked":""%>>all<br><%
     for (SearchService.SearchCategory cat : categories)
     {
         String s = "+searchCategory:cat.toString()";
@@ -111,7 +111,8 @@ function google()
             if (wideView && -1 == qs.indexOf("searchCategory:"))
                 qs += " -searchCategory:navigation";
             long start = System.nanoTime();
-            List<SearchService.SearchHit> hits = ss.search(qs, user, ContainerManager.getRoot(), pageNo);
+            Container searchContainer = null == form.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(form.getContainer());
+            List<SearchService.SearchHit> hits = ss.search(qs, user, searchContainer, pageNo);
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = hits.isEmpty() ? 0 : hits.get(0).totalHits;
 

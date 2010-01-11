@@ -39,13 +39,17 @@ public class SavePaths implements DavCrawler.SavePaths
     static SQLFragment _emptyFragment = new SQLFragment();
     static java.util.Date _futureDate = new Date(DateUtil.parseDateTime("3000-01-01"));
     
-    SQLFragment csPath(TableInfo ti, String path)
-    {
-        if (null == ti.getColumn("csPath"))
-            return _emptyFragment;
-        return new SQLFragment(" AND csPath=CHECKSUM(?)", path);
-    }
 
+    SQLFragment pathFilter(TableInfo ti, String path)
+    {
+        SQLFragment f = new SQLFragment(" Path=? ", path);
+        if (null != ti.getColumn("csPath"))
+        {
+            f.append(" AND csPath=CHECKSUM(?)");
+            f.add(path);
+        }
+        return f;
+    }
 
 
     //
@@ -57,11 +61,13 @@ public class SavePaths implements DavCrawler.SavePaths
         String pathStr = toPathString(path);
         if (null == last) last = nullDate;
         if (null == next) next = nullDate;
+
         SQLFragment upd = new SQLFragment(
-                "UPDATE search.CrawlCollections SET LastCrawled=?, NextCrawl=? WHERE Path=?",
-                last, next, pathStr);
-        SQLFragment cs = csPath(getSearchSchema().getTable("CrawlCollections"), pathStr);
-        upd.append(cs);
+                "UPDATE search.CrawlCollections SET LastCrawled=?, NextCrawl=? ",
+                last, next);
+        upd.append(" WHERE " );
+        SQLFragment f = pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr);
+        upd.append(f);
         
         int count = Table.execute(getSearchSchema(), upd);
         return count > 0;
@@ -79,9 +85,8 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         // find parent
         String pathStr = toPathString(path);
-        SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE Path=?", pathStr);
-        SQLFragment cs = csPath(getSearchSchema().getTable("CrawlCollections"), pathStr);
-        find.append(cs);
+        SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
+        find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
         ResultSet rs = null;
         try
         {
@@ -149,20 +154,26 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         try
         {
-        // Mostly I don't care about Parent
+            // Mostly I don't care about Parent
             // However, we need this for the primary key
             int parent = _getParentId(path);
             if (nextCrawl == null)
                 nextCrawl = new Date(System.currentTimeMillis()+5*60000);
 
-            CaseInsensitiveHashMap<Object> map = new CaseInsensitiveHashMap<Object>();
-            map.put("Path", toPathString(path));
-            map.put("Name", path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
-            map.put("Parent", parent);
-            map.put("NextCrawl", nextCrawl);
-            map.put("LastCrawled", nullDate);
-            map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
-            return true;
+            String pathStr = toPathString(path);
+            SQLFragment f = new SQLFragment(
+                    "INSERT INTO search.crawlcollections (Path,Name,Parent,NextCrawl,LastCrawled) " +
+                    "SELECT ?,?,?,?,? " +
+                    "WHERE NOT EXISTS (SELECT Path FROM search.crawlcollections WHERE ");
+            f.add(pathStr);
+            f.add(path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
+            f.add(parent);
+            f.add(nextCrawl);
+            f.add(nullDate);
+            f.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
+            f.append(")");
+            int count = Table.execute(getSearchSchema(), f);
+            return count==1;
         }
         catch (SQLException x)
         {
@@ -287,7 +298,6 @@ public class SavePaths implements DavCrawler.SavePaths
             rs = null;
 
             // UPDATE LastCrawled so we won't try to crawl for a while
-            // TODO csPath
             if (!paths.isEmpty())
             {
                 SQLFragment upd = new SQLFragment(

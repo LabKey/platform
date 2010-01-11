@@ -139,6 +139,4 @@ public class SearchModule extends DefaultModule
             }
         };
     }
-
-
 }

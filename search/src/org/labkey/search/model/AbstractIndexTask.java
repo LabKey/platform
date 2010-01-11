@@ -140,8 +140,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
         synchronized (_subtasks)
         {
             Object remove =  _subtasks.remove(item);
-            assert null != remove;
-            assert remove == item;
+            assert null == remove || remove == item;
             empty = _subtasks.isEmpty();
         }
         if (empty && checkDone())
@@ -167,7 +166,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
 
     public boolean isDone()
     {
-        return _complete != 0;
+        return _complete != 0 || _cancelled;
     }
 
     public SearchService.IndexTask get() throws InterruptedException, ExecutionException

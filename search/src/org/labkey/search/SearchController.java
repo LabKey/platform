@@ -296,7 +296,7 @@ public class SearchController extends SpringActionController
     }
 
 
-    // UNDONE: remove; for testing only
+    // for testing only
     @RequiresSiteAdmin
     public class IndexAction extends SimpleRedirectAction
     {
@@ -305,27 +305,56 @@ public class SearchController extends SpringActionController
             // SimpleRedirectAction doesn't take a form
             boolean full = "1".equals(getViewContext().getRequest().getParameter("full"));
             String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+            boolean wait = "1".equals(getViewContext().getRequest().getParameter("wait"));
 
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
             if (null == ss)
                 return null;
 
+            if (wait)
+            {
+                ss.purgeQueues();
+                ss.start();
+            }
+
+            SearchService.IndexTask task = null;
+
+            SearchService.IndexTask lastFullTask = _lastFullTask;
             boolean fullInProgress = false;
-            for (SearchService.IndexTask task : ss.getTasks())
-                if (_lastFullTask == task)
+            for (SearchService.IndexTask t : ss.getTasks())
+            {
+                if (lastFullTask == t)
                     fullInProgress = true;
+            }
 
             if (!fullInProgress)
             {
                 if (full)
                 {
-                    _lastFullTask = ss.indexFull();
+                    if (!fullInProgress)
+                    {
+                        task = ss.indexFull();
+                        _lastFullTask = task;
+                    }
+                    else
+                        task = lastFullTask;
                 }
                 else
                 {
-                    _lastIncrementalTask = ss.indexContainer(null,  getViewContext().getContainer(), null);
+                    task = ss.indexContainer(null,  getViewContext().getContainer(), null);
+                    _lastIncrementalTask = task;
                 }
+            }
+
+            if (wait && null != task)
+            {
+                while (!task.isDone())
+                {
+                    try {Thread.sleep(200);}catch(InterruptedException x){}
+                }
+                if (ss instanceof AbstractSearchService)
+                    ((AbstractSearchService)ss).commit();
             }
 
             try
@@ -424,6 +453,7 @@ public class SearchController extends SpringActionController
         private boolean _guest = false;       // TODO: Just for testing
         private String _statusMessage;
         private int _page = 0;
+        private String _container = null;
 
         public String[] getQ()
         {
@@ -491,6 +521,16 @@ public class SearchController extends SpringActionController
         public void setPage(int page)
         {
             _page = page;
+        }
+
+        public String getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(String container)
+        {
+            _container = container;
         }
     }
 }
