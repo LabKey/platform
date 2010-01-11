@@ -2225,28 +2225,27 @@ public class StudyManager
         // times, so we keep a set around in case we run into one and only report it once.
         MultiMap<Integer, String> rowToConversionErrorURIs = new MultiHashMap<Integer, String>();
 
-        for (ColumnInfo col : tinfo.getColumns())
+        int i = 0;
+        for (ListIterator<Map<String, Object>> iter = dataMaps.listIterator(); iter.hasNext(); i++)
         {
-            // lsid is generated
-            if (col.getName().equalsIgnoreCase("lsid"))
-                continue;
+            Map<String, Object> dataMap = iter.next();
 
-            int i = 0;
-            ListIterator<Map<String, Object>> iter = dataMaps.listIterator();
-            while (iter.hasNext())
+            if (needToHandleQCState)
             {
-                i++;
-                Map<String, Object> dataMap = iter.next();
-                Object val = dataMap.get(col.getPropertyURI());
+                String qcStateLabel = (String) dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                // We have a non-null QC state column value.  We need to check to see if this is a known state,
+                // and mark it for addition if not.
+                if (qcStateLabel != null && qcStateLabel.length() > 0 && !qcStateLabels.containsKey(qcStateLabel))
+                    qcStateLabels.put(qcStateLabel, null);
+            }
 
-                if (needToHandleQCState && col.getName().equals(DataSetTable.QCSTATE_LABEL_COLNAME))
-                {
-                    String qcStateLabel = (String)val;
-                    // We have a non-null QC state column value.  We need to check to see if this is a known state,
-                    // and mark it for addition if not.
-                    if (qcStateLabel != null && qcStateLabel.length() > 0 && !qcStateLabels.containsKey(qcStateLabel))
-                        qcStateLabels.put(qcStateLabel, null);
-                }
+            for (ColumnInfo col : tinfo.getColumns())
+            {
+                // lsid is generated
+                if (col.getName().equalsIgnoreCase("lsid"))
+                    continue;
+
+                Object val = dataMap.get(col.getPropertyURI());
 
                 boolean valueMissing;
 
@@ -2467,8 +2466,7 @@ public class StudyManager
                     int currentKey = getMaxKeyValue(def, user);
 
                     // Sadly, may have to create new maps, since TabLoader's aren't modifyable
-                    ListIterator<Map<String, Object>> iter = dataMaps.listIterator();
-                    while (iter.hasNext())
+                    for (ListIterator<Map<String, Object>> iter = dataMaps.listIterator(); iter.hasNext(); )
                     {
                         Map<String, Object> dataMap = iter.next();
 
