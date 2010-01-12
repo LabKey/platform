@@ -23,6 +23,7 @@ import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.*;
@@ -63,6 +64,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
+    private static enum FIELD_NAMES { body, title, summary, url, container, uniqueId }
+
     public LuceneSearchServiceImpl()
     {
         try
@@ -73,7 +76,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (IOException e)
         {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
@@ -115,9 +118,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
+            assert null != r.getDocumentId();
+            assert null != r.getContainerId();
+
             Map<String, ?> props = r.getProperties();
             String body = null;
-            String title = (String)props.get("title");
+            String title = (String)props.get(SearchService.PROPERTY.title.toString());
             String type = r.getContentType();
 
             // Skip XML for now
@@ -187,12 +193,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             Document doc = new Document();
 
-            doc.add(new Field("body", body, Field.Store.NO, Field.Index.ANALYZED));
-            doc.add(new Field("title", title, Field.Store.YES, Field.Index.ANALYZED));
-            doc.add(new Field("summary", summary, Field.Store.YES, Field.Index.NO));
-            doc.add(new Field("url", url, Field.Store.YES, Field.Index.NO));
-            if (null != r.getContainerId())
-                doc.add(new Field("container", r.getContainerId(), Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.uniqueId.name(), r.getDocumentId(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+            doc.add(new Field(FIELD_NAMES.body.name(), body, Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(new Field(FIELD_NAMES.title.name(), title, Field.Store.YES, Field.Index.ANALYZED));
+            doc.add(new Field(FIELD_NAMES.summary.name(), summary, Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.url.name(), url, Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.container.name(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
 
             for (Map.Entry<String, ?> entry : props.entrySet())
             {
@@ -218,7 +224,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             // Suppress stack trace, etc., if Bouncy Castle isn't present.
             if ("org/bouncycastle/cms/CMSException".equals(err.getMessage()))
-                _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encyption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
+                _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
             else
                 throw err;
         }
@@ -262,7 +268,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             Document doc = (Document)preprocessMap.get(Document.class);
-            getIndexWriter().addDocument(doc);
+            IndexWriter iw = getIndexWriter();
+            iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.name(), r.getDocumentId()));
+            iw.addDocument(doc);
         }
         catch(Throwable e)
         {
@@ -364,7 +372,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         Query query;
         try
         {
-            query = new QueryParser(Version.LUCENE_30, "body", _analyzer).parse(queryString.toLowerCase());
+            query = new QueryParser(Version.LUCENE_30, FIELD_NAMES.body.name(), _analyzer).parse(queryString.toLowerCase());
         }
         catch (ParseException x)
         {
@@ -382,8 +390,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
 
         ScoreDoc[] hits = topDocs.scoreDocs;
-
         ArrayList<SearchHit> ret = new ArrayList<SearchHit>(hitsPerPage);
+
         for (int i = page * hitsPerPage; i < Math.min((page + 1) * hitsPerPage, hits.length); i++)
         {
             ScoreDoc scoreDoc = hits[i];
@@ -391,9 +399,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             SearchHit hit = new SearchHit();
             hit.totalHits = topDocs.totalHits;
-            hit.summary = doc.get("summary");
-            hit.url = doc.get("url");
-            hit.title = doc.get("title");
+            hit.summary = doc.get(FIELD_NAMES.summary.name());
+            hit.url = doc.get(FIELD_NAMES.url.name());
+            hit.title = doc.get(FIELD_NAMES.title.name());
             ret.add(hit);
         }
 
