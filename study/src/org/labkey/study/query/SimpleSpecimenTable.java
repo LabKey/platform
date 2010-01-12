@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
+import org.labkey.api.study.StudyService;
 
 /**
  * User: jeckels
@@ -28,7 +29,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimen());
 
-        getColumn("ParticipantId").setFk(null);
+        getColumn(StudyService.get().getSubjectColumnName(getContainer())).setFk(null);
 
         addSpecimenVisitColumn(TimepointType.RELATIVE_DATE);
 

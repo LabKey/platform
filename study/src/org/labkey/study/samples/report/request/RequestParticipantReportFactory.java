@@ -10,6 +10,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 
 import java.util.*;
@@ -90,7 +91,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)
         {
-            SimpleFilter filter = new SimpleFilter("ParticipantId", participantId);
+            SimpleFilter filter = new SimpleFilter(StudyService.get().getSubjectColumnName(getContainer()), participantId);
             addBaseFilters(filter);
             try
             {
@@ -127,7 +128,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
 
     public String getLabel()
     {
-        return "Requests by Participant";
+        return "Requests by " + StudyService.get().getSubjectNounSingular(getContainer());
     }
 
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()

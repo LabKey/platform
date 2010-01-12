@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.study.reports.EnrollmentReport" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -96,7 +97,7 @@
             getButtons : function() {
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
                 buttons.push('-', {
-                    text:'Customize Participant View',
+                    text:'Customize <%= StudyService.get().getSubjectNounSingular(study.getContainer()) %> View',
                     disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                     listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
                 }, '-');

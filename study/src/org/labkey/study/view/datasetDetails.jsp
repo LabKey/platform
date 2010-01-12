@@ -31,6 +31,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -49,7 +50,9 @@
     <tr><td class=labkey-form-label>Display String</td><td><%= h(dataset.getDisplayString()) %></td></tr>
     <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getCategory()) %></td></tr>
     <tr><td class=labkey-form-label>Cohort</td><td><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td></tr>
-    <tr><td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each participant in the study.")%></td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
+    <tr><td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
+        StudyService.get().getSubjectNounSingular(getViewContext().getContainer()).toLowerCase() + 
+        " in the study.")%></td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
     <tr><td class=labkey-form-label><%=visitManager.getLabel()%> Date Column</td><td><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
     <tr><td class=labkey-form-label>Show By Default</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td></tr>
     <tr><td class=labkey-form-label>Description</td><td><%= h(dataset.getDescription()) %></td></tr>

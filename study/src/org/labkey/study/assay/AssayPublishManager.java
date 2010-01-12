@@ -29,6 +29,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
@@ -400,7 +401,15 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         // add hard columns to our return map
         for (ColumnInfo col : dataset.getTableInfo(user).getColumns())
-            propertyNamesToUris.put(col.getName(), col.getPropertyURI());
+        {
+            // Swap out whatever subject column name is used in the target study for 'ParticipantID'.
+            // This allows the assay side to use its column name (ParticipantID) to find the study-side
+            // property URI:
+            if (col.getName().equalsIgnoreCase(StudyService.get().getSubjectColumnName(dataset.getContainer())))
+                propertyNamesToUris.put("ParticipantID", col.getPropertyURI());
+            else
+                propertyNamesToUris.put(col.getName(), col.getPropertyURI());
+        }
 
         // create a set of all columns that will be required, so we can detect
         // if any of these are new

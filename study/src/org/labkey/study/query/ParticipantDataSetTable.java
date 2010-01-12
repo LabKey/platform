@@ -21,6 +21,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -77,7 +78,7 @@ public class ParticipantDataSetTable extends VirtualTable
                     if (displayField == null)
                         return null;
 
-                    return LookupColumn.create(parent, table.getColumn("ParticipantId"), table.getColumn(displayField), true);
+                    return LookupColumn.create(parent, table.getColumn(StudyService.get().getSubjectColumnName(def.getContainer())), table.getColumn(displayField), true);
                 }
 
                 public TableInfo getLookupTableInfo()

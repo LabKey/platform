@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script type="text/javascript">
 function saveList(listName, hiddenElName)
@@ -72,9 +73,14 @@ function orderModule(listName, hiddenElName, down)
 <form method="post" name="reorder" action="visitOrder.post" enctype="multipart/form-data">
     <table>
         <tr>
-            <th>Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all study and specimen data.  By default, visits are displayed in order of increasing visit ID for visit-based studies, and in date order for date-based studies.")%></th>
+            <th>Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +
+                    "study and specimen data.  By default, visits are displayed in order of increasing visit ID for visit-based studies, and in date " +
+                    "order for date-based studies.")%></th>
             <td></td>
-            <th>Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before or after others.  Visits are chronologically ordered when all particpants move only downward through the visit list.  Any given participant may skip some visits, depending on cohort assignment or other factors.  It is generally not useful to set a chronological order for date-based studies.")%></th>
+            <th>Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
+                    "or after others.  Visits are chronologically ordered when all particpants move only downward through the visit list.  Any given " +
+                    StudyService.get().getSubjectNounSingular(getViewContext().getContainer()).toLowerCase() + " may skip some visits, depending on " +
+                    "cohort assignment or other factors.  It is generally not useful to set a chronological order for date-based studies.")%></th>
             <td></td>
         </tr>
         <%

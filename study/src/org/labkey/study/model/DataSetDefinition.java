@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
@@ -163,15 +164,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public static boolean isDefaultFieldName(String fieldName, Study study)
     {
+        String subjectCol = StudyService.get().getSubjectColumnName(study.getContainer());
         switch (study.getTimepointType())
         {
             case VISIT:
-                return DEFAULT_VISIT_FIELDS.contains(fieldName);
+                return DEFAULT_VISIT_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
             case ABSOLUTE_DATE:
-                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
+                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
             case RELATIVE_DATE:
             default:
-                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
+                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
         }
     }
 
@@ -488,7 +490,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         String shortName = fullName.substring(1+fullName.lastIndexOf('.'));
         Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_seq ON " + fullName + "(SequenceNum)", null);
         Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptidsequencekey ON " + fullName + "(ParticipantSequenceKey)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptid_seq ON " + fullName + "(ParticipantId,SequenceNum)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptid_seq ON " + fullName + "(" +
+                StudyService.get().getSubjectColumnName(getContainer()) + ",SequenceNum)", null);
 
         //noinspection ConstantConditions
         if (debug)
@@ -624,7 +627,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public String[] getDisplayKeyNames()
     {
         List<String> keyNames = new ArrayList<String>();
-        keyNames.add("ParticipantId");
+        keyNames.add(StudyService.get().getSubjectColumnName(getContainer()));
         if (!isDemographicData())
         {
             keyNames.add(getStudy().getTimepointType() == TimepointType.VISIT ? "SequenceNum" : "Date");
@@ -718,7 +721,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     col.setUserEditable(false);
                 ColumnInfo wrapped = newDatasetColumnInfo(this, col);
                 if (ptid)
+                {
+                    wrapped.setName(StudyService.get().getSubjectColumnName(c));
+                    wrapped.setLabel(StudyService.get().getSubjectColumnName(c));
                     wrapped.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(c, SpecimenService.CompletionType.ParticipantId));
+                }
                 columns.add(wrapped);
             }
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
@@ -810,7 +817,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 //          <UNDONE> just add a lookup column to the columnlist for VisitDate
             _fromSql = new SQLFragment(
-                    "SELECT SD.container, SD.lsid, SD.ParticipantId, SD.ParticipantSequenceKey, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
+                    "SELECT SD.container, SD.lsid, SD.ParticipantId AS " + StudyService.get().getSubjectColumnName(c) + ", SD.ParticipantSequenceKey, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
                     "  FROM " + studyData.getSelectName() + " SD LEFT OUTER JOIN " + participantVisit.getSelectName() + " PV ON SD.Container=PV.Container AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum \n"+
                     "  WHERE SD.container=? AND SD.datasetid=?");
             _fromSql.add(c);

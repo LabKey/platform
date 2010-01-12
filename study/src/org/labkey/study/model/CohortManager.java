@@ -18,6 +18,7 @@ package org.labkey.study.model;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -325,7 +326,7 @@ public class CohortManager
                 "\tPV.VisitRowId = V.RowId\n" +
                 "LEFT OUTER JOIN " + cohortDatasetTinfo + " D ON\n" +
                 "\tPV.VisitRowId = D.VisitRowId AND\n" +
-                "\tPV.ParticipantId = D.ParticipantId\n" +
+                "\tPV.ParticipantId = D." + StudyService.get().getSubjectColumnName(study.getContainer()) + "\n" +
                 "WHERE PV.Container = ?\n" +
                 "ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
 

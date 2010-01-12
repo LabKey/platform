@@ -21,6 +21,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import org.labkey.api.study.StudyService;
 
 import java.sql.Types;
 import java.sql.SQLException;
@@ -39,7 +40,8 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
 
-        ColumnInfo pvColumn = new AliasedColumn(this, "ParticipantVisit", _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
+        ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
+                _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
         pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
         {
             public TableInfo getLookupTableInfo()

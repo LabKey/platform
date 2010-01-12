@@ -38,6 +38,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.model.*;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
@@ -2034,7 +2035,7 @@ public class SampleManager
         columns.add(FieldKey.fromParts("Visit"));
         columns.add(FieldKey.fromParts("LockedInRequest"));
         columns.add(FieldKey.fromParts("GlobalUniqueId"));
-        columns.add(FieldKey.fromParts("ParticipantId"));
+        columns.add(FieldKey.fromParts(StudyService.get().getSubjectColumnName(container)));
         if (StudyManager.getInstance().showCohorts(container, schema.getUser()))
             columns.add(FieldKey.fromParts("CollectionCohort"));
         columns.add(FieldKey.fromParts("Volume"));
@@ -2096,9 +2097,10 @@ public class SampleManager
 
         String perPtidSpecimenSQL = "\t-- Inner SELECT gets the number of vials per participant/visit/type:\n" +
             "\tSELECT InnerView.Container, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + ",\n" +
-            "\tInnerView.ParticipantId, COUNT(*) AS VialCount, SUM(InnerView.Volume) AS PtidVolume \n" +
+            "\tInnerView." + StudyService.get().getSubjectColumnName(container) + ", COUNT(*) AS VialCount, SUM(InnerView.Volume) AS PtidVolume \n" +
             "FROM (\n" + viewSqlHelper.getViewSql().getSQL() + "\n) InnerView\n" +
-            "\tGROUP BY InnerView.Container, InnerView.ParticipantId, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n";
+            "\tGROUP BY InnerView.Container, InnerView." + StudyService.get().getSubjectColumnName(container) +
+                ", InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n";
 
         StringBuilder sql = new StringBuilder("-- Outer grouping allows us to count participants AND sum vial counts:\n" +
             "SELECT VialData.Visit AS SequenceNum, " + viewSqlHelper.getTypeGroupingColumns() + ", COUNT(*) as ParticipantCount, \n" +
@@ -2151,7 +2153,7 @@ public class SampleManager
 
         if (includeParticipantLists)
             setSummaryParticpantLists(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
-                    viewSqlHelper.getAliasToTypePropertyMap(), summaries, "ParticipantId", "Visit");
+                    viewSqlHelper.getAliasToTypePropertyMap(), summaries, StudyService.get().getSubjectColumnName(container), "Visit");
         return summaries;
     }
 
@@ -2283,14 +2285,14 @@ public class SampleManager
             specimenDetailFilter = clone;
         }
         SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, null);
-
+        String subjectCol = StudyService.get().getSubjectColumnName(container);
         String cohortJoinClause = null;
         switch (cohortType)
         {
             case DATA_COLLECTION:
                 cohortJoinClause = "LEFT OUTER JOIN study.ParticipantVisit ON\n " +
                         "\tSpecimenQuery.Visit = study.ParticipantVisit.SequenceNum AND\n" +
-                        "\tSpecimenQuery.ParticipantId = study.ParticipantVisit.ParticipantId AND\n" +
+                        "\tSpecimenQuery." + subjectCol + " = study.ParticipantVisit.ParticipantId AND\n" +
                         "\tSpecimenQuery.Container = study.ParticipantVisit.Container\n" +
                         "LEFT OUTER JOIN study.Cohort ON \n" +
                         "\tstudy.ParticipantVisit.CohortId = study.Cohort.RowId AND\n" +
@@ -2308,15 +2310,15 @@ public class SampleManager
                 break;
         }
 
-        String ptidSpecimenSQL = "SELECT SpecimenQuery.Visit AS SequenceNum, SpecimenQuery.ParticipantId,\n" +
+        String ptidSpecimenSQL = "SELECT SpecimenQuery.Visit AS SequenceNum, SpecimenQuery." + subjectCol + " AS ParticipantId,\n" +
                 "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n" +
                 "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS SpecimenQuery\n" +
                 "LEFT OUTER JOIN study.Participant ON\n" +
-                "\tSpecimenQuery.ParticipantId = study.Participant.ParticipantId AND\n" +
+                "\tSpecimenQuery." + subjectCol + " = study.Participant.ParticipantId AND\n" +
                 "\tSpecimenQuery.Container = study.Participant.Container\n" +
                 cohortJoinClause +
-                "GROUP BY study.Cohort.Label, SpecimenQuery.ParticipantId, Visit\n" +
-                "ORDER BY study.Cohort.Label, SpecimenQuery.ParticipantId, Visit";
+                "GROUP BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit\n" +
+                "ORDER BY study.Cohort.Label, SpecimenQuery." + subjectCol + ", Visit";
 
         return Table.executeQuery(StudySchema.getInstance().getSchema(),
                 ptidSpecimenSQL, sqlHelper.getViewSql().getParamsArray(), SummaryByVisitParticipant.class);

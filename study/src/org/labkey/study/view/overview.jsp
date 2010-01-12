@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -95,7 +96,7 @@
 %>
 <br><br>
     <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
-    Participant's current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
+    <%= StudyService.get().getSubjectNounSingular(container) %>'s current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
         for (CohortImpl cohort : cohorts)

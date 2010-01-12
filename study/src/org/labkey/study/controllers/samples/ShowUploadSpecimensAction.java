@@ -28,6 +28,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
@@ -72,6 +73,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
             columnAliases.put(entry.getValue(), entry.getKey());
         //And a few more aliases
+        columnAliases.put(StudyService.get().getSubjectColumnName(getViewContext().getContainer()), SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Participant Id", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
@@ -145,7 +147,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 if (sampleIdMap.containsKey(sampleId))
                 {
                     if (!participantVisit.equals(sampleIdMap.get(sampleId)))
-                        errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " same sample id has multiple participant/visits.");
+                        errors.reject(SpringActionController.ERROR_MSG, "Error, Row " + rowNum + " same sample id has multiple " +
+                                StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + "/visits.");
                 }
                 else
                     sampleIdMap.put(sampleId, participantVisit);

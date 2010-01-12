@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.reports.StudyCrosstabReport;
@@ -487,7 +488,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         if (viewType.isVialView())
             return new Sort("GlobalUniqueId");
         else
-            return new Sort("ParticipantId,Visit,PrimaryType,DerivativeType,AdditiveType");
+            return new Sort(StudyService.get().getSubjectColumnName(getContextContainer()) + ",Visit,PrimaryType,DerivativeType,AdditiveType");
     }
 
     protected static SimpleFilter addFilterClause(SimpleFilter filter, Specimen[] specimens, ViewType viewType)
@@ -525,7 +526,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             {
                 if (param > 0)
                     whereClause.append(" OR ");
-                whereClause.append("(Visit = ? AND ParticipantId = ?)");
+                whereClause.append("(Visit = ? AND " + StudyService.get().getSubjectColumnName(getContextContainer()) + " = ?)");
                 params[param++] = pd.getSequenceNum();
                 params[param++] = pd.getParticipantId();
             }

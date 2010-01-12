@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
@@ -66,6 +67,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _participantCommentProperty;
     private Integer _participantVisitCommentDataSetId;
     private String _participantVisitCommentProperty;
+    private String _subjectNounSingular;
+    private String _subjectNounPlural;
+    private String _subjectColumnName;
 
     public StudyImpl()
     {
@@ -432,6 +436,37 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setParticipantVisitCommentProperty(String participantVisitCommentProperty)
     {
         _participantVisitCommentProperty = participantVisitCommentProperty;
+    }
+
+    public String getSubjectNounSingular()
+    {
+        return _subjectNounSingular;
+    }
+
+    public void setSubjectNounSingular(String subjectNounSingular)
+    {
+        _subjectNounSingular = subjectNounSingular;
+    }
+
+    public String getSubjectNounPlural()
+    {
+        return _subjectNounPlural;
+    }
+
+    public void setSubjectNounPlural(String subjectNounPlural)
+    {
+        _subjectNounPlural = subjectNounPlural;
+    }
+
+    public String getSubjectColumnName()
+    {
+        return _subjectColumnName;
+    }
+
+    public void setSubjectColumnName(String subjectColumnName)
+    {
+        // normalize on 'set' to ensure good names:
+        _subjectColumnName = ColumnInfo.legalNameFromName(subjectColumnName);
     }
 
     public static class SummaryStatistics

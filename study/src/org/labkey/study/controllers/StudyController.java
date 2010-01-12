@@ -975,7 +975,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return _appendNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState()).
-                    addChild("Participant - " + _bean.getParticipantId());
+                    addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + _bean.getParticipantId());
         }
     }
 
@@ -1080,6 +1080,9 @@ public class StudyController extends BaseStudyController
             study.setTimepointType(form.getTimepointType());
             study.setStartDate(form.getStartDate());
             study.setSecurityType(form.getSecurityType());
+            study.setSubjectNounSingular(form.getSubjectNounSingular());
+            study.setSubjectNounPlural(form.getSubjectNounPlural());
+            study.setSubjectColumnName(form.getSubjectColumnName());
             StudyManager.getInstance().createStudy(user, study);
         }
     }
@@ -2377,9 +2380,11 @@ public class StudyController extends BaseStudyController
         List<DisplayColumn> columns = queryView.getDisplayColumns();
         for (DisplayColumn col : columns)
         {
-            if ("ParticipantId".equalsIgnoreCase(col.getName()))
+            String subjectColName = StudyService.get().getSubjectColumnName(def.getContainer());
+            if (subjectColName.equalsIgnoreCase(col.getName()))
             {
-                col.getColumnInfo().setFk(new QueryForeignKey(querySchema, "Participant", "ParticipantId", "ParticipantId")
+                col.getColumnInfo().setFk(new QueryForeignKey(querySchema, StudyService.get().getSubjectTableName(def.getContainer()),
+                        subjectColName, subjectColName)
                 {
                     public StringExpression getURL(ColumnInfo parent)
                     {
@@ -2620,7 +2625,7 @@ public class StudyController extends BaseStudyController
                 rs = queryView.getResultset();
                 while (rs.next())
                 {
-                    String ptid = rs.getString("ParticipantId");
+                    String ptid = rs.getString(StudyService.get().getSubjectColumnName(queryView.getContainer()));
                     participantSet.add(ptid);
                 }
                 return new ArrayList<String>(participantSet);
@@ -4605,7 +4610,7 @@ public class StudyController extends BaseStudyController
             "    /* place the webpart into the 'participantData' div: */\n" +
             "    participantWebPart.render();\n" +
             "</script>";
-    
+
     public static class CustomizeParticipantViewForm
     {
         private String _returnUrl;
@@ -4723,7 +4728,7 @@ public class StudyController extends BaseStudyController
         {
             _appendManageStudy(root);
             root.addChild("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()));
-            return root.addChild("Customize Participant View");
+            return root.addChild("Customize " + StudyService.get().getSubjectNounSingular(getContainer()) + " View");
         }
     }
 
@@ -5635,6 +5640,9 @@ public class StudyController extends BaseStudyController
         private Date _startDate;
         private boolean _simpleRepository = true;
         private SecurityType _securityType;
+        private String _subjectNounSingular = "Participant";
+        private String _subjectNounPlural = "Participants";
+        private String _subjectColumnName = "ParticipantId";
 
         public String getLabel()
         {
@@ -5694,6 +5702,36 @@ public class StudyController extends BaseStudyController
         public SecurityType getSecurityType()
         {
             return _securityType;
+        }
+
+        public String getSubjectNounSingular()
+        {
+            return _subjectNounSingular;
+        }
+
+        public void setSubjectNounSingular(String subjectNounSingular)
+        {
+            _subjectNounSingular = subjectNounSingular;
+        }
+
+        public String getSubjectNounPlural()
+        {
+            return _subjectNounPlural;
+        }
+
+        public void setSubjectNounPlural(String subjectNounPlural)
+        {
+            _subjectNounPlural = subjectNounPlural;
+        }
+
+        public String getSubjectColumnName()
+        {
+            return _subjectColumnName;
+        }
+
+        public void setSubjectColumnName(String subjectColumnName)
+        {
+            _subjectColumnName = subjectColumnName;
         }
     }
 
@@ -5763,7 +5801,7 @@ public class StudyController extends BaseStudyController
             dr.setTable(tableInfo);
 
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("participantId", participantId, CompareType.EQUAL);
+            filter.addCondition(StudyService.get().getSubjectColumnName(context.getContainer()), participantId, CompareType.EQUAL);
 
             RenderContext ctx = new RenderContext(context);
             ctx.setContainer(context.getContainer());
@@ -5825,15 +5863,15 @@ public class StudyController extends BaseStudyController
 
             out.print("<table><tr><td align=\"left\">");
             if (_prevURL == null)
-                out.print("[< Previous Participant]");
+                out.print("[< Previous " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + "]");
             else
-                out.print("[<a href=\"" + _prevURL + "\">< Previous Participant</a>]");
+                out.print("[<a href=\"" + _prevURL + "\">< Previous " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + "</a>]");
             out.print("&nbsp;");
 
             if (_nextURL == null)
-                out.print("[Next Participant >]");
+                out.print("[Next " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + " >]");
             else
-                out.print("[<a href=\"" + _nextURL + "\">Next Participant ></a>]");
+                out.print("[<a href=\"" + _nextURL + "\">Next " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + " ></a>]");
             out.print("&nbsp;");
 
             if (null != _currentParticipantId && null != ss)
@@ -6288,7 +6326,7 @@ public class StudyController extends BaseStudyController
             {
                 List<NavTree> buttons = new ArrayList<NavTree>();
                 buttons.add(new NavTree("Overview", PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer())));
-                buttons.add(new NavTree("Participants", "#"));
+                buttons.add(new NavTree(StudyService.get().getSubjectNounPlural(getContainer()), "#"));
                 buttons.add(new NavTree("View Data", new ActionURL(ViewDataAction.class, getContainer())));
                 if (getContainer().hasPermission(getUser(), AdminPermission.class))
                     buttons.add(new NavTree("Manage", new ActionURL(ManageStudyAction.class, getContainer())));

@@ -9,6 +9,7 @@ import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.StudyService;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -105,7 +106,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         ActionURL link = new ActionURL(SpecimenController.SamplesAction.class, _container);
         link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
-        link = updateURLFilterParameter(link, "SpecimenDetail.ParticipantId", summary.getParticipantId());
+        link = updateURLFilterParameter(link, "SpecimenDetail." + StudyService.get().getSubjectColumnName(getContainer()), summary.getParticipantId());
         String linkHtml = link.getLocalURIString();
         if (_filter != null)
         {

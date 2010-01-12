@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -38,24 +39,24 @@ public class CohortFilter
     {
         PTID_INITIAL("Initial cohort")
         {
-            public FieldKey getFilterColumn()
+            public FieldKey getFilterColumn(Container container)
             {
-                return FieldKey.fromParts("ParticipantId", "InitialCohort", "rowid");
+                return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "InitialCohort", "rowid");
             }
         },
 
         PTID_CURRENT("Current cohort")
         {
-            public FieldKey getFilterColumn()
+            public FieldKey getFilterColumn(Container container)
             {
-                return FieldKey.fromParts("ParticipantId", "Cohort", "rowid");
+                return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "Cohort", "rowid");
             }
         },
         DATA_COLLECTION("Cohort as of data collection")
         {
-            public FieldKey getFilterColumn()
+            public FieldKey getFilterColumn(Container container)
             {
-                return FieldKey.fromParts("ParticipantVisit", "Cohort", "rowid");
+                return FieldKey.fromParts(StudyService.get().getSubjectVisitColumnName(container), "Cohort", "rowid");
             }
         };
 
@@ -70,7 +71,7 @@ public class CohortFilter
             return _title;
         }
 
-        public abstract FieldKey getFilterColumn();
+        public abstract FieldKey getFilterColumn(Container container);
     }
 
     public static final CohortFilter UNASSIGNED = new UnassignedCohort();
@@ -89,9 +90,9 @@ public class CohortFilter
         }
 
         @Override
-        public void addFilterCondition(TableInfo table, SimpleFilter filter)
+        public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
         {
-            filter.addCondition(getCohortColumn(table).getName(), null, CompareType.ISBLANK);
+            filter.addCondition(getCohortColumn(table, container).getName(), null, CompareType.ISBLANK);
         }
 
         @Override
@@ -251,9 +252,9 @@ public class CohortFilter
         return getType().getTitle() + " is " + cohort.getLabel();
     }
 
-    protected ColumnInfo getCohortColumn(TableInfo table)
+    protected ColumnInfo getCohortColumn(TableInfo table, Container container)
     {
-        FieldKey cohortColKey = _type.getFilterColumn();
+        FieldKey cohortColKey = _type.getFilterColumn(container);
         Map<FieldKey, ColumnInfo> cohortColumnMap = QueryService.get().getColumns(table, Collections.singleton(cohortColKey));
         ColumnInfo cohortColumn = cohortColumnMap.get(cohortColKey);
         if (cohortColumn == null)
@@ -261,8 +262,8 @@ public class CohortFilter
         return cohortColumn;
     }
 
-    public void addFilterCondition(TableInfo table, SimpleFilter filter)
+    public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
     {
-        filter.addCondition(getCohortColumn(table).getName(), getCohortId());
+        filter.addCondition(getCohortColumn(table, container).getName(), getCohortId());
     }
 }

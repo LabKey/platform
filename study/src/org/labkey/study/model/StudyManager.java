@@ -88,7 +88,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
-    public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Participant");
+    public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subject");
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
     private static StudyManager _instance;
@@ -761,8 +761,8 @@ public class StudyManager
 
             updateLsids.add(lsid);
 
-            StringBuilder auditKey = new StringBuilder("Participant ");
-            auditKey.append(row.get("ParticipantId"));
+            StringBuilder auditKey = new StringBuilder(StudyService.get().getSubjectNounSingular(container) + " ");
+            auditKey.append(row.get(StudyService.get().getSubjectColumnName(container)));
             if (!def.isDemographicData())
             {
                 VisitImpl visit = lsidVisits.get(lsid);
@@ -2348,7 +2348,7 @@ public class StudyManager
             if (null != failedReplaceMap && failedReplaceMap.size() > 0)
             {
                 StringBuilder error = new StringBuilder();
-                error.append("Only one row is allowed for each Participant");
+                error.append("Only one row is allowed for each ").append(StudyService.get().getSubjectNounSingular(def.getContainer()));
 
                 if (!def.isDemographicData())
                 {
@@ -2370,7 +2370,7 @@ public class StudyManager
                 for (Map.Entry<String, Map> e : failedReplaceMap.entrySet())
                 {
                     Map m = e.getValue();
-                    String err = "Duplicate: Participant = " + m.get(participantIdURI);
+                    String err = "Duplicate: " + StudyService.get().getSubjectNounSingular(def.getContainer()) + " = " + m.get(participantIdURI);
                     if (!def.isDemographicData())
                     {
                         if (study.getTimepointType() != TimepointType.VISIT)
@@ -3276,7 +3276,8 @@ public class StudyManager
                 Map<String,Object> props = new HashMap<String,Object>();
                 props.put(SearchService.PROPERTY.category.toString(), subjectCategory);
                 props.put(SearchService.PROPERTY.participantId.toString(), id);
-                props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- Participant " + id);
+                props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- " +
+                        StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id);
 
                 if (0==1)
                 {

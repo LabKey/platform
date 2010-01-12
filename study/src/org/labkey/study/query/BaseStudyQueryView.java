@@ -60,7 +60,7 @@ public abstract class BaseStudyQueryView extends QueryView
             filter = _filter;
 
         if (_cohortFilter != null)
-            _cohortFilter.addFilterCondition(view.getTable(), filter);
+            _cohortFilter.addFilterCondition(view.getTable(), getContainer(), filter);
 
         view.getRenderContext().setBaseFilter(filter);
         if (view.getRenderContext().getBaseSort() == null)

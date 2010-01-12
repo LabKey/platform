@@ -18,6 +18,7 @@
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
@@ -34,7 +35,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
         
-        ColumnInfo pvColumn = new AliasedColumn(this, "ParticipantVisit", _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
+        ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
+                _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
         pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
         {
             public TableInfo getLookupTableInfo()
@@ -150,7 +152,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         public ParticipantVisitColumn(final StudyQuerySchema schema, TableInfo parent)
         {
-            super(parent, "ParticipantVisit",
+            super(parent, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                     new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_VISIT_JOIN + ".ParticipantSequenceKey"),
                     Types.INTEGER);
 
@@ -199,7 +201,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                     return new CohortTable(schema);
                 }
             });
-            setDescription("The cohort of the participant at the time of specimen collection.");
+            setDescription("The cohort of the " + StudyService.get().getSubjectNounSingular(schema.getContainer()) + " at the time of specimen collection.");
         }
 
         @Override

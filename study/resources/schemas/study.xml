@@ -33,16 +33,16 @@
         <ns:description>Whether the study uses visits or relative or absolute dates.  TimepointType may be VISIT, RELATIVE_DATE, or ABSOLUTE_DATE.</ns:description>
       </ns:column>
       <ns:column columnName="StartDate">
-        <ns:description>The start date of each study.  Note that participants can also have start dates.</ns:description>
+        <ns:description>The start date of each study.  Note that subjects can also have start dates.</ns:description>
       </ns:column>
       <ns:column columnName="SecurityType">
         <ns:description>Security type for each study, indicating how dataset read/write access is determined.</ns:description>
       </ns:column>
       <ns:column columnName="participantcohortdatasetid">
-        <ns:description>The ID of the study dataset that contains data for automatic participant cohort assignment.</ns:description>
+        <ns:description>The ID of the study dataset that contains data for automatic subject cohort assignment.</ns:description>
       </ns:column>
       <ns:column columnName="participantcohortproperty">
-        <ns:description>The name of the property/field in the participant cohort dataset that contains the participant's cohort name.</ns:description>
+        <ns:description>The name of the property/field in the subject cohort dataset that contains the subject's cohort name.</ns:description>
       </ns:column>
       <ns:column columnName="manualCohortAssignment">
         <ns:description>Whether each study uses manual (versus automatic) cohort assignment.</ns:description>
@@ -73,19 +73,28 @@
         <ns:description>The user who initiated automatic reload.</ns:description>
       </ns:column>
       <ns:column columnName="AdvancedCohorts">
-        <ns:description>Whether advanced cohort assignment is enabled.  Advanced cohort support allows participants to change cohorts over time.</ns:description>
+        <ns:description>Whether advanced cohort assignment is enabled.  Advanced cohort support allows subjects to change cohorts over time.</ns:description>
       </ns:column>
       <ns:column columnName="ParticipantCommentDatasetId">
-        <ns:description>The ID of the study dataset that contains data for participant-level comments.</ns:description>
+        <ns:description>The ID of the study dataset that contains data for subject-level comments.</ns:description>
       </ns:column>
       <ns:column columnName="ParticipantCommentProperty">
-        <ns:description>The default property/field within the Participant Comment dataset that should be displayed in specimen and dataset views.</ns:description>
+        <ns:description>The default property/field within the Subject Comment dataset that should be displayed in specimen and dataset views.</ns:description>
       </ns:column>
       <ns:column columnName="ParticipantVisitCommentDatasetId">
-        <ns:description>The ID of the study dataset that contains data for participant/visit-level comments</ns:description>
+        <ns:description>The ID of the study dataset that contains data for subject/visit-level comments</ns:description>
       </ns:column>
       <ns:column columnName="ParticipantVisitCommentProperty">
-        <ns:description>The default property/field within the Participant/Visit Comment dataset that should be displayed in specimen and dataset views.</ns:description>
+        <ns:description>The default property/field within the Subject/Visit Comment dataset that should be displayed in specimen and dataset views.</ns:description>
+      </ns:column>
+      <ns:column columnName="SubjectNounSingular">
+        <ns:description>The singular noun used to identify subjects.  Examples include "Participant", "Mouse", or "Yeast".  This value cannot be changed after study creation.</ns:description>
+      </ns:column>
+      <ns:column columnName="SubjectNounPlural">
+        <ns:description>The plural noun used to identify subjects.  Examples include "Participants", "Mice", or "Yeasts".  This value cannot be changed after study creation.</ns:description>
+      </ns:column>
+      <ns:column columnName="SubjectColumnName">
+        <ns:description>The column header for subject IDs.  Examples include "ParticipantId", "MouseId", or "YeastId".  This value cannot be changed after study creation.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -215,7 +224,7 @@
         <ns:description>The description of each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="DemographicData">
-        <ns:description>Whether each dataset contains demographic data, which is keyed only on participant ID (versus non-demographic data keyed on Participant ID and visit).</ns:description>
+        <ns:description>Whether each dataset contains demographic data, which is keyed only on Subjetc ID (versus non-demographic data keyed on Subject ID and visit).</ns:description>
       </ns:column>
       <ns:column columnName="cohortid">
         <ns:description>The ID of each dataset's cohort, if it is cohort specific.</ns:description>
@@ -336,27 +345,27 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="Participant" tableDbType="TABLE">
-    <ns:description>Contains one row per participant.</ns:description>
+    <ns:description>Contains one row per subject.</ns:description>
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="ParticipantId">
-        <ns:description>Participant identifier</ns:description>
+        <ns:description>Subject identifier</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
       </ns:column>
       <ns:column columnName="EnrollmentSiteId">
-        <ns:description>The enrollment site of each participant.</ns:description>
+        <ns:description>The enrollment site of each subject.</ns:description>
       </ns:column>
       <ns:column columnName="CurrentSiteId">
-        <ns:description>The current site of each participant.</ns:description>
+        <ns:description>The current site of each subject.</ns:description>
       </ns:column>
       <ns:column columnName="StartDate">
-        <ns:description>The start date for each participant.</ns:description>
+        <ns:description>The start date for each subject.</ns:description>
       </ns:column>
       <ns:column columnName="CurrentCohortId">
-        <ns:description>The current cohort assignment of each participant.  For studies with advanced cohort support enabled, this corresponds to the cohort assignment from the last chronological visit.</ns:description>
+        <ns:description>The current cohort assignment of each subject.  For studies with advanced cohort support enabled, this corresponds to the cohort assignment from the last chronological visit.</ns:description>
       </ns:column>
       <ns:column columnName="InitialCohortId">
-        <ns:description>The initial cohort assignment of each participant.  For studies with advanced cohort support enabled, this corresponds to the cohort assignment from the first chronological visit.  For studies without advanced cohort support, this will be equal to the current cohort assignment.</ns:description>
+        <ns:description>The initial cohort assignment of each subject.  For studies with advanced cohort support enabled, this corresponds to the cohort assignment from the first chronological visit.  For studies without advanced cohort support, this will be equal to the current cohort assignment.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -406,11 +415,11 @@
     <ns:columns>
       <ns:column columnName="container"/>
       <ns:column columnName="ParticipantSequenceKey">
-        <ns:description>A string value uniquely identfying the participant/visit combination for each dataset row.</ns:description>
+        <ns:description>A string value uniquely identfying the subject/visit combination for each dataset row.</ns:description>
       </ns:column>
       <ns:column columnName="participantid">
         <ns:columnTitle>Participant ID</ns:columnTitle>
-        <ns:description>Participant identifier</ns:description>
+        <ns:description>Subject identifier</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
       </ns:column>
       <ns:column columnName="datasetid">
@@ -489,7 +498,7 @@
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>
         <ns:column columnName="SpecimenHash">
-          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
         </ns:column>
         <ns:column columnName="SpecimenId">
           <ns:description>The ID of the primary specimen associated with each vial.</ns:description>
@@ -532,11 +541,11 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="ParticipantSequenceKey">
-        <ns:description>A string value uniquely identfying the participant/visit combination for each specimen row.</ns:description>
+        <ns:description>A string value uniquely identfying the subject/visit combination for each specimen row.</ns:description>
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="Ptid">
-        <ns:description>The ID of the participant providing each specimen.</ns:description>
+        <ns:description>The ID of the subject providing each specimen.</ns:description>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
         <ns:description>The timestamp of specimen collection.</ns:description>
@@ -546,7 +555,7 @@
         <ns:description>The timestamp of specimen receipt at the site-affiliated laboratory.</ns:description>
       </ns:column>
       <ns:column columnName="SpecimenHash">
-        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the specimen, including participant, visit, and specimen type.</ns:description>
+        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the specimen, including subject, visit, and specimen type.</ns:description>
       </ns:column>
       <ns:column columnName="ClassId">
         <ns:description>The class, network, or study associated with each specimen.</ns:description>
@@ -632,11 +641,11 @@
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="Ptid">
-          <ns:description>The ID of the participant providing each specimen.</ns:description>
+          <ns:description>The ID of the subject providing each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ParticipantSequenceKey">
-          <ns:description>A string value uniquely identfying the participant/visit combination for each specimendetail row.</ns:description>
+          <ns:description>A string value uniquely identfying the subject/visit combination for each specimendetail row.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
@@ -649,7 +658,7 @@
           <ns:datatype>date</ns:datatype>
       </ns:column>
       <ns:column columnName="SpecimenHash">
-          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ClassId">
@@ -780,11 +789,11 @@
           <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="Ptid">
-          <ns:description>The ID of the participant providing each specimen.</ns:description>
+          <ns:description>The ID of the subject providing each specimen.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ParticipantSequenceKey">
-          <ns:description>A string value uniquely identfying the participant/visit combination for each specimensummary row.</ns:description>
+          <ns:description>A string value uniquely identfying the subject/visit combination for each specimensummary row.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
@@ -797,7 +806,7 @@
           <ns:datatype>date</ns:datatype>
       </ns:column>
       <ns:column columnName="SpecimenHash">
-          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+          <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
           <ns:datatype>String</ns:datatype>
       </ns:column>
       <ns:column columnName="ProtocolNumber">
@@ -1048,7 +1057,7 @@
         <ns:description>The date/time each vial was shipped to the lab.</ns:description>
       </ns:column>
       <ns:column columnName="Ptid">
-          <ns:description>The ID of the participant providing each specimen.</ns:description>
+          <ns:description>The ID of the subject providing each specimen.</ns:description>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
           <ns:description>The timestamp of specimen collection.</ns:description>
@@ -1155,16 +1164,16 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="ParticipantVisit" tableDbType="TABLE">
-    <ns:description>Contains one row per participant/visit combination in the study.  Note that this table is populated dynamically as specimen, assay, and dataset data are loaded, and is guaranteed to always be complete.</ns:description>
+    <ns:description>Contains one row per subject/visit combination in the study.  Note that this table is populated dynamically as specimen, assay, and dataset data are loaded, and is guaranteed to always be complete.</ns:description>
     <ns:columns>
       <ns:column columnName="ParticipantId">
-          <ns:description>Participant identifier</ns:description>
+          <ns:description>Subject identifier</ns:description>
       </ns:column>
       <ns:column columnName="VisitDate">
         <ns:description>The date of the visit.  Primarily used in date-based studies.</ns:description>
       </ns:column>
       <ns:column columnName="ParticipantSequenceKey">
-        <ns:description>A string value uniquely identfying the participant/visit combination for each participant/visit row.</ns:description>
+        <ns:description>A string value uniquely identfying the subject/visit combination for each subject/visit row.</ns:description>
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="visitrowid">
@@ -1177,7 +1186,7 @@
         <ns:description>The day of the visit.  Primarily used in date-based studies.</ns:description>
       </ns:column>
       <ns:column columnName="CohortID">
-        <ns:description>The ID of the participant's cohort during each visit.  Useful only when advanced cohort assignment is enabled.</ns:description>
+        <ns:description>The ID of the subject's cohort during each visit.  Useful only when advanced cohort assignment is enabled.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -1333,7 +1342,7 @@
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="SpecimenHash">
-        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
       </ns:column>
       <ns:column columnName="GlobalUniqueId">
         <ns:description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</ns:description>
@@ -1389,7 +1398,7 @@
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="SpecimenHash">
-        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including participant, visit, and specimen type.</ns:description>
+        <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
       </ns:column>
       <ns:column columnName="AvailableVolume">
           <ns:description>The total volume of all vials from each specimen that are currently available for request.</ns:description>

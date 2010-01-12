@@ -24,6 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
@@ -172,7 +173,7 @@ public class ExportExcelReport extends RedirectReport
                 continue;
 
             TableInfo tinfo = def.getTableInfo(user, checkUserPermissions, true);
-            Sort sort = new Sort("ParticipantId,SequenceNum");
+            Sort sort = new Sort(StudyService.get().getSubjectColumnName(getContainer()) + ",SequenceNum");
             ResultSet rs = Table.select(tinfo, Table.ALL_COLUMNS, siteFilter, sort);
 
             String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDataSetId());
@@ -211,7 +212,7 @@ public class ExportExcelReport extends RedirectReport
                     null);
 
             writer.createColumns(rs.getMetaData());
-            renderSheet(workbook, writer, "Participants", rs);
+            renderSheet(workbook, writer, StudyService.get().getSubjectNounPlural(getContainer()), rs);
         }
 
         ExcelWriter.closeWorkbook(workbook, outputStream);

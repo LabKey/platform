@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="java.util.Iterator" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script>LABKEY.requiresScript('util.js');</script>
 <script>LABKEY.requiresClientAPI();</script>
@@ -32,6 +33,7 @@
     ActionURL createRequestURL = new ActionURL(SpecimenController.ShowAPICreateSampleRequestAction.class, getViewContext().getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
     createRequestURL.addParameter("returnUrl", getViewContext().getActionURL().toString());
+    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
 %>
 <script>
     var CREATE_REQUEST_BASE_LINK = '<%= createRequestURL.getLocalURIString() %>';
@@ -73,7 +75,7 @@
         }
         else
         {
-            filterString.append(" the following participant/visit pairs: ");
+            filterString.append(" the following ").append(subjectNounSingle.toLowerCase()).append("/visit pairs: ");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 Pair<String, String> ptidVisit = it.next();
@@ -85,7 +87,7 @@
         }
         ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction("samples");
 %>
-    <b><%= filterString %></b><br><%= textLink("Remove Participant/Visit Filter", noFitlerUrl )%><br>
+    <b><%= filterString %></b><br><%= textLink("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl )%><br>
 <%
     }
 %>

@@ -36,34 +36,62 @@
 <form action="createStudy.post" method="POST">
     <table>
         <tr>
-            <th align="left">Study Label</th>
+            <td colspan="2" class="labkey-announcement-title"><span>Look and Feel</span></td>
+        </tr>
+        <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
+        <tr>
+            <th style="text-align:left;width:18em">Study Label</th>
             <td align="left"><input type="text" size="40" name="label" value="<%= h(form.getLabel()) %>"></td>
         </tr>
-            <tr>
-                <th align="left">Timepoints <%=helpPopup("Timepoint Styles", "<p>Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.</p><p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></th>
-                <td align="left">
-                    <input type="radio" name="timepointType" value="<%=TimepointType.RELATIVE_DATE%>" <%=form.getTimepointType() == TimepointType.RELATIVE_DATE ? "CHECKED" : ""%>> Dates &nbsp;&nbsp;
-                    <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>" <%=form.getTimepointType() == TimepointType.VISIT ? "" : "CHECKED"%>> Assigned Visits
-                </td>
-            </tr>
         <tr>
-            <th align="left">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
+            <th style="text-align:left;width:18em">Subject Noun (Singular)<%=helpPopup("Subject Noun (Singular)", "The singular noun used to identify subjects.  Examples include \"Participant\", \"Mouse\", or \"Yeast\".  This value cannot be changed after study creation.", true)%></th>
+            <td align="left"><input type="text" size="40" name="subjectNounSingular" value="<%= h(form.getSubjectNounSingular()) %>"></td>
+        </tr>
+        <tr>
+            <th style="text-align:left;width:18em">Subject Noun (Plural)<%=helpPopup("Subject Noun (Plural)", "The plural noun used to identify subjects.  Examples include \"Participants\", \"Mice\", or \"Yeasts\".  This value cannot be changed after study creation.", true)%></th>
+            <td align="left"><input type="text" size="40" name="subjectNounPlural" value="<%= h(form.getSubjectNounPlural()) %>"></td>
+        </tr>
+        <tr>
+            <th style="text-align:left;width:18em">Subject Column Name<%=helpPopup("Subject Column Name", "The column header for subject IDs.  Examples include \"ParticipantId\", \"MouseId\", or \"YeastId\".  This value cannot be changed after study creation.", true)%></th>
+            <td align="left"><input type="text" size="40" name="subjectColumnName" value="<%= h(form.getSubjectColumnName()) %>"></td>
+        </tr>
+        <tr>
+            <td colspan="2" class="labkey-announcement-title"><span>Visit/Timepoint Tracking</span></td>
+        </tr>
+        <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
+        <tr>
+            <th style="text-align:left;width:18em">Timepoint Style<%=helpPopup("Timepoint Styles", "<p>Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.</p><p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></th>
+            <td align="left">
+                <input type="radio" name="timepointType" value="<%=TimepointType.RELATIVE_DATE%>" <%=form.getTimepointType() == TimepointType.RELATIVE_DATE ? "CHECKED" : ""%>> Dates &nbsp;&nbsp;
+                <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>" <%=form.getTimepointType() == TimepointType.VISIT ? "" : "CHECKED"%>> Assigned Visits
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align:left;width:18em">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
             <td align="left"><input type="text" name="startDate" value="<%=h(DateUtil.formatDate(form.getStartDate()))%>">
             </td>
         </tr>
         <tr>
-            <th align="left">Specimen Repository</th>
+            <td colspan="2" class="labkey-announcement-title"><span>Specimen Management</span></td>
+        </tr>
+        <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
+        <tr>
+            <th style="text-align:left;width:18em">Repository Type</th>
             <td align="left"><input type="radio" name="simpleRepository" value="true" <%=form.isSimpleRepository() ? "CHECKED" : "" %>> Standard Specimen Repository
                 <input type="radio" name="simpleRepository" value="false" <%=form.isSimpleRepository() ? "" : "CHECKED" %>> Advanced (External) Specimen Repository</td>
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td align="left">The standard specimen repository allows you to upload a list of available specimens. The advanced specimen repository
+            <td align="left"><p><br>The standard specimen repository allows you to upload a list of available specimens. The advanced specimen repository
                 relies on an external set of tools to track movement of specimens between sites. The advanced system also enables a customizable specimen
-                request system.</td>
+                request system.</p></td>
         </tr>
         <tr>
-            <th align="left">Study Security<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%></th>
+            <td colspan="2" class="labkey-announcement-title"><span>Security</span></td>
+        </tr>
+        <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
+        <tr>
+            <th style="text-align:left;width:18em">Security Mode<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%></th>
             <td align="left">
                 <select name="securityString">
                     <%
@@ -78,8 +106,8 @@
             </td>
         </tr>
         <tr>
+            <td><br><br><%= generateSubmitButton("Create Study")%>&nbsp;<%= generateButton("Back", "#", "window.history.back();return null;")%></td>
             <td>&nbsp;</td>
-            <td><%= generateSubmitButton("Create Study")%>&nbsp;<%= generateButton("Back", "#", "window.history.back();return null;")%></td>
         </tr>
     </table>
 </form>

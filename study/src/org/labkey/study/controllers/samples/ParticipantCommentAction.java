@@ -26,6 +26,7 @@ import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.controllers.InsertUpdateAction;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.Specimen;
@@ -89,7 +90,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
            ModelAndView view = super.getView(form, reshow, errors);
             if (!reshow && _dataView instanceof InsertView)
             {
-                ((InsertView)_dataView).setInitialValue("ParticipantId", form.getParticipantId());
+                ((InsertView)_dataView).setInitialValue(StudyService.get().getSubjectColumnName(getViewContext().getContainer()), form.getParticipantId());
                 ((InsertView)_dataView).setInitialValue("SequenceNum", form.getVisitId());
 
                 if (!StringUtils.isBlank(form.getComment()))

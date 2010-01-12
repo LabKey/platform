@@ -24,6 +24,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -214,6 +215,7 @@ public class SpecimenUtils
                 exitItem.setId("Comments:Exit");
 
                 StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
                 boolean addSep = true;
                 if (study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1)
                 {
@@ -225,7 +227,7 @@ public class SpecimenUtils
                             commentsMenuButton.addSeparator();
                             addSep = false;
                         }
-                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage Participant Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + subjectNoun + " Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
                                 addParameter("datasetId", study.getParticipantCommentDataSetId()));
                         ptidComments.setId("Comments:SetParticipant");
                     }
@@ -241,7 +243,7 @@ public class SpecimenUtils
                             commentsMenuButton.addSeparator();
                             addSep = false;
                         }
-                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage Participant/Visit Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + subjectNoun + "/Visit Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
                                 addParameter("datasetId", study.getParticipantVisitCommentDataSetId()));
                         ptidComments.setId("Comments:SetParticipantVisit");
                     }

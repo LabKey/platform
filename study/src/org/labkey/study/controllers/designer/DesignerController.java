@@ -402,6 +402,8 @@ public class DesignerController extends SpringActionController
         {
             int studyId = form.getStudyId();
             StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), studyId);
+            StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());
+            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
 
             form.setMessage(null); //We're reusing the form, so reset the message.
             validateStep(form, info); //Make sure we are not in some weird back/forward state
@@ -420,6 +422,9 @@ public class DesignerController extends SpringActionController
                     form.setWizardStepNumber(WizardStep.PICK_FOLDER.getNumber());
                     form.setStudyName(info.getLabel());
                     form.setFolderName(info.getLabel());
+                    form.setSubjectNounSingular(def.getAnimalSpecies());
+                    form.setSubjectNounPlural(def.getAnimalSpecies() + "s");
+                    form.setSubjectColumnName(def.getAnimalSpecies() + "Id");
                     setParticipants(null);
                     setSpecimens(null);
                     break;
@@ -836,7 +841,9 @@ public class DesignerController extends SpringActionController
         private Date beginDate;
         private boolean ignoreWarnings;
         private boolean containsWarnings;
-
+        private String subjectNounSingular;
+        private String subjectNounPlural;
+        private String subjectColumnName;
 
         public int getStudyId()
         {
@@ -976,6 +983,36 @@ public class DesignerController extends SpringActionController
         public void setContainsWarnings(boolean containsWarnings)
         {
             this.containsWarnings = containsWarnings;
+        }
+
+        public String getSubjectNounSingular()
+        {
+            return subjectNounSingular;
+        }
+
+        public void setSubjectNounSingular(String subjectNounSingular)
+        {
+            this.subjectNounSingular = subjectNounSingular;
+        }
+
+        public String getSubjectNounPlural()
+        {
+            return subjectNounPlural;
+        }
+
+        public void setSubjectNounPlural(String subjectNounPlural)
+        {
+            this.subjectNounPlural = subjectNounPlural;
+        }
+
+        public String getSubjectColumnName()
+        {
+            return subjectColumnName;
+        }
+
+        public void setSubjectColumnName(String subjectColumnName)
+        {
+            this.subjectColumnName = subjectColumnName;
         }
     }
 

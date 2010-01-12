@@ -47,9 +47,32 @@ the vaccine study.
 %>
     <table>
         <tr>
+            <td colspan="2" class="labkey-announcement-title"><span>Study Settings</span></td>
+        </tr>
+        <tr><td colspan="3" class="labkey-title-area-line"></td></tr>
+
+        <tr>
             <td>Study Begin Date</td>
             <td><input name="beginDate" value="<%=DateUtil.formatDate(form.getBeginDate())%>"></td>
         </tr>
+        <tr>
+            <td>Subject Noun (Singular)</td>
+            <td><input name="subjectNounSingular" value="<%= h(form.getSubjectNounSingular()) %>"></td>
+        </tr>
+        <tr>
+            <td>Subject Noun (Plural)</td>
+            <td><input name="subjectNounPlural" value="<%= h(form.getSubjectNounPlural()) %>"></td>
+        </tr>
+        <tr>
+            <td>Subject Column Name</td>
+            <td><input name="subjectColumnName" value="<%= h(form.getSubjectColumnName()) %>"></td>
+        </tr>
+
+    <tr>
+        <td colspan="2" class="labkey-announcement-title"><span>Study Folder Location</span></td>
+    </tr>
+    <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
+
         <tr>
         <td>Folder Name</td>
         <td><input name="folderName" value="<%=PageFlowUtil.filter(form.getFolderName())%>"></td>
@@ -86,6 +109,9 @@ else
 {
 %>
     <input type="hidden" name="beginDate" value="<%=form.getBeginDate()%>">
+    <input type="hidden" name="subjectNounSingular" value="<%=form.getSubjectNounSingular()%>">
+    <input type="hidden" name="subjectNounPlural" value="<%=form.getSubjectNounPlural()%>">
+    <input type="hidden" name="subjectColumnName" value="<%=form.getSubjectColumnName()%>">
     <input type="hidden" name="folderName" value="<%=h(form.getFolderName())%>">
     <input type="hidden" name="parentFolderId" value="<%=form.getParentFolderId()%>">
 <%

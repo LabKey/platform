@@ -2,6 +2,7 @@ package org.labkey.study.visitmanager;
 
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.study.Visit;
 import org.labkey.study.model.QCStateSet;
@@ -252,9 +253,10 @@ public abstract class VisitManager
                 ColumnInfo col = tInfo.getColumn("StartDate");
                 if (null != col)
                 {
-                    String subselect = "(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo + " WHERE ParticipantId=" + tableParticipant + ".ParticipantId)";
-                    String sql = "UPDATE " + tableParticipant + " SET StartDate= " + subselect + " WHERE " +
-                            tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate=" + subselect;
+                    String subselect = "(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo + " WHERE " + tInfo + "." +
+                       StudyService.get().getSubjectColumnName(dataset.getContainer()) + " = " + tableParticipant + ".ParticipantId)";
+                    String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE " +
+                            tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect;
                     count = Table.execute(StudyManager.getSchema(), sql, null);
                     break;
                 }

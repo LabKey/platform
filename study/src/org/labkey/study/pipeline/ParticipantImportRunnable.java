@@ -24,6 +24,7 @@ import org.labkey.api.data.TempTableLoader;
 import org.labkey.api.data.Table;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.study.StudyService;
 
 import java.io.File;
 import java.io.IOException;
@@ -85,9 +86,10 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         for (ColumnDescriptor c : loader.getColumns())
             columnMap.put(c.name, c);
 
-        if (!columnMap.containsKey("ParticipantId"))
+        String subjectIdCol = StudyService.get().getSubjectColumnName(getDatasetDefinition().getContainer());
+        if (!columnMap.containsKey(subjectIdCol))
         {
-            _task.logError("Dataset does not contain column ParticipantId.");
+            _task.logError("Dataset does not contain column " + subjectIdCol + ".");
             return;
         }
 
@@ -101,21 +103,21 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
         Table.execute(schema.getSchema(),
                 "INSERT INTO " + schema.getTableInfoParticipant() + " (ParticipantId)\n" +
-                "SELECT ParticipantId FROM " + tinfoTemp + " WHERE ParticipantId NOT IN (SELECT ParticipantId FROM " + schema.getTableInfoParticipant() + ")", null);
+                "SELECT " + subjectIdCol + " FROM " + tinfoTemp + " WHERE " + subjectIdCol + " NOT IN (SELECT ParticipantId FROM " + schema.getTableInfoParticipant() + ")", null);
 
         if (columnMap.containsKey("EnrollmentSiteId"))
         {
             Table.execute(schema.getSchema(),
                 "UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=study.Site.RowId\n" +
                 "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".EnrollmentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
-                "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + ".ParticipantId", null);
+                "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol, null);
         }
         if (columnMap.containsKey("CurrentSiteId"))
         {
             Table.execute(schema.getSchema(),
                 "UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=study.Site.RowId\n" +
                 "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".CurrentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
-                "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + ".ParticipantId", null);
+                "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol, null);
         }
 
         if (columnMap.containsKey("StartDate"))
@@ -123,7 +125,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             Table.execute(schema.getSchema(),
                 "UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
                 "FROM " + tinfoTemp + " \n" +
-                "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + ".ParticipantId", null);
+                "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol, null);
         }
         tinfoTemp.delete();
     }

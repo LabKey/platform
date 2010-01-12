@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.model.SiteImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();
@@ -38,7 +39,8 @@
 Spreadheet Export allows you to export data from one site exclusively, or to export all data from all sites simultaneously.
 Before you export, you can select the source site or sites using the "Site" drop-down menu.
 <ul>
-<li><b>All Sites</b>. If you select "All Sites" from the dropdown "Site" menu, you will export all data for all participants across all sites.</li>
+<li><b>All Sites</b>. If you select "All Sites" from the dropdown "Site" menu, you will export all data for all
+    <%= StudyService.get().getSubjectNounPlural(getViewContext().getContainer())%> across all sites.</li>
 <li ><b>Single Site</b>. If you select a particular site from the "Site" menu, you will export only data associated with the chosen site.</li>
 </ul>
 </div>

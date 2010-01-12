@@ -21,6 +21,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
@@ -33,9 +34,10 @@ public class ParticipantTable extends FilteredTable
     public ParticipantTable(StudyQuerySchema schema)
     {
         super(StudySchema.getInstance().getTableInfoParticipant(), schema.getContainer());
+        setName(StudyService.get().getSubjectTableName(schema.getContainer()));
         _schema = schema;
-        ColumnInfo rowIdColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("ParticipantId"));
-        rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId"));
+        ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
+        rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, StudyService.get().getSubjectColumnName(getContainer())));
 
         addColumn(rowIdColumn);
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
@@ -95,7 +97,7 @@ public class ParticipantTable extends FilteredTable
         addWrapColumn(_rootTable.getColumn("EnrollmentSiteId")).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("CurrentSiteId")).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("StartDate"));
-        setTitleColumn("ParticipantId");
+        setTitleColumn(StudyService.get().getSubjectColumnName(getContainer()));
     }
 
     public ActionURL getBaseDetailsURL()
@@ -106,8 +108,9 @@ public class ParticipantTable extends FilteredTable
     @Override
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
     {
-        if (!columns.contains(FieldKey.fromParts("ParticipantId")))
+        if (!columns.contains(FieldKey.fromParts(StudyService.get().getSubjectColumnName(_schema.getContainer()))))
             return null;
-        return new DetailsURL(getBaseDetailsURL(), "participantId", new FieldKey(null,"ParticipantId"));
+        return new DetailsURL(getBaseDetailsURL(), "participantId",
+                new FieldKey(null,StudyService.get().getSubjectColumnName(_schema.getContainer())));
     }
 }

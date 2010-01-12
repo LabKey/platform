@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
@@ -229,7 +230,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultDetailCols.put("Visit", visitInfo);
             StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
             TableInfo simpleSpecimenTable = schema.createSimpleSpecimenTable();
-            _defaultDetailCols.put("ParticipantId", new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
+            _defaultDetailCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
             _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("DerivativeType", new DisplayColumnInfo(true, true));
@@ -242,7 +243,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultSummaryCols.put("AdditiveType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("DerivativeType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("Visit", visitInfo);
-            _defaultSummaryCols.put("ParticipantId", new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
+            _defaultSummaryCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
             _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
             _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
             _defaultSummaryCols.put("Clinic", new DisplayColumnInfo(true, true));

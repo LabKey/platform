@@ -24,6 +24,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
@@ -182,7 +183,8 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                     // Data Set tables don't have an interesting title column.
                     return null;
                 }
-                return LookupColumn.create(parent, table.getColumn("ParticipantId"), table.getColumn(displayField), true);
+                String subjectColumnName = StudyService.get().getSubjectColumnName(_dataset.getContainer());
+                return LookupColumn.create(parent, table.getColumn(subjectColumnName), table.getColumn(displayField), true);
             }
 
             public TableInfo getLookupTableInfo()
@@ -199,7 +201,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                             "where\n" +
                             "pv.participantid = (");
 
-                        sequenceSelector.append(dsTable.getFromTable().toString() + ".participantId");
+                        sequenceSelector.append(dsTable.getFromTable().toString() + "." + StudyService.get().getSubjectColumnName(dsTable.getContainer()));
 
                         sequenceSelector.append(")\n" +
                             "and\n" +

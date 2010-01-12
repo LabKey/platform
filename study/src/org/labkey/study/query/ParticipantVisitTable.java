@@ -24,6 +24,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -36,6 +37,7 @@ public class ParticipantVisitTable extends FilteredTable
     public ParticipantVisitTable(StudyQuerySchema schema)
     {
         super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema.getContainer());
+        setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
         _schema = schema;
         _dialect = _schema.getDbSchema().getSqlDialect();
 
@@ -81,6 +83,11 @@ public class ParticipantVisitTable extends FilteredTable
             {
                 participantSequenceKeyColumn = addWrapColumn(col);
                 participantSequenceKeyColumn.setHidden(true);
+            }
+            else if ("ParticipantId".equalsIgnoreCase(col.getName()))
+            {
+                ColumnInfo subjectColumn = wrapColumn(StudyService.get().getSubjectColumnName(getContainer()), col);
+                addColumn(subjectColumn);
             }
             else
                 addWrapColumn(col);
@@ -132,7 +139,7 @@ public class ParticipantVisitTable extends FilteredTable
 
         public PVForeignKey(DataSetDefinition dsd)
         {
-            super("ParticipantVisit");
+            super(StudyService.get().getSubjectVisitColumnName(dsd.getContainer()));
             this.dsd = dsd;
         }
         

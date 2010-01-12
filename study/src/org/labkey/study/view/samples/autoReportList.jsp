@@ -31,6 +31,7 @@
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.query.CustomView" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -220,8 +221,10 @@
                     if (factory.allowsParticipantAggregegates())
                     {
                 %>
-                            <input type="checkbox" name="viewParticipantCount" <%= factory.isViewParticipantCount() ? "CHECKED" : "" %>> Participant Counts<br>
-                            <input type="checkbox" name="viewPtidList" <%= factory.isViewPtidList() ? "CHECKED" : "" %>> Participant ID List
+                            <input type="checkbox" name="viewParticipantCount" <%= factory.isViewParticipantCount() ? "CHECKED" : "" %>>
+                            <%= StudyService.get().getSubjectNounSingular(container) %> Counts<br>
+                            <input type="checkbox" name="viewPtidList" <%= factory.isViewPtidList() ? "CHECKED" : "" %>>
+                            <%= StudyService.get().getSubjectColumnName(container) %>  List
                 <%
                     }
                 %>

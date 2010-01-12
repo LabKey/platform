@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -56,6 +57,9 @@
         if (dataset != null)
             ptidVisitDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
     }
+
+    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNounPlural = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
 %>
 <labkey:errors/>
 
@@ -64,7 +68,7 @@
         <tr><td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment information.</td></tr>
         <tr><td/></tr>
         <tr><td>
-            The comments associated with a Participant or Participant/Visit are saved as fields in datasets.
+            The comments associated with a <%= subjectNounSingle %> or <%= subjectNounSingle %>/Visit are saved as fields in datasets.
             Each of the datasets can contain multiple fields, but only one field can
             be designated to hold the comment text. Comment fields must be of type text or multi-line text.
             Comments will appear automatically in colums for the specimen and vial views.
@@ -75,12 +79,12 @@
     <input type="hidden" name="reshow" value="true">
 
     <%
-        WebPartView.startTitleFrame(out, "Participant Comment Assignment");
+        WebPartView.startTitleFrame(out, subjectNounSingle + " Comment Assignment");
     %>
     <table>
         <tr>
-            <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant basis. The dataset " +
-                    "selected must be a demographics dataset.")%></th>
+            <th align="right">Comment Dataset<%= helpPopup(subjectNounSingle + "/Comment Dataset", "Comments can be associated with each " +
+                    subjectNounSingle.toLowerCase() + ". The dataset selected must be a demographics dataset.")%></th>
             <td>
                 <select name="participantCommentDataSetId" id="participantCommentDataSetId" onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>
@@ -122,12 +126,12 @@
         </table>
     <%
         WebPartView.endTitleFrame(out);
-        WebPartView.startTitleFrame(out, "Participant/Visit Comment Assignment");
+        WebPartView.startTitleFrame(out, subjectNounSingle + "/Visit Comment Assignment");
     %>
     <table>
         <tr>
-            <th align="right">Comment Dataset<%= helpPopup("Participant/Comment Dataset", "Comments can be associated with on a participant/visit basis. The dataset " +
-                    "selected cannot be a demographics dataset.")%></th>
+            <th align="right">Comment Dataset<%= helpPopup(subjectNounSingle + "/Comment Dataset", "Comments can be associated with each " +
+                    subjectNounSingle.toLowerCase() + "/visit combination. The dataset selected cannot be a demographics dataset.")%></th>
             <td>
                 <select name="participantVisitCommentDataSetId" id="participantVisitCommentDataSetId" onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
                     <option value="-1">[None]</option>

@@ -26,6 +26,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -174,11 +175,12 @@
     private void addParticipantMenuItems(NavTree button, Map<String, Map<String, Integer>> pvMap,
                                          boolean hasParticipantMenu, boolean hasParticipantVisitMenu, boolean isMove)
     {
+        String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
         // participant comments
         if (hasParticipantMenu)
         {
             StringBuilder sb = new StringBuilder();
-            NavTree participantItem = new NavTree("To Participant", "#");
+            NavTree participantItem = new NavTree("To " + subjectNoun, "#");
             participantItem.setId(isMove ? "Move:ToParticipant" : "Copy:ToParticipant");
             button.addChild(participantItem);
 
@@ -208,7 +210,7 @@
         if (hasParticipantVisitMenu)
         {
             StringBuilder sb = new StringBuilder();
-            NavTree participantVisitItem = new NavTree("To Participant/Visit", "#");
+            NavTree participantVisitItem = new NavTree("To " + subjectNoun + "/Visit", "#");
             participantVisitItem.setId(isMove ? "Move:ToParticipantVisit" : "Copy:ToParticipantVisit");
             button.addChild(participantVisitItem);
             for (Map.Entry<String, Map<String, Integer>> entry : pvMap.entrySet())

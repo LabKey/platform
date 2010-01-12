@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
@@ -49,6 +50,9 @@
 
     StudyReload.ReloadInterval currentInterval = StudyReload.ReloadInterval.getForSeconds(study.getReloadInterval());
     String intervalLabel;
+
+    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNounPlural = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
 
     if (!study.isAllowReload())
         intervalLabel = "This study is set to not reload";
@@ -137,7 +141,7 @@
     </tr>
     <tr>
         <th align="left">Comments</th>
-        <td>Manage participant and participant/visit comments</td>
+        <td>Manage <%= subjectNounSingle.toLowerCase() %> and  <%= subjectNounSingle.toLowerCase() %>/visit comments</td>
         <td><%= textLink("Manage Comments",
                 new ActionURL(SpecimenController.ManageSpecimenCommentsAction.class, c)) %></td>
     </tr>

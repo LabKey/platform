@@ -112,7 +112,7 @@ public class CohortController extends BaseStudyController
             vbox.addView(queryView);
             
             StudyJspView<Object> bottom = new StudyJspView<Object>(getStudy(), "manageCohortsBottom.jsp", null, errors);
-            bottom.setTitle("Participant-Cohort Assignments");
+            bottom.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + "-Cohort Assignments");
             vbox.addView(bottom);
 
             return vbox;
@@ -157,7 +157,8 @@ public class CohortController extends BaseStudyController
                     // No participants -- nothing to do
                     return true;
                 }
-                assert cohorts.length == participants.length : "Submitted different numbers of participants and cohorts";
+                assert cohorts.length == participants.length : "Submitted different numbers of " +
+                        StudyService.get().getSubjectNounPlural(study.getContainer()) + " and cohorts";
 
                 Map<String, Integer> p2c = new HashMap<String, Integer>();
 

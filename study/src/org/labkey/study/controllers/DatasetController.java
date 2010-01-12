@@ -493,6 +493,8 @@ public class DatasetController extends BaseStudyController
 
             props.put("timepointType", getStudy().getTimepointType().toString());
 
+            props.put("subjectColumnName", getStudy().getSubjectColumnName());
+
             // Cancel should delete the dataset
             ActionURL cancelURL = new ActionURL(
                 StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", form.getDatasetId());

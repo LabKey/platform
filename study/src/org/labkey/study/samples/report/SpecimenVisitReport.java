@@ -12,6 +12,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
 
 import java.util.*;
 
@@ -161,7 +162,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         fullFilter = replaceFilterParameterName(fullFilter, "PrimaryTypeId", FieldKey.fromParts("PrimaryType", "RowId").toString());
         fullFilter = replaceFilterParameterName(fullFilter, "DerivativeTypeId", FieldKey.fromParts("DerivativeType", "RowId").toString());
         fullFilter = replaceFilterParameterName(fullFilter, "AdditiveTypeId", FieldKey.fromParts("AdditiveType", "RowId").toString());
-        fullFilter = replaceFilterParameterName(fullFilter, "ptid", "ParticipantId");
+        fullFilter = replaceFilterParameterName(fullFilter, "ptid", StudyService.get().getSubjectColumnName(getContainer()));
         return fullFilter;
     }
 
@@ -312,6 +313,11 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
                 cellHtml.append("</a>");
         }
         return cellHtml.toString();
+    }
+
+    protected Container getContainer()
+    {
+        return _parameters.getContainer();
     }
 
     protected User getUser()

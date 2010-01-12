@@ -6,6 +6,7 @@ import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SampleManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.study.StudyService;
 
 import java.util.List;
 import java.util.Collections;
@@ -41,7 +42,7 @@ public class ParticipantSummaryReportFactory extends SpecimenVisitReportParamete
 
     public String getLabel()
     {
-        return "Participant Summary";
+        return StudyService.get().getSubjectNounSingular(getContainer()) + " Summary";
     }
 
     public boolean allowsParticipantAggregegates()

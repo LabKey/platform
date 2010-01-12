@@ -33,6 +33,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.study.CohortFilter;
@@ -2832,7 +2833,6 @@ public class SpecimenController extends BaseStudyController
     {
         private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Collected Vials by Type and Timepoint";
         private static final String REQUESTS_BY_DERIVATIVE_TYPE_TITLE = "Requested Vials by Type and Timepoint";
-        private static final String COUNTS_BY_PARTICIPANT_TITLE = "Collected Vials by Participant By Timepoint";
         private Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<String, List<SpecimenVisitReportParameters>>();
         private boolean _listView = true;
         private ViewContext _viewContext;
@@ -2848,9 +2848,10 @@ public class SpecimenController extends BaseStudyController
             registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestSiteReportFactory());
             registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
             registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
-            registerReportFactory(COUNTS_BY_PARTICIPANT_TITLE, new ParticipantSummaryReportFactory());
-            registerReportFactory(COUNTS_BY_PARTICIPANT_TITLE, new ParticipantTypeReportFactory());
-            registerReportFactory(COUNTS_BY_PARTICIPANT_TITLE, new ParticipantSiteReportFactory());
+            String subjectNoun = StudyService.get().getSubjectNounSingular(viewContext.getContainer());
+            registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantSummaryReportFactory());
+            registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantTypeReportFactory());
+            registerReportFactory("Collected Vials by " + subjectNoun + " By Timepoint", new ParticipantSiteReportFactory());
         }
 
         public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView)
@@ -4325,7 +4326,7 @@ public class SpecimenController extends BaseStudyController
             }
 
             List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(), "ParticipantId");
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectColumnName(c));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));
@@ -4437,17 +4438,18 @@ public class SpecimenController extends BaseStudyController
     {
         public void validateCommand(ManageCommentsForm form, Errors errors)
         {
+            String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
             final Study study = StudyManager.getInstance().getStudy(getContainer());
             if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
             {
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
                 if (def != null && !def.isDemographicData())
                 {
-                    errors.reject(ERROR_MSG, "The Dataset specified to contain participant comments must be a demographics dataset.");
+                    errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
                 }
 
                 if (form.getParticipantCommentProperty() == null)
-                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the Participant Comment Assignment.");
+                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
             }
 
             if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
@@ -4455,11 +4457,11 @@ public class SpecimenController extends BaseStudyController
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
                 if (def != null && def.isDemographicData())
                 {
-                    errors.reject(ERROR_MSG, "The Dataset specified to contain participant/visit comments cannot be a demographics dataset.");
+                    errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
                 }
 
                 if (form.getParticipantVisitCommentProperty() == null)
-                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the Participant/Visit Comment Assignment.");
+                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
             }
         }
 
@@ -4620,7 +4622,7 @@ public class SpecimenController extends BaseStudyController
                             filter = new SimpleFilter();
                             view.getRenderContext().setBaseFilter(filter);
                         }
-                        filter.addCondition("participantId", form.getParticipantId());
+                        filter.addCondition(StudyService.get().getSubjectColumnName(view.getViewContext().getContainer()), form.getParticipantId());
                         if (form.getVisitId() != 0)
                             filter.addCondition("sequenceNum", form.getVisitId());
 
@@ -4671,7 +4673,7 @@ public class SpecimenController extends BaseStudyController
                 }
                 catch (Exception e)
                 {
-                    _log.error("Error encountered trying to get participant comments", e);
+                    _log.error("Error encountered trying to get " + StudyService.get().getSubjectNounSingular(getContainer()) + " comments", e);
                 }
                 finally
                 {

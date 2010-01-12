@@ -24,6 +24,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.CrosstabDesignBean> me = (JspView<ReportsController.CrosstabDesignBean>) HttpView.currentView();
@@ -86,15 +87,16 @@
         }
         if (!numericOnly)
         {
-            if (cols.containsKey("ParticipantId"))
+            String subjectNoun = StudyService.get().getSubjectColumnName(getViewContext().getContainer());
+            if (cols.containsKey(subjectNoun))
             {
-                sb.append("<option value=\"ParticipantId\"");
-                if (null != selected && selected.equalsIgnoreCase("ParticipantId"))
+                sb.append("<option value=\"").append(subjectNoun).append("\"");
+                if (null != selected && selected.equalsIgnoreCase(subjectNoun))
                     sb.append(" selected");
-                sb.append(">Participant Id</option>");
+                sb.append(">").append(StudyService.get().getSubjectColumnName(getViewContext().getContainer())).append("</option>");
             }
         }
-        FieldKey ptid = new FieldKey(null,"ParticipantId");
+        FieldKey ptid = new FieldKey(null,StudyService.get().getSubjectColumnName(getViewContext().getContainer()));
         FieldKey seqNum = new FieldKey(null, "SequenceNum");
 
         for (ColumnInfo col : cols.values())

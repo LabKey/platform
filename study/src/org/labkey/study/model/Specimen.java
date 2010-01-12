@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.study.StudyService;
 
 import java.util.Date;
 
@@ -273,7 +274,7 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     {
         StringBuilder builder = new StringBuilder();
         builder.append("Global ID ").append(_globalUniqueId);
-        builder.append(", Participant ").append(_ptid);
+        builder.append(", ").append(StudyService.get().getSubjectNounSingular(getContainer())).append(" ").append(_ptid);
         builder.append(", ").append(_visitDescription).append(" ").append(_visitValue);
         return builder.toString();
     }

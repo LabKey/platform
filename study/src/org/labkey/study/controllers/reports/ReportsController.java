@@ -43,6 +43,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
@@ -1914,7 +1915,7 @@ public class ReportsController extends BaseStudyController
             int idx = participantList.indexOf(participantId);
             if (idx != -1)
             {
-                title = "Participant : " + participantId;
+                title = StudyService.get().getSubjectNounSingular(context.getContainer()) + " : " + participantId;
 
                 if (idx > 0)
                 {
@@ -2184,13 +2185,16 @@ public class ReportsController extends BaseStudyController
                 out.print("<table>");
                 if (hasQuery)
                 {
+                    String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
                     out.print("<tr><td>");
                     out.print("<input type=\"checkbox\" value=\"participantId\" name=\"");
                     out.print(ReportDescriptor.Prop.filterParam);
                     out.print("\"");
                     out.print("participantId".equals(bean.getFilterParam()) ? "checked" : "");
                     out.print(" onchange=\"LABKEY.setDirty(true);return true;\">");
-                    out.print("Participant chart.&nbsp;" + PageFlowUtil.helpPopup("participant chart", "A participant chart view shows measures for only one participant at a time. A participant chart view allows the user to step through charts for each participant shown in any dataset grid."));
+                    out.print(subjectNoun + " chart.&nbsp;" + PageFlowUtil.helpPopup(subjectNoun + " chart", "A " + subjectNoun +
+                            " chart view shows measures for only one " + subjectNoun + " at a time. A " + subjectNoun +
+                            " chart view allows the user to step through charts for each " + subjectNoun + " shown in any dataset grid."));
                     out.print("</td></tr>");
                 }
                 out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cache this report for faster reloading.</td></tr>");

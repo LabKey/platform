@@ -7,6 +7,7 @@ import org.labkey.study.model.Participant;
 import org.labkey.study.model.StudyManager;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 
 import java.sql.SQLException;
 
@@ -109,7 +110,7 @@ public class ParticipantWebPartFactory extends BaseWebPartFactory
         }
         WebPartView view = createView(portalCtx.getContainer(), participantId, sourceDatasetId, currentUrl, dataType, encodedQCState);
         view.setFrame(WebPartView.FrameType.PORTAL);
-        view.setTitle("Participant " + (participantId != null ? participantId : "unknown"));
+        view.setTitle(StudyService.get().getSubjectNounSingular(portalCtx.getContainer()) + " " + (participantId != null ? participantId : "unknown"));
         return view;
     }
 
@@ -120,14 +121,15 @@ public class ParticipantWebPartFactory extends BaseWebPartFactory
                                    DataType type,
                                    final String encodedQCState) throws SQLException
     {
+        String subjectNoun = StudyService.get().getSubjectNounSingular(container);
         if (participantId == null)
-            return new HtmlView("This webpart does not reference a valid participant ID.  Please customize the webpart.");
+            return new HtmlView("This webpart does not reference a valid " + subjectNoun + " ID.  Please customize the webpart.");
         Study study = StudyManager.getInstance().getStudy(container);
         if (study == null)
             return new HtmlView("This folder does not contain a study.");
         Participant participant = StudyManager.getInstance().getParticipant(study, participantId);
         if (participant == null)
-            return new HtmlView("Participant \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
+            return new HtmlView(subjectNoun + " \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
 
         StudyManager.ParticipantViewConfig config = new StudyManager.ParticipantViewConfig()
         {

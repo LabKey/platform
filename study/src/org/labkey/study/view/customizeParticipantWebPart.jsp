@@ -21,6 +21,7 @@
 <%@ page import="java.util.EnumSet" %>
 <%@ page import="org.labkey.study.model.QCStateSet" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -35,9 +36,10 @@
         selectedData = ParticipantWebPartFactory.DataType.ALL.name();
     
     boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(ParticipantWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
+    String subjectNoun = StudyService.get().getSubjectColumnName(getViewContext().getContainer());
 %>
 <script type="text/javascript">LABKEY.requiresScript("completion.js");</script>
-<p>Each participant webpart will display datasets from a single participant.</p>
+<p>Each <%= subjectNoun.toLowerCase() %> webpart will display datasets from a single <%= subjectNoun.toLowerCase() %>.</p>
 
 <form action="<%=postUrl%>" method="post">
 <table>
@@ -45,7 +47,7 @@
         <td>
             <input type="hidden" name="pageId" value="<%=bean.getPageId()%>">
             <input type="hidden" name="index" value="<%=bean.getIndex()%>">
-            Participant ID:
+            <%= StudyService.get().getSubjectColumnName(getViewContext().getContainer()) %>:
         </td>
         <td>
             <input type="text"

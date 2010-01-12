@@ -17,6 +17,7 @@ package org.labkey.study.view;
 
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -80,7 +81,7 @@ public class StudyNavigationView extends JspView<NavTree>
 
         if (null != dem)
         {
-            NavTree ntParticipants = new NavTree("Participants");
+            NavTree ntParticipants = new NavTree(StudyService.get().getSubjectNounPlural(getContextContainer()));
             ntRoot.addChild(ntParticipants);
             ntParticipants.addChild("all", _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",dem.getDataSetId()));
             CohortImpl[] cohorts = _study.getCohorts(user);

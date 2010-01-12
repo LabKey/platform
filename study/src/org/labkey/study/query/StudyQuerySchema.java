@@ -24,6 +24,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
@@ -34,7 +35,7 @@ import java.util.*;
 public class StudyQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "study";
-    public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including participants, cohorts, visits, datasets, specimens, etc.";
+    public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -84,7 +85,7 @@ public class StudyQuerySchema extends UserSchema
         if (_study != null)
         {
             // All these require studies defined
-            ret.add("Participant");
+            ret.add(StudyService.get().getSubjectTableName(getContainer()));
             ret.add("Site");
             if (_study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
                 ret.add("Visit");
@@ -97,7 +98,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add("SpecimenRequestStatus");
             ret.add("VialRequest");
             if (_study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
-                ret.add("ParticipantVisit");
+                ret.add(StudyService.get().getSubjectVisitTableName(getContainer()));
             ret.add("DataSets");
             ret.add("DataSetColumns");
 
@@ -199,7 +200,7 @@ public class StudyQuerySchema extends UserSchema
             CohortTable ret = new CohortTable(this);
             return ret;
         }
-        if ("Participant".equalsIgnoreCase(name))
+        if (StudyService.get().getSubjectTableName(getContainer()).equalsIgnoreCase(name))
         {
             ParticipantTable ret = new ParticipantTable(this);
             return ret;
@@ -229,7 +230,7 @@ public class StudyQuerySchema extends UserSchema
             SpecimenEventTable ret = new SpecimenEventTable(this);
             return ret;
         }
-        if ("ParticipantVisit".equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+        if (StudyService.get().getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
         {
             ParticipantVisitTable ret = new ParticipantVisitTable(this);
             return ret;

@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -43,12 +44,25 @@ public abstract class BaseStudyTable extends FilteredTable
 
     protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
-        ColumnInfo participantColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn(rootTableColumnName));
-        participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", null));
+        String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
+        ColumnInfo participantColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
+        participantColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
         participantColumn.setKeyField(true);
         return addColumn(participantColumn);
     }
-
+/*
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        // The name of the subject ID column can now be customized by study.  Since there are some joins
+        // from the assay side which join to cross-study data, we need a single column name that works
+        // in all containers.  This is 'ParticipantId', since this was the column name before
+        // customization was possible:
+        if ("ParticipantId".equalsIgnoreCase(name))
+            return getColumn(StudyService.get().getSubjectColumnName(getContainer()));
+        return null;
+    }
+*/
     protected ColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
         ColumnInfo locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
@@ -207,12 +221,14 @@ public abstract class BaseStudyTable extends FilteredTable
         private TableInfo _ptidCommentTable;
         private TableInfo _ptidVisitCommentTable;
         private boolean _includeVialComments;
+        private Container _container;
 
-        public SpecimenCommentColumn(TableInfo parent, TableInfo ptidCommentTable, String ptidCommentProperty,
+        public SpecimenCommentColumn(FilteredTable parent, TableInfo ptidCommentTable, String ptidCommentProperty,
                                      TableInfo ptidVisitCommentTable, String ptidVisitCommentProperty, boolean includeVialComments)
         {
             super(parent, COLUMN_NAME, new SQLFragment(), Types.VARCHAR);
 
+            _container = parent.getContainer();
             _ptidCommentTable = ptidCommentTable;
             _ptidVisitCommentTable = ptidVisitCommentTable;
             _includeVialComments = includeVialComments;
@@ -333,7 +349,8 @@ public abstract class BaseStudyTable extends FilteredTable
 
                 joinSql.append(" LEFT OUTER JOIN ").append(_ptidCommentTable.getSelectName()).append(" AS ");
                 joinSql.append(ptidTableAlias).append(" ON ");
-                joinSql.append(parentAlias).append(".Ptid = ").append(ptidTableAlias).append(".ParticipantId\n");
+                joinSql.append(parentAlias).append(".Ptid = ").append(ptidTableAlias).append("." +
+                        StudyService.get().getSubjectColumnName(_container) + "\n");
             }
 
             if (_ptidVisitCommentTable != null)
@@ -401,11 +418,12 @@ public abstract class BaseStudyTable extends FilteredTable
             sb.append(vialComment);
             sb.append(lineSeparator);
         }
+        String subjectNoun = StudyService.get().getSubjectNounSingular(ctx.getContainer());
         if (participantComment instanceof String)
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append("<i>Participant:&nbsp;</i>");
+            sb.append("<i>").append(subjectNoun).append(":&nbsp;</i>");
             sb.append(participantComment);
             sb.append(lineSeparator);
         }
@@ -413,7 +431,7 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append("<i>Participant/Visit:&nbsp;</i>");
+            sb.append("<i>").append(subjectNoun).append("/Visit:&nbsp;</i>");
             sb.append(participantVisitComment);
             sb.append(lineSeparator);
         }

@@ -75,6 +75,15 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.isSetSecurityType())
                     studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
 
+                if (studyXml.getSubjectColumnName() != null)
+                    studyForm.setSubjectColumnName(studyXml.getSubjectColumnName());
+
+                if (studyXml.getSubjectNounSingular() != null)
+                    studyForm.setSubjectNounSingular(studyXml.getSubjectNounSingular());
+
+                if (studyXml.getSubjectNounPlural() != null)
+                    studyForm.setSubjectNounPlural(studyXml.getSubjectNounPlural());
+
                 StudyController.createStudy(support.getStudy(true), ctx.getContainer(), ctx.getUser(), studyForm);
             }
             else
@@ -98,6 +107,15 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
                 if (studyXml.isSetSecurityType())
                     study.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
+
+                if (studyXml.getSubjectColumnName() != null)
+                    study.setSubjectColumnName(studyXml.getSubjectColumnName());
+
+                if (studyXml.getSubjectNounSingular() != null)
+                    study.setSubjectNounSingular(studyXml.getSubjectNounSingular());
+
+                if (studyXml.getSubjectNounPlural() != null)
+                    study.setSubjectNounPlural(studyXml.getSubjectNounPlural());
 
                 StudyManager.getInstance().updateStudy(ctx.getUser(), study);
             }

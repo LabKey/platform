@@ -127,7 +127,7 @@ public class DataSetQueryView extends QueryView
                 filter = new SimpleFilter();
                 view.getRenderContext().setBaseFilter(filter);
             }
-            _cohortFilter.addFilterCondition(view.getDataRegion().getTable(), filter);
+            _cohortFilter.addFilterCondition(view.getDataRegion().getTable(), getContainer(), filter);
         }
         if (null != _qcStateSet)
         {

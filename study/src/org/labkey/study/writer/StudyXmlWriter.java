@@ -64,6 +64,9 @@ class StudyXmlWriter implements InternalStudyWriter
         // Study attributes
         studyXml.setLabel(study.getLabel());
         studyXml.setTimepointType(TimepointType.Enum.forString(study.getTimepointType().toString()));
+        studyXml.setSubjectNounSingular(study.getSubjectNounSingular());
+        studyXml.setSubjectNounPlural(study.getSubjectNounPlural());
+        studyXml.setSubjectColumnName(study.getSubjectColumnName());
 
         if (null != study.getStartDate())
         {

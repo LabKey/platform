@@ -140,7 +140,7 @@
             // once for each row and column, but only once per row.
             TableInfo datasetTable = dataSet.getTableInfo(user);
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("ParticipantId", bean.getParticipantId());
+            filter.addCondition(StudyService.get().getSubjectColumnName(dataSet.getContainer()), bean.getParticipantId());
 
             Sort sort;
             if (study.getTimepointType() != TimepointType.VISIT)
@@ -153,7 +153,7 @@
             }
 
 
-            Map<String,Object> result = Table.selectObject(datasetTable, new CsvSet("lsid,ParticipantId,Date,SequenceNum"), filter, sort, Map.class);
+            Map<String,Object> result = Table.selectObject(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort, Map.class);
             String lsid = result != null ? (String)result.get("lsid") : null;
             Map<String,Object> datasetRow = null;
 
@@ -169,7 +169,7 @@
                 {
                     ActionURL addAction = new ActionURL(DatasetController.InsertAction.class, context.getContainer());
                     addAction.addParameter("datasetId", datasetId);
-                    addAction.addParameter("quf_participantid", bean.getParticipantId());
+                    addAction.addParameter("quf_ParticipantId", bean.getParticipantId());
                     
                     %><td colspan="2" class="labkey-alternate-row">[<a href="<%=addAction.getLocalURIString()%>">add</a>]</td> <%
                 }

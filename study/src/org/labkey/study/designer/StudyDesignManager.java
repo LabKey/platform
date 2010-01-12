@@ -314,12 +314,16 @@ public class StudyDesignManager
 
         //Grab study info from XML and use it here
         StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());
+        GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
+
         StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
         study.setTimepointType(TimepointType.RELATIVE_DATE);
         study.setStartDate(startDate);
+        study.setSubjectNounSingular(def.getAnimalSpecies());
+        study.setSubjectNounPlural(def.getAnimalSpecies() + "s");
+        study.setSubjectColumnName(def.getAnimalSpecies() + "Id");
         study = StudyManager.getInstance().createStudy(user, study);
 
-        GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
         List<GWTTimepoint> timepoints = def.getAssaySchedule().getTimepoints();
         Collections.sort(timepoints);
         if (timepoints.get(0).getDays() > 0)

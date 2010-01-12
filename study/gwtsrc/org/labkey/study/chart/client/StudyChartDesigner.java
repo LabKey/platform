@@ -111,7 +111,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         FlexTable panel = new FlexTable();
         int row = 0;
 
-        BoundCheckBox participant = new BoundCheckBox("Participant Chart", false, new WidgetUpdatable()
+        BoundCheckBox participant = new BoundCheckBox("Subject Chart", false, new WidgetUpdatable()
         {
             public void update(Widget widget)
             {
@@ -124,8 +124,8 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         participant.setName("participantChart");
         HorizontalPanel hp = new HorizontalPanel();
         hp.add(participant);
-        hp.add(new HelpPopup("Participant Chart", "A participant chart view shows measures for only one participant " +
-                "at a time. A participant chart view allows the user to step through charts for each participant shown in any dataset grid."));
+        hp.add(new HelpPopup("Subject Chart", "A subject chart view shows measures for only one subject " +
+                "at a time. A subject chart view allows the user to step through charts for each subject shown in any dataset grid."));
         panel.setWidget(row, 0, hp);
         WebPartPanel wpp = new WebPartPanel("Study Options", panel);
         wpp.setWidth("100%");

@@ -27,6 +27,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.study.model.QCState;
@@ -47,7 +48,8 @@ public class DataSetTable extends FilteredTable
     public DataSetTable(StudyQuerySchema schema, DataSetDefinition dsd)
     {
         super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), false));
-        setDescription("Contains up to one row of " + dsd.getLabel() + " data for each participant" + (!dsd.isDemographicData() ? "/visit" : "") +
+        setDescription("Contains up to one row of " + dsd.getLabel() + " data for each " +
+                StudyService.get().getSubjectNounSingular(dsd.getContainer()) + (!dsd.isDemographicData() ? "/visit" : "") +
             (dsd.getKeyPropertyName() != null ? "/" + dsd.getKeyPropertyName() : "") + " combination.");
         _schema = schema;
         _dsd = dsd;
@@ -58,13 +60,15 @@ public class DataSetTable extends FilteredTable
         for (PropertyDescriptor pd :  DataSetDefinition.getStandardPropertiesSet())
             standardURIs.add(pd.getPropertyURI());
 
+        String subjectColName = StudyService.get().getSubjectColumnName(dsd.getContainer());
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
             String name = baseColumn.getName();
-            if ("ParticipantId".equalsIgnoreCase(name))
+            if (subjectColName.equalsIgnoreCase(name))
             {
-                ColumnInfo column = new AliasedColumn(this, "ParticipantId", baseColumn);
-                column.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", "ParticipantId")
+                ColumnInfo column = new AliasedColumn(this, subjectColName, baseColumn);
+                column.setFk(new QueryForeignKey(_schema,StudyService.get().getSubjectTableName(dsd.getContainer()),
+                        subjectColName, subjectColName)
                 {
                     public StringExpression getURL(ColumnInfo parent) {
                         ActionURL base = new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
@@ -125,7 +129,7 @@ public class DataSetTable extends FilteredTable
             {
                 // Add a copy of the sequence key column without the FK so we can get the value easily when materializing to temp tables:
                 addWrapColumn(baseColumn).setHidden(true);
-                ColumnInfo pvColumn = new AliasedColumn(this, "ParticipantVisit", baseColumn);//addWrapColumn(baseColumn);
+                ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
                 pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
                 {
                     public TableInfo getLookupTableInfo()
@@ -252,8 +256,8 @@ public class DataSetTable extends FilteredTable
      */
     public void hideParticipantLookups()
     {
-        getColumn("ParticipantID").setHidden(true);
-        getColumn("ParticipantVisit").setHidden(true);
+        getColumn(StudyService.get().getSubjectColumnName(_dsd.getContainer())).setHidden(true);
+        getColumn(StudyService.get().getSubjectVisitColumnName(_dsd.getContainer())).setHidden(true);
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 
 import java.util.*;
@@ -48,7 +49,8 @@ public class TypeParticipantReportFactory extends TypeReportFactory
 
     public String getLabel()
     {
-        return _participantId == null ? "By Participant" : "Participant " + _participantId;
+        String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
+        return _participantId == null ? "By " + subjectNoun : subjectNoun + " " + _participantId;
     }
 
     public boolean allowsCohortFilter()
@@ -80,7 +82,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)
         {
-            SimpleFilter filter = new SimpleFilter("ParticipantId", participantId);
+            SimpleFilter filter = new SimpleFilter(StudyService.get().getSubjectColumnName(getContainer()), participantId);
             addBaseFilters(filter);
             try
             {

@@ -35,6 +35,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -204,7 +205,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             if (ds.getDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
             {
-                errors.add("This dataset currently contains more than one row of data per participant. Demographic data includes one row of data per participant.");
+                errors.add("This dataset currently contains more than one row of data per " +  StudyService.get().getSubjectNounSingular(getContainer()) +
+                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(getContainer()) + ".");
                 return errors;
             }
 

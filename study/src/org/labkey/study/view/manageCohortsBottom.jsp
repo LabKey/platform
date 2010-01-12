@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -88,7 +89,7 @@
     %>
     <table>
         <tr>
-            <th>Participant ID</th>
+            <th><%= StudyService.get().getSubjectColumnName(getViewContext().getContainer()) %></th>
             <th>Current Cohort</th>
         </tr>
     <%

@@ -557,4 +557,43 @@ public class StudyServiceImpl implements StudyService.Service
     {
         return RoleManager.roleSet(SpecimenCoordinatorRole.class, SpecimenRequesterRole.class);
     }
+
+    public String getSubjectNounSingular(Container container)
+    {
+        Study study = getStudy(container);
+        if (study == null)
+            return "Participant";
+        return study.getSubjectNounSingular();
+    }
+
+    public String getSubjectNounPlural(Container container)
+    {
+        Study study = getStudy(container);
+        if (study == null)
+            return "Participants";
+        return study.getSubjectNounPlural();
+    }
+
+    public String getSubjectColumnName(Container container)
+    {
+        Study study = getStudy(container);
+        if (study == null)
+            return "ParticipantId";
+        return study.getSubjectColumnName();
+    }
+
+    public String getSubjectVisitColumnName(Container container)
+    {
+        return ColumnInfo.legalNameFromName(getSubjectNounSingular(container) + "Visit");
+    }
+
+    public String getSubjectTableName(Container container)
+    {
+        return ColumnInfo.legalNameFromName(getSubjectNounSingular(container));
+    }
+
+    public String getSubjectVisitTableName(Container container)
+    {
+        return getSubjectTableName(container) + "Visit";
+    }
 }

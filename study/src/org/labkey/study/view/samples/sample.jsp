@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.api.study.Site" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.SpecimenEventBean> me = (JspView<SpecimenController.SpecimenEventBean>) HttpView.currentView();
@@ -41,7 +42,7 @@
         <td><%= h(sample.getGlobalUniqueId()) %></td>
     </tr>
     <tr>
-        <th align="right">Participant</th>
+        <th align="right"><%= StudyService.get().getSubjectNounSingular(sample.getContainer()) %></th>
         <td><%= h(sample.getPtid()) %></td>
     </tr>
     <tr>

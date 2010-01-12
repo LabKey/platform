@@ -21,11 +21,13 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.CustomizeParticipantViewForm> me = (JspView<StudyController.CustomizeParticipantViewForm>) HttpView.currentView();
     StudyController.CustomizeParticipantViewForm bean = me.getModelBean();
     boolean useCustomView = bean.isUseCustomView();
+    String subjectNoun = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
 %>
 <script type="text/javascript">
     window.onbeforeunload = LABKEY.beforeunload();
@@ -44,14 +46,14 @@
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">
     <table>
         <tr class="labkey-wp-header">
-            <th>Participant View Contents</th>
+            <th><%= subjectNoun %> View Contents</th>
         </tr>
         <tr>
             <td>
                 <input type="radio" name="useCustomView"
                        value="false"
                        onclick="return setCustomScriptState(!this.selected)"
-                       <%= useCustomView ? "" : "CHECKED"%>>Use standard participant view<br>
+                       <%= useCustomView ? "" : "CHECKED"%>>Use standard <%= subjectNoun.toLowerCase() %> view<br>
             </td>
         </tr>
         <tr>
@@ -59,7 +61,7 @@
                 <input type="radio" name="useCustomView"
                        value="true"
                        onclick="return setCustomScriptState(this.selected)"
-                       <%= useCustomView ? "CHECKED" : ""%>>Use customized participant view<br>
+                       <%= useCustomView ? "CHECKED" : ""%>>Use customized <%= subjectNoun.toLowerCase() %> view<br>
             </td>
         </tr>
         <tr>
@@ -87,7 +89,7 @@
 %>
 <table width="100%">
     <tr class="labkey-wp-header">
-        <th>Participant View Preview (Save to refresh)</th>
+        <th><%= subjectNoun %> View Preview (Save to refresh)</th>
     </tr>
     <tr>
         <td>

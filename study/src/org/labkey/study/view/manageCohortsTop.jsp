@@ -22,11 +22,14 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
+    String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
+    String subjectNounPlural = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
 %>
 <labkey:errors/>
 
@@ -55,7 +58,7 @@
                 }
             }
             else if (confirm('Changing between simple and advanced modes requires updating cohort ' +
-                               'assignments for all participants.  Update cohort assignments now?'))
+                               'assignments for all <%= subjectNounPlural.toLowerCase() %>.  Update cohort assignments now?'))
             {
                 document.manageCohorts.submit();
                 return true;
@@ -64,9 +67,9 @@
         }
     </script>
     <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport"
-           value="false" <%=study.isAdvancedCohorts() ? "" : "checked"%>>Simple: Participants are assigned to a single cohort throughout the study.<br>
+           value="false" <%=study.isAdvancedCohorts() ? "" : "checked"%>>Simple: <%= subjectNounPlural %> are assigned to a single cohort throughout the study.<br>
     <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport"
-           value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: Participants may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
+           value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: <%= subjectNounPlural %> may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
 <%
     WebPartView.endTitleFrame(out);
 
@@ -84,12 +87,14 @@
     }
     if (!study.isManualCohortAssignment())
     { // If it's automatic, we need to include the dataset selection widgets
-        WebPartView.startTitleFrame(out, "Automatic Participant/Cohort Assignment", null, "100%", null);
+        WebPartView.startTitleFrame(out, "Automatic " + subjectNounSingle + "/Cohort Assignment", null, "100%", null);
     %>
     <b>Note:</b> Only users with read access to the selected dataset will be able to view Cohort information.
 <table>
         <tr>
-            <th align="right">Participant/Cohort Dataset<%= helpPopup("Participant/Cohort Dataset", "Participants can be assigned to cohorts based on the data in a field of a single dataset.  If set, participant's cohort assignments will be reloaded every time this dataset is re-imported.")%></th>
+            <th align="right"><%= subjectNounSingle %>/Cohort Dataset<%= helpPopup(subjectNounSingle + "/Cohort Dataset",
+                    subjectNounPlural + " can be assigned to cohorts based on the data in a field of a single dataset.  " +
+                    "If set, cohort assignments will be reloaded for all " + subjectNounPlural + " every time this dataset is re-imported.")%></th>
             <td>
                 <select name="participantCohortDataSetId" onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
                     <option value="-1">[None]</option>
@@ -141,7 +146,7 @@
             <td>&nbsp;</td>
             <td>
                 <%= buttonImg("Update Assignments", "document.manageCohorts.updateParticipants.value='true'; return true;")%>
-                <%= buttonImg("Clear Assignments", "if (confirm('Are you sure you want to clear cohort information for all participants?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
+                <%= buttonImg("Clear Assignments", "if (confirm('Are you sure you want to clear cohort information for all " + subjectNounPlural + "?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
             </td>
         </tr>
         </table>

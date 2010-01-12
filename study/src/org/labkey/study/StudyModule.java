@@ -112,7 +112,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 9.301;
+        return 9.302;
     }
 
     protected void init()
@@ -188,7 +188,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             Collection<String> list = new LinkedList<String>();
             list.add("Study: " + study.getLabel());
             long participants = StudyManager.getInstance().getParticipantCount(study);
-            list.add("" + participants + " Study participants");
+            list.add("" + participants + " " + StudyService.get().getSubjectNounPlural(c));
             return list;
         }
         else

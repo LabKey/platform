@@ -3,6 +3,7 @@ package org.labkey.study.samples.report.participant;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.Pair;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.model.SiteImpl;
@@ -73,13 +74,13 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
             addBaseFilters(filter);
             if (site != null)
             {
-                filter.addWhereClause("ParticipantId IN (SELECT ParticipantId FROM study.Participant " +
-                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { site.getRowId(), getContainer().getId() }, "ParticipantId");
+                filter.addWhereClause("" + StudyService.get().getSubjectColumnName(getContainer()) + " IN (SELECT ParticipantId FROM study.Participant " +
+                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { site.getRowId(), getContainer().getId() }, StudyService.get().getSubjectColumnName(getContainer()));
             }
             else
             {
-                filter.addWhereClause("ParticipantId IN (SELECT ParticipantId FROM study.Participant " +
-                        "WHERE EnrollmentSiteId IS NULL AND Container = ?)", new Object[] { getContainer().getId() }, "ParticipantId");
+                filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN (SELECT ParticipantId FROM study.Participant " +
+                        "WHERE EnrollmentSiteId IS NULL AND Container = ?)", new Object[] { getContainer().getId() }, StudyService.get().getSubjectColumnName(getContainer()));
             }
             reports.add(new ParticipantSiteReport(label, visits, filter, this));
         }

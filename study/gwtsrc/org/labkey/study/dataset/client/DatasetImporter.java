@@ -47,7 +47,7 @@ public class DatasetImporter implements EntryPoint
         root.add(vPanel);
 
         List<String> columnsToMap = new ArrayList<String>();
-        columnsToMap.add("Participant ID");
+        columnsToMap.add(PropertyUtil.getServerProperty("subjectColumnName"));
 
         String timepointTypeString = PropertyUtil.getServerProperty("timepointType");
         if ("RELATIVE_DATE".equals(timepointTypeString))

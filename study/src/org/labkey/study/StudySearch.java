@@ -31,6 +31,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 
@@ -128,7 +129,7 @@ public class StudySearch implements Search.Searchable
                     participantId,
                     url.getLocalURIString(),
                     SEARCH_HIT_TYPE,
-                    "Study Participant"
+                    "Study Subject (" + StudyService.get().getSubjectNounSingular(study.getContainer()) + ")"
                 ));
             }
         }
@@ -204,7 +205,7 @@ def:    for (DataSetDefinition def : defs)
         SqlDialect dialect = tInfo.getSchema().getSqlDialect();
 
         // We already know the dataset, so all we need to get back is the participant
-        String selectColumn = "participantid";
+        String selectColumn = StudyService.get().getSubjectColumnName(def.getContainer());
 
         // Which columns to search? Everything user-defined
         List<String> columnsToSearch = new ArrayList<String>();
@@ -250,7 +251,7 @@ def:    for (DataSetDefinition def : defs)
                 String ptid = rs.getString(1);
 
                 ActionURL url = new ActionURL(StudyController.DatasetAction.class, def.getContainer());
-                url.addFilter("Dataset", FieldKey.fromParts("ParticipantId"), CompareType.EQUAL, ptid);
+                url.addFilter("Dataset", FieldKey.fromParts(selectColumn), CompareType.EQUAL, ptid);
                 url.addParameter("datasetId", def.getDataSetId());
 
                 hits.add(new SimpleSearchHit(
