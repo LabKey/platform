@@ -171,6 +171,11 @@ abstract public class PipelineProvider
             });
         }
 
+        public String getPathParameter()
+        {
+            return _href.getParameter("path");
+        }
+
     }
 
     public static abstract class FileEntryFilter implements FileFilter
@@ -492,21 +497,21 @@ abstract public class PipelineProvider
         }
     }
 
-    protected void addAction(URLHelper actionURL, String description, PipelineDirectory entry, File[] files)
+    protected void addAction(URLHelper actionURL, String description, PipelineDirectory entry, File[] files, boolean allowMultiSelect)
     {
         if (files == null || files.length == 0)
             return;
 
-        entry.addAction(new PipelineAction(description, actionURL, files));
+        entry.addAction(new PipelineAction(description, actionURL, files, allowMultiSelect));
     }
 
-    protected void addAction(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files)
+    protected void addAction(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files, boolean allowMultiSelect)
     {
         if (files == null || files.length == 0)
             return;
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);
-        directory.addAction(new PipelineAction(description, actionURL, files));
+        directory.addAction(new PipelineAction(description, actionURL, files, allowMultiSelect));
     }
 
     /**

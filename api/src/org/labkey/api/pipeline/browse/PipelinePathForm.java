@@ -17,6 +17,7 @@ package org.labkey.api.pipeline.browse;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.pipeline.PipeRoot;
@@ -32,7 +33,7 @@ import java.util.ArrayList;
  * 
  * Form bean class for pipeline root navigation.
  */
-public class PipelinePathForm
+public class PipelinePathForm extends ViewForm
 {
     private String _path;
     private String[] _file = new String[0];
@@ -106,5 +107,16 @@ public class PipelinePathForm
             result.add(f);
         }
         return result;
+    }
+
+    /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */
+    public File getValidatedSingleFile(Container c)
+    {
+        List<File> files = getValidatedFiles(c);
+        if (files.size() != 1)
+        {
+            throw new IllegalArgumentException("Expected a single file but got " + files.size());
+        }
+        return files.get(0);
     }
 }

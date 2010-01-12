@@ -93,7 +93,7 @@ public class AssayPipelineProvider extends PipelineProvider
 
             if (navTree.getChildCount() > 0)
             {
-                directory.addAction(new PipelineAction(navTree, files));
+                directory.addAction(new PipelineAction(navTree, files, true));
             }
         }
     }

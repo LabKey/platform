@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.data.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
@@ -87,6 +88,14 @@ final public class DefaultSchema extends AbstractSchema
         if (ret != null)
             return ret;
         SchemaProvider provider = _providers.get(name);
+        if (provider == null && name.startsWith("/"))
+        {
+            Container project = ContainerManager.getForPath(name);
+            if (project != null && project.hasPermission(getUser(), ReadPermission.class))
+            {
+                return new FolderSchemaProvider.FolderSchema(getUser(), project, DefaultSchema.get(getUser(), project));
+            }
+        }
         if (provider == null)
         {
             return QueryService.get().getDbUserSchemas(this).get(name);

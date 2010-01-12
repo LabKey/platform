@@ -55,7 +55,7 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 
         public Set<String> getTableNames()
         {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         protected TableInfo createTable(String name)
@@ -101,11 +101,6 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             }
 
             return new FolderSchema(_user, child, fallback);
-        }
-
-        public boolean canEdit(String name)
-        {
-            return false;
         }
     }
 }

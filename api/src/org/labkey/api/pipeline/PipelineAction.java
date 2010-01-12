@@ -32,18 +32,20 @@ public class PipelineAction
     String _description;
     NavTree _links;
     File[] _files;
+    boolean _allowMultiSelect;
 
     /** Use NavTree to create a drop-down menu with submenus for the specified files */
-    public PipelineAction(NavTree links, File[] files)
+    public PipelineAction(NavTree links, File[] files, boolean allowMultiSelect)
     {
         _links = links;
         _files = files;
+        _allowMultiSelect = allowMultiSelect;
     }
 
     /** Use a simple button for the specified files */
-    public PipelineAction(String label, URLHelper href, File[] files)
+    public PipelineAction(String label, URLHelper href, File[] files, boolean allowMultiSelect)
     {
-        this(new NavTree(label, href), files);
+        this(new NavTree(label, href), files, allowMultiSelect);
     }
 
     public String getLabel()
@@ -69,6 +71,7 @@ public class PipelineAction
 
         JSONObject links = _links.toJSON();
         o.put("links", links);
+        o.put("multiSelect", _allowMultiSelect);
 
         JSONArray files = new JSONArray();
         if (null != _files)

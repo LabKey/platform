@@ -419,18 +419,18 @@ function renderBrowser(rootPath, dir)
                             var item = action.links.items[j];
                             if (item.text && item.href)
                             {
-                                items.push({text: item.text, files: action.files, itemHref: item.href, listeners: {click: this.executePipelineAction, scope: this}});
+                                items.push({text: item.text, files: action.files, multiSelect: item.multiSelect, itemHref: item.href, listeners: {click: this.executePipelineAction, scope: this}});
                             }
                         }
 
                         if (items.length)
-                            this.pipelineActions.push(new Ext.Action({text:action.links.text, files: action.files, menu: {cls: 'extContainer', items: items}}));
+                            this.pipelineActions.push(new Ext.Action({text:action.links.text, multiSelect: action.multiSelect, files: action.files, menu: {cls: 'extContainer', items: items}}));
                         else
-                            this.pipelineActions.push(new Ext.Action({text:action.links.text, files: action.files}));
+                            this.pipelineActions.push(new Ext.Action({text:action.links.text, multiSelect: action.multiSelect, files: action.files}));
                     }
                     else if (action.links.text && action.links.href)
                     {
-                        this.pipelineActions.push(new Ext.Action({text:action.links.text, files: action.files, itemHref: action.links.href, listeners: {click: this.executePipelineAction, scope: this}}));
+                        this.pipelineActions.push(new Ext.Action({text:action.links.text, multiSelect: action.multiSelect, files: action.files, itemHref: action.links.href, listeners: {click: this.executePipelineAction, scope: this}}));
                     }
                 }
 
@@ -441,6 +441,7 @@ function renderBrowser(rootPath, dir)
                 });
                 this.allActionsTab.add(allActions);
                 this.allActionsTab.doLayout();
+                this.onSelectionChange();
             }
         },
 
@@ -450,6 +451,10 @@ function renderBrowser(rootPath, dir)
             if (this.pipelineActions)
             {
                 var selections = this.grid.selModel.getSelections();
+                if (!selections.length && this.grid.store.data)
+                {
+                    selections = this.grid.store.data.items;
+                }
 
                 if (selections.length)
                 {
@@ -463,23 +468,24 @@ function renderBrowser(rootPath, dir)
                         var action = this.pipelineActions[i];
                         if (action.initialConfig.files && action.initialConfig.files.length)
                         {
-                            var contains = false;
+                            var selectionCount = 0;
                             for (var j=0; j <action.initialConfig.files.length; j++)
                             {
                                 if (action.initialConfig.files[j] in selectionMap)
                                 {
-                                    contains = true;
-                                    break;
+                                    selectionCount++;
                                 }
                             }
-                            contains ? action.enable() : action.disable();
+                            if (action.initialConfig.multiSelect)
+                            {
+                                selectionCount > 0 ? action.enable() : action.disable();
+                            }
+                            else
+                            {
+                                selectionCount == 1 ? action.enable() : action.disable();
+                            }
                         }
                     }
-                }
-                else
-                {
-                    for (var i=0; i <this.pipelineActions.length; i++)
-                        this.pipelineActions[i].enable();
                 }
             }
         },
