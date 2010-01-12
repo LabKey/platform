@@ -473,7 +473,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             title = "Study -- " + study.getLabel();
             body = "Study Folder " + c.getName() + " in Project " + p.getName();
-            body += study.getDisplayString();
         }
         else
         {
