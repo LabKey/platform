@@ -153,6 +153,18 @@ public class StudyService
         public List<SecurableResource> getSecurableResources(Container container, User user);
 
         public Set<Role> getStudyRoles();
+
+        String getSubjectNounSingular(Container container);
+
+        String getSubjectNounPlural(Container container);
+
+        String getSubjectColumnName(Container container);
+
+        String getSubjectTableName(Container container);
+
+        String getSubjectVisitTableName(Container container);
+
+        String getSubjectVisitColumnName(Container container);
     }
 
     public static void register(Service serviceImpl)

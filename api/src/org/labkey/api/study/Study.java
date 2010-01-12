@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.util.Date;
@@ -41,4 +42,10 @@ public interface Study extends StudyEntity
     TimepointType getTimepointType();
 
     Date getStartDate();
+
+    String getSubjectNounSingular();
+
+    String getSubjectNounPlural();
+
+    String getSubjectColumnName();
 }
