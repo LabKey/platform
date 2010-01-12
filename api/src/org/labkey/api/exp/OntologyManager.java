@@ -1074,7 +1074,10 @@ public class OntologyManager
     private static PropertyDescriptor ensurePropertyDescriptor(PropertyDescriptor pdIn) throws SQLException
     {
          if (null == pdIn.getContainer())
-            pdIn.setContainer(_sharedContainer);
+         {
+             assert false : "Container should be set on PropertyDescriptor";
+             pdIn.setContainer(_sharedContainer);
+         }
 
         PropertyDescriptor pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
         if (null == pd)
