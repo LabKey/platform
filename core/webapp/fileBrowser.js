@@ -1692,8 +1692,25 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         return new Ext.Action({text: 'Download', iconCls:'iconDownload', scope: this, handler: function()
             {
-                if (this.selectedRecord && this.selectedRecord.data.file && this.selectedRecord.data.uri)
-                    window.location = this.selectedRecord.data.uri + "?contentDisposition=attachment";
+                var selections = this.grid.selModel.getSelections();
+
+                if (selections.length == 1 && selections[0].data.file)
+                {
+                    if (this.selectedRecord.data.uri)
+                    {
+                        window.location = this.selectedRecord.data.uri + "?contentDisposition=attachment";
+                    }
+                }
+                else if (fileBrowser.currentDirectory.data.uri)
+                {
+                    var url = fileBrowser.currentDirectory.data.uri + "?method=zip&depth=-1";
+                    for (var i = 0; i < selections.length; i++)
+                    {
+                        url = url + "&file=" + selections[i].data.name;
+                    }
+
+                    window.location = url;
+                }
             }});
     },
 
@@ -1763,50 +1780,54 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             if (!this.currentDirectory || !this.selectedRecord)
                 return;
 
-            var selectedRecord = this.selectedRecord;
+            var selections = this.grid.selModel.getSelections();
             var fnDelete = (function()
             {
-                this.fileSystem.deletePath(selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
-                this.selectFile(null);
-                if (this.tree)
+                for (var i = 0; i < selections.length; i++)
                 {
-                    var node = this.tree.getNodeById(this.currentDirectory.data.path);
-                    if (node)
+                    var selectedRecord = selections[i];
+                    this.fileSystem.deletePath(selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
+                    this.selectFile(null);
+                    if (this.tree)
                     {
-                        // If the user deleted a directory, we need to clean up the folder tree
-                        if (!selectedRecord.data.file)
+                        var node = this.tree.getNodeById(this.currentDirectory.data.path);
+                        if (node)
                         {
-                            var parentNode;
-                            var childNodeToRemove;
-                            // The selection might be from the tree, or from the file list
-                            if (node.attributes.path == selectedRecord.data.path)
+                            // If the user deleted a directory, we need to clean up the folder tree
+                            if (!selectedRecord.data.file)
                             {
-                                // If the path of the selected node in the tree matches what we deleted, use that node
-                                parentNode = node.parentNode;
-                                childNodeToRemove = node;
+                                var parentNode;
+                                var childNodeToRemove;
+                                // The selection might be from the tree, or from the file list
+                                if (node.attributes.path == selectedRecord.data.path)
+                                {
+                                    // If the path of the selected node in the tree matches what we deleted, use that node
+                                    parentNode = node.parentNode;
+                                    childNodeToRemove = node;
+                                }
+                                else
+                                {
+                                    // Otherwise, the selection came from the list and we need to find the right child
+                                    // node in the tree
+                                    childNodeToRemove = node.findChild("path", selectedRecord.data.path);
+                                    if (childNodeToRemove)
+                                    {
+                                        parentNode = node;
+                                    }
+                                }
+                                // Check if we found the child and parent nodes in the tree
+                                if (parentNode && childNodeToRemove)
+                                {
+                                    // Want to make sure that the parent gets selected after the child is deleted
+                                    parentNode.select();
+                                    // Remove the child from the tree since it's been deleted from the disk
+                                    parentNode.removeChild(childNodeToRemove);
+                                }
                             }
                             else
                             {
-                                // Otherwise, the selection came from the list and we need to find the right child
-                                // node in the tree
-                                childNodeToRemove = node.findChild("path", selectedRecord.data.path);
-                                if (childNodeToRemove)
-                                {
-                                    parentNode = node;
-                                }
+                                node.reload();
                             }
-                            // Check if we found the child and parent nodes in the tree
-                            if (parentNode && childNodeToRemove)
-                            {
-                                // Want to make sure that the parent gets selected after the child is deleted
-                                parentNode.select();
-                                // Remove the child from the tree since it's been deleted from the disk
-                                parentNode.removeChild(childNodeToRemove);
-                            }
-                        }
-                        else
-                        {
-                            node.reload();
                         }
                     }
                 }
@@ -1816,42 +1837,58 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             }).createDelegate(this);
 
-            if (selectedRecord)
+            if (selections.length)
             {
-                var name = selectedRecord.data.name;
-                if (this.selectedRecord.data.file)
+                var fileCount = 0;
+                var fileName;
+                var dirCount = 0;
+                var dirName;
+                for (var i = 0; i < selections.length; i++)
                 {
-                    Ext.MessageBox.confirm("Delete -- " + name, "Are you sure that you want to delete the file '" + name + "'?", function(answer)
+                    var selectedRecord = selections[i];
+                    if (selectedRecord.data.file)
                     {
-                        if (answer == "yes")
-                        {
-                            fnDelete();
-                        }
-                    });
+                        fileCount++;
+                        fileName = selectedRecord.data.name;
+                    }
+                    else
+                    {
+                        dirCount++;
+                        dirName = selectedRecord.data.name;
+                    }
                 }
-                else
+                var message = "Are you sure that you want to delete the ";
+                if (fileCount == 1)
                 {
-                    this.fileSystem.listFiles(selectedRecord.data.path, function(filesystem, success, parentPath, records)
-                    {
-                        var message;
-                        if (records.length == 0)
-                        {
-                            message = "Are you sure that you want to delete the empty directory '" + name + "'?";
-                        }
-                        else
-                        {
-                            message = "The directory '" + name + "' is not empty.  This operation is permanent.<br>Delete?";
-                        }
+                    message += "file '" + fileName + "'";
+                }
+                else if (fileCount > 1)
+                {
+                    message += fileCount + " selected files";
+                }
 
-                        Ext.MessageBox.confirm("Delete -- " + name, message, function(answer)
-                        {
-                            if (answer == "yes")
-                            {
-                                fnDelete();
-                            }
-                        });
-                    }, this);
+                if (fileCount > 0 && dirCount > 0)
+                {
+                    message += " and ";
                 }
+
+                if (dirCount == 1)
+                {
+                    message += "directory '" + dirName + "' (including its content)";
+                }
+                else if (dirCount > 1)
+                {
+                    message += dirCount + " selected directories (including their contents)";
+                }
+                message += "?";
+
+                Ext.MessageBox.confirm("Confirm delete", message, function(answer)
+                {
+                    if (answer == "yes")
+                    {
+                        fnDelete();
+                    }
+                });
             }
         }});
     },
@@ -2502,10 +2539,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.uploadPanel = new Ext.Panel({
             id : 'uploadPanel',
             border : false,
-            bodyStyle : 'background-color:#f0f0f0; padding:5px;',
-            defaults: {bodyStyle : 'background-color:#f0f0f0', border:false},
             layout:'fit',
-            items:this.formPanel
+            items:this.formPanel,
+            bodyStyle : 'background-color:#f0f0f0;',
+            defaults: {bodyStyle : 'background-color:#f0f0f0'}
         });
 
         //
@@ -2536,10 +2573,20 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             this.updateFileDetails(record);
 
-            if (record && record.data && record.data.file && startsWith(record.data.uri,"http"))
+            var selections = this.grid.selModel.getSelections();
+
+            if (selections.length == 1 && startsWith(record.data.uri,"http"))
+            {
                 this.actions.download.enable();
+            }
+            else if (selections.length > 0 && startsWith(this.currentDirectory.data.uri,"http"))
+            {
+                this.actions.download.enable();
+            }
             else
+            {
                 this.actions.download.disable();
+            }
 
             if (record && this.fileSystem.canDelete(record))
                 this.actions.deletePath.enable();
@@ -2674,7 +2721,18 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         centerItems.push({region:'center', layout:'fit', border:false, items:[this.grid]});
         if (this.showFileUpload)
-            centerItems.push({region:'south', layout:'fit', border:false, height:40, minSize:40, margins:'1 0 0 0', items:[this.uploadPanel]});
+            centerItems.push(
+                {
+                    region:'south',
+                    layout:'fit',
+                    border:false,
+                    height:40,
+                    minSize:40,
+                    margins:'1 0 0 0',
+                    items:[this.uploadPanel],
+                    bodyStyle : 'background-color:#f0f0f0; padding:5px;',
+                    defaults: {bodyStyle : 'background-color:#f0f0f0'}
+                });
 
         layoutItems.push(
             {

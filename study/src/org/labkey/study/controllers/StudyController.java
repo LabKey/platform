@@ -45,6 +45,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -3369,31 +3370,37 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public class ResetPipelinePathForm extends PipelinePathForm
+    {
+        private String _redirect;
+
+        public String getRedirect()
+        {
+            return _redirect;
+        }
+
+        public void setRedirect(String redirect)
+        {
+            _redirect = redirect;
+        }
+    }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ResetPipelineAction extends SimpleRedirectAction
+    public class ResetPipelineAction extends SimpleRedirectAction<ResetPipelinePathForm>
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(ResetPipelinePathForm form) throws Exception
         {
             Container c = getContainer();
-            String path = (String)getViewContext().get("path");
-            String redirect = (String)getViewContext().get("redirect");
 
-            File f = null;
-
-            if (path != null)
+            for (File f : form.getValidatedFiles(c))
             {
-
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                if (root != null)
-                    f = root.resolvePath(path);
+                if (f.isFile() && f.getName().endsWith(".lock"))
+                {
+                    f.delete();
+                }
             }
 
-            if (null != f && f.exists() && f.isFile() && f.getPath().endsWith(".lock"))
-            {
-                f.delete();
-            }
-
+            String redirect = form.getRedirect();
             if (null != redirect)
                 HttpView.throwRedirect(redirect);
             return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
@@ -3594,27 +3601,25 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ImportStudyBatchAction extends SimpleViewAction<PipelineForm>
+    public class ImportStudyBatchAction extends SimpleViewAction<PipelinePathForm>
     {
         private String path;
 
-        public ModelAndView getView(PipelineForm form, BindException errors) throws Exception
+        public ModelAndView getView(PipelinePathForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
+
+            File definitionFile = form.getValidatedSingleFile(c);
             path = form.getPath();
-            File definitionFile = null;
-
-            if (path != null)
+            if (!path.endsWith("/"))
             {
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                if (root != null)
-                    definitionFile = root.resolvePath(path);
+                path += "/";
             }
+            path += definitionFile.getName();
 
-            if (path == null || null == definitionFile || !definitionFile.exists() || !definitionFile.isFile())
+            if (!definitionFile.isFile())
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
 
             File lockFile = StudyPipeline.lockForDataset(getStudy(), definitionFile);
@@ -3635,7 +3640,7 @@ public class StudyController extends BaseStudyController
             }
 
             return new StudyJspView<ImportStudyBatchBean>(
-                    getStudy(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, form), errors);
+                    getStudy(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3654,9 +3659,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class SubmitStudyBatchAction extends SimpleRedirectAction<PipelineForm>
+    public class SubmitStudyBatchAction extends SimpleRedirectAction<PipelinePathForm>
     {
-        public ActionURL getRedirectURL(PipelineForm form) throws Exception
+        public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
         {
             Study study = getStudy();
             Container c = getContainer();
@@ -3783,18 +3788,13 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ImportStudyFromPipelineAction extends SimpleRedirectAction<ImportStudyForm>
+    public class ImportStudyFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
-        public ActionURL getRedirectURL(ImportStudyForm form) throws Exception
+        public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
         {
             Container c = getContainer();
-            URI pipelineRootURI = StudyReload.getPipelineRootURI(c);
 
-            if (null == pipelineRootURI)
-                throw new NotFoundException("Pipeline root is not set");
-
-            File path = new File(pipelineRootURI.resolve(new URI(form.getPath())));
-            File studyFile = new File(path, form.getFile()[0]);
+            File studyFile = form.getValidatedSingleFile(c);
 
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             BindException errors = new BindException(c, "import");
@@ -3824,33 +3824,6 @@ public class StudyController extends BaseStudyController
                 errors.reject("studyImport", e.getMessage());
                 return new SimpleErrorView(errors);
             }
-        }
-    }
-
-
-    public static class ImportStudyForm
-    {
-        private String _path;
-        private String[] _file;
-
-        public String getPath()
-        {
-            return _path;
-        }
-
-        public void setPath(String path)
-        {
-            _path = path;
-        }
-
-        public String[] getFile()
-        {
-            return _file;
-        }
-
-        public void setFile(String[] file)
-        {
-            _file = file;
         }
     }
 
@@ -5491,12 +5464,12 @@ public class StudyController extends BaseStudyController
     public static class ImportStudyBatchBean
     {
         private final DatasetFileReader reader;
-        private final PipelineForm form;
+        private final String path;
 
-        public ImportStudyBatchBean(DatasetFileReader reader, PipelineForm form)
+        public ImportStudyBatchBean(DatasetFileReader reader, String path)
         {
             this.reader = reader;
-            this.form = form;
+            this.path = path;
         }
 
         public DatasetFileReader getReader()
@@ -5504,19 +5477,10 @@ public class StudyController extends BaseStudyController
             return reader;
         }
 
-        public PipelineForm getForm()
+        public String getPath()
         {
-            return form;
+            return path;
         }
-    }
-
-    public static class PipelineForm
-    {
-        private String _path;
-
-        public String getPath() {return _path;}
-
-        public void setPath(String path) {this._path = path;}
     }
 
     public static class ViewPrefsBean

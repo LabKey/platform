@@ -26,6 +26,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -3316,26 +3317,20 @@ public class SpecimenController extends BaseStudyController
     {
         private String _path = null;
 
-        public void validateCommand(PipelineForm target, Errors errors)
-        {
-        }
-
         public ModelAndView getView(PipelineForm form, BindException bindErrors) throws Exception
         {
-            _path = form.getPath();
-            File dataFile = null;
+            File dataFile = form.getValidatedSingleFile(getContainer());
 
-            if (_path != null)
+            _path = form.getPath();
+            if (!_path.endsWith("/"))
             {
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                if (root != null)
-                    dataFile = root.resolvePath(_path);
+                _path += "/";
             }
+            _path += dataFile.getName();
 
             if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
             {
-                HttpView.throwNotFound();
-                return null;
+                throw new NotFoundException();
             }
 
             List<String> errors = new ArrayList<String>();
@@ -4072,20 +4067,9 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class PipelineForm
+    public static class PipelineForm extends PipelinePathForm
     {
-        private String _path;
         private boolean _deleteLogfile;
-
-        public String getPath()
-        {
-            return _path;
-        }
-
-        public void setPath(String path)
-        {
-            _path = path;
-        }
 
         public boolean isDeleteLogfile()
         {

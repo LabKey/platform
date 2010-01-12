@@ -118,7 +118,14 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             resource = ensureCopyingLock();
             _log.info("Copying " + source + " to " + target);
-            FileUtils.copyFile(source, target);
+            if (source.isDirectory())
+            {
+                FileUtils.copyDirectory(source, target);
+            }
+            else
+            {
+                FileUtils.copyFile(source, target);
+            }
         }
         finally
         {
@@ -283,7 +290,16 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         ensureDescendent(fileWork);
         if (fileWork.exists() && !fileWork.delete())
-            throw new IOException("Failed to remove file " + fileWork);
+        {
+            if (fileWork.isDirectory())
+            {
+                FileUtils.deleteDirectory(fileWork);
+            }
+            if (fileWork.exists())
+            {
+                throw new IOException("Failed to remove file " + fileWork);
+            }
+        }
     }
 
     public void remove() throws IOException

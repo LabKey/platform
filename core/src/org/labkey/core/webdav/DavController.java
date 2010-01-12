@@ -549,6 +549,12 @@ public class DavController extends SpringActionController
             }
             catch (NumberFormatException ignore) {}
 
+            Set<String> includeNames = null;
+            if (request.getParameterValues("file") != null)
+            {
+                includeNames = new HashSet<String>(Arrays.asList(request.getParameterValues("file")));
+            }
+
             //-1 means infinite (...well, as deep as max int)
             if (-1 == depth)
                 depth = Integer.MAX_VALUE;
@@ -561,7 +567,7 @@ public class DavController extends SpringActionController
             ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
             try
             {
-                addResource(resource, out, user, resource, depth);
+                addResource(resource, out, user, resource, depth, includeNames);
             }
             finally
             {
@@ -570,7 +576,8 @@ public class DavController extends SpringActionController
             return WebdavStatus.SC_OK;
         }
 
-        private void addResource(Resource resource, ZipOutputStream out, User user, Resource rootResource, int depth) throws IOException
+        /** @param includeNames if non-null, the set of children to include in the zip. If null, all are included */
+        private void addResource(Resource resource, ZipOutputStream out, User user, Resource rootResource, int depth, Set<String> includeNames) throws IOException
         {
             if (!resource.canRead(user))
                 return;
@@ -581,7 +588,10 @@ public class DavController extends SpringActionController
                 {
                     for (Resource child : resource.list())
                     {
-                        addResource(child, out, user, rootResource, depth - 1);
+                        if (includeNames == null || includeNames.contains(child.getName()))
+                        {
+                            addResource(child, out, user, rootResource, depth - 1, null);
+                        }
                     }
                 }
             }

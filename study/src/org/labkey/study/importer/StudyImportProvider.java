@@ -48,8 +48,7 @@ public class StudyImportProvider extends PipelineProvider
 
         String label = (null == StudyManager.getInstance().getStudy(context.getContainer()) ? "Import Study" : "Reload Study");
 
-        for (File file : directory.listFiles(new StudyImportFilter()))
-            addAction(StudyController.ImportStudyFromPipelineAction.class, label, directory, new File[]{file});
+        addAction(StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listFiles(new StudyImportFilter()), false);
     }
 
     private static class StudyImportFilter implements FileFilter

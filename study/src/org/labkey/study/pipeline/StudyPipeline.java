@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
@@ -34,6 +33,8 @@ import org.labkey.study.controllers.samples.SpecimenController;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 
 
 /**
@@ -63,9 +64,6 @@ public class StudyPipeline extends PipelineProvider
 
         try
         {
-            PipeRoot root = PipelineService.get().findPipelineRoot(context.getContainer());
-            File rootDir = root.getRootPath();
-
             File[] files = directory.listFiles(new FileEntryFilter() {
                 public boolean accept(File f)
                 {
@@ -74,7 +72,7 @@ public class StudyPipeline extends PipelineProvider
             });
 
             if (files != null)
-                handleDatasetFiles(context, study, directory, rootDir, files);
+                handleDatasetFiles(context, study, directory, files);
 
             files = directory.listFiles(new FileEntryFilter()
             {
@@ -85,7 +83,9 @@ public class StudyPipeline extends PipelineProvider
             });
 
             if (files != null)
-                handleSpecimenFiles(directory, rootDir, files);
+            {
+                addAction(SpecimenController.ImportSpecimenData.class, "Import specimen data", directory, files, false);
+            }
         }
         catch (IOException e)
         {
@@ -139,42 +139,39 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File rootDir, File[] files) throws IOException
+    private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File[] files) throws IOException
     {
+        List<File> lockFiles = new ArrayList<File>();
+        List<File> datasetFiles = new ArrayList<File>();
+
         for (File f : files)
         {
             File lock = lockForDataset(study, f);
             if (lock.exists())
             {
-                ActionURL urlReset = directory.cloneHref();
-                urlReset.setAction(StudyController.ResetPipelineAction.class);
-                urlReset.replaceParameter("redirect", context.getActionURL().getLocalURIString());
-                String path = FileUtil.relativize(rootDir, lock, true);
-                urlReset.replaceParameter("path", path);
                 if (lock.canRead() && lock.canWrite())
-                    directory.addAction(new PipelineAction("Delete lock", urlReset, new File[]{lock}));
+                {
+                    lockFiles.add(lock);
+                }
             }
             else
             {
-                ActionURL urlImport = context.cloneActionURL();
-                urlImport.setAction(StudyController.ImportStudyBatchAction.class);
-                String path = FileUtil.relativize(rootDir, f, true);
-                urlImport.replaceParameter("path", path);
-                directory.addAction(new PipelineAction("Import datasets", urlImport, new File[]{f}));
+                datasetFiles.add(f);
             }
         }
-    }
 
-
-    private void handleSpecimenFiles(PipelineDirectory directory, File rootDir, File[] files) throws IOException
-    {
-        for (File f : files)
+        if (!lockFiles.isEmpty())
         {
-            ActionURL urlImport = directory.cloneHref();
-            urlImport.setAction(SpecimenController.ImportSpecimenData.class);
-            String path = FileUtil.relativize(rootDir, f, true);
-            urlImport.replaceParameter("path", path);
-            directory.addAction(new PipelineAction("Import specimen data", urlImport, new File[]{f}));
+            ActionURL urlReset = directory.cloneHref();
+            urlReset.setAction(StudyController.ResetPipelineAction.class);
+            urlReset.replaceParameter("redirect", context.getActionURL().getLocalURIString());
+            urlReset.replaceParameter("path", directory.getPathParameter());
+            directory.addAction(new PipelineAction("Delete lock", urlReset, lockFiles.toArray(new File[lockFiles.size()]), true));
+        }
+
+        if (!datasetFiles.isEmpty())
+        {
+            addAction(StudyController.ImportStudyBatchAction.class, "Import datasets", directory, datasetFiles.toArray(new File[datasetFiles.size()]), false);
         }
     }
 }

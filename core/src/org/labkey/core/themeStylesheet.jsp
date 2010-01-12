@@ -600,7 +600,7 @@ td a.x-grid3-hd-btn:hover {
 .x-menu {
     padding:0;
     background: white none;
-    border-color: #<%= navBorder %>;
+    border-color: #<%= wpHeaderPanelBorder %>;
 }
 .x-menu-sep {margin:1px 1px 0 1px;}
 
@@ -950,7 +950,7 @@ body .x-window .x-window-tl .x-window-header {
 }
 
 .x-tab-panel-body {
-    border-color: #<%= navBorder %>;
+    border-color: #<%= wpHeaderPanelBorder %>;
 }
 
 .x-tab-panel-bbar-noborder .x-toolbar {
@@ -965,7 +965,7 @@ body .x-window .x-window-tl .x-window-header {
 
 .x-tab-panel-header, .x-tab-panel-footer {
 	background-color: #<%= navBackground %>;
-	border-color: #<%= navBorder %>;
+	border-color: #<%= wpHeaderPanelBorder %>;
 	border-top: none;
 	border-left: none;
 	border-right: none;

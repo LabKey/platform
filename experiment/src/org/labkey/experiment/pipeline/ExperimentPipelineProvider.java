@@ -84,7 +84,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
         }
 
         addAction(ExperimentController.ImportXarFileAction.class, "Import Experiment",
-                directory, directory.listFiles(new XarFilenameFilter()));
+                directory, directory.listFiles(new XarFilenameFilter()), true);
     }
 
     private static class XarFilenameFilter extends FileEntryFilter

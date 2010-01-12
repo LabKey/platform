@@ -152,7 +152,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void setFilePathRoot(File file)
     {
-        _object.setFilePathRoot(file.getAbsolutePath());
+        _object.setFilePathRoot(file == null ? null : file.getAbsolutePath());
     }
 
     static final public String s_urlFlagRun = AppProps.getInstance().getContextPath() + "/Experiment/flagRun.gif";

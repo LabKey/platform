@@ -395,11 +395,6 @@ public class Query
 		for (int i = 0; i < parts.size() - 1; i ++)
 		{
 			String name = names.get(i);
-			if (name.startsWith("/"))
-			{
-				parseError(_parseErrors, "Schema name should not start with '/'", node);
-				return null;
-			}
 			schema = schema.getSchema(name);
 			if (schema == null)
 			{
