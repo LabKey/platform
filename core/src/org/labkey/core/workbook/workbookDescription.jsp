@@ -29,9 +29,25 @@
     {
         font-style: italic;
     }
+    .wb-name
+    {
+        font-size: 12pt;
+        font-weight: bold;
+    }
+    .wb-title
+    {
+        font-size: 12pt;
+        font-weight: bold;
+
+    }
+    .wb-name-title-container
+    {
+        padding-bottom: 5px;
+    }
 </style>
 
-<h3 id="wbd-name"><%=PageFlowUtil.filter(container.getName())%></h3>
+<div class="wb-name-title-container"><span id="wb=name" class="wb-name"><%=PageFlowUtil.filter(container.getName() + ":")%></span>
+    <span id="wb-title" class="wb-title"><%=PageFlowUtil.filter(container.getTitle())%></span></div>
 
 <div id="wbd-description" <%=null == container.getDescription() ? "class=\"wb-empty-description\"" : ""%>
 ><%=(null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "No description provided.")%></div>

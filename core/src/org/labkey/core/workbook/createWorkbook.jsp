@@ -41,13 +41,17 @@
     {
         text-align:right;
     }
+    td.labkey-form-label
+    {
+        width: 1%;
+    }
 </style>
 <labkey:errors/>
 <form action="createWorkbook.post" method="POST">
     <table class="cwb-layout-table">
         <tr>
-            <td class="labkey-form-label">Name:</td>
-            <td><input type="text" name="name" class="cwb-input" value="<%=searchBean.getName()%>"/></td>
+            <td class="labkey-form-label">Title:</td>
+            <td><input type="text" name="title" class="cwb-input" value="<%=searchBean.getTitle()%>"/></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description:</td>

@@ -40,7 +40,7 @@ public class WorkbooksTableInfo extends FilteredTable
         ColumnInfo col;
         ActionURL projBegin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(_schema.getContainer());
         String wbURL = AppProps.getInstance().getContextPath() + "/" + projBegin.getPageFlow()
-                + _schema.getContainer().getPath() + "/${Name}/" + projBegin.getAction() + ".view";
+                + "/__r${ID}/" + projBegin.getAction() + ".view";
         StringExpression webURLExp = StringExpressionFactory.create(wbURL, true);
 
         col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
@@ -50,6 +50,10 @@ public class WorkbooksTableInfo extends FilteredTable
         this.addColumn(col);
 
         col = this.wrapColumn(getRealTable().getColumn("Name"));
+        col.setURL(webURLExp);
+        this.addColumn(col);
+
+        col = this.wrapColumn(getRealTable().getColumn("Title"));
         col.setURL(webURLExp);
         this.addColumn(col);
 
@@ -72,7 +76,7 @@ public class WorkbooksTableInfo extends FilteredTable
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
         defCols.add(FieldKey.fromParts("ID"));
-        defCols.add(FieldKey.fromParts("Name"));
+        defCols.add(FieldKey.fromParts("Title"));
         defCols.add(FieldKey.fromParts("CreatedBy"));
         defCols.add(FieldKey.fromParts("Created"));
         this.setDefaultVisibleColumns(defCols);

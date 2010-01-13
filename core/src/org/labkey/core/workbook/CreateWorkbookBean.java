@@ -8,17 +8,17 @@ package org.labkey.core.workbook;
  */
 public class CreateWorkbookBean
 {
-    private String _name;
+    private String _title;
     private String _description;
 
-    public String getName()
+    public String getTitle()
     {
-        return _name;
+        return _title;
     }
 
-    public void setName(String name)
+    public void setTitle(String name)
     {
-        _name = name;
+        _title = name;
     }
 
     public String getDescription()

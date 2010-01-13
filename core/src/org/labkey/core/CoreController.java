@@ -41,6 +41,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.view.*;
@@ -61,6 +62,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.text.SimpleDateFormat;
 
 /**
  * User: jeckels
@@ -420,17 +422,17 @@ public class CoreController extends SpringActionController
 
     public static class CreateWorkbookForm
     {
-        private String _name;
+        private String _title;
         private String _description;
 
-        public String getName()
+        public String getTitle()
         {
-            return _name;
+            return _title;
         }
 
-        public void setName(String name)
+        public void setTitle(String title)
         {
-            _name = name;
+            _title = title;
         }
 
         public String getDescription()
@@ -451,32 +453,25 @@ public class CoreController extends SpringActionController
 
         public void validateCommand(CreateWorkbookForm form, Errors errors)
         {
-            String name = StringUtils.trimToNull(form.getName());
-            if (null == name)
-                errors.reject(null, "You must supply a name for the new workbook!");
-            else
-            {
-                //ensure name is unique
-                Container container = getContainer();
-                if (container.hasChild(name))
-                    errors.reject(null, "The name '" + name + "' has already been used for another workbook.");
-            }
+            String title = StringUtils.trimToNull(form.getTitle());
+            if (null == title)
+                errors.reject(null, "You must supply a title for the new workbook!");
         }
 
         public ModelAndView getView(CreateWorkbookForm createWorkbookForm, boolean reshow, BindException errors) throws Exception
         {
-            Container container = getContainer();
             CreateWorkbookBean bean = new CreateWorkbookBean();
 
             //suggest a name
-            bean.setName(container.getNextWorkbookName());
+            //per spec it should be "<user-display-name> YYYY-MM-DD"
+            bean.setTitle(getViewContext().getUser().getDisplayName(getViewContext()) + " " + DateUtil.formatDate(new Date()));
 
             return new JspView<CreateWorkbookBean>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
         }
 
         public boolean handlePost(CreateWorkbookForm form, BindException errors) throws Exception
         {
-            String name = StringUtils.trimToNull(form.getName());
+            String name = StringUtils.trimToNull(form.getTitle());
             Container container = getContainer();
 
             _newWorkbook = ContainerManager.createWorkbook(container, name, StringUtils.trimToNull(form.getDescription()), getUser());
