@@ -477,21 +477,6 @@ public class CoreController extends SpringActionController
             _newWorkbook = ContainerManager.createWorkbook(container, name, StringUtils.trimToNull(form.getDescription()), getUser());
             _newWorkbook.setFolderType(new WorkbookFolderType());
 
-            //parse and remember new prefix
-            //according to spec, name can be in the following forms
-            // <prefix>-N
-            // <prefix> N
-            //
-            int pos = name.lastIndexOf('-');
-            if (pos < 0)
-                pos = name.lastIndexOf(" ");
-
-            if (pos >= 0)
-            {
-                String prefix = name.substring(0, pos);
-                container.setWorkbookNamePrefix(prefix);
-            }
-
             return true;
         }
 
