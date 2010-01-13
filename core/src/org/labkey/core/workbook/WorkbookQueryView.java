@@ -29,7 +29,7 @@ public class WorkbookQueryView extends QueryView
         settings.setSchemaName(schema.getSchemaName());
         settings.setQueryName(CoreQuerySchema.WORKBOOKS_TABLE_NAME);
         settings.setAllowChooseQuery(false);
-        settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
+        //settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
         setSettings(settings);
 
         setShadeAlternatingRows(true);

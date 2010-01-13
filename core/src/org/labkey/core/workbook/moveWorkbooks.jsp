@@ -60,7 +60,8 @@ to the selected folder:</div>
             useArrows: true,
             renderTo: 'mwb-container-tree',
             height: 400,
-            width: 600
+            width: 600,
+            autoScroll: true
         });
     });
 

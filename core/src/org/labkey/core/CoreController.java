@@ -613,6 +613,8 @@ public class CoreController extends SpringActionController
             props.put("id", c.getRowId());
             props.put("text", c.getName());
             props.put("containerPath", c.getPath());
+            if (c.equals(getViewContext().getContainer()))
+                props.put("disabled", true);
             return props;
         }
     }

@@ -20,6 +20,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Collection;
 
 /**
  * Created by IntelliJ IDEA.
@@ -76,8 +77,22 @@ public class WorkbooksTableInfo extends FilteredTable
         defCols.add(FieldKey.fromParts("Created"));
         this.setDefaultVisibleColumns(defCols);
 
-        //filter for parent = current container
-        this.addCondition(getRealTable().getColumn("Parent"), _schema.getContainer());
+        //workbook true
+        this.addCondition(getRealTable().getColumn("Workbook"), "true");
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        clearConditions("Parent");
+        
+        //need to apply to the 'Parent' column
+        Collection<String> containerIds = filter.getIds(getContainer());
+        if (null != containerIds)
+        {
+            SimpleFilter.InClause containerClause = new SimpleFilter.InClause("Parent", containerIds);
+            this.addCondition(new SimpleFilter(containerClause));
+        }
     }
 
     @Override
