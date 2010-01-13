@@ -285,12 +285,35 @@ public class ContainerManager
         return c;
     }
 
-    public static Container createWorkbook(Container parent, String name, String description, User user)
+    public static Container createWorkbook(Container parent, String title, String description, User user)
     {
         //parent must not be a workbook
         if (parent.isWorkbook())
             throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
-        return createContainer(parent, name, description, true, user);
+
+        //workbook names are simply "workbook-<rowid>" but since we can't know the rowid until
+        //we create the container, use a GUID for the name during the initial create
+        //and then set the name and title
+        String tempName = GUID.makeGUID();
+        Container workbook = createContainer(parent, tempName, description, true, user);
+        int rowId = workbook.getRowId();
+        String name = "workbook-" + rowId;
+
+        try
+        {
+            StringBuilder sql = new StringBuilder("UPDATE ");
+            sql.append(core.getTableInfoContainers());
+            sql.append(" SET Name=?, Title=? WHERE RowID=?");
+            Table.execute(core.getSchema(), sql.toString(), new Object[]{name, title, workbook.getRowId()});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+
+        _removeFromCache(workbook);
+        return getForRowId(String.valueOf(rowId));
+
     }
 
     public static void updateDescription(Container container, String description, User user)
@@ -1866,6 +1889,7 @@ public class ContainerManager
             // _ts, createdby, cabigpublished
             String description = rs.getString("Description");
             boolean workbook = rs.getBoolean("Workbook");
+            String title = rs.getString("Title");
 
             Container dirParent = null;
             if (null != parentId)
@@ -1874,6 +1898,7 @@ public class ContainerManager
             d = new Container(dirParent, name, id, rowId, sortOrder, created);
             d.setDescription(description);
             d.setWorkbook(workbook);
+            d.setTitle(title);
             return d;
         }
 
