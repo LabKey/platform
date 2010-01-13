@@ -4,11 +4,14 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.CoreController;
+import org.labkey.core.admin.AdminController;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,12 +48,22 @@ public class WorkbookQueryView extends QueryView
             ButtonBar bar = region.getButtonBar(DataRegion.MODE_GRID);
             if (null != bar)
             {
-                ActionButton btn = new ActionButton(new ActionURL(CoreController.ManageWorkbooksAction.class, getContainer()), "Manage Workbooks");
-                btn.setActionType(ActionButton.Action.LINK);
+                ActionButton btn = null;
+
+                btn = new ActionButton(new ActionURL(CoreController.MoveWorkbooksAction.class, getContainer()), "Move");
+                btn.setActionType(ActionButton.Action.POST);
+                btn.setRequiresSelection(true);
+                btn.setDisplayPermission(AdminPermission.class);
                 bar.add(btn);
 
                 btn = new ActionButton(new ActionURL(CoreController.CreateWorkbookAction.class, getContainer()), "Create New Workbook");
                 btn.setActionType(ActionButton.Action.LINK);
+                btn.setDisplayPermission(InsertPermission.class);
+                bar.add(btn);
+
+                btn = new ActionButton(new ActionURL(CoreController.ManageWorkbooksAction.class, getContainer()), "Manage Workbooks");
+                btn.setActionType(ActionButton.Action.LINK);
+                btn.setDisplayPermission(AdminPermission.class);
                 bar.add(btn);
             }
         }

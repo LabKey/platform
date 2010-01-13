@@ -26,14 +26,17 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
@@ -41,15 +44,14 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.view.*;
-import org.labkey.core.workbook.WorkbookQueryView;
-import org.labkey.core.workbook.WorkbookSearchView;
-import org.labkey.core.workbook.CreateWorkbookBean;
-import org.labkey.core.workbook.WorkbookFolderType;
+import org.labkey.core.workbook.*;
 import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -57,7 +59,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -533,6 +535,143 @@ public class CoreController extends SpringActionController
             String description =  StringUtils.trimToNull(form.getDescription());
             ContainerManager.updateDescription(getContainer(), description, getUser());
             return new ApiSimpleResponse("description", description);
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MoveWorkbooksAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            Container parentContainer = getViewContext().getContainer();
+            Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
+            if (null == ids || ids.size() == 0)
+                throw new RedirectException(parentContainer.getStartURL(getViewContext()));
+
+            MoveWorkbooksBean bean = new MoveWorkbooksBean();
+            for (String id : ids)
+            {
+                Container wb = ContainerManager.getForRowId(id);
+                if (null != wb)
+                    bean.addWorkbook(wb);
+            }
+
+            return new JspView<MoveWorkbooksBean>("/org/labkey/core/workbook/moveWorkbooks.jsp", bean, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Move Workbooks");
+        }
+    }
+
+    public static class ExtContainerTreeForm
+    {
+        private String _node;
+
+        public String getNode()
+        {
+            return _node;
+        }
+
+        public void setNode(String node)
+        {
+            _node = node;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetExtContainerTreeAction extends ApiAction<ExtContainerTreeForm>
+    {
+        public ApiResponse execute(ExtContainerTreeForm form, BindException errors) throws Exception
+        {
+            User user = getViewContext().getUser();
+            JSONArray children = new JSONArray();
+
+            Container parent = ContainerManager.getForRowId(form.getNode());
+            if (null != parent)
+            {
+                for (Container child : parent.getChildren())
+                {
+                    if (!child.isWorkbook() && child.hasPermission(user, ReadPermission.class))
+                    {
+                        children.put(getContainerProps(child));
+                    }
+                }
+            }
+
+            HttpServletResponse resp = getViewContext().getResponse();
+            resp.setContentType("application/json");
+            resp.getWriter().write(children.toString());
+
+            return null;
+        }
+
+        private JSONObject getContainerProps(Container c)
+        {
+            JSONObject props = new JSONObject();
+            props.put("id", c.getRowId());
+            props.put("text", c.getName());
+            props.put("containerPath", c.getPath());
+            return props;
+        }
+    }
+
+    public static class MoveWorkbookForm
+    {
+        public int _workbookId = -1;
+        public int _newParentId = -1;
+
+        public int getNewParentId()
+        {
+            return _newParentId;
+        }
+
+        public void setNewParentId(int newParentId)
+        {
+            _newParentId = newParentId;
+        }
+
+        public int getWorkbookId()
+        {
+
+            return _workbookId;
+        }
+
+        public void setWorkbookId(int workbookId)
+        {
+            _workbookId = workbookId;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MoveWorkbookAction extends MutatingApiAction<MoveWorkbookForm>
+    {
+        public ApiResponse execute(MoveWorkbookForm form, BindException errors) throws Exception
+        {
+            if (form.getWorkbookId() < 0)
+                throw new IllegalArgumentException("You must supply a workbookId parameter!");
+            if (form.getNewParentId() < 0)
+                throw new IllegalArgumentException("You must specify a newParentId parameter!");
+
+            Container wb = ContainerManager.getForRowId(String.valueOf(form.getWorkbookId()));
+            if (null == wb || !(wb.isWorkbook()) || !(wb.isDescendant(getViewContext().getContainer())))
+                throw new IllegalArgumentException("No workbook found with id '" + form.getWorkbookId() + "'");
+
+            Container newParent = ContainerManager.getForRowId(String.valueOf(form.getNewParentId()));
+            if (null == newParent || newParent.isWorkbook())
+                throw new IllegalArgumentException("No folder found with id '" + form.getNewParentId() + "'");
+
+            if (wb.getParent().equals(newParent))
+                throw new IllegalArgumentException("Workbook is already in the target folder.");
+
+            //user must be allowed to create workbooks in the new parent folder
+            if (!newParent.hasPermission(getViewContext().getUser(), InsertPermission.class))
+                throw new UnauthorizedException("You do not have permission to move workbooks to the folder '" + newParent.getName() + "'.");
+
+            ContainerManager.move(wb, newParent);
+
+            return new ApiSimpleResponse("moved", true);
         }
     }
 }

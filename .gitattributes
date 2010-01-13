@@ -531,6 +531,7 @@ core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
 core/src/org/labkey/core/webdav/list.jsp -text
 core/src/org/labkey/core/workbook/CreateWorkbookBean.java -text
+core/src/org/labkey/core/workbook/MoveWorkbooksBean.java -text
 core/src/org/labkey/core/workbook/WorkbookFolderType.java -text
 core/src/org/labkey/core/workbook/WorkbookQueryView.java -text
 core/src/org/labkey/core/workbook/WorkbookSearchBean.java -text
@@ -538,6 +539,7 @@ core/src/org/labkey/core/workbook/WorkbookSearchView.java -text
 core/src/org/labkey/core/workbook/WorkbookWebPartFactory.java -text
 core/src/org/labkey/core/workbook/WorkbooksTableInfo.java -text
 core/src/org/labkey/core/workbook/createWorkbook.jsp -text
+core/src/org/labkey/core/workbook/moveWorkbooks.jsp -text
 core/src/org/labkey/core/workbook/workbookDescription.jsp -text
 core/src/org/labkey/core/workbook/workbookSearch.jsp -text
 core/webapp/FileTree.js -text
