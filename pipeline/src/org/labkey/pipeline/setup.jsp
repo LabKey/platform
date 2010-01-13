@@ -70,11 +70,13 @@
         {
             document.getElementById('pipeProjectRootPath').style.display = 'none';
             document.getElementById('pipeRootPath').style.display = '';
+            document.getElementById('pipeIndexTd').style.display = 'none';
         }
         if (document.getElementById('pipeOptionProjectSpecified').checked)
         {
             document.getElementById('pipeProjectRootPath').style.display = '';
             document.getElementById('pipeRootPath').style.display = 'none';
+            document.getElementById('pipeIndexTd').style.display = '';
         }
     }
 
@@ -114,6 +116,11 @@
                                    onclick="updatePipelineSelection();">
                             <%=h(folderRadioBtnLabel)%></td>
                         <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getStrValue())%>"></td>
+                    </tr>
+                    <tr>
+                        <td id="pipeIndexTd"><input type="checkbox" name="searchable" id="pipeOptionIndexable" <%=bean.isSearchable() ? " checked" : ""%>>
+                            Allow files in the pipeline root to be searched.
+                        </td>
                     </tr>
                 </table>
             </td>

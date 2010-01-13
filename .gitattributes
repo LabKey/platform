@@ -1172,6 +1172,7 @@ pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.20-9.21.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.20-9.30.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.21-9.22.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.64.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.63-0.64.sql -text
@@ -1207,6 +1208,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.21.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.21-9.22.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.30-9.31.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text

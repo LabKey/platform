@@ -30,6 +30,7 @@ public class PipelineRoot extends Entity
     byte[] _keyBytes;
     byte[] _certBytes;
     String _keyPassword;
+    boolean _searchable = true;
 
     public PipelineRoot()
     {
@@ -47,6 +48,7 @@ public class PipelineRoot extends Entity
         this._keyBytes = root._keyBytes;
         this._certBytes = root._certBytes;
         this._keyPassword = root._keyPassword;
+        this._searchable = root._searchable;
     }
 
     public void setPipelineRootId(int id)
@@ -112,5 +114,15 @@ public class PipelineRoot extends Entity
     public void setKeyPassword(String keyPassword)
     {
         _keyPassword = keyPassword;
+    }
+
+    public boolean isSearchable()
+    {
+        return _searchable;
+    }
+
+    public void setSearchable(boolean searchable)
+    {
+        _searchable = searchable;
     }
 }

@@ -20,6 +20,7 @@ import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.view.SetupForm;
@@ -28,8 +29,8 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
@@ -37,7 +38,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineManager;
@@ -248,7 +248,7 @@ public class PipelineController extends SpringActionController
         }
 
         PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), root, PipelineRoot.PRIMARY_ROOT,
-                keyPair);
+                keyPair, form.isSearchable());
         return true;
     }
 
@@ -430,9 +430,14 @@ public class PipelineController extends SpringActionController
             actions.add(FilesForm.actions.download);
             actions.add(FilesForm.actions.deletePath);
             actions.add(FilesForm.actions.refresh);
+            //actions.add(FilesForm.actions.importData);
             actions.add(FilesForm.actions.createDirectory);
-            actions.add(FilesForm.actions.moreActions);
 
+/*
+            if (getRootContext().getUser().isAdministrator())
+                actions.add(FilesForm.actions.customize);
+
+*/
             bean.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
             
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
@@ -480,7 +485,6 @@ public class PipelineController extends SpringActionController
             return _autoResize;
         }
     }
-
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ActionsAction extends ApiAction<PathForm>
@@ -538,6 +542,195 @@ public class PipelineController extends SpringActionController
         }
     }
 
+/*
+    @RequiresPermissionClass(ReadPermission.class)
+    public class PipelineActionsConfigAction extends ApiAction<PathForm>
+    {
+        public ApiResponse execute(PathForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+
+*/
+/*
+            JSONArray actions = new JSONArray();
+            for (PipelineActionConfig config : PipelineService.get().getPipelineActionConfig(c))
+            {
+                actions.put(config.toJSON());
+            }
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("actions", actions);
+
+            return resp;
+*/
+/*
+            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+            if (pr == null || !URIUtil.exists(pr.getUri()))
+            {
+                HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
+                return null;
+            }
+
+            URI uriRoot = pr.getUri();
+
+            String path = form.getPath();
+            if (null == path || "./".equals(path))
+                path = "";
+            if (path.startsWith("/"))
+                path = path.substring(1);
+
+            URI uriCurrent = URIUtil.resolve(uriRoot, PageFlowUtil.encodePath(path));
+            if (uriCurrent == null)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            File fileCurrent = new File(uriCurrent);
+            if (!fileCurrent.exists())
+                HttpView.throwNotFound("File not found: " + uriCurrent.getPath());
+
+            ActionURL browseURL = new ActionURL(BrowseAction.class, c);
+            browseURL.replaceParameter("path", toRelativePath(uriRoot, uriCurrent));
+
+            PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(uriCurrent, browseURL);
+            List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
+            for (PipelineProvider provider : providers)
+                provider.updateFileProperties(getViewContext(), pr, entry);
+
+            // keep actions in consistent order for display
+            entry.orderActions();
+
+            List<Map<String, String>> actions = new ArrayList<Map<String, String>>();
+            Map<String, PipelineActionConfig> configMap = new HashMap<String, PipelineActionConfig>();
+
+            for (PipelineActionConfig config : PipelineService.get().getPipelineActionConfig(c))
+            {
+                configMap.put(config.getId(), config);
+            }
+
+            for (PipelineAction action : entry.getActions())
+            {
+                Map<String, String> config = new HashMap<String, String>();
+
+                config.put("action", action.getLabel());
+                config.put("id", action.getLabel());
+                config.put("type", "Assay");
+
+                if (configMap.containsKey(action.getLabel()))
+                {
+                    PipelineActionConfig.displayState state = configMap.get(action.getLabel()).getState();
+                    config.put("displayState", state.name());
+
+                    switch (state)
+                    {
+                        case enabled:
+                            config.put("enabled", Boolean.toString(true));
+                            break;
+                        case toolbar:
+                            config.put("showOnToolbar", Boolean.toString(true));
+                            break;
+                    }
+                }
+                else
+                {
+                    config.put("enabled", Boolean.toString(true));
+                    config.put("displayState", PipelineActionConfig.displayState.enabled.name());
+                }
+                actions.add(config);
+            }
+            
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("actions", actions);
+
+            return resp;
+        }
+    }
+
+    public static class PipelineConfigForm
+    {
+        String[] _enabled = new String[0];
+        String[] _disabled = new String[0];
+        String[] _toolbar = new String[0];
+
+        String _displayState;
+        String _id;
+
+        public String[] getEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(String[] enabled)
+        {
+            _enabled = enabled;
+        }
+
+        public String[] getDisabled()
+        {
+            return _disabled;
+        }
+
+        public void setDisabled(String[] disabled)
+        {
+            _disabled = disabled;
+        }
+
+        public String[] getToolbar()
+        {
+            return _toolbar;
+        }
+
+        public void setToolbar(String[] toolbar)
+        {
+            _toolbar = toolbar;
+        }
+
+        public String getDisplayState()
+        {
+            return _displayState;
+        }
+
+        public void setDisplayState(String displayState)
+        {
+            _displayState = displayState;
+        }
+
+        public String getId()
+        {
+            return _id;
+        }
+
+        public void setId(String id)
+        {
+            _id = id;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class UpdatePipelineActionConfigAction extends ApiAction<PipelineConfigForm>
+    {
+        public ApiResponse execute(PipelineConfigForm form, BindException errors) throws Exception
+        {
+            List<PipelineActionConfig> actionConfig = new ArrayList<PipelineActionConfig>();
+
+            for (String id : form.getDisabled())
+                actionConfig.add(new PipelineActionConfig(id, PipelineActionConfig.displayState.disabled.name()));
+
+            for (String id : form.getEnabled())
+                actionConfig.add(new PipelineActionConfig(id, PipelineActionConfig.displayState.enabled.name()));
+
+            for (String id : form.getToolbar())
+                actionConfig.add(new PipelineActionConfig(id, PipelineActionConfig.displayState.toolbar.name()));
+
+            PipelineService.get().setPipelineActionConfig(getContainer(), actionConfig);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+*/
     @RequiresSiteAdmin
     public class UpdateRootPermissionsAction extends RedirectAction<PermissionForm>
     {
@@ -1270,6 +1463,13 @@ public class PipelineController extends SpringActionController
         {
             return new ActionURL(ActionsAction.class, container);
         }
+
+/*
+        public ActionURL urlActionsConfig(Container container)
+        {
+            return new ActionURL(PipelineActionsConfigAction.class, container);
+        }
+*/
     }
 
     public static ActionURL urlBegin(Container container)

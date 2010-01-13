@@ -159,7 +159,12 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public File getSiteDefaultRoot()
     {
-        return AppProps.getInstance().getFileSystemRoot();
+        File root = AppProps.getInstance().getFileSystemRoot();
+
+        if (root != null && !root.exists())
+            root.mkdirs();
+
+        return root;
     }
 
     public void setSiteDefaultRoot(File root)

@@ -134,7 +134,7 @@ public class PipelineManager
 
 
     static public void setPipelineRoot(User user, Container container, String path, String type,
-                                       GlobusKeyPair globusKeyPair) throws SQLException
+                                       GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException
     {
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;
@@ -162,6 +162,7 @@ public class PipelineManager
             newValue.setKeyBytes(globusKeyPair == null ? null : globusKeyPair.getKeyBytes());
             newValue.setCertBytes(globusKeyPair == null ? null : globusKeyPair.getCertBytes());
             newValue.setKeyPassword(globusKeyPair == null ? null : globusKeyPair.getPassword());
+            newValue.setSearchable(searchable);
             if (oldValue == null)
             {
                 Table.insert(user, pipeline.getTableInfoPipelineRoots(), newValue);
@@ -181,7 +182,88 @@ public class PipelineManager
                 container, ContainerManager.Property.PipelineRoot, oldValue, newValue));
     }
 
-    
+/*
+    private static final String ACTION_CONFIG = "pipelineActionConfig";
+    public static List<PipelineActionConfig> getPipelineActionsConfig(Container c)
+    {
+        try {
+            List<PipelineActionConfig> configs = new ArrayList<PipelineActionConfig>();
+
+            Map<String,String> m = PropertyManager.getProperties(c.getId(), "staticFile", false);
+            if (m != null && m.containsKey(ACTION_CONFIG))
+            {
+                String xml = m.get(ACTION_CONFIG);
+                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+
+                PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.parse(xml, options);
+                XmlBeansUtil.validateXmlDocument(doc);
+
+                PipelineOptionsDocument.PipelineOptions pipeOptions = doc.getPipelineOptions();
+                if (pipeOptions != null)
+                {
+                    ActionOptions actionOptions = pipeOptions.getActionConfig();
+                    if (actionOptions != null)
+                    {
+                        for (ActionOptions.DisplayOption o : actionOptions.getDisplayOptionArray())
+                        {
+                            configs.add(new PipelineActionConfig(o.getId(), o.getState()));
+                        }
+                    }
+                }
+            }
+            return configs;
+        }
+        catch (XmlValidationException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (XmlException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void setPipelineActionConfig(Container c, List<PipelineActionConfig> actionConfig)
+    {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try
+        {
+            PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.newInstance();
+            PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
+
+            if (!actionConfig.isEmpty())
+            {
+                ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
+
+                for (PipelineActionConfig ac : actionConfig)
+                {
+                    ActionOptions.DisplayOption displayOption = actionOptions.addNewDisplayOption();
+
+                    displayOption.setId(ac.getId());
+                    displayOption.setState(ac.getState().name());
+                }
+            }
+            XmlBeansUtil.validateXmlDocument(doc);
+            doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
+
+            String xml = output.toString();
+
+            Map<String,String> m = PropertyManager.getWritableProperties(0, c.getId(), "staticFile", true);
+            m.put(ACTION_CONFIG, xml);
+            PropertyManager.saveProperties(m);
+        }
+        catch (Exception e)
+        {
+            // This is likely a code problem -- propagate it up so we log to mothership
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(output);
+        }
+    }
+*/
+
     static public void purge(Container container)
     {
         try

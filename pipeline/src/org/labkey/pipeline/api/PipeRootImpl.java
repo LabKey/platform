@@ -83,12 +83,14 @@ public class PipeRootImpl implements PipeRoot
     private File _file;
     private String _entityId;
     private GlobusKeyPairImpl _keyPair;
+    private boolean _searchable;
 
     public PipeRootImpl(PipelineRoot root) throws URISyntaxException
     {
         _container = ContainerManager.getForId(root.getContainerId());
         _uri = new URI(root.getPath());
         _entityId = root.getEntityId();
+        _searchable = root.isSearchable();
         if (root.getKeyBytes() != null && root.getCertBytes() != null)
         {
             _keyPair = new GlobusKeyPairImpl(root.getKeyBytes(), root.getKeyPassword(), root.getCertBytes());
@@ -302,5 +304,10 @@ public class PipeRootImpl implements PipeRoot
     {
         //pipeline roots should not inherit policies from the container!
         return false;
+    }
+
+    public boolean isSearchable()
+    {
+        return _searchable;
     }
 }

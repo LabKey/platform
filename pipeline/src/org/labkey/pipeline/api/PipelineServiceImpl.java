@@ -274,13 +274,13 @@ public class PipelineServiceImpl extends PipelineService
     }
 
     public void setPipelineRoot(User user, Container container, URI root, String type,
-                                GlobusKeyPair globusKeyPair) throws SQLException
+                                GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException
     {
         if (!canModifyPipelineRoot(user, container))
             throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");
         
         PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type,
-                globusKeyPair);
+                globusKeyPair, searchable);
     }
 
     public boolean canModifyPipelineRoot(User user, Container container)
@@ -561,4 +561,15 @@ public class PipelineServiceImpl extends PipelineService
         }
     }
 
+/*
+    public List<PipelineActionConfig> getPipelineActionConfig(Container c)
+    {
+        return PipelineManager.getPipelineActionsConfig(c);
+    }
+
+    public void setPipelineActionConfig(Container c, List<PipelineActionConfig> config)
+    {
+        PipelineManager.setPipelineActionConfig(c, config);
+    }
+*/
 }
