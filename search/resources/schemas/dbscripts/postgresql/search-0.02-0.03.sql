@@ -45,4 +45,4 @@ CREATE TABLE CrawlResources
   LastIndexed TIMESTAMP NULL,  -- server time
   CONSTRAINT PK_Resources PRIMARY KEY (Parent,Name)
 );
-CLUSTER CrawlResources USING PK_Resources;
+CLUSTER PK_Resources ON CrawlResources;
