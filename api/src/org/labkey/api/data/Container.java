@@ -79,11 +79,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     //optional non-unique title for the container
     private String _title;
 
-    public static final String WORKBOOK_PROPS_CATEGORY = "workbook";
-    public static final String WORKBOOK_PROP_PREFIX = "prefix";
-    public static final String WORKBOOK_PROP_NEXTID = "nextid";
-
-
     // UNDONE: BeanFactory for Container
 
     protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created)
@@ -972,13 +967,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public boolean mayInheritPolicy()
     {
         return true;
-    }
-
-    public synchronized void setWorkbookNamePrefix(String prefix)
-    {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), WORKBOOK_PROPS_CATEGORY, true);
-        props.put(WORKBOOK_PROP_PREFIX, prefix);
-        PropertyManager.saveProperties(props);
     }
 
     /**
