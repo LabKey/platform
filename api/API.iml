@@ -739,17 +739,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/xstream-1.2.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/xstream-1.2.1-sources.zip!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/backport-util-concurrent-3.1.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -886,6 +875,15 @@
         <SOURCES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-io-1.4-sources.zip!/" />
         </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/xstream-1.2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
   </component>
