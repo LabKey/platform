@@ -18,8 +18,6 @@ package org.labkey.api.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.pipeline.browse.BrowseForm;
-import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -76,7 +74,7 @@ abstract public class PipelineService
     abstract public PipeRoot[] getOverlappingRoots(Container c) throws SQLException;
 
     abstract public void setPipelineRoot(User user, Container container, URI root, String type,
-                                         GlobusKeyPair globusKeyPair) throws SQLException;
+                                         GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException;
 
     abstract public boolean canModifyPipelineRoot(User user, Container container);
 
@@ -124,4 +122,8 @@ abstract public class PipelineService
                                                             User user, List<String> sequenceDbPaths);
 
     abstract public boolean hasSiteDefaultRoot(Container container);
+
+    //abstract public List<PipelineActionConfig> getPipelineActionConfig(Container c);
+
+    //abstract public void setPipelineActionConfig(Container c, List<PipelineActionConfig> config);
 }

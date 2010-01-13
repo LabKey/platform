@@ -42,6 +42,7 @@ public class SetupForm
     private BindException _errors;
     private boolean _pipelineRootForm;
     private String _pipelineRootOption;
+    private boolean _searchable;
 
     public String getConfirmMessage()
     {
@@ -144,6 +145,16 @@ public class SetupForm
         _pipelineRootOption = pipelineRootOption;
     }
 
+    public boolean isSearchable()
+    {
+        return _searchable;
+    }
+
+    public void setSearchable(boolean searchable)
+    {
+        _searchable = searchable;
+    }
+
     public boolean hasSiteDefaultPipelineRoot()
     {
         return "siteDefault".equals(getPipelineRootOption());
@@ -166,6 +177,7 @@ public class SetupForm
                 form.setStrValue(rootFile.getPath());
 
             form.setGlobusKeyPair(root.getGlobusKeyPair());
+            form.setSearchable(root.isSearchable());
         }
         return form;
     }

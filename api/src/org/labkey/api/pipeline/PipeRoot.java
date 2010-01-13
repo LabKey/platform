@@ -62,4 +62,7 @@ public interface PipeRoot extends SecurableResource
      * @return null if no key pair has been configured for this pipeline root
      */
     GlobusKeyPair getGlobusKeyPair();
+
+    // returns whether this root should be indexed by the crawler
+    boolean isSearchable();
 }
