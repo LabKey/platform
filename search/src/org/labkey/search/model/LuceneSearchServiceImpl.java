@@ -58,13 +58,14 @@ import java.util.regex.Pattern;
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Category _log = Category.getInstance(LuceneSearchServiceImpl.class);
+
     private static int _count = 0;
     private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out underneath you.  Call getIndexWriter()
     private static Analyzer _analyzer = null;
     private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
-    private static enum FIELD_NAMES { body, title, summary, url, container, uniqueId }
+    static enum FIELD_NAMES { body, title, summary, url, container, uniqueId }
 
     public LuceneSearchServiceImpl()
     {
@@ -212,7 +213,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     {
                         String key = entry.getKey().toLowerCase();
 
-                        if (!"title".equals(key))
+                        if (!FIELD_NAMES.title.name().equals(key))
                             doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.ANALYZED));
                     }
                 }
@@ -361,6 +362,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         String sort = null;  // TODO: add sort parameter
         int hitsPerPage = 20;
+        int hitsToRetrieve = (page + 1) * hitsPerPage;
+        int offset = page * hitsPerPage;
 
         // UNDONE: smarter query parsing
         boolean isParticipantId = isParticipantId(user, StringUtils.strip(queryString," +-"));
@@ -385,14 +388,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         Filter securityFilter = new SecurityFilter(user, root);
 
         if (null == sort)
-            topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage);
+            topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
         else
-            topDocs = searcher.search(query, securityFilter, (page + 1) * hitsPerPage, new Sort(new SortField(sort, SortField.STRING)));
+            topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
 
         ScoreDoc[] hits = topDocs.scoreDocs;
         ArrayList<SearchHit> ret = new ArrayList<SearchHit>(hitsPerPage);
 
-        for (int i = page * hitsPerPage; i < Math.min((page + 1) * hitsPerPage, hits.length); i++)
+        for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
         {
             ScoreDoc scoreDoc = hits[i];
             Document doc = searcher.doc(scoreDoc.doc);

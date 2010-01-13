@@ -67,7 +67,7 @@ class SecurityFilter extends Filter
         {
             Document doc = reader.document(i, CONTAINER_FIELD_SELECTOR);
 
-            String id = doc.get("container");
+            String id = doc.get(LuceneSearchServiceImpl.FIELD_NAMES.container.name());
 
             if (null != id && containerIds.contains(id))
                 bits.set(i);
@@ -80,7 +80,7 @@ class SecurityFilter extends Filter
     {
         public FieldSelectorResult accept(String fieldName)
         {
-            return "container".equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+            return LuceneSearchServiceImpl.FIELD_NAMES.container.name().equals(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
         }
     }
 }

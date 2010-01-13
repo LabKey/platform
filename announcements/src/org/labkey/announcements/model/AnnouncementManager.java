@@ -852,6 +852,11 @@ public class AnnouncementManager
             while (rs.next())
             {
                 String containerId = rs.getString(1);
+
+                // Don't index messages in secure message boards.
+                if (isSecure(containerId))
+                    continue;
+
                 String entityId = rs.getString(2);
                 indexThread(task, containerId, entityId);
                 if (Thread.interrupted())
@@ -883,6 +888,11 @@ public class AnnouncementManager
             while (rs2.next())
             {
                 String containerId = rs2.getString(1);
+
+                // Don't index attachments in secure message boards.
+                if (isSecure(containerId))
+                    continue;
+
                 String entityId = rs2.getString(2);
                 String title = rs2.getString(3);
                 annIds.add(entityId);
@@ -929,6 +939,20 @@ public class AnnouncementManager
         {
             ResultSetUtil.close(rs);
             ResultSetUtil.close(rs2);
+        }
+    }
+
+
+    private static boolean isSecure(String containerId)
+    {
+        try
+        {
+            Container c = ContainerManager.getForId(containerId);
+            return AnnouncementManager.getMessageBoardSettings(c).isSecure();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 
