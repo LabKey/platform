@@ -396,8 +396,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             HString.TestCase.class,
             StringExpressionFactory.TestCase.class,
             Path.TestCase.class,
-            ModuleStaticResolverImpl.TestCase.class,
-            RateLimiter.TestCase.class
+            ModuleStaticResolverImpl.TestCase.class
+            //,RateLimiter.TestCase.class
         ));
     }
 
