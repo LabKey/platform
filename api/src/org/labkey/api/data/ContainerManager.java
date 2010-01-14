@@ -335,6 +335,24 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
+    public static void updateTitle(Container container, String title, User user)
+    {
+        try
+        {
+            //For some reason there is no primary key defined on core.containers
+            //so we can't use Table.update here
+            StringBuilder sql = new StringBuilder("UPDATE ");
+            sql.append(core.getTableInfoContainers());
+            sql.append(" SET Title=? WHERE RowID=?");
+            Table.execute(core.getSchema(), sql.toString(), new Object[]{title, container.getRowId()});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+
+        _removeFromCache(container);
+    }
 
     private static final String SHARED_CONTAINER_PATH = "/Shared";
 
