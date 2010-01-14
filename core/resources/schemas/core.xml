@@ -49,6 +49,7 @@
       <ns:column columnName="DocumentSize"/>
       <ns:column columnName="DocumentType"/>
       <ns:column columnName="Document"/>
+      <ns:column columnName="LastIndexed"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Logins" tableDbType="TABLE">
