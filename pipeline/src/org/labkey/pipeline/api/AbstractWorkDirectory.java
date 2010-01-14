@@ -215,7 +215,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 return fileDest;
             throw new FileNotFoundException("Failed to find expected output " + fileWork);
         }
-        ensureDescendent(fileWork);
+        ensureDescendant(fileWork);
         File fileReplace = null;
         File fileCopy = null;
         CopyingResource resource = null;
@@ -288,7 +288,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     public void discardFile(File fileWork) throws IOException
     {
-        ensureDescendent(fileWork);
+        ensureDescendant(fileWork);
         if (fileWork.exists() && !fileWork.delete())
         {
             if (fileWork.isDirectory())
@@ -302,15 +302,22 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
-    public void remove() throws IOException
+    public void discardCopiedInputs() throws IOException
     {
-        // Delete the copied input files, and clear the map pointing to them.
         if (NetworkDrive.exists(_dir))
         {
             for (File input : _copiedInputs.values())
                 discardFile(input);
             _copiedInputs.clear();
+        }
+    }
 
+    public void remove() throws IOException
+    {
+        discardCopiedInputs();
+        
+        if (NetworkDrive.exists(_dir))
+        {
             if (!_dir.delete())
             {
                 StringBuffer message = new StringBuffer();
@@ -328,10 +335,10 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
-    private void ensureDescendent(File fileWork) throws IOException
+    private void ensureDescendant(File fileWork) throws IOException
     {
-        if (!URIUtil.isDescendent(_dir.toURI(), fileWork.toURI()))
-            throw new IOException("The file " + fileWork + " is not a descendent of " + _dir);
+        if (!URIUtil.isDescendant(_dir.toURI(), fileWork.toURI()))
+            throw new IOException("The file " + fileWork + " is not a descendant of " + _dir);
     }
 
     /**

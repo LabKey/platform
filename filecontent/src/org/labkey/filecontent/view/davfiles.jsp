@@ -122,7 +122,7 @@ function renderBrowser(rootPath, dir)
         ,showDetails:true
         ,allowChangeDirectory:false
         ,actions:{drop:dropAction, configure:configureAction}
-        ,tbar:['download','deletePath','refresh'
+        ,tbar:['refresh', 'download', 'deletePath',
         <%=c.hasPermission(context.getUser(), InsertPermission.class) ? ",'uploadTool'" : ""%>
         ,'->'
         , new Ext.form.Label({html:'File Set:&nbsp;'}), combo

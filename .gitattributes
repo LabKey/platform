@@ -1288,14 +1288,12 @@ pipeline/src/org/labkey/pipeline/mule/filters/TaskJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskRemoteServerJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskStateChangeJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/routing/EPipelineQueueMessageSplitter.java -text
-pipeline/src/org/labkey/pipeline/mule/transformers/AbstractMuleSingleValueConverter.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/JMSMessageToPipelineJob.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/NoOpTransformer.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/PipelineJobToJMSMessage.java -text
 pipeline/src/org/labkey/pipeline/permission.jsp -text
 pipeline/src/org/labkey/pipeline/pipelineStatus.jsp -text
 pipeline/src/org/labkey/pipeline/setup.jsp -text
-pipeline/src/org/labkey/pipeline/source.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text

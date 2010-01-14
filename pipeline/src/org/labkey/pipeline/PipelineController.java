@@ -385,29 +385,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SearchAction extends SimpleViewAction<PathForm>
-    {
-        public SearchAction()
-        {
-        }
-
-        public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
-        {
-            SearchWebPart wp = new SearchWebPart();
-            wp.setContainer(getContainer());
-            wp._autoResize = true;
-            wp.setFrame(WebPartView.FrameType.NONE);
-            return wp;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Search files");
-            return root;
-        }
-    }
-
     public static class BrowseWebPart extends FilesWebPart
     {
         public BrowseWebPart()
@@ -424,14 +401,19 @@ public class PipelineController extends SpringActionController
             bean.setAutoResize(true);
 
             List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
+            // Navigation actions
+            actions.add(FilesForm.actions.parentFolder);
+            actions.add(FilesForm.actions.refresh);
+
+            // Actions not based on the current selection
             if (ctx.getContainer().hasPermission(ctx.getUser(), InsertPermission.class))
                 actions.add(FilesForm.actions.upload);
-            actions.add(FilesForm.actions.parentFolder);
+            actions.add(FilesForm.actions.createDirectory);
+            
+            // Actions based on the current selection
             actions.add(FilesForm.actions.download);
             actions.add(FilesForm.actions.deletePath);
-            actions.add(FilesForm.actions.refresh);
             actions.add(FilesForm.actions.importData);
-            actions.add(FilesForm.actions.createDirectory);
 
             if (getRootContext().getUser().isAdministrator())
                 actions.add(FilesForm.actions.customize);
@@ -444,43 +426,6 @@ public class PipelineController extends SpringActionController
 
             setTitle("Pipeline Files");
             setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
-        }
-    }
-
-    public static class SearchWebPart extends JspView<SearchWebPart>
-    {
-        Container _c;
-        PipeRoot _root;
-        boolean _autoResize = false;
-
-        public SearchWebPart()
-        {
-            super(PipelineController.class, "source.jsp", null, null);
-            setModelBean(this);
-            setTitle("Source Files");
-            setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
-        }
-
-        void setContainer(Container c)
-        {
-            _c = c;
-        }
-
-        public Container getContainer()
-        {
-            return _c != null ? _c : getViewContext().getContainer();
-        }
-
-        public PipeRoot getPipeRoot()
-        {
-            if (null == _root)
-                _root = PipelineService.get().findPipelineRoot(getContainer());
-            return _root;
-        }
-
-        public boolean getAutoResize()
-        {
-            return _autoResize;
         }
     }
 

@@ -1037,7 +1037,7 @@ public class ExperimentController extends SpringActionController
                 PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(expRun.getContainer());
                 if (pipelineRoot != null)
                 {
-                    if (URIUtil.isDescendent(pipelineRoot.getUri(), runRoot.toURI()))
+                    if (URIUtil.isDescendant(pipelineRoot.getUri(), runRoot.toURI()))
                     {
                         String path = runRoot.toURI().toString().substring(pipelineRoot.getUri().toString().length());
                         sb.append("[<a href=\"");

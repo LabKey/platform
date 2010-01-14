@@ -180,7 +180,7 @@ public class MuleListenerHelper implements ServletContext
 
             File muleConfigRoot = new File(muleConfigPath);
             File muleConfigFile = new File(string);
-            if (!URIUtil.isDescendent(muleConfigRoot.toURI(), muleConfigFile.toURI()))
+            if (!URIUtil.isDescendant(muleConfigRoot.toURI(), muleConfigFile.toURI()))
                 return null;
 
             try

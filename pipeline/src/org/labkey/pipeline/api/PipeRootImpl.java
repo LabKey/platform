@@ -200,7 +200,7 @@ public class PipeRootImpl implements PipeRoot
         {
             File canFile = file.getCanonicalFile();
             File canRoot = new File(_uri).getCanonicalFile();
-            return URIUtil.isDescendent(canRoot.toURI(), canFile.toURI());
+            return URIUtil.isDescendant(canRoot.toURI(), canFile.toURI());
         }
         catch (IOException e) {
             return false;
@@ -209,7 +209,7 @@ public class PipeRootImpl implements PipeRoot
 
     public boolean isUnderRoot(URI uri)
     {
-        return URIUtil.isDescendent(_uri, uri);
+        return URIUtil.isDescendant(_uri, uri);
     }
 
     // UNDONE: need wrappers for file download/upload permissions

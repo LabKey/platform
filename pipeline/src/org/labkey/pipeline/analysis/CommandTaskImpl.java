@@ -16,7 +16,6 @@
 package org.labkey.pipeline.analysis;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.cmd.CommandTask;
 import org.labkey.api.pipeline.cmd.*;
@@ -36,8 +35,6 @@ import java.sql.SQLException;
  */
 public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> implements CommandTask
 {
-    private static final Logger _log = Logger.getLogger(CommandTaskImpl.class);
-
     public static class Factory extends AbstractTaskFactory<CommandTaskFactorySettings, Factory>
     {
         private String _statusName = "COMMAND";
@@ -180,7 +177,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             TaskToCommandArgs commandNameConverter = converters.get(0);
 
             CommandTaskImpl task = createTask(job);
-            // Need to set up the work directory so that it can figure out what the arguments will be called
+            // Need to set up the work directory so that it can figure out what arguments will be used in the call
             WorkDirectory wd = createWorkDirectory(job.getJobGUID(), job.getJobSupport(FileAnalysisJobSupport.class), job.getLogger());
             task.setWorkDirectory(wd);
             try
@@ -220,11 +217,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         public Map<String, TaskPath> getOutputPaths()
         {
             return _outputPaths;
-        }
-
-        public SwitchFormat getSwitchFormat()
-        {
-            return _converter.getSwitchFormat();
         }
 
         public List<TaskToCommandArgs> getConverters()
@@ -425,12 +417,19 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
             getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval);
 
-            if (!_factory.getOutputPaths().isEmpty())
+            // Get rid of any copied input files.
+            _wd.discardCopiedInputs();
+
+            File[] remainingFiles = _wd.getDir().listFiles();
+
+            if (remainingFiles != null && remainingFiles.length > 0)
             {
                 WorkDirectory.CopyingResource lock = null;
                 try
                 {
                     lock = _wd.ensureCopyingLock();
+
+                    // First handle anything that's been explicitly configured
                     for (Map.Entry<String, TaskPath> entry : _factory.getOutputPaths().entrySet())
                     {
                         TaskPath taskPath = entry.getValue();
@@ -441,6 +440,31 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                         }
                         outputFile(taskPath, role, action);
                     }
+
+                    // Slurp up any other files too
+                    for (File workFile : _wd.getDir().listFiles())
+                    {
+                        File f = _wd.outputFile(workFile);
+                        String role = "";
+                        String baseName = getJobSupport().getBaseName();
+                        if (f.getName().startsWith(baseName))
+                        {
+                            role = f.getName().substring(baseName.length());
+                        }
+                        else if (f.getName().contains("."))
+                        {
+                            role = f.getName().substring(f.getName().indexOf(".") + 1);
+                        }
+                        while (role.length() > 0 && !Character.isJavaIdentifierPart(role.charAt(0)))
+                        {
+                            role = role.substring(1);
+                        }
+                        if ("".equals(role))
+                        {
+                            role = "Output";
+                        }
+                        action.addOutput(f, role, false);
+                    }
                 }
                 finally
                 {
@@ -448,7 +472,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 }
             }
 
-            // Get rid of the work directory, and any copied input files.
+            // Get rid of the work directory, which should now be empty
             _wd.remove();
 
             // Should now be safe to remove the original input file, if required.

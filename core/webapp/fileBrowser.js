@@ -1690,7 +1690,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDownloadAction : function()
     {
-        return new Ext.Action({text: 'Download', iconCls:'iconDownload', scope: this, handler: function()
+        return new Ext.Action({text: 'Download', tooltip: 'Download the selected files or folders', iconCls:'iconDownload', scope: this, handler: function()
             {
                 var selections = this.grid.selModel.getSelections();
 
@@ -1717,7 +1717,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getCreateDirectoryAction : function()
     {
-        return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', scope: this, handler: function()
+        return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, handler: function()
         {
             var p = this.currentDirectory.data.path;
             var folder = prompt( "Folder Name", "New Folder");
@@ -1747,7 +1747,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getParentFolderAction : function()
     {
-        return new Ext.Action({text: 'Up', iconCls:'iconUp', scope: this, handler: function()
+        return new Ext.Action({text: 'Up', tooltip: 'Navigate to parent folder', iconCls:'iconUp', scope: this, handler: function()
         {
             // CONSIDER: PROPFIND to ensure this link is still good?
             var p = this.currentDirectory.data.path;
@@ -1759,7 +1759,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getRefreshAction : function()
     {
-        return new Ext.Action({text: 'Refresh', iconCls:'iconReload', scope:this, handler: this.refreshDirectory});
+        return new Ext.Action({text: 'Refresh', tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload', scope:this, handler: this.refreshDirectory});
     },
 
 
@@ -1775,7 +1775,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDeleteAction : function()
     {
-        return new Ext.Action({text: 'Delete', iconCls:'iconDelete', scope:this, disabled:true, handler: function()
+        return new Ext.Action({text: 'Delete', tooltip: 'Delete the selected files or folders', iconCls:'iconDelete', scope:this, disabled:true, handler: function()
         {
             if (!this.currentDirectory || !this.selectedRecord)
                 return;
@@ -1991,7 +1991,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getUploadToolAction : function()
     {
-        return new Ext.Action({text: 'Upload Tool', tooltip:"upload&nbsp;multiple&nbsp;files<br>(requires Java)", iconCls:'iconDownloadManager', scope:this, disabled:true, handler: function()
+        return new Ext.Action({text: 'Multi-file Upload', tooltip:"Upload multiple files or folders using drag-and-drop<br>(requires Java)", scope:this, disabled:true, handler: function()
         {
             if (!this.applet || !this.appletWindow)
                 this.layoutAppletWindow();
@@ -2353,11 +2353,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         this.appletWindow = new Ext.Window(
         {
-            title: "Upload Tool",
+            title: "Multi-file Upload",
             closable:true, animateTarget:true,
             closeAction :'hide',
             constrain:true,
-            height: 300, width:240, minHeight:200, minWidth:240,
+            height: 200, width:240, minHeight:200, minWidth:240,
             plain: true,
             layout:'fit',
             tbar: toolbar,
