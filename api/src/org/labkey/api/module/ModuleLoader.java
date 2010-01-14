@@ -202,7 +202,7 @@ public class ModuleLoader implements Filter
         }
         catch (NoSuchMethodException e)
         {
-            throw new ConfigurationException("Could not find getModuleFiles() method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
+            throw new ConfigurationException("Could not find getExplodedModuleDirectories() method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
         }
         catch (InvocationTargetException e)
         {
