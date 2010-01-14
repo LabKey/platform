@@ -614,11 +614,13 @@ api/src/org/labkey/api/security/AuthenticationManager.java -text
 api/src/org/labkey/api/security/AuthenticationProvider.java -text
 api/src/org/labkey/api/security/ContextualRoles.java -text
 api/src/org/labkey/api/security/DbLoginAuthenticationProvider.java -text
+api/src/org/labkey/api/security/DbLoginManager.java -text
 api/src/org/labkey/api/security/Group.java -text
 api/src/org/labkey/api/security/GroupManager.java -text
 api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
 api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
+api/src/org/labkey/api/security/PasswordRule.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
 api/src/org/labkey/api/security/RequiresNoPermission.java -text
 api/src/org/labkey/api/security/RequiresPermission.java -text

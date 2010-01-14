@@ -88,18 +88,6 @@ public class SecurityManager
         SUBMITTER("Submitter", ACL.PERM_INSERT),
         NO_PERMISSIONS("No Permissions", 0);
 
-        private static List<Pair<Integer, String>> _allPerms;
-        static {
-            _allPerms = new ArrayList<Pair<Integer, String>>();
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_READ, "READ"));
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_INSERT, "INSERT"));
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_UPDATE, "UPDATE"));
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_DELETE, "DELETE"));
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_READOWN, "READ-OWN"));
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_UPDATEOWN, "UPDATE-OWN"));
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_DELETEOWN, "DELETE-OWN"));
-            _allPerms.add(new Pair<Integer, String>(ACL.PERM_ADMIN, "ADMIN"));
-        }
         private int _permissions;
         private String _label;
         private PermissionSet(String label, int permissions)
@@ -120,11 +108,6 @@ public class SecurityManager
         public int getPermissions()
         {
             return _permissions;
-        }
-
-        public static boolean isPredefinedPermission(int permissions)
-        {
-            return findPermissionSet(permissions) != null;
         }
 
         private static int normalizePermissions(int permissions)

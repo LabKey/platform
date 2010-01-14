@@ -43,9 +43,9 @@ public interface SearchService
 {
     static Category _log = Category.getInstance(SearchService.class);
 
-    public final static SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
-    public final static SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
-
+    public static final SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
+    public static final int DEFAULT_PAGE_SIZE = 20;
+    public static final SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
 
     enum PRIORITY
     {
@@ -171,10 +171,14 @@ public interface SearchService
     //
 
     
-    public static class SearchHit
+    public static class SearchResult
     {
         public int totalHits;
+        public List<SearchHit> hits;
+    }
 
+    public static class SearchHit
+    {
         public String docid;
         public String container;
         public String title;
@@ -182,7 +186,11 @@ public interface SearchService
         public String url;
     }
 
-    public List<SearchHit> search(String queryString, User user, Container root, int page) throws IOException;
+    public SearchResult search(String queryString, User user, Container root, int offset, int limit) throws IOException;
+
+    // Search using no offset and default page size.
+    public SearchResult search(String queryString, User user, Container root) throws IOException;
+
 //    public String searchFormatted(String queryString, User user, Container root, int page);
     public String escapeTerm(String term);
     
