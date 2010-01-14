@@ -241,18 +241,23 @@ function renderBrowser(rootPath, dir)
         {
             this.actions.upload = new Ext.Action({
                 text: 'Upload',
+                iconCls: 'iconUpload',
+                tooltip: 'Upload files or folders from your local machine to the server',
                 listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
             });
 
             this.actions.importData = new Ext.Action({
                 text: 'Import Data',
+                iconCls: 'iconDBCommit',
+                tooltip: 'Import data from files into the database, or analyze data files',
                 listeners: {click:function(button, event) {this.toggleTabPanel('importDataTab');}, scope:this}
             });
 
             this.actions.customize = new Ext.Action({
                 text: 'Admin',
+                iconCls: 'iconConfigure',
+                tooltip: 'Configure the buttons shown on the toolbar',
                 listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
-                //tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'}
             });
 
             this.toolbar = new Ext.Panel({
@@ -308,9 +313,10 @@ function renderBrowser(rootPath, dir)
             this.collapsibleTabPanel = new TinyTabPanel({
                 region: 'north',
                 collapseMode: 'mini',
-                height: 110,
+                height: 90,
                 header: false,
                 margins:'1 1 1 1',
+                bodyStyle: 'background-color:#f0f0f0;',
                 cmargins:'1 1 1 1',
                 collapsible: true,
                 collapsed: true,

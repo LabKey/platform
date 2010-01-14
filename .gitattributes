@@ -1999,6 +1999,8 @@ internal/webapp/_images/cart_added.gif -text
 internal/webapp/_images/check.png -text
 internal/webapp/_images/collapse_folders.gif -text
 internal/webapp/_images/computer.png -text
+internal/webapp/_images/configure.png -text
+internal/webapp/_images/db_commit.png -text
 internal/webapp/_images/defaultlogo.gif -text
 internal/webapp/_images/defaultlogosmall.gif -text
 internal/webapp/_images/delete.gif -text
@@ -2071,6 +2073,7 @@ internal/webapp/_images/topgrad.gif -text
 internal/webapp/_images/up.png -text
 internal/webapp/_images/uparrow.gif -text
 internal/webapp/_images/uparrow_disabled.gif -text
+internal/webapp/_images/upload.png -text
 internal/webapp/_images/warning-icon.png -text
 internal/webapp/_images/warning-small.png -text
 internal/webapp/_yui/README -text

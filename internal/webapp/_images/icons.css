@@ -4,6 +4,9 @@
 .iconReload { background-image: url(reload.png) !important; }
 .iconDownload { background-image: url(download.png) !important; }
 .iconDownloadManager { background-image: url(download_manager.png) !important; }
+.iconDBCommit { background-image: url(db_commit.png) !important; }
+.iconConfigure { background-image: url(configure.png) !important; }
+.iconUpload { background-image: url(upload.png) !important; }
 .iconFileNew { background-image: url(filenew.png) !important; }
 .iconFileOpen { background-image: url(fileopen.png) !important; }
 .iconFolderNew { background-image: url(folder_new.png) !important; }

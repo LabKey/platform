@@ -66,6 +66,10 @@ public interface WorkDirectory
      */
     void discardFile(File fileWork) throws IOException;
 
+    /** Deletes any inputs that were copied into this working directory */
+    void discardCopiedInputs() throws IOException;
+
+    /** Cleans up any lingering inputs and deletes the working directory */
     void remove() throws IOException;
 
     /**

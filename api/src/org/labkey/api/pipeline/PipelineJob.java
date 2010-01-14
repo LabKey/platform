@@ -1046,8 +1046,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 Map<String, String> env = pb.environment();
                 String path = env.get("PATH");
                 if(path == null) path = env.get("Path");
-                throw new PipelineJobException("Failed starting process '" + pb.command() + "'. " +
-                        "Must be on server path. (PATH=" + path + ")", eio);
+                throw new PipelineJobException("Failed starting process '" + pb.command() + "'", eio);
             }
 
             BufferedReader procReader = null;

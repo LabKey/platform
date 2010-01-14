@@ -259,7 +259,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
 
             File configRoot = new File(configPath);
             File configFile = new File(string);
-            if (!URIUtil.isDescendent(configRoot.toURI(), configFile.toURI()))
+            if (!URIUtil.isDescendant(configRoot.toURI(), configFile.toURI()))
                 return null;
 
             try

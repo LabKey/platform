@@ -25,9 +25,9 @@ import java.net.URISyntaxException;
  */
 public class URIUtil
 {
-    static public boolean isDescendent(URI base, URI descendent)
+    static public boolean isDescendant(URI base, URI descendant)
     {
-        return descendent.toString().startsWith(base.toString());
+        return descendant.toString().startsWith(base.toString());
     }
 
     static public URI resolve(URI root, URI base, String path)
@@ -59,7 +59,7 @@ public class URIUtil
                 return null;
             }
         }
-        if (!isDescendent(root, ret))
+        if (!isDescendant(root, ret))
             return null;
         return ret;
     }
@@ -72,7 +72,7 @@ public class URIUtil
 
     static public URI relativize(URI base, URI current)
     {
-        if (!isDescendent(base, current))
+        if (!isDescendant(base, current))
             return null;
         return base.relativize(current);
     }
@@ -92,7 +92,7 @@ public class URIUtil
         try
         {
             URI ret = new URI(current.getScheme(), path, null);
-            if (base != null && !isDescendent(base, ret))
+            if (base != null && !isDescendant(base, ret))
                 return null;
             return ret;
         }
