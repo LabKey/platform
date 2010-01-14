@@ -518,6 +518,32 @@ public class CoreController extends SpringActionController
         }
     }
 
+    public static class UpdateTitleForm
+    {
+        private String _title;
+
+        public String getTitle()
+        {
+            return _title;
+        }
+
+        public void setTitle(String title)
+        {
+            _title = title;
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class UpdateTitleAction extends MutatingApiAction<UpdateTitleForm>
+    {
+        public ApiResponse execute(UpdateTitleForm form, BindException errors) throws Exception
+        {
+            String title =  StringUtils.trimToNull(form.getTitle());
+            ContainerManager.updateTitle(getContainer(), title, getUser());
+            return new ApiSimpleResponse("title", title);
+        }
+    }
+
     @RequiresPermissionClass(AdminPermission.class)
     public class MoveWorkbooksAction extends SimpleViewAction
     {

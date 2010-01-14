@@ -550,6 +550,8 @@ core/webapp/FileTree.js -text
 core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/dropApplet.js -text
+core/webapp/editInPlaceElement.css -text
+core/webapp/editInPlaceElement.js -text
 core/webapp/fileBrowser.js -text
 core/webapp/printStyle.css -text
 core/webapp/schemaBrowser.css -text

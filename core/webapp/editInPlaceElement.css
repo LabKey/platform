@@ -1,0 +1,19 @@
+.labkey-edit-in-place
+{
+}
+.labkey-edit-in-place-hover
+{
+    background-color: #FFFFCC;
+}
+.labkey-edit-in-place-empty
+{
+    font-style: italic;
+}
+.labkey-edit-in-place-updating
+{
+    background-color: #EEEEEE;
+    color: #999999;
+    background-image: url("_images/ajax-loading.gif");
+    background-position: center;
+    background-repeat:no-repeat;
+}
