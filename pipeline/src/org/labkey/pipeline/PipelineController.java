@@ -430,14 +430,12 @@ public class PipelineController extends SpringActionController
             actions.add(FilesForm.actions.download);
             actions.add(FilesForm.actions.deletePath);
             actions.add(FilesForm.actions.refresh);
-            //actions.add(FilesForm.actions.importData);
+            actions.add(FilesForm.actions.importData);
             actions.add(FilesForm.actions.createDirectory);
 
-/*
             if (getRootContext().getUser().isAdministrator())
                 actions.add(FilesForm.actions.customize);
 
-*/
             bean.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
             
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
@@ -529,6 +527,7 @@ public class PipelineController extends SpringActionController
 
             // keep actions in consistent order for display
             entry.orderActions();
+            mergeActionConfiguration(entry, c);
 
             JSONArray actions = new JSONArray();
             for (PipelineAction action : entry.getActions())
@@ -540,111 +539,36 @@ public class PipelineController extends SpringActionController
             resp.put("actions", actions);
             return resp;
         }
-    }
 
-/*
-    @RequiresPermissionClass(ReadPermission.class)
-    public class PipelineActionsConfigAction extends ApiAction<PathForm>
-    {
-        public ApiResponse execute(PathForm form, BindException errors) throws Exception
+        private void mergeActionConfiguration(PipelineProvider.PipelineDirectory entry, Container c)
         {
-            Container c = getContainer();
-
-*/
-/*
-            JSONArray actions = new JSONArray();
-            for (PipelineActionConfig config : PipelineService.get().getPipelineActionConfig(c))
-            {
-                actions.put(config.toJSON());
-            }
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            resp.put("success", true);
-            resp.put("actions", actions);
-
-            return resp;
-*/
-/*
-            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-            if (pr == null || !URIUtil.exists(pr.getUri()))
-            {
-                HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
-                return null;
-            }
-
-            URI uriRoot = pr.getUri();
-
-            String path = form.getPath();
-            if (null == path || "./".equals(path))
-                path = "";
-            if (path.startsWith("/"))
-                path = path.substring(1);
-
-            URI uriCurrent = URIUtil.resolve(uriRoot, PageFlowUtil.encodePath(path));
-            if (uriCurrent == null)
-            {
-                HttpView.throwNotFound();
-                return null;
-            }
-
-            File fileCurrent = new File(uriCurrent);
-            if (!fileCurrent.exists())
-                HttpView.throwNotFound("File not found: " + uriCurrent.getPath());
-
-            ActionURL browseURL = new ActionURL(BrowseAction.class, c);
-            browseURL.replaceParameter("path", toRelativePath(uriRoot, uriCurrent));
-
-            PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(uriCurrent, browseURL);
-            List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
-            for (PipelineProvider provider : providers)
-                provider.updateFileProperties(getViewContext(), pr, entry);
-
-            // keep actions in consistent order for display
-            entry.orderActions();
-
-            List<Map<String, String>> actions = new ArrayList<Map<String, String>>();
+            // get and merge configuration information
             Map<String, PipelineActionConfig> configMap = new HashMap<String, PipelineActionConfig>();
-
             for (PipelineActionConfig config : PipelineService.get().getPipelineActionConfig(c))
-            {
                 configMap.put(config.getId(), config);
-            }
 
             for (PipelineAction action : entry.getActions())
             {
-                Map<String, String> config = new HashMap<String, String>();
-
-                config.put("action", action.getLabel());
-                config.put("id", action.getLabel());
-                config.put("type", "Assay");
-
-                if (configMap.containsKey(action.getLabel()))
-                {
-                    PipelineActionConfig.displayState state = configMap.get(action.getLabel()).getState();
-                    config.put("displayState", state.name());
-
-                    switch (state)
-                    {
-                        case enabled:
-                            config.put("enabled", Boolean.toString(true));
-                            break;
-                        case toolbar:
-                            config.put("showOnToolbar", Boolean.toString(true));
-                            break;
-                    }
-                }
-                else
-                {
-                    config.put("enabled", Boolean.toString(true));
-                    config.put("displayState", PipelineActionConfig.displayState.enabled.name());
-                }
-                actions.add(config);
+                NavTree links = action.getLinks();
+                if (links != null)
+                    setActionConfiguration(links, configMap);
             }
-            
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            resp.put("success", true);
-            resp.put("actions", actions);
+        }
 
-            return resp;
+        private void setActionConfiguration(NavTree tree, Map<String, PipelineActionConfig> configMap)
+        {
+            if (StringUtils.isEmpty(tree.getId()))
+                tree.setId(tree.getKey());
+            if (configMap.containsKey(tree.getId()))
+            {
+                PipelineActionConfig config = configMap.get(tree.getId());
+                tree.setDisplay(config.getState().name());
+            }
+            else
+                tree.setDisplay(PipelineActionConfig.displayState.enabled.name());
+
+            for (NavTree child : tree.getChildren())
+                setActionConfiguration(child, configMap);
         }
     }
 
@@ -730,7 +654,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-*/
     @RequiresSiteAdmin
     public class UpdateRootPermissionsAction extends RedirectAction<PermissionForm>
     {
@@ -1463,13 +1386,6 @@ public class PipelineController extends SpringActionController
         {
             return new ActionURL(ActionsAction.class, container);
         }
-
-/*
-        public ActionURL urlActionsConfig(Container container)
-        {
-            return new ActionURL(PipelineActionsConfigAction.class, container);
-        }
-*/
     }
 
     public static ActionURL urlBegin(Container container)
