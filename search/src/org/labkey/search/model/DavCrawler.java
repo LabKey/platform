@@ -192,13 +192,18 @@ public class DavCrawler implements ShutdownListener
                 return;
             }
 
-
             final Resource r = getResolver().lookup(_path);
+
             if (null == r || !r.isCollection())
             {
                 _paths.deletePath(_path);
                 return;
             }
+            if (!r.shouldIndex())
+            {
+                return;
+            }
+
 
             // UNDONE: would be better if this were called on _task completion
             {
@@ -272,36 +277,7 @@ public class DavCrawler implements ShutdownListener
     }
 
 
-    class Rate
-    {
-        double _rate;
-        Rate(int count, int duration, TimeUnit unit)
-        {
-            _rate = (double)count / (double)unit.toMillis(duration);
-        }
-    }
 
-    
-    class RateAccumulator
-    {
-        long _start = System.currentTimeMillis();
-        double _count = 0;
-        void accumulate(int add)
-        {
-            _count += add;
-        }
-        double getRate()
-        {
-            return _count / Math.max(1, System.currentTimeMillis()-_start);
-        }
-    }
-
-
-    class RateLimiter
-    {
-
-    }
-    
 
 
 

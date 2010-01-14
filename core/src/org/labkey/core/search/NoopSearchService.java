@@ -179,7 +179,7 @@ public class NoopSearchService implements SearchService
         while (ptids.next()) {}
     }
 
-    public void deleteResource(String identifier, PRIORITY pri)
+    public void deleteResource(String identifier)
     {
     }
 

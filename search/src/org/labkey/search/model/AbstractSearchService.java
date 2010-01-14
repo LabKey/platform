@@ -357,9 +357,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public void deleteResource(String identifier, PRIORITY pri)
+    public void deleteResource(String identifier)
     {
-        Item i = new Item(null, OPERATION.delete, identifier, null, pri);
+        Item i = new Item(null, OPERATION.delete, identifier, null, PRIORITY.delete);
         // don't need to preprocess so try to put in the indexQueue
         // if it's full then put in the itemQueue
         if (_indexQueue.offer(i))

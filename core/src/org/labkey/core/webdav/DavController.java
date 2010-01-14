@@ -28,8 +28,10 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
@@ -1975,6 +1977,7 @@ public class DavController extends SpringActionController
                             audit(resource, "replaced");
                         else
                             audit(resource, "created");
+                        addToIndex(resource);
                     }
                 }
 
@@ -2054,7 +2057,10 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             boolean temp = rmTempFile(resource);
             if (!temp)
+            {
                 audit(resource, "deleted");
+                removeFromIndex(resource);
+            }
             return WebdavStatus.SC_NO_CONTENT;
         }
         else
@@ -2126,7 +2132,10 @@ public class DavController extends SpringActionController
                 
                 boolean temp = rmTempFile(child);
                 if (!temp)
+                {
                     audit(child, "deleted");
+                    removeFromIndex(child);
+                }
             }
         }
     }
@@ -2317,11 +2326,14 @@ public class DavController extends SpringActionController
             if (rmTempFile(src))
             {
                 audit(dest, "created");
+                addToIndex(dest);
             }
             else
             {
                 audit(src, null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
                 audit(dest, null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
+                removeFromIndex(src);
+                addToIndex(dest);
             }
 
             // Removing any lock-null resource which would be present at
@@ -3643,6 +3655,7 @@ public class DavController extends SpringActionController
                     audit(dest, "overwrite: copied from " + src.getFile().getPath());
                 else
                     audit(dest, "create: copied from " + src.getFile().getPath());
+                addToIndex(dest);
             }
             catch (IOException ex)
             {
@@ -4237,5 +4250,28 @@ public class DavController extends SpringActionController
                     new File((String)path).delete();
             }
         };
+    }
+
+
+    private void addToIndex(Resource r)
+    {
+        if (!r.shouldIndex())
+            return;
+        if (!r.isFile())
+            return;
+        if (isTempFile(r))
+            return;
+        
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (null != ss)
+            ss.defaultTask().addResource(r, SearchService.PRIORITY.item);
+    }
+
+
+    private void removeFromIndex(Resource r)
+    {
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (null != ss)
+            ss.deleteResource(r.getDocumentId());
     }
 }

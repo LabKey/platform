@@ -80,6 +80,8 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
             this.c = c;
             _containerId = c.getId();
+            _shouldIndex = root.isSearchable();
+
             URI uriRoot = (root != null) ? root.getUri() : null;
             if (uriRoot != null)
             {
