@@ -17,16 +17,16 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -55,15 +55,15 @@
         if (-1 == q.indexOf("status:"))
             qs += " status:open^2 status:closed^1";
 
-        List<SearchService.SearchHit> hits = ss.search(qs, user, ContainerManager.getRoot(), 0); // 1-1000
+        SearchService.SearchResult result = ss.search(qs, user, ContainerManager.getRoot());
+        List<SearchService.SearchHit> hits = result.hits;
 
         %><div id="searchResults"><%
 
-        for (int i =0; i < hits.size() ; i++)
+        for (SearchService.SearchHit hit : hits)
         {
-            SearchService.SearchHit hit = hits.get(i);
-
             String href = hit.url;
+
             try
             {
                 if (href.startsWith("/"))
@@ -79,13 +79,20 @@
                 //
             }
 
-            %><a href="<%=h(hit.url)%>"><%=h(hit.title)%></a><br><%
+%><a href="<%=h(hit.url)%>"><%=h(hit.title)%>
+</a><br><%
             String summary = StringUtils.trimToNull(hit.summary);
             if (null != summary)
             {
-                %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary,false)%></div><%
+%>
+    <div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%>
+    </div>
+    <%
             }
-            %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><%
+    %>
+    <div style='margin-left:10px; color:green;'><%=h(href)%>
+    </div>
+    <br><%
         }
         %></div><%
     }

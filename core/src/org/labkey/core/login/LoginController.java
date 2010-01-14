@@ -56,6 +56,8 @@ import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -695,7 +697,6 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class SetPasswordAction extends FormViewAction<VerifyForm>
     {
-        String _error = null;
         ValidEmail _email = null;
         boolean _unrecoverableError = false;
         private User _user;
@@ -794,15 +795,16 @@ public class LoginController extends SpringActionController
             String password = request.getParameter("password");
             String password2 = request.getParameter("password2");
 
-            if (null == password || null == password2)
-                errors.reject("password", "You must enter two passwords");
-            else if (!SecurityManager.isValidPassword(password, _email))
-                errors.reject("password", "Enter a valid password.  " + SecurityManager.passwordRule);
-            else if (!password.equals(password2))
-                errors.reject("password", "Your password entries didn't match.");
+            Collection<String> messages = new LinkedList<String>();
+            User user = UserManager.getUser(_email);
 
-            if (errors.hasErrors())
+            if (!DbLoginManager.getPasswordRule().isValid(password, password2, user, messages))
+            {
+                for (String message : messages)
+                    errors.reject("password", message);
+
                 return false;
+            }
 
             try
             {

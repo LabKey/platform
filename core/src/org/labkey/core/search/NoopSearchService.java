@@ -176,7 +176,7 @@ public class NoopSearchService implements SearchService
 
     public void addParticipantIds(ResultSet ptids) throws SQLException
     {
-        while (ptids.next()) {};
+        while (ptids.next()) {}
     }
 
     public void deleteResource(String identifier, PRIORITY pri)
@@ -187,9 +187,14 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public List<SearchHit> search(String queryString, User user, Container root, int page) throws IOException
+    public SearchResult search(String queryString, User user, Container root, int offset, int limit) throws IOException
     {
-        return Collections.emptyList();
+        return null;
+    }
+
+    public SearchResult search(String queryString, User user, Container root) throws IOException
+    {
+        return null;
     }
 
     public boolean isParticipantId(User user, String ptid)

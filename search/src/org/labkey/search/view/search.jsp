@@ -103,7 +103,9 @@ function google()
     {
         %><table><tr><td  valign="top" align="left" width=500><%
         int hitsPerPage = 20;  // UNDONE
-        int pageNo=0;
+        int offset = 0;
+
+        int pageNo = (offset / hitsPerPage) + 1;
 
         try
         {
@@ -112,15 +114,15 @@ function google()
                 qs += " -searchCategory:navigation";
             long start = System.nanoTime();
             Container searchContainer = null == form.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(form.getContainer());
-            List<SearchService.SearchHit> hits = ss.search(qs, user, searchContainer, pageNo);
+            SearchService.SearchResult result = ss.search(qs, user, searchContainer, offset, hitsPerPage);
             long time = (System.nanoTime() - start)/1000000;
-            int totalHits = hits.isEmpty() ? 0 : hits.get(0).totalHits;
+            int totalHits = result.totalHits;
 
-            %><p />Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1?"s":""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
+            %><p />Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
 
             if (hitsPerPage < totalHits)
             {
-                %>Displaying page <%=Formats.commaf0.format(pageNo + 1)%> of <%=Formats.commaf0.format((int)Math.ceil((double)totalHits / hitsPerPage))%><br><%
+                %>Displaying page <%=Formats.commaf0.format(pageNo)%> of <%=Formats.commaf0.format((int)Math.ceil((double)totalHits / hitsPerPage))%><br><%
             }
             else
             {
@@ -129,10 +131,8 @@ function google()
             %><p />
             <div id="searchResults"><%
 
-            for (int i = pageNo * hitsPerPage; i < Math.min((pageNo + 1) * hitsPerPage, hits.size()); i++)
+            for (SearchService.SearchHit hit : result.hits)
             {
-                SearchService.SearchHit hit = hits.get(i);
-
                 String href = hit.url;
                 try
                 {
@@ -149,29 +149,36 @@ function google()
                     //
                 }
 
-                %><a href="<%=h(hit.url)%>"><%=h(hit.title)%></a><br><%
-                String summary = StringUtils.trimToNull(hit.summary);
-                if (null != summary)
-                {
-                    %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary,false)%></div><%
-                }
-                %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><%
-            }
+            %><a href="<%=h(hit.url)%>"><%=h(hit.title)%>
+            </a><br><%
+                             String summary = StringUtils.trimToNull(hit.summary);
+                             if (null != summary)
+                             {
+            %>
+                <div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%>
+                </div>
+                <%
+                    }
+                %>
+                <div style='margin-left:10px; color:green;'><%=h(href)%>
+                </div>
+                <br><%
+                    }
             %></div></td><%
 
             if (-1 == queryString.indexOf("searchCategory") && wideView)
             {
-                qs = "(" +  queryString + ") &&  +searchCategory:navigation";
-                hits = ss.search(qs, user, ContainerManager.getRoot(), pageNo);
-                if (hits.size() > 0)
+                qs = "(" +  queryString + ") && +searchCategory:navigation";
+                result = ss.search(qs, user, ContainerManager.getRoot(), offset, hitsPerPage);
+
+                if (result.hits.size() > 0)
                 {
                     %><td valign="top" align="left" width="350>"><%
                     WebPartView.startTitleFrame(out, "Quick Links");
                     %><div id="navigationResults"><%
-                    for (int i = pageNo * hitsPerPage; i < Math.min((pageNo + 1) * hitsPerPage, hits.size()); i++)
-                    {
-                        SearchService.SearchHit hit = hits.get(i);
 
+                    for (SearchService.SearchHit hit : result.hits)
+                    {
                         String href = hit.url;
                         try
                         {
@@ -192,7 +199,7 @@ function google()
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {
-                            %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary,false)%></div><%
+                            %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
                         }
                         /* %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><% */
                     }

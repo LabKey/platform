@@ -413,13 +413,15 @@ public class SearchController extends SpringActionController
             if (null != StringUtils.trimToNull(query))
             {
                 //UNDONE: paging, rowlimit etc
-                List<SearchService.SearchHit> hits = ss.search(query, getViewContext().getUser(), ContainerManager.getRoot(), 1);
+                SearchService.SearchResult result = ss.search(query, getViewContext().getUser(), ContainerManager.getRoot());
+                List<SearchService.SearchHit> hits = result.hits;
+                totalHits = result.totalHits;
+
                 arr = new Object[hits.size()];
 
                 int i=0;
                 for (SearchService.SearchHit hit : hits)
                 {
-                    totalHits = hit.totalHits;
                     JSONObject o = new JSONObject();
                     String id = StringUtils.isEmpty(hit.docid) ? String.valueOf(i) : hit.docid;
                     o.put("id", id);
@@ -430,7 +432,7 @@ public class SearchController extends SpringActionController
                     arr[i++] = o;
                 }
             }
-            // UNDONE: SearchHit.totalHit is a hack, don't really want to expose in API
+
             response.put("success",true);
             response.put("hits", arr);
             response.put("totalHits", totalHits);

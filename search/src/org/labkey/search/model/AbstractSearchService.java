@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
-    final static Category _log = Category.getInstance(AbstractSearchService.class);
+    private static final Category _log = Category.getInstance(AbstractSearchService.class);
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
     final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
@@ -284,6 +284,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void setLastIndexedForPath(Path path, long time)
     {
         _savePaths.updateFile(path, new Date(time));
+    }
+
+
+    public SearchResult search(String queryString, User user, Container root) throws IOException
+    {
+        return search(queryString, user, root, 0, SearchService.DEFAULT_PAGE_SIZE);
     }
 
 

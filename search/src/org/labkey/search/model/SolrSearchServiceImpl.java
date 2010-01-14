@@ -16,13 +16,12 @@
 package org.labkey.search.model;
 
 import org.apache.log4j.Category;
-import org.labkey.api.search.SearchService;
-import org.labkey.api.webdav.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.webdav.Resource;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,9 +49,9 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 //        }
     }
 
-    public List<SearchHit> search(String queryString, User user, Container root, int page) throws IOException
+    public SearchResult search(String queryString, User user, Container root, int offset, int limit) throws IOException
     {
-        return Collections.emptyList();
+        return null;
     }
 
     public void clearIndex()

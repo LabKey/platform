@@ -357,15 +357,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    public List<SearchHit> search(String queryString, User user, Container root, int page)
-            throws IOException
+    public SearchResult search(String queryString, User user, Container root, int offset, int limit) throws IOException
     {
         audit(user, root, queryString);
 
         String sort = null;  // TODO: add sort parameter
-        int hitsPerPage = 20;
-        int hitsToRetrieve = (page + 1) * hitsPerPage;
-        int offset = page * hitsPerPage;
+        int hitsToRetrieve = offset + limit;
 
         // UNDONE: smarter query parsing
         boolean isParticipantId = isParticipantId(user, StringUtils.strip(queryString," +-"));
@@ -395,7 +392,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
 
         ScoreDoc[] hits = topDocs.scoreDocs;
-        ArrayList<SearchHit> ret = new ArrayList<SearchHit>(hitsPerPage);
+
+        List<SearchHit> ret = new LinkedList<SearchHit>();
 
         for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
         {
@@ -403,7 +401,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Document doc = searcher.doc(scoreDoc.doc);
 
             SearchHit hit = new SearchHit();
-            hit.totalHits = topDocs.totalHits;
             hit.container = doc.get(FIELD_NAMES.container.name());
             hit.docid = doc.get(FIELD_NAMES.uniqueId.name());
             hit.summary = doc.get(FIELD_NAMES.summary.name());
@@ -412,7 +409,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             ret.add(hit);
         }
 
-        return ret;
+        SearchResult result = new SearchResult();
+        result.totalHits = topDocs.totalHits;
+        result.hits = ret;
+
+        return result;
     }
     
 
