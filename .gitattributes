@@ -1909,6 +1909,7 @@ internal/src/org/labkey/api/util/DiffMatchPatch.java -text
 internal/src/org/labkey/api/util/FTPUtil.java -text
 internal/src/org/labkey/api/util/HashHelpers.java -text
 internal/src/org/labkey/api/util/LogPrintWriter.java -text
+internal/src/org/labkey/api/util/RateLimiter.java -text
 internal/src/org/labkey/api/util/Search.java -text
 internal/src/org/labkey/api/util/SessionTempFileHolder.java -text
 internal/src/org/labkey/api/util/TextExtractor.java -text

@@ -56,7 +56,8 @@ public interface SearchService
 
         bulk,       // all wikis
         group,      // one container
-        item        // one page/attachment
+        item,        // one page/attachment
+        delete
     }
 
 
@@ -215,7 +216,7 @@ public interface SearchService
     IndexTask defaultTask();
     IndexTask createTask(String description);
 
-    void deleteResource(String identifier, PRIORITY pri);
+    void deleteResource(String identifier);
 
     List<IndexTask> getTasks();
 

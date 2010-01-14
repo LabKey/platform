@@ -46,10 +46,10 @@ import java.util.*;
 */
 public class FileSystemResource extends AbstractResource
 {
-    Container _c;
     protected File _file;
     String _name = null;
     Resource _folder;   // containing controller used for canList()
+    protected Boolean _shouldIndex = null; // null means ask parent
 
     private FileType _type;
     private long _length = UNKNOWN;
@@ -405,5 +405,15 @@ public class FileSystemResource extends AbstractResource
         if (null == id)
             return null;
         return ContainerManager.getForId(id);
+    }
+
+    @Override
+    public boolean shouldIndex()
+    {
+        if (null != _shouldIndex)
+            return _shouldIndex.booleanValue();
+        if (null != _folder)
+            return _folder.shouldIndex();
+        return super.shouldIndex();
     }
 }
