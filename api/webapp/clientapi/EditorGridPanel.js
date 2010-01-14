@@ -1076,7 +1076,7 @@ Ext.grid.CheckColumn = function(config){
 Ext.grid.CheckColumn.prototype ={
     init : function(grid){
         this.grid = grid;
-        if(grid.getView())
+        if(grid.getView() && grid.getView().mainBody)
         {
             grid.getView().mainBody.on('mousedown', this.onMouseDown, this);
         }

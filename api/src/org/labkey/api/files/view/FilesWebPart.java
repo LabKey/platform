@@ -28,6 +28,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 
@@ -86,18 +87,21 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         form.setShowFolderTree(false);
         form.setRootPath(getRootContext().getContainer(), null);
 
-        List<FilesForm.actions> buttons = new ArrayList<FilesForm.actions>();
+        List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
 
         if (getRootContext().getContainer().hasPermission(getRootContext().getUser(), InsertPermission.class))
-        {
-            buttons.add(FilesForm.actions.upload);
-        }
-        buttons.add(FilesForm.actions.download);
-        buttons.add(FilesForm.actions.deletePath);
-        buttons.add(FilesForm.actions.refresh);
-        buttons.add(FilesForm.actions.moreActions);
+            actions.add(FilesForm.actions.upload);
 
-        form.setButtonConfig(buttons.toArray(new FilesForm.actions[buttons.size()]));
+        actions.add(FilesForm.actions.parentFolder);
+        actions.add(FilesForm.actions.download);
+        actions.add(FilesForm.actions.deletePath);
+        actions.add(FilesForm.actions.refresh);
+        actions.add(FilesForm.actions.importData);
+
+        if (getRootContext().getUser().isAdministrator())
+            actions.add(FilesForm.actions.customize);
+
+        form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
 
         return form;
     }
@@ -196,7 +200,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             createDirectory,
             parentFolder,
             upload,
-            moreActions,
+            importData,
+            customize,
         }
 
         public boolean isAutoResize()
@@ -276,6 +281,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public void setRootPath(Container c, String davName)
         {
+/*
+            AppProps props = AppProps.getInstance();
+            StringBuilder baseServer = URLHelper.getBaseServer(props.getScheme(), props.getServerName(), props.getServerPort());
+            String webdavPrefix = baseServer.append(props.getContextPath()).append("/").append(WebdavService.getServletPath()).toString();
+*/
             String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
             String rootPath;
 

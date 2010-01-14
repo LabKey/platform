@@ -1501,10 +1501,10 @@ public class PageFlowUtil
         // Ext CSS
         sb.append("    <link href=\"");
         sb.append(AppProps.getInstance().getContextPath());
-        sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+        sb.append("/ext-2.2/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
         sb.append("    <link href=\"");
         sb.append(AppProps.getInstance().getContextPath());
-        sb.append("/ext-2.2/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+        sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
         // Ext JS
         sb.append("    <script src=\"");

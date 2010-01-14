@@ -36,8 +36,7 @@
     LABKEY.requiresScript("applet.js");
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("FileUploadField.js");
-    LABKEY.requiresCss("verticalTabPanel/VerticalTabPanel.css");
-    LABKEY.requiresScript("verticalTabPanel/VerticalTabPanel.js");
+    LABKEY.requiresScript("ActionsAdmin.js");
 </script>
 
 <%
@@ -152,13 +151,20 @@ function renderBrowser(rootPath, dir)
         // collapsible tab panel used to display dialog-like content
         collapsibleTabPanel : undefined,
 
-        // all actions tab
-        allActionsTab : undefined,
+        // import data tab
+        importDataTab : undefined,
 
         actionsConnection : new Ext.data.Connection({autoAbort:true}),
 
         // pipeline actions
         pipelineActions : undefined,
+
+        // file upload form field
+        fileInputField : undefined,
+
+        // toolbar buttons
+        toolbarButtons : [],
+        toolbar : undefined,
 
         constructor : function(config)
         {
@@ -185,7 +191,7 @@ function renderBrowser(rootPath, dir)
             if (this.currentDirectory)
             {
                 var form = this.collapsibleTabPanel.getActiveTab().getForm();
-                var path = this.fileUploadField.getValue();
+                var path = this.fileInputField.getValue();
                 var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
                 var name = path.substring(i+1);
                 var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
@@ -196,7 +202,7 @@ function renderBrowser(rootPath, dir)
                 }
                 else
                 {
-                    var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
+                    var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileInputField.getValue()};
                     // set errorReader, so that handleResponse() doesn't try to eval() the XML response
                     // assume that we've got a WebdavFileSystem
                     form.errorReader = this.fileSystem.transferReader;
@@ -208,7 +214,7 @@ function renderBrowser(rootPath, dir)
 
         uploadSuccess : function(f, action)
         {
-            this.fileUploadField.reset();
+            this.fileInputField.reset();
             Ext.getBody().dom.style.cursor = "pointer";
             console.log("upload actioncomplete");
             console.log(action);
@@ -221,7 +227,7 @@ function renderBrowser(rootPath, dir)
 
         uploadFailed : function(f, action)
         {
-            this.fileUploadField.reset();
+            this.fileInputField.reset();
             Ext.getBody().dom.style.cursor = "pointer";
             console.log("upload actionfailed");
             console.log(action);
@@ -233,42 +239,25 @@ function renderBrowser(rootPath, dir)
          */
         createPanels : function()
         {
-            var buttons = [];
-
             this.actions.upload = new Ext.Action({
                 text: 'Upload',
                 listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
             });
 
-            this.actions.moreActions = new Ext.Action({
-                text: 'More Actions',
-                listeners: {click:function(button, event) {this.toggleTabPanel('allActionsTab');}, scope:this},
-                tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'}
+            this.actions.importData = new Ext.Action({
+                text: 'Import Data',
+                listeners: {click:function(button, event) {this.toggleTabPanel('importDataTab');}, scope:this}
             });
-            //buttons.push(new Ext.Button({text:'More Actions', tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'},
-            //    listeners:{click:function(button, event) {this.toggleTabPanel('allActionsTab');}, scope:this}}));
 
-//            buttons.push(new Ext.Button({text:'Upload', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}));
+            this.actions.customize = new Ext.Action({
+                text: 'Admin',
+                listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
+                //tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'}
+            });
 
-            if (this.buttonCfg && this.buttonCfg.length)
-            {
-                for (var i=0; i < this.buttonCfg.length; i++)
-                {
-                    var item = this.buttonCfg[i];
-                    if (typeof item == "string" && typeof this.actions[item] == "object")
-                        buttons.push(new Ext.Button(this.actions[item]));
-                    else
-                        buttons.push(item);
-                }
-            }
-
-            //buttons.push(new Ext.Button({text:'More Actions', tooltip: {text:'Displays additional actions that can be performed on selected files', title:'More Actions'},
-            //    listeners:{click:function(button, event) {this.toggleTabPanel('allActionsTab');}, scope:this}}));
-
-            new Ext.Toolbar({
-                renderTo: 'toolbar',
-                border: false,
-                items: buttons
+            this.toolbar = new Ext.Panel({
+                id: 'toolbarPanel',
+                renderTo: 'toolbar'
             });
         },
 
@@ -280,16 +269,14 @@ function renderBrowser(rootPath, dir)
         {
             var items = FilesWebPartPanel.superclass.getItems.call(this);
 
-            this.allActionsTab = new Ext.Panel({
-                id: 'allActionsTab',
-                title: 'All'
+            this.importDataTab = new Ext.Panel({
+                id: 'importDataTab'
             });
 
-            this.fileUploadField = new Ext.form.FileUploadField(
+            this.fileInputField = new Ext.form.FileUploadField(
             {
                 id: this.id ? this.id + 'Upload' : 'fileUpload',
                 buttonText: "Browse...",
-                width: 350,
                 fieldLabel: 'Choose a file'
             });
 
@@ -302,7 +289,7 @@ function renderBrowser(rootPath, dir)
                 border:false,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [
-                    this.fileUploadField,
+                    this.fileInputField,
                     {xtype: 'textfield', fieldLabel: 'Description', width: 350}
                 ],
                 buttons:[
@@ -315,6 +302,8 @@ function renderBrowser(rootPath, dir)
                     "actionfailed" : {fn: this.uploadFailed, scope: this}
                 }
             });
+           // uploadPanel.on('render', function(c){c.doLayout();}, this);
+            //this.on(BROWSER_EVENTS.directorychange,function(record){this.onDirectoryChange(record);}, this);
 
             this.collapsibleTabPanel = new TinyTabPanel({
                 region: 'north',
@@ -326,10 +315,11 @@ function renderBrowser(rootPath, dir)
                 collapsible: true,
                 collapsed: true,
                 hideCollapseTool: true,
-                activeTab: 'allActionsTab',
+                activeTab: 'uploadFileTab',
+                deferredRender: false,
                 items: [
                     uploadPanel,
-                    this.allActionsTab
+                    this.importDataTab,
                 ]});
 
             items.push(this.collapsibleTabPanel);
@@ -368,6 +358,7 @@ function renderBrowser(rootPath, dir)
                 store: this.store,
                 border:false,
                 selModel : sm,
+                loadMask:{msg:"Loading, please wait..."},
                 columns: [
                     sm,
                     {header: "", width:20, dataIndex: 'iconHref', sortable: false, hidden:false, renderer:iconRenderer},
@@ -377,6 +368,8 @@ function renderBrowser(rootPath, dir)
                     {header: "Usages", width: 150, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage}
                 ]
             });
+            // hack to get the file input field to size correctly
+            grid.on('render', function(c){this.fileInputField.setSize(350);}, this);
             return grid;
         },
 
@@ -390,59 +383,153 @@ function renderBrowser(rootPath, dir)
                 url:actionsURL + encodeURIComponent(path),
                 method:'GET',
                 disableCaching:false,
-                success : this.renderExtraActions,
+                success : this.updatePipelineActions,
                 scope: this
             });
         },
 
-        renderExtraActions : function(response)
+        updatePipelineActions : function(response)
         {
             var o = eval('var $=' + response.responseText + ';$;');
             var actions = o.success ? o.actions : [];
 
-            // delete the actions container
-            if (this.allActionsTab && this.pipelineActions != undefined)
-                this.allActionsTab.remove('allActionsToolbar');
+            var toolbarActions = [];
+            var importActions = [];
 
             if (actions && actions.length)
             {
-                this.pipelineActions = [];
-
                 for (var i=0; i < actions.length; i++)
                 {
                     var action = actions[i];
                     if (action.links.items != undefined)
                     {
-                        var items = [];
                         for (var j=0; j < action.links.items.length; j++)
                         {
                             var item = action.links.items[j];
-                            if (item.text && item.href)
+                            if (item.text && item.href && item.display != 'disabled')
                             {
-                                items.push({text: item.text, files: action.files, multiSelect: item.multiSelect, itemHref: item.href, listeners: {click: this.executePipelineAction, scope: this}});
+                                if (item.display == 'toolbar')
+                                    this.addActionItem(toolbarActions, action, item);
+                                else
+                                    this.addActionItem(importActions, action, item);
                             }
                         }
-
-                        if (items.length)
-                            this.pipelineActions.push(new Ext.Action({text:action.links.text, multiSelect: action.multiSelect, files: action.files, menu: {cls: 'extContainer', items: items}}));
-                        else
-                            this.pipelineActions.push(new Ext.Action({text:action.links.text, multiSelect: action.multiSelect, files: action.files}));
                     }
-                    else if (action.links.text && action.links.href)
+                    else if (action.links.text && action.links.href && action.links.display != 'disabled')
                     {
-                        this.pipelineActions.push(new Ext.Action({text:action.links.text, multiSelect: action.multiSelect, files: action.files, itemHref: action.links.href, listeners: {click: this.executePipelineAction, scope: this}}));
+                        if (action.links.display == 'toolbar')
+                            this.addActionItem(toolbarActions, action);
+                        else
+                            this.addActionItem(importActions, action);
                     }
                 }
-
-                // add the actions to a toolbar and insert into the tabpanel
-                var allActions = new Ext.Toolbar({
-                    id: 'allActionsToolbar',
-                    items: this.pipelineActions
-                });
-                this.allActionsTab.add(allActions);
-                this.allActionsTab.doLayout();
-                this.onSelectionChange();
             }
+
+            this.displayPipelineActions(toolbarActions, importActions)
+        },
+
+        /**
+         * Helper to add pipeline action items to an object array
+         */
+        addActionItem : function(list, action, item)
+        {
+            var name = action.links.text;
+
+            // multiple items per type (menu dropdown)
+            if (item)
+            {
+                var actionObject = list[action.links.text];
+                if (!actionObject)
+                {
+                    actionObject = {text: name, multiSelect: action.multiSelect, files: action.files, menu: {cls: 'extContainer', items: []}};
+                    list[name] = actionObject;
+                }
+                actionObject.menu.items.push({
+                    text: item.text,
+                    files: action.files,
+                    multiSelect: item.multiSelect,
+                    itemHref: item.href,
+                    display: item.display,
+                    listeners: {click: this.executePipelineAction, scope: this}});
+            }
+            else
+            {
+                list[name] = {text:name, multiSelect: action.multiSelect, files: action.files, itemHref: action.links.href, listeners: {click: this.executePipelineAction, scope: this}};
+            }
+        },
+
+        displayPipelineActions : function(toolbarActions, importActions)
+        {
+            // delete the actions container
+            if (this.importDataTab && this.importDataTab.items)
+                this.importDataTab.remove('importDataPanel');
+
+            if (this.toolbar && this.toolbar.items)
+                this.toolbar.remove('toolbarPanelToolbar');
+
+            var tbarButtons = [];
+            var importDataButtons = [];
+
+            // first add the standard buttons
+            if (this.buttonCfg && this.buttonCfg.length)
+            {
+                for (var i=0; i < this.buttonCfg.length; i++)
+                {
+                    var item = this.buttonCfg[i];
+                    if (typeof item == "string" && typeof this.actions[item] == "object")
+                        tbarButtons.push(new Ext.Button(this.actions[item]));
+                    else
+                        tbarButtons.push(item);
+                }
+            }
+
+            // now add the configurable pipleline actions
+            this.pipelineActions = [];
+
+            for (action in toolbarActions)
+            {
+                var a = toolbarActions[action];
+                if (a.text)
+                {
+                    var tbarAction = new Ext.Action(a);
+                    tbarButtons.push(new Ext.Button(tbarAction));
+                    this.pipelineActions.push(tbarAction);
+                }
+            }
+
+            for (action in importActions)
+            {
+                var a = importActions[action];
+                if (a.text)
+                {
+                    var importAction = new Ext.Action(a);
+                    importDataButtons.push(importAction);
+                    this.pipelineActions.push(importAction);
+                }
+            }
+
+            // add the appropriate import actions to the import data tabpanel
+            var importData = new Ext.Panel({
+                id: 'importDataPanel',
+                bodyStyle : 'background-color:#f0f0f0; padding:10px;',
+                items: new Ext.Toolbar({items:importDataButtons}),
+                buttons:[
+                    {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('importDataTab');}, scope:this}}
+                ],
+                buttonAlign: 'center'
+            });
+            this.importDataTab.add(importData);
+            this.importDataTab.doLayout();
+
+            var toolbar = new Ext.Toolbar({
+                id: 'toolbarPanelToolbar',
+                //renderTo: 'toolbar',
+                border: false,
+                items: tbarButtons
+            });
+            //this.toolbar.render('toolbar');
+            this.toolbar.add(toolbar);
+            this.toolbar.doLayout();
         },
 
         // selection change handler
@@ -538,9 +625,18 @@ function renderBrowser(rootPath, dir)
                 document.body.appendChild(form);    // Not entirely sure if this is necessary
                 form.submit();
             }
+        },
+
+        onAdmin : function(btn)
+        {
+            var configDlg = new LABKEY.ActionsAdminPanel({path: this.currentDirectory.data.path});
+
+            configDlg.on('success', function(c){this.onDirectoryChange(this.currentDirectory);}, this);
+            configDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
+
+            configDlg.show();
         }
     });
-
 
     if (!fileSystem)
         fileSystem = new LABKEY.WebdavFileSystem({

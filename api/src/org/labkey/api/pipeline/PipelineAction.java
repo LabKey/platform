@@ -63,6 +63,11 @@ public class PipelineAction
         _description = description;
     }
 
+    public NavTree getLinks()
+    {
+        return _links;
+    }
+
     public JSONObject toJSON()
     {
         JSONObject o = new JSONObject();

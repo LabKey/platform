@@ -49,6 +49,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     private String _script;
     private String _id = "";
     private boolean _disabled;
+    private String _display;
 
     private ArrayList<NavTree> children = null;
 
@@ -366,6 +367,16 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _disabled = disabled;
     }
 
+    public String getDisplay()
+    {
+        return _display;
+    }
+
+    public void setDisplay(String display)
+    {
+        _display = display;
+    }
+
     public String childrenToJS()
     {
         if (null == children)
@@ -401,6 +412,8 @@ public class NavTree extends Pair<String, String> implements Collapsible
             o.put("href",getValue());
         if (null != getScript())
             o.put("handler", "function(){" + getScript() + "}");
+        if (null != getDisplay())
+            o.put("display", getDisplay());
         if (recursive && null != getChildren() && getChildren().length > 0)
         {
             JSONArray a = new JSONArray();
