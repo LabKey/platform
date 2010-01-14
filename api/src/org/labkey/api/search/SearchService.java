@@ -17,6 +17,7 @@ package org.labkey.api.search;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
@@ -43,7 +44,9 @@ public interface SearchService
     static Category _log = Category.getInstance(SearchService.class);
 
     public final static SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
-    
+    public final static SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
+
+
     enum PRIORITY
     {
         commit,
@@ -83,8 +86,6 @@ public interface SearchService
     {
         String getDescription();
 
-        boolean isCancelled();
-
         int getDocumentCountEstimate();
 
         int getIndexedCount();
@@ -114,13 +115,14 @@ public interface SearchService
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull Resource r, SearchService.PRIORITY pri);
+
+        void onSuccess(Runnable r);
     }
 
 
     //
     // plug in interfaces
     //
-
     
     public interface ResourceResolver
     {
@@ -209,7 +211,7 @@ public interface SearchService
 
     List<IndexTask> getTasks();
 
-    void addPathToCrawl(Path path);
+    void addPathToCrawl(Path path, @Nullable Date nextCrawl);
 
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
     IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
@@ -250,6 +252,12 @@ public interface SearchService
          * else incremental (either modified > modifiedSince, or modified > lastIndexed)
          */
         void enumerateDocuments(IndexTask task, Container c, Date since);
+
+        /**
+         *if the full-text search is deleted, providers may need to clear
+         * any stored lastIndexed values.
+         */
+        void indexDeleted() throws SQLException;
     }
 
     // an interface that enumerates documents in a container (not recursive)
@@ -278,12 +286,14 @@ public interface SearchService
     public static class LastIndexedClause extends SimpleFilter.FilterClause
     {
         SQLFragment _sqlf = new SQLFragment();
-        private List<String> _colNames = new ArrayList<String>();
+        private Set<String> _colNames = new HashSet<String>();
 
+        final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
 
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
-            boolean incremental = modifiedSince != null;
+            boolean incremental = modifiedSince == null || modifiedSince.compareTo(oldDate) > 0;
+            
             // no filter
             if (!incremental)
                 return;
@@ -292,23 +302,29 @@ public interface SearchService
             ColumnInfo lastIndexed = info.getColumn("lastIndexed");
             String prefix = null == tableAlias ? " " : tableAlias + ".";
 
+            String or = "";
+            if (null != lastIndexed)
+            {
+                _sqlf.append(prefix).append(lastIndexed.getSelectName()).append(" IS NULL");
+                _colNames.add(lastIndexed.getName());
+                or = " OR ";
+            }
+
             if (null != modified && null != lastIndexed)
             {
-                _sqlf.append("NOT (");
-                _sqlf.append(prefix).append(modified.getSelectName()).append("<").append(prefix).append(lastIndexed.getSelectName());
-                _sqlf.append(")");
+                _sqlf.append(or);
+                _sqlf.append(prefix).append(modified.getSelectName()).append(">").append(prefix).append(lastIndexed.getSelectName());
                 _colNames.add(modified.getName());
                 _colNames.add(lastIndexed.getName());
+                or = " OR ";
             }
-            else if (null != modified)
+
+            if (null != modifiedSince && null != modified)
             {
+                _sqlf.append(or);
                 _sqlf.append(prefix).append(modified.getSelectName()).append("> ?");
                 _sqlf.add(modifiedSince);
                 _colNames.add(modified.getName());
-            }
-            else if (null != lastIndexed)
-            {
-                // lastIndexed but no modified???
             }
         }
 
@@ -319,7 +335,7 @@ public interface SearchService
 
         public List<String> getColumnNames()
         {
-            return _colNames;
+            return new ArrayList<String>(_colNames);
         }
     }
 }
@@ -332,5 +348,11 @@ public interface SearchService
 // TODO consider Files table (Attachments?) and attached properties
 // TODO participantid and sampleid
 // TODO Resource.shouldCrawl()
-// TODO: resource.shouldIndex()
+// TODO resource.shouldIndex()
+// TODO fcs keywords
+// TODO issues attachments
+// TODO index in response to dav methods
+// TODO delete documents
+// TODO admin controls
+// TODO perf/profiling
 //

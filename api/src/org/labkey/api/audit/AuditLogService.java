@@ -25,6 +25,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 
@@ -53,13 +54,14 @@ public class AuditLogService
             throw new IllegalStateException("An audit log provider :" + _instance.getClass().getName() + " has already been registered");
 
         _instance = provider;
+        ServiceRegistry.get().registerService(AuditLogService.I.class, provider);
     }
 
     public interface I
     {
         /**
          * Specifies whether the provider produces displayable views.
-         * @return  
+         * @return
          */
         public boolean isViewable();
 

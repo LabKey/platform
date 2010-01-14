@@ -3185,6 +3185,8 @@ public class OntologyManager
 
     static public void indexConcepts(SearchService.IndexTask task)
     {
+        if (1==1)
+            return;
         if (null == task)
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);

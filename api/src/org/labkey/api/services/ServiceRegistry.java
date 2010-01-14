@@ -66,6 +66,14 @@ public class ServiceRegistry
         return (T)(_services.get(type));
     }
 
+
+    // short cut
+    public static <T> T get(Class<T> type)
+    {
+        return get().getService(type);
+    }
+    
+
     /**
      * Registers a service implementation. Modules that expose services should call this method
      * at load time, passing the service interface class and the implemenation instance.

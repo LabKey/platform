@@ -15,6 +15,7 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.search.SearchService;
 import org.labkey.api.util.Path;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public abstract class AbstractDocumentResource extends AbstractResource
     public AbstractDocumentResource(Path path)
     {
         super(path);
+        setProperty(SearchService.fileCategory);
     }
 
     protected AbstractDocumentResource(Path parent, String name)

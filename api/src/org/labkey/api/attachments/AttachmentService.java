@@ -17,6 +17,7 @@
 package org.labkey.api.attachments;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -71,7 +72,7 @@ public class AttachmentService
         public Attachment[] getAttachments(AttachmentParent parent);
         public List<Pair<String,String>> listAttachments(Collection<String> parents, Date modifiedSince);
         public Resource getAttachmentResource(Path path, AttachmentParent parent);
-        public Resource getDocumentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name);
+        public Resource getDocumentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name, SearchService.SearchCategory cat);
         public Attachment getAttachment(AttachmentParent parent, String name);
         public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;

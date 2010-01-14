@@ -35,10 +35,7 @@ import org.labkey.api.view.ViewContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -122,8 +119,8 @@ public abstract class AbstractResource implements Resource
 
     public void setLastIndexed(long ms)
     {
-        // DavCrawler uses this information
-        ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
+        if (isFile())
+            ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
     }
 
     public String getModifiedBy()
@@ -380,5 +377,19 @@ public abstract class AbstractResource implements Resource
     public boolean shouldIndex()
     {
         return true;
+    }
+
+    protected void setProperty(String key, String value)
+    {
+        if (_properties == null)
+            _properties = new HashMap<String, Object>();
+        _properties.put(key,value);
+    }
+
+    protected void setProperty(SearchService.SearchCategory category)
+    {
+        if (_properties == null)
+            _properties = new HashMap<String, Object>();
+        _properties.put(SearchService.PROPERTY.category.toString(),category.toString());
     }
 }
