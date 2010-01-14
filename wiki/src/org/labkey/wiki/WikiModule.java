@@ -17,9 +17,13 @@ package org.labkey.wiki;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
+import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -217,5 +221,13 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
                 }
             };
         task.addRunnable(r, SearchService.PRIORITY.bulk);
+    }
+
+
+    public void indexDeleted() throws SQLException
+    {
+        Table.execute(CommSchema.getInstance().getSchema(), new SQLFragment(
+            "UPDATE comm.pages SET lastIndexed=NULL"
+        ));
     }
 }

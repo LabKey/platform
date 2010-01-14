@@ -830,6 +830,9 @@ public class AnnouncementManager
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
             return;
+        if (null != c && isSecure(c))
+            return;
+
         ResultSet rs = null;
         ResultSet rs2 = null;
 
@@ -874,7 +877,7 @@ public class AnnouncementManager
                 sql.add(c);
                 and = " AND ";
             }
-            modified = new SearchService.LastIndexedClause(_comm.getTableInfoAnnouncements(), modifiedSince, "a").toSQLFragment(null, null);
+            modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
             if (!modified.isEmpty())
                 sql.append(and).append(modified);
 
@@ -923,7 +926,7 @@ public class AnnouncementManager
                             new Path(entityId, documentName),
                             attachmentUrl, title,
                             ann,
-                            documentName);
+                            documentName, searchCategory);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
 
@@ -948,6 +951,19 @@ public class AnnouncementManager
         try
         {
             Container c = ContainerManager.getForId(containerId);
+            return AnnouncementManager.getMessageBoardSettings(c).isSecure();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private static boolean isSecure(Container c)
+    {
+        try
+        {
             return AnnouncementManager.getMessageBoardSettings(c).isSecure();
         }
         catch (Exception e)

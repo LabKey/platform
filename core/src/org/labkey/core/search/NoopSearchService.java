@@ -144,6 +144,10 @@ public class NoopSearchService implements SearchService
         {
             return null;
         }
+
+        public void onSuccess(Runnable r)
+        {
+        }
     };
 
 
@@ -162,7 +166,7 @@ public class NoopSearchService implements SearchService
         return _dummyTask;
     }
 
-    public void addPathToCrawl(Path path)
+    public void addPathToCrawl(Path path, Date d)
     {
     }
 

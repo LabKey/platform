@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -583,9 +584,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public Resource getDocumentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name)
+    public Resource getDocumentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name, SearchService.SearchCategory cat)
     {
-        return new AttachmentResource(path, downloadURL, title, parent, name);
+        return new AttachmentResource(path, downloadURL, title, parent, name, cat);
     }
 
 
@@ -1074,7 +1075,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         Attachment _cached = null;
 
 
-        AttachmentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name)
+        AttachmentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name, SearchService.SearchCategory cat)
         {
             super(path);
             Container c = ContainerManager.getForId(parent.getContainerId());
@@ -1083,7 +1084,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _downloadUrl = downloadURL;
             _parent = parent;
             _name = name;
-            _properties = Collections.singletonMap("title",(Object)title);
+            String category = cat == null ?
+                    SearchService.fileCategory.toString() :
+                    SearchService.fileCategory.toString() + " " + cat.toString();
+            setProperty("title", title);
+            setProperty(SearchService.PROPERTY.category.toString(), category);
         }
 
 
@@ -1358,6 +1363,21 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             //noinspection unchecked
             return Collections.EMPTY_LIST;
+        }
+
+        @Override
+        public void setLastIndexed(long ms)
+        {
+            try
+            {
+            Table.execute(CoreSchema.getInstance().getSchema(), new SQLFragment(
+                    "UPDATE core.Documents SET LastIndexed=? WHERE Parent=? and DocumentName=?",
+                    new Object[]{new Date(ms), _parent.getEntityId(), _name}));
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
         }
     }
 

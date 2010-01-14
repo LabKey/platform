@@ -20,9 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.announcements.model.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.*;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.SecurityManager;
@@ -219,5 +217,10 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                 }
             };
         task.addRunnable(r, SearchService.PRIORITY.bulk);
+    }
+
+    public void indexDeleted() throws SQLException
+    {
+        Table.execute(CommSchema.getInstance().getSchema(), new SQLFragment("UPDATE comm.announcements SET LastIndexed=NULL"));
     }
 }

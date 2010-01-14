@@ -81,6 +81,7 @@ import org.labkey.study.view.*;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.*;
 
 
@@ -459,5 +460,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 StudyManager.indexParticipants(c);
             }
         }, SearchService.PRIORITY.bulk);
+    }
+
+    public void indexDeleted() throws SQLException
+    {
     }
 }

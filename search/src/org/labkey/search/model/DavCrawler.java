@@ -66,8 +66,8 @@ public class DavCrawler implements ShutdownListener
     // to make testing easier, break out the interface for persisting crawl state
     public interface SavePaths
     {
-        final static java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
-        final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("2000-01-01"));
+        final static java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-31"));
+        final static java.util.Date oldDate =  new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
 
         // collections
 
@@ -147,7 +147,7 @@ public class DavCrawler implements ShutdownListener
         _log.debug("START CONTINUOUS " + start.toString());
 
         if (null != start)
-            _paths.insertPath(start, nextCrawl);
+            _paths.updatePath(start, null, nextCrawl, true);
         pingCrawler();
     }
 
@@ -193,13 +193,25 @@ public class DavCrawler implements ShutdownListener
             }
 
 
-            Resource r = getResolver().lookup(_path);
+            final Resource r = getResolver().lookup(_path);
             if (null == r || !r.isCollection())
             {
                 _paths.deletePath(_path);
                 return;
             }
 
+            // UNDONE: would be better if this were called on _task completion
+            {
+            long changeInterval = (r instanceof WebdavResolver.WebFolder) ? Cache.DAY / 2 : Cache.DAY;
+            final long nextCrawl = now + (long)(changeInterval * (0.5 + 0.5 * Math.random()));
+            _task.onSuccess(new Runnable() {
+                public void run()
+                {
+                    _paths.updatePath(_path, new Date(now), new Date(nextCrawl), true);
+                    r.setLastIndexed(now);
+                }
+            });
+            }
 
             // if this is a web folder, call enumerate documents
             if (r instanceof WebdavResolver.WebFolder)
@@ -256,11 +268,6 @@ public class DavCrawler implements ShutdownListener
                     }
                 }
             }
-
-            // UNDONE: would be better if this were called on _task completion
-            long changeInterval = (r instanceof WebdavResolver.WebFolder) ? Cache.DAY / 2 : Cache.DAY;
-            long nextCrawl = now + (long)(changeInterval * (0.5 + 0.5 * Math.random()));
-            _paths.updatePath(_path, new Date(now), new Date(nextCrawl), true);
         }
     }
 

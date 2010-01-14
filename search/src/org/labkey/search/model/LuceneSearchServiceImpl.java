@@ -360,6 +360,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public List<SearchHit> search(String queryString, User user, Container root, int page)
             throws IOException
     {
+        audit(user, root, queryString);
+
         String sort = null;  // TODO: add sort parameter
         int hitsPerPage = 20;
         int hitsToRetrieve = (page + 1) * hitsPerPage;
@@ -402,6 +404,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             SearchHit hit = new SearchHit();
             hit.totalHits = topDocs.totalHits;
+            hit.container = doc.get(FIELD_NAMES.container.name());
+            hit.docid = doc.get(FIELD_NAMES.uniqueId.name());
             hit.summary = doc.get(FIELD_NAMES.summary.name());
             hit.url = doc.get(FIELD_NAMES.url.name());
             hit.title = doc.get(FIELD_NAMES.title.name());

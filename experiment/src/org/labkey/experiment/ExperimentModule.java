@@ -200,8 +200,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
         {
-            ss.addSearchCategory(OntologyManager.conceptCategory);
-            ss.addDocumentProvider(this);
+//            ss.addSearchCategory(OntologyManager.conceptCategory);
+//            ss.addDocumentProvider(this);
         }
 
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
@@ -314,5 +314,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         if (c == ContainerManager.getSharedContainer())
             OntologyManager.indexConcepts(task);
+    }
+
+    public void indexDeleted() throws SQLException
+    {
     }
 }

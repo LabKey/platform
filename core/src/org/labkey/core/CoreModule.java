@@ -21,6 +21,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.*;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -83,7 +84,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public double getVersion()
     {
-        return 9.36;
+        return 9.37;
     }
 
     @Override
@@ -491,5 +492,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 new ActionURL("project","start",c),
                 properties);
         task.addResource(doc, SearchService.PRIORITY.item);
+    }
+
+    public void indexDeleted() throws SQLException
+    {
+        Table.execute(IssuesSchema.getInstance().getSchema(), new SQLFragment(
+            "UPDATE core.Documents SET lastIndexed=NULL"
+        ));
     }
 }

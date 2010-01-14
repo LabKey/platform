@@ -17,10 +17,7 @@ package org.labkey.issue;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -38,6 +35,7 @@ import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -151,5 +149,12 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                 }
             };
         task.addRunnable(r, SearchService.PRIORITY.bulk);
+    }
+
+    public void indexDeleted() throws SQLException
+    {
+        Table.execute(IssuesSchema.getInstance().getSchema(), new SQLFragment(
+            "UPDATE issues.issues SET lastIndexed=NULL"
+        ));
     }
 }

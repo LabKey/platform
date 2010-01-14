@@ -283,6 +283,7 @@ core/resources/schemas/dbscripts/postgresql/core-9.32-9.33.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.33-9.34.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.34-9.35.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.35-9.36.sql -text
+core/resources/schemas/dbscripts/postgresql/core-9.36-9.37.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/bootstrap.sql -text
@@ -361,6 +362,7 @@ core/resources/schemas/dbscripts/sqlserver/core-9.32-9.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.33-9.34.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.34-9.35.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.35-9.36.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-9.36-9.37.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/bootstrap.sql -text
@@ -1816,6 +1818,7 @@ search/src/org/labkey/search/model/SecurityFilter.java -text
 search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
 search/src/org/labkey/search/view/admin.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
+search/src/org/labkey/search/view/testJson.jsp -text
 search/src/schemas/search.xml -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text
 study/gwtsrc/org/labkey/assay/designer/client/AssayDesigner.java -text

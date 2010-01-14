@@ -17,27 +17,21 @@
 package org.labkey.search;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.data.Container;
+import org.json.JSONObject;
+import org.labkey.api.action.*;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
 import org.springframework.validation.BindException;
@@ -45,7 +39,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.Date;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -296,6 +289,37 @@ public class SearchController extends SpringActionController
     }
 
 
+    // UNDONE: remove; for testing only
+    // cause the current directory to be crawled soon
+    @RequiresSiteAdmin
+    public class CrawlAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            // SimpleRedirectAction doesn't take a form
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null == ss)
+                return null;
+
+            ss.addPathToCrawl(
+                    Path.parse(WebdavService.getServletPath()).append(getContainer().getParsedPath()),
+                    new Date(System.currentTimeMillis()));
+
+            try
+            {
+                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
+                if (null != returnUrl)
+                    return new ActionURL(returnUrl);
+            }
+            catch (Exception x)
+            {
+            }
+            return new ActionURL(SearchAction.class, getContainer());
+        }
+    }
+
+
     // for testing only
     @RequiresSiteAdmin
     public class IndexAction extends SimpleRedirectAction
@@ -349,10 +373,7 @@ public class SearchController extends SpringActionController
 
             if (wait && null != task)
             {
-                while (!task.isDone())
-                {
-                    try {Thread.sleep(200);}catch(InterruptedException x){}
-                }
+                task.get(); // wait for completion
                 if (ss instanceof AbstractSearchService)
                     ((AbstractSearchService)ss).commit();
             }
@@ -370,11 +391,76 @@ public class SearchController extends SpringActionController
     }
 
 
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class JsonAction extends ApiAction<SearchForm>
+    {
+        @Override
+        public ApiResponse execute(SearchForm form, BindException errors) throws Exception
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null == ss)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            String query = form.getQueryString();
+            JSONObject response = new JSONObject();
+            Object[] arr = new Object[0];
+            int totalHits = 0;
+
+            if (null != StringUtils.trimToNull(query))
+            {
+                //UNDONE: paging, rowlimit etc
+                List<SearchService.SearchHit> hits = ss.search(query, getViewContext().getUser(), ContainerManager.getRoot(), 1);
+                arr = new Object[hits.size()];
+
+                int i=0;
+                for (SearchService.SearchHit hit : hits)
+                {
+                    totalHits = hit.totalHits;
+                    JSONObject o = new JSONObject();
+                    String id = StringUtils.isEmpty(hit.docid) ? String.valueOf(i) : hit.docid;
+                    o.put("id", id);
+                    o.put("title", hit.title);
+                    o.put("container", hit.container);
+                    o.put("url", hit.url);
+                    o.put("summary", StringUtils.trimToEmpty(hit.summary));
+                    arr[i++] = o;
+                }
+            }
+            // UNDONE: SearchHit.totalHit is a hack, don't really want to expose in API
+            response.put("success",true);
+            response.put("hits", arr);
+            response.put("totalHits", totalHits);
+            response.put("q", query);
+            return new ApiSimpleResponse(response);
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class TestJson extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView(SearchController.class, "view/testJson.jsp", null, null);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+    
+
     static SearchService.IndexTask _lastFullTask = null;
     static SearchService.IndexTask _lastIncrementalTask = null;
 
     
-    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends SimpleViewAction<SearchForm>
     {
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception

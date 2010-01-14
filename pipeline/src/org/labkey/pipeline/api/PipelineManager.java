@@ -179,7 +179,7 @@ public class PipelineManager
             Path davPath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null != ss)
-                ss.addPathToCrawl(davPath);
+                ss.addPathToCrawl(davPath, null);
         }
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(

@@ -906,7 +906,7 @@ public class WikiManager
                             new Path(entityId,documentName),
                             attachmentUrl, title,
                             parent,
-                            documentName);
+                            documentName, searchCategory);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
             }

@@ -122,9 +122,13 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     // indicates that caller is done adding Resources to this task
     public void setReady()
     {
-        _isReady = true;
-        if (_subtasks.isEmpty())
-            checkDone();
+        synchronized (_completeEvent)
+        {
+            _isReady = true;
+            if (_subtasks.isEmpty())
+                if (checkDone())
+                    onDone();
+        }
     }
 
 
@@ -143,43 +147,93 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
             assert null == remove || remove == item;
             empty = _subtasks.isEmpty();
         }
-        if (empty && checkDone())
+        if (!empty)
+            return;
+
+        synchronized (_completeEvent)
         {
-            _complete = System.currentTimeMillis();
-            synchronized (_completeEvent)
-            {
-                _completeEvent.notifyAll();
-            }
+            if (checkDone())
+                onDone();
         }
     }
 
+
     public boolean isCancelled()
     {
-        return _cancelled;
+        synchronized (_completeEvent)
+        {
+            return _cancelled;
+        }
     }
+
 
     public boolean cancel(boolean mayInterruptIfRunning)
     {
-        _cancelled = true;
-        return true;
+        synchronized (_completeEvent)
+        {
+            _cancelled = true;
+            _completeEvent.notify();
+            return true;
+        }
     }
+
 
     public boolean isDone()
     {
-        return _complete != 0 || _cancelled;
+        synchronized (_completeEvent)
+        {
+            return _complete != 0 || _cancelled;
+        }
     }
+
 
     public SearchService.IndexTask get() throws InterruptedException, ExecutionException
     {
-        _completeEvent.wait();
+        synchronized (_completeEvent)
+        {
+            if (!isDone())
+                _completeEvent.wait();
+        }
         return this;
     }
+
 
     public SearchService.IndexTask get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
     {
-        _completeEvent.wait(unit.toMillis(timeout));
+        synchronized (_completeEvent)
+        {
+            if (!isDone())
+                _completeEvent.wait(unit.toMillis(timeout));
+        }
         return this;
     }
 
+
+    Runnable onSuccess = null;
+
+    public void onSuccess(Runnable r)
+    {
+        synchronized (_completeEvent)
+        {
+            if (null != onSuccess)
+                throw new IllegalStateException("only one success event supported");
+            if (isDone() && !isCancelled())
+                r.run();
+            else
+                onSuccess = r;
+        }
+    }
+
+    protected void onDone()
+    {
+        assert Thread.holdsLock(_completeEvent);
+        
+        _complete = System.currentTimeMillis();
+        _completeEvent.notifyAll();
+        if (null != onSuccess && !isCancelled())
+            onSuccess.run();
+    }
+
+    
     protected abstract boolean checkDone();
 }

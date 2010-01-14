@@ -727,14 +727,14 @@ public class IssueManager
                 int id = rs.getInt(1);
                 if (id != currentIssueId)
                 {
-                    queueIssue(task, ss, m, comments);
+                    queueIssue(task, currentIssueId, m, comments);
                     comments = new ArrayList<Issue.Comment>();
                     m = factory.getRowMap(rs);
                     currentIssueId = id;
                 }
                 comments.add(new Issue.Comment(rs.getString("comment")));
             }
-            queueIssue(task, ss, m, comments);
+            queueIssue(task, currentIssueId, m, comments);
             if (Thread.interrupted())
                 return;
         }
@@ -762,16 +762,15 @@ public class IssueManager
     }
 
 
-    static void queueIssue(SearchService.IndexTask task, SearchService ss, Map<String,Object> m, ArrayList<Issue.Comment> comments)
+    static void queueIssue(SearchService.IndexTask task, int id, Map<String,Object> m, ArrayList<Issue.Comment> comments)
     {
-        if (null == ss || null == m)
+        if (null == task || null == m)
             return;
-        String id = String.valueOf(m.get("issueid"));
         String title = String.valueOf(m.get("title"));
         m.put(SearchService.PROPERTY.title.toString(), id + " : " + title);
         m.put("comment",null);
         m.put("_row",null);
-        task.addResource(new IssueResource(m,comments), SearchService.PRIORITY.item);
+        task.addResource(new IssueResource(id, m,comments), SearchService.PRIORITY.item);
     }
 
 
@@ -812,13 +811,11 @@ public class IssueManager
     private static class IssueResource extends AbstractDocumentResource
     {
         Collection<Issue.Comment> _comments;
-        int _issueId;
+        final int _issueId;
 
         IssueResource(Issue issue)
         {
-            super(new Path(null==issue ? "NOTFOUND" : "issue:" + String.valueOf(issue.getIssueId())));
-            if (null == issue)
-                return;
+            super(new Path("issue:" + String.valueOf(issue.getIssueId())));
             _issueId = issue.issueId;
             Map<String,Object> m = _issueFactory.toMap(issue, null);
             for (Map.Entry<String,Object> e : m.entrySet())
@@ -837,9 +834,10 @@ public class IssueManager
         }
 
 
-        IssueResource(Map<String,Object> m, List<Issue.Comment> comments)
+        IssueResource(int issueId, Map<String,Object> m, List<Issue.Comment> comments)
         {
-            super(new Path("issue:"+String.valueOf(m.get("issueid"))));
+            super(new Path("issue:"+String.valueOf(issueId)));
+            _issueId = issueId;
             _containerId = (String)m.get("container");
             _properties = m;
             _comments = comments;

@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -83,6 +84,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     };
 
 
+    public AbstractSearchService()
+    {
+        addSearchCategory(fileCategory);
+        addSearchCategory(navigationCategory);
+    }
+    
+
     public IndexTask createTask(String description)
     {
         _IndexTask task = new _IndexTask(description);
@@ -97,9 +105,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public void addPathToCrawl(Path path)
+    public void addPathToCrawl(Path path, Date next)
     {
-        DavCrawler.getInstance().addPathToCrawl(path, null);
+        DavCrawler.getInstance().addPathToCrawl(path, next);
     }
 
 
@@ -299,8 +307,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         clearIndex();
         _savePaths.updatePrefix(Path.rootPath, null, null, true);
+        DocumentProvider[] documentProviders = _documentProviders.get();
+        for (DocumentProvider p : documentProviders)
+        {
+            try
+            {
+                p.indexDeleted();
+            }
+            catch (Throwable t)
+            {
+                _log.error("Unexpected error", t);
+            }
+        }
     }
 
+    
     private void queueItem(Item i)
     {
 //        assert MemTracker.put(i);
@@ -442,7 +463,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     
     protected int getCountIndexingThreads()
     {
-        return 4;
+        int cpu = Runtime.getRuntime().availableProcessors();
+        return Math.max(1,cpu/4);
     }
 
 
@@ -481,7 +503,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
         if (0 < countPreprocessingThreads)
-            _indexQueue = new ArrayBlockingQueue<Item>(Math.min(100,10*Runtime.getRuntime().availableProcessors()));
+            _indexQueue = new ArrayBlockingQueue<Item>(Math.min(100,10*countIndexingThreads));
 
         _threadsInitialized = true;
 
@@ -962,6 +984,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    protected void audit(User user, Container c, String query)
+    {
+        AuditLogService.I audit = AuditLogService.get();
+        if (null == audit)
+            return;
+        // UNDONE: need to configure an AuditLogService.AuditViewFactory
+        // audit.addEvent(user, c, "search", null, query);
+    }
+    
+
     static void indexMaintenance()
     {
         try
@@ -971,6 +1003,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     "DELETE FROM search.ParticipantIndex " +
                     "WHERE LastIndexed < ?",
                     new Object[] {new Date(System.currentTimeMillis() - 7*24*60*60*1000L)});
+            if (search.getSqlDialect().isPostgreSQL())
+            {
+                Table.execute(search, "CLUSTER search.CrawlResources", null);
+            }
         }
         catch (SQLException x)
         {
