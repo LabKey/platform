@@ -30,13 +30,13 @@ SET search_path TO core, public;
 -- LDAP authenticated users are not in this table
 
 CREATE TABLE Logins
-	(
+(
 	Email VARCHAR(255) NOT NULL,
 	Crypt VARCHAR(64) NOT NULL,
 	Verification VARCHAR(64),
 
 	CONSTRAINT PK_Logins PRIMARY KEY (Email)
-	);
+);
 
 -- Principals is used for managing security related information
 -- It is not used for validating login, that requires an 'external'
@@ -45,7 +45,7 @@ CREATE TABLE Logins
 -- It does not contain contact info and other generic user visible data
 
 CREATE TABLE Principals
-	(
+(
 	UserId SERIAL,			        -- user or group
 	Container ENTITYID,				-- NULL for all users, NOT NULL for _ALL_ groups
     OwnerId ENTITYID NULL,
@@ -54,23 +54,23 @@ CREATE TABLE Principals
 
 	CONSTRAINT PK_Principals PRIMARY KEY (UserId),
     CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)
-	);
+);
 
 
 SELECT SETVAL('Principals_UserId_Seq', 1000);
 
 -- maps users to groups (issue: groups containing groups?)
 CREATE TABLE Members
-	(
+(
 	UserId USERID,
 	GroupId USERID,
 	
 	CONSTRAINT PK_Members PRIMARY KEY (UserId, GroupId)
-	);
+);
 
 
 CREATE TABLE UsersData
-	(
+(
 	-- standard fields
 	_ts TIMESTAMP DEFAULT now(),
 	EntityId ENTITYID NOT NULL,
@@ -93,11 +93,11 @@ CREATE TABLE UsersData
 	LastLogin TIMESTAMP,
 
 	CONSTRAINT PK_UsersData PRIMARY KEY (UserId)
-	);
+);
 
 
 CREATE TABLE ACLs
-	(
+(
 	_ts TIMESTAMP DEFAULT now(),
 
 	-- we use UNIQUEIDENTIFIER, so we don't need to know ahead of time, what ACLs will be used for
@@ -106,11 +106,11 @@ CREATE TABLE ACLs
 	ACL BYTEA,
 	
 	CONSTRAINT UQ_ACLs_ContainerObjectId UNIQUE (Container, ObjectId)
-	);
+);
 
 
 CREATE TABLE Containers
-	(
+(
 	_ts TIMESTAMP DEFAULT now(),
 	RowId SERIAL,
 	EntityId ENTITYID NOT NULL,
@@ -123,19 +123,19 @@ CREATE TABLE Containers
 	CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
 	CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
 	CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES Containers(EntityId)
-	);
+);
 
 
 -- table for all modules
 CREATE TABLE Modules
-	(
+(
 	Name VARCHAR(255),
 	ClassName VARCHAR(255),
 	InstalledVersion FLOAT8,
 	Enabled BOOLEAN DEFAULT '1',
 
 	CONSTRAINT PK_Modules PRIMARY KEY (Name)
-	);
+);
 
 
 -- keep track of sql scripts that have been run in each module

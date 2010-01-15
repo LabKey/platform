@@ -30,13 +30,13 @@ GO
 -- LDAP authenticated users are not in this table
 
 CREATE TABLE core.Logins
-	(
+(
 	Email VARCHAR(255) NOT NULL,
 	Crypt VARCHAR(64) NOT NULL,
 	Verification VARCHAR(64),
 
 	CONSTRAINT PK_Logins PRIMARY KEY (Email),
-	)
+)
 GO
 
 
@@ -47,7 +47,7 @@ GO
 -- It does not contain contact info and other generic user visible data
 
 CREATE TABLE core.Principals
-	(
+(
 	UserId USERID IDENTITY(1000,1),	-- user or group
 	Container ENTITYID,				-- NULL for all users, NOT NULL for _ALL_ groups
     OwnerId ENTITYID NULL,
@@ -56,23 +56,23 @@ CREATE TABLE core.Principals
 
 	CONSTRAINT PK_Principals PRIMARY KEY (UserId),
 	CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId)
-	)
+)
 GO
 
 
 -- maps users to groups
 CREATE TABLE core.Members
-	(
+(
 	UserId USERID,
 	GroupId USERID,
 	
 	CONSTRAINT PK_Members PRIMARY KEY (UserId, GroupId)
-	)
+)
 GO
 
 
 CREATE TABLE core.UsersData
-	(
+(
 	-- standard fields
 	_ts TIMESTAMP,
 	EntityId ENTITYID DEFAULT NEWID(),
@@ -95,12 +95,12 @@ CREATE TABLE core.UsersData
 	LastLogin DATETIME,
 
 	CONSTRAINT PK_UsersData PRIMARY KEY (UserId),
-	)
+)
 GO
 
 
 CREATE TABLE core.ACLs
-	(
+(
 	_ts TIMESTAMP,
 
 	Container UNIQUEIDENTIFIER,
@@ -108,14 +108,14 @@ CREATE TABLE core.ACLs
 	ACL	VARBINARY(256),
 	
 	CONSTRAINT UQ_ACLs_ContainerObjectId UNIQUE (Container, ObjectId),
-	)
+)
 GO
 
 
 CREATE TABLE core.Containers
-	(
+(
 	_ts TIMESTAMP,
-	RowId INT IDENTITY(1,1),
+	RowId INT IDENTITY(1, 1),
 	EntityId ENTITYID DEFAULT NEWID(),
 	CreatedBy USERID,
 	Created DATETIME,
@@ -126,26 +126,26 @@ CREATE TABLE core.Containers
 	CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
 	CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
 	CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)
-	)
+)
 GO
 
 
 -- table for all modules
 CREATE TABLE core.Modules
-	(
+(
 	Name NVARCHAR(255),
 	ClassName NVARCHAR(255),
 	InstalledVersion FLOAT,
 	Enabled BIT DEFAULT 1,
 
 	CONSTRAINT PK_Modules PRIMARY KEY (Name)
-	)
+)
 GO
 
 
 -- keep track of sql scripts that have been run in each module
 CREATE TABLE core.SqlScripts
-	(
+(
 	-- standard fields
 	_ts TIMESTAMP,
 	CreatedBy USERID,
@@ -157,13 +157,13 @@ CREATE TABLE core.SqlScripts
 	FileName NVARCHAR(300),
 
 	CONSTRAINT PK_SqlScripts PRIMARY KEY (ModuleName, FileName)
-	)
+)
 GO
 
 
 -- generic table for all attached docs
 CREATE TABLE core.Documents
-	(
+(
 	-- standard fields
 	_ts TIMESTAMP,
 	RowId INT IDENTITY(1,1),
@@ -183,7 +183,7 @@ CREATE TABLE core.Documents
 
 	CONSTRAINT PK_Documents PRIMARY KEY (RowId),
 	CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
-	)
+)
 GO
 
 /* core-1.30-1.40.sql */

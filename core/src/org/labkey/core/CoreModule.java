@@ -84,7 +84,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public double getVersion()
     {
-        return 9.37;
+        return 9.38;
     }
 
     @Override

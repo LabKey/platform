@@ -57,6 +57,8 @@
       <ns:column columnName="Email"/>
       <ns:column columnName="Crypt"/>
       <ns:column columnName="Verification"/>
+      <ns:column columnName="LastChanged"/>
+      <ns:column columnName="PreviousCrypts"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Members" tableDbType="TABLE">

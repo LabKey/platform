@@ -25,6 +25,8 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
 import org.apache.log4j.Logger;
+import org.labkey.core.login.DbLoginManager;
+import org.labkey.core.login.LoginController;
 
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -312,5 +314,20 @@ public class CoreUpgradeCode implements UpgradeCode
             return new EditorRole();
         else
             return null;
+    }
+
+
+    // invoked by prop-9.30-9.31.sql
+    public void setPasswordStrengthAndExpiration(ModuleContext context)
+    {
+        // If upgrading an existing installation, make sure the settings don't change.  New installations will require
+        // strong passwords.
+        if (!context.isNewInstall())
+        {
+            LoginController.Config config = new LoginController.Config();
+            config.setStrength(PasswordRule.Weak.toString());
+            config.setExpiration(PasswordExpiration.Never.toString());
+            DbLoginManager.saveProperties(config);
+        }
     }
 }

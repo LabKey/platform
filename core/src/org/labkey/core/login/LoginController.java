@@ -817,7 +817,7 @@ public class LoginController extends SpringActionController
             }
             catch (SecurityManager.UserManagementException e)
             {
-                errors.reject("password", "Resetting password failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+                errors.reject("password", "Resetting password failed: " + e.getMessage() + ".  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
                 return false;
             }
 

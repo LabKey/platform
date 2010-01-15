@@ -284,6 +284,7 @@ core/resources/schemas/dbscripts/postgresql/core-9.33-9.34.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.34-9.35.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.35-9.36.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.36-9.37.sql -text
+core/resources/schemas/dbscripts/postgresql/core-9.37-9.38.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/bootstrap.sql -text
@@ -340,6 +341,7 @@ core/resources/schemas/dbscripts/postgresql/portal-8.20-8.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-2.00-2.10.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-8.30-9.10.sql -text
+core/resources/schemas/dbscripts/postgresql/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-1.00.sql -text
@@ -363,6 +365,7 @@ core/resources/schemas/dbscripts/sqlserver/core-9.33-9.34.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.34-9.35.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.35-9.36.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.36-9.37.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-9.37-9.38.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/bootstrap.sql -text
@@ -423,6 +426,7 @@ core/resources/schemas/dbscripts/sqlserver/portal-8.20-8.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-2.00-2.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-8.30-9.10.sql -text
+core/resources/schemas/dbscripts/sqlserver/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-0.00-1.00.sql -text

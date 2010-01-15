@@ -17,7 +17,7 @@ public class DbLoginManager
 
     public static PasswordRule getPasswordRule()
     {
-        String strength = getProperty(Key.Strength, PasswordRule.Weak);
+        String strength = getProperty(Key.Strength, PasswordRule.Weak);  // TODO: Change to strong -- new installs will use this
 
         return PasswordRule.valueOf(strength);
     }
