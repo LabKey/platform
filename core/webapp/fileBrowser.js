@@ -1334,6 +1334,12 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 //
 
 var TRANSFER_EVENTS = {update:'update'};
+var TRANSFER_STATES = {
+    success:1,
+    info:0,
+    failed:-1,
+    retryable:-2
+}
 
 var TransferApplet;
 if (LABKEY.Applet)
@@ -1517,10 +1523,10 @@ if (LABKEY.Applet)
                 var state = record.data.state;
                 switch (state)
                 {
-                case 1: success++; break;
-                case 0: info++; break;
-                case -1: failed++; break;
-                case -2: retryable++; break;
+                case TRANSFER_STATES.success: success++; break;
+                case TRANSFER_STATES.info: info++; break;
+                case TRANSFER_STATES.failed: failed++; break;
+                case TRANSFER_STATES.retryable: retryable++; break;
                 }
             }
             return {success:success, info:info, failed:failed, retryable:retryable,
@@ -1646,7 +1652,7 @@ Ext.extend(_TextItem, Ext.Toolbar.Item,
 //
 
 
-var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange", doubleclick:"doubleclick"};
+var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange", doubleclick:"doubleclick",  transferstarted:'transferstarted', transfercomplete:'transfercomplete'};
 
 
 // configuration
@@ -1988,6 +1994,67 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.lastSummary.file = file;
     },
 
+
+    notifyStates : {},
+
+    //private
+    fireUploadEvents : function()
+    {
+        var transfers = this.applet.getTransfers();
+        var count = transfers.getCount();
+        var incompleteCount = 0;
+        var newlyAdded = [];
+        var newlyComplete = [];
+
+        //Try to notify in batches.
+        //If new files are added fire a transferstarted event
+        //If all started files are finished, file a transfercomplete event for all of them
+        
+        for (var i = 0 ; i<count ; i++)
+        {
+            var record = transfers.getAt(i);
+            var id = record.id;
+            var name = record.get("name");
+            var state = record.get("state");
+
+            var notifyInfo =  this.notifyStates[record.id];
+            if (null == notifyInfo)
+            {
+                notifyInfo = {current:state, notified:null, name:name};
+                if (state == TRANSFER_STATES.info || state == TRANSFER_STATES.success)
+                    newlyAdded.push({id:id, name:name});
+
+                if (state == TRANSFER_STATES.success)
+                    newlyComplete.push({id:id, name:name});
+
+                this.notifyStates[id] = notifyInfo;
+            }
+            else
+            {
+                notifyInfo.current = state;
+                if (state == TRANSFER_STATES.success && notifyInfo.notified != TRANSFER_STATES.success)
+                    newlyComplete.push({id:id, name:name});
+            }
+
+            if (state == TRANSFER_STATES.info)
+                incompleteCount++;
+        }
+
+        if (newlyAdded.length != 0)
+        {
+            this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"applet", files:newlyAdded});
+            for (var i = 0; i < newlyAdded.length; i++)
+                this.notifyStates[newlyAdded[i].id].notified = TRANSFER_STATES.info;
+        }
+
+        //If all complete, notify all the completed guys at once
+        if (incompleteCount == 0 && newlyComplete.length > 0)
+        {
+            this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"applet", files:newlyComplete});
+            for (var i = 0; i < newlyComplete.length; i++)
+                this.notifyStates[newlyComplete[i].id].notified = TRANSFER_STATES.success;
+        }
+    },
 
     getUploadToolAction : function()
     {
@@ -2368,6 +2435,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
 
         this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
+        this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);
         this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
 
         // make sure that the applet still matches the current directory when it appears
@@ -2524,6 +2592,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     // UNDONE: update data store directly
                     me.refreshDirectory();
                     me.selectFile(me.fileSystem.concatPaths(options.record.data.path, options.name));
+                    me.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:me.fileSystem.concatPaths(options.record.data.path, options.name), path:options.record.data.path}]});
                 },
                 "actionfailed" : function (f, action)
                 {
@@ -2562,7 +2631,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         //
         // EVENTS (tie together components)
         //
-        this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange, BROWSER_EVENTS.doubleclick ]);
+        this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange, BROWSER_EVENTS.doubleclick, BROWSER_EVENTS.transferstarted, BROWSER_EVENTS.transfercomplete ]);
 
 
         this.on(BROWSER_EVENTS.selectionchange, function(record)
