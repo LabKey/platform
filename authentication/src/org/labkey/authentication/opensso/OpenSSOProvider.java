@@ -20,6 +20,7 @@ import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.iplanet.sso.SSOTokenManager;
 import org.apache.log4j.Logger;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
@@ -101,7 +102,7 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
 
                 if (null != factory)
                 {
-                    String returnURL = request.getParameter("URI");
+                    String returnURL = request.getParameter(ReturnUrlForm.Params.returnUrl.toString());
 
                     if (null != returnURL)
                     {

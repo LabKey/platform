@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.api.security.DbLoginManager" %>
+<%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.VerifyBean bean = ((JspView<LoginController.VerifyBean>)HttpView.currentView()).getModelBean();

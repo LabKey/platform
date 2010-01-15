@@ -20,8 +20,10 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.*;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -56,7 +58,7 @@ public class LdapController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresSiteAdmin
     public class ConfigureAction extends FormViewAction<Config>
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception

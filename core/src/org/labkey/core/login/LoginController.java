@@ -90,6 +90,11 @@ public class LoginController extends SpringActionController
             return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
         }
 
+        public ActionURL getConfigureDbLoginURL()
+        {
+            return LoginController.getConfigureDbLoginURL(false);
+        }
+
         public ActionURL getInitialUserURL()
         {
             return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
@@ -1399,6 +1404,90 @@ public class LoginController extends SpringActionController
         public void setName(String name)
         {
             _name = name;
+        }
+    }
+
+
+    public static ActionURL getConfigureDbLoginURL(boolean reshow)
+    {
+        ActionURL url = new ActionURL(ConfigureDbLoginAction.class, ContainerManager.getRoot());
+
+        if (reshow)
+            url.addParameter("reshow", "1");
+
+        return url;
+    }
+
+
+    @RequiresSiteAdmin
+    public class ConfigureDbLoginAction extends FormViewAction<Config>
+    {
+        public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<Config>("/org/labkey/core/login/configureDbLogin.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure Database Authentication");
+            return root;
+        }
+
+        public void validateCommand(Config form, Errors errors)
+        {
+        }
+
+        public boolean handlePost(Config form, BindException errors) throws Exception
+        {
+            DbLoginManager.saveProperties(form);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(Config form)
+        {
+            return getConfigureDbLoginURL(true);  // Redirect to same action -- want to reload props from database
+        }
+    }
+
+
+    public static class Config extends ReturnUrlForm
+    {
+        public String helpLink = "<a href=\"" + (new HelpTopic("configDbLogin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">More information about database authentication</a>";
+        public PasswordRule currentRule = DbLoginManager.getPasswordRule();
+        public PasswordExpiration currentExpiration = DbLoginManager.getPasswordExpiration();
+        public boolean reshow = false;
+
+        private String strength = "Weak";
+        private String expiration = "Never";
+
+        public boolean isReshow()
+        {
+            return reshow;
+        }
+
+        public void setReshow(boolean reshow)
+        {
+            this.reshow = reshow;
+        }
+
+        public String getStrength()
+        {
+            return strength;
+        }
+
+        public void setStrength(String strength)
+        {
+            this.strength = strength;
+        }
+
+        public String getExpiration()
+        {
+            return expiration;
+        }
+
+        public void setExpiration(String expiration)
+        {
+            this.expiration = expiration;
         }
     }
 }

@@ -18,30 +18,39 @@
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.authentication.ldap.LdapController" %>
-<%@ page import="org.labkey.authentication.ldap.LdapController.Config" %>
+<%@ page import="org.labkey.core.login.LoginController.Config" %>
+<%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.api.security.PasswordRule" %>
+<%@ page import="org.labkey.api.security.PasswordExpiration" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Config> me = (JspView<Config>)HttpView.currentView();
+    JspView<LoginController.Config> me = (JspView<Config>)HttpView.currentView();
     Config bean = me.getModelBean();
 %>
-<form action="configure.post" method="post">
+<form action="configureDbLogin.post" method="post">
 <table>
     <tr>
-        <td class="labkey-form-label">LDAP servers</td>
-        <td><input type="text" name="servers" size="50" value="<%=h(bean.getServers()) %>"></td>
+        <td class="labkey-form-label">Password Strength</td>
+        <td><table><%
+            for (PasswordRule rule : PasswordRule.values())
+            { %>
+            <tr>
+                <td valign="top"><input type="radio" name="strength" value="<%=rule.name()%>"<%=rule.equals(bean.currentRule) ? " checked" : ""%>></td>
+                <td><b><%=h(rule.name())%></b> - <%=rule.getRuleHTML()%></td>
+            </tr>
+                <%
+            }
+        %></table></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">LDAP domain</td>
-        <td><input type="text" name="domain" size="50" value="<%=h(bean.getDomain()) %>"></td>
-    </tr>
-    <tr>
-        <td class="labkey-form-label">LDAP principal template</td>
-        <td><input type="text" name="principalTemplate" size="50" value="<%=h(bean.getPrincipalTemplate()) %>"></td>
-    </tr>
-    <tr>
-        <td class="labkey-form-label">Use SASL authentication</td>
-        <td><input type="checkbox" name="SASL" <%=bean.getSASL() ? "checked" : ""%>></td>
+        <td class="labkey-form-label">Password Expiration</td>
+        <td><select name="expiration"><%
+            for (PasswordExpiration expiration : PasswordExpiration.values())
+            { %>
+            <option value="<%=expiration.name()%>"<%=expiration.equals(bean.currentExpiration) ? " selected" : ""%>><%=h(expiration.getDescription())%></option>
+                <%
+            }
+        %></select></td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
@@ -54,9 +63,5 @@
     <tr>
         <td colspan=2>[<%=bean.helpLink%>]</td>
     </tr>
-    <tr>
-        <td colspan=2>[<a href="<%=urlFor(LdapController.TestLdapAction.class).addReturnURL(me.getViewContext().getActionURL())%>">Test LDAP settings</a>]</td>
-    </tr>
 </table>
 </form>
-
