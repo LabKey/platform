@@ -47,13 +47,11 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         _titleColumn = titleColumn;
     }
 
-    // XXX: remove all calls to this constructor
     public LookupForeignKey(ActionURL baseURL, String paramName, String pkColumnName, String titleColumn)
     {
         this(baseURL, paramName, null, pkColumnName, titleColumn);
     }
 
-    // XXX: remove all calls to this constructor
     public LookupForeignKey(ActionURL baseURL, Enum paramName, String pkColumnName, String titleColumn)
     {
         this(baseURL, paramName, null, pkColumnName, titleColumn);
@@ -64,13 +62,11 @@ abstract public class LookupForeignKey extends AbstractForeignKey
          this(null, (String) null, tableName, pkColumnName, titleColumn);
     }
 
-    // XXX: remove all calls to this constructor
     public LookupForeignKey(String pkColumnName, String titleColumn)
     {
          this(null, (String) null, null, pkColumnName, titleColumn);
     }
 
-    // XXX: remove all calls to this constructor
     public LookupForeignKey(String pkColumnName)
     {
         this(null, (String) null, null, pkColumnName, null);

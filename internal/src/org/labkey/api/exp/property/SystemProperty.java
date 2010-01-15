@@ -25,14 +25,13 @@ import org.labkey.api.util.MemTracker;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 
 public class SystemProperty
 {
     static final private Logger _log = Logger.getLogger(SystemProperty.class);
-    static private Map<String, SystemProperty> _systemProperties = new LinkedHashMap();
+    static private Map<String, SystemProperty> _systemProperties = new LinkedHashMap<String, SystemProperty>();
     static private boolean _registered = false;
 
     private String _propertyURI;
@@ -95,6 +94,24 @@ public class SystemProperty
             }
         }
         _registered = true;
+    }
+
+    static public List<PropertyDescriptor> getProperties()
+    {
+        if (!_registered)
+            throw new IllegalStateException("System properties can only be enumerated after startup");
+
+        ArrayList<PropertyDescriptor> properties = new ArrayList<PropertyDescriptor>(_systemProperties.size());
+        for (SystemProperty property : _systemProperties.values())
+            properties.add(property._pd);
+
+        Collections.sort(properties, new Comparator<PropertyDescriptor>() {
+            public int compare(PropertyDescriptor o1, PropertyDescriptor o2)
+            {
+                return o1.getPropertyURI().compareTo(o2.getPropertyURI());
+            }
+        });
+        return Collections.unmodifiableList(properties);
     }
 
     protected Container getContainer()

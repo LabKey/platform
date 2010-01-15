@@ -1853,7 +1853,8 @@ public class OntologyManager
 	{
         DomainDescriptor dexist = ensureDomainDescriptor(dd);
 
-        if (!dexist.getContainer().equals(pd.getContainer()))
+        if (!dexist.getContainer().equals(pd.getContainer())
+                &&  !pd.getProject().equals(_sharedContainer))
         {
             // domain is defined in a different container.
             //ToDO  define property in the domains container?  what security?
@@ -2060,12 +2061,19 @@ public class OntologyManager
             String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
             String domainURI = uriFactory.getDomainURI(domainName);
 
+            PropertyDescriptor pd = null;
             String name = StringUtils.trimToEmpty((String) m.get("property"));
             String propertyURI = domainURI + "." + name;
             if (-1 != name.indexOf('#'))
             {
                 propertyURI = name;
-                name = name.substring(name.indexOf('#') + 1);
+                int hash = name.indexOf('#');
+                String uri = name.substring(0, hash);
+                name = name.substring(hash+1);
+
+                // try use existing SystemProperty PropertyDescriptor from Shared container.
+                if (!domainURI.equals(uri))
+                    pd = getPropertyDescriptor(propertyURI, _sharedContainer);
             }
             if (name.length() == 0)
             {
@@ -2075,83 +2083,112 @@ public class OntologyManager
                 continue;
             }
 
-            String label = StringUtils.trimToNull((String) m.get("label"));
-            if (null == label)
-                label = name;
-            String conceptURI = (String) m.get("conceptURI");
-            String rangeURI = (String) m.get("rangeURI");
-
-            BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
-
-            boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
-            boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
-            boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
-
-            String description = (String) m.get("description");
-            String format = StringUtils.trimToNull((String)m.get("format"));
-            String url = (String) m.get("url");
-            String importAliases = (String) m.get("importAliases");
-
-            // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
-            String lookupContainerId = null;
-            String lookupFolderPath = (String) m.get("LookupFolderPath");
-            if (null != lookupFolderPath)
+            if (pd == null)
             {
-                Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
-                lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
-            }
-            String lookupSchema = (String) m.get("LookupSchema");
-            String lookupQuery = (String) m.get("LookupQuery");
+                String label = StringUtils.trimToNull((String) m.get("label"));
+                if (null == label)
+                    label = name;
+                String conceptURI = (String) m.get("conceptURI");
+                String rangeURI = (String) m.get("rangeURI");
 
-            boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean)m.get("ShownInInsertView")).booleanValue();
-            boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue(); 
-            boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
+                BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
 
-            PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
-            if (null == pt)
-            {
-                String e = "Unrecognized type URI : " + ((null==conceptURI)? rangeURI : conceptURI);
-                if (!errors.contains(e))
-                    errors.add(e);
-                continue;
-            }
-            if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
-            {
-                pt = PropertyType.MULTI_LINE;
-            }
-            rangeURI = pt.getTypeUri();
+                boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
+                boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
+                boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
 
-            if (format != null)
-            {
-                try
+                String description = (String) m.get("description");
+                String format = StringUtils.trimToNull((String)m.get("format"));
+                String url = (String) m.get("url");
+                String importAliases = (String) m.get("importAliases");
+
+                // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
+                String lookupContainerId = null;
+                String lookupFolderPath = (String) m.get("LookupFolderPath");
+                if (null != lookupFolderPath)
                 {
-                    switch (pt)
+                    Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
+                    lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
+                }
+                String lookupSchema = (String) m.get("LookupSchema");
+                String lookupQuery = (String) m.get("LookupQuery");
+
+                boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean)m.get("ShownInInsertView")).booleanValue();
+                boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue();
+                boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
+
+                PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
+                if (null == pt)
+                {
+                    String e = "Unrecognized type URI : " + ((null==conceptURI)? rangeURI : conceptURI);
+                    if (!errors.contains(e))
+                        errors.add(e);
+                    continue;
+                }
+                if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
+                {
+                    pt = PropertyType.MULTI_LINE;
+                }
+                rangeURI = pt.getTypeUri();
+
+                if (format != null)
+                {
+                    try
                     {
-                        case INTEGER:
-                        case DOUBLE:
-                            format = convertNumberFormatChars(format);
-                            (new DecimalFormat(format)).format(1.0);
-                            break;
-                        case DATE_TIME:
-                            format = convertDateFormatChars(format);
-                            (new SimpleDateFormat(format)).format(new Date());
-                            // UNDONE: don't import date format until we have default format for study
-                            // UNDONE: it looks bad to have mixed formats
-                            break;
-                        case STRING:
-                        case MULTI_LINE:
-                        default:
-                            format = null;
+                        switch (pt)
+                        {
+                            case INTEGER:
+                            case DOUBLE:
+                                format = convertNumberFormatChars(format);
+                                (new DecimalFormat(format)).format(1.0);
+                                break;
+                            case DATE_TIME:
+                                format = convertDateFormatChars(format);
+                                (new SimpleDateFormat(format)).format(new Date());
+                                // UNDONE: don't import date format until we have default format for study
+                                // UNDONE: it looks bad to have mixed formats
+                                break;
+                            case STRING:
+                            case MULTI_LINE:
+                            default:
+                                format = null;
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        format = null;
                     }
                 }
-                catch (Exception x)
-                {
-                    format = null;
-                }
+
+                pd = new PropertyDescriptor();
+                pd.setPropertyURI(propertyURI);
+                pd.setName(name);
+                pd.setLabel(label);
+                pd.setConceptURI(conceptURI);
+                pd.setRangeURI(rangeURI);
+                pd.setContainer(container);
+                pd.setDescription(description);
+                pd.setURL(StringExpressionFactory.createURL(url));
+                pd.setImportAliases(importAliases);
+                pd.setRequired(required);
+                pd.setHidden(hidden);
+                pd.setShownInInsertView(shownInInsertView);
+                pd.setShownInUpdateView(shownInUpdateView);
+                pd.setShownInDetailsView(shownInDetailsView);
+                pd.setFormat(format);
+                pd.setMvEnabled(mvEnabled);
+                pd.setLookupContainer(lookupContainerId);
+                pd.setLookupSchema(lookupSchema);
+                pd.setLookupQuery(lookupQuery);
+            }
+
+            if (null != allProps.put(pd.getPropertyURI(), pd))
+            {
+                if (!ignoreDuplicates)
+                    errors.add("Duplicate definition of property: " + pd.getPropertyURI());
             }
 
             DomainDescriptor dd = null;
-
             if (null != domainURI)
             {
                 dd = domainMap.get(domainURI);
@@ -2160,33 +2197,6 @@ public class OntologyManager
                     dd = ensureDomainDescriptor(domainURI, domainName, container);
                     domainMap.put(domainURI, dd);
                 }
-            }
-
-            PropertyDescriptor pd = new PropertyDescriptor();
-            pd.setPropertyURI(propertyURI);
-            pd.setName(name);
-            pd.setLabel(label);
-            pd.setConceptURI(conceptURI);
-            pd.setRangeURI(rangeURI);
-            pd.setContainer(container);
-            pd.setDescription(description);
-            pd.setURL(StringExpressionFactory.createURL(url));
-            pd.setImportAliases(importAliases);
-            pd.setRequired(required);
-            pd.setHidden(hidden);
-            pd.setShownInInsertView(shownInInsertView);
-            pd.setShownInUpdateView(shownInUpdateView);
-            pd.setShownInDetailsView(shownInDetailsView);
-            pd.setFormat(format);
-            pd.setMvEnabled(mvEnabled);
-            pd.setLookupContainer(lookupContainerId);
-            pd.setLookupSchema(lookupSchema);
-            pd.setLookupQuery(lookupQuery);
-
-            if (null != allProps.put(pd.getPropertyURI(), pd))
-            {
-                if (!ignoreDuplicates)
-                    errors.add("Duplicate definition of property: " + pd.getPropertyURI());
             }
 
             if (null != dd)
@@ -2221,7 +2231,7 @@ public class OntologyManager
 
             for (PropertyDescriptor pdToInsert : pdNewMap.values())
             {
-                DomainDescriptor dd = domainMap.get(dURI); 
+                DomainDescriptor dd = domainMap.get(dURI);
                 assert (null!= dd);
                 PropertyDescriptor pdInserted = null;
                 if (domainProps.length == 0)
@@ -2229,7 +2239,8 @@ public class OntologyManager
                     try
                     {
                         // this is much faster than insertOrUpdatePropertyDescriptor()
-                        insertPropertyDescriptor(pdToInsert);
+                        if (pdToInsert.getPropertyId() == 0)
+                            insertPropertyDescriptor(pdToInsert);
                         pdInserted = ensurePropertyDomain(pdToInsert, dd, sortOrder++);
                     }
                     catch (SQLException x)
