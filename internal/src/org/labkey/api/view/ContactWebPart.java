@@ -17,7 +17,6 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;

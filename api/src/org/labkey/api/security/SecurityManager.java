@@ -63,10 +63,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SecurityManager
 {
-    private static Logger _log = Logger.getLogger(SecurityManager.class);
-    private static CoreSchema core = CoreSchema.getInstance();
+    private static final Logger _log = Logger.getLogger(SecurityManager.class);
+    private static final CoreSchema core = CoreSchema.getInstance();
     private static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
-    private static List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
+    private static final List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
     private static final String GROUP_CACHE_PREFIX = "Groups/MetaData=";
 
     static
@@ -700,13 +700,7 @@ public class SecurityManager
 
             if (createLogin)
             {
-                // Create a placeholder password that's hard to guess and a separate email verification
-                // key that gets emailed.
-                String tempPassword = SecurityManager.createTempPassword();
-                String verification = SecurityManager.createTempPassword();
-
-                SecurityManager.createLogin(email, tempPassword, verification);
-
+                String verification = SecurityManager.createLogin(email);
                 newUserBean.setVerification(verification);
             }
 
@@ -846,14 +840,23 @@ public class SecurityManager
         }
     }
 
-    // Create record for non-LDAP login, saving email address and hashed password
-    public static void createLogin(ValidEmail email, String password, String verification) throws UserManagementException
+    // Create record for non-LDAP login, saving email address and hashed password.  Return verification token.
+    private static String createLogin(ValidEmail email) throws UserManagementException
     {
+        // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
+        String tempPassword = SecurityManager.createTempPassword();
+        String verification = SecurityManager.createTempPassword();
+
         try
         {
-            int rowCount = Table.execute(core.getSchema(), "INSERT INTO " + core.getTableInfoLogins() + " (Email, Crypt, Verification) VALUES (?, ?, ?)", new Object[]{email.getEmailAddress(), Crypt.digest(password), verification});
+            String crypt = Crypt.digest(tempPassword);
+
+            // Don't need to set LastChanged -- it defaults to current date/time.
+            int rowCount = Table.execute(core.getSchema(), "INSERT INTO " + core.getTableInfoLogins() + " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)", new Object[]{email.getEmailAddress(), crypt, new Date(), verification, crypt});
             if (1 != rowCount)
                 throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
+
+            return verification;
         }
         catch (SQLException e)
         {
@@ -867,7 +870,17 @@ public class SecurityManager
     {
         try
         {
-            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Crypt=? WHERE Email=?", new Object[]{Crypt.digest(password), email.getEmailAddress()});
+            String crypt = Crypt.digest(password);
+            List<String> history = new ArrayList<String>(getCryptHistory(email));
+            history.add(crypt);
+
+            // Remember only the last 10 password hashes
+            int itemsToDelete = Math.max(0, history.size() - MAX_HISTORY);
+            for (int i = 0; i < itemsToDelete; i++)
+                history.remove(i);
+            String cryptHistory = StringUtils.join(history, ",");
+
+            int rows = Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoLogins() + " SET Crypt=?, LastChanged=?, PreviousCrypts=? WHERE Email=?", new Object[]{crypt, new Date(), cryptHistory, email.getEmailAddress()});
             if (1 != rows)
                 throw new UserManagementException(email, "Password update statement affected " + rows + " rows.");
         }
@@ -876,6 +889,18 @@ public class SecurityManager
             _log.error("setPassword", e);
             throw new UserManagementException(email, e);
         }
+    }
+
+
+    private static final int MAX_HISTORY = 10;
+
+    private static List<String> getCryptHistory(ValidEmail email) throws SQLException
+    {
+        String cryptHistory = Table.executeSingleton(core.getSchema(), "SELECT PreviousCrypts FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, String.class);
+
+        List<String> fixedList = Arrays.asList(cryptHistory.split(","));
+        assert fixedList.size() <= MAX_HISTORY;
+        return fixedList;
     }
 
 
@@ -977,7 +1002,7 @@ public class SecurityManager
 
         try
         {
-            Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name",newName), group.getUserId());
+            Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
             removeGroupFromCache(group.getUserId());
         }
         catch(SQLException e)
