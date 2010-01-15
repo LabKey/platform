@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -195,6 +196,7 @@ function renderBrowser(rootPath, dir)
                 var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
                 var name = path.substring(i+1);
                 var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
+                var id = this.fileSystem.concatPaths(this.currentDirectory.data.uri, target);
                 var file = this.fileSystem.recordFromCache(target);
                 if (file)
                 {
@@ -207,7 +209,8 @@ function renderBrowser(rootPath, dir)
                     // assume that we've got a WebdavFileSystem
                     form.errorReader = this.fileSystem.transferReader;
                     form.doAction(new Ext.form.Action.Submit(form, options));
-                    Ext.getBody().dom.style.cursor = "wait";
+                    this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:id}]});
+                    Ext.getBody().dom.style.cursor = "wait";                
                 }
             }
         },
@@ -223,6 +226,7 @@ function renderBrowser(rootPath, dir)
             this.toggleTabPanel();
             this.refreshDirectory();
             this.selectFile(this.fileSystem.concatPaths(options.record.data.path, options.name));
+            this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:this.fileSystem.concatPaths(options.record.data.uri, options.name)}]});
         },
 
         uploadFailed : function(f, action)
@@ -708,6 +712,22 @@ function renderBrowser(rootPath, dir)
     }
 
     fileBrowser.start(dir);
+
+    <% //Temporary code for testing events
+    if (AppProps.getInstance().isDevMode())
+    {
+    %>
+        fileBrowser.on(BROWSER_EVENTS.transfercomplete, function(result) {showTransfer("transfercomplete", result)});
+        fileBrowser.on(BROWSER_EVENTS.transferstarted, function(result) {showTransfer("transferstarted", result)});
+        function showTransfer(heading, result)
+        {
+            console.log("Transfer event: " + heading);
+            for (var fileIndex = 0; fileIndex <result.files.length; fileIndex++)
+                console.log("  name: " + result.files[fileIndex].name + ", id: " + result.files[fileIndex].id);
+        }
+    <%
+    }
+    %>
 }
     var fileSets = [
 <%
