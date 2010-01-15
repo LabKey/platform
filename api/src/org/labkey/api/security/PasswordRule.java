@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -13,7 +14,7 @@ import java.util.regex.Pattern;
  */
 public enum PasswordRule
 {
-    weak
+    Weak
     {
         private Pattern passwordPattern = Pattern.compile("^\\S{6,}$");  // At least six, non-whitespace characters
 
@@ -45,8 +46,14 @@ public enum PasswordRule
         }
     },
 
-    strong
+    Strong
     {
+        private Pattern passwordPattern = Pattern.compile("^\\S{8,}$");  // At least eight, non-whitespace characters
+        private Pattern lowerCase = Pattern.compile("[A-Z]");
+        private Pattern upperCase = Pattern.compile("[a-z]");
+        private Pattern digit = Pattern.compile("\\d");
+        private Pattern nonWord = Pattern.compile("[^A-Za-z\\d]");
+
         @NotNull
         @Override
         public String getRuleHTML()
@@ -57,7 +64,64 @@ public enum PasswordRule
         @Override
         boolean isValid(@NotNull String password, @NotNull User user, @NotNull Collection<String> messages)
         {
+            if (!passwordPattern.matcher(password).matches())
+            {
+                messages.add("Your password must be eight characters or more.");
+                return false;
+            }
+
+            if (containsPersonalInfo(password, user.getEmail(), "email address", messages) ||
+                containsPersonalInfo(password, user.getEmail(), "display name", messages) ||
+                containsPersonalInfo(password, user.getFirstName() + user.getLastName(), "name", messages))
+            {
+                return false;
+            }
+
+            if (countMatches(password, lowerCase, upperCase, digit, nonWord) < 3)
+            {
+                messages.add("Your password must contain some crazy symbols.");
+                return false;
+            }
+
+            // TODO: Check last 10 passwords
+            // TODO: Better descriptions
+
+            return true;
+        }
+
+        private boolean containsPersonalInfo(String password, String personalInfo, String infoType, @NotNull Collection<String> messages)
+        {
+            if (StringUtils.isBlank(personalInfo) || personalInfo.length() < 3)
+                return false;
+
+            String lcPassword = password.toLowerCase();
+            String lcInfo = personalInfo.toLowerCase();
+
+            for (int i = 0; i < lcInfo.length() - 3; i++)
+            {
+                if (lcPassword.contains(lcInfo.substring(i, i + 3)))
+                {
+                    messages.add("Your password contained a sequence of three or more characters from your " + infoType + ".");
+                    return true;
+                }
+            }
+
             return false;
+        }
+
+        private int countMatches(String password, Pattern... patterns)
+        {
+            int count = 0;
+
+            for (Pattern pattern : patterns)
+            {
+                Matcher m = pattern.matcher(password);
+
+                if (m.find())
+                    count++;
+            }
+
+            return count;
         }
     };
 

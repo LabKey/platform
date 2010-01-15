@@ -55,7 +55,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.regex.Pattern;
 
 /**
  * Note should consider implementing a Tomcat REALM, but we've tried to avoid
@@ -1819,21 +1818,6 @@ public class SecurityManager
     {
         String ldapDomain = AuthenticationManager.getLdapDomain();
         return ldapDomain != null && email.getEmailAddress().endsWith("@" + ldapDomain.toLowerCase());
-    }
-
-
-    // Password rule: regular expression and English language version for error messages
-    // TODO: Add these to AppProps
-    public static final String passwordRule = "Passwords must be six characters or more and can't match your email address.";
-    private static Pattern passwordPattern = Pattern.compile("^\\S{6,}$");  // At least six, non-whitespace characters
-
-    // Make sure password is strong enough.
-    public static boolean isValidPassword(@NotNull String password, @NotNull ValidEmail email)
-    {
-        if (null != password)
-            return passwordPattern.matcher(password).matches() && !email.getEmailAddress().equalsIgnoreCase(password);  // Passes rule and doesn't match email address
-        else
-            return false;
     }
 
 

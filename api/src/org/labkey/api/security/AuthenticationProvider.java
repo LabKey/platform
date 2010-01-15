@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 
@@ -29,7 +30,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public abstract interface AuthenticationProvider
 {
-    public ActionURL getConfigurationLink();
+    public @Nullable ActionURL getConfigurationLink();
     public String getName();
     public String getDescription();
     public void logout(HttpServletRequest request);

@@ -15,9 +15,10 @@
  */
 package org.labkey.api.security;
 
-import org.labkey.api.security.AuthenticationProvider.*;
-import org.labkey.api.view.ActionURL;
 import org.apache.log4j.Logger;
+import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -72,7 +73,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
     public ActionURL getConfigurationLink()
     {
-        return null;
+        return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
     }
 
 
