@@ -29,27 +29,46 @@
 </script>
 
 <style type="text/css">
+    .wb-name-container
+    {
+        width: 1%;
+        white-space: nowrap;
+    }
     .wb-name
     {
         font-size: 12pt;
         font-weight: bold;
     }
+    .wb-title-container
+    {
+        width: 99%;
+    }
     .wb-title
     {
         font-size: 12pt;
         font-weight: bold;
-
     }
     .wb-name-title-container
     {
         padding-bottom: 5px;
+        width: 100%;
+        border: 0;
+    }
+    td .wb-name-title-container
+    {
+        text-align: left;
+        vertical-align: top;
     }
 </style>
 
-<div class="wb-name-title-container"><span id="wb=name" class="wb-name"><%=PageFlowUtil.filter(container.getName() + ":")%></span>
-    <span id="wb-title" class="wb-title"><%=PageFlowUtil.filter(container.getTitle())%></span></div>
+<table class="wb-name-title-container">
+    <tr>
+        <td class="wb-name-container"><div class="wb-name"><%=PageFlowUtil.filter(container.getName() + ":")%></div></td>
+        <td class="wb-title-container"><div id="wb-title" class="wb-title"><%=PageFlowUtil.filter(container.getTitle())%></div></td>
+    </tr>
+</table>
 
-<div id="wb-description"><%=PageFlowUtil.filter(container.getDescription())%></div>
+<div id="wb-description"><%=null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "&nbsp;"%></div>
 
 <script type="text/javascript">
     var _descriptionEditor;
