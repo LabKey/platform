@@ -864,7 +864,10 @@ public class WikiManager
             }
             rs = Table.executeQuery(comm.getSchema(), f, 0, false, false);
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+
             HashMap<String, AttachmentParent> ids = new HashMap<String, AttachmentParent>();
+            // AGGH wiki doesn't have a title!
+            HashMap<String, String> titles = new HashMap<String,String>();
             
             while (rs.next())
             {
@@ -885,6 +888,7 @@ public class WikiManager
                 parent.setEntityId(entityid);
                 parent.setName(new HString(name,false));
                 ids.put(entityid, parent);
+                titles.put(entityid,(String)m.get("title"));
             }
 
             // now attachments
@@ -901,7 +905,7 @@ public class WikiManager
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
                     Wiki parent = (Wiki)ids.get(entityId);
-                    String title = documentName + " attached to page " + parent.getName();
+                    String title = documentName + " attached to page " + titles.get(entityId);
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
                             attachmentUrl, title,

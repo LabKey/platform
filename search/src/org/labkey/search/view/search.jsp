@@ -110,8 +110,8 @@ function google()
         try
         {
             String qs = queryString;
-            if (wideView && -1 == qs.indexOf("searchCategory:"))
-                qs += " -searchCategory:navigation";
+//            if (wideView && -1 == qs.indexOf("searchCategory:"))
+//                qs += " -searchCategory:navigation";
             long start = System.nanoTime();
             Container searchContainer = null == form.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(form.getContainer());
             SearchService.SearchResult result = ss.search(qs, user, searchContainer, offset, hitsPerPage);
