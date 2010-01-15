@@ -85,6 +85,7 @@ public class StudyQuerySchema extends UserSchema
         if (_study != null)
         {
             // All these require studies defined
+            ret.add("StudyData");
             ret.add(StudyService.get().getSubjectTableName(getContainer()));
             ret.add("Site");
             if (_study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
@@ -195,6 +196,11 @@ public class StudyQuerySchema extends UserSchema
         if (_study == null)
             return null;
 
+        if ("StudyData".equalsIgnoreCase(name))
+        {
+            StudyDataTable ret = new StudyDataTable(this);
+            return ret;
+        }
         if ("Cohort".equalsIgnoreCase(name))
         {
             CohortTable ret = new CohortTable(this);
