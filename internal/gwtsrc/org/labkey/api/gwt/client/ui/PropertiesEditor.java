@@ -403,7 +403,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         if (index != -1)
         {
             FieldStatus status = getStatus(pd);
-            boolean readOnly = _readOnly || status == FieldStatus.Deleted;
+            boolean readOnly = isReadOnly(pd, getRow(index));
 
             int tableRow = index + 1;
 
@@ -473,7 +473,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         int col = 0;
 
         FieldStatus status = getStatus(pd);
-        boolean readOnly = _readOnly || status == FieldStatus.Deleted;
+        boolean readOnly = isReadOnly(pd, rowObject);
         boolean locked = isLocked(index);
 
         Image statusImage = getStatusImage(Integer.toString(index), status);
@@ -523,7 +523,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             _table.setText(tableRow, col++, "");
         }
 
-        if (!locked && !_readOnly && !_domain.isMandatoryField(pd))
+        if (!locked && !_readOnly)
         {
             if (status == FieldStatus.Deleted)
             {
@@ -618,7 +618,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         };
         nameTextBox.addFocusHandler(focusHandler);
-        nameTextBox.setEnabled(!locked && !readOnly && !_domain.isMandatoryField(pd));
+        nameTextBox.setEnabled(!locked && !readOnly);
         _table.setWidget(tableRow, col, nameTextBox);
 
         col++;
@@ -632,7 +632,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
         typePicker.addFocusHandler(focusHandler);
         typePicker.setRangeURI(pd.getRangeURI());
-        typePicker.setEnabled(isTypeEditable(pd, status) && !locked);
+        typePicker.setEnabled(isTypeEditable(pd, status) && !locked && !readOnly);
         _table.setWidget(tableRow, col, typePicker);
         col++;
 
@@ -711,9 +711,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
+    /** @return Locked status of the field. */
     public boolean isLocked(int i)
     {
-        return !_domain.isEditable(getRow(i).edit);
+        return _domain.isLocked(getRow(i).edit);
+    }
+
+    /** @return ReadOnly status of the field. */
+    public boolean isReadOnly(FieldType fieldType, Row row)
+    {
+        FieldStatus status = getStatus(fieldType);
+        return _readOnly || status == FieldStatus.Deleted || _domain.isReadOnly(row.edit);
     }
 
     public FieldStatus getStatus(GWTPropertyDescriptor pd)

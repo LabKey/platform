@@ -37,6 +37,7 @@ public class GWTPropertyDescriptor implements IsSerializable
 {
     private IntegerProperty propertyId = new IntegerProperty(0);
     private StringProperty propertyURI = new StringProperty();
+    private StringProperty container = new StringProperty();
     private StringProperty ontologyURI = new StringProperty();
     private StringProperty name = new StringProperty();
     private StringProperty description = new StringProperty();
@@ -71,6 +72,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     {
         setPropertyId(s.getPropertyId());
         setPropertyURI(s.getPropertyURI());
+        setContainer(s.getContainer());
         setOntologyURI(s.getOntologyURI());
         setName(s.getName());
         setDescription(s.getDescription());
@@ -104,6 +106,16 @@ public class GWTPropertyDescriptor implements IsSerializable
     public GWTPropertyDescriptor copy()
     {
         return new GWTPropertyDescriptor(this);
+    }
+
+    public String getContainer()
+    {
+        return container.getString();
+    }
+
+    public void setContainer(String container)
+    {
+        this.container.set(container);
     }
 
     public String getLookupContainer()
@@ -177,14 +189,14 @@ public class GWTPropertyDescriptor implements IsSerializable
     }
 
     public String getOntologyURI()
-        {
+    {
         return ontologyURI.getString();
-        }
+    }
 
     public void setOntologyURI(String ontologyURI)
-        {
+    {
         this.ontologyURI.set(ontologyURI);
-        }
+    }
 
     public String getRangeURI()
     {
@@ -355,6 +367,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isRequired() != that.isRequired()) return false;
         if (isHidden() != that.isHidden()) return false;
         if (getMvEnabled() != that.getMvEnabled()) return false;
+        if (getContainer() != null ? !getContainer().equals(that.getContainer()) : that.getContainer() != null) return false;
         if (getConceptURI() != null ? !getConceptURI().equals(that.getConceptURI()) : that.getConceptURI() != null) return false;
         if (getDescription() != null ? !getDescription().equals(that.getDescription()) : that.getDescription() != null) return false;
         if (getFormat() != null ? !getFormat().equals(that.getFormat()) : that.getFormat() != null) return false;
@@ -397,6 +410,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (ontologyURI.getString() != null ? ontologyURI.getString().hashCode() : 0);
         result = 31 * result + (name.getString() != null ? name.getString().hashCode() : 0);
         result = 31 * result + (description.getString() != null ? description.getString().hashCode() : 0);
+        result = 31 * result + (container.getString() != null ? container.getString().hashCode() : 0);
         result = 31 * result + (rangeURI.getString() != null ? rangeURI.getString().hashCode() : 0);
         result = 31 * result + (conceptURI.getString() != null ? conceptURI.getString().hashCode() : 0);
         result = 31 * result + (label.getString() != null ? label.getString().hashCode() : 0);
@@ -432,6 +446,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("ontologyURI".equals(prop)) return ontologyURI;
         if ("name".equals(prop)) return name;
         if ("description".equals(prop)) return description;
+        if ("container".equals(prop)) return container;
         if ("rangeURI".equals(prop)) return rangeURI;
         if ("conceptURI".equals(prop)) return conceptURI;
         if ("label".equals(prop)) return label;

@@ -35,6 +35,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private String name;
     private String domainURI;
     private String description;
+    private String container;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
     private DefaultValueType defaultDefaultValueType = null;
@@ -57,6 +58,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.name = src.name;
         this.domainURI = src.domainURI;
         this.description = src.description;
+        this.container = src.container;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
@@ -120,6 +122,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.description = description;
     }
 
+    public String getContainer()
+    {
+        return container;
+    }
+
+    public void setContainer(String container)
+    {
+        this.container = container;
+    }
+
     public List<FieldType> getFields()
     {
         return fields;
@@ -162,9 +174,15 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         return mandatoryPropertyDescriptorNames.contains(field.getName().toLowerCase());
     }
 
-    public boolean isEditable(FieldType field)
+    public boolean isLocked(FieldType field)
     {
-        return !isMandatoryField(field);
+        return isReadOnly(field) || isMandatoryField(field);
+    }
+
+    public boolean isReadOnly(FieldType field)
+    {
+        // new fields or fields in the same container as the domain are editable
+        return !(field.getContainer() == null || getContainer().equals(field.getContainer()));
     }
 
     /**

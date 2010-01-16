@@ -116,54 +116,48 @@ public class DomainUtil
     @Nullable
     public static GWTDomain getDomainDescriptor(User user, String typeURI, Container domainContainer)
     {
-        try
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, domainContainer);
+        if (null == dd)
+            return null;
+        Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+        GWTDomain d = getDomain(dd);
+
+        ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
+
+        DomainProperty[] properties = domain.getProperties();
+        Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domainContainer, domain);
+
+        for (DomainProperty prop : properties)
         {
-            DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, domainContainer);
-            if (null == dd)
-                return null;
-            Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-            GWTDomain d = new GWTDomain();
-            PropertyUtils.copyProperties(d, dd);
-
-            ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
-
-            DomainProperty[] properties = domain.getProperties();
-            Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domainContainer, domain);
-
-            for (DomainProperty prop : properties)
-            {
-                GWTPropertyDescriptor p = getPropertyDescriptor(prop);
-                Object defaultValue = defaultValues.get(prop);
-                String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
-                p.setDefaultDisplayValue(formattedDefaultValue);
-                p.setDefaultValue(ConvertUtils.convert(defaultValue));
-                list.add(p);
-            }
-
-            d.setFields(list);
-
-            // Handle reserved property names
-            DomainKind domainKind = domain.getDomainKind();
-            Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
-            d.setReservedFieldNames(new HashSet<String>(reservedProperties));
-
-            return d;
+            GWTPropertyDescriptor p = getPropertyDescriptor(prop);
+            Object defaultValue = defaultValues.get(prop);
+            String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
+            p.setDefaultDisplayValue(formattedDefaultValue);
+            p.setDefaultValue(ConvertUtils.convert(defaultValue));
+            list.add(p);
         }
-        catch (IllegalAccessException e)
-        {
-            Logger.getLogger(DomainEditorServiceBase.class).error("unexpected error", e);
-            throw new RuntimeException(e);
-        }
-        catch (InvocationTargetException e)
-        {
-            Logger.getLogger(DomainEditorServiceBase.class).error("unexpected error", e);
-            throw new RuntimeException(e);
-        }
-        catch (NoSuchMethodException e)
-        {
-            Logger.getLogger(DomainEditorServiceBase.class).error("unexpected error", e);
-            throw new RuntimeException(e);
-        }
+
+        d.setFields(list);
+
+        // Handle reserved property names
+        DomainKind domainKind = domain.getDomainKind();
+        Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
+        d.setReservedFieldNames(new HashSet<String>(reservedProperties));
+
+        return d;
+    }
+
+    public static GWTDomain getDomain(DomainDescriptor dd)
+    {
+        GWTDomain gwtDomain = new GWTDomain();
+
+        gwtDomain.setDomainId(dd.getDomainId());
+        gwtDomain.setDomainURI(dd.getDomainURI());
+        gwtDomain.setName(dd.getName());
+        gwtDomain.setDescription(dd.getDescription());
+        gwtDomain.setContainer(dd.getContainer().getId());
+
+        return gwtDomain;
     }
 
     public static GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop)
@@ -176,6 +170,7 @@ public class DomainUtil
         gwtProp.setLabel(prop.getLabel());
         gwtProp.setName(prop.getName());
         gwtProp.setPropertyURI(prop.getPropertyURI());
+        gwtProp.setContainer(prop.getContainer().getId());
         gwtProp.setRangeURI(prop.getType().getTypeURI());
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setHidden(prop.isHidden());
