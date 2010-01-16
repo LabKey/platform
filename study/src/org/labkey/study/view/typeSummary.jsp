@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
+<%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -46,7 +48,15 @@
         }
         else
         {
-            if (!col.isHidden()) // MV indicator and raw columns shouldn't be displayed
+             // MV indicator and raw columns shouldn't be displayed
+            if (col.isHidden())
+                continue;
+
+            // SystemProperties and properties from other containers should be listed above the line
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(col.getPropertyURI(), study.getContainer());
+            if (pd != null && !pd.getContainer().equals(dataset.getContainer()))
+                systemColumns.add(col);
+            else
                 userColumns.add(col);
         }
     }
