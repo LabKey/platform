@@ -56,13 +56,13 @@ public class AssayPipelineProvider extends PipelineProvider
         _actionDescription = actionDescription;
     }
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             return;
 
         File[] files = directory.listFiles(_filter);
-        if (files != null && files.length > 0)
+        if (includeAll || (files != null && files.length > 0))
         {
             List<ExpProtocol> assays = AssayService.get().getAssayProtocols(context.getContainer());
             Collections.sort(assays);

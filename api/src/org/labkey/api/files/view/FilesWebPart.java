@@ -81,7 +81,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     {
         FilesForm form = new FilesForm();
 
-        form.setAllowChangeDirectory(false);
+        form.setAllowChangeDirectory(true);
         form.setShowAddressBar(false);
         form.setShowDetails(false);
         form.setShowFolderTree(false);

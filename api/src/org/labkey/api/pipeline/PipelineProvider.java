@@ -109,7 +109,7 @@ abstract public class PipelineProvider
          * The function also uses a map to avoid looking for the same fileset
          * multiple times.
          *
-         * @param filter The filter to use on the listed files.
+         * @param filter The filter to usae on the listed files.
          * @return List of filtered files.
          */
         public File[] listFiles(FileFilter filter)
@@ -155,9 +155,9 @@ abstract public class PipelineProvider
                     File[] files2 = action2.getFiles();
                     if (files1 == files2)
                         return 0;
-                    if (files1 == null)
+                    if (files1 == null || files1.length == 0)
                         return -1;
-                    if (files2 == null)
+                    if (files2 == null || files2.length == 0)
                         return 1;
                     rc = files2.length - files1.length;
                     if (rc != 0)
@@ -431,8 +431,9 @@ abstract public class PipelineProvider
      * @param context The ViewContext for the current request
      * @param pr the <code>PipeRoot</code> object for the current context
      * @param directory directory to scan for possible actions
+     * @param includeAll add all actions from this provider even if there are no files of interest in the pipeline directory
      */
-    public abstract void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory);
+    public abstract void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll);
 
     /**
      * Allows the provider to add action buttons to the details page of one
@@ -497,17 +498,19 @@ abstract public class PipelineProvider
         }
     }
 
-    protected void addAction(URLHelper actionURL, String description, PipelineDirectory entry, File[] files, boolean allowMultiSelect)
+    protected void addAction(URLHelper actionURL, String description, PipelineDirectory entry, File[] files,
+                             boolean allowMultiSelect, boolean includeAll)
     {
-        if (files == null || files.length == 0)
+        if (!includeAll && (files == null || files.length == 0))
             return;
 
         entry.addAction(new PipelineAction(description, actionURL, files, allowMultiSelect));
     }
 
-    protected void addAction(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files, boolean allowMultiSelect)
+    protected void addAction(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files,
+                             boolean allowMultiSelect, boolean includeAll)
     {
-        if (files == null || files.length == 0)
+        if (!includeAll && (files == null || files.length == 0))
             return;
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);

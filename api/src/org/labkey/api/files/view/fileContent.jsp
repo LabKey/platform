@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2009 LabKey Corporation
+ * Copyright (c) 2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("FileUploadField.js");
     LABKEY.requiresScript("ActionsAdmin.js");
+    LABKEY.requiresScript("PipelineAction.js");
 </script>
 
 <%
@@ -159,6 +160,7 @@ function renderBrowser(rootPath, dir)
 
         // pipeline actions
         pipelineActions : undefined,
+        importActions : undefined,
 
         // file upload form field
         fileInputField : undefined,
@@ -252,9 +254,9 @@ function renderBrowser(rootPath, dir)
 
             this.actions.importData = new Ext.Action({
                 text: 'Import Data',
+                listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
                 iconCls: 'iconDBCommit',
-                tooltip: 'Import data from files into the database, or analyze data files',
-                listeners: {click:function(button, event) {this.toggleTabPanel('importDataTab');}, scope:this}
+                tooltip: 'Import data from files into the database, or analyze data files'
             });
 
             this.actions.customize = new Ext.Action({
@@ -410,27 +412,24 @@ function renderBrowser(rootPath, dir)
             {
                 for (var i=0; i < actions.length; i++)
                 {
-                    var action = actions[i];
-                    if (action.links.items != undefined)
+                    var pUtil = new LABKEY.PipelineActionUtil(actions[i]);
+                    var links = pUtil.getLinks();
+
+                    if (!links) continue;
+
+                    for (var j=0; j < links.length; j++)
                     {
-                        for (var j=0; j < action.links.items.length; j++)
+                        var link = links[j];
+
+                        if (link.display != 'disabled')
                         {
-                            var item = action.links.items[j];
-                            if (item.text && item.href && item.display != 'disabled')
-                            {
-                                if (item.display == 'toolbar')
-                                    this.addActionItem(toolbarActions, action, item);
-                                else
-                                    this.addActionItem(importActions, action, item);
-                            }
+                            link.handler = this.executePipelineAction;
+                            link.scope = this;
+                            if (link.display == 'toolbar')
+                                this.addActionLink(toolbarActions, pUtil, link);
+                            else
+                                this.addActionLink(importActions, pUtil, link);
                         }
-                    }
-                    else if (action.links.text && action.links.href && action.links.display != 'disabled')
-                    {
-                        if (action.links.display == 'toolbar')
-                            this.addActionItem(toolbarActions, action);
-                        else
-                            this.addActionItem(importActions, action);
                     }
                 }
             }
@@ -441,33 +440,29 @@ function renderBrowser(rootPath, dir)
         /**
          * Helper to add pipeline action items to an object array
          */
-        addActionItem : function(list, action, item)
+        addActionLink : function(list, parent, link)
         {
-            var name = action.links.text;
+            var action= list[parent.getText()];
 
-            // multiple items per type (menu dropdown)
-            if (item)
+            if (!action)
             {
-                var actionObject = list[action.links.text];
-                if (!actionObject)
-                {
-                    actionObject = {text: name, multiSelect: action.multiSelect, files: action.files, menu: {cls: 'extContainer', items: []}};
-                    list[name] = actionObject;
-                }
-                actionObject.menu.items.push({
-                    text: item.text,
-                    files: action.files,
-                    multiSelect: item.multiSelect,
-                    itemHref: item.href,
-                    display: item.display,
-                    listeners: {click: this.executePipelineAction, scope: this}});
+                // create a new data object to hold this link
+                action = new LABKEY.PipelineActionUtil({
+                    multiSelect: parent.multiSelect,
+                    description: parent.description,
+                    files: parent.getFiles(),
+                    links: {
+                        id: parent.links.id,
+                        text: parent.links.text,
+                        href: parent.links.href
+                    }
+                });
+                action.clearLinks();
+                list[parent.getText()] = action;
             }
-            else
-            {
-                list[name] = {text:name, multiSelect: action.multiSelect, files: action.files, itemHref: action.links.href, listeners: {click: this.executePipelineAction, scope: this}};
-            }
+            action.addLink(link);
         },
-
+        
         displayPipelineActions : function(toolbarActions, importActions)
         {
             // delete the actions container
@@ -495,14 +490,16 @@ function renderBrowser(rootPath, dir)
 
             // now add the configurable pipleline actions
             this.pipelineActions = [];
+            this.importActions = [];
 
             for (action in toolbarActions)
             {
                 var a = toolbarActions[action];
-                if (a.text)
+                if ('object' == typeof a )
                 {
-                    var tbarAction = new Ext.Action(a);
+                    var tbarAction = new LABKEY.PipelineAction(a.getActionConfig());
                     tbarButtons.push(new Ext.Button(tbarAction));
+
                     this.pipelineActions.push(tbarAction);
                 }
             }
@@ -510,10 +507,12 @@ function renderBrowser(rootPath, dir)
             for (action in importActions)
             {
                 var a = importActions[action];
-                if (a.text)
+                if ('object' == typeof a )
                 {
-                    var importAction = new Ext.Action(a);
+                    var importAction = new LABKEY.PipelineAction(a.getActionConfig());
                     importDataButtons.push(importAction);
+
+                    this.importActions.push(importAction);
                     this.pipelineActions.push(importAction);
                 }
             }
@@ -537,7 +536,6 @@ function renderBrowser(rootPath, dir)
                 border: false,
                 items: tbarButtons
             });
-            //this.toolbar.render('toolbar');
             this.toolbar.add(toolbar);
             this.toolbar.doLayout();
         },
@@ -585,11 +583,23 @@ function renderBrowser(rootPath, dir)
                     }
                 }
             }
+
+            this.actions.importData.disable();
+            if (this.importActions && this.importActions.length)
+            {
+                for (var i=0; i < this.importActions.length; i++)
+                {
+                    var action = this.importActions[i];
+                    if (!action.isDisabled())
+                        this.actions.importData.enable();
+                }
+            }
         },
 
         executePipelineAction : function(item, e)
         {
             var selections = this.grid.selModel.getSelections();
+            var action = item.isAction ? item : new LABKEY.PipelineAction(item);
 
             // if there are no selections, treat as if all are selected
             if (selections.length == 0)
@@ -605,7 +615,7 @@ function renderBrowser(rootPath, dir)
                 }
             }
 
-            if (item && item.itemHref)
+            if (action && action.initialConfig.href)
             {
                 if (selections.length == 0)
                 {
@@ -615,13 +625,14 @@ function renderBrowser(rootPath, dir)
 
                 var form = document.createElement("form");
                 form.setAttribute("method", "post");
-                form.setAttribute("action", item.itemHref);
+                form.setAttribute("action", item.initialConfig.href);
 
                 for (var i=0; i < selections.length; i++)
                 {
-                    for (var j = 0; j < item.files.length; j++)
+                    var files = action.getFiles();
+                    for (var j = 0; j < files.length; j++)
                     {
-                        if (item.files[j] == selections[i].data.name)
+                        if (files[j] == selections[i].data.name)
                         {
                             var fileField = document.createElement("input");
                             fileField.setAttribute("name", "file");
@@ -645,6 +656,86 @@ function renderBrowser(rootPath, dir)
             configDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
 
             configDlg.show();
+        },
+
+        onImportData : function(btn)
+        {
+            var actionMap = [];
+            var actions = [];
+            var checked = true;
+
+            for (var i=0; i < this.importActions.length; i++)
+            {
+                var pa = this.importActions[i];
+
+                if (!pa.isDisabled())
+                {
+                    var links = pa.getLinks();
+                    var fieldLabel = pa.getText();
+                    for (var j=0; j < links.length; j++)
+                    {
+                        var link = links[j];
+
+                        actionMap[link.id] = link;
+                        actions.push({
+                            //xtype: 'radio',
+                            fieldLabel: fieldLabel,
+                            checked: checked,
+                            labelSeparator: '',
+                            boxLabel: link.text,
+                            name: 'importAction',
+                            inputValue: link.id
+                            //width: 250
+                        });
+                        fieldLabel = '';
+                        checked = false;
+                    }
+                }
+            }
+            var actionPanel = new Ext.form.FormPanel({
+                bodyStyle : 'padding:10px;',
+                defaultType: 'radio',
+                items: actions
+            });
+
+            var win = new Ext.Window({
+                title: 'Import Data',
+                border: false,
+                width: 400,
+                height: 300,
+                cls: 'extContainer',
+                autoScroll: true,
+                closeAction:'close',
+                modal: true,
+                items: actionPanel,
+                buttons: [{
+                    text: 'Submit',
+                    id: 'btn_submit',
+                    listeners: {click:function(button, event) {
+                        this.submitForm(actionPanel, actionMap);
+                        win.close();
+                    }, scope:this}
+                },{
+                    text: 'Cancel',
+                    id: 'btn_cancel',
+                    handler: function(){win.close();}
+                }]
+            });
+            win.show();
+        },
+
+        submitForm : function (panel, actionMap)
+        {
+            // client side validation
+            var form = panel.getForm();
+            var selection = form.getValues();
+            var action = actionMap[selection.importAction];
+
+            if ('object' == typeof action)
+            {
+                var a = new LABKEY.PipelineAction(action);
+                a.execute(a);
+            }
         }
     });
 
