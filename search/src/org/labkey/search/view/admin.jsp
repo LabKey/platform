@@ -18,9 +18,11 @@
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.search.model.DavCrawler" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -35,7 +37,7 @@
     }
     else if(ss.isRunning())
     {
-        %> The indexing service is running.<br>
+        %> The indexing crawler is running.<br>
         <form method="POST">
             <input type="hidden" name="pause" value="1">
             <%=PageFlowUtil.generateSubmitButton("PAUSE")%>
@@ -43,10 +45,20 @@
     }
     else
     {
-        %> The indexing service is paused.<br>
+        %> The indexing crawler is paused.<br>
         <form method="POST">
             <input type="hidden" name="start" value="1">
             <%=PageFlowUtil.generateSubmitButton("START")%>
         </form><%
     }
-%>
+
+    WebPartView.startTitleFrame(out,"Statistics");
+    Map<String,Object> m = DavCrawler.getInstance().getStats();
+    %><table><%
+    for (Map.Entry e : m.entrySet())
+    {
+        String l = String.valueOf(e.getKey());
+        String v = String.valueOf(e.getValue());
+        %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
+    }
+    %></table>

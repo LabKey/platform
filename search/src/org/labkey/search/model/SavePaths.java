@@ -36,8 +36,9 @@ import java.util.*;
  */
 public class SavePaths implements DavCrawler.SavePaths
 {
-    static SQLFragment _emptyFragment = new SQLFragment();
     static java.util.Date _futureDate = new Date(DateUtil.parseDateTime("3000-01-01"));
+
+    final private long _startupTime = System.currentTimeMillis();
     
 
     SQLFragment pathFilter(TableInfo ti, String path)
@@ -129,7 +130,7 @@ public class SavePaths implements DavCrawler.SavePaths
         map.put("Name", path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
         map.put("Parent", parent);
         map.put("NextCrawl", _futureDate);
-        map.put("LastCrawled", _futureDate);
+        map.put("LastCrawled", nullDate);
         try
         {
             map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
@@ -208,24 +209,27 @@ public class SavePaths implements DavCrawler.SavePaths
     }
     
 
-    public void updatePrefix(Path path, java.util.Date last, java.util.Date next, boolean forceIndex)
+    public void updatePrefix(Path path, Date next, boolean forceIndex)
     {
+        if (next == null)
+            next = oldDate;
+        
         try
         {
             if (forceIndex)
             {
                 Table.execute(getSearchSchema(),
-                        "UPDATE search.CrawlResources SET LastIndexed=?" +
+                        "UPDATE search.CrawlResources SET LastIndexed=NULL " +
                         "WHERE Parent IN (SELECT id FROM search.CrawlCollections " +
                         "  WHERE Path LIKE ?)",
-                        new Object[]{nullDate, toPathString(path) + "%"});
+                        new Object[]{toPathString(path) + "%"});
             }
             Table.execute(getSearchSchema(),
                     "UPDATE search.CrawlCollections " +
                     "SET LastCrawled=NULL, NextCrawl=? " +
                     "WHERE Path LIKE ?",
                     // UNDONE LIKE ESCAPE
-                    new Object[]{nullDate, toPathString(path) + "%"});
+                    new Object[]{next, toPathString(path) + "%"});
         }
         catch (SQLException x)
         {
@@ -267,8 +271,8 @@ public class SavePaths implements DavCrawler.SavePaths
 
     public Map<Path, Pair<Date,Date>> getPaths(int limit)
     {
-        java.sql.Timestamp now = new Timestamp(System.currentTimeMillis());
-        java.sql.Timestamp awhileago = new Timestamp(now.getTime() - 30*60000);
+        Date now = new Date(System.currentTimeMillis());
+        Date awhileago = new Date(Math.max(_startupTime,now.getTime() - 30*60000));
 
         SQLFragment f = new SQLFragment(
                 "SELECT Path, LastCrawled, NextCrawl\n" +

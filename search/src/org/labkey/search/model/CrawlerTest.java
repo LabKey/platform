@@ -64,7 +64,7 @@ public class CrawlerTest extends junit.framework.TestCase
     {
         DavCrawler cr = new DavCrawler();
         cr.setResolver(new TestResolver(ModuleLoader.getInstance().getCoreModule().getExplodedPath()));
-        cr.startFull(Path.rootPath);
+        cr.startFull(Path.rootPath, true);
 
         long start = System.currentTimeMillis();
     }
@@ -184,12 +184,12 @@ public class CrawlerTest extends junit.framework.TestCase
             return true;
         }
 
-        public synchronized void updatePrefix(Path path, Date lastIndexed, Date nextCrawl, boolean force)
+        public synchronized void updatePrefix(Path path, Date nextCrawl, boolean force)
         {
             for (Map.Entry<Path,Pair<Date,Date>> e : collections.entrySet())
             {
                 if (e.getKey().startsWith(path))
-                    updatePath(e.getKey(), lastIndexed, nextCrawl, false);
+                    updatePath(e.getKey(), e.getValue().first, nextCrawl, false);
             }
         }
 

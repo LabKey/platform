@@ -51,8 +51,14 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         Container c = folder.getContainer();
         
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
-        return null != root ? PageFlowUtil.set(PIPELINE_LINK) : null;
+        if (null == root)
+            return null;
+        if (!root.ensureSystemDirectory().exists())
+            return null;
+
+        return PageFlowUtil.set(PIPELINE_LINK);
     }
+
 
     public Resource resolve(@NotNull Resource parent, @NotNull String name)
     {
@@ -69,6 +75,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             return null;
         return new PipelineFolderResource(folder, c, root);
     }
+
 
     private class PipelineFolderResource extends FileSystemResource implements WebdavResolver.WebFolder
     {

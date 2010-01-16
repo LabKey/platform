@@ -312,7 +312,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public final void clear()
     {
         clearIndex();
-        _savePaths.updatePrefix(Path.rootPath, null, null, true);
+        _savePaths.updatePrefix(Path.rootPath, null, true);
         DocumentProvider[] documentProviders = _documentProviders.get();
         for (DocumentProvider p : documentProviders)
         {
@@ -410,13 +410,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    /** OK we're really only pausing the crawler */
     public void pause()
     {
         synchronized (_runningLock)
         {
             _paused = true;
         }
-        commit();
     }
 
 
@@ -545,8 +545,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
                 try
                 {
-                    if (!waitForRunning())
-                        continue;
+// UNDONE: only pause the crawler for now, don't want to worry about the queue growing unchecked
+//                    if (!waitForRunning())
+//                        continue;
 
                     i = _runQueue.poll(30, TimeUnit.SECONDS);
                     if (null != i)
@@ -969,8 +970,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    // UNDONE: support incremental
-    public IndexTask indexFull()
+    //
+    // full crawl
+    // use clear() and indexFull() for full forced reindex
+    //
+    
+    public IndexTask indexFull(final boolean force)
     {
         final IndexTask task = createTask("Full reindex");
         Runnable r = new Runnable()
@@ -978,14 +983,40 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             public void run()
             {
                 DocumentProvider[] documentProviders = _documentProviders.get();
+
+                if (force)
+                {
+                    for (DocumentProvider p : documentProviders)
+                    {
+                        try
+                        {
+                            p.indexDeleted();
+                        }
+                        catch (SQLException x)
+                        {
+                            _log.error("Unexpected exception", x);
+                        }
+                    }
+                }
+
                 for (DocumentProvider p : documentProviders)
                 {
                     p.enumerateDocuments(task, null, null);
                 }
             }
         };
+
         task.addRunnable(r, PRIORITY.bulk);
         task.setReady();
+        task.onSuccess(new Runnable(){
+            public void run()
+            {
+                commit();
+            }
+        });
+
+        // also crank crawler into high gear!
+        DavCrawler.getInstance().startFull(Path.parse(WebdavService.getServletPath()), force);
         return task;
     }
 

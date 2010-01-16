@@ -34,6 +34,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
+import org.labkey.search.model.DavCrawler;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -126,7 +127,7 @@ public class SearchController extends SpringActionController
         
         public URLHelper getSuccessURL(AdminForm o)
         {
-            return null;
+            return new ActionURL(AdminAction.class, getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -358,7 +359,7 @@ public class SearchController extends SpringActionController
                 {
                     if (!fullInProgress)
                     {
-                        task = ss.indexFull();
+                        task = ss.indexFull(true);
                         _lastFullTask = task;
                     }
                     else
@@ -366,7 +367,7 @@ public class SearchController extends SpringActionController
                 }
                 else
                 {
-                    task = ss.indexContainer(null,  getViewContext().getContainer(), null);
+                    task = ss.indexContainer(null, getViewContext().getContainer(), null);
                     _lastIncrementalTask = task;
                 }
             }

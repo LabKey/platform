@@ -274,7 +274,7 @@ public class NoopSearchService implements SearchService
         return null==task?_dummyTask:task;
     }
 
-    public IndexTask indexFull()
+    public IndexTask indexFull(boolean force)
     {
         return _dummyTask;
     }

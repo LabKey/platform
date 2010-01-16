@@ -17,6 +17,7 @@ package org.labkey.search.model;
 
 import org.labkey.api.search.SearchService;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -209,20 +210,23 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
-    Runnable onSuccess = null;
+    ArrayList<Runnable> onSuccess = null;
 
     public void onSuccess(Runnable r)
     {
         synchronized (_completeEvent)
         {
-            if (null != onSuccess)
-                throw new IllegalStateException("only one success event supported");
             if (isDone() && !isCancelled())
                 r.run();
             else
-                onSuccess = r;
+            {
+                if (null == onSuccess)
+                    onSuccess = new ArrayList<Runnable>(1);
+                onSuccess.add(r);
+            }
         }
     }
+
 
     protected void onDone()
     {
@@ -231,7 +235,10 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
         _complete = System.currentTimeMillis();
         _completeEvent.notifyAll();
         if (null != onSuccess && !isCancelled())
-            onSuccess.run();
+        {
+            for (Runnable r : onSuccess)
+                r.run();
+        }
     }
 
     
