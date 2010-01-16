@@ -224,7 +224,7 @@ public interface SearchService
 
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
     IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
-    IndexTask indexFull(/*boolean incremental*/);
+    IndexTask indexFull(boolean force);
 
     // container, ptid pairs
     void addParticipantIds(Collection<Pair<String,String>> ptids);

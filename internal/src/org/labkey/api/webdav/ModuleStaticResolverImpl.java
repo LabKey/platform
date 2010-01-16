@@ -242,6 +242,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             return false;
         }
+
+        @Override
+        public boolean shouldIndex()
+        {
+            return false;
+        }
     }
 
     private class StaticResource extends _PublicResource

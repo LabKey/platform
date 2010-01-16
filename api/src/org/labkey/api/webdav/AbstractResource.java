@@ -150,8 +150,9 @@ public abstract class AbstractResource implements Resource
 
     @NotNull
     public String getLocalHref(ViewContext context)
-    {                                             
-        String href = c(context.getContextPath(), _path.encode());
+    {
+        String contextPath = null==context ? AppProps.getInstance().getContextPath() : context.getContextPath();
+        String href = c(contextPath, _path.encode());
         if (isCollection() && !href.endsWith("/"))
             href += "/";
         return href;

@@ -19,8 +19,6 @@ package org.labkey.api.webdav;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
@@ -30,10 +28,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.TTLCacheMap;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.UnsetRootDirectoryException;
-import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.services.ServiceRegistry;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -112,7 +106,7 @@ public class WebdavResolverImpl implements WebdavResolver
     synchronized Resource getRoot()
     {
         if (null == _root)
-            _root = new WebFolderResource(this, ContainerManager.getRoot(), null);
+            _root = new WebFolderResource(this, ContainerManager.getRoot());
         return _root;
     }
 
@@ -333,22 +327,22 @@ public class WebdavResolverImpl implements WebdavResolver
     {
         WebdavResolver _resolver;
         final Container _c;
-        final AttachmentDirectory _attachmentDirectory;
-        final Resource _attachmentResource;
+//        final AttachmentDirectory _attachmentDirectory;
+//        final Resource _attachmentResource;
         ArrayList<String> _children = null;
 
-        WebFolderResource(WebdavResolver resolver, Container c, AttachmentDirectory root)
+        WebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver.getRootPath().append(c.getParsedPath()));
             _resolver = resolver;
             _c = c;
             _containerId = c.getId();
             _policy = c.getPolicy();
-            _attachmentDirectory = root;
-            if (null != _attachmentDirectory)
-                _attachmentResource = AttachmentService.get().getAttachmentResource(getPath(), _attachmentDirectory);
-            else
-                _attachmentResource = null;
+//            _attachmentDirectory = root;
+//            if (null != _attachmentDirectory)
+//                _attachmentResource = AttachmentService.get().getAttachmentResource(getPath(), _attachmentDirectory);
+//            else
+//                _attachmentResource = null;
         }
 
         public int getIntPermissions(User user)
@@ -373,7 +367,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public synchronized List<String> getWebFoldersNames(User user)
         {
-            if (null ==_children)
+            if (null == _children)
             {
                 List<Container> list = ContainerManager.getChildren(_c);
                 _children = new ArrayList<String>(list.size() + 2);
@@ -411,7 +405,8 @@ public class WebdavResolverImpl implements WebdavResolver
         @Override
         public boolean canCreate(User user)
         {
-            return null != _attachmentResource && _attachmentResource.canCreate(user);
+            return false;
+//            return null != _attachmentResource && _attachmentResource.canCreate(user);
         }
 
         @Override
@@ -437,8 +432,8 @@ public class WebdavResolverImpl implements WebdavResolver
         public List<String> listNames()
         {
             Set<String> set = new TreeSet<String>();
-            if (null != _attachmentResource)
-            set.addAll(_attachmentResource.listNames());
+//            if (null != _attachmentResource)
+//                set.addAll(_attachmentResource.listNames());
             set.addAll(getWebFoldersNames(null));
             ArrayList<String> list = new ArrayList<String>(set);
             Collections.sort(list);
@@ -471,27 +466,27 @@ public class WebdavResolverImpl implements WebdavResolver
 
                 if (c != null)
                 {
-                    AttachmentDirectory dir = null;
-                    try
-                    {
-                        try
-                        {
-                            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                            if (c.isRoot())
-                                dir = svc.getMappedAttachmentDirectory(c, false);
-                            else
-                                dir = svc.getMappedAttachmentDirectory(c, true);
-                        }
-                        catch (MissingRootDirectoryException ex)
-                        {
-                            /* */
-                        }
-                    }
-                    catch (UnsetRootDirectoryException x)
-                    {
-                        /* */
-                    }
-                    resource = new WebFolderResource(_resolver, c, dir);
+//                    AttachmentDirectory dir = null;
+//                    try
+//                    {
+//                        try
+//                        {
+//                            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+//                            if (c.isRoot())
+//                                dir = svc.getMappedAttachmentDirectory(c, false);
+//                            else
+//                                dir = svc.getMappedAttachmentDirectory(c, true);
+//                        }
+//                        catch (MissingRootDirectoryException ex)
+//                        {
+//                            /* */
+//                        }
+//                    }
+//                    catch (UnsetRootDirectoryException x)
+//                    {
+//                        /* */
+//                    }
+                    resource = new WebFolderResource(_resolver, c);
                 }
                 else
                 {
@@ -510,12 +505,12 @@ public class WebdavResolverImpl implements WebdavResolver
                 }
             }
 
-            if (null != _attachmentResource)
-            {
-                Resource r = _attachmentResource.find(child);
-                if (null != r)
-                    return r;
-            }
+//            if (null != _attachmentResource)
+//            {
+//                Resource r = _attachmentResource.find(child);
+//                if (null != r)
+//                    return r;
+//            }
             return new UnboundResource(this.getPath().append(child));
         }
 
