@@ -27,6 +27,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.apache.log4j.Logger;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.login.PasswordRule;
 
 import java.sql.SQLException;
 import java.sql.ResultSet;

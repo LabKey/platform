@@ -2,7 +2,6 @@ package org.labkey.core.login;
 
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.PasswordExpiration;
-import org.labkey.api.security.PasswordRule;
 
 import java.util.Map;
 

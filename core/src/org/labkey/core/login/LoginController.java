@@ -803,7 +803,7 @@ public class LoginController extends SpringActionController
             Collection<String> messages = new LinkedList<String>();
             User user = UserManager.getUser(_email);
 
-            if (!DbLoginManager.getPasswordRule().isValid(password, password2, user, messages))
+            if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
             {
                 for (String message : messages)
                     errors.reject("password", message);

@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController.Config" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.api.security.PasswordRule" %>
+<%@ page import="org.labkey.core.login.PasswordRule" %>
 <%@ page import="org.labkey.api.security.PasswordExpiration" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
