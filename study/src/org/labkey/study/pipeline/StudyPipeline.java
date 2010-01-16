@@ -52,7 +52,7 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             return;
@@ -71,8 +71,7 @@ public class StudyPipeline extends PipelineProvider
                 }
             });
 
-            if (files != null)
-                handleDatasetFiles(context, study, directory, files);
+            handleDatasetFiles(context, study, directory, files, includeAll);
 
             files = directory.listFiles(new FileEntryFilter()
             {
@@ -82,10 +81,7 @@ public class StudyPipeline extends PipelineProvider
                 }
             });
 
-            if (files != null)
-            {
-                addAction(SpecimenController.ImportSpecimenData.class, "Import specimen data", directory, files, false);
-            }
+            addAction(SpecimenController.ImportSpecimenData.class, "Import specimen data", directory, files, false, includeAll);
         }
         catch (IOException e)
         {
@@ -139,7 +135,7 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File[] files) throws IOException
+    private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File[] files, boolean includeAll) throws IOException
     {
         List<File> lockFiles = new ArrayList<File>();
         List<File> datasetFiles = new ArrayList<File>();
@@ -169,9 +165,10 @@ public class StudyPipeline extends PipelineProvider
             directory.addAction(new PipelineAction("Delete lock", urlReset, lockFiles.toArray(new File[lockFiles.size()]), true));
         }
 
+        files = new File[0];
         if (!datasetFiles.isEmpty())
-        {
-            addAction(StudyController.ImportStudyBatchAction.class, "Import datasets", directory, datasetFiles.toArray(new File[datasetFiles.size()]), false);
-        }
+            files = datasetFiles.toArray(new File[datasetFiles.size()]);
+
+        addAction(StudyController.ImportStudyBatchAction.class, "Import datasets", directory, files, false, includeAll);
     }
 }

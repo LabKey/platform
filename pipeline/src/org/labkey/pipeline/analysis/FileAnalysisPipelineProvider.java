@@ -60,7 +60,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         return null;
     }
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
         {
@@ -75,7 +75,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         {            
             String path = directory.cloneHref().getParameter(Params.path.toString());
             addAction(tp.getAnalyzeURL(c, path), tp.getDescription(),
-                    directory, directory.listFiles(tp.getInitialFileTypeFilter()), true);
+                    directory, directory.listFiles(tp.getInitialFileTypeFilter()), true, includeAll);
         }
     }
 }

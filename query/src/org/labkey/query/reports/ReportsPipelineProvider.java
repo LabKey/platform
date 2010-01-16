@@ -51,7 +51,7 @@ public class ReportsPipelineProvider extends PipelineProvider
         }
     }
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         // Don't hook up any actions to files
     }

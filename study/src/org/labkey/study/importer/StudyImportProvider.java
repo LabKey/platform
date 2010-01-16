@@ -40,7 +40,7 @@ public class StudyImportProvider extends PipelineProvider
     }
 
     @Override
-    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         // Only admins can import/reload studies
         if (!context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
@@ -48,7 +48,7 @@ public class StudyImportProvider extends PipelineProvider
 
         String label = (null == StudyManager.getInstance().getStudy(context.getContainer()) ? "Import Study" : "Reload Study");
 
-        addAction(StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listFiles(new StudyImportFilter()), false);
+        addAction(StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listFiles(new StudyImportFilter()), false, includeAll);
     }
 
     private static class StudyImportFilter implements FileFilter

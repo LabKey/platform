@@ -429,10 +429,25 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ActionsAction extends ApiAction<PathForm>
+    public static class PipelineActionsForm extends PathForm
     {
-        public ApiResponse execute(PathForm form, BindException errors) throws Exception
+        boolean _allActions;
+
+        public boolean isAllActions()
+        {
+            return _allActions;
+        }
+
+        public void setAllActions(boolean allActions)
+        {
+            _allActions = allActions;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ActionsAction extends ApiAction<PipelineActionsForm>
+    {
+        public ApiResponse execute(PipelineActionsForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
 
@@ -467,8 +482,12 @@ public class PipelineController extends SpringActionController
 
             PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(uriCurrent, browseURL);
             List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
+            //Set<Module> activeModules = c.getActiveModules();
             for (PipelineProvider provider : providers)
-                provider.updateFileProperties(getViewContext(), pr, entry);
+            {
+                //if (!form.isAllActions() || activeModules.contains(provider.getOwningModule()))
+                    provider.updateFileProperties(getViewContext(), pr, entry, form.isAllActions());
+            }
 
             // keep actions in consistent order for display
             entry.orderActions();

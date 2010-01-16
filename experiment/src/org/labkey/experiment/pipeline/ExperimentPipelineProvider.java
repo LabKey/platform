@@ -76,7 +76,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
             f.renameTo(getExperimentDirectory(systemDir, name));
     }
 
-    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
         {
@@ -84,7 +84,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
         }
 
         addAction(ExperimentController.ImportXarFileAction.class, "Import Experiment",
-                directory, directory.listFiles(new XarFilenameFilter()), true);
+                directory, directory.listFiles(new XarFilenameFilter()), true, includeAll);
     }
 
     private static class XarFilenameFilter extends FileEntryFilter
