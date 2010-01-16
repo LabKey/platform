@@ -871,7 +871,7 @@ public class SecurityManager
         try
         {
             String crypt = Crypt.digest(password);
-            List<String> history = new ArrayList<String>(getCryptHistory(email));
+            List<String> history = new ArrayList<String>(getCryptHistory(email.getEmailAddress()));
             history.add(crypt);
 
             // Remember only the last 10 password hashes
@@ -894,13 +894,35 @@ public class SecurityManager
 
     private static final int MAX_HISTORY = 10;
 
-    private static List<String> getCryptHistory(ValidEmail email) throws SQLException
+    private static List<String> getCryptHistory(String email) throws SQLException
     {
-        String cryptHistory = Table.executeSingleton(core.getSchema(), "SELECT PreviousCrypts FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, String.class);
+        String cryptHistory = Table.executeSingleton(core.getSchema(), "SELECT PreviousCrypts FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{email}, String.class);
 
         List<String> fixedList = Arrays.asList(cryptHistory.split(","));
         assert fixedList.size() <= MAX_HISTORY;
         return fixedList;
+    }
+
+
+    public static boolean matchesPreviousPassword(String password, User user)
+    {
+        try
+        {
+            List<String> history = getCryptHistory(user.getEmail());
+            String crypt = Crypt.digest(password);
+
+            for (String hash : history)
+            {
+                if (crypt.equals(hash))
+                    return true;
+            }
+
+            return false;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 

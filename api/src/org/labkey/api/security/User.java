@@ -113,7 +113,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
      * We then filter the display name for guests, stripping out the @domain.com
      * if it is an email address.
      * @param context
-     * @return The diplay name, possibly sanitized
+     * @return The display name, possibly sanitized
      */
     public String getDisplayName(ViewContext context)
     {

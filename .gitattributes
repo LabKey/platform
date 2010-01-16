@@ -620,7 +620,6 @@ api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
 api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
 api/src/org/labkey/api/security/PasswordExpiration.java -text
-api/src/org/labkey/api/security/PasswordRule.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
 api/src/org/labkey/api/security/RequiresNoPermission.java -text
 api/src/org/labkey/api/security/RequiresPermission.java -text
