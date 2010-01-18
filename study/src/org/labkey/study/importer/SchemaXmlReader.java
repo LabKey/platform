@@ -94,7 +94,7 @@ public class SchemaXmlReader implements SchemaReader
             _datasetInfoMap.put(tableProps.getId(), info);
 
             // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "Label", "Description",
+            RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
                     "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                     "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
                     "ShownInDetailsView");
@@ -134,6 +134,7 @@ public class SchemaXmlReader implements SchemaReader
                 Map<String, Object> map = mapFactory.getRowMap(new Object[]{
                     datasetName,
                     columnName,
+                    columnXml.getPropertyURI(),
                     columnXml.getColumnTitle(),
                     columnXml.getDescription(),
                     t.getXsdType(),

@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -71,11 +72,13 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
     private static class DatasetTableInfoWriter extends TableInfoWriter
     {
         private final DataSetDefinition _def;
+        private Domain _domain;
 
         private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat)
         {
             super(ti, DatasetWriter.getColumnsToExport(ti, def, true), defaultDateFormat);
             _def = def;
+            _domain = _def.getDomain();
         }
 
         @Override
@@ -96,10 +99,6 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
             super.writeColumn(column, columnXml);
 
             String columnName = column.getName();
-
-            if (columnName.equals(_def.getVisitDatePropertyName()))
-                columnXml.setPropertyURI(DataSetDefinition.getVisitDateURI());
-
             if (columnName.equals(_def.getKeyPropertyName()))
             {
                 columnXml.setIsKeyField(true);
@@ -108,5 +107,19 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
                     columnXml.setIsAutoInc(true);
             }
         }
+
+        @Override
+        protected String getPropertyURI(ColumnInfo column)
+        {
+            String propertyURI = column.getPropertyURI();
+            if (propertyURI != null && !propertyURI.startsWith(_domain.getTypeURI()) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+                return propertyURI;
+
+            if (column.getName().equals(_def.getVisitDatePropertyName()))
+                return DataSetDefinition.getVisitDateURI();
+
+            return null;
+        }
+
     }
 }

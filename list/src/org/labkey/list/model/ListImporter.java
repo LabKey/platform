@@ -142,7 +142,9 @@ public class ListImporter
         // TODO: This code is largely the same as SchemaXmlReader -- should consolidate
 
         // Set up RowMap with all the keys that OntologyManager.importTypes() handles
-        RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "Label", "Description", "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath", "LookupSchema", "LookupQuery", "URL", "ImportAliases");
+        RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
+                "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
+                "LookupSchema", "LookupQuery", "URL", "ImportAliases");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
@@ -182,6 +184,7 @@ public class ListImporter
             Map<String, Object> map = mapFactory.getRowMap(new Object[]{
                 listName,
                 columnName,
+                columnXml.getPropertyURI(),
                 columnXml.getColumnTitle(),
                 columnXml.getDescription(),
                 t.getXsdType(),

@@ -24,6 +24,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
@@ -213,13 +214,15 @@ public class ListWriter
     {
         private final ListDefinition _def;
         private final Map<String, DomainProperty> _properties = new HashMap<String, DomainProperty>();
+        private Domain _domain;
 
         protected ListTableInfoWriter(TableInfo ti, ListDefinition def, Collection<ColumnInfo> columns)
         {
             super(ti, columns, null);
             _def = def;
+            _domain = _def.getDomain();
 
-            for (DomainProperty prop : _def.getDomain().getProperties())
+            for (DomainProperty prop : _domain.getProperties())
                 _properties.put(prop.getName(), prop);
         }
 
@@ -252,5 +255,16 @@ public class ListWriter
                     columnXml.setDatatype(propType.getXmlName());
             }
         }
+
+        @Override
+        protected String getPropertyURI(ColumnInfo column)
+        {
+            String propertyURI = column.getPropertyURI();
+            if (propertyURI != null && !propertyURI.startsWith(_domain.getTypeURI()) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+                return propertyURI;
+
+            return null;
+        }
+
     }
 }
