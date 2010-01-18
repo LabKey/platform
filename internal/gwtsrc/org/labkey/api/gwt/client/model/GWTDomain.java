@@ -174,15 +174,9 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         return mandatoryPropertyDescriptorNames.contains(field.getName().toLowerCase());
     }
 
-    public boolean isLocked(FieldType field)
+    public boolean isEditable(FieldType field)
     {
-        return isReadOnly(field) || isMandatoryField(field);
-    }
-
-    public boolean isReadOnly(FieldType field)
-    {
-        // new fields or fields in the same container as the domain are editable
-        return !(field.getContainer() == null || getContainer().equals(field.getContainer()));
+        return !isMandatoryField(field);
     }
 
     /**
