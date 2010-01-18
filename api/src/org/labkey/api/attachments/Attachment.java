@@ -18,10 +18,12 @@ package org.labkey.api.attachments;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
 
@@ -252,6 +254,13 @@ public class Attachment implements Serializable
     public void setCreatedBy(int createdBy)
     {
         this.createdBy = createdBy;
+    }
+
+
+    @Transient
+    public String getCreatedByName(ViewContext context)
+    {
+        return UserManager.getDisplayName(createdBy, context);
     }
 
 
