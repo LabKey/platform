@@ -30,9 +30,9 @@ public class GWTTableInfo extends GWTDomain<GWTColumnInfo>
     /** If metadata is not stored in the current container, the folder path where it is stored */
     private String _definitionFolder;
 
-    public boolean isLocked(GWTColumnInfo field)
+    public boolean isEditable(GWTColumnInfo field)
     {
-        return isReadOnly(field);
+        return true;
     }
 
     public boolean isUserDefinedQuery()
