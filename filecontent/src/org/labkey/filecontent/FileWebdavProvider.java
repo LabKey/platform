@@ -16,12 +16,13 @@
 
 package org.labkey.filecontent;
 
+import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.services.ServiceRegistry;
@@ -29,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -39,8 +41,6 @@ import java.util.*;
  */
 public class FileWebdavProvider implements WebdavService.Provider
 {
-    static final String FILEMODULE_LINK = "@files";
-    
     @Nullable
     public Set<String> addChildren(@NotNull Resource target)
     {
@@ -50,29 +50,66 @@ public class FileWebdavProvider implements WebdavService.Provider
         Container c = folder.getContainer();
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        if (svc == null)
+        {
+            return null;
+        }
+        // Check for the default file location
+        Set<String> result = new HashSet<String>();
+        File root = svc.getFileRoot(c);
+        if (root != null && NetworkDrive.exists(root))
+        {
+            result.add(FileContentService.FILES_LINK);
+        }
+
+        // Check if there are any named file sets
         AttachmentDirectory[] dirs = svc.getRegisteredDirectories(c);
         if (null != dirs)
+        {
             for (AttachmentDirectory dir : dirs)
             {
                 if (!StringUtils.isEmpty(dir.getLabel()))
                 {
-                    return PageFlowUtil.set(FILEMODULE_LINK);
+                    result.add(FileContentService.FILE_SETS_LINK);
+                    break;
                 }
             }
-        return null;
+        }
+        return result;
     }
 
 
     public Resource resolve(@NotNull Resource parent, @NotNull String name)
     {
-        if (!FILEMODULE_LINK.equalsIgnoreCase(name))
-            return null;
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
             return null;
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
-        
-        return new _FilesetsFolder(c, parent.getPath());
+
+        if (FileContentService.FILE_SETS_LINK.equalsIgnoreCase(name))
+            return new _FilesetsFolder(c, parent.getPath());
+
+        if (FileContentService.FILES_LINK.equalsIgnoreCase(name))
+        {
+            FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+            if (service != null)
+            {
+                try
+                {
+                    AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, false);
+                    if (dir != null)
+                    {
+                        return new FileSystemResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy(), true);
+                    }
+                }
+                catch (MissingRootDirectoryException e)
+                {
+                    // Don't complain here, just hide the @files subfolder
+                }
+            }
+        }
+
+        return null;
     }
 
 
@@ -84,7 +121,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         
         _FilesetsFolder(Container c, Path folder)
         {
-            super(folder, FILEMODULE_LINK);
+            super(folder, FileContentService.FILE_SETS_LINK);
             _c = c;
             _policy = _c.getPolicy();
             
@@ -132,9 +169,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         {
             AttachmentDirectory dir = _map.get(name);
             Path path = getPath().append(name);
-            Resource r;
-            r = AttachmentService.get().getAttachmentResource(path, dir);
-            return r;
+            return AttachmentService.get().getAttachmentResource(path, dir);
         }
     }
 }

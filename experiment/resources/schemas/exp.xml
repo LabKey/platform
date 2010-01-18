@@ -28,7 +28,18 @@
       <ns:column columnName="SourceApplicationId"/>
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>
-      <ns:column columnName="Created"/>
+        <ns:column columnName="Created">
+            <ns:description>Contains the date and time that this data was added to the system</ns:description>
+        </ns:column>
+        <ns:column columnName="CreatedBy">
+            <ns:description>Contains the user that created this data</ns:description>
+        </ns:column>
+        <ns:column columnName="Modified">
+            <ns:description>Contains the date and time that this data last modified</ns:description>
+        </ns:column>
+        <ns:column columnName="ModifiedBy">
+            <ns:description>Contains the user that last modified this data</ns:description>
+        </ns:column>
       <ns:column columnName="Container"/>
     </ns:columns>
     <ns:description>Contains one row per data (typically a file with raw data or analysis results) object in this folder.</ns:description>
@@ -186,6 +197,15 @@
       </ns:column>
       <ns:column columnName="Created">
           <ns:description>Contains the date and time that this sample was added to the system</ns:description>
+      </ns:column>
+      <ns:column columnName="CreatedBy">
+          <ns:description>Contains the user that created this sample</ns:description>
+      </ns:column>
+      <ns:column columnName="Modified">
+          <ns:description>Contains the date and time that this sample last modified</ns:description>
+      </ns:column>
+      <ns:column columnName="ModifiedBy">
+          <ns:description>Contains the user that last modified this sample</ns:description>
       </ns:column>
       <ns:column columnName="Container">
           <ns:description>Contains a reference to the folder that holds this sample</ns:description>
@@ -678,6 +698,9 @@
       <ns:column columnName="SourceApplicationId"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
       <ns:column columnName="Container"/>
     </ns:columns>
   </ns:table>
@@ -708,6 +731,9 @@
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
       <ns:column columnName="Container"/>
     </ns:columns>
   </ns:table>

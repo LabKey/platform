@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.*;
@@ -54,6 +55,9 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.DataFileUrl);
         addColumn(Column.Created);
+        addColumn(Column.CreatedBy);
+        addColumn(Column.Modified);
+        addColumn(Column.ModifiedBy);
         addColumn(Column.DownloadLink);
         addColumn(Column.ViewFileLink);
         addColumn(Column.ContentLink);
@@ -90,6 +94,12 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
+            case CreatedBy:
+                return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
+            case Modified:
+                return wrapColumn(alias, _rootTable.getColumn("Modified"));
+            case ModifiedBy:
+                return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case DataFileUrl:
                 return wrapColumn(alias, _rootTable.getColumn("DataFileUrl"));
             case LSID:

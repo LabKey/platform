@@ -474,7 +474,7 @@ public class PipelineStatusManager
         }
     }
 
-    public static void deleteStatus(ViewBackgroundInfo info, int[] rowIds) throws SQLException, PipelineProvider.StatusUpdateException
+    public static void deleteStatus(ViewBackgroundInfo info, int[] rowIds) throws SQLException
     {
         if (rowIds.length == 0)
         {

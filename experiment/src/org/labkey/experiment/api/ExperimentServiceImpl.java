@@ -66,11 +66,8 @@ import java.util.*;
 
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
-    public static String PROTOCOLS_FOLDER = "protocols";
-
     private DatabaseCache<MaterialSource> materialSourceCache;
 
-    static private final Logger _log = Logger.getLogger(ExperimentServiceImpl.class);
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
 
     private List<ExperimentRunTypeSource> _runTypeSources = new ArrayList<ExperimentRunTypeSource>();
@@ -243,8 +240,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         catch (SQLException e)
         {
-            _log.error("Error", e);
-            return new ExpData[0];
+            throw new RuntimeSQLException(e);
         }
     }
 

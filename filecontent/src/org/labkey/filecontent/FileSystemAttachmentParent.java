@@ -50,7 +50,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
 
     public FileSystemAttachmentParent()
     {
-        //For use by auto-contstruction schemes...
+        //For use by auto-construction schemes...
     }
 
     FileSystemAttachmentParent(Container c, FileContentServiceImpl.ContentType contentType)

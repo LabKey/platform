@@ -38,7 +38,7 @@ public class ReportsPipelineProvider extends PipelineProvider
         super(NAME, owningModule);
     }
 
-    public void preDeleteStatusFile(PipelineStatusFile sf) throws StatusUpdateException
+    public void preDeleteStatusFile(PipelineStatusFile sf)
     {
         // clean up all the temp files on status file deletion
         File filePath = new File(sf.getFilePath());

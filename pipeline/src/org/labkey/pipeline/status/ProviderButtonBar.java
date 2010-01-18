@@ -120,10 +120,10 @@ public class ProviderButtonBar extends ButtonBar
     {
         if (_providerCurrent != null && _containerCurrent != null)
         {
-            Map<String, List<DisplayElement>> containerElemenets = _providerContainerElements.get(_providerCurrent);
-            if (containerElemenets == null)
+            Map<String, List<DisplayElement>> containerElements = _providerContainerElements.get(_providerCurrent);
+            if (containerElements == null)
                 return null;            
-            return containerElemenets.get(_containerCurrent);
+            return containerElements.get(_containerCurrent);
         }
         return super.getList();
     }

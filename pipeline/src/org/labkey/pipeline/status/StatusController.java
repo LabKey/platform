@@ -523,11 +523,6 @@ public class StatusController extends SpringActionController
                 reject(errors, e.getMessage());
                 return false;
             }
-            catch (PipelineProvider.StatusUpdateException e)
-            {
-                reject(errors, e.getMessage());
-                return false;
-            }
 
             return true;
         }

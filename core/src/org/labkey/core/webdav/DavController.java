@@ -28,6 +28,9 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -957,8 +960,7 @@ public class DavController extends SpringActionController
 
                             // Displaying the lock-null resources present in that
                             // collection
-                            Path lockPath = currentPath;
-                            List currentLockNullResources = (List) lockNullResources.get(lockPath);
+                            List currentLockNullResources = (List) lockNullResources.get(currentPath);
                             if (currentLockNullResources != null)
                             {
                                 for (Object currentLockNullResource : currentLockNullResources)
@@ -1144,18 +1146,18 @@ public class DavController extends SpringActionController
                     }
                     if (exists)
                     {
-                        String createdby = resource.getCreatedBy();
+                        User createdby = resource.getCreatedBy();
                         if (null != createdby)
-                            xml.writeProperty(null, "createdby", createdby);
+                            xml.writeProperty(null, "createdby", UserManager.getDisplayName(createdby.getUserId(), getViewContext()));
 
                         if (isFile)
                         {
                             long modified = resource.getLastModified();
                             if (modified != Long.MIN_VALUE)
                                 xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
-                            String modifiedby = resource.getModifiedBy();
+                            User modifiedby = resource.getModifiedBy();
                             if (null != modifiedby)
-                                xml.writeProperty(null, "modifiedby", modifiedby);
+                                xml.writeProperty(null, "modifiedby", UserManager.getDisplayName(modifiedby.getUserId(), getViewContext()));
                             xml.writeProperty(null, "getcontentlength", String.valueOf(_contentLength(resource)));
                             String contentType = resource.getContentType();
                             if (contentType != null)
@@ -1930,6 +1932,7 @@ public class DavController extends SpringActionController
                     deleteFileOnFail = true;
                 }
 
+                File file = resource.getFile();
                 if (range != null)
                 {
                     if (resource.getContentType().startsWith("text/html") && !UserManager.mayWriteScript(getUser()))
@@ -1941,10 +1944,9 @@ public class DavController extends SpringActionController
                     FileUtil.copyData(getFileStream().openInputStream(), bos);
                     if (bos.size() != range.end-range.start)
                         throw new DavException(WebdavStatus.SC_BAD_REQUEST);
-                    File f = resource.getFile();
-                    if (null == f)
+                    if (null == file)
                         return WebdavStatus.SC_NOT_IMPLEMENTED;
-                    raf = new RandomAccessFile(resource.getFile(),"rw");
+                    raf = new RandomAccessFile(file,"rw");
                     assert track(raf);
                     raf.seek(range.start);
                     bos.writeTo(raf);
@@ -1978,6 +1980,24 @@ public class DavController extends SpringActionController
                         else
                             audit(resource, "created");
                         addToIndex(resource);
+
+                        if (file != null)
+                        {
+                            Container c1 = getContainer();
+                            Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+                            if (c != null)
+                            {
+                                ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+
+                                if (data == null)
+                                {
+                                    data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+                                    data.setName(file.getName());
+                                    data.setDataFileURI(file.toURI());
+                                }
+                                data.save(getUser());
+                            }
+                        }
                     }
                 }
 
@@ -2060,6 +2080,17 @@ public class DavController extends SpringActionController
             {
                 audit(resource, "deleted");
                 removeFromIndex(resource);
+
+                Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+                File file = resource.getFile();
+                if (c != null && file != null)
+                {
+                    ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+                    if (data != null && ExperimentService.get().getRunsUsingDatas(Arrays.asList(data)).isEmpty())
+                    {
+                        data.delete(getUser());
+                    }
+                }
             }
             return WebdavStatus.SC_NO_CONTENT;
         }
@@ -2306,6 +2337,24 @@ public class DavController extends SpringActionController
                         if (null != tmp)
                             tmp.renameTo(dest.getFile());
                         throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not move source:" + src.getPath());
+                    }
+
+                    Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
+                    Container destContainer = dest.getContainerId() == null ? null : ContainerManager.getForId(dest.getContainerId());
+                    if (PageFlowUtil.nullSafeEquals(srcContainer, destContainer))
+                    {
+                        ExpData data = ExperimentService.get().getExpDataByURL(src.getFile(), srcContainer);
+                        if (data == null)
+                        {
+                            data = ExperimentService.get().getExpDataByURL(dest.getFile(), srcContainer);
+                        }
+                        if (data == null)
+                        {
+                            data = ExperimentService.get().createData(srcContainer, new DataType("UploadedFile"));
+                        }
+                        data.setDataFileURI(dest.getFile().toURI());
+                        data.setName(dest.getFile().getName());
+                        data.save(getUser());
                     }
                 }
                 finally

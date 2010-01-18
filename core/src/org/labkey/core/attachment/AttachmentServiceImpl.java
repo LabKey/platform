@@ -31,6 +31,7 @@ import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -1070,7 +1071,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         AttachmentParent _parent = null;
         String _name = null;
         long _created = Long.MIN_VALUE;
-        String _createdBy = null;
+        User _createdBy = null;
         ActionURL _downloadUrl = null;
         Attachment _cached = null;
 
@@ -1097,7 +1098,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             this(folder, parent, attachment.getName());
             _containerId = parent.getContainerId();
             _created = attachment.getCreated().getTime();
-            _createdBy = attachment.getCreatedByName(HttpView.currentContext());
+            _createdBy = UserManager.getUser(attachment.getCreatedBy());
             _cached = attachment;
         }
 
@@ -1280,7 +1281,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         @Override
-        public String getCreatedBy()
+        public User getCreatedBy()
         {
             return _createdBy;
         }
@@ -1291,7 +1292,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         @Override
-        public String getModifiedBy()
+        public User getModifiedBy()
         {
             return _createdBy;
         }

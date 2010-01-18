@@ -31,6 +31,9 @@ public abstract class ProtocolOutput extends IdentifiableBase
     private Integer _runId;
     private int _rowId;
     private Date _created;
+    private Integer _createdBy;
+    private Date _modified;
+    private Integer _modifiedBy;
     private String _cpasType;
     private Integer _sourceApplicationId;
 
@@ -92,6 +95,36 @@ public abstract class ProtocolOutput extends IdentifiableBase
     public void setSourceApplicationId(Integer sourceApplicationId)
     {
         this._sourceApplicationId = sourceApplicationId;
+    }
+
+    public Integer getCreatedBy()
+    {
+        return _createdBy;
+    }
+
+    public void setCreatedBy(Integer createdBy)
+    {
+        _createdBy = createdBy;
+    }
+
+    public Date getModified()
+    {
+        return _modified;
+    }
+
+    public void setModified(Date modified)
+    {
+        _modified = modified;
+    }
+
+    public Integer getModifiedBy()
+    {
+        return _modifiedBy;
+    }
+
+    public void setModifiedBy(Integer modifiedBy)
+    {
+        _modifiedBy = modifiedBy;
     }
 
     public int hashCode()

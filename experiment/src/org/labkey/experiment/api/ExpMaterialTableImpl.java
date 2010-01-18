@@ -126,6 +126,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return createFlagColumn(alias);
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
+            case CreatedBy:
+                return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
+            case Modified:
+                return wrapColumn(alias, _rootTable.getColumn("Modified"));
+            case ModifiedBy:
+                return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -213,6 +219,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
         colLSID.setHidden(true);
         addColumn(ExpMaterialTable.Column.Created);
+        addColumn(ExpMaterialTable.Column.CreatedBy);
+        addColumn(ExpMaterialTable.Column.Modified);
+        addColumn(ExpMaterialTable.Column.ModifiedBy);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));

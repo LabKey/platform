@@ -848,7 +848,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                         else if (405 == client.status) // METHOD_NOT_ALLOWED
                             callback(fileSystem, false, path);
                         else
-                            window.alert(client.statusText);
+                            window.alert("Unable to created directory, status code " + client.status + ". " + client.statusText);
                     }
                 };
             var resourcePath = this.concatPaths(this.prefixUrl, path);
@@ -2143,6 +2143,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     Grid_onSelectionChange : function(rowIndex, keepExisting, record)
     {
+        this.fireEvent(BROWSER_EVENTS.selectionchange, record);
     },
 
     Grid_onKeypress : function(e)
@@ -2634,15 +2635,21 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange, BROWSER_EVENTS.doubleclick, BROWSER_EVENTS.transferstarted, BROWSER_EVENTS.transfercomplete ]);
 
 
-        this.on(BROWSER_EVENTS.selectionchange, function(record)
+        this.on(BROWSER_EVENTS.selectionchange, function()
         {
             this.history = null;
             if (this.actions.showHistory)
                 this.actions.showHistory.disable();
 
-            this.updateFileDetails(record);
-
             var selections = this.grid.selModel.getSelections();
+
+            var record;
+            if (selections.length > 0 && !record)
+            {
+                record = selections[0];
+            }
+
+            this.updateFileDetails(record);
 
             if (selections.length == 1 && startsWith(record.data.uri,"http"))
             {
@@ -2865,12 +2872,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             selModel : new Ext.grid.RowSelectionModel({singleSelect:true}),
             loadMask:{msg:"Loading, please wait..."},
             columns: [
-                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:iconRenderer},
+                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hidden:false, renderer:iconRenderer},
                 {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
 //                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
-                {header: "Usages", width: 150, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage}
+                {header: "Usages", width: 150, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
+                {header: "Created By", width: 150, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
             ]
         });
         return grid;

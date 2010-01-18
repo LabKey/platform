@@ -234,9 +234,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         else if (null == getMappedDirectory(c, false))
             return null;
 
-        FileSystemAttachmentParent parent;
-        parent = new FileSystemAttachmentParent(c, ContentType.files);
-        return parent;
+        return new FileSystemAttachmentParent(c, ContentType.files);
     }
 
     File getMappedDirectory(Container c, boolean create) throws UnsetRootDirectoryException, MissingRootDirectoryException

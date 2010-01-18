@@ -362,7 +362,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Item i = new Item(null, OPERATION.delete, identifier, null, PRIORITY.delete);
         // don't need to preprocess so try to put in the indexQueue
         // if it's full then put in the itemQueue
-        if (_indexQueue.offer(i))
+        if (_indexQueue != null && _indexQueue.offer(i))
             return;
         _itemQueue.put(i);
     }

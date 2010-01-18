@@ -19,6 +19,7 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.data.*;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.security.UserManager;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -119,20 +120,17 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public User getCreatedBy()
     {
-        ExpRunImpl run = getRun();
-        return null == run ? null : run.getCreatedBy();
+        return _object.getCreatedBy() == null ? null : UserManager.getUser(_object.getCreatedBy().intValue());
     }
 
     public User getModifiedBy()
     {
-        ExpRunImpl run = getRun();
-        return null == run ? null : run.getModifiedBy();
+        return _object.getModifiedBy() == null ? null : UserManager.getUser(_object.getModifiedBy().intValue());
     }
 
     public Date getModified()
     {
-        ExpRunImpl run = getRun();
-        return null == run ? null : run.getModified();
+        return _object.getModified();
     }
 
     public ExpRunImpl getRun()

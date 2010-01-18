@@ -825,20 +825,22 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 }
 .x-window-tl {
 	background: #<%= fullScreenBorder %>;
+	padding-left: 4px !important;
 }
 .x-window-tr {
 	background: #<%= fullScreenBorder %>;
+	padding-right: 4px !important;
 }
 .x-window-bc{
 	background: white;
 }
 .x-window-bl {
 	background: #<%= fullScreenBorder %>;
-	padding-left:4px;
+	padding-left:4px !important;
 }
 .x-window-br {
 	background: #<%= fullScreenBorder %>;
-	padding-right:4px;
+	padding-right:4px !important;
 }
 .x-window-mc {
     border:0px solid #d0d0d0;
@@ -846,16 +848,16 @@ body .x-window .x-window-header-text, body .x-panel-ghost .x-window-header-text 
 }
 
 .x-window-footer {
-	border-bottom: #<%= fullScreenBorder %> solid 4px;
+	border-bottom: #<%= fullScreenBorder %> solid 4px !important;
 }
 
 .x-window-ml {
 	background: #<%= fullScreenBorder %> ;
-	padding-left:4px;
+	padding-left:4px !important;
 }
 .x-window-mr {
 	background: #<%= fullScreenBorder %> ;
-	padding-right:4px;
+	padding-right:4px !important;
 }
 
 /* MBOH */
@@ -889,12 +891,13 @@ body.x-body-masked .x-window-mc, body.x-body-masked .x-window-plain .x-window-mc
 }
 
 .x-window-maximized .x-window-tc {
-	background: #<%= fullScreenBorder %> ;
+	background: #<%= fullScreenBorder %>;
 }
 
 
 .x-panel-nofooter .x-panel-bc, .x-panel-nofooter .x-window-bc {
 	height:4px;
+	background: #<%= fullScreenBorder %>;
 }
 
 body .x-window .x-window-tl .x-window-header {

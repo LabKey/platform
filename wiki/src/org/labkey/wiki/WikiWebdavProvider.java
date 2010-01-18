@@ -391,15 +391,15 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public String getCreatedBy()
+        public User getCreatedBy()
         {
-            return UserManager.getDisplayName(_wiki.getCreatedBy(), null);
+            return UserManager.getUser(_wiki.getCreatedBy());
         }
 
         @Override
-        public String getModifiedBy()
+        public User getModifiedBy()
         {
-            return UserManager.getDisplayName(_wiki.getModifiedBy(), null);
+            return UserManager.getUser(_wiki.getModifiedBy());
         }
 
         public InputStream getInputStream(User user) throws IOException
