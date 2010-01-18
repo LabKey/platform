@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
@@ -34,7 +35,7 @@ public interface LoginUrls extends UrlProvider
     public ActionURL getConfigureURL();
     public ActionURL getConfigureDbLoginURL();
     public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters);
-    public ActionURL getChangePasswordURL(Container c, String email, URLHelper returnURL);
+    public ActionURL getChangePasswordURL(Container c, String email, URLHelper returnURL, @Nullable String message);
     public NavTree appendAuthenticationNavTrail(NavTree root);
     public ActionURL getInitialUserURL();
     public ActionURL getLoginURL();

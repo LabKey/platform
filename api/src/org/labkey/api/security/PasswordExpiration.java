@@ -71,7 +71,7 @@ public enum PasswordExpiration
             testExpiration(PasswordExpiration.ThreeMonths, 60, 46);
         }
 
-        // Test expiration on a weekly basis for the specified number of weeks
+        // Test expiration every week for the specified number of weeks
         private void testExpiration(PasswordExpiration expiration, int weeks, int expectedExpirations)
         {
             long now = new Date().getTime();
