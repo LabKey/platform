@@ -1034,7 +1034,7 @@ public class UserController extends SpringActionController
                     }
                 }
 
-                ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user.getEmail(), getViewContext().getActionURL()), "Change Password");
+                ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user.getEmail(), getViewContext().getActionURL(), null), "Change Password");
                 changePasswordButton.setActionType(ActionButton.Action.LINK);
                 bb.add(changePasswordButton);
 

@@ -20,12 +20,13 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
+<%@ page import="org.labkey.api.collections.NamedObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrors("form");
 %>
-<form method="POST" action="setPassword.post">
+<form method="POST" action="<%=bean.actionName%>.post">
 <table><%
     if (errors.length() > 0)
     { %>
@@ -36,38 +37,37 @@
     if (!bean.unrecoverableError)
     { %>
     <tr><td colspan=2><%=h(bean.email)%>:</td></tr>
-    <tr><td colspan=2>Choose a password you'll use to access this server.</td></tr>
+    <tr><td colspan=2><%=h(bean.message)%></td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
     <tr><td colspan=2><%=DbLoginManager.getPasswordRule().getRuleHTML()%></td></tr>
     <tr><td colspan=2>&nbsp;</td></tr><%
 
-    if (bean.changePassword)
+    for (NamedObject passwordInput : bean.passwordInputs)
     { %>
-    <tr><td>Old Password:</td><td><input id="oldPassword" type="password" name="oldPassword" style="width:150;"></td></tr><%
+    <tr><td><%=h(passwordInput.getName())%></td><td><input id="<%=passwordInput.getObject()%>" type="password" name="<%=passwordInput.getObject()%>" style="width:150;"></td></tr><%
     }
     %>
-    <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:150;"></td></tr>
-    <tr><td>Retype Password:</td><td><input type="password" name="password2" style="width:150;"></td></tr>
     <tr>
         <td>
-            <input type=hidden name=email value="<%=h(bean.email)%>"><%
+            <input type="hidden" name="email" value="<%=h(bean.email)%>"><%
+
+            if (null != bean.form.getVerification())
+            { %>
+            <input type="hidden" name="verification" value="<%=h(bean.form.getVerification())%>"><%
+            }
 
             if (bean.form.getSkipProfile())
             { %>
-            <input type=hidden name=skipProfile value="1"><%
+            <input type="hidden" name="skipProfile" value="1"><%
             }
+
             if (null != bean.form.getReturnURLHelper())
             { %>
             <%=generateReturnUrlFormField(bean.form)%><%
             }
-
-            %>
-        </td><%
-        if (!bean.changePassword)
-        { %>
-        <td><input type=hidden name=verification value="<%=h(bean.form.getVerification())%>"></td></tr><%
-        }
         %>
+        </td>
+    </tr>
     <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%></td></tr><%
     } %>
 </table>

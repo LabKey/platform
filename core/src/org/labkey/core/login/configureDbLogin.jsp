@@ -31,12 +31,12 @@
 <table>
     <tr>
         <td class="labkey-form-label">Password Strength</td>
-        <td><table><%
+        <td><table class="labkey-data-region labkey-show-borders"><%
             for (PasswordRule rule : PasswordRule.values())
             { %>
-            <tr>
-                <td valign="top"><input type="radio" name="strength" value="<%=rule.name()%>"<%=rule.equals(bean.currentRule) ? " checked" : ""%>></td>
-                <td><b><%=h(rule.name())%></b> - <%=rule.getRuleHTML()%></td>
+            <tr valign="center">
+                <td><input type="radio" name="strength" value="<%=rule.name()%>"<%=rule.equals(bean.currentRule) ? " checked" : ""%>><b><%=h(rule.name())%></b></td>
+                <td><%=rule.getRuleHTML()%></td>
             </tr>
                 <%
             }

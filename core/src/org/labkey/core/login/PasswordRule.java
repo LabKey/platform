@@ -25,7 +25,7 @@ public enum PasswordRule
         @Override
         public String getRuleHTML()
         {
-            return "Passwords must be six characters or more and can't match your email address.";
+            return "Passwords must be six characters or more and must not match your email address.";
         }
 
         @Override
@@ -50,7 +50,7 @@ public enum PasswordRule
             if (email.equalsIgnoreCase(password))
             {
                 if (null != messages)
-                    messages.add("Your password can't match your email address.");
+                    messages.add("Your password must not match your email address.");
 
                 return false;
             }
@@ -71,8 +71,11 @@ public enum PasswordRule
         @Override
         public String getRuleHTML()
         {
-            // TODO: Need better description
-            return "Passwords must be eight characters or more, and contain all kinds of crazy characters.";
+            return "Passwords follow these rules:<ul>\n" +
+                    "<li>Must be eight characters or more.</li>\n" +
+                    "<li>Must contain three of the following: lowercase letter (a-z), uppercase letter (A-Z), digit (0-9), or symbol (e.g., ! # $ % & / < = > ? @).</li>\n" +
+                    "<li>Must not contain a sequence of three or more characters from your email address, display name, first name, or last name.</li>\n" +
+                    "<li>Must not match any of your 10 previously used passwords.</li>\n</ul>\n";
         }
 
         @Override
@@ -96,7 +99,7 @@ public enum PasswordRule
             if (countMatches(password, lowerCase, upperCase, digit, nonWord) < 3)
             {
                 if (null != messages)
-                    messages.add("Your password must contain some crazy symbols.");
+                    messages.add("Your password must contain three of the following: lowercase letter (a-z), uppercase letter (A-Z), digit (0-9), or symbol (e.g., ! # $ % & / < = > ? @).");
 
                 return false;
             }
@@ -113,7 +116,7 @@ public enum PasswordRule
             if (SecurityManager.matchesPreviousPassword(password, user))
             {
                 if (null != messages)
-                    messages.add("Your entry matches a password you used recently.");
+                    messages.add("Your password must not match a recently used password.");
 
                 return false;
             }
@@ -134,7 +137,7 @@ public enum PasswordRule
                 if (lcPassword.contains(lcInfo.substring(i, i + 3)))
                 {
                     if (null != messages)
-                        messages.add("Your password contained a sequence of three or more characters from your " + infoType + ".");
+                        messages.add("Your password must not contain a sequence of three or more characters from your " + infoType + ".");
 
                     return true;
                 }

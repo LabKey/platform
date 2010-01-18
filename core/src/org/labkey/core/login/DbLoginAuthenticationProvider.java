@@ -16,16 +16,21 @@
 package org.labkey.core.login;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
@@ -76,7 +81,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         if (!hash.equals(Crypt.digest(password)))
         {
-            _log.error("Invalid login. name=" + email + ", bad password.");
+            _log.error("Invalid login. name=" + email + ", incorrect password.");
             return null;
         }
 
@@ -90,25 +95,58 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         Collection<String> messages = new LinkedList<String>();
 
         if (!rule.isValidForLogin(password, user, messages))
-        {
-            _log.info("Password for " + user.getEmail() + " is no longer valid: " + messages.toString());
-            throw new RedirectException(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(ContainerManager.getRoot(), user.getEmail(), AppProps.getInstance().getHomePageActionURL()));
-        }
+            return handleProblem(user, "doesn't meet the current complexity requirements");
 
         PasswordExpiration expiration = DbLoginManager.getPasswordExpiration();
         Date lastChanged = SecurityManager.getLastChanged(user);
 
         if (expiration.hasExpired(lastChanged))
-        {
-            _log.info("Password for " + email.getEmailAddress() + " has expired.");
-            throw new RedirectException(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(ContainerManager.getRoot(), user.getEmail(), AppProps.getInstance().getHomePageActionURL()));
-        }
-
-        // TODO: use correct container and returnURL in redirects
+            return handleProblem(user, "has expired");
 
         return email;
     }
 
+
+    private ValidEmail handleProblem(User user, String description) throws RedirectException
+    {
+        _log.info("Password for " + user.getEmail() + " " + description + ".");
+
+        ViewContext ctx = HttpView.currentContext();
+
+        if (null != ctx)
+        {
+            Container c = ctx.getContainer();
+            ActionURL currentURL = ctx.getActionURL();
+
+            if (null != c && null != currentURL)
+            {
+                // We have a ViewContext, container, and an ActionURL, so redirect to password change page
+
+                // Figure out where to redirect after change password.  Fall back plan is the home page.
+                URLHelper returnURL = AppProps.getInstance().getHomePageActionURL();
+                String returnURLParam = currentURL.getParameter(ReturnUrlForm.Params.returnUrl);
+
+                if (null != returnURLParam)
+                {
+                    try
+                    {
+                        returnURL = new URLHelper(returnURLParam);
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        // Ignore... we'll just fall back to the home page
+                    }
+                }
+
+                LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
+                ActionURL changePasswordURL = urls.getChangePasswordURL(c, user.getEmail(), returnURL, "Your password " + description + "; please choose a new password.");
+
+                throw new RedirectException(changePasswordURL);
+            }
+        }
+
+        return null;
+    }
 
     public ActionURL getConfigurationLink()
     {
