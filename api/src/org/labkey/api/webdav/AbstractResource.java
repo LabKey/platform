@@ -101,7 +101,7 @@ public abstract class AbstractResource implements Resource
     }
 
 
-    public String getCreatedBy()
+    public User getCreatedBy()
     {
         return null;
     }
@@ -123,7 +123,7 @@ public abstract class AbstractResource implements Resource
             ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
     }
 
-    public String getModifiedBy()
+    public User getModifiedBy()
     {
         return null;
     }

@@ -38,6 +38,9 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
         Property,
         Folder,
         Created,
+        CreatedBy,
+        Modified,
+        ModifiedBy,
     }
     void populate(ExpSampleSet ss, boolean filterSampleSet);
     void setSampleSet(ExpSampleSet ss, boolean filter);

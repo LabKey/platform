@@ -221,10 +221,6 @@ public class ExperimentService
          * @param outputDatas map from output role name to output data
          * @param info context information, including the user
          * @param log output log target
-         * @param loadDataFiles
-         * @throws SQLException
-         * @throws XarFormatException
-         * @throws ExperimentException
          */
         public ExpRun insertSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
         public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;

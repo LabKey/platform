@@ -15,6 +15,9 @@
  */
 package org.labkey.api.webdav;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFileFilter;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -46,6 +49,8 @@ import java.util.*;
 */
 public class FileSystemResource extends AbstractResource
 {
+    private static final Logger _log = Logger.getLogger(FileSystemResource.class);
+
     protected File _file;
     String _name = null;
     Resource _folder;   // containing controller used for canList()
@@ -56,6 +61,9 @@ public class FileSystemResource extends AbstractResource
     private long _lastModified = UNKNOWN;
 
     private static final long UNKNOWN = -1;
+    private boolean _dataQueried = false;
+    private ExpData _data;
+    private boolean _mergeFromParent;
 
     private enum FileType { file, directory, notpresent }
 
@@ -71,11 +79,17 @@ public class FileSystemResource extends AbstractResource
 
     public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy)
     {
+        this(folder, name, file, policy, false);
+    }
+
+    public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
+    {
         super(folder.getPath(), name);
         _folder = folder;
         _name = name;
         _policy = policy;
         _file = FileUtil.canonicalFile(file);
+        _mergeFromParent = mergeFromParent;
     }
 
     public FileSystemResource(FileSystemResource folder, String relativePath)
@@ -126,7 +140,7 @@ public class FileSystemResource extends AbstractResource
         }
         if (_type == null)
         {
-            if (_file.getName().indexOf(".") == -1)
+            if (!_file.getName().contains("."))
             {
                 // With no extension, first guess that it's a directory
                 if (_file.isDirectory())
@@ -167,25 +181,15 @@ public class FileSystemResource extends AbstractResource
         return getPath().isDirectory();
     }
 
-
-    // cannot create objects in a virtual collection
-    public boolean isVirtual()
-    {
-        return _file == null;
-    }
-
-
     public boolean isFile()
     {
         return _file != null && getType() == FileType.file;
     }
 
-
     public File getFile()
     {
         return _file;
     }
-
 
     public FileStream getFileStream(User user) throws IOException
     {
@@ -207,29 +211,20 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public OutputStream getOutputStream(User user) throws IOException
+    public long copyFrom(User user, FileStream is) throws IOException
     {
-        if (!canWrite(user))
-            return null;
-        if (null == _file)
-            return null;
+        if (!canWrite(user) || null == _file)
+            return -1;
+
         if (!_file.exists())
         {
             _file.createNewFile();
             resetMetadata(FileType.file);
         }
-        return new FileOutputStream(_file);
-    }
 
-
-    public long copyFrom(User user, FileStream is) throws IOException
-    {
-        FileOutputStream fos=null;
+        FileOutputStream fos = new FileOutputStream(_file);
         try
         {
-            fos = (FileOutputStream)getOutputStream(user);
-            if (null == fos)
-                return -1;
             long len = FileUtil.copyData(is.openInputStream(), fos);
             fos.getFD().sync();
             resetMetadata(FileType.file);
@@ -248,11 +243,62 @@ public class FileSystemResource extends AbstractResource
         _type = type;
     }
 
+    /**
+     * To improve backwards compatibility with existing external processes, copy files from
+     * the original location on the file system into the @files directory if they don't exist
+     * in the @files directory or are newer.
+     */
+    private void mergeFiles()
+    {
+        if (_mergeFromParent && isCollection())
+        {
+            File[] parentFiles = _file.getParentFile().listFiles((FileFilter)FileFileFilter.FILE);
+            if (parentFiles != null)
+            {
+                for (File parentFile : parentFiles)
+                {
+                    long lastModified = parentFile.lastModified();
+                    File destFile = new File(_file, parentFile.getName());
+                    // lastModified() returns 0 if the file doesn't exist, so this check works in either case
+                    if (destFile.lastModified() < parentFile.lastModified())
+                    {
+                        try
+                        {
+                            if (destFile.exists() && !destFile.delete())
+                            {
+                                _log.warn("Failed to delete outdated file '" + destFile + "' from @files location");
+                            }
+                            FileUtils.moveFile(parentFile, destFile);
+                            // Preserve the file's timestamp
+                            if (!destFile.setLastModified(lastModified))
+                            {
+                                _log.warn("Filed to set timestamp on " + destFile);
+                            }
+                        }
+                        catch (IOException e)
+                        {
+                            // Don't fail the request because of this error
+                            _log.warn("Unable to copy file '" + parentFile + "' from legacy location to new @files location");
+                        }
+                    }
+                    else
+                    {
+                        if (!parentFile.delete())
+                        {
+                            _log.warn("Failed to delete file '" + parentFile + "' from legacy location");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @NotNull
     public List<String> listNames()
     {
         if (!isCollection())
             return Collections.emptyList();
+        mergeFiles();
         ArrayList<String> list = new ArrayList<String>();
         if (_file != null && _file.isDirectory())
         {
@@ -284,6 +330,7 @@ public class FileSystemResource extends AbstractResource
 
     public Resource find(String name)
     {
+        mergeFiles();
         return new FileSystemResource(this, name);
     }
 
@@ -378,12 +425,26 @@ public class FileSystemResource extends AbstractResource
         return history;
     }
 
+    @Override
+    public User getCreatedBy()
+    {
+        ExpData data = getExpData();
+        return data == null ? super.getCreatedBy() : data.getCreatedBy();
+    }
+
+    @Override
+    public User getModifiedBy()
+    {
+        ExpData data = getExpData();
+        return data == null ? super.getCreatedBy() : data.getModifiedBy();
+    }
+
     @NotNull @Override
     public List<NavTree> getActions()
     {
         if (_file != null)
         {
-            ExpData data = ExperimentService.get().getExpDataByURL(_file, getContainer());
+            ExpData data = getExpData();
             if (data != null)
             {
                 ActionURL url = data.findDataHandler().getContentURL(data.getContainer(), data);
@@ -397,6 +458,16 @@ public class FileSystemResource extends AbstractResource
             }
         }
         return Collections.emptyList();
+    }
+
+    private ExpData getExpData()
+    {
+        if (!_dataQueried)
+        {
+            _data = ExperimentService.get().getExpDataByURL(_file, getContainer());
+            _dataQueried = true;
+        }
+        return _data;
     }
 
     Container getContainer()

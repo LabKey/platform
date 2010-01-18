@@ -293,19 +293,6 @@ abstract public class PipelineProvider
         }
     }
 
-    public static class StatusUpdateException extends Exception
-    {
-        public StatusUpdateException(String message)
-        {
-            super(message);
-        }
-
-        public StatusUpdateException(String message, Throwable cause)
-        {
-            super(message, cause);
-        }
-    }
-
     public static class FileCached extends File
     {
         private Boolean _dir;
@@ -405,7 +392,7 @@ abstract public class PipelineProvider
      *
      * @param sf the entry to delete
      */
-    public void preDeleteStatusFile(PipelineStatusFile sf) throws StatusUpdateException
+    public void preDeleteStatusFile(PipelineStatusFile sf)
     {
     }
 
@@ -416,7 +403,6 @@ abstract public class PipelineProvider
 
     /**
      * @return Web part shown on the setup page.
-     * @param container
      */
     public HttpView getSetupWebPart(Container container)
     {
@@ -524,7 +510,6 @@ abstract public class PipelineProvider
      * current container's folder type is one that makes use of this pipeline provider.
      * Many modules (e.g. MS2) have trouble with overlapping pipeline roots.  It is important that in MS2 folders
      * the user be shown the warning.
-     * @return
      */
     public boolean suppressOverlappingRootsWarning(ViewContext context)
     {

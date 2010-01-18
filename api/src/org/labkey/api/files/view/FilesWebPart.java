@@ -22,16 +22,17 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.files.view.CustomizeFilesWebPartView;
+import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,7 +72,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
             //this.fileSet = fileSet;
             getModelBean().setRoot(dir);
-            getModelBean().setRootPath(c, "@files/" + fileSet);
+            getModelBean().setRootPath(c, FileContentService.FILE_SETS_LINK + "/" + fileSet);
             setTitle(fileSet);
             setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
         }
@@ -81,22 +82,35 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     {
         FilesForm form = new FilesForm();
 
-        form.setAllowChangeDirectory(true);
         form.setShowAddressBar(false);
         form.setShowDetails(false);
         form.setShowFolderTree(false);
-        form.setRootPath(getRootContext().getContainer(), null);
+        form.setRootPath(getRootContext().getContainer(), FileContentService.FILES_LINK);
 
         List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
 
-        if (getRootContext().getContainer().hasPermission(getRootContext().getUser(), InsertPermission.class))
-            actions.add(FilesForm.actions.upload);
-
+        // Navigation actions
         actions.add(FilesForm.actions.parentFolder);
-        actions.add(FilesForm.actions.download);
-        actions.add(FilesForm.actions.deletePath);
         actions.add(FilesForm.actions.refresh);
-        actions.add(FilesForm.actions.importData);
+
+        // Actions not based on the current selection
+        SecurityPolicy policy = org.labkey.api.security.SecurityManager.getPolicy(getSecurableResource());
+        if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
+        {
+            actions.add(FilesForm.actions.upload);
+            actions.add(FilesForm.actions.createDirectory);
+        }
+
+        // Actions based on the current selection
+        actions.add(FilesForm.actions.download);
+        if (policy.hasPermission(getViewContext().getUser(), DeletePermission.class))
+        {
+            actions.add(FilesForm.actions.deletePath);
+        }
+        if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
+        {
+            actions.add(FilesForm.actions.importData);
+        }
 
         if (getRootContext().getUser().isAdministrator())
             actions.add(FilesForm.actions.customize);
@@ -113,6 +127,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
         String path = webPartDescriptor.getPropertyMap().get("path");
+    }
+
+    protected SecurableResource getSecurableResource()
+    {
+        return getViewContext().getContainer(); 
     }
 
     public boolean isWide()
@@ -174,9 +193,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         @Override
         public HttpView getEditView(Portal.WebPart webPart)
         {
-            JspView editView = new CustomizeFilesWebPartView(webPart);
-
-            return editView;
+            return new CustomizeFilesWebPartView(webPart);
         }
     }
 
@@ -186,7 +203,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _showAddressBar;
         private boolean _showFolderTree;
         private boolean _showDetails;
-        private boolean _allowChangeDirectory;
         private boolean _autoResize;
         private actions[] _buttonConfig;
         private String _rootPath;
@@ -254,16 +270,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             _showDetails = showDetails;
         }
 
-        public boolean isAllowChangeDirectory()
-        {
-            return _allowChangeDirectory;
-        }
-
-        public void setAllowChangeDirectory(boolean allowChangeDirectory)
-        {
-            _allowChangeDirectory = allowChangeDirectory;
-        }
-
         public actions[] getButtonConfig()
         {
             return _buttonConfig;
@@ -281,16 +287,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public void setRootPath(Container c, String davName)
         {
-/*
-            AppProps props = AppProps.getInstance();
-            StringBuilder baseServer = URLHelper.getBaseServer(props.getScheme(), props.getServerName(), props.getServerPort());
-            String webdavPrefix = baseServer.append(props.getContextPath()).append("/").append(WebdavService.getServletPath()).toString();
-*/
             String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
             String rootPath;
 
             if (davName != null)
-                rootPath = webdavPrefix + c.getEncodedPath() + davName;
+                rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName);
             else
                 rootPath = webdavPrefix + c.getEncodedPath();
 

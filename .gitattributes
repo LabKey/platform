@@ -395,10 +395,6 @@ api/src/org/labkey/api/pipeline/TaskPipelineSettings.java -text
 api/src/org/labkey/api/pipeline/WorkDirFactory.java -text
 api/src/org/labkey/api/pipeline/WorkDirectory.java -text
 api/src/org/labkey/api/pipeline/WorkDirectoryTask.java -text
-api/src/org/labkey/api/pipeline/browse/BrowseFile.java -text
-api/src/org/labkey/api/pipeline/browse/BrowseForm.java -text
-api/src/org/labkey/api/pipeline/browse/BrowseView.java -text
-api/src/org/labkey/api/pipeline/browse/FileFilter.java -text
 api/src/org/labkey/api/pipeline/browse/PipelinePathForm.java -text
 api/src/org/labkey/api/pipeline/cmd/AbstractValueToNamedSwitch.java -text
 api/src/org/labkey/api/pipeline/cmd/BooleanToCommandArgs.java -text

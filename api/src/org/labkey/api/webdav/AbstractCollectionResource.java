@@ -54,7 +54,7 @@ public abstract class AbstractCollectionResource extends AbstractResource
         return false;
     }
 
-    public String getModifiedBy()
+    public User getModifiedBy()
     {
         return null;
     }

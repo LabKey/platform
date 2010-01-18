@@ -54,8 +54,6 @@ public class Table
 {
     public static Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
 
-    public static interface UncachedResultset extends ResultSet{}      // marker interface for select()
-
     /** Return all rows instead of limiting to the top n */
     public static final int ALL_ROWS = 0;
     public static final int NO_ROWS = -2;
@@ -66,9 +64,6 @@ public class Table
 
     private static Logger _log = Logger.getLogger(Table.class);
 
-    protected static Object _lock = new Object();
-
-
     private Table()
     {
     }
@@ -78,7 +73,6 @@ public class Table
     public static PreparedStatement prepareStatement(Connection conn, String sql, Object[] parameters)
             throws SQLException
     {
-        _logDebug(sql, parameters, conn);
         PreparedStatement stmt = conn.prepareStatement(sql);
         setParameters(stmt, parameters);
         assert MemTracker.put(stmt);
@@ -94,7 +88,6 @@ public class Table
     private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, AsyncQueryRequest asyncRequest, boolean scrollable, Integer statementRowCount)
             throws SQLException
     {
-        _logDebug(sql, parameters, conn);
         ResultSet rs;
 
         if (null == parameters || 0 == parameters.length)
@@ -144,7 +137,6 @@ public class Table
     public static int execute(Connection conn, String sql, Object[] parameters)
             throws SQLException
     {
-        _logDebug(sql, parameters, conn);
         Statement stmt = null;
 
         try
@@ -406,8 +398,6 @@ public class Table
 
         try
         {
-            _logDebug("batchExecute " + sql, null, conn);
-
             stmt = conn.prepareStatement(sql);
             int paramCounter = 0;
             for (Collection<?> params : paramList)
@@ -1807,19 +1797,6 @@ public class Table
     public static void notifyTableUpdate(/*String operation,*/ TableInfo table/*, Container c*/)
     {
         DbCache.invalidateAll(table);
-    }
-
-
-//    private static void _logDebug(String msg, Connection conn)
-//    {
-//        _logQuery(Priority.DEBUG, msg, null, conn);
-//    }
-
-
-    private static void _logDebug(String sql, Object[] parameters, Connection conn)
-    {
-        // HANDLED BY StatementWrapper
-        // _logQuery(Priority.DEBUG, sql, parameters, conn);
     }
 
 

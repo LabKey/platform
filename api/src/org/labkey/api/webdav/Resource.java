@@ -60,11 +60,11 @@ public interface Resource
 
     long getCreated();
 
-    String getCreatedBy();
+    User getCreatedBy();
 
     long getLastModified();
 
-    String getModifiedBy();
+    User getModifiedBy();
 
     // may return Long.MIN_VALUE
     long getLastIndexed();

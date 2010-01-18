@@ -1311,6 +1311,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
             }
         }
+        else
+        {
+            if (!dataType.matches(new Lsid(data.getLSID())))
+            {
+                // Reset its LSID so that it's the correct type
+                data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
+            }
+        }
         return data;
     }
 
