@@ -39,6 +39,8 @@ import java.util.regex.Pattern;
 
 public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 {
+    public static final String DEFAULT_PROPERTY_URI_PREFIX = "http://terms.fhcrc.org/dbschemas/";
+
     private static final DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
     {
         public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -308,7 +310,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getPropertyURI()
     {
         if (null == propertyURI)
-            propertyURI = "http://terms.fhcrc.org/dbschemas/" + getParentTable().getSchema().getName() + "#" + getTableAlias() + "." + getSelectName();
+            propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getTableAlias() + "." + getSelectName();
         return propertyURI;
     }
 

@@ -2061,19 +2061,14 @@ public class OntologyManager
             String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
             String domainURI = uriFactory.getDomainURI(domainName);
 
-            PropertyDescriptor pd = null;
-            String name = StringUtils.trimToEmpty((String) m.get("property"));
-            String propertyURI = domainURI + "." + name;
+            String name = StringUtils.trimToEmpty(((String)m.get("property")));
+            String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));
+            if (propertyURI.length() == 0)
+                propertyURI = domainURI + "." + name;
             if (-1 != name.indexOf('#'))
             {
                 propertyURI = name;
-                int hash = name.indexOf('#');
-                String uri = name.substring(0, hash);
-                name = name.substring(hash+1);
-
-                // try use existing SystemProperty PropertyDescriptor from Shared container.
-                if (!domainURI.equals(uri))
-                    pd = getPropertyDescriptor(propertyURI, _sharedContainer);
+                name = name.substring(name.indexOf('#')+1);
             }
             if (name.length() == 0)
             {
@@ -2082,6 +2077,11 @@ public class OntologyManager
                     errors.add(e);
                 continue;
             }
+
+            // try use existing SystemProperty PropertyDescriptor from Shared container.
+            PropertyDescriptor pd = null;
+            if (!propertyURI.startsWith(domainURI) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+                pd = getPropertyDescriptor(propertyURI, _sharedContainer);
 
             if (pd == null)
             {

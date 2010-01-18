@@ -20,6 +20,7 @@ import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Date;
@@ -87,6 +88,10 @@ public class TableInfoWriter
         if (null != column.getDescription())
             columnXml.setDescription(column.getDescription());
 
+        String propertyURI = getPropertyURI(column);
+        if (propertyURI != null)
+            columnXml.setPropertyURI(propertyURI);
+
         if (!column.isNullable())
             columnXml.setNullable(false);
 
@@ -147,4 +152,20 @@ public class TableInfoWriter
         // TODO: Default values / Default value types
         // TODO: ConceptURI
     }
+
+    /**
+     * Get the propertyURI of the ColumnInfo or null if no uri should be written.
+     * @param column
+     * @return The propertyURI to be written or null.
+     */
+    @Nullable
+    protected String getPropertyURI(ColumnInfo column)
+    {
+        String propertyURI = column.getPropertyURI();
+        if (propertyURI != null && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+            return propertyURI;
+
+        return null;
+    }
+
 }
