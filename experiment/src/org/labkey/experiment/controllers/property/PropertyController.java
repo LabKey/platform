@@ -456,6 +456,7 @@ public class PropertyController extends SpringActionController
 
         domain.setName(jsonDomain.getString("name"));
         domain.setDomainURI(jsonDomain.getString("domainURI"));
+        domain.setContainer(jsonDomain.getString("container"));
 
         // Description can be null
         domain.setDescription((String)jsonDomain.get("description"));

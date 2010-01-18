@@ -118,6 +118,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             gwtDomain.setDomainURI(domain.getTypeURI());
             gwtDomain.setDescription(domain.getDescription());
             gwtDomain.setName(domain.getName());
+            gwtDomain.setContainer(domain.getContainer().getId());
             gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
