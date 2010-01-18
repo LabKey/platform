@@ -730,7 +730,8 @@ li.x-menu-item-active a.x-menu-item {
 .x-toolbar .x-btn-pressed .x-btn-center
 , .x-panel-btns-ct .x-btn-pressed .x-btn-center
 , .x-btn-pressed .x-btn-center
-, .x-btn-menu-active .x-btn-center {
+, .x-btn-menu-active .x-btn-center
+, .x-toolbar .x-btn-menu-active .x-btn-center {
 	background:transparent url(<%= contextPath %>/gtheme/img/btn.gif) repeat-x scroll center -66px;}
 
 .x-toolbar .x-btn-right, .x-btn-right {
@@ -746,7 +747,8 @@ li.x-menu-item-active a.x-menu-item {
 .x-toolbar .x-btn-pressed .x-btn-right
 , .x-panel-btns-ct .x-btn-pressed .x-btn-right
 , .x-btn-pressed .x-btn-right
-, .x-btn-menu-active .x-btn-right  {
+, .x-btn-menu-active .x-btn-right
+, .x-toolbar .x-btn-menu-active .x-btn-right  {
 	background:transparent url(<%= contextPath %>/gtheme/img/btn.gif) no-repeat scroll right -66px;}
 
 .x-toolbar .x-btn-left, .x-btn-left {
@@ -757,12 +759,13 @@ li.x-menu-item-active a.x-menu-item {
 	background:transparent url(<%= contextPath %>/gtheme/img/btn.gif) no-repeat scroll left -22px;}
 .x-toolbar .x-btn-focus .x-btn-left
 , .x-panel-btns-ct .x-btn-focus .x-btn-left
-, .x-btn-focus.x-btn-left {
+, .x-btn-focus .x-btn-left {
 	background:transparent url(<%= contextPath %>/gtheme/img/btn.gif) no-repeat scroll left -44px;}
 .x-toolbar .x-btn-pressed .x-btn-left
 , .x-panel-btns-ct .x-btn-pressed .x-btn-left
-, .x-btn-pressed.x-btn-left
-, .x-btn-menu-active .x-btn-left  {
+, .x-btn-pressed .x-btn-left
+, .x-btn-menu-active .x-btn-left
+, .x-toolbar .x-btn-menu-active .x-btn-left  {
 	background:transparent url(<%= contextPath %>/gtheme/img/btn.gif) no-repeat scroll left -66px;}
 
 /* Window */
