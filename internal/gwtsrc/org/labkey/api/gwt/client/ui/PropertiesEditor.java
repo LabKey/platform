@@ -403,7 +403,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         if (index != -1)
         {
             FieldStatus status = getStatus(pd);
-            boolean readOnly = _readOnly || status == FieldStatus.Deleted;
+            boolean readOnly = isReadOnly(pd, getRow(index));
 
             int tableRow = index + 1;
 
@@ -473,7 +473,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         int col = 0;
 
         FieldStatus status = getStatus(pd);
-        boolean readOnly = _readOnly || status == FieldStatus.Deleted;
+        boolean readOnly = isReadOnly(pd, rowObject);
         boolean locked = isLocked(index);
 
         Image statusImage = getStatusImage(Integer.toString(index), status);
@@ -632,7 +632,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
         typePicker.addFocusHandler(focusHandler);
         typePicker.setRangeURI(pd.getRangeURI());
-        typePicker.setEnabled(isTypeEditable(pd, status) && !locked);
+        typePicker.setEnabled(isTypeEditable(pd, status) && !locked && !readOnly);
         _table.setWidget(tableRow, col, typePicker);
         col++;
 
@@ -714,6 +714,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     public boolean isLocked(int i)
     {
         return !_domain.isEditable(getRow(i).edit);
+    }
+
+    /** @return ReadOnly status of the field. */
+    public boolean isReadOnly(FieldType fieldType, Row row)
+    {
+        FieldStatus status = getStatus(fieldType);
+        GWTPropertyDescriptor pd = row.edit;
+
+        // new properties (no container) or those in the domain's container
+        boolean inSameContainer = pd != null && (pd.getContainer() == null || pd.getContainer().equals(_domain.getContainer()));
+        return _readOnly || status == FieldStatus.Deleted || !inSameContainer;
     }
 
     public FieldStatus getStatus(GWTPropertyDescriptor pd)
