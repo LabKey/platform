@@ -49,6 +49,7 @@ import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.ftp.FtpController;
 import org.labkey.core.junit.JunitController;
+import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.*;
 import org.labkey.core.security.SecurityController;
@@ -384,6 +385,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             DateUtil.TestCase.class,
             DatabaseCache.TestCase.class,
             SecurityController.TestCase.class,
+            PasswordExpiration.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
             BooleanFormat.TestCase.class,
             XMLWriterTest.TestCase.class,

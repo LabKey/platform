@@ -35,7 +35,7 @@ import java.util.Map;
 
 public class OpenSSOController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(OpenSSOController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(OpenSSOController.class);
 
     public OpenSSOController() throws Exception
     {
@@ -50,12 +50,12 @@ public class OpenSSOController extends SpringActionController
 
         if (null != title)
         {
-            auth.addChild("Configure OpenSSO", getCurrentSettingsURL());
+            auth.addChild("Configure OpenSSO Authentication", getCurrentSettingsURL());
             auth.addChild(title);
         }
         else
         {
-            auth.addChild("Configure OpenSSO");
+            auth.addChild("Configure OpenSSO Authentication");
         }
 
         return root;
@@ -100,7 +100,7 @@ public class OpenSSOController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure OpenSSO");
+            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure OpenSSO Authentication");
             return root;
         }
     }

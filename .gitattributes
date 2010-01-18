@@ -495,6 +495,7 @@ core/src/org/labkey/core/ftp/drop.jsp -text
 core/src/org/labkey/core/ftp/ftpdetails.jsp -text
 core/src/org/labkey/core/junit/JunitManager.java -text
 core/src/org/labkey/core/junit/JunitRunner.java -text
+core/src/org/labkey/core/login/DbLoginAuthenticationProvider.java -text
 core/src/org/labkey/core/login/DbLoginManager.java -text
 core/src/org/labkey/core/login/LoginController.java -text
 core/src/org/labkey/core/login/PasswordRule.java -text

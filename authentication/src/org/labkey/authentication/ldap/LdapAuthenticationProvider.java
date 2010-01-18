@@ -17,6 +17,7 @@
 package org.labkey.authentication.ldap;
 
 import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.view.ActionURL;
 
@@ -65,7 +66,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider.LoginF
         // Consider: allow user ids other than email
         ValidEmail email = new ValidEmail(id);
 
-        if (org.labkey.api.security.SecurityManager.isLdapEmail(email) && LdapAuthenticationManager.authenticate(email, password))
+        if (SecurityManager.isLdapEmail(email) && LdapAuthenticationManager.authenticate(email, password))
             return email;
 
         return null;

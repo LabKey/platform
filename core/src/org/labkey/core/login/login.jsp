@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -99,11 +98,11 @@
         <tr><td></td><td><a href="resetPassword.view">Forgot your password?</a></td></tr><%
     }
 
-    if (null != bean.termsOfUseHtml)
+    if (null != bean.termsOfUseHTML)
     { %>
         <tr><td colspan=2>&nbsp;</td></tr>
         <tr><td></td><td><strong>Terms of Use</strong></td></tr>
-        <tr><td></td><td><%=bean.termsOfUseHtml%></td></tr>
+        <tr><td></td><td><%=bean.termsOfUseHTML%></td></tr>
         <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=bean.termsOfUseChecked ? " checked" : ""%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
     } %>
         <tr><td></td><td height="50px">

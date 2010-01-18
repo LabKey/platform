@@ -69,7 +69,7 @@ public class LdapController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure LDAP");
+            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure LDAP Authentication");
             return root;
         }
 

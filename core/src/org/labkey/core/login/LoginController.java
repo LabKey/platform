@@ -113,6 +113,15 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        public ActionURL getChangePasswordURL(Container c, String email, URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(ChangePasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
+            url.addParameter("email", email);
+            url.addReturnURL(returnURL);
+
+            return url;
+        }
+
         public ActionURL getLoginURL()
         {
             return getLoginURL(HttpView.getContextContainer(), HttpView.getContextURL());
@@ -271,7 +280,7 @@ public class LoginController extends SpringActionController
                 if (null != termsProject)
                     SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
 
-                // Login page is container qualified; we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
+                // Login page is container qualified, but we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
                 String search = "/login/";
                 String url = getViewContext().getActionURL().getLocalURIString();
                 int index = url.indexOf(search);
@@ -509,7 +518,7 @@ public class LoginController extends SpringActionController
         public LoginForm form;
         public boolean agreeOnly;
         public boolean remember;
-        public String termsOfUseHtml = null;
+        public String termsOfUseHTML = null;
         public boolean termsOfUseChecked;
 
         private LoginBean(LoginForm form, boolean agreeOnly, boolean remember, boolean termsOfUseChecked)
@@ -525,7 +534,7 @@ public class LoginController extends SpringActionController
 
                 // Display the terms of use if this is the terms-of-use page or user hasn't already approved them. #4684
                 if (agreeOnly || !SecurityManager.isTermsOfUseApproved(getViewContext(), project))
-                    termsOfUseHtml = SecurityManager.getTermsOfUseHtml(project);
+                    termsOfUseHTML = SecurityManager.getTermsOfUseHtml(project);
             }
             catch (Exception e)
             {
@@ -698,15 +707,14 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresNoPermission
-    @AllowedDuringUpgrade
-    public class SetPasswordAction extends FormViewAction<VerifyForm>
+    private abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
-        ValidEmail _email = null;
-        boolean _unrecoverableError = false;
+        private ValidEmail _email = null;
         private User _user;
+        private boolean _changePassword = false;
+        private boolean _unrecoverableError = false;
 
-        public void validateCommand(VerifyForm form, Errors errors)
+        public void validateCommand(SetPasswordForm form, Errors errors)
         {
             ActionURL currentUrl = getViewContext().getActionURL();
             String verification = form.getVerification();
@@ -724,38 +732,58 @@ public class LoginController extends SpringActionController
             }
             catch (ValidEmail.InvalidEmailException e)
             {
-                errors.reject("verify", "Invalid email address");
+                errors.reject("setPassword", "Invalid email address");
                 _unrecoverableError = true;
                 return;
             }
 
             try
             {
-                if (SecurityManager.verify(email, verification))
+                if (null == form.getVerification())
                 {
-                    // logout any current user
-                    if (getUser() != null && !getUser().isGuest())
+                    // Change password case -- user requested a password change or just attempted to login with a
+                    // correct password that doesn't meet the current password rule or is expired.  In this case, we
+                    // don't require a valid verification parameter -- we'll ask for the user's current password as
+                    // verification.
+                    if (!SecurityManager.loginExists(email))
                     {
-                        SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
-                        HttpView.throwRedirect(currentUrl);
+                        errors.reject("setPassword", "This email address doesn't exist.");
+                        _unrecoverableError = true;
                     }
-
-                    // Success
-                    _email = email;
+                    else
+                    {
+                        _changePassword = true;
+                        _email = email;
+                    }
                 }
                 else
                 {
-                    if (!SecurityManager.loginExists(email))
-                        errors.reject("verify", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
-                    else if (SecurityManager.isVerified(email))
-                        errors.reject("verify", "This email address has already been verified.");
-                    else if (verification.length() < SecurityManager.tempPasswordLength)
-                        errors.reject("verify", "Make sure you've copied the entire link into your browser's address bar.");
-                    else
-                        // Incorrect verification string
-                        errors.reject("verify", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
+                    if (SecurityManager.verify(email, verification))
+                    {
+                        // logout any current user
+                        if (getUser() != null && !getUser().isGuest())
+                        {
+                            SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
+                            HttpView.throwRedirect(currentUrl);
+                        }
 
-                    _unrecoverableError = true;
+                        // Success
+                        _email = email;
+                    }
+                    else
+                    {
+                        if (!SecurityManager.loginExists(email))
+                            errors.reject("setPassword", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                        else if (SecurityManager.isVerified(email))
+                            errors.reject("setPassword", "This email address has already been verified.");
+                        else if (verification.length() < SecurityManager.tempPasswordLength)
+                            errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
+                        else
+                            // Incorrect verification string
+                            errors.reject("setPassword", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
+
+                        _unrecoverableError = true;
+                    }
                 }
             }
             catch (Exception e)
@@ -764,7 +792,7 @@ public class LoginController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(VerifyForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SetPasswordForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!reshow)
                 validateCommand(form, errors);
@@ -776,12 +804,8 @@ public class LoginController extends SpringActionController
                 else
                     _log.warn("Password entry error: " + form.getEmail());
             }
-            else
-            {
-                _log.debug("Verified: " + _email);
-            }
 
-            HttpView view = new JspView<VerifyBean>("/org/labkey/core/login/setPassword.jsp", new VerifyBean(_email, form, _unrecoverableError), errors);
+            HttpView view = new JspView<SetPasswordBean>("/org/labkey/core/login/setPassword.jsp", new SetPasswordBean(_email, form, _changePassword, _unrecoverableError), errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
@@ -792,9 +816,21 @@ public class LoginController extends SpringActionController
             return view;
         }
 
-        public boolean handlePost(VerifyForm form, BindException errors) throws Exception
+        public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
         {
             HttpServletRequest request = getViewContext().getRequest();
+
+            if (_changePassword)
+            {
+                String oldPassword = request.getParameter("oldPassword");
+                String hash = SecurityManager.getPasswordHash(new ValidEmail(form.getEmail()));
+
+                if (!hash.equals(Crypt.digest(oldPassword)))
+                {
+                    errors.reject("password", "Old password didn't match.");
+                    return false;
+                }
+            }
 
             // Pull straight from the request to minimize logging of passwords (in Spring, bean utils, etc.)
             String password = request.getParameter("password");
@@ -842,7 +878,7 @@ public class LoginController extends SpringActionController
             return true;
         }
 
-        public URLHelper getSuccessURL(VerifyForm form)
+        public URLHelper getSuccessURL(SetPasswordForm form)
         {
             if (_user != null)
             {
@@ -860,45 +896,62 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class VerifyBean
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    public class SetPasswordAction extends AbstractSetPasswordAction
     {
-        public String email;
-        public VerifyForm form;
-        public boolean unrecoverableError;
+    }
 
-        private VerifyBean(ValidEmail email, VerifyForm form, boolean unrecoverableError)
+
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    public class ChangePasswordAction extends AbstractSetPasswordAction
+    {
+
+    }
+
+
+    public static class SetPasswordBean
+    {
+        public final String email;
+        public final SetPasswordForm form;
+        public final boolean unrecoverableError;
+        public final boolean changePassword;
+
+        private SetPasswordBean(ValidEmail email, SetPasswordForm form, boolean changePassword, boolean unrecoverableError)
         {
             this.email = (null != email ? email.getEmailAddress() : form.getEmail());
             this.form = form;
             this.unrecoverableError = unrecoverableError;
+            this.changePassword = changePassword;
         }
     }
 
 
-    public static class VerifyForm extends ReturnUrlForm
+    public static class SetPasswordForm extends ReturnUrlForm
     {
-        private String verification;
-        private String email;
+        private String _verification;
+        private String _email;
         private boolean _skipProfile = false;
 
         public void setEmail(String email)
         {
-            this.email = email;
+            _email = email;
         }
 
         public String getEmail()
         {
-            return email;
+            return _email;
         }
 
         public void setVerification(String verification)
         {
-            this.verification = verification;
+            _verification = verification;
         }
 
         public String getVerification()
         {
-            return verification;
+            return _verification;
         }
 
         public boolean getSkipProfile()

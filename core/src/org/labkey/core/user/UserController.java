@@ -1034,6 +1034,10 @@ public class UserController extends SpringActionController
                     }
                 }
 
+                ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user.getEmail(), getViewContext().getActionURL()), "Change Password");
+                changePasswordButton.setActionType(ActionButton.Action.LINK);
+                bb.add(changePasswordButton);
+
                 ActionButton doneButton;
 
                 if (null != form.getReturnUrl())
@@ -1055,7 +1059,7 @@ public class UserController extends SpringActionController
                     doneButton.setURL(doneURL.getLocalURIString());
                 }
 
-                rgn.getButtonBar(DataRegion.MODE_DETAILS).add(doneButton);
+                bb.add(doneButton);
             }
 
             DetailsView detailsView = new DetailsView(rgn, _detailsUserId);

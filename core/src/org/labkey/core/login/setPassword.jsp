@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    LoginController.VerifyBean bean = ((JspView<LoginController.VerifyBean>)HttpView.currentView()).getModelBean();
+    LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrors("form");
 %>
 <form method="POST" action="setPassword.post">
@@ -39,7 +39,13 @@
     <tr><td colspan=2>Choose a password you'll use to access this server.</td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
     <tr><td colspan=2><%=DbLoginManager.getPasswordRule().getRuleHTML()%></td></tr>
-    <tr><td colspan=2>&nbsp;</td></tr>
+    <tr><td colspan=2>&nbsp;</td></tr><%
+
+    if (bean.changePassword)
+    { %>
+    <tr><td>Old Password:</td><td><input id="oldPassword" type="password" name="oldPassword" style="width:150;"></td></tr><%
+    }
+    %>
     <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:150;"></td></tr>
     <tr><td>Retype Password:</td><td><input type="password" name="password2" style="width:150;"></td></tr>
     <tr>
@@ -56,8 +62,12 @@
             }
 
             %>
-        </td>
-        <td><input type=hidden name=verification value="<%=h(bean.form.getVerification())%>"></td></tr>
+        </td><%
+        if (!bean.changePassword)
+        { %>
+        <td><input type=hidden name=verification value="<%=h(bean.form.getVerification())%>"></td></tr><%
+        }
+        %>
     <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%></td></tr><%
     } %>
 </table>
