@@ -46,6 +46,6 @@ public abstract interface AuthenticationProvider
     public static interface LoginFormAuthenticationProvider extends AuthenticationProvider
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
-        public ValidEmail authenticate(String id, String password) throws ValidEmail.InvalidEmailException;
+        public ValidEmail authenticate(String id, String password) throws ValidEmail.InvalidEmailException, RedirectException;
     }
 }

@@ -34,6 +34,7 @@ public interface LoginUrls extends UrlProvider
     public ActionURL getConfigureURL();
     public ActionURL getConfigureDbLoginURL();
     public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters);
+    public ActionURL getChangePasswordURL(Container c, String email, URLHelper returnURL);
     public NavTree appendAuthenticationNavTrail(NavTree root);
     public ActionURL getInitialUserURL();
     public ActionURL getLoginURL();

@@ -362,6 +362,7 @@ public class ExceptionUtil
                     UnauthorizedException uae = (UnauthorizedException)ex;
 
                     ActionURL redirect;
+
                     if (uae instanceof TermsOfUseException)
                     {
                         redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURL());

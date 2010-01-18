@@ -17,15 +17,12 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.ErrorRenderer;
-import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ErrorRenderer;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +31,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Map;
+
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> implements HttpView.ViewWrapper

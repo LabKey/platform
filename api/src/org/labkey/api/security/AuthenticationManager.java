@@ -270,24 +270,24 @@ public class AuthenticationManager
 
         for (AuthenticationProvider authProvider : getActiveProviders())
         {
-            if (authProvider instanceof LoginFormAuthenticationProvider)
+            try
             {
-                if (areNotBlank(id, password))
-                    email = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password);
-            }
-            else
-            {
-                if (areNotNull(request, response))
+                if (authProvider instanceof LoginFormAuthenticationProvider)
                 {
-                    try
-                    {
-                        email = ((RequestAuthenticationProvider)authProvider).authenticate(request, response);
-                    }
-                    catch (RedirectException e)
-                    {
-                        throw new RuntimeException(e);  // Some authentication provider has seen a hint and chosen to redirect
-                    }
+                    if (areNotBlank(id, password))
+                        email = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password);
                 }
+                else
+                {
+                    if (areNotNull(request, response))
+                        email = ((RequestAuthenticationProvider)authProvider).authenticate(request, response);
+                }
+            }
+            catch (RedirectException e)
+            {
+                // Some authentication provider has chosen to redirect (e.g., to retrieve auth credentials from
+                // a different server or to force change password due to expiration.
+                throw new RuntimeException(e);
             }
 
             if (email != null)

@@ -926,21 +926,30 @@ public class SecurityManager
     }
 
 
-    // Look up email in Logins table and return the corresponding password hash
-    public static String getPasswordHash(ValidEmail email)
+    public static Date getLastChanged(User user)
     {
-        String hash = null;
-
         try
         {
-            hash = Table.executeSingleton(core.getSchema(), "SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, String.class);
+            return Table.executeSingleton(core.getSchema(), "SELECT LastChanged FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{user.getEmail()}, Date.class);
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
+    }
 
-        return hash;
+
+    // Look up email in Logins table and return the corresponding password hash
+    public static String getPasswordHash(ValidEmail email)
+    {
+        try
+        {
+            return Table.executeSingleton(core.getSchema(), "SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email=?", new Object[]{email.getEmailAddress()}, String.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 
