@@ -25,13 +25,10 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
     constructor: function(config){
 
-        //default instance variables
-        this.editing = false;
-
-        LABKEY.ext.EditInPlaceElement.superclass.constructor.apply(this, arguments);
+        this.addEvents("beforecomplete", "canceledit");
         Ext.apply(this, config);
 
-        this.addEvents("beforecomplete", "canceledit");
+        LABKEY.ext.EditInPlaceElement.superclass.constructor.apply(this, arguments);
 
         if (!this.applyTo)
             throw "You must specify an applyTo property in your config!";

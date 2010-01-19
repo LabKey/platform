@@ -71,13 +71,11 @@
 <div id="wb-description"><%=null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "&nbsp;"%></div>
 
 <script type="text/javascript">
-    var _descriptionEditor;
-
     Ext.onReady(function(){
         if (!LABKEY.Security.currentUser.canUpdate)
             return;
 
-        _descriptionEditor = new LABKEY.ext.EditInPlaceElement({
+        new LABKEY.ext.EditInPlaceElement({
             applyTo: 'wb-description',
             multiLine: true,
             emptyText: 'No description provided. Click to add one.',
@@ -86,7 +84,12 @@
 
         new LABKEY.ext.EditInPlaceElement({
             applyTo: 'wb-title',
-            updateHandler: onUpdateTitle
+            updateHandler: onUpdateTitle,
+            listeners: {
+                beforecomplete: function(newText){
+                    return (newText.length > 0);
+                }
+            }
         });
     });
 
