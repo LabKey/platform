@@ -33,11 +33,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.LuceneSearchServiceImpl;
+import org.labkey.search.view.SearchWebPartFactory;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.Map;
+import java.util.*;
 import java.io.FilenameFilter;
 import java.io.File;
 
@@ -72,7 +70,8 @@ public class SearchModule extends DefaultModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Collections.emptyList();
+        return Arrays.asList(new SearchWebPartFactory("New Search", null),
+            new SearchWebPartFactory("New Search", "right"));
     }
 
     
@@ -118,6 +117,8 @@ public class SearchModule extends DefaultModule
 
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new SearchContainerListener());
+
+
     }
 
 

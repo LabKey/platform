@@ -196,7 +196,7 @@ public class LuceneSearch
             Container container = ContainerManager.getForId(doc.get("Container"));
             int issueId = Integer.valueOf(doc.get("IssueId")).intValue();
 
-            ActionURL url = new ActionURL(SearchController.SearchAction.class, container);
+            ActionURL url = SearchController.getSearchURL(container);
             url.addParameter("issueId", issueId);
 
             html.append("<tr><td><a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(issueId).append(": ").append(title).append("</a>").append("</td></tr>\n");
@@ -212,7 +212,7 @@ public class LuceneSearch
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             LuceneSearch.buildIndex();
-            return new ActionURL(SearchController.SearchAction.class, getViewContext().getContainer());
+            return SearchController.getSearchURL(getViewContext().getContainer());
         }
     }
 

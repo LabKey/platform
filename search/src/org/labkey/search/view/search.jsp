@@ -57,31 +57,45 @@
         }
     }
 
-    if (!StringUtils.isEmpty(form.getStatusMessage()))
+    if (form.isAdvanced())
     {
-        out.println(h(form.getStatusMessage())+ "<br><br>");
-    }
+        if (!StringUtils.isEmpty(form.getStatusMessage()))
+        {
+            out.println(h(form.getStatusMessage())+ "<br><br>");
+        }
 %>
 [<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c).addParameter("full", "1"))%>">reindex (full)</a>]<br>
-[<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c))%>">reindex (incremental)</a>]<br>
-<form id=searchForm name="search"><%
+[<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
+    }
+%>
+<form id=searchForm name="search" action="<%=SearchController.getSearchURL(c)%>"><%
     if (form.isPrint())
     {
         %><input type=hidden name=_print value=1><%
     }
+
+    if (form.isAdvanced())
+    {
 %>
-    <input type="hidden" name="guest" value=0>
+    <input type="hidden" name="guest" value=0><%
+    }
+    %>
     <input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q," ")))%>">&nbsp;
-    <%=generateSubmitButton("Search")%>
+    <%=generateSubmitButton("Search")%><%
+
+    if (form.isAdvanced())
+    {
+    %>
     <%=buttonImg("Search As Guest", "document.search.guest.value=1; return true;")%>
     <%=buttonImg("Google", "return google();")%><br>
     <input type=checkbox name="container" value="<%=c.getId()%>" <%=null==form.getContainer()?"":"checked"%>>this folder and children<br>
     <input type=radio name=q value="" <%=null==selected?"checked":""%>>all<br><%
-    for (SearchService.SearchCategory cat : categories)
-    {
-        String s = "+searchCategory:cat.toString()";
-        boolean checked = form.getQueryString().contains(s);
-        %><input type=radio name=q value="+searchCategory:<%=h(cat.toString())%>" <%=cat==selected?"checked":""%>><%=h(cat.getDescription())%><br><%
+        for (SearchService.SearchCategory cat : categories)
+        {
+            String s = "+searchCategory:cat.toString()";
+            boolean checked = form.getQueryString().contains(s);
+            %><input type=radio name=q value="+searchCategory:<%=h(cat.toString())%>" <%=cat==selected?"checked":""%>><%=h(cat.getDescription())%><br><%
+        }
     }
 %>
 </form>
@@ -96,9 +110,9 @@ function google()
 
 </script>
 
-
 <%
     String queryString = form.getQueryString();
+
     if (null != StringUtils.trimToNull(queryString))
     {
         %><table><tr><td  valign="top" align="left" width=500><%
@@ -151,19 +165,19 @@ function google()
 
             %><a href="<%=h(hit.url)%>"><%=h(hit.title)%>
             </a><br><%
-                             String summary = StringUtils.trimToNull(hit.summary);
-                             if (null != summary)
-                             {
+                String summary = StringUtils.trimToNull(hit.summary);
+                if (null != summary)
+                {
             %>
                 <div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%>
                 </div>
                 <%
-                    }
+                }
                 %>
                 <div style='margin-left:10px; color:green;'><%=h(href)%>
                 </div>
                 <br><%
-                    }
+            }
             %></div></td><%
 
             if (-1 == queryString.indexOf("searchCategory") && wideView)
@@ -201,7 +215,7 @@ function google()
                         {
                             %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
                         }
-                        /* %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><% */
+                        // %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><%
                     }
                     %></div><%
                     WebPartView.endTitleFrame(out);

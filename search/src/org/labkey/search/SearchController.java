@@ -19,6 +19,7 @@ package org.labkey.search;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.search.SearchService;
@@ -34,7 +35,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
-import org.labkey.search.model.DavCrawler;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -57,7 +57,7 @@ public class SearchController extends SpringActionController
     {
         public ActionURL getRedirectURL(Object o) throws Exception
         {
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -172,7 +172,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -200,7 +200,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -228,7 +228,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -257,7 +257,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -285,7 +285,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -316,7 +316,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -387,7 +387,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return new ActionURL(SearchAction.class, getContainer());
+            return getSearchURL();
         }
     }
 
@@ -463,12 +463,21 @@ public class SearchController extends SpringActionController
     static SearchService.IndexTask _lastIncrementalTask = null;
 
     
+    public static ActionURL getSearchURL(Container c)
+    {
+        return new ActionURL(SearchAction.class, c);
+    }
+
+    private ActionURL getSearchURL()
+    {
+        return getSearchURL(getContainer());
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends SimpleViewAction<SearchForm>
     {
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
-
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null == ss)
             {
@@ -543,6 +552,7 @@ public class SearchController extends SpringActionController
         private String _statusMessage;
         private int _page = 0;
         private String _container = null;
+        private boolean _advanced = false;
 
         public String[] getQ()
         {
@@ -555,7 +565,6 @@ public class SearchController extends SpringActionController
                 return "";
             return StringUtils.join(_query, " ");
         }
-
 
         public void setQ(String[] query)
         {
@@ -620,6 +629,16 @@ public class SearchController extends SpringActionController
         public void setContainer(String container)
         {
             _container = container;
+        }
+
+        public boolean isAdvanced()
+        {
+            return _advanced;
+        }
+
+        public void setAdvanced(boolean advanced)
+        {
+            _advanced = advanced;
         }
     }
 }
