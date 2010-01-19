@@ -506,7 +506,6 @@ public class ProjectController extends SpringActionController
                 return HttpView.redirect(beginURL());
 
             HttpView v = desc.getEditView(_webPart);
-            assert(null != v);
             if (null == v)
                 return HttpView.redirect(beginURL());
 
