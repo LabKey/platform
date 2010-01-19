@@ -16,7 +16,6 @@
 package org.labkey.core.login;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.*;
@@ -30,7 +29,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
@@ -68,7 +66,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public ValidEmail authenticate(String id, String password) throws ValidEmail.InvalidEmailException, RedirectException
+    public ValidEmail authenticate(String id, String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
     {
         ValidEmail email = new ValidEmail(id);
         String hash = SecurityManager.getPasswordHash(email);
@@ -95,19 +93,19 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         Collection<String> messages = new LinkedList<String>();
 
         if (!rule.isValidForLogin(password, user, messages))
-            return handleProblem(user, "doesn't meet the current complexity requirements");
+            return handleProblem(user, returnURL, "doesn't meet the current complexity requirements");
 
         PasswordExpiration expiration = DbLoginManager.getPasswordExpiration();
         Date lastChanged = SecurityManager.getLastChanged(user);
 
         if (expiration.hasExpired(lastChanged))
-            return handleProblem(user, "has expired");
+            return handleProblem(user, returnURL, "has expired");
 
         return email;
     }
 
 
-    private ValidEmail handleProblem(User user, String description) throws RedirectException
+    private ValidEmail handleProblem(User user, URLHelper returnURL, String description) throws RedirectException
     {
         _log.info("Password for " + user.getEmail() + " " + description + ".");
 
@@ -116,27 +114,14 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         if (null != ctx)
         {
             Container c = ctx.getContainer();
-            ActionURL currentURL = ctx.getActionURL();
 
-            if (null != c && null != currentURL)
+            if (null != c)
             {
-                // We have a ViewContext, container, and an ActionURL, so redirect to password change page
+                // We have a container and a returnURL, so redirect to password change page
 
-                // Figure out where to redirect after change password.  Fall back plan is the home page.
-                URLHelper returnURL = AppProps.getInstance().getHomePageActionURL();
-                String returnURLParam = currentURL.getParameter(ReturnUrlForm.Params.returnUrl);
-
-                if (null != returnURLParam)
-                {
-                    try
-                    {
-                        returnURL = new URLHelper(returnURLParam);
-                    }
-                    catch (URISyntaxException e)
-                    {
-                        // Ignore... we'll just fall back to the home page
-                    }
-                }
+                // Fall back plan is the home page.
+                if (null == returnURL)
+                    returnURL = AppProps.getInstance().getHomePageActionURL();
 
                 LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
                 ActionURL changePasswordURL = urls.getChangePasswordURL(c, user.getEmail(), returnURL, "Your password " + description + "; please choose a new password.");

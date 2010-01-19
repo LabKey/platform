@@ -19,6 +19,7 @@ package org.labkey.authentication.ldap;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
@@ -61,7 +62,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider.LoginF
     }
 
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public ValidEmail authenticate(String id, String password) throws ValidEmail.InvalidEmailException
+    public ValidEmail authenticate(String id, String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         // Consider: allow user ids other than email
         ValidEmail email = new ValidEmail(id);

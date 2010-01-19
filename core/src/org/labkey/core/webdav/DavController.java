@@ -131,9 +131,9 @@ public class DavController extends SpringActionController
     }
 
 
-    String getURL()
+    URLHelper getURL()
     {
-        return (String)getRequest().getAttribute(ViewServlet.ORIGINAL_URL);
+        return (URLHelper)getRequest().getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
     }
 
 
@@ -2518,7 +2518,7 @@ public class DavController extends SpringActionController
     {
         // If the resource is not a collection, and the resource path ends with "/"
         if (resource.getPath().isDirectory())
-            return notFound(getURL());
+            return notFound(getURL().getURIString());
 
         // Check if the conditions specified in the optional If headers are satisfied.
         if (!checkIfHeaders(resource))

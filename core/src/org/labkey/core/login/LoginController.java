@@ -126,31 +126,28 @@ public class LoginController extends SpringActionController
 
         public ActionURL getLoginURL()
         {
-            return getLoginURL(HttpView.getContextContainer(), HttpView.getContextURL());
+            return getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
         }
 
-        public ActionURL getLoginURL(ActionURL returnURL)
+        public ActionURL getLoginURL(URLHelper returnURL)
         {
             // Use root as placeholder; extra path of returnURL determines the real login URL path
             ActionURL url = new ActionURL(LoginAction.class, ContainerManager.getRoot());
 
-            if (null == returnURL)
+            if (null != returnURL && returnURL instanceof ActionURL)
+            {
+                url.setExtraPath(((ActionURL)returnURL).getExtraPath());
+            }
+            else
+            {
                 returnURL = AppProps.getInstance().getHomePageActionURL();
+            }
 
-            url.setExtraPath(returnURL.getExtraPath());
             url.addReturnURL(returnURL);
             return url;
         }
 
 
-        public ActionURL getLoginURL(Container c, String returnURLString)
-        {
-            ActionURL url = new ActionURL(LoginAction.class, c);
-            addReturnURL(url, returnURLString);
-            return url;
-        }
-
-        
         public ActionURL getLoginURL(Container c, URLHelper returnURL)
         {
             ActionURL url = new ActionURL(LoginAction.class, c);
@@ -195,25 +192,11 @@ public class LoginController extends SpringActionController
                 return getLogoutURL(c);
         }
 
-        public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL)
+        public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL)
         {
             ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
             url.addReturnURL(returnURL);
             return url;
-        }
-
-        public ActionURL getAgreeToTermsURL(Container c, String returnURLString)
-        {
-            ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
-            addReturnURL(url, returnURLString);
-            return url;
-        }
-
-        // TODO: Remove this -- should only be passing in URLHelpers, which can be added directly to another URL
-        private void addReturnURL(ActionURL url, String returnURLString)
-        {
-            if (null != returnURLString)
-                url.addParameter(ReturnUrlForm.Params.returnUrl, returnURLString);
         }
     }
 
@@ -327,7 +310,7 @@ public class LoginController extends SpringActionController
             try
             {
                 // Attempt authentication with all registered providers
-                _user = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword());
+                _user = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper());
 
                 if (null != _user)
                 {
@@ -799,7 +782,7 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            _user = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password);
+            _user = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper());
 
             if (null != _user)
             {

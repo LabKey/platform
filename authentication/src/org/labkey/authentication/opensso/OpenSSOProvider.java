@@ -20,10 +20,10 @@ import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.iplanet.sso.SSOTokenManager;
 import org.apache.log4j.Logger;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 
@@ -69,7 +69,7 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
         return OpenSSOController.getCurrentSettingsURL();
     }
 
-    public ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException, RedirectException
+    public ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
     {
         try
         {
@@ -100,15 +100,10 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
             {
                 AuthenticationManager.LinkFactory factory = AuthenticationManager.getLinkFactory(NAME);
 
-                if (null != factory)
+                if (null != factory && null != returnURL)
                 {
-                    String returnURL = request.getParameter(ReturnUrlForm.Params.returnUrl.toString());
-
-                    if (null != returnURL)
-                    {
-                        String url = factory.getURL(new ActionURL(returnURL));
-                        throw new RedirectException(url);
-                    }
+                    String url = factory.getURL(returnURL);
+                    throw new RedirectException(url);
                 }
             }
         }

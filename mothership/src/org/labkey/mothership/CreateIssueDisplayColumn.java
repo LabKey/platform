@@ -45,7 +45,7 @@ public class CreateIssueDisplayColumn extends DataColumn
 
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        String originalURL = (String)ctx.getRequest().getAttribute(ViewServlet.ORIGINAL_URL);
+        String originalURL = (String)ctx.getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         StringBuilder body = new StringBuilder();
         body.append("Created from crash report: ");
         body.append(originalURL);
