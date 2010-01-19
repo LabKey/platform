@@ -155,7 +155,7 @@ public class ExceptionUtil
 
         _log.error("Exception detected and logged to mothership", ex);
 
-        String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL);
+        String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
         if (level != ExceptionReportingLevel.NONE &&
                 ex != null &&
@@ -365,11 +365,11 @@ public class ExceptionUtil
 
                     if (uae instanceof TermsOfUseException)
                     {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURL());
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
                     }
                     else
                     {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURL());
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
                     }
 
                     return redirect;

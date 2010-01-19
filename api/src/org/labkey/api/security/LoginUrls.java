@@ -39,11 +39,10 @@ public interface LoginUrls extends UrlProvider
     public NavTree appendAuthenticationNavTrail(NavTree root);
     public ActionURL getInitialUserURL();
     public ActionURL getLoginURL();
-    public ActionURL getLoginURL(ActionURL returnURL);
-    public ActionURL getLoginURL(Container c, String returnURLString);
+    public ActionURL getLoginURL(URLHelper returnURL);
+    public ActionURL getLoginURL(Container c, URLHelper returnURL);
     public ActionURL getLogoutURL(Container c);
-    public ActionURL getStopImpersonatingURL(Container c, HttpServletRequest request);
     public ActionURL getLogoutURL(Container c, URLHelper returnURL);
-    public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL);
-    public ActionURL getAgreeToTermsURL(Container c, String returnURLString);
+    public ActionURL getStopImpersonatingURL(Container c, HttpServletRequest request);
+    public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
 }

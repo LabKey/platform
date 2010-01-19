@@ -31,7 +31,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -51,8 +50,9 @@ public class ViewServlet extends HttpServlet
     private static final Logger _log = Logger.getLogger(ViewServlet.class);
     private static final boolean _debug = _log.isDebugEnabled();
 
-    public static final String ORIGINAL_URL = "LABKEY.OriginalURL";       // String
-    public static final String REQUEST_URL = "LABKEY.RequestURL";         // ActionURL
+    public static final String ORIGINAL_URL_STRING = "LABKEY.OriginalURL";           // String
+    public static final String ORIGINAL_URL_URLHELPER = "LABKEY.OriginalURLHelper";  // URLHelper
+    public static final String REQUEST_ACTION_URL = "LABKEY.RequestURL";             // ActionURL
     public static final String REQUEST_STARTTIME = "LABKEY.StartTime";
 
     // useful for access log
@@ -446,7 +446,7 @@ public class ViewServlet extends HttpServlet
         HttpServletRequest request = HttpView.getRootContext().getRequest();
         if (null == request)
             return null;
-        Object url = request.getAttribute(ORIGINAL_URL);
+        Object url = request.getAttribute(ORIGINAL_URL_STRING);
         if (null == url)
             url = request.getRequestURI() + "?" + StringUtils.trimToEmpty(request.getQueryString());
         return String.valueOf(url);
@@ -456,7 +456,7 @@ public class ViewServlet extends HttpServlet
     public static ActionURL getRequestURL()
     {
         // using HttpView to remember the root request, rather than have our own ThreadLocal
-        return (ActionURL) HttpView.getRootContext().getRequest().getAttribute(REQUEST_URL);
+        return (ActionURL) HttpView.getRootContext().getRequest().getAttribute(REQUEST_ACTION_URL);
     }
 
 

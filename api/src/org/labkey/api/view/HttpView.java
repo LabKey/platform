@@ -31,7 +31,6 @@ import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -698,16 +697,28 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      * @return
      */
 
-    // TODO: Return URLHelper instead?
     public static String getContextURL()
     {
         ViewContext context = getRootContext();
         HttpServletRequest request = context.getRequest();
-        String url = (String)request.getAttribute(ViewServlet.ORIGINAL_URL);
+        String url = (String)request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         if (url == null)
         {
             url = context.getActionURL().getLocalURIString();
         }
+        
+        return url;
+    }
+
+
+    public static URLHelper getContextURLHelper()
+    {
+        ViewContext context = getRootContext();
+        HttpServletRequest request = context.getRequest();
+        URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
+
+        if (url == null)
+            url = context.getActionURL();
         
         return url;
     }

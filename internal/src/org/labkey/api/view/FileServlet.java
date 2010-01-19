@@ -55,10 +55,10 @@ public class FileServlet extends HttpServlet
         String extraPath = pathInfo.substring(0, index);
 
         // Store the original URL in case we need to redirect for authentication
-        if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
+        if (request.getAttribute(ViewServlet.ORIGINAL_URL_STRING) == null)
         {
             URLHelper helper = new URLHelper(request);
-            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
+            request.setAttribute(ViewServlet.ORIGINAL_URL_STRING, helper.getURIString());
         }
 
         //The servlet path looks like a pageflow. Stash this away so that

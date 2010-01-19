@@ -35,7 +35,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
-import org.labkey.api.search.SearchService;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletContext;
@@ -730,12 +729,13 @@ public abstract class DefaultModule implements Module
             assert rootContext == HttpView.currentContext();
 
             // Store the original URL in case we need to redirect for authentication
-            if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
+            if (request.getAttribute(ViewServlet.ORIGINAL_URL_STRING) == null)
             {
                 URLHelper helper = new URLHelper(request);
-                request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
+                request.setAttribute(ViewServlet.ORIGINAL_URL_STRING, helper.getURIString());
+                request.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, helper);
             }
-            request.setAttribute(ViewServlet.REQUEST_URL, url);
+            request.setAttribute(ViewServlet.REQUEST_ACTION_URL, url);
 
             if (controller instanceof HasViewContext)
                 ((HasViewContext)controller).setViewContext(rootContext);

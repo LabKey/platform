@@ -31,6 +31,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -264,7 +265,7 @@ public class AuthenticationManager
     }
 
 
-    public static User authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password) throws ValidEmail.InvalidEmailException
+    public static User authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         ValidEmail email = null;
 
@@ -275,12 +276,12 @@ public class AuthenticationManager
                 if (authProvider instanceof LoginFormAuthenticationProvider)
                 {
                     if (areNotBlank(id, password))
-                        email = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password);
+                        email = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password, returnURL);
                 }
                 else
                 {
                     if (areNotNull(request, response))
-                        email = ((RequestAuthenticationProvider)authProvider).authenticate(request, response);
+                        email = ((RequestAuthenticationProvider)authProvider).authenticate(request, response, returnURL);
                 }
             }
             catch (RedirectException e)
@@ -317,7 +318,7 @@ public class AuthenticationManager
     //  authentication mechanisms that rely on cookies, browser redirects, etc.
     public static User authenticate(String id, String password) throws ValidEmail.InvalidEmailException
     {
-        return authenticate(null, null, id, password);
+        return authenticate(null, null, id, password, null);
     }
 
 
@@ -628,7 +629,7 @@ public class AuthenticationManager
                 return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\">" + img + "</a>";
         }
 
-        public String getURL(ActionURL returnURL)
+        public String getURL(URLHelper returnURL)
         {
             if (_isFixedURL)
             {

@@ -31,6 +31,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.*;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -51,6 +52,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -387,8 +389,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                 if (user.isGuest())
                 {
-                    String requested = request.getRequestURL().toString();
-                    return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), requested);
+                    ActionURL loginURL;
+                    try
+                    {
+                        URLHelper requested = new URLHelper(request.getRequestURL().toString());
+                        loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), requested);
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL();
+                    }
+                    return loginURL;
                 }
                 else if (!user.isAdministrator())
                 {

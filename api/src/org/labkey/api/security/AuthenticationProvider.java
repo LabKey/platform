@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 
@@ -40,12 +41,12 @@ public abstract interface AuthenticationProvider
 
     public static interface RequestAuthenticationProvider extends AuthenticationProvider
     {
-        public ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException, RedirectException;
+        public ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException;
     }
 
     public static interface LoginFormAuthenticationProvider extends AuthenticationProvider
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
-        public ValidEmail authenticate(String id, String password) throws ValidEmail.InvalidEmailException, RedirectException;
+        public ValidEmail authenticate(String id, String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException;
     }
 }

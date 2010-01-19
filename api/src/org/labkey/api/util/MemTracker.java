@@ -35,10 +35,11 @@ import junit.framework.TestSuite;
  */
 public class MemTracker
 {
-    private static MemTracker _instance = new MemTracker();
+    private static final MemTracker _instance = new MemTracker();
     private static final Logger _log = Logger.getLogger(MemTracker.class);
-    private static long _lastLog = 0;
     private static final Object LOGGER_LOCK_OBJECT = new Object();
+
+    private static long _lastLog = 0;
 
     static class AllocationInfo
     {
@@ -80,7 +81,7 @@ public class MemTracker
 
     public static class HeldReference extends AllocationInfo
     {
-        private Object  _reference;
+        private Object _reference;
 
         private HeldReference(Object held, AllocationInfo allocationInfo)
         {
