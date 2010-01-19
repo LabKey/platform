@@ -31,7 +31,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         LABKEY.ext.EditInPlaceElement.superclass.constructor.apply(this, arguments);
         Ext.apply(this, config);
 
-        this.addEvents("complete", "canceledit");
+        this.addEvents("beforecomplete", "canceledit");
 
         if (!this.applyTo)
             throw "You must specify an applyTo property in your config!";
@@ -69,7 +69,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     },
 
     startEdit: function(){
-        if (this.editing)
+        if (this.editor || this.el.hasClass("labkey-edit-in-place-updating"))
             return;
         
         //create the editor as a peer to the bound element
@@ -143,8 +143,6 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
                 scope: this
             }
         ]);
-
-        this.editing = true;
     },
 
     autoSize: function(){
@@ -160,26 +158,29 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     },
 
     completeEdit: function(){
-        this.editor.un("blur", this.completeEdit, this);
-        
-        this.el.setDisplayed(true);
-        this.editor.setDisplayed(false);
-        if (this.editor.getValue() != this.oldText)
-            this.processChange(this.editor.getValue(), this.oldText);
+        var value = this.editor.getValue();
+        this.endEdit();
+
+        if (value != this.oldText && false !== this.fireEvent("beforecomplete", value, this.oldText))
+        {
+            this.el.update(value);
+            this.processChange(value, this.oldText);
+        }
         else
-            this.onUpdateComplete(this.editor.getValue(), this.oldText);
-        this.cleanup();
+            this.checkForEmpty();
     },
 
     cancelEdit: function(){
-        this.editor.un("blur", this.completeEdit, this);
-        this.el.setDisplayed(true);
-        this.editor.setDisplayed(false);
-        this.cleanup();
-        this.editing = false;
+        this.endEdit();
+        this.fireEvent("canceledit", this.oldText);
     },
 
-    cleanup: function() {
+    endEdit: function(){
+        this.editor.un("blur", this.completeEdit, this);
+
+        this.el.setDisplayed(true);
+        this.editor.setDisplayed(false);
+
         this.editor.remove();
         this.editor = null;
 
@@ -198,28 +199,19 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
                 this.updateHandler.fn.call(this.updateHandler.scope || this, value, oldValue, this.onUpdateComplete, this.onUpdateFailure, this);
         }
         else
-        {
-            this.fireEvent("complete", value, oldValue);
             this.onUpdateComplete(value);
-        }
-    },
-
-    onCancelEdit: function(editor, value, startValue){
-        this.fireEvent("canceledit", editor, value, startValue);
     },
 
     onUpdateComplete: function(value, oldValue){
         this.el.removeClass("labkey-edit-in-place-updating");
         this.el.update(value);
         this.checkForEmpty();
-        this.editing = false;
     },
 
     onUpdateFailure: function(value, oldValue) {
         this.el.removeClass("labkey-edit-in-place-updating");
         this.el.update(oldValue);
         this.checkForEmpty();
-        this.editing = false;
     }
 
 });
