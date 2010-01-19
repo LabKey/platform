@@ -15,25 +15,24 @@
  */
 package org.labkey.pipeline.status;
 
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.data.*;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.pipeline.*;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.pipeline.api.PipelineQuerySchema;
-import static org.labkey.pipeline.api.PipelineStatusManager.getTableInfo;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.PipelineController;
+import org.labkey.pipeline.api.PipelineQuerySchema;
 import org.springframework.validation.BindException;
-
-import java.net.URI;
 
 /**
  * User: jeckels
