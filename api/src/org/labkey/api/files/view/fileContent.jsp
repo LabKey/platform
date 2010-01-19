@@ -156,6 +156,9 @@ function renderBrowser(rootPath, dir)
         // import data tab
         importDataTab : undefined,
 
+        // panel for the drop applet
+        appletPanel : undefined,
+
         actionsConnection : new Ext.data.Connection({autoAbort:true}),
 
         // pipeline actions
@@ -177,10 +180,20 @@ function renderBrowser(rootPath, dir)
         initComponent : function()
         {
             FilesWebPartPanel.superclass.initComponent.call(this);
-            this.createPanels();
 
             this.on(BROWSER_EVENTS.directorychange,function(record){this.onDirectoryChange(record);}, this);
             this.grid.getSelectionModel().on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
+
+            this.on(BROWSER_EVENTS.transfercomplete, function(result) {
+                if (this.appletStatusBar)
+                    this.appletStatusBar.setVisible(false);
+            }, this);
+            this.on(BROWSER_EVENTS.transferstarted, function(result) {
+                if (this.appletStatusBar)
+                    this.appletStatusBar.setVisible(true);
+            }, this);
+//            this.on(BROWSER_EVENTS.transferstarted, function(result) {showTransfer("transferstarted", result)});
+
         },
 
         getTbarConfig : function()
@@ -241,9 +254,9 @@ function renderBrowser(rootPath, dir)
         },
 
         /**
-         * Initialize additional components
+         * Initialize additional actions and components
          */
-        createPanels : function()
+        initializeActions : function()
         {
             this.actions.upload = new Ext.Action({
                 text: 'Upload',
@@ -266,6 +279,28 @@ function renderBrowser(rootPath, dir)
                 listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
             });
 
+            this.actions.appletFileAction = new Ext.Action({
+                text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew',
+                handler:function(){
+                    if (this.applet)
+                    {
+                        var a = this.applet.getApplet();
+                        if (a) a.showFileChooser();
+                    }
+                }
+            });
+
+            this.actions.appletDirAction = new Ext.Action({
+                text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen',
+                handler:function(){
+                    if (this.applet)
+                    {
+                        var a = this.applet.getApplet();
+                        if (a) a.showDirectoryChooser();
+                    }
+                }
+            });
+
             this.toolbar = new Ext.Panel({
                 id: 'toolbarPanel',
                 renderTo: 'toolbar'
@@ -280,6 +315,8 @@ function renderBrowser(rootPath, dir)
         {
             var items = FilesWebPartPanel.superclass.getItems.call(this);
 
+            this.initializeActions();
+
             this.importDataTab = new Ext.Panel({
                 id: 'importDataTab'
             });
@@ -291,6 +328,18 @@ function renderBrowser(rootPath, dir)
                 fieldLabel: 'Choose a file'
             });
 
+            var uploadPanel_rb1 = new Ext.form.Radio({
+                style: 'background-color:#f0f0f0;',
+                boxLabel: 'Single file', name: 'rb-auto', inputValue: 1, checked: true
+            });
+            var uploadPanel_rb2 = new Ext.form.Radio({
+                boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2,
+                listeners:{check:function(button, checked) {
+                    if (checked)
+                        this.onMultipleFileUpload();
+                }, scope:this}
+            });
+
             var uploadPanel = new Ext.FormPanel({
                 id: 'uploadFileTab',
                 formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
@@ -300,11 +349,17 @@ function renderBrowser(rootPath, dir)
                 border:false,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [
+                    {
+                    xtype: 'radiogroup',
+                    fieldLabel: 'File Upload Type',
+                    items: [
+                        uploadPanel_rb1,
+                        uploadPanel_rb2
+                    ]},
                     this.fileInputField,
                     {xtype: 'textfield', fieldLabel: 'Description', width: 350}
                 ],
                 buttons:[
-                    new Ext.Button(this.actions.uploadTool),
                     {text: 'Submit', handler:this.uploadFile, scope:this},
                     {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
                 ],
@@ -313,13 +368,79 @@ function renderBrowser(rootPath, dir)
                     "actionfailed" : {fn: this.uploadFailed, scope: this}
                 }
             });
-           // uploadPanel.on('render', function(c){c.doLayout();}, this);
-            //this.on(BROWSER_EVENTS.directorychange,function(record){this.onDirectoryChange(record);}, this);
+            uploadPanel.on('beforeshow', function(c){uploadPanel_rb1.setValue(true); uploadPanel_rb2.setValue(false);}, this);
+
+            var uploadMultiPanel_rb1 = new Ext.form.Radio({
+                boxLabel: 'Single file', name: 'rb-auto', inputValue: 1,
+                listeners:{check:function(button, checked) {
+                    if (checked)
+                        this.toggleTabPanel('uploadFileTab');
+                }, scope:this}
+            });
+            var uploadMultiPanel_rb2 = new Ext.form.Radio({
+                boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2, checked: true
+            });
+
+            this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
+            this.appletStatusBar = new Ext.StatusBar({
+                id:'appletStatusBar', defaultText:'', busyText:'Copying...',
+                width: 200,
+                hidden: true,
+                statusAlign: 'right',
+                style : 'background-color:#f0f0f0;',
+                items:[{
+                    xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120
+                }]
+            });
+
+            this.appletPanel = new Ext.Panel({
+                fieldLabel: 'File and Folder Drop Target',
+                isFormField: true,
+                height: 60,
+                width: 325
+            });
+
+            var uploadMultiPanel = new Ext.FormPanel({
+                id: 'uploadMultiFileTab',
+                layout: 'form',
+                border:false,
+                bodyStyle : 'background-color:#f0f0f0; padding:10px;',
+                items: [{
+                    xtype: 'radiogroup',
+                    fieldLabel: 'File Upload Type',
+                    items: [
+                        uploadMultiPanel_rb1,
+                        uploadMultiPanel_rb2
+                    ]},
+                    this.appletPanel
+/*
+                    new Ext.Panel({
+                        layout: 'table',
+                        border: false,
+                        layoutConfig: {
+                            columns:2
+                        },
+                        fieldLabel: 'File and Folder Drop Target',
+                        isFormField: true,
+                        items: [
+                            this.appletPanel
+                        ]
+                    })
+*/
+                ],
+                buttons:[
+                    new Ext.Button(this.actions.appletFileAction),
+                    new Ext.Button(this.actions.appletDirAction),
+                    {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadMultiFileTab');}, scope:this}},
+                        this.appletStatusBar
+                ]
+            });
+            uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
 
             this.collapsibleTabPanel = new TinyTabPanel({
                 region: 'north',
                 collapseMode: 'mini',
-                height: 90,
+                height: 130,
                 header: false,
                 margins:'1 1 1 1',
                 bodyStyle: 'background-color:#f0f0f0;',
@@ -331,11 +452,51 @@ function renderBrowser(rootPath, dir)
                 deferredRender: false,
                 items: [
                     uploadPanel,
-                    this.importDataTab,
+                    uploadMultiPanel
                 ]});
 
             items.push(this.collapsibleTabPanel);
             return items;
+        },
+
+        onMultipleFileUpload : function()
+        {
+            this.toggleTabPanel('uploadMultiFileTab');            
+            if (!this.applet)
+            {
+                var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
+                var url = uri.toString();
+                this.applet = new TransferApplet({url:url, directory:this.currentDirectory.data.path});
+
+                this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
+                this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);
+                this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
+
+                // make sure that the applet still matches the current directory when it appears
+                this.applet.onReady(function()
+                {
+                    this.updateAppletState(this.currentDirectory);
+                }, this);
+
+                this.appletPanel.add(this.applet);
+                this.appletPanel.doLayout();
+            }
+            else
+            {
+                var task = {
+                    interval:100,
+                    applet:this.applet,
+                    run : function()
+                    {
+                        if (this.applet.isActive())
+                        {
+                            this.applet.setText("Drop files and folders here");
+                            Ext.TaskMgr.stop(this);
+                        }
+                    }
+                };
+                Ext.TaskMgr.start(task);
+            }
         },
 
         toggleTabPanel : function(tabId)
@@ -422,7 +583,7 @@ function renderBrowser(rootPath, dir)
                     {
                         var link = links[j];
 
-                        if (link.display != 'disabled')
+                        if (link.display != 'disabled' && link.href)
                         {
                             link.handler = this.executePipelineAction;
                             link.scope = this;
@@ -476,35 +637,10 @@ function renderBrowser(rootPath, dir)
             var tbarButtons = [];
             var importDataButtons = [];
 
-            // first add the standard buttons
-            if (this.buttonCfg && this.buttonCfg.length)
-            {
-                for (var i=0; i < this.buttonCfg.length; i++)
-                {
-                    var item = this.buttonCfg[i];
-                    if (typeof item == "string" && typeof this.actions[item] == "object")
-                        tbarButtons.push(new Ext.Button(this.actions[item]));
-                    else
-                        tbarButtons.push(item);
-                }
-            }
-
-            // now add the configurable pipleline actions
             this.pipelineActions = [];
             this.importActions = [];
 
-            for (action in toolbarActions)
-            {
-                var a = toolbarActions[action];
-                if ('object' == typeof a )
-                {
-                    var tbarAction = new LABKEY.PipelineAction(a.getActionConfig());
-                    tbarButtons.push(new Ext.Button(tbarAction));
-
-                    this.pipelineActions.push(tbarAction);
-                }
-            }
-
+            // add any import data actions
             for (action in importActions)
             {
                 var a = importActions[action];
@@ -515,6 +651,36 @@ function renderBrowser(rootPath, dir)
 
                     this.importActions.push(importAction);
                     this.pipelineActions.push(importAction);
+                }
+            }
+
+            // add the standard buttons to the toolbar
+            if (this.buttonCfg && this.buttonCfg.length)
+            {
+                for (var i=0; i < this.buttonCfg.length; i++)
+                {
+                    var item = this.buttonCfg[i];
+                    if (typeof item == "string" && typeof this.actions[item] == "object")
+                    {
+                        // don't add the import data button if there are no import data actions
+                        if (this.importActions.length || item != 'importData')
+                            tbarButtons.push(new Ext.Button(this.actions[item]));
+                    }
+                    else
+                        tbarButtons.push(item);
+                }
+            }
+
+            // now add the configurable pipleline actions
+            for (action in toolbarActions)
+            {
+                var a = toolbarActions[action];
+                if ('object' == typeof a )
+                {
+                    var tbarAction = new LABKEY.PipelineAction(a.getActionConfig());
+                    tbarButtons.push(new Ext.Button(tbarAction));
+
+                    this.pipelineActions.push(tbarAction);
                 }
             }
 
@@ -709,7 +875,7 @@ function renderBrowser(rootPath, dir)
                 modal: true,
                 items: actionPanel,
                 buttons: [{
-                    text: 'Submit',
+                    text: 'Import',
                     id: 'btn_submit',
                     listeners: {click:function(button, event) {
                         this.submitForm(actionPanel, actionMap);
