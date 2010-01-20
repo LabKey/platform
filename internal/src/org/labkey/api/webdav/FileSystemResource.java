@@ -262,6 +262,7 @@ public class FileSystemResource extends AbstractResource
                     // lastModified() returns 0 if the file doesn't exist, so this check works in either case
                     if (destFile.lastModified() < parentFile.lastModified())
                     {
+                        _log.info("Detected updated file '" + destFile + "', moving to @files subdirectory");
                         try
                         {
                             if (destFile.exists() && !destFile.delete())
