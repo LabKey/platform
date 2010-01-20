@@ -207,6 +207,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     protected File outputFile(File fileWork, File fileDest) throws IOException
     {
         NetworkDrive.ensureDrive(fileDest.getAbsolutePath());
+
+        // TPP treats .xml.gz as a native format, follow suit
+        if (fileWork.getName().endsWith(".gz") && !fileDest.getName().endsWith(".gz"))
+        {
+            fileDest = new File(fileDest.getPath()+".gz");
+        }
+
         if (!fileWork.exists())
         {
             // If the work file does not exist, and the destination does
@@ -219,6 +226,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         File fileReplace = null;
         File fileCopy = null;
         CopyingResource resource = null;
+
         try
         {
             resource = ensureCopyingLock();
