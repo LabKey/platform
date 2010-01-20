@@ -9,16 +9,18 @@ package proteowizard.pwiz.RAMPAdapter;
 
 import java.io.Serializable;
 
-import java.util.zip.*;
-
 /**
  * A simple class to hold the contents of a scan from a pwiz-supported mass spec file.
  * 
  * @author B. Pratt
  *  
  */
-public final class Scan extends ScanHeader implements Serializable
+public final class Scan implements Serializable
 {
+    /**
+     * peak count, mslevel, etc
+     */
+    public ScanHeaderStruct hdr;
 
 	/**
 	 * A 2-dimensional array, element 0 contains a list of masses of peaks,
@@ -33,9 +35,14 @@ public final class Scan extends ScanHeader implements Serializable
 	 */
 	public Scan()
 	{
-		super();
+		hdr = new ScanHeaderStruct();
 	}
 
+    public Scan(pwiz_RAMPAdapter parser,long scanIndex)
+    {
+        this();
+        parser.getScanHeader(scanIndex, hdr);
+    }
    
 	//
 	// Getter methods
@@ -101,7 +108,7 @@ public final class Scan extends ScanHeader implements Serializable
     }
 
 	/**
-	 * String respresentation of a Scan object.
+	 * String representation of a Scan object.
 	 * 
 	 * Note: This is most likely not an optimal way to build the string.
 	 * Hopefully this method will only be used for testing.
@@ -111,7 +118,18 @@ public final class Scan extends ScanHeader implements Serializable
 		StringBuffer tmpStrBuffer = new StringBuffer(1000);
 		tmpStrBuffer.append("SCAN\n");
 		tmpStrBuffer.append("====\n");
-		tmpStrBuffer.append(super.toString());
+        tmpStrBuffer.append("num = " + hdr.getSeqNum() + "\n");
+        tmpStrBuffer.append("msLevel = " + hdr.getMsLevel() + "\n");
+        tmpStrBuffer.append("peaksCount = " + hdr.getPeaksCount() + "\n");
+        tmpStrBuffer.append("scanType = " + hdr.getScanType() + "\n");
+        tmpStrBuffer.append("retentionTime = " + hdr.getRetentionTime() + "\n");
+        tmpStrBuffer.append("basePeakIntensity = " + hdr.getBasePeakIntensity() + "\n");
+        tmpStrBuffer.append("totIonCurrent = " + hdr.getTotIonCurrent() + "\n");
+        tmpStrBuffer.append("precursorScanNum = " + hdr.getPrecursorScanNum() + "\n");
+        tmpStrBuffer.append("precursorCharge = " + hdr.getPrecursorCharge() + "\n");
+        tmpStrBuffer.append("collisionEnergy = " + hdr.getCollisionEnergy() + "\n");
+        tmpStrBuffer.append("ionisationEnergy = " + hdr.getIonisationEnergy() + "\n");
+
 
 		tmpStrBuffer.append("peaks:\n");
 		if(floatMassIntensityList != null)

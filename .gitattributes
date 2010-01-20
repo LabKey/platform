@@ -847,6 +847,7 @@ api/src/org/labkey/api/util/MothershipReport.java -text
 api/src/org/labkey/api/util/NameString.java -text
 api/src/org/labkey/api/util/Pair.java -text
 api/src/org/labkey/api/util/Path.java -text
+api/src/org/labkey/api/util/PossiblyGZIPpedFileInputStreamFactory.java -text
 api/src/org/labkey/api/util/ReturnURLString.java -text
 api/src/org/labkey/api/util/SafeFileAppender.java -text
 api/src/org/labkey/api/util/SearchHit.java -text
@@ -871,6 +872,7 @@ api/src/org/labkey/api/util/XmlBeansUtil.java -text
 api/src/org/labkey/api/util/XmlValidationException.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
+api/src/org/labkey/api/util/massSpecDataFileType.java -text
 api/src/org/labkey/api/util/mime.txt -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/ActionWebPart.java -text
@@ -971,7 +973,6 @@ api/src/proteowizard/pwiz/RAMPAdapter/MZXMLFileInfo.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/ParentFile.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/RunHeaderStruct.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/Scan.java -text
-api/src/proteowizard/pwiz/RAMPAdapter/ScanHeader.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/ScanHeaderStruct.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/SoftwareInfo.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/e_contentType.java -text

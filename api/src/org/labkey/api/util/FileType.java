@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Vector;
 
 /**
  * <code>FileType</code>
@@ -28,18 +29,55 @@ import java.util.Arrays;
  */
 public class FileType implements Serializable
 {
+    /** handle TPP's native use of .xml.gz **/
+    public static enum gzSupportLevel
+    {
+        NO_GZ,      // we don't support gzip for this filetype
+        SUPPORT_GZ, // we support gzip for this filetype, but it's not the norm
+        PREFER_GZ   // we support gzip for this filetype, and it's the default for new files
+    };
+
+    public static gzSupportLevel systemPreferenceGZ()
+    {   // return PREFER_GZ iff .pep.xml.gz is preferred as
+        // indicated by the env varbl TPP itself uses, else
+        // return SUPPORT_GZ, since you still might get those
+        // from outside sources
+        String pepXMLext = System.getenv("PEPXML_EXT");
+        return pepXMLext.endsWith(".pep.xml.gz")? gzSupportLevel.PREFER_GZ: gzSupportLevel.SUPPORT_GZ;
+    }
+
     /** A list of possible suffixes in priority order. Later suffixes may also match earlier suffixes */
     private List<String> _suffixes;
     /** The canonical suffix, will be used when creating new files from scratch */
     private String _defaultSuffix;
     private Boolean _dir;
+    /** If _preferGZ is true, assume suffix.gz for new files to support TPP's transparent .xml.gz useage.
+     * When dealing with existing files, non-gz version is still assumed to be the target if found **/
+    private Boolean _preferGZ;
+    /** If _supportGZ is true, accept .suffix.gz as the equivalent of .suffix **/ 
+    private Boolean _supportGZ;
 
     /**
      * Constructor to use when type is assumed to be a file, but a call to isDirectory()
      * is not necessary.
      *
+     * @param supportGZ for handling of TPP's transparent use of .xml.gz
      * @param suffix usually the file extension, but may be some other suffix to
      *          uniquely identify a file type
+     *
+     */
+
+    public FileType(String suffix, gzSupportLevel supportGZ)
+    {
+        this(Arrays.asList(suffix), suffix, supportGZ);
+    }
+ /**
+     * Constructor to use when type is assumed to be a file, but a call to isDirectory()
+     * is not necessary.
+     *
+     * @param suffix usually the file extension, but may be some other suffix to
+     *          uniquely identify a file type
+     *
      */
     public FileType(String suffix)
     {
@@ -56,8 +94,34 @@ public class FileType implements Serializable
      */
     public FileType(String suffix, boolean dir)
     {
-        this(Arrays.asList(suffix), suffix, dir);
+        this(Arrays.asList(suffix), suffix, dir, gzSupportLevel.NO_GZ);
     }
+
+    /**
+     * @param suffixes list of what are usually the file extensions (but may be some other suffix to
+     *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
+     *          and files that match the rest of the suffixes will be ignored
+     * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
+     */
+    public FileType(List<String> suffixes, String defaultSuffix)
+    {
+        this(suffixes, defaultSuffix, false, gzSupportLevel.NO_GZ);
+    }
+
+    /**
+        * @param suffixes list of what are usually the file extensions (but may be some other suffix to
+        *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
+        *          and files that match the rest of the suffixes will be ignored
+        * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
+        * @param dir true when the type must be a directory
+        * @param supportGZ for handling TPP's transparent use of .xml.gz
+        */
+       public FileType(List<String> suffixes, String defaultSuffix, boolean dir, gzSupportLevel supportGZ)
+       {
+           this(suffixes, defaultSuffix, supportGZ);
+           _dir = Boolean.valueOf(dir);
+       }
+
 
     /**
      * @param suffixes list of what are usually the file extensions (but may be some other suffix to
@@ -68,19 +132,19 @@ public class FileType implements Serializable
      */
     public FileType(List<String> suffixes, String defaultSuffix, boolean dir)
     {
-        this(suffixes, defaultSuffix);
-        _dir = Boolean.valueOf(dir);
+        this(suffixes, defaultSuffix, dir, gzSupportLevel.NO_GZ);
     }
-    
     /**
      * @param suffixes list of what are usually the file extensions (but may be some other suffix to
      *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
      *          and files that match the rest of the suffixes will be ignored
      * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
+     * @param doSupportGZ for handling TPP's transparent use of .xml.gz
      */
-    public FileType(List<String> suffixes, String defaultSuffix)
+    public FileType(List<String> suffixes, String defaultSuffix, gzSupportLevel doSupportGZ)
     {
         _suffixes = suffixes;
+        supportGZ(doSupportGZ);
         _defaultSuffix = defaultSuffix;
         if (!suffixes.contains(defaultSuffix))
         {
@@ -88,10 +152,60 @@ public class FileType implements Serializable
         }
     }
 
+    /** helper for supporting TPP's use of .xml.gz */
+    private String tryName(File parentDir, String name)
+    {
+        if (_supportGZ.booleanValue())  // TPP treats xml.gz as a native format
+        {   // in the case of existing files, non-gz copy wins if present
+            File f = parentDir!=null ? new File(parentDir,name) : new File(name);
+            if (!NetworkDrive.exists(f))
+            {  // non-gz copy doesn't exist - how about .gz version?
+                String gzname = name += ".gz";
+                if (_preferGZ.booleanValue())
+                {   // we like .gz for new filenames, so don't care if exists
+                    return gzname;
+                }
+                f = parentDir!=null ? new File(parentDir,gzname) : new File(gzname);
+                if (NetworkDrive.exists(f))
+                { // we don't prefer .gz, but we support it if it exists
+                    return gzname;
+                }
+            }
+        }
+        return name;
+    }
+
     /** Uses the preferred suffix, useful when there's not a directory of existing files to reference */
+    /** if _preferGZ is set, will use preferred suffix.gz since TPP treats .gz as native format,
+     *  unless non-gz file exists */
     public String getName(String basename)
     {
-        return basename + _defaultSuffix;
+        return tryName(null, basename + _defaultSuffix);
+    }
+
+    /**
+     * turn support for gzipped files on and off
+     */
+    public boolean supportGZ(gzSupportLevel doSupportGZ)
+    {
+        _supportGZ = Boolean.valueOf(doSupportGZ != gzSupportLevel.NO_GZ);
+        _preferGZ = Boolean.valueOf(doSupportGZ == gzSupportLevel.PREFER_GZ);
+        return _supportGZ.booleanValue();
+    }
+
+    /**
+     * add a new supported suffix, return new list length
+     */
+    public int addSuffix(String newsuffix)
+    {
+        Vector<String> s = new Vector<String>(_suffixes.size()+1);
+        for (String suffix : _suffixes)
+        {
+            s.add(suffix);
+        }
+        s.add(newsuffix);
+        _suffixes = s;
+        return _suffixes.size();
     }
 
     /**
@@ -105,14 +219,24 @@ public class FileType implements Serializable
             // Only bother checking if we have more than one possible suffix
             for (String suffix : _suffixes)
             {
-                File f = new File(parentDir, basename + suffix);
+                String name = tryName(parentDir, basename + suffix);
+                File f = new File(parentDir, name);
                 if (NetworkDrive.exists(f))
                 {
-                    return f.getName();
+                    return name;
                 }
             }
         }
-        return basename + _defaultSuffix;
+        return tryName(parentDir, basename + _defaultSuffix);
+    }
+
+    /**
+     * Looks for a file in the parentDir that matches, in priority order. If one is found, returns its file name.
+     * If nothing matches, uses the defaultSuffix to build a file name.
+     */
+    public File getFile(File parentDir, String basename)
+    {
+        return new File(parentDir, getName(parentDir, basename));
     }
 
     /**
@@ -124,6 +248,11 @@ public class FileType implements Serializable
         for (int i = 0; i < _suffixes.size(); i++)
         {
             if (file.getName().endsWith(_suffixes.get(i)))
+            {
+                return i;
+            }
+            // TPP treats .xml.gz as a native format
+            if (_supportGZ.booleanValue() && file.getName().endsWith(_suffixes.get(i)+".gz"))
             {
                 return i;
             }
@@ -148,6 +277,15 @@ public class FileType implements Serializable
             {
                 suffix = s;
                 break;
+            }
+            if (_supportGZ.booleanValue()) // TPP treats .xml.gz as a native read format
+            {
+                String sgz = s+".gz";
+                if (file.getName().endsWith(sgz))
+                {
+                    suffix = sgz;
+                    break;
+                }
             }
         }
         assert suffix != null : "Could not find matching suffix even though types match";
@@ -178,6 +316,11 @@ public class FileType implements Serializable
             {
                 return true;
             }
+            // TPP treats .xml.gz as a native format
+            if (_supportGZ.booleanValue() && filePath.endsWith(suffix+".gz"))
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -187,6 +330,11 @@ public class FileType implements Serializable
         for (String suffix : _suffixes)
         {
             if (name.equalsIgnoreCase(basename + suffix))
+            {
+                return true;
+            }
+            // TPP treats .xml.gz as a native format
+            if (_supportGZ.booleanValue() && name.equals(basename + suffix+".gz"))
             {
                 return true;
             }
@@ -201,6 +349,8 @@ public class FileType implements Serializable
 
         FileType fileType = (FileType) o;
 
+        if (_supportGZ != null ? !_supportGZ.equals(fileType._supportGZ) : fileType._supportGZ != null) return false;
+        if (_preferGZ != null ? !_preferGZ.equals(fileType._preferGZ) : fileType._preferGZ != null) return false;
         if (_dir != null ? !_dir.equals(fileType._dir) : fileType._dir != null) return false;
         if (_defaultSuffix != null ? !_defaultSuffix.equals(fileType._defaultSuffix) : fileType._defaultSuffix != null)
             return false;
@@ -213,6 +363,8 @@ public class FileType implements Serializable
         result = (_suffixes != null ? _suffixes.hashCode() : 0);
         result = 31 * result + (_defaultSuffix != null ? _defaultSuffix.hashCode() : 0);
         result = 31 * result + (_dir != null ? _dir.hashCode() : 0);
+        result = 31 * result + (_supportGZ != null ? _supportGZ.hashCode() : 0);
+        result = 31 * result + (_preferGZ != null ? _preferGZ.hashCode() : 0);
         return result;
     }
 
@@ -246,7 +398,10 @@ public class FileType implements Serializable
     {
         if (_suffixes.size() > 0)
         {
-            return new FileType(_defaultSuffix);
+            FileType ft = new FileType(_defaultSuffix);
+            ft._supportGZ = _supportGZ.booleanValue();
+            ft._preferGZ = _preferGZ.booleanValue();
+            return ft;
         }
         else
         {
