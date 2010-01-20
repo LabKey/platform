@@ -475,7 +475,7 @@ public class PipelineController extends SpringActionController
 
             // keep actions in consistent order for display
             entry.orderActions();
-            mergeActionConfiguration(entry, c);
+            mergeActionConfiguration(pr, entry, c);
 
             JSONArray actions = new JSONArray();
             for (PipelineAction action : entry.getActions())
@@ -488,35 +488,42 @@ public class PipelineController extends SpringActionController
             return resp;
         }
 
-        private void mergeActionConfiguration(PipelineProvider.PipelineDirectory entry, Container c)
+        private void mergeActionConfiguration(PipeRoot pr, PipelineProvider.PipelineDirectory entry, Container c)
         {
             // get and merge configuration information
             Map<String, PipelineActionConfig> configMap = new HashMap<String, PipelineActionConfig>();
             for (PipelineActionConfig config : PipelineService.get().getPipelineActionConfig(c))
                 configMap.put(config.getId(), config);
 
+            // administrators always see all import actions (disabled or not), but we want to be able
+            // to distinguish in the UI without having to impersonate a user.
+            boolean isAdmin = getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class);
+
             for (PipelineAction action : entry.getActions())
             {
                 NavTree links = action.getLinks();
                 if (links != null)
-                    setActionConfiguration(links, configMap);
+                    setActionConfiguration(links, configMap, isAdmin);
             }
         }
 
-        private void setActionConfiguration(NavTree tree, Map<String, PipelineActionConfig> configMap)
+        private void setActionConfiguration(NavTree tree, Map<String, PipelineActionConfig> configMap, boolean isAdmin)
         {
             if (StringUtils.isEmpty(tree.getId()))
                 tree.setId(tree.getKey());
             if (configMap.containsKey(tree.getId()))
             {
                 PipelineActionConfig config = configMap.get(tree.getId());
-                tree.setDisplay(config.getState().name());
+                if (config.getState() == PipelineActionConfig.displayState.disabled && isAdmin)
+                    tree.setDisplay(PipelineActionConfig.displayState.admin.name());
+                else
+                    tree.setDisplay(config.getState().name());
             }
             else
                 tree.setDisplay(PipelineActionConfig.displayState.enabled.name());
 
             for (NavTree child : tree.getChildren())
-                setActionConfiguration(child, configMap);
+                setActionConfiguration(child, configMap, isAdmin);
         }
     }
 

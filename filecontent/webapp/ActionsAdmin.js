@@ -65,37 +65,27 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         {
             for (var i=0; i < actions.length; i++)
             {
-                var action = actions[i];
-                if (action.links.items != undefined)
+                var pUtil = new LABKEY.PipelineActionUtil(actions[i]);
+                var links = pUtil.getLinks();
+
+                if (!links) continue;
+
+                for (var j=0; j < links.length; j++)
                 {
-                    for (var j=0; j < action.links.items.length; j++)
+                    var link = links[j];
+
+                    if (link.href)
                     {
-                        var item = action.links.items[j];
-                        if (item.text && item.href)
-                        {
-                            data.actions.push({
-                                type: action.links.text,
-                                id: item.id,
-                                display: item.display,
-                                action: item.text,
-                                href: item.href,
-                                enabled: item.display == 'enabled' || 'toolbar',
-                                showOnToolbar: item.display == 'toolbar'
-                            });
-                        }
+                        data.actions.push({
+                            type: pUtil.getText(),
+                            id: link.id,
+                            display: link.display,
+                            action: link.text,
+                            href: link.href,
+                            enabled: link.display == 'enabled' || 'toolbar',
+                            showOnToolbar: link.display == 'toolbar'
+                        });
                     }
-                }
-                else
-                {
-                    data.actions.push({
-                        type: action.links.text,
-                        id: action.links.id,
-                        display: action.links.display,
-                        action: action.links.text,
-                        href: action.links.href,
-                        enabled: action.links.display == 'enabled' || 'toolbar',
-                        showOnToolbar: action.links.display == 'toolbar'
-                    });
                 }
             }
         }
@@ -137,8 +127,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 // specify any defaults for each column
                 columns: [
                     {header:'Type', dataIndex:'type'},
-                    {header:'Action', dataIndex:'action', width:200},
-                    {header:'Category', dataIndex:'category', width:200},
+                    {header:'Action', dataIndex:'action', width:300},
+                    //{header:'Category', dataIndex:'category', width:200},
                     //{header:'Description', dataIndex:'description', width:300},
                     enabledColumn,
                     onToolbarColumn,
@@ -185,10 +175,17 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             plugins: [enabledColumn, onToolbarColumn],
             view: new Ext.grid.GroupingView({
                 startCollapsed:false,
+                cls: 'extContainer',
                 hideGroupedColumn:true,
                 forceFit:true,
                 groupTextTpl: '{values.group}'
             })
+        });
+
+        grid.on('render', function()
+        {
+            grid.getView().hmenu.getEl().addClass("extContainer");
+            grid.getView().colMenu.getEl().addClass("extContainer");
         });
 
         var actionPanel = new Ext.Panel({
@@ -198,10 +195,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         var win = new Ext.Window({
             title: 'Manage Pipeline Actions',
-//                header: false,
-//                closable: false,
             border: false,
-            width: 650,
+            width: 500,
             height: 400,
             cls: 'extContainer',
             autoScroll: true,
@@ -218,8 +213,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 text: 'Cancel',
                 id: 'btn_cancel',
                 handler: function(){win.close();}
-            },
-            this.runAction]
+            }]
         });
         win.show();
     },
@@ -264,6 +258,14 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         if (record)
         {
+            var action = this.actionMap[record.id];
+
+            if ('object' == typeof action)
+            {
+                var a = new LABKEY.PipelineAction(action);
+                a.execute(a);
+            }
+
             this.fireEvent('runSelected', record);
         }
     }
