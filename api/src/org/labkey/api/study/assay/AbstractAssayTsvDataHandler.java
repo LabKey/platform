@@ -338,11 +338,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Map<String, DomainProperty> aliasMap = dataDomain.createImportMap(true);
 
-        for (int i = 0; i < rawData.size(); i++)
+        int i = 0;
+        for (ListIterator<Map<String, Object>> iter = rawData.listIterator(); iter.hasNext(); i++)
         {
+            Map<String, Object> originalMap = iter.next();
             Map<String, Object> map = new CaseInsensitiveHashMap<Object>();
             // Rekey the map, resolving aliases to the actual property names
-            for (Map.Entry<String, Object> entry : rawData.get(i).entrySet())
+            for (Map.Entry<String, Object> entry : originalMap.entrySet())
             {
                 DomainProperty prop = aliasMap.get(entry.getKey());
                 if (prop != null)
@@ -417,17 +419,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (participantPD != null && map.get(participantPD.getName()) == null)
             {
                 map.put(participantPD.getName(), participantVisit.getParticipantID());
-                rawData.set(i, map);
+                iter.set(map);
             }
             if (visitPD != null && map.get(visitPD.getName()) == null)
             {
                 map.put(visitPD.getName(), participantVisit.getVisitID());
-                rawData.set(i, map);
+                iter.set(map);
             }
             if (datePD != null && map.get(datePD.getName()) == null)
             {
                 map.put(datePD.getName(), participantVisit.getDate());
-                rawData.set(i, map);
+                iter.set(map);
             }
 
             materialInputs.add(participantVisit.getMaterial());
