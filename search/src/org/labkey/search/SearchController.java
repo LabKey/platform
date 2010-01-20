@@ -476,6 +476,8 @@ public class SearchController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends SimpleViewAction<SearchForm>
     {
+        private String _category = null;
+
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
@@ -531,6 +533,7 @@ public class SearchController extends SpringActionController
 
             form.setPrint(isPrint());
             form.setStatusMessage(statusMessage);
+            _category = form.getCategory();
 
             HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
             return search;
@@ -538,7 +541,7 @@ public class SearchController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Search");
+            return root.addChild("Search" + (null != _category ? " " + _category + "s" : ""));
         }
     }
 
@@ -553,6 +556,7 @@ public class SearchController extends SpringActionController
         private int _page = 0;
         private String _container = null;
         private boolean _advanced = false;
+        private String _category = null;
 
         public String[] getQ()
         {
@@ -563,7 +567,13 @@ public class SearchController extends SpringActionController
         {
             if (null == _query || _query.length == 0)
                 return "";
-            return StringUtils.join(_query, " ");
+
+            String queryString = StringUtils.join(_query, " ");
+
+            if (null == _category)
+                return queryString;
+            else
+                return "(" + queryString + ") && searchCategory:" + _category;
         }
 
         public void setQ(String[] query)
@@ -639,6 +649,16 @@ public class SearchController extends SpringActionController
         public void setAdvanced(boolean advanced)
         {
             _advanced = advanced;
+        }
+
+        public String getCategory()
+        {
+            return _category;
+        }
+
+        public void setCategory(String category)
+        {
+            _category = category;
         }
     }
 }

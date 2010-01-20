@@ -33,13 +33,15 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SearchController.SearchForm> me = (JspView<SearchController.SearchForm>) HttpView.currentView();
     SearchController.SearchForm form = me.getModelBean();
-    Container c = me.getViewContext().getContainer();
-    User user = me.getViewContext().getUser();
+    ViewContext ctx = me.getViewContext();
+    Container c = ctx.getContainer();
+    User user = ctx.getUser();
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     boolean wideView = true;
 
@@ -72,6 +74,11 @@
     if (form.isPrint())
     {
         %><input type=hidden name=_print value=1><%
+    }
+
+    if (null != form.getCategory())
+    {
+        %><input type=hidden name=category value="<%=h(form.getCategory())%>"><%
     }
 
     if (form.isAdvanced())
@@ -111,11 +118,21 @@ function google()
 </script>
 
 <%
+    String category = form.getCategory();
+    ActionURL researchURL = ctx.cloneActionURL().deleteParameter("category");
+
     String queryString = form.getQueryString();
 
     if (null != StringUtils.trimToNull(queryString))
     {
-        %><table><tr><td  valign="top" align="left" width=500><%
+        %><br><table>
+            <tr><td><font size="2">
+                <% if (null == category) { %>All<% } else { %><a href="<%=researchURL%>">All</a><% } %>
+                <% if ("File".equals(category)) { %>Files<% } else { %><a href="<%=researchURL.clone().addParameter("category", "File")%>">Files</a><% } %>
+                <% if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=researchURL.clone().addParameter("category", "Subject")%>">Subjects</a><% } %>
+                <% if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=researchURL.clone().addParameter("category", "Dataset")%>">Datasets</a><% } %>
+            </font></td></tr>
+            <tr><td valign="top" align="left" width=500><%
         int hitsPerPage = 20;  // UNDONE
         int offset = 0;
 
@@ -132,7 +149,7 @@ function google()
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = result.totalHits;
 
-            %><p />Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
+            %><p /><p />Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
 
             if (hitsPerPage < totalHits)
             {
@@ -173,9 +190,14 @@ function google()
                 </div>
                 <%
                 }
+
+                if (form.isAdvanced())
+                {
                 %>
                 <div style='margin-left:10px; color:green;'><%=h(href)%>
-                </div>
+                </div><%
+                }
+                %>
                 <br><%
             }
             %></div></td><%
