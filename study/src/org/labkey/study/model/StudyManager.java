@@ -3136,7 +3136,11 @@ public class StudyManager
 
     public WebPartView<ParticipantViewConfig> getParticipantView(Container container, ParticipantViewConfig config, BindException errors)
     {
-        return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantAll.jsp", config, errors);
+        StudyImpl study = getStudy(container);
+        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+            return new BaseStudyController.StudyJspView<ParticipantViewConfig>(study, "studyData.jsp", config, errors);
+        else
+            return new BaseStudyController.StudyJspView<ParticipantViewConfig>(study, "participantAll.jsp", config, errors);
     }
 
     public WebPartView<ParticipantViewConfig> getParticipantDemographicsView(Container container, ParticipantViewConfig config, BindException errors)

@@ -37,7 +37,7 @@ public class ParticipantTable extends FilteredTable
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
         _schema = schema;
         ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
-        rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, StudyService.get().getSubjectColumnName(getContainer())));
+        rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId"));
 
         addColumn(rowIdColumn);
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));

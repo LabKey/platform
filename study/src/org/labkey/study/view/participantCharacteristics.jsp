@@ -54,7 +54,7 @@
     ViewContext context = HttpView.currentContext();
     UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
     String contextPath = request.getContextPath();
-    JspView<StudyManager.ParticipantViewConfig> me = (org.labkey.api.view.JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
+    JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     StudyManager.ParticipantViewConfig bean = me.getModelBean();
 
     ChartDesignerBean chartBean = new ChartDesignerBean();
