@@ -35,6 +35,7 @@ public class PipelineActionConfig
         enabled,
         disabled,
         toolbar,
+        admin,
     }
 
     public PipelineActionConfig(String id, String state)

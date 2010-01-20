@@ -112,7 +112,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             actions.add(FilesForm.actions.importData);
         }
 
-        if (getRootContext().getUser().isAdministrator())
+        if (policy.hasPermission(getViewContext().getUser(), AdminPermission.class))
             actions.add(FilesForm.actions.customize);
 
         form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
