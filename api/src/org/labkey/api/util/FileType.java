@@ -15,6 +15,8 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.api.gwt.client.util.StringUtils;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -42,7 +44,7 @@ public class FileType implements Serializable
         // indicated by the env varbl TPP itself uses, else
         // return SUPPORT_GZ, since you still might get those
         // from outside sources
-        String pepXMLext = System.getenv("PEPXML_EXT");
+        String pepXMLext = StringUtils.trimToEmpty(System.getenv("PEPXML_EXT"));
         return pepXMLext.endsWith(".pep.xml.gz")? gzSupportLevel.PREFER_GZ: gzSupportLevel.SUPPORT_GZ;
     }
 
