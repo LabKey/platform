@@ -454,6 +454,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public void enumerateDocuments(SearchService.IndexTask task, Container c, Date since)
     {
+        containerSimple(task,c);
+    }
+    
+    private void containerSimple(SearchService.IndexTask task, Container c)
+    {
         if (null == c || c.isRoot())
             return;
         Container p = c.getProject();
@@ -486,9 +491,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put(SearchService.PROPERTY.title.toString(), title);
-        properties.put(SearchService.PROPERTY.category.toString(), SearchService.navigationCategory);
+        //properties.put(SearchService.PROPERTY.category.toString(), SearchService.navigationCategory);
         Resource doc = new SimpleDocumentResource(c.getParsedPath(),
-                "container:" + c.getId(),
+                "link:" + c.getId(),
                 c.getId(),
                 "text/plain",
                 body.getBytes(),
@@ -496,6 +501,41 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 properties);
         task.addResource(doc, SearchService.PRIORITY.item);
     }
+
+    
+    private void containerPortal(SearchService.IndexTask task, Container c)
+    {
+        if (null == c || c.isRoot())
+            return;
+        String title;
+        Study study = StudyService.get().getStudy(c);
+        if (c.isProject())
+        {
+            title = "Project -- " + c.getName();
+        }
+        else if (c.isWorkbook())
+        {
+            title = "Workbook -- " + c.getName();
+        }
+        else if (null != study)
+        {
+            title = "Study -- " + study.getLabel();
+        }
+        else
+        {
+            title = "Folder -- " + c.getName();
+        }
+
+        ViewContext v = new ViewContext();
+        v.setUser(User.getSearchUser());
+        ActionURL url = c.getStartURL(v);
+        final String docid = "container:" + c.getId();
+        HashMap map = new HashMap();
+        map.put(SearchService.PROPERTY.title.toString(), title);
+        ActionResource r = new ActionResource(SearchService.navigationCategory, docid, url, url, map);
+        task.addResource(r, SearchService.PRIORITY.item);
+    }
+
 
     public void indexDeleted() throws SQLException
     {

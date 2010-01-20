@@ -61,7 +61,7 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         String pathStr = toPathString(path);
         if (null == last) last = nullDate;
-        if (null == next) next = nullDate;
+        if (null == next) next = oldDate;
 
         SQLFragment upd = new SQLFragment(
                 "UPDATE search.CrawlCollections SET LastCrawled=?, NextCrawl=? ",

@@ -16,28 +16,22 @@
 package org.labkey.search.model;
 
 import org.apache.log4j.Category;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Table;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
-import org.labkey.api.webdav.Resource;
-import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.webdav.WebdavResolver;
-import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.ServletContextEvent;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -349,19 +343,33 @@ public class DavCrawler implements ShutdownListener
         public void run()
         {
             long delay = 0;
-            
+            SearchService ss = null;
+
+            while (!_shuttingDown && ss == null)
+            {
+                try
+                {
+                    ss = getSearchService();
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException x)
+                {
+                }
+            }
+
             while (!_shuttingDown)
             {
                 try
                 {
-                    SearchService ss = getSearchService();
-                    if (null != ss && !((AbstractSearchService)ss).waitForRunning())
+                    ((AbstractSearchService)ss).waitForRunning();
+                    if (ss.isBusy())
+                    {
+                        _wait(_crawlerEvent, 1000);
                         continue;
-                    _wait(_crawlerEvent, delay);
-                    delay = _defaultBusyWait;
-                    if (null == ss || ss.isBusy())
-                        continue;
+                    }
+
                     delay = findSomeWork();
+                    _wait(_crawlerEvent, delay);
                 }
                 catch (Throwable t)
                 {
@@ -509,7 +517,7 @@ public class DavCrawler implements ShutdownListener
                 });
             }
             StringBuilder activity = new StringBuilder();
-            long time = now - 60*60000;
+            long time = now - 5*60000;
             for (Pair<Resource,Date> p : recent)
             {
                 Resource r = p.first;

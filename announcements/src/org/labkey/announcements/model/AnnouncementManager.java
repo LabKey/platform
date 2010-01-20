@@ -346,6 +346,7 @@ public class AnnouncementManager
     {
         update.beforeUpdate(user);
         Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
+        indexThread(update);
     }
 
 
@@ -361,6 +362,8 @@ public class AnnouncementManager
         DbSchema schema = _comm.getSchema();
         boolean startedTransaction = false;
 
+        Announcement ann = null;
+
         try
         {
             if (!schema.getScope().isTransactionActive())
@@ -368,7 +371,7 @@ public class AnnouncementManager
                 schema.getScope().beginTransaction();
                 startedTransaction = true;
             }
-            Announcement ann = getAnnouncement(c, rowId, INCLUDE_RESPONSES);
+            ann = getAnnouncement(c, rowId, INCLUDE_RESPONSES);
             if (ann != null)
             {
                 deleteAnnouncement(ann);
@@ -393,6 +396,8 @@ public class AnnouncementManager
             if (startedTransaction && schema.getScope().isTransactionActive())
                 schema.getScope().rollbackTransaction();
         }
+
+       unindexThread(ann);
     }
     
 
@@ -989,12 +994,24 @@ public class AnnouncementManager
     }
 
 
+    private static void unindexThread(Announcement ann)
+    {
+        String docid = "thread:" + ann.getEntityId();
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (null != ss)
+        {
+            ss.deleteResource(docid);
+        }
+    }
+
+
     public static void indexThread(SearchService.IndexTask task, String c, final String entityId)
     {
+        String docid = "thread:" + entityId;
         ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
         url.setExtraPath(c);
         url.addParameter("entityId", entityId);
-        ActionResource r = new ActionResource(searchCategory, url)
+        ActionResource r = new ActionResource(searchCategory, docid, url)
         {
             @Override
             public void setLastIndexed(long ms)

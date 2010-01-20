@@ -1535,7 +1535,8 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
-            String searchTerm = (String)getProperty("q", "");
+            Object q = getProperty("q", "");
+            String searchTerm = (q instanceof String) ? (String)q : StringUtils.join((String[])q," ");
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 

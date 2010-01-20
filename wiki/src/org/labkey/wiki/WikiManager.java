@@ -309,6 +309,8 @@ public class WikiManager
         {
             if (scope != null)
                 scope.closeConnection();
+
+            unindexWiki(wiki.getEntityId());
         }
         WikiCache.uncache(c);  // Uncache entire container to invalidate references to this page from other pages
     }
@@ -729,19 +731,18 @@ public class WikiManager
     }
 
 
-
-    static String getSearchId(Wiki page)
+    static void unindexWiki(String entityId)
     {
-//        return "dav:/" + WebdavService.getServletPath() + WikiWebdavProvider.getResourcePath(page);
-        ActionURL url = new ActionURL(WikiController.PageAction.class, null).addParameter("name",page.getName());
-        url.setExtraPath(page.getContainerId());
-        return "action:" + url.getLocalURIString();
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        String docid = "wiki:" + entityId;
+        if (null != ss)
+            ss.deleteResource(docid);
     }
-
+    
 
     static void indexWiki(Wiki page)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        SearchService ss = ServiceRegistry.get(SearchService.class);
         Container c = ContainerManager.getForId(page.getContainerId());
         if (null != ss && null != c)
             indexWikiContainerFast(ss.defaultTask(), c, null, page.getName().getSource());

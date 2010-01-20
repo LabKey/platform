@@ -52,12 +52,15 @@ public abstract class VisitManager
         StudyManager.getInstance().clearVisitCache(_study);
         if (requiresUncache)
             StudyManager.getInstance().clearCaches(_study.getContainer(), true);
+        StudyManager.getInstance().reindex(_study.getContainer());
     }
+
 
     public String getLabel()
     {
         return "Visit";
     }
+
 
     protected String getParticipantSequenceKeyExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
     {
@@ -69,6 +72,7 @@ public abstract class VisitManager
         participantSequenceKey.append("CAST(").append(sequenceNumColumnName).append(" AS VARCHAR))");
         return participantSequenceKey.toString();
     }
+
 
     protected void updateParticipantSequenceKeys()
     {

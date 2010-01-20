@@ -758,7 +758,12 @@ public class IssueManager
                 return;
             task = ss.defaultTask();
         }
-        task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
+
+        // UNDONE: broken ??
+        // task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
+
+        // try requery instead
+        indexIssues(task, new int[]{issue.getIssueId()}, 1);
     }
 
 

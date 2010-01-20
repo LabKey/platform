@@ -88,6 +88,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         addSearchCategory(fileCategory);
         addSearchCategory(navigationCategory);
+        synchronized (_runningLock)
+        {
+            startThreads();
+        }
     }
     
 
@@ -163,7 +167,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
         {
-            addResource(new ActionResource(category, url), pri);
+            addResource(new ActionResource(category, url.getLocalURIString(false), url), pri);
         }
 
 
@@ -270,7 +274,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public boolean isBusy()
     {
-        if (!isRunning())
+        if (!isRunning() || _shuttingDown)
             return true;
         int n = _itemQueue.size() + 10 * _runQueue.size();
         if (null != _indexQueue)
@@ -328,9 +332,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     
-    private void queueItem(Item i)
+    private void queueItem(final Item i)
     {
-//        assert MemTracker.put(i);
+        // UNDONE: this is not 100% correct, consider passing in a scope with Item
+        DbScope s = DbScope.getLabkeyScope();
+        if (s.isTransactionActive())
+        {
+            s.addCommitTask(new Runnable()
+            {
+                public void run()
+                {
+                    queueItem(i);
+                }
+            });
+            return;
+        }
 
         _log.debug("_submitQueue.put(" + i._id + ")");
         if (null != i._run)
@@ -442,6 +458,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    /** return false if returning because of shutting down */
     boolean waitForRunning()
     {
         synchronized (_runningLock)

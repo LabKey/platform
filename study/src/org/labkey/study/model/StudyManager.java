@@ -60,8 +60,10 @@ import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
+import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
@@ -294,12 +296,14 @@ public class StudyManager
         if (dataSetDefinition.getDataSetId() <= 0)
             throw new IllegalArgumentException("datasetId must be greater than zero.");
         _dataSetHelper.create(user, dataSetDefinition);
+        reindex(dataSetDefinition.getContainer());
     }
 
     public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
     {
         Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
         _dataSetHelper.update(user, dataSetDefinition, pk);
+        reindex(dataSetDefinition.getContainer());
     }
 
     public boolean isDataUniquePerParticipant(DataSet dataSet) throws SQLException
@@ -1408,6 +1412,8 @@ public class StudyManager
 
         if (safeIntegersEqual(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
             CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.<String, Integer>emptyMap());
+
+        unindexDataset(ds);
     }
 
 
@@ -3151,11 +3157,13 @@ public class StudyManager
         _listeners.add(listener);
     }
 
+
     private static List<UnmaterializeListener> getListeners()
     {
         return _listeners;
     }
     
+
     public static void fireUnmaterialized(DataSet def)
     {
         List<UnmaterializeListener> list = getListeners();
@@ -3170,6 +3178,20 @@ public class StudyManager
             }
     }
 
+
+    public void reindex(Container c)
+    {
+        _enumerateDocuments(null, c);
+    }
+    
+
+    private void unindexDataset(DataSetDefinition ds)
+    {
+        String docid = "dataset:" + new Path(ds.getContainer().getId(),String.valueOf(ds.getDataSetId())).toString();
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (null != ss)
+            ss.deleteResource(docid);
+    }
 
 
     public static void indexDatasets(SearchService.IndexTask task, Container c, Date modifiedSince)
@@ -3191,11 +3213,12 @@ public class StudyManager
             {
                 String container = rs.getString(1);
                 int id = rs.getInt(2);
+                String docid = "dataset:" + new Path(container,String.valueOf(id)).toString();
                 ActionURL view = dataset.clone().replaceParameter("datasetId",String.valueOf(id));
                 view.setExtraPath(container);
                 ActionURL source = details.clone().replaceParameter("id",String.valueOf(id));
                 source.setExtraPath(container);
-                ActionResource r = new ActionResource(datasetCategory, view, source);
+                ActionResource r = new ActionResource(datasetCategory, docid, view, source);
                 task.addResource(r, SearchService.PRIORITY.item);
             }
         }
@@ -3209,6 +3232,7 @@ public class StudyManager
         }
     }
     
+
     public static void indexParticipantView(final SearchService.IndexTask task, final Date modifiedSince)
     {
         ResultSet rs = null;
@@ -3272,6 +3296,7 @@ public class StudyManager
                 String id = rs.getString(2);
                 ActionURL execute = executeURL.clone().addParameter("participantId",String.valueOf(id));
                 Path p = new Path(c.getId(),id);
+                String docid = "participant:" + p.toString();
 
                 Map<String,Object> props = new HashMap<String,Object>();
                 props.put(SearchService.PROPERTY.category.toString(), subjectCategory);
@@ -3283,7 +3308,7 @@ public class StudyManager
                 {
                     // SimpleDocument
                     SimpleDocumentResource r = new SimpleDocumentResource(
-                            p, "participant:/" + p,
+                            p, docid,
                             c.getId(),
                             "text/plain",
                             id.getBytes(),
@@ -3295,7 +3320,7 @@ public class StudyManager
                 {
                     // ActionResource
                     ActionURL index = indexURL.clone().addParameter("participantId",id);
-                    ActionResource r = new ActionResource(subjectCategory, execute, index, props);
+                    ActionResource r = new ActionResource(subjectCategory, docid, execute, index, props);
                     task.addResource(r, SearchService.PRIORITY.item);
                 }
             }
@@ -3342,6 +3367,53 @@ public class StudyManager
         {
             ResultSetUtil.close(rs);
         }
+    }
+
+
+    // make sure we don't over do it with multiple calls to reindex the same study (see reindex())
+    // add a level of indirection
+    // CONSIDER: add some facility like this to SearchService??
+    // NOTE: this needs to be reviewed if we use modifiedSince
+
+    final static WeakHashMap<Container,Runnable> _lastEnumerate = new WeakHashMap<Container,Runnable>();
+
+    public static void _enumerateDocuments(SearchService.IndexTask t, final Container c)
+    {
+        if (null == c)
+            return;
+
+        final SearchService.IndexTask defaultTask = ServiceRegistry.get(SearchService.class).defaultTask();
+        final SearchService.IndexTask task = null==t ? defaultTask : t;
+
+        Runnable runEnumerate = new Runnable()
+        {
+            public void run()
+            {
+                if (task == defaultTask)
+                {
+                    synchronized (_lastEnumerate)
+                    {
+                        Runnable r = _lastEnumerate.get(c);
+                        if (this != r)
+                            return;
+                        _lastEnumerate.remove(c);
+                    }
+                }
+                StudyManager.indexDatasets(task, c, null);
+                StudyManager.indexParticipantView(task, c, null);
+                StudyManager.indexParticipants(c);
+            }
+        };
+
+        if (task == defaultTask)
+        {
+            synchronized (_lastEnumerate)
+            {
+                _lastEnumerate.put(c, runEnumerate);
+            }
+        }
+        
+        task.addRunnable(runEnumerate, SearchService.PRIORITY.crawl);
     }
 
 

@@ -435,32 +435,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         StudyUpgradeCode.updateAllCalculatedSpecimenData(moduleContext);
     }
 
-    
+
     public void enumerateDocuments(@NotNull final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {
-        task.addRunnable(new Runnable()
-        {
-            public void run()
-            {
-                StudyManager.indexDatasets(task, c, modifiedSince);
-            }
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(new Runnable()
-        {
-            public void run()
-            {
-                StudyManager.indexParticipantView(task, c, modifiedSince);            }
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(new Runnable()
-        {
-            public void run()
-            {
-                StudyManager.indexParticipants(c);
-            }
-        }, SearchService.PRIORITY.bulk);
+        StudyManager._enumerateDocuments(task, c);
     }
+    
 
     public void indexDeleted() throws SQLException
     {

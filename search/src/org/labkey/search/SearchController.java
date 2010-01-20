@@ -64,8 +64,32 @@ public class SearchController extends SpringActionController
 
     public static class AdminForm
     {
+        public String[] _messages = {"", "Index deleted"};
+        private int msg = 0;
         private boolean pause;
         private boolean start;
+        private boolean delete;
+
+
+        public String getMessage()
+        {
+            return msg >= 0 && msg < _messages.length ? _messages[msg] : "";
+        }
+
+        public void setMsg(int m)
+        {
+            msg = m;
+        }
+
+        public boolean isDelete()
+        {
+            return delete;
+        }
+
+        public void setDelete(boolean delete)
+        {
+            this.delete = delete;
+        }
 
         public boolean isStart()
         {
@@ -92,6 +116,8 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class AdminAction extends FormViewAction<AdminForm>
     {
+        int _msgid = 0;
+        
         public void validateCommand(AdminForm target, Errors errors)
         {
         }
@@ -121,13 +147,21 @@ public class SearchController extends SpringActionController
                 ss.pause();
                 m.put(SearchModule.searchRunningState,"false");
             }
+            else if (form.isDelete())
+            {
+                ss.clear();
+                _msgid = 1;
+            }
             PropertyManager.saveProperties(m);
             return true;
         }
         
         public URLHelper getSuccessURL(AdminForm o)
         {
-            return new ActionURL(AdminAction.class, getContainer());
+            ActionURL success = new ActionURL(AdminAction.class, getContainer());
+            if (0 != _msgid)
+                success.addParameter("msg",String.valueOf(_msgid));
+            return success;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -179,34 +213,6 @@ public class SearchController extends SpringActionController
 
     // UNDONE: remove; for testing only
     @RequiresSiteAdmin
-    public class ClearAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            // SimpleRedirectAction doesn't take a form
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-
-            if (null == ss)
-                return null;
-
-            ss.clear();
-
-            try
-            {
-                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
-                if (null != returnUrl)
-                    return new ActionURL(returnUrl);
-            }
-            catch (Exception x)
-            {
-            }
-            return getSearchURL();
-        }
-    }
-
-
-    // UNDONE: remove; for testing only
-    @RequiresSiteAdmin
     public class CommitAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -228,64 +234,7 @@ public class SearchController extends SpringActionController
             catch (Exception x)
             {
             }
-            return getSearchURL();
-        }
-    }
-
-
-
-    // UNDONE: remove; for testing only
-    @RequiresSiteAdmin
-    public class PauseAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            // SimpleRedirectAction doesn't take a form
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-
-            if (null == ss)
-                return null;
-
-            ss.pause();
-
-            try
-            {
-                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
-                if (null != returnUrl)
-                    return new ActionURL(returnUrl);
-            }
-            catch (Exception x)
-            {
-            }
-            return getSearchURL();
-        }
-    }
-
-
-    // UNDONE: remove; for testing only
-    @RequiresSiteAdmin
-    public class StartAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            // SimpleRedirectAction doesn't take a form
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-
-            if (null == ss)
-                return null;
-
-            ss.start();
-
-            try
-            {
-                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
-                if (null != returnUrl)
-                    return new ActionURL(returnUrl);
-            }
-            catch (Exception x)
-            {
-            }
-            return getSearchURL();
+            return new ActionURL(SearchAction.class, getContainer());
         }
     }
 
@@ -336,12 +285,6 @@ public class SearchController extends SpringActionController
 
             if (null == ss)
                 return null;
-
-            if (wait)
-            {
-                ss.purgeQueues();
-                ss.start();
-            }
 
             SearchService.IndexTask task = null;
 
@@ -414,7 +357,9 @@ public class SearchController extends SpringActionController
             if (null != StringUtils.trimToNull(query))
             {
                 //UNDONE: paging, rowlimit etc
-                SearchService.SearchResult result = ss.search(query, getViewContext().getUser(), ContainerManager.getRoot());
+                int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
+                SearchService.SearchResult result = ss.search(query, getViewContext().getUser(), ContainerManager.getRoot(),
+                        form.getOffset(), form.getLimit());
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;
 
@@ -434,6 +379,12 @@ public class SearchController extends SpringActionController
                 }
             }
 
+            JSONObject metaData = new JSONObject();
+            metaData.put("idProperty","id");
+            metaData.put("root", "hits");
+            metaData.put("successProperty", "success");
+
+            response.put("metaData", metaData);
             response.put("success",true);
             response.put("hits", arr);
             response.put("totalHits", totalHits);
@@ -556,7 +507,10 @@ public class SearchController extends SpringActionController
         private int _page = 0;
         private String _container = null;
         private boolean _advanced = false;
+        private int _offset = 0;
+        private int _limit = 1000;
         private String _category = null;
+        private boolean _includeSubfolders = true;
 
         public String[] getQ()
         {
@@ -631,6 +585,26 @@ public class SearchController extends SpringActionController
             _page = page;
         }
 
+        public int getOffset()
+        {
+            return _offset;
+        }
+
+        public void setOffset(int o)
+        {
+            _offset = o;
+        }
+
+        public int getLimit()
+        {
+            return _limit;
+        }
+
+        public void setLimit(int o)
+        {
+            _limit = o;
+        }
+
         public String getContainer()
         {
             return _container;
@@ -639,6 +613,16 @@ public class SearchController extends SpringActionController
         public void setContainer(String container)
         {
             _container = container;
+        }
+
+        public void setIncludeSubFolders(boolean b)
+        {
+            _includeSubfolders = b;
+        }
+
+        public boolean getIncludeSubFolders()
+        {
+            return null == _container || _includeSubfolders;
         }
 
         public boolean isAdvanced()
