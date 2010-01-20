@@ -87,6 +87,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public static final FieldKey BATCH_ROWID_FROM_RUN = FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, "RowId");
 
+    public static final DataType RELATED_FILE_DATA_TYPE = new DataType("RelatedFile");
+
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
     protected AssayTableMetadata _tableMetadata;
@@ -370,7 +372,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     {
                         roleName = null;
                     }
-                    dataType = new DataType("RelatedFile");
+                    dataType = RELATED_FILE_DATA_TYPE;
                 }
                 ExpData imageData = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType);
                 outputDatas.put(imageData, roleName);
