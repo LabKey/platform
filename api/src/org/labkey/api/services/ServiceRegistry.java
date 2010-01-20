@@ -39,7 +39,8 @@ public class ServiceRegistry
 {
     private static final ServiceRegistry _instance = new ServiceRegistry();
     private ConcurrentMap<Class,Object> _services = new ConcurrentHashMap<Class,Object>();
-
+    static {ServiceRegistry._instance.registerService(ServiceRegistry.class, _instance);}
+    
     /**
      * Returns the single instance of the ServiceRegistry
      * @return The single instance of the ServiceRegistry

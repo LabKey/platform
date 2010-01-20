@@ -43,6 +43,7 @@ import java.util.Map;
  */
 public class ActionResource extends AbstractDocumentResource
 {
+    final String _docid;
     ActionURL _url;
     ActionURL _indexUrl;
 
@@ -50,6 +51,7 @@ public class ActionResource extends AbstractDocumentResource
     {
         super(new Path("action",str));
         _url = new ActionURL(str);
+        _docid = _url.getLocalURIString();
         _containerId = getContainerId(_url);
         _indexUrl = _url.clone();
         _indexUrl.replaceParameter("_print","1");
@@ -58,19 +60,22 @@ public class ActionResource extends AbstractDocumentResource
     }
 
 
-    public ActionResource(SearchService.SearchCategory category, ActionURL url)
+    public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url)
     {
-        this(category, url, url.clone(), null);
+        this(category, docid, url, url.clone(), null);
     }
 
-    public ActionResource(SearchService.SearchCategory category, ActionURL url, ActionURL source)
+
+    public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url, ActionURL source)
     {
-        this(category, url, source, null);
+        this(category, docid, url, source, null);
     }
 
-    public ActionResource(SearchService.SearchCategory category, ActionURL url, ActionURL source, Map<String,Object> properties)
+
+    public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url, ActionURL source, Map<String,Object> properties)
     {
         super(new Path("action",url.getLocalURIString()));
+        _docid = docid;
         _url = url;
         _containerId = getContainerId(_url);
         _indexUrl = source;
@@ -84,6 +89,13 @@ public class ActionResource extends AbstractDocumentResource
             _properties.put(SearchService.PROPERTY.category.toString(), category.getName());
     }
 
+
+    @Override
+    public String getDocumentId()
+    {
+        return null!=_docid ? _docid : super.getDocumentId();
+    }
+    
 
     String getContainerId(ActionURL url)
     {
