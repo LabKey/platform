@@ -105,9 +105,10 @@
         }
     }
 %>
-</form>
-
-<script type="text/javascript">
+</form><%
+    if (form.isAdvanced())
+    {
+%><script type="text/javascript">
 function google()
 {
     var query = document.getElementById('query').value;
@@ -116,21 +117,22 @@ function google()
 }
 
 </script>
-
 <%
+    }
+
     String category = form.getCategory();
     ActionURL researchURL = ctx.cloneActionURL().deleteParameter("category");
-
     String queryString = form.getQueryString();
 
     if (null != StringUtils.trimToNull(queryString))
     {
-        %><br><table>
+        %><br>
+        <table>
             <tr><td><font size="2">
-                <% if (null == category) { %>All<% } else { %><a href="<%=researchURL%>">All</a><% } %>
-                <% if ("File".equals(category)) { %>Files<% } else { %><a href="<%=researchURL.clone().addParameter("category", "File")%>">Files</a><% } %>
-                <% if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=researchURL.clone().addParameter("category", "Subject")%>">Subjects</a><% } %>
-                <% if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=researchURL.clone().addParameter("category", "Dataset")%>">Datasets</a><% } %>
+                <% if (null == category) { %>All<% } else { %><a href="<%=h(researchURL)%>">All</a><% } %>
+                <% if ("File".equals(category)) { %>Files<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>
+                <% if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>
+                <% if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% } %>
             </font></td></tr>
             <tr><td valign="top" align="left" width=500><%
         int hitsPerPage = 20;  // UNDONE
@@ -251,8 +253,8 @@ function google()
             if (e.getCause() instanceof ParseException)
                 t = e.getCause();
             out.write("Error: " + t.getMessage());
-        }
-        
+        } %>
+        </tr></table><%
     }
 %>
-</td></tr></table>
+
