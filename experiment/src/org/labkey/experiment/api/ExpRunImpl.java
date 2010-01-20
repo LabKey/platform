@@ -310,12 +310,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             String sql = " ";
             sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
 
+            //per Josh: break relation between all datas with this run id and don't delete them
             sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL " +
-                    " WHERE RowId IN (SELECT exp.Data.RowId FROM exp.Data " +
-                    " INNER JOIN exp.DataInput ON exp.Data.RowId = exp.DataInput.DataId " +
-                    " INNER JOIN exp.ProtocolApplication PAOther ON exp.DataInput.TargetApplicationId = PAOther.RowId " +
-                    " INNER JOIN exp.ProtocolApplication PA ON exp.Data.SourceApplicationId = PA.RowId " +
-                    " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + getRowId() + ");\n";
+                    " WHERE RunId = " + getRowId() + ";\n";
 
             sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL " +
                     " WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material " +
@@ -329,7 +326,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ");\n";
             sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
 
-            sql += "DELETE FROM exp.Data WHERE RunId = " + getRowId() + ";\n";
             Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{});
 
             ExpMaterial[] materialsToDelete = ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId());

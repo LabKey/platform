@@ -262,7 +262,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         {
             String pipelinePath = dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH);
             String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
-            DataType type = ModuleAssayProvider.RAW_DATA_TYPE;
+            DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
             //check to see if this is already an ExpData
             File file = new File(pipelineRoot.getRootPath(), pipelinePath);
