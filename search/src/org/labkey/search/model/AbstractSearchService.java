@@ -920,7 +920,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Date now = new Date(System.currentTimeMillis());
         Table.execute(search,
                 "UPDATE search.ParticipantIndex SET LastIndexed=? " +
-                "WHERE EXISTS (SELECT ParticipantId FROM " + tinfo.getTempTableName() + " F WHERE F.Container = ParticipantIndex.Container AND F.ParticipantID = ParticipantIndex.ParticipantID)",
+                "WHERE EXISTS (SELECT ParticipantId FROM " + tinfo.getTempTableName() + " F WHERE F.Container = search.ParticipantIndex.Container AND F.ParticipantID = search.ParticipantIndex.ParticipantID)",
                 new Object[] {now});
         Table.execute(search,
                 "INSERT INTO search.ParticipantIndex (Container, ParticipantID, LastIndexed) " +
