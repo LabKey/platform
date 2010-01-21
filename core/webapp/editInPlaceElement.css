@@ -18,3 +18,21 @@
     background-position: center;
     background-repeat:no-repeat;
 }
+.labkey-edit-in-place-icon
+{
+    background-image: url("_images/pencil.png");
+    position: absolute;
+    width: 25px;
+    height: 23px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+.labkey-edit-in-place-icon-hover
+{
+    background-position: -25px 0;
+}
+.labkey-edit-in-place-icon-mouse-down
+{
+    background-position: -50px 0;
+}

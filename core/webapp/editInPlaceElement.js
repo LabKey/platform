@@ -57,7 +57,28 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         this.el.addClass("labkey-edit-in-place");
         this.el.on("mouseover", this.onMouseOver, this);
         this.el.on("mouseout", this.onMouseOut, this);
-        this.el.on("click", function(){this.startEdit();}, this);
+        this.el.on("click", this.startEdit, this);
+
+        this.editIcon = Ext.getBody().createChild({
+            tag: 'div',
+            cls: 'labkey-edit-in-place-icon',
+            title: 'Click to Edit'
+        });
+        this.editIcon.anchorTo(this.el, 'tr-tr');
+        this.editIcon.on("mouseover", function(){
+            this.editIcon.addClass("labkey-edit-in-place-icon-hover");
+        }, this);
+        this.editIcon.on("mouseout", function(){
+            this.editIcon.removeClass("labkey-edit-in-place-icon-hover");
+            this.editIcon.removeClass("labkey-edit-in-place-icon-mouse-down");
+        }, this);
+        this.editIcon.on("mousedown", function(){
+            this.editIcon.addClass("labkey-edit-in-place-icon-mouse-down");
+        }, this);
+        this.editIcon.on("mouseup", function(){
+            this.editIcon.removeClass("labkey-edit-in-place-icon-mouse-down");
+        }, this);
+        this.editIcon.on("click", this.startEdit, this);
     },
 
     checkForEmpty: function(){
@@ -69,11 +90,11 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     },
 
     onMouseOver: function(){
-        this.el.addClass("labkey-edit-in-place-hover");
+        this.editIcon.addClass("labkey-edit-in-place-icon-hover");
     },
 
     onMouseOut: function(){
-        this.el.removeClass("labkey-edit-in-place-hover");
+        this.editIcon.removeClass("labkey-edit-in-place-icon-hover");
     },
 
     startEdit: function(){
@@ -131,6 +152,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
         this.editor.setDisplayed(true);
         this.el.setDisplayed(false);
+        this.editIcon.setDisplayed(false);
 
         this.editor.focus();
         this.editor.dom.select();
@@ -172,7 +194,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         if (value != this.oldText && false !== this.fireEvent("beforecomplete", value, this.oldText))
             this.processChange(value, this.oldText);
         else
-            this.onUpdateComplete();
+            this.onUpdateComplete(value, this.oldText);
     },
 
     cancelEdit: function(){
@@ -186,6 +208,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
         this.el.setDisplayed(true);
         this.editor.setDisplayed(false);
+        this.editIcon.setDisplayed(true);
 
         this.editor.remove();
         this.editor = null;
