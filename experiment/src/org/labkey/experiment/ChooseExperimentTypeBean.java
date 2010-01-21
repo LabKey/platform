@@ -16,9 +16,12 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.ExperimentRunType;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -31,19 +34,45 @@ public class ChooseExperimentTypeBean
     private final ExperimentRunType _selectedType;
     private final ActionURL _url;
 
-    public ChooseExperimentTypeBean(Set<ExperimentRunType> types, ExperimentRunType selectedType, ActionURL url)
+    public ChooseExperimentTypeBean(Set<ExperimentRunType> types, ExperimentRunType selectedType, ActionURL url, List<ExpProtocol> protocols)
     {
         _types = types;
-        if (selectedType == null)
+        _selectedType = getBestTypeSelection(types, selectedType, protocols);
+        _url = url;
+    }
+
+    public static ExperimentRunType getBestTypeSelection(Set<ExperimentRunType> types, ExperimentRunType selectedType, List<ExpProtocol> protocols)
+    {
+        if (selectedType != null)
         {
-            _selectedType = ExperimentRunType.ALL_RUNS_TYPE;
+            return selectedType;
         }
-        else
+        if (protocols == null || protocols.isEmpty())
         {
-            _selectedType = selectedType;
+            return ExperimentRunType.ALL_RUNS_TYPE;
         }
 
-        _url = url;
+        Handler.Priority bestPriority = null;
+        for (ExperimentRunType type : types)
+        {
+            Handler.Priority worstFilterPriority = Handler.Priority.HIGH;
+            for (ExpProtocol protocol : protocols)
+            {
+                Handler.Priority p = type.getPriority(protocol);
+                if (worstFilterPriority != null && (p == null || p.compareTo(worstFilterPriority) < 0))
+                {
+                    worstFilterPriority = p;
+                }
+            }
+
+            if (worstFilterPriority != null && (bestPriority == null || bestPriority.compareTo(worstFilterPriority) < 0))
+            {
+                bestPriority = worstFilterPriority;
+                selectedType = type;
+            }
+        }
+
+        return selectedType;
     }
 
     public Set<ExperimentRunType> getFilters()

@@ -46,7 +46,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new WikiController.CustomizeWikiPartView(webPart);
     }

@@ -40,7 +40,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<Portal.WebPart>("/org/labkey/wiki/view/customizeWikiToc.jsp", webPart);
     }

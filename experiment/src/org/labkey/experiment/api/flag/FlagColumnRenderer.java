@@ -111,16 +111,4 @@ public class FlagColumnRenderer extends DataColumn
     {
         renderFlag(ctx, out);
     }
-
-    /*static public class SampleFlag extends FlagColumn
-    {
-        public SampleFlag(ColumnInfo column)
-        {
-            super(column);
-        }
-        protected String urlFlag(boolean flagged)
-        {
-            return FlowSample.s_urlFlag(flagged).toString();
-        }
-    }*/
 }

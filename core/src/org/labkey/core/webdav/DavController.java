@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -703,9 +704,9 @@ public class DavController extends SpringActionController
                 if (multipartRequest.getFileMap().size() > 1)
                     return WebdavStatus.SC_NOT_IMPLEMENTED;
 
-                for (Object o : multipartRequest.getFileMap().entrySet())
+                if (!multipartRequest.getFileMap().isEmpty())
                 {
-                    Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>) o;
+                    Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>)multipartRequest.getFileMap().entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
                     String fileName = file.getOriginalFilename();
                     if (file.isEmpty())
@@ -1989,7 +1990,6 @@ public class DavController extends SpringActionController
 
                         if (file != null)
                         {
-                            Container c1 = getContainer();
                             Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
                             if (c != null)
                             {
@@ -2002,6 +2002,15 @@ public class DavController extends SpringActionController
                                     data.setDataFileURI(file.toURI());
                                 }
                                 data.save(getUser());
+
+                                if (getRequest().getParameter("description") != null)
+                                {
+                                    try
+                                    {
+                                        data.setComment(getUser(), getRequest().getParameter("description"));
+                                    }
+                                    catch (ValidationException e) {}
+                                }
                             }
                         }
                     }

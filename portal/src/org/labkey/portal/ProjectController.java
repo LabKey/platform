@@ -505,7 +505,7 @@ public class ProjectController extends SpringActionController
             if (null == desc)
                 return HttpView.redirect(beginURL());
 
-            HttpView v = desc.getEditView(_webPart);
+            HttpView v = desc.getEditView(_webPart, getViewContext());
             if (null == v)
                 return HttpView.redirect(beginURL());
 

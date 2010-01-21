@@ -228,9 +228,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
 
+        addColumn(ExpMaterialTable.Column.Flag);
         if (ss != null)
         {
-            addColumn(ExpMaterialTable.Column.Flag);
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleSet(ss, filter);
             addSampleSetColumns(ss, defaultCols);

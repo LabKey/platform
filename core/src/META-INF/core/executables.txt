@@ -1,4 +1,4 @@
-The following executable files are distibuted and installed with the LabKey Server Graphical Windows Installer.
+The following executable files are distributed and installed with the LabKey Server Graphical Windows Installer.
 They are also shipped in the zip download used for manual Windows installations.
 
 {table}

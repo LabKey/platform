@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
@@ -153,7 +154,11 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         }
         if (ret != null)
             return ret;
-        return super.urlFlag(flagged);
+        if (flagged)
+        {
+            return AppProps.getInstance().getContextPath() + "/Experiment/flagData.png";
+        }
+        return AppProps.getInstance().getContextPath() + "/Experiment/unflagData.png";
     }
 
     public void delete(User user)

@@ -97,7 +97,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         EditViewBean bean = new EditViewBean();
         bean.description = getDescription();

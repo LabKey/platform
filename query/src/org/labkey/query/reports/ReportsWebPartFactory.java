@@ -40,7 +40,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
         return wp;
     }
 
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new ReportsWebPartConfig(webPart);
     }

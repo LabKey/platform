@@ -61,7 +61,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
         }
     }
 
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<Portal.WebPart>("/org/labkey/list/view/customizeSingleListWebPart.jsp", webPart);
     }

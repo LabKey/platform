@@ -35,7 +35,7 @@ public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
         return ret;
     }
 
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new EditQueryView(webPart);
     }

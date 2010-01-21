@@ -23,6 +23,7 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -62,6 +63,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.ViewFileLink);
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
+        addColumn(Column.Flag);
         addColumn(Column.SourceProtocolApplication).setHidden(true);
         addColumn(Column.Protocol).setHidden(true);
         addContainerColumn(Column.Folder, null);
@@ -278,7 +280,11 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             ret = type.urlFlag(flagged);
         if (ret != null)
             return ret;
-        return super.urlFlag(flagged);
+        if (flagged)
+        {
+            return AppProps.getInstance().getContextPath() + "/Experiment/flagData.png";
+        }
+        return AppProps.getInstance().getContextPath() + "/Experiment/unflagData.png";
     }
 
 

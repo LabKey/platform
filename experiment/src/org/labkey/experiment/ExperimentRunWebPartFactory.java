@@ -1,0 +1,83 @@
+package org.labkey.experiment;
+
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.view.*;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+
+import java.util.Arrays;
+import java.util.Set;
+
+/**
+* User: jeckels
+* Date: Jan 19, 2010
+*/
+public class ExperimentRunWebPartFactory extends BaseWebPartFactory
+{
+    public static final String EXPERIMENT_RUN_FILTER = "experimentRunFilter";
+
+    public ExperimentRunWebPartFactory()
+    {
+        super(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME, null, true, false);
+
+    }
+
+    private String getConfiguredRunFilterName(Portal.WebPart webPart)
+    {
+        return webPart.getPropertyMap().get(EXPERIMENT_RUN_FILTER);
+    }
+
+    public static class Bean
+    {
+        private final Set<ExperimentRunType> _types;
+        private final String _defaultRunFilterName;
+
+        public Bean(Set<ExperimentRunType> types, String defaultRunFilterName)
+        {
+            _types = types;
+            _defaultRunFilterName = defaultRunFilterName;
+        }
+
+        public String getDefaultRunFilterName()
+        {
+            return _defaultRunFilterName;
+        }
+
+        public Set<ExperimentRunType> getTypes()
+        {
+            return _types;
+        }
+    }
+
+    @Override
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    {
+        Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(context.getContainer());
+        return new JspView<Bean>("/org/labkey/experiment/customizeRunWebPart.jsp", new Bean(types, getConfiguredRunFilterName(webPart)));
+    }
+
+    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
+    {
+        String selectedTypeName = getConfiguredRunFilterName(webPart);
+        Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(portalCtx.getContainer());
+
+        ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, selectedTypeName);
+
+        if (selectedType == null)
+        {
+            // Try to find the most specific kind of run that we will be asked to show so we can present the
+            // best set of columns
+            ExpProtocol[] protocols = ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(portalCtx.getContainer());
+            selectedType = ChooseExperimentTypeBean.getBestTypeSelection(types, selectedType, Arrays.asList(protocols));
+        }
+
+        ExperimentRunListView result = ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), selectedType);
+        if (selectedType != ExperimentRunType.ALL_RUNS_TYPE)
+        {
+            result.setTitle(result.getTitle() + " (" + selectedType.getDescription() + ")");
+        }
+        return result;
+    }
+}

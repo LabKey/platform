@@ -804,6 +804,7 @@ experiment/src/org/labkey/experiment/ExperimentModule.java -text
 experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text
 experiment/src/org/labkey/experiment/ExperimentRunDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ExperimentRunGraph.java -text
+experiment/src/org/labkey/experiment/ExperimentRunWebPartFactory.java -text
 experiment/src/org/labkey/experiment/ExperimentUpgradeCode.java -text
 experiment/src/org/labkey/experiment/ExternalDocsLabelCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java -text
@@ -906,6 +907,7 @@ experiment/src/org/labkey/experiment/controllers/exp/RunInputOutputBean.java -te
 experiment/src/org/labkey/experiment/controllers/exp/SampleSetServiceImpl.java -text
 experiment/src/org/labkey/experiment/controllers/property/DomainForm.java -text
 experiment/src/org/labkey/experiment/controllers/property/PropertyController.java -text
+experiment/src/org/labkey/experiment/customizeRunWebPart.jsp -text
 experiment/src/org/labkey/experiment/defaults/DefaultValueServiceImpl.java -text
 experiment/src/org/labkey/experiment/deriveSamplesChooseTarget.jsp -text
 experiment/src/org/labkey/experiment/experimentRunQueryHeader.jsp -text
@@ -938,6 +940,7 @@ experiment/src/org/labkey/experiment/xar/FileResolver.java -text
 experiment/src/org/labkey/experiment/xar/XarExpander.java -text
 experiment/src/org/labkey/experiment/xar/XarExportSelection.java -text
 experiment/webapp/Experiment/ExperimentRunNotFound.gif -text
+experiment/webapp/Experiment/flagData.png -text
 experiment/webapp/Experiment/flagDefault.gif -text
 experiment/webapp/Experiment/flagRun.gif -text
 experiment/webapp/Experiment/flagWait.gif -text

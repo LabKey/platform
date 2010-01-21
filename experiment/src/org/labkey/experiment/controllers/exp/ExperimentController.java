@@ -114,34 +114,21 @@ public class ExperimentController extends SpringActionController
         return root;
     }
 
+    @ActionNames("begin,gridView")
     @RequiresPermissionClass(ReadPermission.class)
-    public class BeginAction extends GridViewAction
+    public class BeginAction extends ShowRunsAction
     {
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class GridViewAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public VBox getView(Object o, BindException errors) throws Exception
         {
-            RunGroupWebPart v = new RunGroupWebPart(getViewContext(), false);
-            v.showHeader();
+            VBox result = super.getView(o, errors);
+            RunGroupWebPart runGroups = new RunGroupWebPart(getViewContext(), false);
+            runGroups.showHeader();
+            result.addView(runGroups);
 
-            Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone());
-            JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
-            chooserView.setTitle(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME);
-            chooserView.setTitleHref(ExperimentUrlsImpl.get().getShowRunsURL(getContainer(), ExperimentRunType.ALL_RUNS_TYPE));
+            result.addView(new ProtocolWebPart(false, getViewContext()));
+            result.addView(new SampleSetWebPart(false, getViewContext()));
 
-            ExperimentRunListView runView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
-            runView.setShowDeleteButton(true);
-            runView.setShowAddToRunGroupButton(true);
-            runView.setShowMoveRunsButton(true);
-
-            ProtocolWebPart protocolView = new ProtocolWebPart(false, getViewContext());
-            SampleSetWebPart sampleSet = new SampleSetWebPart(false, getViewContext());
-
-            return new VBox(chooserView, runView, v, protocolView, sampleSet);
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -153,16 +140,13 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public VBox getView(Object o, BindException errors) throws Exception
         {
             Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone());
+            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.<ExpProtocol>emptyList());
             JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
-            ExperimentRunListView view = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
-            view.setShowDeleteButton(true);
-            view.setShowAddToRunGroupButton(true);
-            view.setShowMoveRunsButton(true);
+            ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
             return new VBox(chooserView, view);
         }
 
@@ -254,41 +238,12 @@ public class ExperimentController extends SpringActionController
             VBox vbox = new VBox();
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, customPropertiesView));
 
-            ExpProtocol[] protocols = _experiment.getAllProtocols();
+            List<ExpProtocol> protocols = _experiment.getAllProtocols();
 
             Set<ExperimentRunType> types = new TreeSet<ExperimentRunType>(ExperimentService.get().getExperimentRunTypes(getContainer()));
             ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
-            if (selectedType == null)
-            {
-                if (protocols.length == 0)
-                {
-                    selectedType = ExperimentRunType.ALL_RUNS_TYPE;
-                }
-                else
-                {
-                    Handler.Priority bestPriority = null;
-                    for (ExperimentRunType type : types)
-                    {
-                        Handler.Priority worstFilterPriority = Handler.Priority.HIGH;
-                        for (ExpProtocol protocol : protocols)
-                        {
-                            Handler.Priority p = type.getPriority(protocol);
-                            if (worstFilterPriority != null && (p == null || p.compareTo(worstFilterPriority) < 0))
-                            {
-                                worstFilterPriority = p;
-                            }
-                        }
 
-                        if (worstFilterPriority != null && (bestPriority == null || bestPriority.compareTo(worstFilterPriority) < 0))
-                        {
-                            bestPriority = worstFilterPriority;
-                            selectedType = type;
-                        }
-                    }
-                }
-            }
-
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, selectedType, getViewContext().getActionURL().clone());
+            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, selectedType, getViewContext().getActionURL().clone(), protocols);
             JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
@@ -4084,7 +4039,7 @@ public class ExperimentController extends SpringActionController
     {
         public ActionURL getOverviewURL(Container c)
         {
-            return new ActionURL(GridViewAction.class, c);
+            return new ActionURL(BeginAction.class, c);
         }
 
         public ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment)

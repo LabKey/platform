@@ -30,7 +30,9 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.URLHelper;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> implements ExpExperiment
@@ -116,12 +118,12 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         _object.setBatchProtocolId(protocol == null ? null : protocol.getRowId());
     }
 
-    public ExpProtocolImpl[] getAllProtocols()
+    public List<ExpProtocol> getAllProtocols()
     {
         try
         {
             String sql = "SELECT p.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " p, " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = ?)";
-            return ExpProtocolImpl.fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getSchema(), sql, new Object[] { getRowId() }, Protocol.class));
+            return Arrays.<ExpProtocol>asList(ExpProtocolImpl.fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getSchema(), sql, new Object[] { getRowId() }, Protocol.class)));
         }
         catch (SQLException e)
         {

@@ -60,7 +60,7 @@ public class TimelineModule extends DefaultModule
                 return new TimelineView(settings);
             }
 
-            public HttpView getEditView(Portal.WebPart webPart)
+            public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
             {
                 return new JspView<Portal.WebPart>(TimelineView.class, "customizeTimeline.jsp", webPart);
             }

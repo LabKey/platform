@@ -174,7 +174,7 @@ public class ParticipantWebPartFactory extends BaseWebPartFactory
 
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<Portal.WebPart>("/org/labkey/study/view/customizeParticipantWebPart.jsp", webPart);
     }

@@ -846,12 +846,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         getExpSchema().getScope().rollbackTransaction();
     }
 
-    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton)
+    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type)
     {
         ExperimentRunListView view = ExperimentRunListView.createView(context, type, true);
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
-        view.setShowMoveRunsButton(moveButton);
+        view.setShowMoveRunsButton(true);
         view.setTitle("Experiment Runs");
         ActionURL url = new ActionURL(ExperimentController.ShowRunsAction.class, context.getContainer());
         url.addParameter("experimentRunFilter", type.getDescription());
@@ -2941,6 +2941,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             SimpleFilter filter = new SimpleFilter("Container", container.getId());
             return ExpProtocolImpl.fromProtocols(Table.select(getTinfoProtocol(), Table.ALL_COLUMNS, filter, null, Protocol.class));
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    public ExpProtocolImpl[] getExpProtocolsForRunsInContainer(Container container)
+    {
+        try
+        {
+            SQLFragment sql = new SQLFragment("SELECT p.* FROM ");
+            sql.append(getTinfoProtocol());
+            sql.append(" p WHERE LSID IN (SELECT ProtocolLSID FROM ");
+            sql.append(getTinfoExperimentRun());
+            sql.append(" WHERE Container = ?)");
+            sql.add(container.getId());
+            return ExpProtocolImpl.fromProtocols(Table.executeQuery(getSchema(), sql, Protocol.class));
         }
         catch (SQLException x)
         {
