@@ -130,6 +130,10 @@ abstract class BaseWikiView extends JspView<Object>
                 {
                     throw new RuntimeSQLException(e);
                 }
+                catch (Exception e)
+                {
+                    html = "<p class='labkey-error'>Error rendering page: " + e.getMessage() + "<p>";
+                }
             }
             else
                 html = ""; //wiki.jsp will display appropriate message if user doesn't have read perms
