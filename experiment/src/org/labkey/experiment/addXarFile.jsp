@@ -27,10 +27,3 @@
 </form>
 </p>
 <p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=urlProvider(PipelineUrls.class).urlSetup(HttpView.currentContext().getContainer())%>">Data Pipeline</a> instead.</p>
-
-<script type="text/javascript">
-    Ext.onReady(new function()
-    {
-        try {document.getElementById("UploadFile").focus();} catch(x){}
-    });
-</script>
