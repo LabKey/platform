@@ -161,7 +161,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         public void addResource(@NotNull String identifier, PRIORITY pri)
         {
-            addResource(identifier, null, pri);
+            Item i = new Item(this, OPERATION.add, identifier, null, pri);
+            this.addItem(i);
+            queueItem(i);
         }
 
 
@@ -171,17 +173,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
 
-        public void addResource(String identifier, Resource r, PRIORITY pri)
-        {
-            Item i = new Item(this, OPERATION.add, identifier, r, pri);
-            this.addItem(i);
-            queueItem(i);
-        }
-
-
         public void addResource(@NotNull Resource r, PRIORITY pri)
         {
-            Item i = new Item(this, OPERATION.add, r.getName(), r, pri);
+            Item i = new Item(this, OPERATION.add, r.getDocumentId(), r, pri);
             addItem(i);
             queueItem(i);
         }
@@ -373,14 +367,55 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public void deleteResource(String identifier)
+    public void deleteResource(String id)
     {
-        Item i = new Item(null, OPERATION.delete, identifier, null, PRIORITY.delete);
-        // don't need to preprocess so try to put in the indexQueue
-        // if it's full then put in the itemQueue
-        if (_indexQueue != null && _indexQueue.offer(i))
-            return;
-        _itemQueue.put(i);
+        this.deleteDocument(id);
+        synchronized (_commitLock)
+        {
+            _countIndexedSinceCommit++;
+        }
+    }
+
+
+    public boolean _eq(URLHelper a, URLHelper b)
+    {
+        if (!a.getParsedPath().equals(b.getParsedPath()))
+            return false;
+        Map A = a.getParameterMap();
+        Map B = b.getParameterMap();
+        return A.equals(B);
+    }
+
+
+    public void notFound(URLHelper in)
+    {
+        try
+        {
+            if (null == in)
+                return;
+            // UNDONE: add find to interface
+            if (!(this instanceof LuceneSearchServiceImpl))
+                return;
+            String docid = in.getParameter("_docid");
+            if (StringUtils.isEmpty(docid))
+                return;
+            URLHelper url = in.clone();
+            url.deleteParameter("_docid");
+            url.deleteParameter("_print");
+            SearchHit hit = ((LuceneSearchServiceImpl)this).find(docid);
+            if (null == hit || null == hit.url)
+                return;
+            URLHelper expected = new URLHelper(hit.url);
+            expected.deleteParameter("_docid");
+            expected.deleteParameter("_print");
+            if (!_eq(url,expected))
+                return;
+            deleteResource(docid);
+        }
+        catch (Exception x)
+        {
+            _log.error("Unexpected error", x);
+        }
     }
 
 
@@ -420,7 +455,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             _paused = false;
             startThreads();
-            DavCrawler.getInstance().addPathToCrawl(new Path(WebdavService.getServletPath()), null);
+            DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath(), null);
             _runningLock.notifyAll();
         }
     }
@@ -899,6 +934,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected abstract void index(String id, Resource r, Map preprocessProps);
     protected abstract void commitIndex();
+    protected abstract void deleteDocument(String id);
     protected abstract void deleteIndexedContainer(String id);
     protected abstract void shutDown();
     protected abstract void clearIndex();
@@ -1033,16 +1069,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         });
 
         // also crank crawler into high gear!
-        DavCrawler.getInstance().startFull(Path.parse(WebdavService.getServletPath()), force);
+        DavCrawler.getInstance().startFull(WebdavService.getPath(), force);
         return task;
     }
 
 
     protected void audit(User user, Container c, String query)
     {
+        if (user == User.getSearchUser())
+            return;
+        
         AuditLogService.I audit = AuditLogService.get();
         if (null == audit)
             return;
+        
         // UNDONE: need to configure an AuditLogService.AuditViewFactory
         // audit.addEvent(user, c, "search", null, query);
     }

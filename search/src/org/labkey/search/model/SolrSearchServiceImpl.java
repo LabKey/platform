@@ -77,4 +77,10 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     {
         return term;
     }
+
+    @Override
+    protected void deleteDocument(String id)
+    {
+        
+    }
 }

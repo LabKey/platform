@@ -253,7 +253,7 @@ public class SearchController extends SpringActionController
                 return null;
 
             ss.addPathToCrawl(
-                    Path.parse(WebdavService.getServletPath()).append(getContainer().getParsedPath()),
+                    WebdavService.getPath().append(getContainer().getParsedPath()),
                     new Date(System.currentTimeMillis()));
 
             try

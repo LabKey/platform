@@ -176,7 +176,7 @@ public class PipelineManager
                 Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId());
             }
 
-            Path davPath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
+            Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             if (null != ss)
                 ss.addPathToCrawl(davPath, null);

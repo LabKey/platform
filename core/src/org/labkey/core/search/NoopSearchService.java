@@ -22,6 +22,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.Container;
@@ -280,6 +281,10 @@ public class NoopSearchService implements SearchService
     }
 
     public void addDocumentProvider(DocumentProvider provider)
+    {
+    }
+
+    public void notFound(URLHelper url)
     {
     }
 }

@@ -53,6 +53,7 @@ public class WebdavServlet extends HttpServlet
         // Store the original URL in case we need to redirect for authentication
         if (null == request.getAttribute(ViewServlet.ORIGINAL_URL_STRING))
         {
+            request.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, helper);
             request.setAttribute(ViewServlet.ORIGINAL_URL_STRING, helper.getURIString());
         }
 

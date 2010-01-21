@@ -194,7 +194,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             Document doc = new Document();
 
-            doc.add(new Field(FIELD_NAMES.uniqueId.name(), r.getDocumentId(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+            doc.add(new Field(FIELD_NAMES.uniqueId.name(), r.getDocumentId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
             doc.add(new Field(FIELD_NAMES.body.name(), body, Field.Store.NO, Field.Index.ANALYZED));
             doc.add(new Field(FIELD_NAMES.title.name(), title, Field.Store.YES, Field.Index.ANALYZED));
             doc.add(new Field(FIELD_NAMES.summary.name(), summary, Field.Store.YES, Field.Index.NO));
@@ -264,13 +264,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    protected void deleteDocument(String id)
+    {
+        try
+        {
+            IndexWriter iw = getIndexWriter();
+            iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.name(), id));
+        }
+        catch(Throwable e)
+        {
+            _log.error("Indexing error deleting " + id, e);
+        }
+    }
+
+    
     protected void index(String id, Resource r, Map preprocessMap)
     {
         try
         {
             Document doc = (Document)preprocessMap.get(Document.class);
+            deleteDocument(r.getDocumentId());
             IndexWriter iw = getIndexWriter();
-            iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.name(), r.getDocumentId()));
             iw.addDocument(doc);
         }
         catch(Throwable e)
@@ -357,6 +371,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    public SearchHit find(String id) throws IOException
+    {
+        IndexSearcher searcher = getIndexSearcher();
+        TermQuery query = new TermQuery(new Term(FIELD_NAMES.uniqueId.name(), id));
+        TopDocs topDocs = searcher.search(query, null, 1);
+        SearchResult result = createSearchResult(0, 1, topDocs, searcher);
+        if (result.hits.size() != 1)
+            return null;
+        return result.hits.get(0);
+    }
+    
+
     public SearchResult search(String queryString, User user, Container root, int offset, int limit) throws IOException
     {
         audit(user, root, queryString);
@@ -382,15 +408,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             io.initCause(x);
             throw io;
         }
-        TopDocs topDocs;
-        IndexSearcher searcher = getIndexSearcher();
-        Filter securityFilter = new SecurityFilter(user, root);
 
+        IndexSearcher searcher = getIndexSearcher();
+        Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root);
+
+        TopDocs topDocs;
         if (null == sort)
             topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
         else
             topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
 
+        SearchResult result = createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
+        return result;
+    }
+
+
+    private SearchResult createSearchResult(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher)
+            throws IOException
+    {
         ScoreDoc[] hits = topDocs.scoreDocs;
 
         List<SearchHit> ret = new LinkedList<SearchHit>();
@@ -404,7 +439,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.container = doc.get(FIELD_NAMES.container.name());
             hit.docid = doc.get(FIELD_NAMES.uniqueId.name());
             hit.summary = doc.get(FIELD_NAMES.summary.name());
-            hit.url = doc.get(FIELD_NAMES.url.name());
+            String url = doc.get(FIELD_NAMES.url.name());
+            String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
+            hit.url = url + (-1==url.indexOf("?") ? "?" : "&") + docid;
             hit.title = doc.get(FIELD_NAMES.title.name());
             ret.add(hit);
         }
@@ -412,10 +449,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         SearchResult result = new SearchResult();
         result.totalHits = topDocs.totalHits;
         result.hits = ret;
-
         return result;
     }
-    
+
 
 /*    public String searchFormatted(String queryString, User user, Container root, int page)
     {

@@ -33,7 +33,7 @@ public class SearchContainerListener implements ContainerListener
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
-            DavCrawler.getInstance().addPathToCrawl(Path.parse(WebdavService.getServletPath()).append(c.getParsedPath()), null);
+            DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath().append(c.getParsedPath()), null);
     }
 
     public void containerDeleted(Container c, User user)

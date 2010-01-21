@@ -458,6 +458,12 @@ public class DavController extends SpringActionController
             }
             catch (DavException dex)
             {
+                if (dex.getStatus().equals(WebdavStatus.SC_NOT_FOUND))
+                {
+                    SearchService ss = ServiceRegistry.get(SearchService.class);
+                    if (null != ss)
+                        ss.notFound((URLHelper)getRequest().getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER));
+                }
                 getResponse().sendError(dex.getStatus(), dex.getMessage());
             }
 
@@ -2319,7 +2325,7 @@ public class DavController extends SpringActionController
 
 
             // File based
-            if (src.getFile() != null || dest.getFile() != null)
+            if (src.getFile() != null && dest.getFile() != null)
             {
                 File tmp = null;
                 try
@@ -2447,7 +2453,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Path servletPrefix = new Path(WebdavService.getServletPath());
+    static Path servletPrefix = WebdavService.getPath();
     
     /** allow html listing of this resource */
     private boolean allowHtmlListing(Resource resource)
@@ -2477,13 +2483,12 @@ public class DavController extends SpringActionController
     }
 
 
-    final static Path servletPath = Path.parse(WebdavService.getServletPath());
     final static Map<Path,Resource> compressedResources = Collections.synchronizedMap(new HashMap<Path,Resource>());
     boolean supportStaticGzFiles = false;
 
     boolean isStaticContent(Path path)
     {
-        return !path.startsWith(servletPath);
+        return !path.startsWith(servletPrefix);
     }
 
     Resource getGzipResource(Path path) throws DavException
@@ -4306,8 +4311,30 @@ public class DavController extends SpringActionController
     {
         if (!r.shouldIndex())
             return;
-        if (!r.isFile())
+
+        boolean isFile = r.isFile();
+        // UNDONE: FileSystemResource.isFile() may not be correct after MoveAction
+        // UNDONE: fix FileSystemResource or at least move this hack into MoveAction (CopyAction?)
+        if (!isFile && null != r.getFile())
+        {
+            isFile = r.getFile().isFile();
+            if (isFile)
+            {
+                try
+                {
+                    resourceCache.remove(r.getPath());
+                    r = resolvePath(r.getPath());
+                    isFile = r.isFile();
+                }
+                catch (DavException x)
+                {
+                    return;
+                }
+            }
+        }
+        if (!isFile)
             return;
+
         if (isTempFile(r))
             return;
         
