@@ -85,8 +85,13 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public Portal.WebPart createWebPart()
     {
+        return createWebPart(defaultLocation);
+    }
+
+    public Portal.WebPart createWebPart(String location)
+    {
         Portal.WebPart part = new Portal.WebPart();
-        part.setLocation(defaultLocation);
+        part.setLocation(location);
         part.setName(getName());
         return part;
     }

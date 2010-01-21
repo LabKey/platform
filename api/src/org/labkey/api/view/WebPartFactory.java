@@ -40,6 +40,8 @@ public interface WebPartFactory
 
     Portal.WebPart createWebPart();
 
+    Portal.WebPart createWebPart(String location);
+
     boolean isEditable();
 
     boolean showCustomizeOnInsert();

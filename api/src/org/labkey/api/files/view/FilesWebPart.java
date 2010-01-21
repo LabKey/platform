@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -49,6 +50,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private Container container;
 
     private static final String JSP = "/org/labkey/api/files/view/fileContent.jsp";
+    private static final String JSP_RIGHT = "/org/labkey/filecontent/view/files.jsp";
 
 
     public FilesWebPart(Container c)
@@ -127,6 +129,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
         String path = webPartDescriptor.getPropertyMap().get("path");
+
+        if (!isWide())
+        {
+            _path = JSP_RIGHT;
+            _page = JspLoader.createPage(HttpView.currentRequest(), (String)null, _path);
+        }
     }
 
     protected SecurableResource getSecurableResource()
