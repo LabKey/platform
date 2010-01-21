@@ -21,6 +21,9 @@
 <%@ page import="org.labkey.api.attachments.AttachmentService" %>
 <%@ page import="org.labkey.api.attachments.DownloadURL" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.files.MissingRootDirectoryException" %>
+<%@ page import="org.labkey.api.files.UnsetRootDirectoryException" %>
+<%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
@@ -28,17 +31,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
-<%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Comparator" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
-<%@ page import="org.labkey.api.files.UnsetRootDirectoryException" %>
-<%@ page import="org.labkey.api.files.MissingRootDirectoryException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = HttpView.currentContext();
-    AttachmentDirectory parent = (AttachmentDirectory) HttpView.currentModel();
+    FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm) HttpView.currentModel();
+    AttachmentDirectory parent = bean.getRoot();
     FilesWebPart me = (FilesWebPart) HttpView.currentView();
     Container c = context.getContainer();
     if (null == parent)

@@ -53,7 +53,7 @@ public class FileContentModule extends DefaultModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new FilesWebPart.Factory(HttpView.BODY));
+        return Arrays.asList(new FilesWebPart.Factory(HttpView.BODY), new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT));
     }
 
     public boolean hasScripts()

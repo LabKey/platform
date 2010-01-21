@@ -552,11 +552,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     // don't add the import data button if there are no import data actions
                     if (this.importActions.length || item != 'importData')
                         tbarButtons.push(new Ext.Button(this.actions[item]));
-                    if (item == 'customize')
-                    {
-                        tbarButtons.push('->');
-                        tbarButtons.push(new Ext.Button(this.actions['customize']));
-                    }
                 }
                 else
                     tbarButtons.push(item);

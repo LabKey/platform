@@ -17,13 +17,10 @@ package org.labkey.core.workbook;
 
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
-import org.labkey.api.data.Container;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,7 +39,7 @@ public class WorkbookFolderType extends DefaultFolderType
                 null,
                 Arrays.asList(
                         Portal.getPortalPart("Workbook Description").createWebPart(),
-                        Portal.getPortalPart("Files").createWebPart(),
+                        Portal.getPortalPart("Files").createWebPart(HttpView.BODY),
                         Portal.getPortalPart("Experiment Runs").createWebPart()
                 ),
                 getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), getModule("Experiment")),
