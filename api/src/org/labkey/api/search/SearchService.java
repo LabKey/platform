@@ -65,7 +65,7 @@ public interface SearchService
     enum PROPERTY
     {
         title("title"),
-        category("searchCategory"),
+        categories("searchCategories"),
         securableResourceId(SecurableResource.class.getName()),
         participantId("org.labkey.study#StudySubject"),
         container(Container.class.getName());
@@ -188,10 +188,10 @@ public interface SearchService
         public String url;
     }
 
-    public SearchResult search(String queryString, User user, Container root, int offset, int limit) throws IOException;
+    public SearchResult search(String queryString, String category, User user, Container root, int offset, int limit) throws IOException;
 
     // Search using no offset and default page size.
-    public SearchResult search(String queryString, User user, Container root) throws IOException;
+    public SearchResult search(String queryString, String category, User user, Container root) throws IOException;
 
 //    public String searchFormatted(String queryString, User user, Container root, int page);
     public String escapeTerm(String term);

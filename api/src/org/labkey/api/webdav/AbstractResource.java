@@ -391,6 +391,6 @@ public abstract class AbstractResource implements Resource
     {
         if (_properties == null)
             _properties = new HashMap<String, Object>();
-        _properties.put(SearchService.PROPERTY.category.toString(),category.toString());
+        _properties.put(SearchService.PROPERTY.categories.toString(),category.toString());
     }
 }

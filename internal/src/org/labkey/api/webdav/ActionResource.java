@@ -86,7 +86,7 @@ public class ActionResource extends AbstractDocumentResource
         if (null != properties)
             _properties.putAll(properties);
         if (null != category)
-            _properties.put(SearchService.PROPERTY.category.toString(), category.getName());
+            _properties.put(SearchService.PROPERTY.categories.toString(), category.getName());
     }
 
 
