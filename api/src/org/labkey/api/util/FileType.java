@@ -162,7 +162,7 @@ public class FileType implements Serializable
             File f = parentDir!=null ? new File(parentDir,name) : new File(name);
             if (!NetworkDrive.exists(f))
             {  // non-gz copy doesn't exist - how about .gz version?
-                String gzname = name += ".gz";
+                String gzname = name + ".gz";
                 if (_preferGZ.booleanValue())
                 {   // we like .gz for new filenames, so don't care if exists
                     return gzname;
