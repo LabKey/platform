@@ -22,11 +22,22 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     border: true,
     updateHandler: null,
     emptyText: null,
+    updateConfig: null,
 
     constructor: function(config){
 
-        this.addEvents("beforecomplete", "canceledit");
+        this.addEvents("beforecomplete", "complete", "canceledit", "updatefail");
         Ext.apply(this, config);
+        if (this.updateConfig)
+        {
+            this.updateConfig = Ext.applyIf(this.updateConfig, {
+                method: 'POST',
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        }
+
 
         LABKEY.ext.EditInPlaceElement.superclass.constructor.apply(this, arguments);
 
@@ -159,16 +170,14 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         this.endEdit();
 
         if (value != this.oldText && false !== this.fireEvent("beforecomplete", value, this.oldText))
-        {
-            this.el.update(value);
             this.processChange(value, this.oldText);
-        }
         else
-            this.checkForEmpty();
+            this.onUpdateComplete();
     },
 
     cancelEdit: function(){
         this.endEdit();
+        this.checkForEmpty();
         this.fireEvent("canceledit", this.oldText);
     },
 
@@ -186,14 +195,27 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     },
 
     processChange: function(value, oldValue){
-        if (this.updateHandler)
+        if (this.updateConfig)
         {
+            var reqConfig = Ext.apply({}, this.updateConfig);
+
+            //set jsonData and handlers
+            reqConfig.jsonData = {};
+            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = value;
+            reqConfig.success = function(){
+                this.onUpdateComplete(value, oldValue);
+            };
+            reqConfig.failure = function(){
+                this.onUpdateFailure(value, oldValue);
+            };
+            reqConfig.scope = this;
+
+            //update the el and add the updating class
             this.el.addClass("labkey-edit-in-place-updating");
             this.el.update(value);
-            if (typeof this.updateHandler == "function")
-                this.updateHandler(value, oldValue, this.onUpdateComplete, this.onUpdateFailure, this);
-            else
-                this.updateHandler.fn.call(this.updateHandler.scope || this, value, oldValue, this.onUpdateComplete, this.onUpdateFailure, this);
+
+            //do the Ajax request
+            Ext.Ajax.request(reqConfig);
         }
         else
             this.onUpdateComplete(value);
@@ -203,12 +225,15 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         this.el.removeClass("labkey-edit-in-place-updating");
         this.el.update(value);
         this.checkForEmpty();
+        this.fireEvent("complete");
     },
 
     onUpdateFailure: function(value, oldValue) {
+        alert("There was an error while updating the value!");
         this.el.removeClass("labkey-edit-in-place-updating");
         this.el.update(oldValue);
         this.checkForEmpty();
+        this.fireEvent("updatefail");
     }
 
 });

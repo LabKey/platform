@@ -79,12 +79,18 @@
             applyTo: 'wb-description',
             multiLine: true,
             emptyText: 'No description provided. Click to add one.',
-            updateHandler: onUpdateDescription
+            updateConfig: {
+                url: LABKEY.ActionURL.buildURL("core", "updateDescription"),
+                jsonDataPropName: 'description'
+            }
         });
 
         new LABKEY.ext.EditInPlaceElement({
             applyTo: 'wb-title',
-            updateHandler: onUpdateTitle,
+            updateConfig: {
+                url: LABKEY.ActionURL.buildURL("core", "updateTitle"),
+                jsonDataPropName: 'title'
+            },
             listeners: {
                 beforecomplete: function(newText){
                     return (newText.length > 0);
@@ -92,43 +98,5 @@
             }
         });
     });
-
-    function onUpdateDescription(value, oldValue, successCallback, failureCallback, scope) {
-        var params = {description: value};
-        Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("core", "updateDescription"),
-            method: "POST",
-            success: function() {
-                successCallback.call(scope, value, oldValue);
-            },
-            failure: function() {
-                Ext.Msg.alert("Error", "Error updating description!");
-                failureCallback.call(scope, value, oldValue);
-            },
-            jsonData: params,
-            headers : {
-                'Content-Type' : 'application/json'
-            }
-        });
-    }
-
-    function onUpdateTitle(value, oldValue, successCallback, failureCallback, scope) {
-        var params = {title: value};
-        Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("core", "updateTitle"),
-            method: "POST",
-            success: function() {
-                successCallback.call(scope, value, oldValue);
-            },
-            failure: function() {
-                Ext.Msg.alert("Error", "Error updating title!");
-                failureCallback.call(scope, value, oldValue);
-            },
-            jsonData: params,
-            headers : {
-                'Content-Type' : 'application/json'
-            }
-        });
-    }
 
 </script>
