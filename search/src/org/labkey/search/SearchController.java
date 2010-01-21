@@ -27,7 +27,6 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -358,7 +357,7 @@ public class SearchController extends SpringActionController
             {
                 //UNDONE: paging, rowlimit etc
                 int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                SearchService.SearchResult result = ss.search(query, getViewContext().getUser(), ContainerManager.getRoot(),
+                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(),
                         form.getOffset(), form.getLimit());
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;
@@ -522,12 +521,7 @@ public class SearchController extends SpringActionController
             if (null == _query || _query.length == 0)
                 return "";
 
-            String queryString = StringUtils.join(_query, " ");
-
-            if (null == _category)
-                return queryString;
-            else
-                return "(" + queryString + ") && searchCategory:" + _category;
+            return StringUtils.join(_query, " ");
         }
 
         public void setQ(String[] query)

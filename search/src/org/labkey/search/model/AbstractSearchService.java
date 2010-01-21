@@ -285,9 +285,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public SearchResult search(String queryString, User user, Container root) throws IOException
+    public SearchResult search(String queryString, String category, User user, Container root) throws IOException
     {
-        return search(queryString, user, root, 0, SearchService.DEFAULT_PAGE_SIZE);
+        return search(queryString, category, user, root, 0, SearchService.DEFAULT_PAGE_SIZE);
     }
 
 

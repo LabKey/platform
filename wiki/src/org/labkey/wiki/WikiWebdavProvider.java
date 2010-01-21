@@ -327,7 +327,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
             _properties = new HashMap<String,Object>();
             _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
-            _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
+            _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
             if (null != v)
             {
                 _body = getWikiVersion().getBody();
@@ -354,7 +354,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             m.put("renderertype",null);
             _properties = m;
             _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
-            _properties.put(SearchService.PROPERTY.category.toString(),WikiManager.searchCategory.getName());
+            _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
         }
 
 

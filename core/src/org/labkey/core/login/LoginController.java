@@ -56,7 +56,10 @@ import javax.servlet.http.HttpSession;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * User: adam
@@ -715,7 +718,7 @@ public class LoginController extends SpringActionController
             }
             catch (ValidEmail.InvalidEmailException e)
             {
-                errors.reject("setPassword", "Invalid email address");
+                errors.reject("setPassword", "Invalid email address: " + rawEmail);
                 _unrecoverableError = true;
                 return;
             }
@@ -736,14 +739,18 @@ public class LoginController extends SpringActionController
                     _log.warn("Password entry error: " + form.getEmail());
             }
 
-            SetPasswordBean bean = new SetPasswordBean(_email, form, _unrecoverableError, getMessage(form), getPasswordInputs(), getClass());
+            NamedObjectList passwordInputs = getPasswordInputs();
+            SetPasswordBean bean = new SetPasswordBean(_email, form, _unrecoverableError, getMessage(form), passwordInputs, getClass());
             HttpView view = new JspView<SetPasswordBean>("/org/labkey/core/login/setPassword.jsp", bean, errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle("Choose a Password");
             page.setIncludeLoginLink(false);
-            page.setFocusId("password");
+
+            // If no error, then set focus on the first input.
+            if (!_unrecoverableError)
+                page.setFocusId((String)(passwordInputs.get(0)));
 
             return view;
         }
@@ -812,7 +819,7 @@ public class LoginController extends SpringActionController
         protected abstract void verify(SetPasswordForm form, ValidEmail email, Errors errors);
         protected abstract String getMessage(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs();
-        public abstract void afterPasswordSet(BindException errors) throws SQLException;
+        protected abstract void afterPasswordSet(BindException errors) throws SQLException;
     }
 
 
@@ -869,8 +876,8 @@ public class LoginController extends SpringActionController
         protected NamedObjectList getPasswordInputs()
         {
             NamedObjectList list = new NamedObjectList();
-            list.put(new SimpleNamedObject("New Password", "password"));
-            list.put(new SimpleNamedObject("Retype New Password", "password2"));
+            list.put(new SimpleNamedObject("Password", "password"));
+            list.put(new SimpleNamedObject("Retype Password", "password2"));
 
             return list;
         }

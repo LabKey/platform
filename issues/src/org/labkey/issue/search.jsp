@@ -51,11 +51,11 @@
 <%
     if (0 < q.length())
     {
-        String qs = "+(" + q + ") +container:" + c.getId() + " +searchCategory:issues";
+        String qs = "+(" + q + ") +container:" + c.getId();   //TODO: just pass container to search()
         if (-1 == q.indexOf("status:"))
             qs += " status:open^2 status:closed^1";
 
-        SearchService.SearchResult result = ss.search(qs, user, ContainerManager.getRoot());
+        SearchService.SearchResult result = ss.search(qs, "issues", user, ContainerManager.getRoot());
         List<SearchService.SearchHit> hits = result.hits;
 
         %><div id="searchResults"><%

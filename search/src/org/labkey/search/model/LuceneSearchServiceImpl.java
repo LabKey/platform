@@ -24,6 +24,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.*;
@@ -60,9 +61,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static final Category _log = Category.getInstance(LuceneSearchServiceImpl.class);
 
     private static int _count = 0;
-    private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out underneath you.  Call getIndexWriter()
-    private static Analyzer _analyzer = null;
-    private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out underneath you.  Call getIndexSearcher()
+    private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexWriter()
+    private final Analyzer _analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
+    private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
     static enum FIELD_NAMES { body, title, summary, url, container, uniqueId }
@@ -73,7 +74,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             File tempDir = new File(FileUtil.getTempDirectory(), "labkey_full_text_index");
             _directory = FSDirectory.open(tempDir);
-            _analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
         }
         catch (IOException e)
         {
@@ -114,6 +114,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(PROPERTY.categories.toString(), PROPERTY.title.toString());
+
     @Override
     Map<?, ?> preprocess(String id, Resource r)
     {
@@ -123,8 +125,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assert null != r.getContainerId();
 
             Map<String, ?> props = r.getProperties();
+            String categories = (String)props.get(PROPERTY.categories.toString());
             String body = null;
-            String title = (String)props.get(SearchService.PROPERTY.title.toString());
+            String title = (String)props.get(PROPERTY.title.toString());
             String type = r.getContentType();
 
             // Skip XML for now
@@ -194,12 +197,22 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             Document doc = new Document();
 
-            doc.add(new Field(FIELD_NAMES.uniqueId.name(), r.getDocumentId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-            doc.add(new Field(FIELD_NAMES.body.name(), body, Field.Store.NO, Field.Index.ANALYZED));
-            doc.add(new Field(FIELD_NAMES.title.name(), title, Field.Store.YES, Field.Index.ANALYZED));
-            doc.add(new Field(FIELD_NAMES.summary.name(), summary, Field.Store.YES, Field.Index.NO));
-            doc.add(new Field(FIELD_NAMES.url.name(), url, Field.Store.YES, Field.Index.NO));
-            doc.add(new Field(FIELD_NAMES.container.name(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.uniqueId.toString(), r.getDocumentId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+            doc.add(new Field(FIELD_NAMES.body.toString(), body, Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(new Field(FIELD_NAMES.title.toString(), title, Field.Store.YES, Field.Index.ANALYZED));
+            doc.add(new Field(FIELD_NAMES.summary.toString(), summary, Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.url.toString(), url, Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
+
+            // TODO: all docs should have a category -- assert
+            // Split the category string by whitespace, index each without stemming
+            if (null != categories)
+            {
+                String[] array = categories.split("\\s+");
+
+                for (String category : array)
+                    doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+            }
 
             for (Map.Entry<String, ?> entry : props.entrySet())
             {
@@ -213,7 +226,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     {
                         String key = entry.getKey().toLowerCase();
 
-                        if (!FIELD_NAMES.title.name().equals(key))
+                        // Skip known properties -- we added them above
+                        if (!KNOWN_PROPERTIES.contains(key))
                             doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.ANALYZED));
                     }
                 }
@@ -269,7 +283,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             IndexWriter iw = getIndexWriter();
-            iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.name(), id));
+            iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.toString(), id));
         }
         catch(Throwable e)
         {
@@ -284,8 +298,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             Document doc = (Document)preprocessMap.get(Document.class);
             deleteDocument(r.getDocumentId());
-            IndexWriter iw = getIndexWriter();
-            iw.addDocument(doc);
+            getIndexWriter().addDocument(doc);
         }
         catch(Throwable e)
         {
@@ -374,7 +387,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public SearchHit find(String id) throws IOException
     {
         IndexSearcher searcher = getIndexSearcher();
-        TermQuery query = new TermQuery(new Term(FIELD_NAMES.uniqueId.name(), id));
+        TermQuery query = new TermQuery(new Term(FIELD_NAMES.uniqueId.toString(), id));
         TopDocs topDocs = searcher.search(query, null, 1);
         SearchResult result = createSearchResult(0, 1, topDocs, searcher);
         if (result.hits.size() != 1)
@@ -383,24 +396,59 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
     
 
-    public SearchResult search(String queryString, User user, Container root, int offset, int limit) throws IOException
+    // Always search title and body, but boost title
+    private static final String[] standardFields = new String[]{FIELD_NAMES.title.toString(), FIELD_NAMES.body.toString()};
+    private static final Float[] standardBoosts = new Float[]{2.0f, 1.0f};
+    private static final Map<String, Float> boosts = new HashMap<String, Float>();
+
+    static
+    {
+        for (int i = 0; i < standardFields.length; i++)
+            boosts.put(standardFields[i], standardBoosts[i]);
+    }
+
+    private final QueryParser _titleBodyQueryParser = new MultiFieldQueryParser(Version.LUCENE_30, standardFields, _analyzer, boosts);
+
+    public SearchResult search(String queryString, String category, User user, Container root, int offset, int limit) throws IOException
     {
         audit(user, root, queryString);
 
         String sort = null;  // TODO: add sort parameter
         int hitsToRetrieve = offset + limit;
+        boolean limitToCategory = (null != category);
 
-        // UNDONE: smarter query parsing
-        boolean isParticipantId = isParticipantId(user, StringUtils.strip(queryString," +-"));
-        if (isParticipantId)
+        if (!limitToCategory)
         {
-            queryString += " " + SearchService.PROPERTY.category.toString() + ":subject^1"; // UNDONE: StudyManager.subjectCategory
+            // Boost "subject" results if this is a participant id
+            if (isParticipantId(user, StringUtils.strip(queryString, " +-")))
+                category = "subject";
         }
 
         Query query;
+
         try
         {
-            query = new QueryParser(Version.LUCENE_30, FIELD_NAMES.body.name(), _analyzer).parse(queryString.toLowerCase());
+            QueryParser queryParser = _titleBodyQueryParser;
+            query = queryParser.parse(queryString);
+
+            if (null != category)
+            {
+                BooleanQuery bq = new BooleanQuery();
+                bq.add(query, BooleanClause.Occur.MUST);
+
+                Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), category.toLowerCase()));
+
+                if (limitToCategory)
+                {
+                    bq.add(categoryQuery, BooleanClause.Occur.MUST);
+                }
+                else
+                {
+                    categoryQuery.setBoost(3.0f);
+                    bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                }
+                query = bq;
+            }
         }
         catch (ParseException x)
         {
@@ -436,13 +484,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Document doc = searcher.doc(scoreDoc.doc);
 
             SearchHit hit = new SearchHit();
-            hit.container = doc.get(FIELD_NAMES.container.name());
-            hit.docid = doc.get(FIELD_NAMES.uniqueId.name());
-            hit.summary = doc.get(FIELD_NAMES.summary.name());
-            String url = doc.get(FIELD_NAMES.url.name());
+            hit.container = doc.get(FIELD_NAMES.container.toString());
+            hit.docid = doc.get(FIELD_NAMES.uniqueId.toString());
+            hit.summary = doc.get(FIELD_NAMES.summary.toString());
+            String url = doc.get(FIELD_NAMES.url.toString());
             String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
             hit.url = url + (-1==url.indexOf("?") ? "?" : "&") + docid;
-            hit.title = doc.get(FIELD_NAMES.title.name());
+            hit.title = doc.get(FIELD_NAMES.title.toString());
             ret.add(hit);
         }
 

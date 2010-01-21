@@ -60,10 +60,8 @@ import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.webdav.WebdavService;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
-import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
@@ -3303,7 +3301,7 @@ public class StudyManager
                 String docid = "participant:" + p.toString();
 
                 Map<String,Object> props = new HashMap<String,Object>();
-                props.put(SearchService.PROPERTY.category.toString(), subjectCategory);
+                props.put(SearchService.PROPERTY.categories.toString(), subjectCategory);
                 props.put(SearchService.PROPERTY.participantId.toString(), id);
                 props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- " +
                         StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id);

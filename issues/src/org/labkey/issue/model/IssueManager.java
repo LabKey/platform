@@ -835,7 +835,7 @@ public class IssueManager
             _properties = m;
             _comments = issue.getComments();
             _properties.put(securableResourceId.toString(),_containerId);
-            _properties.put(category.toString(), searchCategory.getName());
+            _properties.put(categories.toString(), searchCategory.getName());
         }
 
 
@@ -847,7 +847,7 @@ public class IssueManager
             _properties = m;
             _comments = comments;
             _properties.put(securableResourceId.toString(),_containerId);
-            _properties.put(category.toString(), searchCategory.getName());
+            _properties.put(categories.toString(), searchCategory.getName());
         }
 
 

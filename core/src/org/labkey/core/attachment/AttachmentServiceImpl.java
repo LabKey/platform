@@ -1089,7 +1089,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     SearchService.fileCategory.toString() :
                     SearchService.fileCategory.toString() + " " + cat.toString();
             setProperty("title", title);
-            setProperty(SearchService.PROPERTY.category.toString(), category);
+            setProperty(SearchService.PROPERTY.categories.toString(), category);
         }
 
 
