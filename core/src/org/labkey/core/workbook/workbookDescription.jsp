@@ -33,6 +33,7 @@
     {
         width: 1%;
         white-space: nowrap;
+        padding: 0;
     }
     .wb-name
     {
