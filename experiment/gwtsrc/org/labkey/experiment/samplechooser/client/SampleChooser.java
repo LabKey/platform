@@ -130,7 +130,16 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
 
     private void updateSampleCount()
     {
-        int count = Integer.parseInt(_sampleCountListBox.getValue(_sampleCountListBox.getSelectedIndex()));
+        int count;
+        if (_sampleCountListBox == null)
+        {
+            count = _maxSampleCount;
+        }
+        else
+        {
+            count = Integer.parseInt(_sampleCountListBox.getValue(_sampleCountListBox.getSelectedIndex()));
+        }
+        
         setSampleCount(count);
     }
 

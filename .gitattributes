@@ -945,6 +945,7 @@ experiment/webapp/Experiment/flagDefault.gif -text
 experiment/webapp/Experiment/flagRun.gif -text
 experiment/webapp/Experiment/flagWait.gif -text
 experiment/webapp/Experiment/images/graphIcon.gif -text
+experiment/webapp/Experiment/images/unflagData.png -text
 experiment/webapp/Experiment/unflagDefault.gif -text
 experiment/webapp/Experiment/unflagRun.gif -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
