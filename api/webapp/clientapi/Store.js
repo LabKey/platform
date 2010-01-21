@@ -599,6 +599,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     getDeleteSuccessHandler : function() {
         var store = this;
         return function(results) {
+            store.fireEvent("commitcomplete");
             store.reload();
         };
     },
