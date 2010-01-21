@@ -65,9 +65,4 @@ public class RunListQueryView extends ExperimentRunListView
     {
         return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), AssayRunType.SCHEMA_NAME);
     }
-
-    protected void populateButtonBar(DataView view, ButtonBar bar)
-    {
-        super.populateButtonBar(view, bar);
-    }
 }

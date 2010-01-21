@@ -18,6 +18,8 @@ package org.labkey.api.exp.api;
 
 import org.labkey.api.security.User;
 
+import java.util.List;
+
 public interface ExpExperiment extends ExpObject
 {
     ExpRun[] getRuns();
@@ -38,7 +40,7 @@ public interface ExpExperiment extends ExpObject
     /**
      * @return all the parent protocols for all of the member runs 
      */
-    ExpProtocol[] getAllProtocols();
+    List<ExpProtocol> getAllProtocols();
     void removeRun(User user, ExpRun run) throws Exception;
     void addRuns(User user, ExpRun... run);
     boolean isHidden();

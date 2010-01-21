@@ -199,7 +199,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
 
         @Override
-        public HttpView getEditView(Portal.WebPart webPart)
+        public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
         {
             return new CustomizeFilesWebPartView(webPart);
         }

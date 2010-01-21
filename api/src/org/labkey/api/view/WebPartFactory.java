@@ -36,7 +36,7 @@ public interface WebPartFactory
 
     WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception;
 
-    HttpView getEditView(Portal.WebPart webPart);
+    HttpView getEditView(Portal.WebPart webPart, ViewContext context);
 
     Portal.WebPart createWebPart();
 

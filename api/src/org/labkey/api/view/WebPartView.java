@@ -120,7 +120,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         return (String) ret;
     }
 
-    // Use ActionURL version instead
+    /** Use ActionURL version instead */
     @Deprecated
     public void setTitleHref(String href)
     {

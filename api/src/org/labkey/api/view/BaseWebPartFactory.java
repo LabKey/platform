@@ -78,7 +78,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     }
 
 
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return null;
     }

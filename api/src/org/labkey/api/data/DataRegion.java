@@ -77,6 +77,8 @@ public class DataRegion extends DisplayElement
     private boolean allowAsync = false;
     private ActionURL _formActionUrl = null;
 
+    private String _noRowsMessage = "No data to show.";
+
     private boolean _shadeAlternatingRows = false;
     private boolean _showBorders = false;
     private boolean _showPagination = true;
@@ -99,7 +101,6 @@ public class DataRegion extends DisplayElement
     public static final String LAST_FILTER_PARAM = ".lastFilter";
     public static final String SELECT_CHECKBOX_NAME = ".select";
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
-    protected static final String COLUMN_SEPARATOR_COLOR = "#AAAAAA";
 
     public void addDisplayColumn(DisplayColumn col)
     {
@@ -993,7 +994,12 @@ public class DataRegion extends DisplayElement
 
     protected String getNoRowsMessage()
     {
-        return "No data to show.";
+        return _noRowsMessage;
+    }
+
+    public void setNoRowsMessage(String noRowsMessage)
+    {
+        _noRowsMessage = noRowsMessage;
     }
 
     /**

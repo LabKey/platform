@@ -54,7 +54,7 @@ public abstract class ClientAPIWebPartFactory extends BaseWebPartFactory
         return view;
     }
 
-    public HttpView getEditView(Portal.WebPart webPart)
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         String defaultContent = getDefaultContent();
         Map<String,String> propertyMap = webPart.getPropertyMap();

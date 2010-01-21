@@ -151,7 +151,7 @@ public class ExperimentService
         void closeTransaction();
         void rollbackTransaction();
 
-        QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton);
+        ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
 
         public DbSchema getSchema();
 

@@ -1487,17 +1487,6 @@ public class PageFlowUtil
     {
         StringBuilder sb = new StringBuilder();
 
-        ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
-
-        sb.append("    <link href=\"");
-        sb.append(PageFlowUtil.filter(stylesheetURL));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
-
-        ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
-        sb.append("    <link href=\"");
-        sb.append(PageFlowUtil.filter(printStyleURL));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
-
         // Ext CSS
         sb.append("    <link href=\"");
         sb.append(AppProps.getInstance().getContextPath());
@@ -1505,6 +1494,8 @@ public class PageFlowUtil
         sb.append("    <link href=\"");
         sb.append(AppProps.getInstance().getContextPath());
         sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+
+        ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
 
         // Ext JS
         sb.append("    <script src=\"");
@@ -1528,6 +1519,15 @@ public class PageFlowUtil
         sb.append("/ext-2.2/ext-patches.js?").append(getServerHash());
         sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
 
+        sb.append("    <link href=\"");
+        sb.append(PageFlowUtil.filter(stylesheetURL));
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+
+        ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
+        sb.append("    <link href=\"");
+        sb.append(PageFlowUtil.filter(printStyleURL));
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
+        
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
 
         sb.append("    <link href=\"");
