@@ -18,8 +18,10 @@ package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.*;
@@ -391,7 +393,15 @@ public class ExceptionUtil
                 if (ex instanceof NotFoundException && ex.getMessage() != null)
                     message = ex.getMessage();
                 else
-                    message = responseStatus + ": Page not Found";                
+                    message = responseStatus + ": Page not Found";
+
+                URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
+                if (null != url && null != url.getParameter("_docid"))
+                {
+                    SearchService ss = ServiceRegistry.get(SearchService.class);
+                    if (null != ss)
+                        ss.notFound(url);
+                }
             }
             else
             {

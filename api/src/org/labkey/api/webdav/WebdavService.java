@@ -85,6 +85,12 @@ public class WebdavService
         return "_webdav";
     }
 
+    final private static Path _path = Path.parse("/_webdav/");
+
+    public static Path getPath()
+    {
+        return _path;
+    }
 
     /**
      * Only for static web content, alias a collection path to another location.

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
 import org.labkey.api.security.SecurableResource;
@@ -217,6 +218,9 @@ public interface SearchService
     IndexTask createTask(String description);
 
     void deleteResource(String identifier);
+    
+    // helper to call when not found exception is detected
+    void notFound(URLHelper url);
 
     List<IndexTask> getTasks();
 
