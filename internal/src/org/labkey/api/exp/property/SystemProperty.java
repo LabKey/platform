@@ -65,12 +65,18 @@ public class SystemProperty
     {
         _pd = OntologyManager.getPropertyDescriptor(_propertyURI, getContainer());
         assert MemTracker.remove(_pd);  // these are globals now, so don't track
+        PropertyDescriptor pd = constructPropertyDescriptor();
         if (_pd == null)
         {
-            PropertyDescriptor pd = constructPropertyDescriptor();
             _pd = OntologyManager.insertPropertyDescriptor(pd);
-            assert MemTracker.remove(_pd);
         }
+        else
+        {
+            // ensure the PropertyDescriptor is up to date
+            pd.setPropertyId(_pd.getPropertyId());
+            _pd = OntologyManager.updatePropertyDescriptor(pd);
+        }
+        assert MemTracker.remove(_pd);
     }
 
     protected PropertyDescriptor constructPropertyDescriptor()
