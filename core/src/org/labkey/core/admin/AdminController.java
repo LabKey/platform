@@ -242,7 +242,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getCustomizeSiteURL()
         {
-            return new ActionURL(ShowCustomizeSiteAction.class, ContainerManager.getRoot());
+            return new ActionURL(CustomizeSiteAction.class, ContainerManager.getRoot());
         }
 
         public ActionURL getCustomizeSiteURL(boolean upgradeInProgress)
@@ -1011,8 +1011,8 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
-    public class ShowCustomizeSiteAction extends FormViewAction<SiteSettingsForm>
+    @RequiresPermissionClass(AdminReadPermission.class)
+    public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
         public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
@@ -1035,6 +1035,9 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
         {
+            if (!getUser().isAdministrator())
+                HttpView.throwUnauthorized();
+
             ModuleLoader.getInstance().setDeferUsageReport(false);
             HttpServletRequest request = getViewContext().getRequest();
 
@@ -1804,7 +1807,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminReadPermission.class)
     public class DumpHeapAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

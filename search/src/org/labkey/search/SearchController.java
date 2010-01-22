@@ -25,6 +25,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
@@ -112,7 +113,7 @@ public class SearchController extends SpringActionController
     }
     
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminReadPermission.class)
     public class AdminAction extends FormViewAction<AdminForm>
     {
         int _msgid = 0;

@@ -49,11 +49,16 @@
         } %>
     <tr><td colspan="2">&nbsp;</td></tr><%
     }
-%>
+
+    if (context.getUser().isAdministrator())
+    {
+    %>
     <tr><td colspan="2"><%
         include(new UserController.ImpersonateView(c, true), out);
     %>
-    </td></tr>
+    </td></tr><%
+    }
+    %>
 
     <tr><td colspan="2">&nbsp;</td></tr>
 

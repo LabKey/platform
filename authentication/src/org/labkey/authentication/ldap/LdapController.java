@@ -20,10 +20,8 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
-import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -38,7 +36,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 public class LdapController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(LdapController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(LdapController.class);
 
     public LdapController() throws Exception
     {
@@ -58,7 +56,7 @@ public class LdapController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminReadPermission.class)
     public class ConfigureAction extends FormViewAction<Config>
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
@@ -79,6 +77,8 @@ public class LdapController extends SpringActionController
 
         public boolean handlePost(Config config, BindException errors) throws Exception
         {
+            if (!getUser().isAdministrator())
+                HttpView.throwUnauthorized();
             LdapAuthenticationManager.saveProperties(config);
             return true;
         }

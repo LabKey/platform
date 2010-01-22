@@ -1,16 +1,3 @@
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.*" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.SecurityManager" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -28,6 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.security.*" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SecurityController.FolderPermissions me = (SecurityController.FolderPermissions)HttpView.currentView();
@@ -190,8 +190,6 @@ Ext.onReady(function(){
 <%--
     PERMISSIONS
 --%>
-<% if (!c.isRoot())
-{%>
     <div id="permissionsFrame" class="extContainer x-hide-display"></div>
     <script type="text/javascript">
     tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
@@ -202,7 +200,6 @@ Ext.onReady(function(){
         policyEditor.render($('permissionsFrame'));
     });
     </script>
-<%}%>
 
 <%--
     GROUPS

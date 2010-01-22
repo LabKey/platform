@@ -99,7 +99,7 @@ else
 {
     %>
     <div id="current-members">
-<table>
+    <table>
         <tr>
             <th>Remove</th>
             <th>Email</th>

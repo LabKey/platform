@@ -29,6 +29,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -1449,7 +1450,7 @@ public class LoginController extends SpringActionController
 
 
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminReadPermission.class)
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
@@ -1532,7 +1533,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminReadPermission.class)
     public class ConfigureDbLoginAction extends FormViewAction<Config>
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
@@ -1552,6 +1553,8 @@ public class LoginController extends SpringActionController
 
         public boolean handlePost(Config form, BindException errors) throws Exception
         {
+            if (!getUser().isAdministrator())
+                HttpView.throwUnauthorized();
             DbLoginManager.saveProperties(form);
             return true;
         }
