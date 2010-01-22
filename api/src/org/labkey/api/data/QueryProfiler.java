@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.collections15.map.ReferenceMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -26,6 +27,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletException;
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.*;
@@ -57,18 +60,7 @@ public class QueryProfiler
 
     static
     {
-        TRACKER_SETS.add(new QueryTrackerSet("Invocations", "highest number of invocations", false, true, new QueryTrackerComparator()
-        {
-            long getPrimaryStatisticValue(QueryTracker qt)
-            {
-                return qt.getCount();
-            }
-
-            long getSecondaryStatisticValue(QueryTracker qt)
-            {
-                return qt.getCumulative();
-            }
-        }));
+        TRACKER_SETS.add(new InvocationQueryTrackerSet());
 
         TRACKER_SETS.add(new QueryTrackerSet("Cumulative", "highest cumulative execution time", false, true, new QueryTrackerComparator()
         {
@@ -235,36 +227,28 @@ public class QueryProfiler
 
     public static class QueryStatTsvWriter extends TSVWriter
     {
-        private final String _statName;
-
-        public QueryStatTsvWriter(String statName)
+        public QueryStatTsvWriter()
         {
-            _statName = statName;
         }
 
         protected void write()
         {
-            for (QueryTrackerSet set : TRACKER_SETS)
+            QueryTrackerSet export = new InvocationQueryTrackerSet();
+            StringBuilder rows = new StringBuilder();
+
+            // Don't update anything while we're rendering the report or vice versa
+            synchronized (LOCK)
             {
-                if (set.getCaption().equals(_statName))
-                {
-                    StringBuilder rows = new StringBuilder();
+                for (QueryTrackerSet set : TRACKER_SETS)
+                    if (set.shouldDisplay())
+                        export.addAll(set);
 
-                    // Don't update anything while we're rendering the report or vice versa
-                    synchronized (LOCK)
-                    {
-                        for (QueryTracker tracker : set)
-                            tracker.exportRow(rows);
-                    }
+                for (QueryTracker tracker : export)
+                    tracker.exportRow(rows);
 
-                    QueryTracker.exportRowHeader(_pw);
-                    _pw.println(rows);
-
-                    return;
-                }
+                QueryTracker.exportRowHeader(_pw);
+                _pw.println(rows);
             }
-
-            throw new IllegalArgumentException("Query statistic \"" + _statName + "\" does not exist");
         }
     }
 
@@ -504,6 +488,19 @@ public class QueryProfiler
         public void shutdownStarted(ServletContextEvent servletContextEvent)
         {
             interrupt();
+
+            // Export query statistics at every graceful shutdown
+            File file = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "QueryStats_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".tsv");
+            QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter();
+
+            try
+            {
+                writer.write(file);
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Exception writing query stats", e);
+            }
         }
     }
 
@@ -574,6 +571,26 @@ public class QueryProfiler
         public String toString()
         {
             return getCaption();
+        }
+    }
+
+    // Use static class since we use this in a couple places
+    private static class InvocationQueryTrackerSet extends QueryTrackerSet
+    {
+        InvocationQueryTrackerSet()
+        {
+            super("Invocations", "highest number of invocations", false, true, new QueryTrackerComparator()
+            {
+                long getPrimaryStatisticValue(QueryTracker qt)
+                {
+                    return qt.getCount();
+                }
+
+                long getSecondaryStatisticValue(QueryTracker qt)
+                {
+                    return qt.getCumulative();
+                }
+            });
         }
     }
 
