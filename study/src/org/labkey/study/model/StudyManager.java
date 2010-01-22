@@ -102,7 +102,7 @@ public class StudyManager
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
     private final QueryHelper<SiteImpl> _siteHelper;
-    private final QueryHelper<DataSetDefinition> _dataSetHelper;
+    private final DataSetHelper _dataSetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
 
     private static final String LSID_REQUIRED = "LSID_REQUIRED";
@@ -155,18 +155,70 @@ public class StudyManager
          * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
          * however, this is the best choke point
          */
-        _dataSetHelper = new QueryHelper<DataSetDefinition>(dataSetGetter, DataSetDefinition.class)
-        {
-            public void clearCache(DataSetDefinition def)
-            {
-                super.clearCache(def);
-                def.unmaterialize();
-            }
-        };
+        _dataSetHelper = new DataSetHelper(dataSetGetter);
         _tableInfoVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
         _tableInfoParticipant = StudySchema.getInstance().getTableInfoParticipant();
         _tableInfoStudyData = StudySchema.getInstance().getTableInfoStudyData();
         _tableInfoUploadLog = StudySchema.getInstance().getTableInfoUploadLog();
+    }
+
+    class DataSetHelper extends QueryHelper<DataSetDefinition>
+    {
+        DataSetHelper(TableInfoGetter tableGetter)
+        {
+            super(tableGetter, DataSetDefinition.class);
+        }
+
+        private final Map<Container, PropertyDescriptor[]> sharedProperties = new HashMap<Container, PropertyDescriptor[]>();
+
+        public PropertyDescriptor[] getSharedProperties(Container c) throws SQLException
+        {
+            PropertyDescriptor[] pds = sharedProperties.get(c);
+            if (pds == null)
+            {
+                Container sharedContainer = ContainerManager.getSharedContainer();
+                assert c != sharedContainer;
+
+                Set<PropertyDescriptor> set = new LinkedHashSet<PropertyDescriptor>();
+                DataSetDefinition[] defs = get(c);
+                if (defs == null)
+                {
+                    pds = new PropertyDescriptor[0];
+                }
+                else
+                {
+                    for (DataSetDefinition def : defs)
+                    {
+                        Domain domain = def.getDomain();
+                        if (domain == null)
+                            continue;
+
+                        for (DomainProperty dp : domain.getProperties())
+                            if (dp.getContainer().equals(sharedContainer))
+                                set.add(dp.getPropertyDescriptor());
+                    }
+
+                    pds = set.toArray(new PropertyDescriptor[set.size()]);
+                }
+
+                sharedProperties.put(c, pds);
+            }
+
+            return pds;
+        }
+
+        public void clearProperties(DataSetDefinition def)
+        {
+            sharedProperties.remove(def.getContainer());
+        }
+
+        @Override
+        public void clearCache(DataSetDefinition def)
+        {
+            super.clearCache(def);
+            def.unmaterialize();
+            clearProperties(def);
+        }
     }
 
 
@@ -1047,6 +1099,18 @@ public class StudyManager
                 filter.addWhereClause("(CohortId IS NULL OR CohortId = ?)", new Object[] { cohort.getRowId() });
             }
             return _dataSetHelper.get(study.getContainer(), filter, "DisplayOrder,Category,DataSetId");
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    public PropertyDescriptor[] getSharedProperties(Study study)
+    {
+        try
+        {
+            return _dataSetHelper.getSharedProperties(study.getContainer());
         }
         catch (SQLException x)
         {

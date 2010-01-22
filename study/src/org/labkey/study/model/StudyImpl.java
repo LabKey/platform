@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -145,6 +146,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getDataSetDefinitions(this);
     }
 
+    public synchronized PropertyDescriptor[] getSharedProperties()
+    {
+        return StudyManager.getInstance().getSharedProperties(this);
+    }
 
     public synchronized SampleRequestActor[] getSampleRequestActors() throws SQLException
     {

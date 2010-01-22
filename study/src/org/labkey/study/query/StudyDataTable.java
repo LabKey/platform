@@ -18,14 +18,15 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.StudyImpl;
 
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -36,12 +37,16 @@ import java.util.List;
  */
 public class StudyDataTable extends FilteredTable
 {
+    private static final PropertyDescriptor[] EMPTY_PROPERTY_ARRAY = new PropertyDescriptor[0];
+
     StudyQuerySchema _schema;
 
     public StudyDataTable(StudyQuerySchema schema)
     {
         super(StudySchema.getInstance().getTableInfoStudyData(), schema.getContainer());
         _schema = schema;
+
+        List<FieldKey> defaultColumns = new LinkedList<FieldKey>();
 
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSetId"));
         datasetColumn.setFk(new LookupForeignKey(getDataSetURL(), "datasetId", "datasetId", "Name") {
@@ -51,13 +56,16 @@ public class StudyDataTable extends FilteredTable
             }
         });
         addColumn(datasetColumn);
+        defaultColumns.add(FieldKey.fromParts("DataSet"));
 
         ColumnInfo participantIdColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("ParticipantId"));
         participantIdColumn.setFk(new TitleForeignKey(getParticipantURL(), null, null, "participantId"));
         addColumn(participantIdColumn);
+        defaultColumns.add(FieldKey.fromParts("ParticipantId"));
 
         ColumnInfo dateColumn = new AliasedColumn(this, "Date", _rootTable.getColumn("_visitdate"));
         addColumn(dateColumn);
+        defaultColumns.add(FieldKey.fromParts("Date"));
 
         ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
         addColumn(createdColumn);
@@ -77,18 +85,19 @@ public class StudyDataTable extends FilteredTable
         sequenceNumColumn.setHidden(true);
         addColumn(sequenceNumColumn);
 
-        ColumnInfo propertiesColumn = new AliasedColumn(this, "Properties", _rootTable.getColumn("lsid"));
-        propertiesColumn.setIsUnselectable(true);
-        List<PropertyDescriptor> pds = SystemProperty.getProperties();
-        propertiesColumn.setFk(new PropertyForeignKey(pds.toArray(new PropertyDescriptor[pds.size()]), _schema));
-        addColumn(propertiesColumn);
+        PropertyDescriptor[] pds = EMPTY_PROPERTY_ARRAY;
+        StudyImpl study = _schema.getStudy();
+        if (study != null)
+            pds = study.getSharedProperties();
 
-        setDefaultVisibleColumns(Arrays.asList(
-                FieldKey.fromParts("DataSet"),
-                FieldKey.fromParts("ParticipantId"),
-                FieldKey.fromParts("Date"),
-                FieldKey.fromParts("Properties", "Comment")
-        ));
+        for (PropertyDescriptor pd : pds)
+        {
+            ColumnInfo projectColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer().getId(), _schema.getUser());
+            addColumn(projectColumn);
+            defaultColumns.add(FieldKey.fromParts(pd.getName()));
+        }
+
+        setDefaultVisibleColumns(defaultColumns);
     }
 
     public ActionURL getParticipantURL()
