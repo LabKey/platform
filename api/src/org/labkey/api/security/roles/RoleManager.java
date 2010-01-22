@@ -66,6 +66,7 @@ public class RoleManager
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
         registerRole(new DeveloperRole());
+        registerRole(new TroubleshooterRole());
     }
 
     public static Role getRole(String name)
@@ -208,7 +209,7 @@ public class RoleManager
         
         for (Class<? extends HasContextualRoles> roleFactory : roleFactories)
         {
-            HasContextualRoles factory = null;
+            HasContextualRoles factory;
             try
             {
                 Constructor ctor = roleFactory.getConstructor();

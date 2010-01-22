@@ -546,7 +546,7 @@ public class PropertyManager
             {
                 String sql = "SELECT COUNT(*) FROM " +  prop.getTableInfoPropertySets() + " WHERE ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")";
 
-                Long count = Table.executeSingleton(getSchema(), sql, new Object[]{}, Long.class);
+                    Long count = Table.executeSingleton(getSchema(), sql, new Object[]{}, Long.class);
 
                 assertEquals(0, count.intValue());
             }

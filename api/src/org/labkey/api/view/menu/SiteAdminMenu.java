@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -40,17 +41,26 @@ public class SiteAdminMenu extends NavTreeMenu
     public static NavTree[] getNavTree(ViewContext context)
     {
         User user = context.getUser();
-        if (!user.isAdministrator())
-            return null;
+        NavTree[] admin = null;
 
-        AdminUrls adminUrls = PageFlowUtil.urlProvider(AdminUrls.class);
-        NavTree[] admin = new NavTree[6];
-        admin[0] = new NavTree("Admin Console", adminUrls.getAdminConsoleURL());
-        admin[1] = new NavTree("Site Admins", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), "Administrators"));
-        admin[2] = new NavTree("Site Developers", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), "Developers"));
-        admin[3] = new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
-        admin[4] = new NavTree("Site Groups", PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(ContainerManager.getRoot()));
-        admin[5] = new NavTree("Create Project", adminUrls.getCreateProjectURL());
+        if (user.isAdministrator())
+        {
+            AdminUrls adminUrls = PageFlowUtil.urlProvider(AdminUrls.class);
+            admin = new NavTree[6];
+            admin[0] = new NavTree("Admin Console", adminUrls.getAdminConsoleURL());
+            admin[1] = new NavTree("Site Admins", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), "Administrators"));
+            admin[2] = new NavTree("Site Developers", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), "Developers"));
+            admin[3] = new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
+            admin[4] = new NavTree("Site Groups", PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(ContainerManager.getRoot()));
+            admin[5] = new NavTree("Create Project", adminUrls.getCreateProjectURL());
+        }
+        else if (ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
+        {
+            AdminUrls adminUrls = PageFlowUtil.urlProvider(AdminUrls.class);
+            admin = new NavTree[1];
+            admin[0] = new NavTree("Admin Console", adminUrls.getAdminConsoleURL());
+        }
+
         return admin;
     }
 
@@ -58,6 +68,6 @@ public class SiteAdminMenu extends NavTreeMenu
     @Override
     public boolean isVisible()
     {
-        return getViewContext().getUser().isAdministrator();
+        return ContainerManager.getRoot().hasPermission(getViewContext().getUser(), AdminReadPermission.class);
     }
 }

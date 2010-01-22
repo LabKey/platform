@@ -40,14 +40,6 @@ import java.util.Map;
 
 public class HomeTemplate extends PrintTemplate
 {
-    static ArrayList mainMenu = null;
-
-    @Deprecated
-    public HomeTemplate(ViewContext context, ModelAndView body, NavTrailConfig trailConfig)
-    {
-        this(context, context.getContainer(), body, trailConfig);
-    }
-
     public HomeTemplate(ViewContext context, Container c, ModelAndView body)
     {
         this(context, c, body, new PageConfig(context.getActionURL().getPageFlow()), new NavTree[0]);
@@ -61,26 +53,6 @@ public class HomeTemplate extends PrintTemplate
     public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page, NavTree[] navTrail)
     {
         this("/org/labkey/api/view/template/CommonTemplate.jsp", context, c, body, page, navTrail);
-    }
-
-
-    @Deprecated
-    public HomeTemplate(ViewContext context, Container c, ModelAndView body, NavTrailConfig trailConfig)
-    {
-        this("/org/labkey/api/view/template/CommonTemplate.jsp", context, c, body, trailConfig);
-    }
-
-
-    @Deprecated
-    protected HomeTemplate(String template, ViewContext context, Container c, ModelAndView body, NavTrailConfig trailConfig)
-    {
-        super(template, trailConfig);
-
-        NavTree[] in = trailConfig.getExtraChildren();
-        NavTree[] navTrail = new NavTree[in.length+1];
-        System.arraycopy(in, 0, navTrail, 0, in.length);
-        navTrail[in.length] = new NavTree(trailConfig.getTitle());
-        init(context, c, body, trailConfig, navTrail);
     }
 
 

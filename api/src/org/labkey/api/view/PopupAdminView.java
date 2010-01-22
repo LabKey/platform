@@ -17,11 +17,13 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.menu.MenuService;
@@ -41,11 +43,11 @@ import java.util.TreeSet;
  */
 public class PopupAdminView extends PopupMenuView
 {
-    private boolean canAdmin;
+    private boolean visible;
 
     protected void renderInternal(PopupMenu model, PrintWriter out) throws Exception
     {
-        if (canAdmin)
+        if (visible)
             super.renderInternal(model, out);
         else
             out.write("&nbsp;");
@@ -53,13 +55,17 @@ public class PopupAdminView extends PopupMenuView
 
     public PopupAdminView(final ViewContext context)
     {
-        canAdmin = context.hasPermission(ACL.PERM_ADMIN);
-        if (!canAdmin)
+        User user = context.getUser();
+
+        boolean isAdmin = context.hasPermission(ACL.PERM_ADMIN);
+        boolean hasAdminRead = ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class);
+
+        visible = isAdmin || hasAdminRead;
+        if (!visible)
             return;
         
         NavTree navTree = new NavTree("Admin");
         Container c = context.getContainer();
-        User user = context.getUser();
 
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
         //Allow Admins to turn the folder bar on & off
@@ -72,7 +78,7 @@ public class PopupAdminView extends PopupMenuView
                 navTree.addChild("Show Navigation Bar", adminURL);
         }
 
-        if (user.isAdministrator())
+        if (hasAdminRead)
         {
             NavTree siteAdmin = new NavTree("Manage Site");
 
@@ -82,9 +88,12 @@ public class PopupAdminView extends PopupMenuView
 
         if (!c.isRoot())
         {
-            NavTree projectAdmin = new NavTree("Manage Project");
-            projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
-            navTree.addChild(projectAdmin);
+            if (isAdmin)
+            {
+                NavTree projectAdmin = new NavTree("Manage Project");
+                projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
+                navTree.addChild(projectAdmin);
+            }
 
             c.getFolderType().addManageLinks(navTree, c);
 

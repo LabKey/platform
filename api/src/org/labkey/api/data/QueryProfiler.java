@@ -195,7 +195,7 @@ public class QueryProfiler
                     sb.append("</tr>\n  <tr>");
                     sb.append("<td>Total Unique Queries");
 
-                    if (_uniqueQueryCountEstimate > QueryTrackerSet.LIMIT)
+                    if (_uniqueQueryCountEstimate > QueryTrackerSet.STANDARD_LIMIT)
                         sb.append(" (Estimate)");
 
                     sb.append(":</td><td align=\"right\">").append(Formats.commaf0.format(_uniqueQueryCountEstimate)).append("</td>");
@@ -233,7 +233,12 @@ public class QueryProfiler
 
         protected void write()
         {
-            QueryTrackerSet export = new InvocationQueryTrackerSet();
+            QueryTrackerSet export = new InvocationQueryTrackerSet() {
+                protected int getLimit()
+                {
+                    return Integer.MAX_VALUE;
+                }
+            };
             StringBuilder rows = new StringBuilder();
 
             // Don't update anything while we're rendering the report or vice versa
@@ -506,7 +511,7 @@ public class QueryProfiler
 
     private static class QueryTrackerSet extends TreeSet<QueryTracker>
     {
-        private static final int LIMIT = 1000;     // Set to Integer.MAX_VALUE for effectively no limit
+        private static final int STANDARD_LIMIT = 1000;
 
         private final String _caption;
         private final String _description;
@@ -551,12 +556,17 @@ public class QueryProfiler
                 add(tracker);
         }
 
+        protected int getLimit()
+        {
+            return STANDARD_LIMIT;
+        }
+
         @Override
         public boolean add(QueryTracker tracker)
         {
-            assert size() <= LIMIT;
+            assert size() <= getLimit();
 
-            if (size() == LIMIT)
+            if (size() == getLimit())
             {
                 if (comparator().compare(tracker, first()) < 0)
                     return false;

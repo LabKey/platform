@@ -447,6 +447,9 @@ public class AuthenticationManager
 
         public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
         {
+            if (!getViewContext().getUser().isAdministrator())
+                HttpView.throwUnauthorized();
+
             Map<String, MultipartFile> fileMap = getFileMap();
 
             boolean changedLogos = deleteLogos(form);

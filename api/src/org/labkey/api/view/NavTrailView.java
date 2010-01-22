@@ -18,10 +18,12 @@ package org.labkey.api.view;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
@@ -249,7 +251,7 @@ public class NavTrailView extends HttpView
     void drawAdminTd(ViewContext context) throws Exception
     {
         _out.print("<td align=right>");
-        if (context.hasPermission(ACL.PERM_ADMIN))
+        if (context.hasPermission(ACL.PERM_ADMIN) || ContainerManager.getRoot().hasPermission(context.getUser(), AdminReadPermission.class))
             include(new PopupAdminView(context));
         else if (context.getUser().isDeveloper())
             include(new PopupDeveloperView(context));
