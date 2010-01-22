@@ -122,7 +122,7 @@ public class AttachmentAuditViewFactory extends SimpleAuditViewFactory
         filter.addCondition("EventType", AttachmentService.ATTACHMENT_AUDIT_EVENT);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AttachmentService.ATTACHMENT_AUDIT_EVENT);
-        view.setTitle("<b>Attachments History:</b>");
+        view.setTitle("Attachments History:");
         view.setSort(new Sort("-Date"));
         view.setVisibleColumns(new String[]{"Date", "CreatedBy", "Comment"});
 

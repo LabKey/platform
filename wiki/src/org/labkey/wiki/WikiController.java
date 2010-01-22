@@ -485,7 +485,7 @@ public class WikiController extends SpringActionController
             if (null == _wikiversion)
                 _wikiversion = WikiManager.getLatestVersion(_wiki);
             return (new PageAction(_wiki,_wikiversion).appendNavTrail(root))
-                    .addChild("Manage \"" + _wikiversion.getTitle() + "\"");
+                    .addChild("Manage \"" + _wikiversion.getTitle().getSource() + "\"");
         }
 
         public ActionURL getUrl()
@@ -1102,7 +1102,8 @@ public class WikiController extends SpringActionController
             bean.folderList = ct.render().toString();           // folder tree
             bean.destContainer = c.getPath();                   // hidden input
             bean.sourceContainer = form.getSourceContainer();   // hidden input
-            bean.cancelURL = getBeginURL(getSourceContainer(form.getSourceContainer()));
+            Container sourceContainer = getSourceContainer(form.getSourceContainer());
+            bean.cancelURL = null == sourceContainer ? getBeginURL(c) : getBeginURL(sourceContainer);
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setShowHeader(true);

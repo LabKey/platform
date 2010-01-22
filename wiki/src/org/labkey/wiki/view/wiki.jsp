@@ -177,7 +177,7 @@ else
 %>
 <p/>
 <%
-if (hasContent && null != me.getView("discussion"))
+if (hasContent && null != me.getView("discussion") && !user.isGuest())
 {
     me.include(me.getView("discussion"), out);
 }
