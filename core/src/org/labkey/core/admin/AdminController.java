@@ -2080,7 +2080,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
         {
-            String buttonHTML = PageFlowUtil.generateButton("Reset All Statistics", getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.generateButton("Export", getExportQueriesURL(form.getStat()));
+            String buttonHTML = PageFlowUtil.generateButton("Reset All Statistics", getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.generateButton("Export", getExportQueriesURL());
 
             return QueryProfiler.getReportView(form.getStat(), buttonHTML, new QueryProfiler.ActionURLFactory() {
                 public ActionURL getActionURL(String name)
@@ -2112,11 +2112,9 @@ public class AdminController extends SpringActionController
     }
 
 
-    private ActionURL getExportQueriesURL(String stat)
+    private ActionURL getExportQueriesURL()
     {
-        ActionURL url = new ActionURL(ExportQueriesAction.class, ContainerManager.getRoot());
-        url.addParameter("stat", stat);
-        return url;
+        return new ActionURL(ExportQueriesAction.class, ContainerManager.getRoot());
     }
 
     @RequiresPermissionClass(AdminReadPermission.class)

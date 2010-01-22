@@ -741,7 +741,7 @@ public class LoginController extends SpringActionController
             }
 
             NamedObjectList passwordInputs = getPasswordInputs();
-            SetPasswordBean bean = new SetPasswordBean(_email, form, _unrecoverableError, getMessage(form), passwordInputs, getClass());
+            SetPasswordBean bean = new SetPasswordBean(_email, form, _unrecoverableError, getMessage(form), passwordInputs, getClass(), isCancellable(form));
             HttpView view = new JspView<SetPasswordBean>("/org/labkey/core/login/setPassword.jsp", bean, errors);
 
             PageConfig page = getPageConfig();
@@ -821,6 +821,7 @@ public class LoginController extends SpringActionController
         protected abstract String getMessage(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs();
         protected abstract void afterPasswordSet(BindException errors) throws SQLException;
+        protected abstract boolean isCancellable(SetPasswordForm form);
     }
 
 
@@ -874,6 +875,12 @@ public class LoginController extends SpringActionController
             return "Choose a password you'll use to access this server.";
         }
 
+        @Override
+        protected boolean isCancellable(SetPasswordForm form)
+        {
+            return false;
+        }
+
         protected NamedObjectList getPasswordInputs()
         {
             NamedObjectList list = new NamedObjectList();
@@ -922,6 +929,13 @@ public class LoginController extends SpringActionController
             return null != form.getMessage() ? form.getMessage() : "Choose a new password.";
         }
 
+        @Override
+        protected boolean isCancellable(SetPasswordForm form)
+        {
+            // No message => user clicked "change password" button -- allow cancel in this case
+            return null == form.getMessage();
+        }
+
         protected NamedObjectList getPasswordInputs()
         {
             NamedObjectList list = new NamedObjectList();
@@ -965,8 +979,9 @@ public class LoginController extends SpringActionController
         public final String message;
         public final NamedObjectList passwordInputs;
         public final String actionName;
+        public final boolean cancellable;
 
-        private SetPasswordBean(ValidEmail email, SetPasswordForm form, boolean unrecoverableError, String message, NamedObjectList passwordInputs, Class<? extends AbstractSetPasswordAction> clazz)
+        private SetPasswordBean(ValidEmail email, SetPasswordForm form, boolean unrecoverableError, String message, NamedObjectList passwordInputs, Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable)
         {
             this.email = (null != email ? email.getEmailAddress() : form.getEmail());
             this.form = form;
@@ -974,6 +989,7 @@ public class LoginController extends SpringActionController
             this.message = message;
             this.passwordInputs = passwordInputs;
             this.actionName = getActionName(clazz);
+            this.cancellable = cancellable;
         }
     }
 

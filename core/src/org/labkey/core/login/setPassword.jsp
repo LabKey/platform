@@ -44,7 +44,7 @@
 
     for (NamedObject passwordInput : bean.passwordInputs)
     { %>
-    <tr><td><%=h(passwordInput.getName())%></td><td><input id="<%=passwordInput.getObject()%>" type="password" name="<%=passwordInput.getObject()%>" style="width:150;"></td></tr><%
+    <tr><td width=150px><%=h(passwordInput.getName())%></td><td><input id="<%=passwordInput.getObject()%>" type="password" name="<%=passwordInput.getObject()%>" style="width:150px;"></td></tr><%
     }
     %>
     <tr>
@@ -54,6 +54,11 @@
             if (null != bean.form.getVerification())
             { %>
             <input type="hidden" name="verification" value="<%=h(bean.form.getVerification())%>"><%
+            }
+
+            if (null != bean.form.getMessage())
+            { %>
+            <input type="hidden" name="message" value="<%=h(bean.form.getMessage())%>"><%
             }
 
             if (bean.form.getSkipProfile())
@@ -68,7 +73,7 @@
         %>
         </td>
     </tr>
-    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%></td></tr><%
+    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%><%=bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : ""%></td></tr><%
     } %>
 </table>
 </form>
