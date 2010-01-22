@@ -16,6 +16,7 @@
 package org.labkey.core;
 
 import junit.framework.TestCase;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
@@ -42,6 +43,7 @@ import org.labkey.api.webdav.*;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -63,6 +65,7 @@ import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookWebPartFactory;
 import org.apache.commons.lang.StringUtils;
 
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
@@ -316,6 +319,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContextListener.addStartupListener(TempTableTracker.getStartupListener());
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
+
+        // Export action stats on graceful shutdown
+        ContextListener.addShutdownListener(new ShutdownListener() {
+            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            {
+                File file = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "ActionStats_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".tsv");
+                TSVWriter writer = new ActionsTsvWriter();
+                try
+                {
+                    writer.write(file);
+                }
+                catch (ServletException e)
+                {
+                    Logger.getLogger(CoreModule.class).error("Exception exporting action stats", e);
+                }
+            }
+        });
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();

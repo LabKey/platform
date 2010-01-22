@@ -16,10 +16,13 @@
 package org.labkey.core.login;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.Crypt;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.view.HttpView;
 
 import java.util.Collection;
 import java.util.regex.Matcher;
@@ -200,4 +203,126 @@ public enum PasswordRule
     abstract boolean isValidToStore(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);
 
     public abstract @NotNull String getRuleHTML();
+
+    // 100 most-used passwords on RockYou
+    private static final String weakPasswords = "123456\n"+
+        "12345\n"+
+        "123456789\n"+
+        "password\n"+
+        "iloveyou\n"+
+        "princess\n"+
+        "1234567\n"+
+        "rockyou\n"+
+        "12345678\n"+
+        "abc123\n"+
+        "nicole\n"+
+        "daniel\n"+
+        "babygirl\n"+
+        "monkey\n"+
+        "lovely\n"+
+        "jessica\n"+
+        "654321\n"+
+        "michael\n"+
+        "ashley\n"+
+        "qwerty\n"+
+        "111111\n"+
+        "iloveu\n"+
+        "000000\n"+
+        "michelle\n"+
+        "tigger\n"+
+        "sunshine\n"+
+        "chocolate\n"+
+        "password1\n"+
+        "soccer\n"+
+        "anthony\n"+
+        "friends\n"+
+        "butterfly\n"+
+        "purple\n"+
+        "angel\n"+
+        "jordan\n"+
+        "liverpool\n"+
+        "justin\n"+
+        "loveme\n"+
+        "fuckyou\n"+
+        "123123\n"+
+        "football\n"+
+        "secret\n"+
+        "andrea\n"+
+        "carlos\n"+
+        "jennifer\n"+
+        "joshua\n"+
+        "bubbles\n"+
+        "1234567890\n"+
+        "superman\n"+
+        "hannah\n"+
+        "amanda\n"+
+        "loveyou\n"+
+        "pretty\n"+
+        "basketball\n"+
+        "andrew\n"+
+        "angels\n"+
+        "tweety\n"+
+        "flower\n"+
+        "playboy\n"+
+        "hello\n"+
+        "elizabeth\n"+
+        "hottie\n"+
+        "tinkerbell\n"+
+        "charlie\n"+
+        "samantha\n"+
+        "barbie\n"+
+        "chelsea\n"+
+        "lovers\n"+
+        "teamo\n"+
+        "jasmine\n"+
+        "brandon\n"+
+        "666666\n"+
+        "shadow\n"+
+        "melissa\n"+
+        "eminem\n"+
+        "matthew\n"+
+        "robert\n"+
+        "danielle\n"+
+        "forever\n"+
+        "family\n"+
+        "jonathan\n"+
+        "987654321\n"+
+        "computer\n"+
+        "whatever\n"+
+        "dragon\n"+
+        "vanessa\n"+
+        "cookie\n"+
+        "naruto\n"+
+        "summer\n"+
+        "sweety\n"+
+        "spongebob\n"+
+        "joseph\n"+
+        "junior\n"+
+        "softball\n"+
+        "taylor\n"+
+        "yellow\n"+
+        "daniela\n"+
+        "lauren\n"+
+        "mickey\n"+
+        "princesa";
+
+    public static void testWeakPasswords()
+    {
+        int weak = 0;
+        int strong = 0;
+
+        User user = HttpView.currentContext().getUser();
+        String[] passwords = weakPasswords.split("\n");
+
+        for (String password : passwords)
+        {
+            if (Weak.isValidForLogin(password, user, null))
+                weak++;
+
+            if (Strong.isValidForLogin(password, user, null))
+                strong++;
+        }
+
+        Logger.getLogger(PasswordRule.class).info("Total number: " + passwords.length + " Allowed by Weak: " + weak + " Allowed by Strong: " + strong);
+    }
 }

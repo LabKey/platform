@@ -2117,11 +2117,11 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminReadPermission.class)
-    public class ExportQueriesAction extends ExportAction<QueriesForm>
+    public class ExportQueriesAction extends ExportAction<Object>
     {
-        public void export(QueriesForm form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter(form.getStat());
+            QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter();
 //            writer.setExportAsWebPage(form.isAsWebPage());
             writer.write(response);
         }
