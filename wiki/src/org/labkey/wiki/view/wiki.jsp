@@ -154,7 +154,10 @@ else
 
     if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0 && wiki.isShowAttachments())
     {
-        %><p/>
+        %><p/><%
+            if (null != wiki.latestVersion().getBody())
+            {
+        %>
             <table style="width:100%" cellspacing="0" class="lk-wiki-file-attachments-divider">
                 <tr>
                     <td style="border-bottom: 1px solid #89A1B4; width:48%">&nbsp;</td>
@@ -167,6 +170,7 @@ else
                 </tr>
             </table>
         <%
+            }
 
         for (Attachment a : wiki.getAttachments())
         {

@@ -2916,10 +2916,8 @@ public class WikiController extends SpringActionController
             SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
             Set<Role> contextualRoles = new HashSet<Role>();
 
-            //must have a body, and if HTML, must be valid according to tidy
-            if (null == form.getBody() || form.getBody().trim().length() <= 0)
-                errors.rejectValue("body", ERROR_MSG, "The body text may not be blank.");
-            else if (null == form.getRendererType() || WikiRendererType.valueOf(form.getRendererType()) == WikiRendererType.HTML)
+            //if HTML body, must be valid according to tidy
+            if (null != form.getBody() && (null == form.getRendererType() || WikiRendererType.valueOf(form.getRendererType()) == WikiRendererType.HTML))
             {
                 String body = form.getBody();
                 ArrayList<String> tidyErrors = new ArrayList<String>();
@@ -3031,7 +3029,9 @@ public class WikiController extends SpringActionController
             //only insert new version if something has changed
             if (wikiUpdate.getName().trim().compareTo(form.getName()) != 0 ||
                     wikiversion.getTitle().trim().compareTo(title) != 0 ||
-                    wikiversion.getBody().compareTo(form.getBody().trim()) != 0 ||
+                    (null == wikiversion.getBody() && null != form.getBody()) ||
+                    (null != wikiversion.getBody() && null == form.getBody()) ||
+                    (null != wikiversion.getBody() && null != form.getBody() && wikiversion.getBody().compareTo(form.getBody().trim()) != 0) ||
                     wikiversion.getRendererType().compareTo(currentRendererName) != 0 ||
                     wikiUpdate.getParent() != form.getParentId() ||
                     wikiUpdate.isShowAttachments() != form.isShowAttachments())
