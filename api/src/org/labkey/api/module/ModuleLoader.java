@@ -495,8 +495,8 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            if (coreContext.getInstalledVersion() < 2.0)
-                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be 2.0 or later.");
+            if (coreContext.getInstalledVersion() < 2.3)
+                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be 2.3 or greater.");
 
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
         }
