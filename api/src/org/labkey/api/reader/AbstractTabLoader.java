@@ -19,6 +19,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.log4j.Logger;
@@ -65,6 +66,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     protected char _chDelimiter = '\t';
     protected String _strDelimiter = null;
     protected boolean _parseQuotes = false;
+    protected boolean _unescapeJava = true;
     protected boolean _throwOnErrors = false;
     private Filter<Map<String, Object>> _mapFilter;
 
@@ -145,11 +147,13 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
      * you could argue that TAB delimited string shouldn't have white space stripped, but
      * we always strip.
      */
-    protected static String parseValue(String value)
+    protected String parseValue(String value)
     {
         value = StringUtils.trimToEmpty(value);
         if ("\\N".equals(value))
             return "";
+        if (_unescapeJava)
+            return StringEscapeUtils.unescapeJava(value);
         return value;
     }
 
@@ -275,6 +279,11 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     public void setParseQuotes(boolean parseQuotes)
     {
         _parseQuotes = parseQuotes;
+    }
+
+    public void setUnescapeJava(boolean unescapeJava)
+    {
+        _unescapeJava = unescapeJava;
     }
 
     public boolean isThrowOnErrors()

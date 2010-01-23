@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.HttpView;
@@ -235,9 +236,9 @@ public class TSVGridWriter extends TSVWriter
         {
             if (dc.isVisible(ctx))
             {
-                // Remove all tab characters; see #8435
-                String value = dc.getTsvFormattedValue(ctx).replaceAll("\t", "");
-                row.append(value);
+                // Encode all tab and newline characters; see #8435, #8748
+                String value = dc.getTsvFormattedValue(ctx);
+                row.append(StringEscapeUtils.escapeJava(value));
                 row.append('\t');
             }
         }
