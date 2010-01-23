@@ -316,6 +316,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             try {
                 runInfoReader = new BufferedReader(new FileReader(runInfo));
                 TabLoader loader = new TabLoader(runInfoReader, false);
+                // Don't unescape file path names on windows (C:\foo\bar.tsv)
+                loader.setUnescapeJava(false);
                 loader.setColumns(new ColumnDescriptor[]{
                         new ColumnDescriptor("name", String.class),
                         new ColumnDescriptor("value", String.class),
@@ -458,6 +460,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         try {
             reader = new BufferedReader(new FileReader(runInfo));
             TabLoader loader = new TabLoader(reader, false);
+            // Don't unescape file path names on windows (C:\foo\bar.tsv)
+            loader.setUnescapeJava(false);
             loader.setColumns(new ColumnDescriptor[]{
                     new ColumnDescriptor("name", String.class),
                     new ColumnDescriptor("value", String.class),

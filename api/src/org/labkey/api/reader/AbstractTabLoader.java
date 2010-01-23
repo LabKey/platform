@@ -817,6 +817,39 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
             assertEquals(firstRow.getDescription(), "description");
         }
 
+        final String data =
+                "a\tmulti-line\tb\n" +
+                "A\tthis\\nis\\tmulti-line\tB\n" +
+                "A\tthis\\nis\\tmulti-line\tB\n";
+
+        public void testUnescape() throws Exception
+        {
+            TabLoader loader = new TabLoader(data, true);
+            List<Map<String, Object>> rows = loader.load();
+            assertEquals(2, rows.size());
+
+            for (Map<String, Object> row : rows)
+            {
+                assertEquals("A", row.get("a"));
+                assertEquals("this\nis\tmulti-line", row.get("multi-line"));
+                assertEquals("B", row.get("b"));
+            }
+        }
+
+        public void testNoUnescape() throws Exception
+        {
+            TabLoader loader = new TabLoader(data, true);
+            loader.setUnescapeJava(false);
+            List<Map<String, Object>> rows = loader.load();
+            assertEquals(2, rows.size());
+
+            for (Map<String, Object> row : rows)
+            {
+                assertEquals("A", row.get("a"));
+                assertEquals("this\\nis\\tmulti-line", row.get("multi-line"));
+                assertEquals("B", row.get("b"));
+            }
+        }
 
         public void testTransform()
         {
