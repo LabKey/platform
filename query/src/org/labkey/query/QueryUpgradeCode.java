@@ -35,10 +35,9 @@ public class QueryUpgradeCode implements UpgradeCode
 {
     private static final String R_EXE = "RReport.RExe";
     private static final String R_CMD = "RReport.RCmd";
-    private static final String R_TEMP_FOLDER = "RReport.TempFolder";
-    private static final String R_EDIT_PERMISSIONS = "RReport.EditPermissions";
 
     // Invoked at version 9.1
+    @SuppressWarnings({"UnusedDeclaration"})
     public void upgradeRConfiguration(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())
@@ -64,6 +63,7 @@ public class QueryUpgradeCode implements UpgradeCode
     }
 
     // Invoked from script query-9.20-9.21.sql
+    @SuppressWarnings({"UnusedDeclaration"})
     public void populateDataSourceColumn(ModuleContext ctx) throws SQLException
     {
         if (!ctx.isNewInstall())

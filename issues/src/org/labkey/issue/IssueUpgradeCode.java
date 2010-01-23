@@ -40,6 +40,7 @@ public class IssueUpgradeCode implements UpgradeCode
     private static final Logger _log = Logger.getLogger(IssueUpgradeCode.class);
 
     // Invoked from issues-8.10-8.20.sql
+    @SuppressWarnings({"UnusedDeclaration"})
     public void populateCommentEntityIds(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())

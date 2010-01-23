@@ -32,12 +32,12 @@ import java.sql.SQLException;
  * Date: Nov 25, 2008
  * Time: 1:23:48 PM
  */
-@SuppressWarnings({"UnusedDeclaration"})
 public class PipelineUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(PipelineUpgradeCode.class);
 
     // Invoked at version 8.261
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setPipelineToolsDirectory(ModuleContext moduleContext)
     {
         String toolsDir = StringUtils.trimToNull(AppProps.getInstance().getPipelineToolsDirectory());

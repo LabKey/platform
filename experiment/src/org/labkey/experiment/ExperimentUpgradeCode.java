@@ -38,7 +38,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static final Logger _log = Logger.getLogger(ExperimentUpgradeCode.class);
 
     // Invoked at version 8.23
-    @SuppressWarnings("ThrowableInstanceNeverThrown")
+    @SuppressWarnings({"ThrowableInstanceNeverThrown", "UnusedDeclaration"})
     public void version132Upgrade(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())
@@ -50,24 +50,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             catch (Exception e)
             {
                 String msg = "Error running doVersion_132Update on ExperimentModule, upgrade from version " + String.valueOf(moduleContext.getInstalledVersion());
-                _log.error(msg, e);
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, null, false, false);
-            }
-        }
-    }
-
-    // Invoked at version 2.23  // TODO: Move to list module & re-enable, or delete
-    public void populateListEntityIds(ModuleContext moduleContext)
-    {
-        if (!moduleContext.isNewInstall())
-        {
-            try
-            {
-                doPopulateListEntityIds();
-            }
-            catch (Exception e)
-            {
-                String msg = "Error running afterSchemaUpdate doPopulateListEntityIds on ExperimentModule, upgrade from version " + String.valueOf(moduleContext.getInstalledVersion());
                 _log.error(msg, e);
                 ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, null, false, false);
             }
@@ -98,28 +80,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             setDescriptorProject(tmpSchema, cid, projectId, newContainerId, descriptorTable);
         }
     }
-
-    private void doPopulateListEntityIds() throws SQLException
-    {
-/*        ListDef[] listDefs = ListManager.get().getAllLists();
-
-        for (ListDef listDef : listDefs)
-        {
-            int listId = listDef.getRowId();
-            ListDefinitionImpl impl = new ListDefinitionImpl(listDef);
-            TableInfo tinfo = impl.getIndexTable();
-
-            SimpleFilter lstItemFilter = new SimpleFilter("ListId", listId);
-            ListItm[] itms = Table.select(tinfo, Table.ALL_COLUMNS, lstItemFilter, null, ListItm.class);
-
-            String sql = "UPDATE " + tinfo + " SET EntityId = ? WHERE ListId = ? AND " + tinfo.getSqlDialect().getColumnSelectName("Key") + " = ?";
-
-            for (ListItm itm : itms)
-            {
-                Table.execute(tinfo.getSchema(), sql, new Object[]{GUID.makeGUID(), listId, itm.getKey()});
-            }
-        }
-*/    }
 
     private void setDescriptorProject(DbSchema tmpSchema, String containerId, String projectId, String newContainerId, String descriptorTable) throws SQLException
     {

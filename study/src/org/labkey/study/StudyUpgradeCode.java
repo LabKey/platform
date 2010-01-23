@@ -35,21 +35,6 @@ import java.util.HashMap;
  */
 public class StudyUpgradeCode implements UpgradeCode
 {
-    // Invoked at version 2.11
-    public static void upgradeRequirementsTables(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall() || moduleContext.getInstalledVersion() >= 2.11)
-            return;
-        try
-        {
-            SampleManager.getInstance().upgradeRequirementsTables();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     // Intended for version 8.23, but invoked from afterUpdate(), NOT from script, because the code path relies
     //  too heavily on an up-to-date schema.
     public static void upgradeExtensibleTables_83(ModuleContext moduleContext)
@@ -68,6 +53,7 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
     // Invoked at version 8.29
+    @SuppressWarnings({"UnusedDeclaration"})
     public void uniquifyDatasetLabels(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())
@@ -151,6 +137,7 @@ public class StudyUpgradeCode implements UpgradeCode
     }
 
     // Invoked at version 8.38
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void upgradeMissingProtocols(ModuleContext moduleContext)
     {
         if (moduleContext.isNewInstall() || moduleContext.getInstalledVersion() >= 8.38)

@@ -431,7 +431,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         super.afterUpdate(moduleContext);
 
         StudyUpgradeCode.upgradeExtensibleTables_83(moduleContext);
-        StudyUpgradeCode.upgradeRequirementsTables(moduleContext);
         StudyUpgradeCode.updateAllCalculatedSpecimenData(moduleContext);
     }
 
