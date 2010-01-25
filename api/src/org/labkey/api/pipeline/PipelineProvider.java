@@ -37,6 +37,8 @@ abstract public class PipelineProvider
 
     public enum Params { path }
 
+    private boolean _showActionsIfModuleInactive;
+
     // UNDONE: should probably extend NavTree
     public static class PipelineDirectory
     {
@@ -501,6 +503,21 @@ abstract public class PipelineProvider
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);
         directory.addAction(new PipelineAction(description, actionURL, files, allowMultiSelect));
+    }
+
+    /**
+     * Returns true if a provider wants to show file actions even if the provider module is not active
+     * in a container.
+     * @return
+     */
+    public boolean isShowActionsIfModuleInactive()
+    {
+        return _showActionsIfModuleInactive;
+    }
+
+    protected void setShowActionsIfModuleInactive(boolean showActionsIfModuleInactive)
+    {
+        _showActionsIfModuleInactive = showActionsIfModuleInactive;
     }
 
     /**

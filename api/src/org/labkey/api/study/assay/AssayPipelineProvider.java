@@ -54,6 +54,8 @@ public class AssayPipelineProvider extends PipelineProvider
         _filter = filter;
         _assayProvider = assayProvider;
         _actionDescription = actionDescription;
+
+        setShowActionsIfModuleInactive(true);
     }
 
     public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)

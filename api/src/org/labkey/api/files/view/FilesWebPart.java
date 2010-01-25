@@ -17,12 +17,15 @@
 package org.labkey.api.files.view;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.jsp.JspLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -44,6 +47,8 @@ import java.util.List;
  */
 public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 {
+    private static final Logger _log = Logger.getLogger(FilesWebPart.class);
+
     private boolean wide = true;
     private boolean showAdmin = false;
     private String fileSet;
@@ -109,14 +114,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             actions.add(FilesForm.actions.deletePath);
         }
-        if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
+
+        if (canDisplayPipelineActions())
         {
-            actions.add(FilesForm.actions.importData);
+            if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
+            {
+                actions.add(FilesForm.actions.importData);
+            }
+
+            if (policy.hasPermission(getViewContext().getUser(), AdminPermission.class))
+                actions.add(FilesForm.actions.customize);
         }
-
-        if (policy.hasPermission(getViewContext().getUser(), AdminPermission.class))
-            actions.add(FilesForm.actions.customize);
-
         form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
 
         return form;
@@ -135,6 +143,28 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             _path = JSP_RIGHT;
             _page = JspLoader.createPage(HttpView.currentRequest(), (String)null, _path);
         }
+    }
+
+    protected boolean canDisplayPipelineActions()
+    {
+        try {
+            // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
+            // reference the same location, then import and customize actions should be disabled
+
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
+            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+
+            if (root != null && root.getRootPath().equals(dir.getFileSystemDirectory()))
+            {
+                return true;
+            }
+        }
+        catch (MissingRootDirectoryException e)
+        {
+            _log.error("Error determining whether pipeline actions can be shown", e);
+        }
+        return false;
     }
 
     protected SecurableResource getSecurableResource()
