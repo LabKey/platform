@@ -61,6 +61,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
     public ExperimentPipelineProvider(Module owningModule)
     {
         super(NAME, owningModule);
+        setShowActionsIfModuleInactive(true);
     }
 
     public void initSystemDirectory(File rootDir, File systemDir)

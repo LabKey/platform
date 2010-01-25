@@ -120,10 +120,10 @@ public class PipelineServiceImpl extends PipelineService
             File root = svc.getFileRoot(container.getProject());
             if (root != null)
             {
-                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container.getProject(), true);
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
                 PipelineRoot p = new PipelineRoot();
 
-                p.setContainer(container.getProject().getId());
+                p.setContainer(container.getId());
                 p.setPath(dir.getFileSystemDirectory().toURI().toString());
                 //p.setType("Default");
 
@@ -209,7 +209,7 @@ public class PipelineServiceImpl extends PipelineService
             PipelineRoot r = PipelineManager.getPipelineRootObject(container, PipelineRoot.PRIMARY_ROOT);
             if (null == r)
             {
-                if (container != null && container.isProject())
+                if (container != null)
                     return getDefaultPipelineRoot(container);
                 return null;
             }
@@ -230,7 +230,7 @@ public class PipelineServiceImpl extends PipelineService
         String root = PipelineManager.getPipelineRoot(container, type);
         if (root == null)
         {
-            if (container != null && container.isProject())
+            if (container != null)
             {
                 PipeRoot pipeRoot = getDefaultPipelineRoot(container);
                 if (pipeRoot != null)

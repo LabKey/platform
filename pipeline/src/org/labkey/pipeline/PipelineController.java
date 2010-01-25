@@ -411,6 +411,12 @@ public class PipelineController extends SpringActionController
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
             return pipeRoot == null ? getViewContext().getContainer() : pipeRoot;
         }
+
+        @Override
+        protected boolean canDisplayPipelineActions()
+        {
+            return true;
+        }
     }
 
     public static class PipelineActionsForm extends PathForm
@@ -466,11 +472,12 @@ public class PipelineController extends SpringActionController
 
             PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(uriCurrent, browseURL);
             List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
-            //Set<Module> activeModules = c.getActiveModules();
+            Set<Module> activeModules = c.getActiveModules();
             for (PipelineProvider provider : providers)
             {
-                //if (!form.isAllActions() || activeModules.contains(provider.getOwningModule()))
-                    provider.updateFileProperties(getViewContext(), pr, entry, form.isAllActions());
+                boolean showAllActions = form.isAllActions();
+                if (provider.isShowActionsIfModuleInactive() || activeModules.contains(provider.getOwningModule()))
+                    provider.updateFileProperties(getViewContext(), pr, entry, showAllActions);
             }
 
             // keep actions in consistent order for display

@@ -59,7 +59,7 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
 
     public String getName()
     {
-        return "Specimen Comment events";
+        return "Specimen Comments and QC";
     }
 
     public String getEventType()

@@ -14,9 +14,8 @@
  */
 LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
-    actionsConfigURL : LABKEY.ActionURL.buildURL("pipeline", "pipelineActionsConfig"),
-
-    actionsUpdateURL : LABKEY.ActionURL.buildURL("pipeline", "updatePipelineActionConfig"),
+    actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true}),
+    actionsUpdateURL : LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig'),
 
     // run selected action
     runAction : undefined,
@@ -33,9 +32,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             if (startsWith(config.path,"/"))
                 config.path = config.path.substring(1);
 
-//            this.actionsConfigURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true, path:config.path});
-            this.actionsConfigURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {path:config.path});
-            this.actionsUpdateURL = LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig');
+            this.actionsConfigURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true, path:config.path});
         }
     },
 

@@ -4466,7 +4466,7 @@ public class SpecimenController extends BaseStudyController
                 form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
             }
             StudyJspView<Object> view = new StudyJspView<Object>(study, "manageComments.jsp", form, errors);
-            view.setTitle("Specimen Comment Configuration");
+            view.setTitle("Comment Configuration");
 
             return view;
         }
