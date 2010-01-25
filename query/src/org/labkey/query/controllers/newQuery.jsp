@@ -39,7 +39,7 @@
         <input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
 
         <p>What do you want to call the new query?<br>
-            <input type="text" name="ff_newQueryName" value="<%=h(form.ff_newQueryName)%>">
+            <input type="text" id="ff_newQueryName" name="ff_newQueryName" value="<%=h(form.ff_newQueryName)%>">
         </p>
 
         <p>

@@ -240,7 +240,7 @@ public class QueryController extends SpringActionController
             }
             if (!form.getSchema().canCreate())
                 HttpView.throwUnauthorized();
-            getPageConfig().setFocus("forms[0].ff_newQueryName");
+            getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
             setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
             return new JspView<NewQueryForm>(QueryController.class, "newQuery.jsp", form, errors);

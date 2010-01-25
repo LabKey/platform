@@ -93,7 +93,7 @@ function orderModule(listName, down, targetName)
   %>
   <tr>
     <td class='labkey-form-label'>Name</td>
-    <td><input type="text" size="40" name="name" value="<%= PageFlowUtil.filter(wiki.getName()) %>"></td>
+    <td><input type="text" size="40" id="name" name="name" value="<%= PageFlowUtil.filter(wiki.getName()) %>"></td>
   </tr>
   <tr>
     <td></td>

@@ -348,7 +348,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class) //will test explcitly below
+    @RequiresPermissionClass(ReadPermission.class) //will test explicitly below
     public class ManageAction extends FormViewAction<WikiManageForm>
     {
         Wiki _wiki = null;
@@ -415,7 +415,7 @@ public class WikiController extends SpringActionController
             else
                 manageView.addObject("deleteLink", null);
 
-            getPageConfig().setFocus("forms[0].name");
+            getPageConfig().setFocusId("name");
             return manageView;
         }
 
