@@ -16,12 +16,10 @@
 
 package org.labkey.api.view.template;
 
-import org.apache.commons.collections.MultiHashMap;
-import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.module.Module;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -62,7 +60,6 @@ public class PageConfig
     private boolean _appendPathToTitle;
     private Module _moduleOwner;
     private String _focus = null;
-    private String _focusId = null;
     private boolean _showPrintDialog = false;
     private String _anchor;
     private ActionURL _rssUrl = null;
@@ -151,32 +148,14 @@ public class PageConfig
         _template = template;
     }
 
-    public String getFocusId()
-    {
-        return _focusId;
-    }
-
     public void setFocusId(String focusId)
     {
-        _focusId = focusId;
+        _focus = "getElementById('" + focusId + "')";
     }
 
     public String getFocus()
     {
-        if (null != _focus)
-            return _focus;
-
-        if (null != _focusId)
-            return "getElementById('" + _focusId + "')";
-
-        return null;
-    }
-
-    /** Use setFocusId() instead */
-    @Deprecated
-    public void setFocus(String focus)
-    {
-        _focus = focus;
+        return _focus;
     }
 
     public void setShowPrintDialog(boolean showPrintDialog)

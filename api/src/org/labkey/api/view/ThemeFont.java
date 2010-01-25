@@ -20,8 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ThemeFont
 {
@@ -117,13 +116,13 @@ public class ThemeFont
     }
 
     public final static ThemeFont DEFAULT_THEME_FONT = SMALL;
-    protected static final List<ThemeFont> webThemeFontList = new ArrayList<ThemeFont>();
+    private static final Map<String, ThemeFont> webThemeFontMap = new HashMap<String, ThemeFont>();
 
     static
     {
-        webThemeFontList.add(SMALL);
-        webThemeFontList.add(MEDIUM);
-        webThemeFontList.add(LARGE);
+        webThemeFontMap.put(SMALL.getFriendlyName(), SMALL);
+        webThemeFontMap.put(MEDIUM.getFriendlyName(), MEDIUM);
+        webThemeFontMap.put(LARGE.getFriendlyName(), LARGE);
     }
 
     public static ThemeFont getThemeFont(Container c)
@@ -134,22 +133,13 @@ public class ThemeFont
 
     public static ThemeFont getThemeFont(String themeFont)
     {
-        if (null != themeFont && 0 < themeFont.length ())
-        {
-            // locate the name
-            for (ThemeFont webThemeFont : ThemeFont.getThemeFonts())
-            {
-                if (webThemeFont.getFriendlyName().equals(themeFont))
-                {
-                    return webThemeFont;
-                }
-            }
-        }
-        return null;
+        return webThemeFontMap.get(themeFont);
     }
 
+    // Return a copy of the values, to protect callers.  Not really necessary right now, since writes occur in a
+    // static initializer, but this may not always be the case...
     public static List<ThemeFont> getThemeFonts()
     {
-        return webThemeFontList;
+        return new LinkedList<ThemeFont>(webThemeFontMap.values());
     }
 }
