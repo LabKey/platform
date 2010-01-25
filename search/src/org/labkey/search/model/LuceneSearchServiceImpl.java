@@ -131,7 +131,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String type = r.getContentType();
 
             // Skip XML for now
-            if (type.startsWith("image/") || type.contains("xml"))
+            if (type.startsWith("image/"))
             {
                 return null;
             }
@@ -170,7 +170,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     Metadata metadata = new Metadata();
                     ContentHandler handler = new BodyContentHandler();
                     is = r.getInputStream(User.getSearchUser());
-                    new AutoDetectParser().parse(is, handler, metadata);
+                    AutoDetectParser parser = new AutoDetectParser();
+                    _log.info(id + ": " + parser.getDetector());
+                    parser.parse(is, handler, metadata);
                     is.close();
                     body = handler.toString();
                     if (StringUtils.isBlank(title))
