@@ -41,6 +41,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.reader.AbstractTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.*;
@@ -2169,6 +2170,9 @@ public class StudyManager
         loader.ensureColumn(new ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
         loader.ensureColumn(new ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
 
+        if (AppProps.getInstance().isDevMode() && (loader instanceof AbstractTabLoader))
+            ((AbstractTabLoader)loader).setThrowOnErrors(true);
+
         return loader.load();
     }
 
@@ -2356,11 +2360,7 @@ public class StudyManager
                         {
                             if (col.getName().equalsIgnoreCase("Date"))
                             {
-                                // Yuck! The Map we get here isn't really a Map,
-                                // so we need to construct a copy and update our entry
-                                dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
                                 dataMap.put(col.getPropertyURI(), study.getStartDate());
-                                iter.set(dataMap);
                                 continue;
                             }
                         }
@@ -2368,12 +2368,7 @@ public class StudyManager
                         {
                             if (col.getName().equalsIgnoreCase("SequenceNum"))
                             {
-                                // See above
-                                dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
-
-                                // We introduce a sentinel, 0, as our SequenceNum
                                 dataMap.put(col.getPropertyURI(), 0);
-                                iter.set(dataMap);
                                 continue;
                             }
                         }
@@ -2386,7 +2381,7 @@ public class StudyManager
                     if (!rowToConversionErrorURIs.containsValue(i, col.getPropertyURI()))
                     {
                         // Only emit the error once for a given property uri and row
-                        errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
+                        errors.add("Row " + (i+1) + " data type error for field " + col.getName() + ": '" + String.valueOf(val) + "'.");
                         rowToConversionErrorURIs.put(i, col.getPropertyURI());
                     }
                 }
@@ -2532,17 +2527,13 @@ public class StudyManager
                     int currentKey = getMaxKeyValue(def, user);
 
                     // Sadly, may have to create new maps, since TabLoader's aren't modifyable
-                    for (ListIterator<Map<String, Object>> iter = dataMaps.listIterator(); iter.hasNext(); )
+                    for (Map<String, Object> dataMap : dataMaps)
                     {
-                        Map<String, Object> dataMap = iter.next();
-
                         // Only insert if there isn't already a value
                         if (dataMap.get(keyPropertyURI) == null)
                         {
                             currentKey++;
-                            Map<String, Object> data = new CaseInsensitiveHashMap<Object>(dataMap);
-                            data.put(keyPropertyURI, currentKey);
-                            iter.set(data);
+                            dataMap.put(keyPropertyURI, currentKey);
                         }
                     }
                 }

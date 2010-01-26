@@ -125,10 +125,13 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
                 pj.info("Finish batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
 
+                pj.setStatus("UPDATE participants");
+                pj.info("Updating particpant visits");
                 getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser());
 
                 try
                 {
+                    pj.info("Updating particpant cohorts");
                     getCohortManager().updateParticipantCohorts(pj.getUser(), getStudy());
                 }
                 catch (SQLException e)
@@ -145,6 +148,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                     if (!(runnable instanceof ParticipantImportRunnable))
                         runnable.getDatasetDefinition().materializeInBackground(pj.getUser());
                 }
+                pj.info("Finished updating participants");
             }
             catch (RuntimeException x)
             {
