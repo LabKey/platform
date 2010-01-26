@@ -17,6 +17,8 @@ package org.labkey.api.util;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Category;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +32,10 @@ import java.util.concurrent.TimeUnit;
 
 public class RateLimiter
 {
+    static final Category _log = Category.getInstance(RateLimiter.class);
+    static final boolean _isDebugEnabled = _log.isDebugEnabled();
+
+    final String _name;
     final Rate _target;
     ArrayList<RateAccumulator> _history = new ArrayList<RateAccumulator>(4);
     RateAccumulator _short;
@@ -40,13 +46,20 @@ public class RateLimiter
     final long accumulateInterval;
     long minPause = 500;
 
-    public RateLimiter(long count, long duration)
+
+    public RateLimiter(String name, long count, TimeUnit unit)
     {
-        this(count,duration,60000);
+        this(name, count, unit.toMillis(1), 60000);
     }
 
-    public RateLimiter(long count, long duration, long history)
+    public RateLimiter(String name, long count, long duration)
     {
+        this(name, count,duration,60000);
+    }
+
+    public RateLimiter(String name, long count, long duration, long history)
+    {
+        this._name = name;
         this._target = new Rate(count,duration,TimeUnit.MILLISECONDS);
         long now = System.currentTimeMillis();
         _short = new RateAccumulator(now);
@@ -70,13 +83,23 @@ public class RateLimiter
     }
 
 
-    public long add(int count, boolean wait)
+    @Override
+    public String toString()
+    {
+        return "RateLimiter:" + _name + " " + _target.toString();
+    }
+
+   /*
+    * RateLimiter.add() is thread-safe
+    */
+    public long add(long count, boolean wait)
     {
         long delay;
+        String info = "";
+        long now = System.currentTimeMillis();
         
         synchronized (this)
         {
-            long now = System.currentTimeMillis();
             if (_short._start + accumulateInterval < now)
             {
                 int size = _history.size();
@@ -89,19 +112,26 @@ public class RateLimiter
             _short.accumulate(count);
             _long.accumulate(count);
             delay = _long.getDelay(now,_target);
+            if (_isDebugEnabled && delay > minPause)
+            {
+                long duration = Math.max(1,now - _long._start);
+                long total = _long._count;
+                info = toString() + " wait " + DateUtil.formatDuration(delay) + " " + total + "/" + DateUtil.formatDuration(duration) + "=" + (1000.0*total/duration) + "/sec";
+            }
         }
         
+        // concerned that a do/while (delay>0) could lead to some starvation/unfairness
         if (wait && delay > minPause)
         {
-            do
+            try
             {
-                try {Thread.sleep(delay);}catch(InterruptedException x){}
-                synchronized (this)
-                {
-                    delay = _long.getDelay(System.currentTimeMillis(), _target);
-                }
+                _log.debug(info);
+                Thread.sleep(Math.min(historyInterval,delay));
+                return 0;
             }
-            while (delay > 0);
+            catch(InterruptedException x)
+            {
+            }
         }
         return delay;
     }
@@ -110,9 +140,28 @@ public class RateLimiter
     static class Rate
     {
         double _rate;
+        String _toString;        
+
         Rate(long count, long duration, TimeUnit unit)
         {
+            if (unit == TimeUnit.MILLISECONDS && 0 == (duration%1000))
+            {
+                duration /= 1000;
+                unit = TimeUnit.SECONDS;
+            }
+            
             _rate = (double)count / (double)unit.toMillis(duration);
+
+            if (duration == 1)
+                _toString = "" + count + "/" + StringUtils.stripEnd(unit.toString(),"S");
+            else
+                _toString = "" + count + "/(" + duration + " "  + StringUtils.stripEnd(unit.toString(),"S") + ")";
+        }
+
+        @Override
+        public String toString()
+        {
+            return _toString;
         }
     }
 
@@ -130,7 +179,7 @@ public class RateLimiter
             _start = start;
             _count = count;
         }
-        void accumulate(int add)
+        void accumulate(long add)
         {
             _count += add;
         }
@@ -164,7 +213,7 @@ public class RateLimiter
         
         public void test()
         {
-            final RateLimiter l = new RateLimiter(1,1,1000);
+            final RateLimiter l = new RateLimiter("test",1,1,1000);
             l.minPause = 1;
 
             Runnable run = new Runnable()

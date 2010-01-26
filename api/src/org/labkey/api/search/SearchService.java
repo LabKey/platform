@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.*;
 import org.labkey.api.security.SecurableResource;
@@ -52,6 +53,7 @@ public interface SearchService
     {
         commit,
         
+        idle,       // only used to detect when there is no other work to do
         crawl,      // lowest work priority
         background, // crawler item
 
@@ -68,7 +70,8 @@ public interface SearchService
         categories("searchCategories"),
         securableResourceId(SecurableResource.class.getName()),
         participantId("org.labkey.study#StudySubject"),
-        container(Container.class.getName());
+        container(Container.class.getName()),
+        navtrail(NavTree.class.getName());  // only handle one link for now
 
         final String _propName;
         PROPERTY(String name)
@@ -188,10 +191,10 @@ public interface SearchService
         public String url;
     }
 
-    public SearchResult search(String queryString, String category, User user, Container root, int offset, int limit) throws IOException;
+    public SearchResult search(String queryString, SearchCategory category, User user, Container root, int offset, int limit) throws IOException;
 
     // Search using no offset and default page size.
-    public SearchResult search(String queryString, String category, User user, Container root) throws IOException;
+    public SearchResult search(String queryString, SearchCategory category, User user, Container root) throws IOException;
 
 //    public String searchFormatted(String queryString, User user, Container root, int page);
     public String escapeTerm(String term);
@@ -239,6 +242,7 @@ public interface SearchService
 
     /** an indicator that there are a lot of things in the queue */
     boolean isBusy();
+    void waitForIdle() throws InterruptedException;
 
 
     /** default implementation saving lastIndexed */
