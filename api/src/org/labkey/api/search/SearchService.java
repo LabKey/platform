@@ -258,6 +258,7 @@ public interface SearchService
     //
     
     public void addSearchCategory(SearchCategory category);
+    public SearchCategory getCategory(String category);
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
 
     public interface DocumentProvider
