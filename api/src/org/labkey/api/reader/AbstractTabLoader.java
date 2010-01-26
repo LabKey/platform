@@ -622,7 +622,9 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                     }
                 }
 
-                return factory.getRowMap(values);
+                ArrayList<Object> list = new ArrayList<Object>((int)(_columns.length * 1.2));
+                list.addAll(Arrays.asList(values));
+                return factory.getRowMap(list);
             }
             catch (Exception e)
             {
