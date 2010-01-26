@@ -222,7 +222,7 @@ public class QueryProfiler
             }
         }
 
-        throw new IllegalArgumentException("Query statistic \"" + statName + "\" does not exist");
+        return new HtmlView("<font class=\"labkey-error\">Error: Query statistic \"" + statName + "\" does not exist</font>");
     }
 
     public static class QueryStatTsvWriter extends TSVWriter
