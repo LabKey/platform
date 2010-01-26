@@ -848,17 +848,17 @@ public class StudyController extends BaseStudyController
         {
             final ActionURL url = getViewContext().getActionURL();
             final String collapse = url.getParameter("collapse");
-            final String datasetId = url.getParameter(DataSetDefinition.DATASETKEY);
-            final String id = url.getParameter("id");
+            final int datasetId = NumberUtils.toInt(url.getParameter(DataSetDefinition.DATASETKEY), -1);
+            final int id = NumberUtils.toInt(url.getParameter("id"), -1);
 
-            if (datasetId != null && id != null)
+            if (datasetId != -1 && id != -1)
             {
-                Map<Integer, String> expandedMap = getExpandedState(getViewContext(), Integer.parseInt(id));
+                Map<Integer, String> expandedMap = getExpandedState(getViewContext(), id);
                 // collapse param is only set on a collapse action
                 if (collapse != null)
-                    expandedMap.put(Integer.parseInt(datasetId), "collapse");
+                    expandedMap.put(datasetId, "collapse");
                 else
-                    expandedMap.put(Integer.parseInt(datasetId), "expand");
+                    expandedMap.put(datasetId, "expand");
             }
             return null;
         }
@@ -2090,40 +2090,46 @@ public class StudyController extends BaseStudyController
 
             VBox view = new VBox();
 
-            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
+            int datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), -1);
             final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-            final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-            QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
-            qs.setSchemaName(querySchema.getSchemaName());
-            qs.setQueryName(def.getLabel());
 
-            if (!def.canRead(getUser()))
+            if (def != null)
             {
-                //requiresLogin();
-                view.addView(new HtmlView("User does not have read permission on this dataset."));
+                final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
+                QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
+                qs.setSchemaName(querySchema.getSchemaName());
+                qs.setQueryName(def.getLabel());
+
+                if (!def.canRead(getUser()))
+                {
+                    //requiresLogin();
+                    view.addView(new HtmlView("User does not have read permission on this dataset."));
+                }
+                else
+                {
+                    String protocolId = (String)getViewContext().get("protocolId");
+                    String sourceLsid = (String)getViewContext().get("sourceLsid");
+                    String recordCount = (String)getViewContext().get("recordCount");
+
+                    ActionButton deleteRows = new ActionButton("button", "Recall Rows");
+                    ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
+                    deleteURL.addParameter("protocolId", protocolId);
+                    deleteURL.addParameter("sourceLsid", sourceLsid);
+
+                    //String deleteRowsURL = ActionURL.toPathString("Study", "deletePublishedRows", getContainer()) + "?datasetId=" + datasetId;
+                    deleteRows.setURL(deleteURL);
+                    deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
+                    deleteRows.setActionType(ActionButton.Action.POST);
+                    deleteRows.setDisplayPermission(DeletePermission.class);
+
+                    PublishedRecordQueryView qv = new PublishedRecordQueryView(def, querySchema, qs, sourceLsid,
+                            NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount));
+                    qv.setButtons(Collections.singletonList(deleteRows));
+                    view.addView(qv);
+                }
             }
             else
-            {
-                String protocolId = (String)getViewContext().get("protocolId");
-                String sourceLsid = (String)getViewContext().get("sourceLsid");
-                String recordCount = (String)getViewContext().get("recordCount");
-
-                ActionButton deleteRows = new ActionButton("button", "Recall Rows");
-                ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                deleteURL.addParameter("protocolId", protocolId);
-                deleteURL.addParameter("sourceLsid", sourceLsid);
-
-                //String deleteRowsURL = ActionURL.toPathString("Study", "deletePublishedRows", getContainer()) + "?datasetId=" + datasetId;
-                deleteRows.setURL(deleteURL);
-                deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
-                deleteRows.setActionType(ActionButton.Action.POST);
-                deleteRows.setDisplayPermission(DeletePermission.class);
-
-                PublishedRecordQueryView qv = new PublishedRecordQueryView(def, querySchema, qs, sourceLsid,
-                        NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount));
-                qv.setButtons(Collections.singletonList(deleteRows));
-                view.addView(qv);
-            }
+                view.addView(new HtmlView("The Dataset does not exist."));
             return view;
         }
 

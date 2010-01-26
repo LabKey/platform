@@ -457,7 +457,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var toolbarActions = [];
         var importActions = [];
 
-        if (actions && actions.length)
+        if (actions && actions.length && this.canImportData())
         {
             for (var i=0; i < actions.length; i++)
             {
@@ -806,5 +806,15 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             var a = new LABKEY.PipelineAction(action);
             a.execute(a);
         }
+    },
+
+    canImportData : function()
+    {
+        for (var i=0; i < this.buttonCfg.length; i++)
+        {
+            if (this.buttonCfg[i] == 'importData')
+                return true;
+        }
+        return false;
     }
 });
