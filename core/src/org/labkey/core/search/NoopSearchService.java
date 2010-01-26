@@ -291,4 +291,9 @@ public class NoopSearchService implements SearchService
     public void notFound(URLHelper url)
     {
     }
+
+    public SearchCategory getCategory(String category)
+    {
+        return null;
+    }
 }
