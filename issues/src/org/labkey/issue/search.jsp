@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -43,19 +44,13 @@
     { 
         %><input type=hidden name=_print value=1>";<%
     }
-%>
-    <input type="hidden" name="guest" value=0>
-    <input type="text" size=50 id="query" name="q" value="<%=h(q)%>">&nbsp;
-    <%=generateSubmitButton("Search")%>
-</form>
-<%
+    %><input type="text" size=50 id="query" name="q" value="<%=h(q)%>">&nbsp;<%=generateSubmitButton("Search")%>
+</form><%
     if (0 < q.length())
     {
-        String qs = "+(" + q + ") +container:" + c.getId();   //TODO: just pass container to search()
-        if (-1 == q.indexOf("status:"))
-            qs += " status:open^2 status:closed^1";
-
-        SearchService.SearchResult result = ss.search(qs, "issues", user, ContainerManager.getRoot());
+        //String qs = "+(" + q + ") +container:" + c.getId();   //UNDONE: non-recursive search
+        String qs = q;
+        SearchService.SearchResult result = ss.search(qs, IssueManager.searchCategory, user, ContainerManager.getRoot());
         List<SearchService.SearchHit> hits = result.hits;
 
         %><div id="searchResults"><%

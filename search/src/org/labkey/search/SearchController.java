@@ -19,20 +19,19 @@ package org.labkey.search;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
+import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
 import org.springframework.validation.BindException;
@@ -486,6 +485,8 @@ public class SearchController extends SpringActionController
             form.setStatusMessage(statusMessage);
             _category = form.getCategory();
 
+            audit(form);
+
             HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
             return search;
         }
@@ -493,6 +494,29 @@ public class SearchController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Search" + (null != _category ? " " + _category + "s" : ""));
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CommentAction extends FormHandlerAction<SearchForm>
+    {
+        @Override
+        public void validateCommand(SearchForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(SearchForm searchForm, BindException errors) throws Exception
+        {
+            audit(searchForm);
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SearchForm searchForm)
+        {
+            return getSearchURL();
         }
     }
 
@@ -511,6 +535,7 @@ public class SearchController extends SpringActionController
         private int _limit = 1000;
         private String _category = null;
         private boolean _includeSubfolders = true;
+        private String _comment = null;
 
         public String[] getQ()
         {
@@ -639,5 +664,38 @@ public class SearchController extends SpringActionController
         {
             _category = category;
         }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
+        }
+    }
+
+    
+    protected void audit(SearchForm form)
+    {
+        ViewContext c = getViewContext();
+        audit(c.getUser(), c.getContainer(), form.getQueryString(), form.getComment());
+    }
+
+    
+    protected void audit(User user, Container c, String query, String comment)
+    {
+        if (user == User.getSearchUser() || StringUtils.isEmpty(query))
+            return;
+
+        AuditLogService.I audit = AuditLogService.get();
+        if (null == audit)
+            return;
+
+        if (query.length() > 200)
+            query = query.substring(0,197) + "...";
+
+        audit.addEvent(user, c, SearchModule.EVENT_TYPE, query, comment);
     }
 }

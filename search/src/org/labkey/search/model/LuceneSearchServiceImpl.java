@@ -411,9 +411,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private final QueryParser _titleBodyQueryParser = new MultiFieldQueryParser(Version.LUCENE_30, standardFields, _analyzer, boosts);
 
-    public SearchResult search(String queryString, String category, User user, Container root, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, SearchCategory searchCategory, User user, Container root, int offset, int limit) throws IOException
     {
-        audit(user, root, queryString);
+        String category = null==searchCategory ? null : searchCategory.toString();
 
         String sort = null;  // TODO: add sort parameter
         int hitsToRetrieve = offset + limit;

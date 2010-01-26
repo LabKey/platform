@@ -31,6 +31,7 @@ import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.ServletContextEvent;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -59,10 +60,22 @@ public class DavCrawler implements ShutdownListener
 //    SearchService.SearchCategory folderCategory = new SearchService.SearchCategory("Folder", "Folder");
 
     long _defaultWait = TimeUnit.SECONDS.toMillis(60);
-    long _defaultBusyWait = TimeUnit.SECONDS.toMillis(5);
+    long _defaultBusyWait = TimeUnit.SECONDS.toMillis(1);
 
-    RateLimiter _listingRateLimiter = new RateLimiter(10, 1000); // 10/second
+    // UNDONE: configurable
+    // NOTE: we want to use these to control how fast we SUBMIT jobs to the indexer,
+    // we don't want to hold up the actual indexer threads if possible
 
+     // 10 directories/second
+    final RateLimiter _listingRateLimiter = new RateLimiter("directory listing", 10, 1000);
+
+    // 1 Mbyte/sec, this seems to be enough to use a LOT of tika cpu time
+    final RateLimiter _fileIORateLimiter = new RateLimiter("file io", 1000000, 1000);
+
+    // CONSIDER: file count limiter
+    final RateLimiter _filesIndexRateLimiter = new RateLimiter("file index", 100, 1000);
+
+    
     // to make testing easier, break out the interface for persisting crawl state
     public interface SavePaths
     {
@@ -173,19 +186,26 @@ public class DavCrawler implements ShutdownListener
             _path = path;
             _lastCrawl = last;
             _full = next.getTime() <= SavePaths.oldDate.getTime();
-        }
-
-
-        public void submit()
-        {
             _task = getSearchService().createTask("Index " + _path.toString());
-            _task.addRunnable(this, SearchService.PRIORITY.crawl);
-            _task.setReady();
         }
+
+
+//        public void submit()
+//        {
+//            _listingRateLimiter.add(0,true);
+//            _fileIORateLimiter.add(0,true);
+//
+//            _task.addRunnable(this, SearchService.PRIORITY.crawl);
+//            _task.setReady();
+//        }
 
 
         public void run()
         {
+            boolean isCrawlerThread = Thread.currentThread() == _crawlerThread;
+            
+            _listingRateLimiter.add(1, isCrawlerThread);
+
             _log.debug("IndexDirectoryJob.run(" + _path + ")");
 
             final Resource r = getResolver().lookup(_path);
@@ -195,8 +215,6 @@ public class DavCrawler implements ShutdownListener
                 _paths.deletePath(_path);
                 return;
             }
-
-            _listingRateLimiter.add(1,true);
 
             _indexTime = new Date(System.currentTimeMillis());
             long changeInterval = (r instanceof WebdavResolver.WebFolder) ? Cache.DAY / 2 : Cache.DAY;
@@ -252,6 +270,11 @@ public class DavCrawler implements ShutdownListener
                             }
                         };
                     }
+
+                    File f = child.getFile();
+                    if (null != f)
+                        _fileIORateLimiter.add(f.length(), isCrawlerThread);
+
                     _task.addResource(child, SearchService.PRIORITY.background);
                 }
                 else if (!child.exists()) // happens when pipeline is defined but directory doesn't exist
@@ -291,6 +314,8 @@ public class DavCrawler implements ShutdownListener
                 String docId =  "dav:" + missing;
                 ss.deleteResource(docId);
             }
+
+            _task.setReady();
         }
     }
 
@@ -337,39 +362,60 @@ public class DavCrawler implements ShutdownListener
     }
 
 
+//    final Runnable pingJob = new Runnable()
+//    {
+//        public void run()
+//        {
+//            synchronized (_crawlerEvent)
+//            {
+//                _crawlerEvent.notifyAll();
+//            }
+//        }
+//    };
+
+
+    void waitForIndexerIdle() throws InterruptedException
+    {
+        SearchService ss = getSearchService();
+        ((AbstractSearchService)ss).waitForRunning();
+
+        // wait for indexer to have nothing else to do
+        while (ss.isBusy())
+        {
+            ss.waitForIdle();
+        }
+    }
+    
+
     Thread _crawlerThread = new Thread("DavCrawler")
     {
         @Override
         public void run()
         {
-            long delay = 0;
-            SearchService ss = null;
-
-            while (!_shuttingDown && ss == null)
+            while (!_shuttingDown && null == getSearchService())
             {
-                try
-                {
-                    ss = getSearchService();
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException x)
-                {
-                }
+                try { Thread.sleep(1000); } catch (InterruptedException x) {}
             }
 
             while (!_shuttingDown)
             {
                 try
                 {
-                    ((AbstractSearchService)ss).waitForRunning();
-                    if (ss.isBusy())
-                    {
-                        _wait(_crawlerEvent, 1000);
-                        continue;
-                    }
+                    waitForIndexerIdle();
 
-                    delay = findSomeWork();
-                    _wait(_crawlerEvent, delay);
+                    IndexDirectoryJob j = findSomeWork();
+                    if (null != j)
+                    {
+                        j.run();
+                    }
+                    else
+                    {
+                        _wait(_crawlerEvent, _defaultWait);                  
+                    }
+                }
+                catch (InterruptedException x)
+                {
+                    continue;
                 }
                 catch (Throwable t)
                 {
@@ -378,35 +424,29 @@ public class DavCrawler implements ShutdownListener
             }
         }
     };
-    
 
-    long findSomeWork()
+
+    LinkedList<IndexDirectoryJob> crawlQueue = new LinkedList<IndexDirectoryJob>();
+
+    IndexDirectoryJob findSomeWork()
     {
-        _log.debug("findSomeWork()");
-
-        boolean fullCrawl = false;
-        Map<Path,Pair<Date,Date>> map = _paths.getPaths(100);
-
-        if (map.isEmpty())
+        if (crawlQueue.isEmpty())
         {
-            return _defaultWait;
-        }
+            _log.debug("findSomeWork()");
 
-        List<Path> paths = new ArrayList<Path>(map.size());
-        for (Map.Entry<Path,Pair<Date,Date>> e : map.entrySet())
-        {
-            Path path = e.getKey();
-            Date lastCrawl = e.getValue().first;
-            Date nextCrawl = e.getValue().second;
-            boolean full = nextCrawl.getTime() < SavePaths.oldDate.getTime();
-            fullCrawl |= full;
+            Map<Path,Pair<Date,Date>> map = _paths.getPaths(100);
 
-            _log.debug("crawl: " + path.toString());
-            paths.add(path);
-            new IndexDirectoryJob(path, lastCrawl, nextCrawl).submit();
+            for (Map.Entry<Path,Pair<Date,Date>> e : map.entrySet())
+            {
+                Path path = e.getKey();
+                Date lastCrawl = e.getValue().first;
+                Date nextCrawl = e.getValue().second;
+
+                _log.debug("add to queue: " + path.toString());
+                crawlQueue.add(new IndexDirectoryJob(path, lastCrawl, nextCrawl));
+            }
         }
-        long delay = (fullCrawl || map.size() > 0) ? 0 : _defaultWait;
-        return delay;
+        return crawlQueue.isEmpty() ? null : crawlQueue.removeFirst();
     }
     
 

@@ -235,6 +235,10 @@ public class NoopSearchService implements SearchService
         return false;
     }
 
+    public void waitForIdle() throws InterruptedException
+    {
+    }
+
     public void setLastIndexedForPath(Path path, long time)
     {
     }

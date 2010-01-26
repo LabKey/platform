@@ -17,13 +17,18 @@
 package org.labkey.search;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.data.*;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
@@ -115,10 +120,11 @@ public class SearchModule extends DefaultModule
         }
 
 
+        AuditLogService.get().addAuditViewFactory(new SearchAuditViewFactory());
+
+
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new SearchContainerListener());
-
-
     }
 
 
@@ -140,4 +146,58 @@ public class SearchModule extends DefaultModule
             }
         };
     }
+
+
+    public static final String EVENT_TYPE = "SearchAuditEvent";
+
+    private static class SearchAuditViewFactory extends SimpleAuditViewFactory
+    {
+        public String getEventType()
+        {
+            return EVENT_TYPE;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "Search";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Search queries";
+        }
+
+        @Override
+        public void setupTable(TableInfo table)
+        {
+            ColumnInfo col = table.getColumn("Key1");
+            col.setLabel("Query");
+        }
+
+        @Override
+        public List<FieldKey> getDefaultVisibleColumns()
+        {
+            List<FieldKey> columns = new ArrayList<FieldKey>();
+            columns.add(FieldKey.fromParts("Date"));
+            columns.add(FieldKey.fromParts("CreatedBy"));
+            columns.add(FieldKey.fromParts("ImpersonatedBy"));
+            columns.add(FieldKey.fromParts("Key1"));
+            columns.add(FieldKey.fromParts("Comment"));
+            columns.add(FieldKey.fromParts("ContainerId"));
+            return columns;
+        }
+
+        public QueryView createDefaultQueryView(ViewContext context)
+        {
+            SimpleFilter filter = new SimpleFilter("EventType", EVENT_TYPE);
+
+            AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+            view.setSort(new Sort("-Date"));
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+
+            return view;
+        }
+    }    
 }

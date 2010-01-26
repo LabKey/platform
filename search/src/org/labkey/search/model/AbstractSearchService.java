@@ -32,6 +32,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.search.SearchModule;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
@@ -39,11 +40,10 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -68,7 +68,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final List<IndexTask> _tasks = Collections.synchronizedList(new ArrayList<IndexTask>());
 
     final _IndexTask _defaultTask = new _IndexTask("default");
-
 
     enum OPERATION
     {
@@ -270,12 +269,45 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         if (!isRunning() || _shuttingDown)
             return true;
-        int n = _itemQueue.size() + 10 * _runQueue.size();
+        if (_runQueue.size() > 0)
+            return true;
+        int n = _itemQueue.size();
         if (null != _indexQueue)
             n += _indexQueue.size();
-        return n > 1000;
+        return n > 100;
     }
 
+
+    final Object _idleEvent = new Object();
+    boolean _idleWaiting = false;
+
+
+    public void waitForIdle() throws InterruptedException
+    {
+        if (_runQueue.size() == 0 && _itemQueue.size() < 4)
+            return;
+        synchronized (_idleEvent)
+        {
+            _idleWaiting = true;
+            _idleEvent.wait();
+        }
+    }
+
+
+    private void checkIdle()
+    {
+        if (_idleWaiting && _runQueue.isEmpty())
+        {
+            synchronized (_idleEvent)
+            {
+                if (_idleWaiting)
+                    _idleEvent.notifyAll();
+                _idleWaiting = false;
+            }
+        }
+    }
+
+    
 
     SavePaths _savePaths = new SavePaths();
 
@@ -285,7 +317,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public SearchResult search(String queryString, String category, User user, Container root) throws IOException
+    public SearchResult search(String queryString, SearchCategory category, User user, Container root) throws IOException
     {
         return search(queryString, category, user, root, 0, SearchService.DEFAULT_PAGE_SIZE);
     }
@@ -411,8 +443,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (!_eq(url,expected))
                 return;
             deleteResource(docid);
+
+            if (docid.startsWith("dav:"))
+            {
+                Path path = Path.parse(docid.substring("dav:".length()));
+                DavCrawler.getInstance().addPathToCrawl(path.getParent(), null);
+            }
         }
-        catch (Exception x)
+        catch (Throwable x)
         {
             _log.error("Unexpected error", x);
         }
@@ -523,6 +561,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         int cpu = Runtime.getRuntime().availableProcessors();
         return Math.max(1,cpu/4);
+    }
+
+
+    protected boolean isPreprocessThreadSafe()
+    {
+        return true;
     }
 
 
@@ -652,6 +696,35 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     };
 
 
+    boolean _lock(Lock s)
+    {
+        while (null != s)
+        {
+            try
+            {
+                s.lockInterruptibly();
+                return true;
+            }
+            catch (InterruptedException x)
+            {
+                if (_shuttingDown)
+                    return false;
+            }
+        }
+        return true;
+    }
+    
+
+    void _unlock(Lock s)
+    {
+        if (null != s)
+            s.unlock();
+    }
+    
+
+
+    ReentrantLock lockPreprocess = isPreprocessThreadSafe() ? null : new ReentrantLock();
+
     private boolean preprocess(Item i)
     {
         if (_commitItem == i)
@@ -660,14 +733,25 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (null == r || !r.exists())
             return false;
         assert MemTracker.put(r);
-        _log.debug("preprocess(" + r.getDocumentId() + ")");
-        i._preprocessMap = preprocess(i._id, i._res);
-        if (null == i._preprocessMap)
+
+        try
         {
-            _log.debug("skipping " + i._id);
-            return false;
+            if (!_lock(lockPreprocess))
+                return false;
+
+            _log.debug("preprocess(" + r.getDocumentId() + ")");
+            i._preprocessMap = preprocess(i._id, i._res);
+            if (null == i._preprocessMap)
+            {
+                _log.debug("skipping " + i._id);
+                return false;
+            }
+            return true;
         }
-        return true;
+        finally
+        {
+            _unlock(lockPreprocess);
+        }
     }
 
 
@@ -727,11 +811,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 else
                     i.complete(false);
             }
-            return _indexQueue.poll(1, TimeUnit.SECONDS);
+            checkIdle();
+            return _indexQueue.poll(2, TimeUnit.SECONDS);
         }
 
         // otherwise just wait on the preprocess queue
-        i = _itemQueue.poll(2, TimeUnit.SECONDS);
+        i = _itemQueue.poll();
+        if (null == i)
+        {
+            checkIdle();
+            i = _itemQueue.poll(2, TimeUnit.SECONDS);
+        }
+
         if (null != i)
         {
             if (preprocess(i))
@@ -1073,20 +1164,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return task;
     }
 
-
-    protected void audit(User user, Container c, String query)
-    {
-        if (user == User.getSearchUser())
-            return;
-        
-        AuditLogService.I audit = AuditLogService.get();
-        if (null == audit)
-            return;
-        
-        // UNDONE: need to configure an AuditLogService.AuditViewFactory
-        // audit.addEvent(user, c, "search", null, query);
-    }
-    
 
     static void indexMaintenance()
     {
