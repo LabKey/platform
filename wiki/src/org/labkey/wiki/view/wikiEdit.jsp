@@ -121,7 +121,7 @@
                 <tr>
                     <td class="labkey-form-label" title="This field is required">Name<span class="labkey-error">*</span></td>
                     <td width="99%">
-                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onchange="onChangeName()"/>
+                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onkeypress="setWikiDirty()" onchange="onChangeName()"/>
                     </td>
                 </tr>
                 <tr>
