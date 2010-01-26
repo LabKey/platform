@@ -188,12 +188,12 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public SearchResult search(String queryString, String category, User user, Container root, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, SearchCategory category, User user, Container root, int offset, int limit) throws IOException
     {
         return null;
     }
 
-    public SearchResult search(String queryString, String category, User user, Container root) throws IOException
+    public SearchResult search(String queryString, SearchCategory category, User user, Container root) throws IOException
     {
         return null;
     }
