@@ -942,6 +942,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
+    public SearchCategory getCategory(String category)
+    {
+        if (category == null)
+            return null;
+        
+        List<SearchCategory> cats = _readonlyCategories;
+        for (SearchCategory cat : cats)
+        {
+            if (category.equalsIgnoreCase(cat.toString()))
+                return cat;
+        }
+        return null;
+    }
+    
 
     public boolean isParticipantId(User user, String ptid)
     {
@@ -1163,6 +1177,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         DavCrawler.getInstance().startFull(WebdavService.getPath(), force);
         return task;
     }
+
+
+    
+    public Map<String,Object> getStats()
+    {
+        return new HashMap<String,Object>();
+    }
+    
 
 
     static void indexMaintenance()

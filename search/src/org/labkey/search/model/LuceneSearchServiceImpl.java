@@ -561,4 +561,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         commit();
     }
+
+
+    @Override
+    public Map<String, Object> getStats()
+    {
+        Map<String,Object> map = super.getStats();
+        try
+        {
+            IndexSearcher is = getIndexSearcher();
+            map.put("Indexed Documents", is.getIndexReader().numDocs());
+        }
+        catch (IOException x)
+        {
+            
+        }
+        return map;
+    }
 }

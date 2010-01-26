@@ -145,7 +145,7 @@ function google()
             String qs = queryString;
             long start = System.nanoTime();
             Container searchContainer = null == form.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(form.getContainer());
-            SearchService.SearchResult result = ss.search(qs, category, user, searchContainer, offset, hitsPerPage);
+            SearchService.SearchResult result = ss.search(qs, ss.getCategory(category), user, searchContainer, offset, hitsPerPage);
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = result.totalHits;
 
@@ -204,7 +204,7 @@ function google()
 
             if (-1 == queryString.indexOf("searchCategory") && wideView)
             {
-                result = ss.search(queryString, "navigation", user, ContainerManager.getRoot(), offset, hitsPerPage);
+                result = ss.search(queryString, SearchService.navigationCategory, user, ContainerManager.getRoot(), offset, hitsPerPage);
 
                 if (result.hits.size() > 0)
                 {

@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.search.SearchController" %>
+<%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.search.model.DavCrawler" %>
@@ -64,8 +65,18 @@ else
     </form></p><%
     
     WebPartView.startTitleFrame(out,"Statistics");
-    Map<String,Object> m = DavCrawler.getInstance().getStats();
     %><table><%
+    if (ss instanceof AbstractSearchService)
+    {
+        Map<String,Object> m = ((AbstractSearchService)ss).getStats();
+        for (Map.Entry e : m.entrySet())
+        {
+            String l = String.valueOf(e.getKey());
+            String v = String.valueOf(e.getValue());
+            %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
+        }
+    }
+    Map<String,Object> m = DavCrawler.getInstance().getStats();
     for (Map.Entry e : m.entrySet())
     {
         String l = String.valueOf(e.getKey());

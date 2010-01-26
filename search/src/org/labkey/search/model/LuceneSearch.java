@@ -267,4 +267,6 @@ public class LuceneSearch
             _sort = sort;
         }
     }
+
+    
 }
