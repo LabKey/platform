@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.Vector;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
 /**
  * <code>FileType</code>
  *
@@ -419,4 +422,44 @@ public class FileType implements Serializable
         }
         return _defaultSuffix;
     }
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+
+        public void test()
+        {
+            // simple case
+            FileType ft = new FileType(".foo");
+            assertTrue(ft.isType("test.foo"));
+            assertTrue(!ft.isType("test.foo.gz"));
+            assertEquals("test.foo",ft.getName("test"));
+            // support for .gz
+            FileType ftgz = new FileType(".foo",gzSupportLevel.SUPPORT_GZ);
+            assertTrue(ftgz.isType("test.foo"));
+            assertTrue(ftgz.isType("test.foo.gz"));
+            assertEquals("test.foo",ftgz.getName("test"));
+            // preference for .gz
+            FileType ftgzgz = new FileType(".foo",gzSupportLevel.PREFER_GZ);
+            assertTrue(ftgzgz.isType("test.foo"));
+            assertTrue(ftgzgz.isType("test.foo.gz"));
+            assertEquals("test.foo.gz",ftgzgz.getName("test"));
+            // multiple extensions
+            ArrayList<String> foobar = new ArrayList<String>();
+            foobar.add(".foo");
+            foobar.add(".bar");
+            FileType ftt = new FileType(foobar,".foo",false,gzSupportLevel.SUPPORT_GZ);
+            assertTrue(ftt.isType("test.foo"));
+            assertTrue(ftt.isType("test.bar"));
+            assertTrue(ftt.isType("test.foo.gz"));
+            assertTrue(ftt.isType("test.bar.gz"));
+            assertEquals("test.foo",ftt.getName("test"));
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
+    }
+
+
 }
