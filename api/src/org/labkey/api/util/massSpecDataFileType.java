@@ -57,19 +57,23 @@ public class massSpecDataFileType extends FileType
     static private boolean _triedPwizLoadLib;
     static private boolean _isPwizAvailable;
     public static boolean isMZmlAvailable()
-             throws IOException
     {
         if (!_triedPwizLoadLib)
         {
             _triedPwizLoadLib = true;
-            String msg = "pwiz_swigbindings lib not found, no mzML support (this is not necessarily an error)";
+            String why="";
             try {
                 System.loadLibrary("pwiz_swigbindings");
                 _isPwizAvailable = true;
             } catch (UnsatisfiedLinkError e) {
-                throw new IOException (msg + e);
+                why = e.getMessage();
             } catch (Exception e) {
-                throw new IOException (msg + e);
+                why = e.getMessage();
+            }
+            if (!_isPwizAvailable)
+            {
+                String msg = "Could not load native library for mzML input support (this is not necessarily an error): ";
+                Logger.getLogger(massSpecDataFileType.class).info(msg+why);
             }
         }
         return _isPwizAvailable;
@@ -78,14 +82,10 @@ public class massSpecDataFileType extends FileType
     private boolean try_mzml()
     {
         boolean result = false;
-        try {
-            if (isMZmlAvailable())
-            {
-                this.addSuffix(".mzML");
-                result = true;
-            }
-        } catch (IOException x) {
-            Logger.getLogger(massSpecDataFileType.class).info(x);
+        if (isMZmlAvailable())
+        {
+            this.addSuffix(".mzML");
+            result = true;
         }
         return result;
     }
