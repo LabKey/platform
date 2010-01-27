@@ -2378,7 +2378,7 @@ public class StudyManager
                     if (!rowToConversionErrorURIs.containsValue(i, col.getPropertyURI()))
                     {
                         // Only emit the error once for a given property uri and row
-                        errors.add("Row " + (i+1) + " data type error for field " + col.getName() + ": '" + String.valueOf(val) + "'.");
+                        errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
                         rowToConversionErrorURIs.put(i, col.getPropertyURI());
                     }
                 }
