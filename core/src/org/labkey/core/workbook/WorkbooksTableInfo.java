@@ -22,6 +22,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.NotFoundException;
@@ -115,7 +116,7 @@ public class WorkbooksTableInfo extends FilteredTable
     }
 
     @Override
-    public boolean hasPermission(User user, int perm)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         return _schema.getContainer().hasPermission(user, perm);
     }

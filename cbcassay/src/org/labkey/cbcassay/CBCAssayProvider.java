@@ -29,6 +29,8 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.assay.*;
@@ -146,13 +148,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     {
         RunDataTable table = new RunDataTable(schema, protocol) {
             @Override
-            public boolean hasPermission(User user, int perm)
+            public boolean hasPermission(User user, Class<? extends Permission> perm)
             {
-                if ((perm & ~ACL.PERM_DELETE) != 0)
-                {
-                    return false;
-                }
-                return schema.getContainer().hasPermission(user, perm);
+                return (DeletePermission.class.isAssignableFrom(perm)) && schema.getContainer().hasPermission(user, perm);
             }
 
             @Override

@@ -1225,7 +1225,7 @@ public class QueryController extends SpringActionController
                 forward = new ActionURL(returnURL);
             TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
             QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext(), errors);
-            if (!table.hasPermission(getUser(), ACL.PERM_DELETE))
+            if (!table.hasPermission(getUser(), DeletePermission.class))
             {
                 HttpView.throwUnauthorized();
             }
@@ -1330,7 +1330,7 @@ public class QueryController extends SpringActionController
         protected void doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
         {
             TableInfo table = form.getTable();
-            if (!table.hasPermission(form.getUser(), insert ? ACL.PERM_INSERT : ACL.PERM_UPDATE))
+            if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))
                 HttpView.throwUnauthorized();
 
             Map<String, Object> values = getFormValues(form, table);
@@ -2013,7 +2013,7 @@ public class QueryController extends SpringActionController
 
         protected void checkTablePermission(User user, TableInfo table)
         {
-            if (!table.hasPermission(user, ACL.PERM_UPDATE))
+            if (!table.hasPermission(user, UpdatePermission.class))
                 HttpView.throwUnauthorized();
         }
 
@@ -2041,7 +2041,7 @@ public class QueryController extends SpringActionController
 
         protected void checkTablePermission(User user, TableInfo table)
         {
-            if (!table.hasPermission(user, ACL.PERM_INSERT))
+            if (!table.hasPermission(user, InsertPermission.class))
                 HttpView.throwUnauthorized();
         }
 
@@ -2070,7 +2070,7 @@ public class QueryController extends SpringActionController
 
         protected void checkTablePermission(User user, TableInfo table)
         {
-            if (!table.hasPermission(user, ACL.PERM_DELETE))
+            if (!table.hasPermission(user, DeletePermission.class))
                 HttpView.throwUnauthorized();
         }
 
@@ -2115,7 +2115,7 @@ public class QueryController extends SpringActionController
             {
                 if(!container.hasPermission(user, InsertPermission.class))
                     throw new UnauthorizedException("You do not have permissions to insert data into this folder.");
-                if (!table.hasPermission(user, ACL.PERM_INSERT))
+                if (!table.hasPermission(user, InsertPermission.class))
                     throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
                 Map<String,Object> insertedRow = qus.insertRow(user, container, values);
@@ -2128,7 +2128,7 @@ public class QueryController extends SpringActionController
             {
                 if(!container.hasPermission(user, UpdatePermission.class))
                     throw new UnauthorizedException("You do not have permissions to update data into this folder.");
-                if (!table.hasPermission(user, ACL.PERM_UPDATE))
+                if (!table.hasPermission(user, UpdatePermission.class))
                     throw new UnauthorizedException("You do not have permission to update data into this table.");
 
                 Map<String,Object> updatedRow = qus.updateRow(user, container, values, oldKeys);
@@ -2141,7 +2141,7 @@ public class QueryController extends SpringActionController
             {
                 if(!container.hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException("You do not have permissions to delete data into this folder.");
-                if (!table.hasPermission(user, ACL.PERM_DELETE))
+                if (!table.hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException("You do not have permission to delete data into this table.");
 
                 qus.deleteRow(user, container, values);

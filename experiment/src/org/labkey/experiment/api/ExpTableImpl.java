@@ -24,6 +24,7 @@ import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.exp.query.TableEditHelper;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
@@ -154,7 +155,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         _editHelper = helper;
     }
 
-    public boolean hasPermission(User user, int perm)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         if (_editHelper != null)
             return _editHelper.hasPermission(user, perm);

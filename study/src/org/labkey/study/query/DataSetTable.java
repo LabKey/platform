@@ -22,6 +22,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.*;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -277,12 +278,12 @@ public class DataSetTable extends FilteredTable
     }
 
     @Override
-    public boolean hasPermission(User user, int perm)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         DataSet def = getDatasetDefinition();
-        if (perm == (perm & ACL.PERM_READ))
+        if (ReadPermission.class.isAssignableFrom(perm))
             return def.canRead(user);
-        if (perm == (perm & (ACL.PERM_INSERT | ACL.PERM_UPDATE | ACL.PERM_DELETE)))
+        if (InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
             return def.canWrite(user);
         return false;
     }

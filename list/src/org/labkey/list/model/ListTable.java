@@ -23,6 +23,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -179,7 +180,7 @@ public class ListTable extends FilteredTable
         return _list;
     }
 
-    public boolean hasPermission(User user, int perm)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         return _list.getContainer().hasPermission(user, perm);
     }

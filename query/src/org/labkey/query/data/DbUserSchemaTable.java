@@ -19,6 +19,7 @@ package org.labkey.query.data;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.data.xml.TableType;
@@ -50,7 +51,7 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
         return (DbUserSchema)super.getUserSchema();
     }
 
-    public boolean hasPermission(User user, int perm)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         if (!super.hasPermission(user, perm))
             return false;
